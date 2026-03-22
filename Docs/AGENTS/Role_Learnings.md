@@ -286,6 +286,24 @@ When the Captain reviews and promotes learnings, record it here:
 **Learning:** When a classification prompt defines categories that share surface features (e.g., "foreign media reporting domestic events" vs. "foreign government reactions"), lightweight models (Haiku) over-generalize without concrete contrastive examples. Adding paired examples showing the boundary ("BBC reporting Brazilian sentencing → contextual" vs. "Reuters reporting US sanctions → foreign_reaction") plus the rule "classify by evidence substance, not publisher nationality" eliminated misclassification. The APPLICABILITY_ASSESSMENT prompt had this pattern; RELEVANCE_CLASSIFICATION didn't — fixing the asymmetry resolved the issue. Always check that classification prompts at different pipeline stages use consistent guidance quality.
 **Files:** `apps/web/prompts/claimboundary.prompt.md` (RELEVANCE_CLASSIFICATION, APPLICABILITY_ASSESSMENT)
 
+### 2026-03-22 — Supplementary language is not a reliable proxy for evidential direction
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** wrong-assumption
+**Learning:** Phase 2 v2 assumed that running contrarian queries in a supplementary language (e.g., EN for DE inputs) would reliably yield evidence in the direction OPPOSITE to the current pool majority. In practice it did not: the one run where the supplementary pass fired (DE exact, ratio=0.58) swung the verdict from MOSTLY-FALSE (21%/77%) to MOSTLY-TRUE (74%/24%) — the wrong direction. The EN search space for this topic returns failure-mode evidence regardless of contrarian query framing, because the failure narrative dominates EN-language sources. Language selection and evidential direction must be controlled independently. Never assume that a cross-linguistic pass will systematically add opposing-direction evidence.
+**Files:** `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_CrossLinguistic_v2_Results.md`
+
+### 2026-03-22 — Pool-balance gate at 0.55 blocks almost all supplementary passes
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** gotcha
+**Learning:** After the main + contradiction loops run, evidence pool majority ratios typically converge to ≤ 0.55 (observed: 0.48–0.55 across 5 of 6 validation runs). A gate of `ratio > 0.55` therefore blocks the supplementary pass on almost every run. The FR exact and Hydrogen runs both landed at exactly 0.55 and were blocked by strict `>`. If a supplementary mechanism depends on pool skew detection, the threshold must be calibrated against the actual post-loop distribution, not set by intuition. Validate firing rate against a real run set before committing to a threshold value.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (Step 3.5)
+
+### 2026-03-22 — Verify mechanism fires before evaluating quality
+**Role:** Senior Developer  **Agent/Tool:** Claude Code (Sonnet 4.6)
+**Category:** useful-pattern
+**Learning:** When validating an experimental mechanism, always verify whether the mechanism actually fired before interpreting results as evidence for or against it. In the Phase 2 v2 batch, 3 of 4 "passing" gate criteria were achieved without the supplementary pass firing at all — meaning those passes are run variance, not evidence that v2 works. Build firing-detection into the result analysis step: check the evidence pool majority ratio against the threshold for each run, and flag any "improvement" that occurred with the pass blocked. Results from non-firing runs are baseline measurements, not v2 evidence.
+**Files:** `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_CrossLinguistic_v2_Results.md`
+
 ### 2026-03-18 — LLM output ordering is not a ranking signal
 **Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
 **Category:** gotcha

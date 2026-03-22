@@ -1,6 +1,100 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | WIP Plan Roles Clarified
+**Task:** Remove ambiguity between the short-horizon execution plan, the refactoring plan, and the speed/cost optimization plan so future agents do not treat the wrong document as the governing priority source.
+**Files touched:** `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Made the document roles explicit in all three plans. The Mar 22 plan is now clearly labeled as the governing near-term execution plan; the Mar 18 refactoring doc is explicitly the refactoring source plan; the Mar 19 speed/cost doc is explicitly the optimization source plan. The WIP index now repeats this distinction so the relationship is visible from the directory entry point.
+**Open items:** The plan itself is still draft and awaits substantive review/approval. These edits only remove document-role ambiguity.
+**Warnings:** Future edits should preserve this role separation. If the near-term execution order changes, update the Mar 22 plan rather than silently repurposing the refactor or optimization source documents.
+**For next agent:** Use `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md` as the top-level sequencing document. Use the other two only after the execution plan explicitly selects their tracks.
+**Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Next 1-2 Weeks Execution Plan Draft
+**Task:** Convert the current post-Plastik-investigation recommendations into a concrete short-horizon execution plan and publish it as a reviewable WIP document.
+**Files touched:** `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Framed Plastik multilingual neutrality as a parked known limitation after failed Phase 2 v1/v2 experiments and explicitly moved the near-term focus to config provenance repair, WS-1 dead-code cleanup, a first WS-2 decomposition slice, and only the low-risk subset of the speed/cost plan. Kept Phase 2 v3 alive as a future architecture/design track, not an immediate implementation task.
+**Open items:** The new WIP plan is draft-only and should be reviewed before execution starts. A separate decision is still needed on whether config provenance should be lifted ahead of all refactoring work if it remains partially open.
+**Warnings:** The plan intentionally does not reopen Plastik Phase 2 implementation. If product priorities change and multilingual neutrality becomes urgent again, the correct restart point is a fresh Phase 2 v3 architecture brief, not further tuning of v1/v2.
+**For next agent:** Use `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md` as the working plan for the next short execution window. If approved, start with the "Priority 0 / Priority 1" items before touching the larger refactoring or optimization streams.
+**Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 — Contrarian Cross-Linguistic Supplementation (FAIL, flag off)
+**Task:** Validate Phase 2 v2, evaluate gate criteria, revert if failed.
+**Files touched:** UCM `pipeline/default` (reverted to `crossLinguisticQueryEnabled=false`). Full results: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_CrossLinguistic_v2_Results.md`.
+**Key decisions:** Phase 2 v2 FAILED. Gate fired for only 1/6 runs (DE exact, ratio=0.58). The one firing moved DE from 21%/77% MOSTLY-FALSE → 74%/24% MOSTLY-TRUE (wrong direction). All other apparent improvements (EN exact conf 24%→64%, FR exact conf 24%→70%, EN para direction 63%→37%) are run variance — the supplementary pass was blocked for those runs. Family spread unchanged at 47pp (was 48pp). Core assumption invalid: supplementary language ≠ balancing direction proxy. UCM reverted at 2026-03-22T17:04:29Z.
+**Open items:** Phase 2 cross-linguistic supplementation exhausted in current architecture. Two options: (1) park as known limitation, (2) Phase 2 v3 as full architecture redesign. Captain decision required.
+**Warnings:** Do not lower threshold or change > to >= as a quick fix — this causes more wrong-direction firings. Code kept behind flag; do not enable without full redesign.
+**For next agent:** Phase 2 v1 and v2 both failed. Root causes are fundamentally different. v1: claim-unaware pool mixing. v2: language ≠ direction proxy + gate rarely fires. The 47pp family spread remains an open problem. See full experiment history in handoff file.
+
+---
+### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 Implementation — Contrarian Cross-Linguistic Supplementation
+**Task:** Implement Phase 2 v2: change supplementary pass from `"main"` iterationType to `"contrarian"`, add pool balance gate (`supplementarySkewThreshold: 0.55`), bound budget to `suppQueriesPerClaim`.
+**Files touched:** `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`. Handoff: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_ClaimAware_CrossLinguistic_Implementation.md`.
+**Key decisions:** `supplementarySkewThreshold` placed in pipeline config (not calculation config — `researchEvidence()` doesn't load calculation config). Pool balance gate uses inline `majorityRatio` calculation (not `assessEvidenceBalance` which mishandles empty pool). Budget bound changed from `maxSourcesPerIteration` (8) to `suppQueriesPerClaim` (2). UCM activated at `2026-03-22T13:16:21.859Z`.
+**Open items:** Validation batch not yet run. Six inputs: EN exact, DE exact, EN para, FR exact (Plastik family) + Hydrogen + Bolsonaro smoke.
+**Warnings:** `assessEvidenceBalance()` returns `isSkewed=false` for empty pool — do not reuse for supplementary gate. Gate 4 `contextConsistency` (`maxConfidenceSpread: 25 / reductionFactor: 0.5`) unchanged.
+**For next agent:** UCM active (`crossLinguisticQueryEnabled=true`, `supplementarySkewThreshold=0.55`). Run validation batch. Gate: EN/FR conf ≥ 50% (was 24%), spread ≤ 35pp (was 47pp), smoke inputs stable ±15% conf.
+
+---
+### 2026-03-22 | Lead Architect + Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 Design — Claim-Aware Cross-Linguistic Supplementation
+**Task:** Design Phase 2 v2 after v1 failed. Post-mortem, v2 design proposal, minimum viable implementation slice, validation plan, go/defer recommendation.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-22_Lead_Architect_Phase2v2_ClaimAware_CrossLinguistic_Design.md` (created).
+**Key decisions:** v2 design: change supplementary iterationType from `"main"` → `"contrarian"`. Add `supplementarySkewThreshold: 0.55` UCM gate (skip supplementary if pool already balanced). Extend `extendedPipelineConfig` with `contrarianMaxQueriesPerClaim`. Pre-implementation blocker: verify whether `contrarianMaxQueriesPerClaim` is accessible from pipeline config context or only from calculation config. **Recommendation: Go — implement v2** (3-file change, ~15 net lines, bounded risk, no lower-friction alternative).
+**Open items:** Captain approval for implementation. Verify `contrarianMaxQueriesPerClaim` accessibility. After implementation: 4-input validation batch (EN exact, DE exact, EN para, FR exact) + Hydrogen regression control.
+**For next agent:** Read full design doc. Pre-implementation check: search for `contrarianMaxQueriesPerClaim` usage in `claimboundary-pipeline.ts` to confirm config access path. Then implement the 3-file change, run `npm test` + build, activate via UCM, run validation batch.
+
+---
+### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v1 — Cross-Linguistic Supplementation (FAIL, flag off)
+**Task:** Implement and validate Phase 2: cross-linguistic query supplementation behind `crossLinguisticQueryEnabled` UCM flag. Run 4-input validation batch (EN exact, DE exact, EN para, FR exact).
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`. UCM config reverted to `crossLinguisticQueryEnabled=false`. Full results: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2_CrossLinguistic_v1_Results.md`.
+**Key decisions:** Phase 2 v1 FAILED. EN para went wrong direction (55%→63%). Confidence collapse on EN exact (74%→24%), FR exact (73%→24%), EN para (24%). Spread 47pp — no improvement vs pre-experiment 48pp baseline. Root cause: supplementary DE pass deposits evidence into shared pool without claim awareness → inter-claim spread exceeds `maxConfidenceSpread: 25` → `contextConsistency` penalty → confidence floor. Code kept behind flag (correctly implemented mechanically); UCM reverted to false. Do not soften Gate 4 calibration to paper over this.
+**Open items:** Spread problem unresolved (post-revert: ~48pp). All interventions exhausted: B1 ✓ B2 ✓ Phase1A ✗ Phase1 ✗ Phase2v1 ✗.
+**For next agent:** Phase 2 v2 (claim-aware cross-linguistic supplementation) is the only remaining structural option. Requires Captain design approval. EN para post-revert result (27% / 71%) is an incidental baseline data point — EN para can land correctly without cross-linguistic supplementation.
+
+---
+### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 1 Experiment — GENERATE_QUERIES direction-neutralization (FAIL, reverted)
+**Task:** Implement and validate the Lead Architect's GENERATE_QUERIES direction-neutralization prompt change (expectedEvidenceProfile confirmation bias fix). Captain-approved.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md` (changed then reverted), reseeded to config DB twice.
+**Key decisions:** Phase 1 FAILED and was reverted. The direction-neutralization paragraph ("don't skew toward what preliminary search found") harmed correctly-low runs: DE/FR preliminary searches legitimately found contradicting evidence; the instruction caused the LLM to seek more supporting evidence, pushing Run4 (55%→69%) and Run5 (15%→36%) up without helping EN exact (63%→62%, no movement). Root cause: the instruction is undifferentiated — it corrects the EN failure-anchor but simultaneously breaks DE/FR runs that were already correct. Spread: 48pp → 44pp (no material improvement).
+**Open items:** Both UCM levers (Phase 1A) and prompt levers (Phase 1) are now exhausted. Phase 2 (cross-linguistic query supplementation) is the structural fix — requires Captain design approval before implementation.
+**For next agent:** Prompt is back to pre-Phase-1 state (reseeded). No code/config changes remain. Read `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` §4 for Phase 2 design. Key constraint: cross-linguistic language selection must be LLM-guided or config-driven, not hardcoded per-language rules.
+
+---
+### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 1A Experiment — evidenceBalanceSkewThreshold 0.8→0.65
+**Task:** Controlled UCM-only experiment: lower contrarian threshold from 0.8 to 0.65. Observe whether contrarian fires on EN exact and reduces spread.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase1A_Experiment_Results.md`
+**Key decisions:** Phase 1A FAILED and was reverted. Contrarian does fire at 0.65 — mechanism confirmed working. But EN exact went from 63%→77% (worse). Contrarian found only 21 contradicting items against 85 supporting — EN search space structurally resistant to yielding contradicting evidence for "is pointless" framing. Phase 1B (more iterations) also not recommended by structural math. Next step: Lead Architect Phase 1 (GENERATE_QUERIES direction-neutralization, prompt change, needs Captain approval).
+**Open items:** Captain decision on Phase 1 prompt change (direction-neutralization paragraph in GENERATE_QUERIES).
+**For next agent:** See handoff. Threshold is back to 0.8. Do not retry threshold changes. Proposed prompt text in `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` §3.
+
+---
+### 2026-03-21 | LLM Expert | Claude Code (Sonnet 4.6) | Stage 2 Architecture Deep Dive — Retrieval Root Cause
+**Task:** Full Stage 2 code investigation: how retrieval creates the EN exact 63% outlier. Identify structural gaps and lowest-friction intervention package.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_LLM_Expert_Stage2_Architecture_Deep_Dive.md`
+**Key decisions:** Identified `evidenceBalanceSkewThreshold=0.8` (strict >) as the critical structural gap — EN exact pools at ~65% supporting never cross this threshold, so D5 contrarian (already built, already correct) never fires. Also identified `contradictionReservedIterations=1` as structurally insufficient against dominant EN failure narrative. Both fixable via UCM with no approval. Recommended phased rollout: Phase 1 (UCM: lower skew threshold to 0.65, increase contradiction iterations to 2) → Phase 2 (prompt: direction-neutralization in GENERATE_QUERIES, approval needed) → Phase 3 (code: cross-linguistic retrieval, design approval).
+**Open items:** Phase 0 diagnostic (3 EN exact runs to confirm persistent issue). Phase 1 UCM changes can be activated immediately via admin API. Phase 2 and 3 require Captain approval.
+**For next agent:** See handoff for UCM API commands. The contrarian mechanism fires for ALL claims when triggered; budget increase (`contradictionReservedQueries`: 2→4) is required alongside the iterations increase to prevent silent budget exhaustion.
+
+---
+### 2026-03-21 | LLM Expert | Claude Code (Sonnet 4.6) | Stage 2 Retrieval Skew — Prompt-Mechanics Root Cause
+**Task:** Diagnose why Run2 (EN exact: 63% LEANING-TRUE) stays high after B1+B2. Complement Lead Architect structural assessment with prompt-level stage-by-stage breakdown.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_LLM_Expert_Stage2_Retrieval_Skew_Analysis.md`
+**Key decisions:** Confirmed RC1 (preliminary search anchoring in EN failure discourse, ~45% of spread) + RC2 (expectedEvidenceProfile inheriting failure bias, ~25%) as the cascade. B1 doesn't reach most EN failure evidence because it's correctly `supports`, not misclassified. VerdictDirectionPolicy correctly doesn't fire — 63% is directionally consistent with ~65% supporting pool. C-exp (balanced preliminary injection without code change) is a cheaper diagnostic gate than running 3 fresh LLM runs. C1 (bidirectional expectedEvidenceProfile in Pass 2) and C2 (refutingSearchHint in Pass 1) are the prompt-level alternatives to cross-linguistic pooling.
+**Open items:** C-exp diagnostic recommended before C1/C2. Captain approval required for any prompt change.
+**For next agent:** See handoff for per-stage percentage breakdown and the distinction between C1 (Pass 2 expectedEvidenceProfile structure) vs Lead Architect Phase 1 (GENERATE_QUERIES direction neutralization). Both target the same RC2 from different sites — GENERATE_QUERIES change is narrower/lower-risk; Pass 2 change is more structural.
+
+---
+### 2026-03-21 | Lead Architect | Claude Code (Sonnet 4.6) | Plastik Stage 2 Retrieval Design Assessment
+**Task:** Assess whether remaining 48pp post-B1+B2 spread requires another local prompt tweak or structural retrieval redesign. Deliver phased plan with decision gates.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md`
+**Key decisions:** 48pp spread is primarily RC1 (language-stratified retrieval) — not fixable by prompt alone. One remaining prompt intervention (expectedEvidenceProfile neutralization, Phase 1) is worth doing as a gate test. If insufficient, Phase 2 (cross-linguistic query supplementation) is the structural fix.
+**Open items:** Phase 0 diagnostic (3 EN exact runs); Captain approval for Phase 1 prompt change; Captain design approval for Phase 2 before implementation.
+**For next agent:** Read `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` for full phased plan. Do Phase 0 first (zero-cost diagnostic).
+
+---
 ### 2026-03-20 | Senior Developer | Claude Code (Sonnet 4.6) | Plastik A1 Experiment + verdictDirectionPolicy Promoted
 **Task:** Execute A1 experiment (verdictDirectionPolicy via UCM), evaluate results, promote to permanent default.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-03-20_A1_Experiment_Results.md`, `apps/web/src/lib/config-schemas.ts` (default changed), `apps/web/configs/pipeline.default.json` (default changed), `apps/web/test/unit/lib/config-schemas.test.ts` (2 assertions updated).
@@ -1034,4 +1128,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** The next work item should shift from Stage 1 decomposition to downstream Plastik instability: search framing, evidence allocation, and verdict behavior under now-stable claim structures.
 **Warnings:** The correct conclusion is not “Plastik solved”; it is “Stage 1 claim-contract issue materially fixed, remaining variance still open.” Do not re-open Stage 1 as the default blocker without new evidence.
 **For next agent:** Read the dedicated handoff at `Docs/AGENTS/Handoffs/2026-03-20_Senior_Developer_Plastik_Contract_Fix_Status.md` first if you need the decision-ready summary. The master quality report now reflects the same updated state.
+**Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Live Validation Hygiene Procedure
+**Task:** Add a short, explicit checklist so future agents do not confuse build/test results, live localhost runs, prompt/UCM activations, restarts, and job provenance when interpreting quality experiments.
+**Files touched:** `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added a standalone procedure covering: change classification, restart rules, what job `gitCommitHash` does and does not prove, clean A/B requirements, mechanism-firing checks, and the minimum metadata to capture for localhost experiments. Linked it from `Multi_Agent_Collaboration_Rules.md` both in the Testing area mapping and as an explicit live-validation reference. The procedure documents the correct nuance for current FactHarbor behavior: UCM/prompt activation invalidates loader cache for new jobs, but runtime code changes still require restart discipline, and job commit hashes do not prove absence of uncommitted local changes.
+**Open items:** None for the checklist itself. If config provenance UI/API is expanded later, the procedure may need a small refresh to point to the new surfaces.
+**Warnings:** This procedure deliberately distinguishes committed provenance from runtime activation. Agents should not treat a matching job hash as proof that web code changes were live without a restart or confirmed hot reload.
+**For next agent:** Use `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` as the default reference before interpreting localhost experiment results. This is especially important for future Phase 2 v3 or any UCM/prompt A/B work.
 **Learnings:** no

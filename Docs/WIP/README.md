@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-20
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 18 active files remain. Primary track: quality improvement on `main`, now focused on downstream Plastik verdict stability after Stage 1 contract stabilization, plus auditability hardening.
+**Last Updated**: 2026-03-22
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, while near-term execution focus shifts to config provenance, low-risk refactoring, and selected speed/cost improvements.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The new LLM-based broad-claim contract validator has now been implemented and structurally validated. Next: investigate downstream Plastik verdict instability on `main` (search / evidence / verdict path), plus config provenance repair.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The new LLM-based broad-claim contract validator has now been implemented and structurally validated. Plastik downstream work reached a temporary stopping point after Phase 2 v1/v2 failed for different structural reasons; the next 1-2 week execution focus is config provenance repair, behavior-preserving cleanup, and low-risk optimization while Phase 2 v3 is deferred to a future architecture track.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -18,6 +18,22 @@ For completed work, historical documents, and reference materials, see:
 ---
 
 ## Active Quality Plans (governing current work)
+
+### Next 1-2 Weeks Execution Plan (2026-03-22)
+**Status:** Draft — ready for review
+- **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
+- **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
+- **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.
+
+### Refactoring Plan — Code Cleanup (2026-03-18)
+**Status:** Revised after review; not yet executed as a full work stream
+- **Document:** [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md)
+- **Role:** This is the **refactoring source plan**. Use it when the execution plan selects refactoring work (for example WS-1 or WS-2), not as the top-level priority document.
+
+### Pipeline Speed & Cost Optimization Plan (2026-03-19)
+**Status:** Draft — awaiting review
+- **Document:** [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md)
+- **Role:** This is the **optimization source plan**. Use it when the execution plan selects low-risk optimization work, not as the top-level priority document.
 
 ### Combined Claim & Boundary Quality Remediation Plan (2026-03-16)
 **Status:** Phase A ✅, Phase B core claim-contract fix now implemented via validator, Phase C ✅, Phases D/E pending

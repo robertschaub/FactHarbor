@@ -41,7 +41,7 @@ When a task specifies an **Area**, read the corresponding documents:
 | **Source-Reliability** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability/WebHome.xwiki` |
 | **Pipeline** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki` |
 | **UI** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/KeyFactors Design/WebHome.xwiki` |
-| **Testing** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Promptfoo Testing/WebHome.xwiki` |
+| **Testing** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Guidelines/Testing Strategy/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Tooling/Promptfoo Testing/WebHome.xwiki`, `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` |
 | **Schema** | `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Schema Migration/WebHome.xwiki`, `/Docs/xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data Models and Schemas/Metrics Schema/WebHome.xwiki` |
 | **Deployment** | `/Docs/xwiki-pages/FactHarbor/Product Development/DevOps/Deployment/Zero-Cost Hosting Implementation Guide/WebHome.xwiki` |
 | **Documentation** | `/Docs/AGENTS/Roles/Technical_Writer.md`, `/Docs/xwiki-pages/README.md`, `/Docs/xwiki-pages/scripts/WORKFLOW.md` |
@@ -70,6 +70,16 @@ When activated in a role, use this table to identify which areas are within your
 - **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
 - **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `AGENTS.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
 - **On Completion:** Move finalized documents to an appropriate `Docs/` subfolder or `Docs/ARCHIVE/`
+
+### 1.5 Live Validation Hygiene
+
+For localhost experiments involving code changes, UCM activation, prompt reseeds,
+or interpretation of live job results, follow:
+
+- `/Docs/AGENTS/Procedures/Live_Validation_Hygiene.md`
+
+This is the authority for restart expectations, prompt/config activation timing,
+job-hash interpretation, and "mechanism fired vs run variance" checks.
 
 ---
 
