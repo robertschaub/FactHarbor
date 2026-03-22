@@ -91,6 +91,19 @@ else
 fi
 ok "Code updated: $(git log --oneline -1)"
 
+# --- Step 2b: Record deployed commit hash for AppBuildInfo ---
+# The API runs from the dotnet publish directory (not a git repo), so the
+# git fallback in AppBuildInfo.Resolve() will fail. We inject GIT_COMMIT
+# into the production env file so the API picks it up on startup.
+GIT_COMMIT="$(git rev-parse HEAD)"
+ENV_FILE="$DEPLOY_DIR/deploy/.env.production"
+if grep -q '^GIT_COMMIT=' "$ENV_FILE" 2>/dev/null; then
+    sed -i "s/^GIT_COMMIT=.*/GIT_COMMIT=$GIT_COMMIT/" "$ENV_FILE"
+else
+    echo "GIT_COMMIT=$GIT_COMMIT" >> "$ENV_FILE"
+fi
+log "GIT_COMMIT set to $GIT_COMMIT"
+
 # --- Step 3: Free memory for build ---
 # Stop ALL app services to free RAM — VPS has 4 GB and npm ci + next build
 # need most of it. Caddy stays up and serves the maintenance page.
