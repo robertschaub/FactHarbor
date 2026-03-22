@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-4 complete except optional P1-B; next step is the Phase 2 v3 design brief
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; Phase 2 v3 design brief is ready for review/prioritization
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -216,6 +216,11 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 **Done when:**
 - A new architecture brief exists with clear rationale, constraints, and decision gates
 
+**Progress update (2026-03-22):**
+- Complete.
+- A dedicated design-only brief now exists: `2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`
+- Recommendation in that brief: keep Plastik parked by default; if reopened later, restart from a claim-scoped multilingual-lane design, not from v1/v2 variants.
+
 ---
 
 ## 4. Suggested Week-by-Week Sequence
@@ -240,7 +245,8 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 **Progress update (2026-03-22):**
 - Step 1 is complete (leaf helper extraction only; no stage extraction yet)
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
-- Next execution item: Phase 2 v3 as a design-only architecture brief
+- Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
+- Next execution item: review/prioritize the v3 brief or continue with separately approved non-Plastik work
 
 ---
 

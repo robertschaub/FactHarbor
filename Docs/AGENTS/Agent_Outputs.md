@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Design Brief — Architecture Restart Point Defined
+**Task:** Execute the next planned non-code step after the low-risk optimization slice by writing the Phase 2 v3 design-only architecture brief for the parked Plastik multilingual-neutrality issue.
+**Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Treated this as a design-only restart point, not as an implementation request. Captured the two hard lessons from failed Phase 2 variants: (1) shared supplementary pooling is the wrong abstraction, and (2) supplementary language is not a stable proxy for evidential direction. Compared three credible paths (`Option A` claim-scoped multilingual retrieval lanes, `Option B` independent multilingual claim analysis then reconciliation, `Option C` keep parked) and recommended: keep the limitation parked by default; if reopened later, start with a claim-scoped multilingual-lane design rather than any v1/v2 derivative.
+**Open items:** The brief is ready for review/prioritization. No Phase 2 v3 implementation is approved or started. Optional `P1-B` preliminary-search parallelization also remains deferred and untouched.
+**Warnings:** Do not misread the existence of the v3 brief as approval to reopen Plastik implementation. The brief is explicitly a guard against repeating v1/v2, not a hidden resumption of that track.
+**For next agent:** If asked about Plastik next, start from `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`. If priorities stay unchanged, this track remains parked and other approved repository work should take precedence.
+**Learnings:** no
+
+---
 ### 2026-03-22 | Senior Developer | Codex (GPT-5) | Low-Risk ClaimBoundary Speed/Cost Slice — P1-C / P1-D / P1-E
 **Task:** Execute the approved low-risk speed/cost subset after WS-2 first slice: record preliminary URLs in `state.sources`, wire `parallelExtractionLimit`, and align preliminary fetch timeout usage.
 **Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`

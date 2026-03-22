@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-22
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, the first WS-2 slice is complete, and the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is now complete as well.
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, the first WS-2 slice is complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, and a Phase 2 v3 design-only architecture brief is now available for later review.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, the first WS-2 leaf slice is complete, and the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete; the next planned item is a Phase 2 v3 design-only architecture brief, while optional `P1-B` remains deferred.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, the first WS-2 leaf slice is complete, the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, and the Phase 2 v3 work now exists as a design-only architecture brief rather than an active implementation track; optional `P1-B` remains deferred.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -20,10 +20,15 @@ For completed work, historical documents, and reference materials, see:
 ## Active Quality Plans (governing current work)
 
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** In progress — Priorities 0-4 complete except optional `P1-B`; next step is the Phase 2 v3 design brief
+**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; Phase 2 v3 design brief ready for review
 - **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 - **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
 - **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.
+
+### Plastik Phase 2 v3 Architecture Brief (2026-03-22)
+**Status:** Design-only — no implementation approved
+- **Document:** [2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md](2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md)
+- **Scope:** Captures the architectural restart point after failed Phase 2 v1/v2 experiments. Compares credible v3 directions, preserves hard constraints, and recommends keeping the limitation parked unless product priority changes.
 
 ### Refactoring Plan — Code Cleanup (2026-03-18)
 **Status:** Revised after review; not yet executed as a full work stream
