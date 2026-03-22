@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; three low-risk WS-2 slices are complete; Phase 2 v3 design brief has been reviewed and tightened
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; four low-risk WS-2 slices are complete; Phase 2 v3 design brief has been reviewed and tightened
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -167,6 +167,9 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - Third slice completed.
 - Extracted Stage 5 aggregation/quality-gate logic into `aggregation-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
 - Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
+- Fourth slice completed.
+- Extracted Stage 4 verdict-generation orchestration into `verdict-generation-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
+- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1330/1330`).
 
 ---
 
@@ -253,9 +256,10 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
   - leaf helper extraction (`pipeline-utils.ts`)
   - isolated Stage 3 extraction (`boundary-clustering-stage.ts`)
   - isolated Stage 5 extraction (`aggregation-stage.ts`)
+  - isolated Stage 4 verdict-generation extraction (`verdict-generation-stage.ts`)
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
 - Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
-- Next execution item: another separately approved WS-2 slice if refactoring remains the preferred direction; `P1-B` stays optional and deferred
+- Next execution item: pause before higher-coupling WS-2 work, or approve one more narrowly scoped slice explicitly; `P1-B` stays optional and deferred
 
 ---
 
