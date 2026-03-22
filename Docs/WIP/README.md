@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The new LLM-based broad-claim contract validator has now been implemented and structurally validated. Plastik downstream work reached a temporary stopping point after Phase 2 v1/v2 failed for different structural reasons; the next 1-2 week execution focus is config provenance repair, behavior-preserving cleanup, and low-risk optimization while Phase 2 v3 is deferred to a future architecture track.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments, while the near-term execution focus shifts to config provenance repair, behavior-preserving cleanup, and low-risk optimization; any Phase 2 v3 work is deferred to a future architecture track.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -36,7 +36,7 @@ For completed work, historical documents, and reference materials, see:
 - **Role:** This is the **optimization source plan**. Use it when the execution plan selects low-risk optimization work, not as the top-level priority document.
 
 ### Combined Claim & Boundary Quality Remediation Plan (2026-03-16)
-**Status:** Phase A ✅, Phase B core claim-contract fix now implemented via validator, Phase C ✅, Phases D/E pending
+**Status:** Phase A ✅, Phase B core validator implemented but not sufficient for live Plastik stabilization, Phase C ✅, Phases D/E pending
 - **Document:** [Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md](Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md)
 - **Scope:** Master quality plan: boundary pruning (A), claim decomposition (B), analyticalDimension (C), validation (D), structural consistency (E)
 
@@ -83,13 +83,13 @@ These files contain pending items extracted from archived documents during WIP C
 - **Scope:** 5-part fix for Stage 2 jurisdiction classification misclassifying international factual journalism as foreign_reaction, plus structural top-5 fetch ordering bug. Two prior reviews incorporated.
 
 ### Report Quality Evolution Investigation (2026-03-19)
-**Status:** Complete — independent review incorporated, Mar 20 refresh + addendum; current basis for quality decisions
+**Status:** Complete — independent review incorporated, Mar 22 clean post-restart refresh; current basis for quality decisions
 - **Document:** [2026-03-19_Report_Quality_Evolution_Investigation.md](2026-03-19_Report_Quality_Evolution_Investigation.md)
 - **Independent review:** [2026-03-19_Independent_Report_Quality_Investigation.md](2026-03-19_Independent_Report_Quality_Investigation.md)
-- **Scope:** 246 jobs, 22+ HTML reports, ~120 commits, live UCM audited. Two rounds + independent verification, then a Mar 20 live comparison across `main`, `FH_best_monolithic_canonical`, and `FH-quality_window_start`.
-- **Key finding (corrected):** The dominant quality lever is `applyEvidenceWeighting()` itself (5-21pp compression), not the `defaultScore=0.45` drift (~1pp). Iran is the control case. Plastik is a claim decomposition problem, not infrastructure.
-- **New addendum findings:** the later same-stack diagnostic batch isolated the real residual trigger class: exact colloquial evaluative predicates such as `bringt nichts` / `is pointless`. A new LLM-based claim-contract validator was then implemented and validated; 5/5 multilingual validation runs preserved the original predicate meaning without proxy drift.
-- **Current decision state:** Legacy SR weighting is already off on `main`, and the broad-claim contract stabilizer is now in place. The next practical focus is downstream Plastik verdict stability on current ClaimBoundary (search / evidence / verdict path), plus later config provenance repair.
+- **Scope:** 246 jobs, 22+ HTML reports, ~120 commits, live UCM audited. Two rounds + independent verification, followed by a Mar 22 clean post-restart validation batch used as the only trusted current live baseline.
+- **Key finding (corrected):** The dominant historical quality lever is `applyEvidenceWeighting()` itself (5-21pp compression), not the `defaultScore=0.45` drift (~1pp). Iran is the control case.
+- **Current live baseline finding:** On the clean Mar 22 batch, Hydrogen is still healthy, Bolsonaro live recovery is not confirmed, and Plastik remains unstable on current `main`; earlier Mar 20 localhost addenda were superseded because later hygiene review found runtime-provenance risk.
+- **Current decision state:** Legacy SR weighting is already off on `main`. Plastik Phase 2 v1/v2 is closed and parked as a known limitation, while the near-term focus shifts to config provenance repair, low-risk refactoring, and low-risk speed/cost work.
 
 ### Broad Claim Contract Validator Plan (2026-03-20)
 **Status:** Draft converted into implementation baseline; keep as design rationale / rollout reference

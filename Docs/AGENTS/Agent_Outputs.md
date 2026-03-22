@@ -1139,3 +1139,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This procedure deliberately distinguishes committed provenance from runtime activation. Agents should not treat a matching job hash as proof that web code changes were live without a restart or confirmed hot reload.
 **For next agent:** Use `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` as the default reference before interpreting localhost experiment results. This is especially important for future Phase 2 v3 or any UCM/prompt A/B work.
 **Learnings:** no
+
+---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Clean Post-Restart Rebaseline and Report Correction
+**Task:** Re-run a minimal live validation batch on a fully restarted stack, discard stale-risk localhost evidence, refresh the master report accordingly, and redraw conclusions from reliable data only.
+**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** A first apparent post-restart localhost batch was canceled after job inspection showed it was still running against stale API hash `cdd78d0f...`. After manually killing the lingering API runtime and restarting both services, I submitted a fresh 6-job batch and verified all jobs carried `gitCommitHash=d163aa8c...`. Reliable current-live results: Hydrogen `21 / 62 / MOSTLY-FALSE` (healthy), Bolsonaro fair/legal `44 / 24 / UNVERIFIED` (live recovery not confirmed), Plastik EN exact `71 / 24 / LEANING-TRUE` and `47 / 56 / MIXED`, Plastik DE exact `50 / 24 / UNVERIFIED`, Plastik EN paraphrase `50 / 24 / UNVERIFIED`. Updated the master report to remove the older Mar 20 localhost addenda, replace them with a new clean Mar 22 addendum, and revise the current recommendations accordingly.
+**Open items:** Config provenance repair remains the highest-leverage infrastructure follow-up. If Bolsonaro becomes active quality work again, it now needs a fresh dedicated clean mini-series before any “recovered” claim is reused.
+**Warnings:** Do not cite the removed Mar 20 localhost addenda as current proof. The clean Mar 22 batch shows that stronger live claims such as “Bolsonaro is recovered” or “Plastik Stage 1 is materially fixed and the problem is purely downstream” are not established strongly enough by reliable live evidence.
+**For next agent:** Use the updated `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md` as the current source of truth. For live localhost work, require post-restart jobs with matching `gitCommitHash` before drawing conclusions.
+**Learnings:** no
