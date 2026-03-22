@@ -47,6 +47,13 @@ What happened:
 - which increased inter-claim divergence,
 - which Gate 4 `contextConsistency` correctly penalized via confidence collapse.
 
+Why this was structurally baked in:
+- the supplementary pass used `"main"` iterationType,
+- `"main"` inherits the primary language's `expectedEvidenceProfile`,
+- and for EN Plastik inputs that profile was seeded by failure-mode methodology during preliminary search.
+
+So even a per-claim supplementary `"main"` pass would still tend to reproduce the primary lane's directional bias in another language rather than counterbalance it.
+
 What this rules out:
 - more shared-pool supplementation,
 - more supplementary query budget on the same design,
@@ -80,6 +87,12 @@ That means v3 must independently control:
 - **which language** is worth searching,
 - **which direction** of evidence is needed,
 - and **how** that evidence is merged without creating new cross-claim inconsistency.
+
+Additional diagnostic signal from v2:
+- FR exact ended with a relatively clean inter-claim spread (~20pp),
+- while EN exact and EN paraphrase still showed much larger spreads (~39-42pp).
+
+So the instability does not appear evenly multilingual; it is concentrated most heavily in the EN retrieval space and related phrasing paths.
 
 ---
 
@@ -138,6 +151,17 @@ This avoids v1's flat-pool failure because supplementary evidence cannot silentl
 - likely requires careful pipeline refactor before implementation
 - still does not by itself solve "language != direction"
 
+**Open design question: direction control within lanes**
+
+Per-claim lane structure fixes evidence attribution, but it does not automatically solve how each lane should seek the evidence direction that is actually missing.
+
+That question must be answered explicitly in any later implementation planning. Credible options include:
+- per-claim balance diagnosis -> only run a supplementary lane for claims that actually need it -> query in the specific direction that claim lacks
+- an undirected multilingual lane whose purpose is only to broaden coverage, while later merge/reconciliation handles disagreement
+- explicit LLM-guided direction selection per claim per lane
+
+This is the key unresolved design question for v3. It must be solved in the architecture/implementation plan, not improvised during coding.
+
 **Assessment:**  
 This is the best **minimum credible architecture family** if Plastik is reopened later.
 
@@ -163,7 +187,7 @@ Example shape:
 - more complex to explain and validate
 
 **Assessment:**  
-Highest-fidelity option, but too large as a first restart step unless product priority is very high.
+Highest-fidelity option, but too large as a first restart step unless product priority is very high. It becomes materially more tractable after WS-2 pipeline decomposition is further along.
 
 ### Option C — Keep the Limitation Parked
 
@@ -229,6 +253,10 @@ If implementation is ever approved later, the smallest viable first slice should
    - v3 should be tested as an architectural retrieval/data-flow change
    - do not simultaneously reopen prompt experimentation
 
+6. **Remove or quarantine the old Phase 2 code path**
+   - the existing Step 3.5 v2 path and related config-schema remnants should be cleaned up before or during any future v3 implementation
+   - do not treat them as a reusable base; v3 requires a different data flow and control model
+
 ---
 
 ## 8. Decision Gates Before Any Future Implementation
@@ -260,7 +288,22 @@ If these are not true, do not implement v3.
 
 ---
 
-## 9. Recommendation
+## 9. Adjacent but Distinct Risk
+
+There is also evidence of **claim-decomposition / phrasing instability** adjacent to the multilingual retrieval problem.
+
+Example from the v2 diagnostic chain:
+- EN exact and EN paraphrase showed large swaps between claim-level positions, with one sub-claim moving strongly true-ish in one phrasing and strongly false-ish in another.
+
+That means a future v3 could improve multilingual retrieval spread and still leave some instability coming from upstream claim decomposition or phrasing neutrality.
+
+So:
+- **v3 should not assume retrieval is the only remaining source of spread**
+- but this adjacent issue should be handled as a distinct problem, not folded into the v3 retrieval design itself
+
+---
+
+## 10. Recommendation
 
 ### Immediate recommendation
 
@@ -285,7 +328,7 @@ Do **not** restart from:
 
 ---
 
-## 10. Reviewer Questions
+## 11. Reviewer Questions
 
 When this brief is reviewed, the useful questions are:
 
@@ -293,4 +336,3 @@ When this brief is reviewed, the useful questions are:
 2. If the issue is reopened later, is Option A the right smallest credible architecture family?
 3. Is Option B worth keeping as an explicit escalation path, or is it too large to matter now?
 4. Are the v3 preconditions and success gates strict enough to prevent another low-signal experiment cycle?
-

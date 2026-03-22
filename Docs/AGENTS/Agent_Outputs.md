@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Brief Review Feedback Incorporated
+**Task:** Incorporate reviewer feedback into the new Phase 2 v3 architecture brief so it is safer to use later as the restart document.
+**Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Tightened the brief in five places: explained why v1 `"main"` supplementation was directionally biased via inherited `expectedEvidenceProfile`; added the key unresolved direction-control question inside Option A; noted that FR exact's lower inter-claim spread points to EN retrieval-space concentration; clarified that Option B becomes more tractable as WS-2 progresses; and explicitly separated adjacent claim-decomposition/phrasing instability from the v3 retrieval problem. Also added guidance that old v2 Step 3.5/config remnants should not be reused as the v3 base.
+**Open items:** The brief is still design-only. No implementation approval was added. Remaining work is review/decision, not coding.
+**Warnings:** The main structural risk remains under-specifying direction control inside claim-scoped multilingual lanes. That question is now explicit in the brief and must be answered before any future v3 implementation plan.
+**For next agent:** Use the updated brief, not the earlier draft, if Phase 2 v3 is discussed again. The current near-term default remains: keep Plastik parked.
+**Learnings:** no
+
+---
 ### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Design Brief — Architecture Restart Point Defined
 **Task:** Execute the next planned non-code step after the low-risk optimization slice by writing the Phase 2 v3 design-only architecture brief for the parked Plastik multilingual-neutrality issue.
 **Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
