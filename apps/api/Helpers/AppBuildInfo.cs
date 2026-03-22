@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace FactHarbor.Api.Helpers;
 
@@ -8,13 +10,12 @@ namespace FactHarbor.Api.Helpers;
 /// back to the exact deployed code version that ran it.
 ///
 /// Format:
-///   Clean working tree : "{hash}"              e.g. "cdd78d0f"
-///   Dirty working tree : "{hash}-{timestamp}"  e.g. "cdd78d0f-20260322T1904"
+///   Clean working tree : "{hash}"           e.g. "cdd78d0f"
+///   Dirty working tree : "{hash}+{wthash}"  e.g. "cdd78d0f+a3f9b201"
 ///
-/// The timestamp suffix marks local dev runs with uncommitted changes so jobs
-/// cannot be confused with a clean, reproducible commit state. The timestamp
-/// is the UTC assembly build time (minutes precision) — constant across restarts
-/// of the same binary, changing only when the code is rebuilt.
+/// The working-tree hash is the first 8 hex chars of SHA256("git diff HEAD"),
+/// giving a unique, reproducible fingerprint for the exact local change set.
+/// Two restarts with identical uncommitted changes produce the same identifier.
 /// </summary>
 public sealed record AppBuildInfo(string? GitCommitHash)
 {
@@ -36,7 +37,6 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             return new AppBuildInfo(envHash);
 
         // 2. Local dev fallback: run git with a hard 3-second wall-clock timeout.
-        //    We read stdout on a background thread so WaitForExit(3000) is the real gate.
         try
         {
             var hash = RunGit("rev-parse HEAD");
@@ -47,12 +47,11 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             var porcelain = RunGit("status --porcelain");
             if (!string.IsNullOrWhiteSpace(porcelain))
             {
-                // Append the assembly build timestamp so all jobs from the same dirty
-                // binary share the same identifier regardless of how many times the
-                // server is restarted. Format: yyyyMMddTHHmm (UTC, minutes precision).
-                var buildTime = File.GetLastWriteTimeUtc(typeof(AppBuildInfo).Assembly.Location);
-                var ts = buildTime.ToString("yyyyMMddTHHmm");
-                return new AppBuildInfo($"{hash}-{ts}");
+                // Compute SHA256 of the full diff to get a reproducible fingerprint
+                // for the exact working-tree change set. Two restarts with the same
+                // uncommitted changes produce the same identifier.
+                var wtHash = ComputeWorkingTreeHash();
+                return new AppBuildInfo(wtHash is not null ? $"{hash}+{wtHash}" : $"{hash}+dirty");
             }
 
             return new AppBuildInfo(hash);
@@ -60,6 +59,45 @@ public sealed record AppBuildInfo(string? GitCommitHash)
         catch { /* git not available or not in a repo */ }
 
         return new AppBuildInfo(GitCommitHash: null);
+    }
+
+    /// <summary>
+    /// Returns the first 8 hex chars of SHA256("git diff HEAD"), or null on failure.
+    /// Uses a 5-second timeout — diffs can be large.
+    /// </summary>
+    private static string? ComputeWorkingTreeHash()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("git", "diff HEAD")
+            {
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = AppContext.BaseDirectory
+            };
+            using var proc = Process.Start(psi);
+            if (proc is null) return null;
+
+            // Stream stdout directly into SHA256 to avoid buffering the full diff in memory.
+            using var sha = SHA256.Create();
+            var hashTask = Task.Run(() =>
+            {
+                sha.ComputeHash(proc.StandardOutput.BaseStream);
+                return sha.Hash;
+            });
+
+            if (!proc.WaitForExit(5000))
+            {
+                try { proc.Kill(); } catch { }
+                return null;
+            }
+            hashTask.Wait(500);
+            if (!hashTask.IsCompletedSuccessfully || hashTask.Result is null) return null;
+
+            return Convert.ToHexString(hashTask.Result)[..8].ToLowerInvariant();
+        }
+        catch { return null; }
     }
 
     /// <summary>
