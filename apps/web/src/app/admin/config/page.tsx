@@ -219,10 +219,6 @@ const DEFAULT_PIPELINE_CONFIG: PipelineConfig = SHARED_DEFAULT_PIPELINE_CONFIG;
 const DEFAULT_PROMPT_PROFILES = [
   "claimboundary",
   "source-reliability",
-  "text-analysis-input",
-  "text-analysis-evidence",
-  "text-analysis-context",
-  "text-analysis-verdict",
 ] as const;
 
 const DEFAULT_SR_CONFIG: SRConfig = SHARED_DEFAULT_SR_CONFIG as SRConfig;

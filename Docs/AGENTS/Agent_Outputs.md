@@ -1,6 +1,15 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Claude Code (Opus 4.6) | WS-1 Dead Code Removal — 3,682 lines deleted
+**Task:** Execute WS-1 from the refactoring plan: remove dead code with zero callers.
+**Files touched:** 22 files (14 deleted source, 4 deleted test, 6 deleted prompt, 3 edited references).
+**Key decisions:** `json.ts` kept (imported by `claimboundary-pipeline.ts` — plan incorrectly listed as dead). `json.test.ts` kept. `inverse-claim-verification.prompt.md` preserved (used by `paired-job-audit.ts`). `calculateFalsePositiveRate` removed from barrel re-export only. `VALID_PROMPT_PROFILES` and admin page cleaned of 4 dead text-analysis entries.
+**Open items:** None. WS-1 complete.
+**Warnings:** None. Build clean, 67/67 test files pass (1329 tests). Delta: −4 test files / −37 tests (all from deleted dead modules).
+**For next agent:** WS-1 is done. Next per execution plan: WS-2 first slice (pipeline decomposition).
+
+---
 ### 2026-03-22 | Senior Developer | Codex (GPT-5) | WIP Plan Roles Clarified
 **Task:** Remove ambiguity between the short-horizon execution plan, the refactoring plan, and the speed/cost optimization plan so future agents do not treat the wrong document as the governing priority source.
 **Files touched:** `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`

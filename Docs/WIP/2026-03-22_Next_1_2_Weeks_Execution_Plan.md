@@ -214,8 +214,9 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 3. Execute WS-1 dead code removal
 
 **Progress update (2026-03-22):**
-- Steps 1 and 2 are complete
-- Step 3 is the next execution item
+- Steps 1, 2, and 3 are complete
+- WS-1 removed 3,682 lines across 22 files (14 source + 4 test + 6 prompt). Build clean, 1329 tests passing.
+- Next execution item: WS-2 first slice (Week 2)
 
 ### Week 2
 

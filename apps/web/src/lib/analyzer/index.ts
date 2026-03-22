@@ -133,7 +133,6 @@ export {
 export type { ProbativeFilterConfig, FilterStats } from "./evidence-filter";
 export {
   filterByProbativeValue,
-  calculateFalsePositiveRate,
   DEFAULT_FILTER_CONFIG,
 } from "./evidence-filter";
 

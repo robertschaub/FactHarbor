@@ -1276,11 +1276,6 @@ import { existsSync } from "fs";
 
 export const VALID_PROMPT_PROFILES = [
   "source-reliability",
-  // LLM text analysis prompts (4 analysis points)
-  "text-analysis-input",
-  "text-analysis-evidence",
-  "text-analysis-context",
-  "text-analysis-verdict",
   // ClaimBoundary pipeline prompts (all stages)
   "claimboundary",
   // Pre-pipeline gates
