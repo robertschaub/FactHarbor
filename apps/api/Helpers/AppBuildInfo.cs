@@ -13,7 +13,8 @@ namespace FactHarbor.Api.Helpers;
 ///
 /// The timestamp suffix marks local dev runs with uncommitted changes so jobs
 /// cannot be confused with a clean, reproducible commit state. The timestamp
-/// is the UTC startup time (minutes precision), making each dirty session unique.
+/// is the UTC assembly build time (minutes precision) — constant across restarts
+/// of the same binary, changing only when the code is rebuilt.
 /// </summary>
 public sealed record AppBuildInfo(string? GitCommitHash)
 {
@@ -46,9 +47,11 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             var porcelain = RunGit("status --porcelain");
             if (!string.IsNullOrWhiteSpace(porcelain))
             {
-                // Append a startup timestamp so dirty-state jobs are distinguishable
-                // from each other and clearly separated from clean commit runs.
-                var ts = DateTime.UtcNow.ToString("yyyyMMddTHHmm");
+                // Append the assembly build timestamp so all jobs from the same dirty
+                // binary share the same identifier regardless of how many times the
+                // server is restarted. Format: yyyyMMddTHHmm (UTC, minutes precision).
+                var buildTime = File.GetLastWriteTimeUtc(typeof(AppBuildInfo).Assembly.Location);
+                var ts = buildTime.ToString("yyyyMMddTHHmm");
                 return new AppBuildInfo($"{hash}-{ts}");
             }
 
