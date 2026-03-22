@@ -1238,3 +1238,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This slice is still structural only. Do not treat the new module as approval to change verdict-stage semantics, prompt behavior, or the public analyzer import surface.
 **For next agent:** The repo now has four completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`, `verdict-generation-stage.ts`). If WS-2 continues, prefer a clearly bounded next cut over any broad research-loop move by default.
 **Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | WS-2 Stage 1 Claim Extraction Extraction
+**Task:** Execute the last explicitly approved low-risk WS-2 slice by extracting Stage 1 claim extraction out of `claimboundary-pipeline.ts` without changing analysis behavior.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Moved Stage 1 claim extraction, Gate 1, preliminary search, claim-contract validation, related Zod schemas, and their helper wiring into `claim-extraction-stage.ts` while preserving the existing public import surface through `claimboundary-pipeline.ts` re-exports. Exported `upsertSearchProviderWarning` back to the orchestrator because Stage 2 research still depends on it, rather than forcing a larger cross-stage redesign.
+**Open items:** WS-2 should now pause before the higher-coupling Stage 2 research loop (`query-generation`, `evidence-extraction`, `research-stage`). Any continuation should require a fresh explicit decision.
+**Warnings:** This slice is structural only despite its size. Do not treat `claim-extraction-stage.ts` as approval to change Stage 1 prompts, validation semantics, or research-loop boundaries.
+**For next agent:** The repo now has five completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`, `verdict-generation-stage.ts`, `claim-extraction-stage.ts`). `claimboundary-pipeline.ts` is down to the main entry point plus the Stage 2 research loop; stop here unless the next higher-coupling extraction is explicitly authorized.
+**Learnings:** no
