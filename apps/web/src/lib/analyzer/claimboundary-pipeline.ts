@@ -1476,6 +1476,7 @@ export async function runPreliminarySearch(
 ): Promise<PreliminaryEvidenceItem[]> {
   const queriesPerClaim = pipelineConfig.preliminarySearchQueriesPerClaim ?? 2;
   const maxSources = pipelineConfig.preliminaryMaxSources ?? 5;
+  const fetchTimeoutMs = pipelineConfig.sourceFetchTimeoutMs ?? 20000;
 
   const allEvidence: PreliminaryEvidenceItem[] = [];
 
@@ -1531,10 +1532,23 @@ export async function runPreliminarySearch(
         for (const searchResult of sourcesToFetch) {
           try {
             const content = await extractTextFromUrl(searchResult.url, {
-              timeoutMs: 12000,
+              timeoutMs: fetchTimeoutMs,
               maxLength: 15000,
             });
             if (content.text.length > 100) {
+              if (!state.sources.some((s) => s.url === searchResult.url)) {
+                state.sources.push({
+                  id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
+                  url: searchResult.url,
+                  title: content.title || searchResult.title,
+                  trackRecordScore: null,
+                  fullText: content.text,
+                  fetchedAt: new Date().toISOString(),
+                  category: content.contentType || "text/html",
+                  fetchSuccess: true,
+                  searchQuery: query,
+                });
+              }
               fetchedSources.push({
                 url: searchResult.url,
                 title: content.title || searchResult.title,
@@ -4031,7 +4045,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs">,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -4048,10 +4062,10 @@ export async function fetchSources(
     (source) => !state.sources.some((s) => s.url === source.url),
   );
 
-  // Parallel fetch with concurrency limit of 3
-  const FETCH_CONCURRENCY = 3;
-  for (let i = 0; i < toFetch.length; i += FETCH_CONCURRENCY) {
-    const batch = toFetch.slice(i, i + FETCH_CONCURRENCY);
+  // Parallel fetch with configurable concurrency limit
+  const fetchConcurrency = pipelineConfig?.parallelExtractionLimit ?? 3;
+  for (let i = 0; i < toFetch.length; i += fetchConcurrency) {
+    const batch = toFetch.slice(i, i + fetchConcurrency);
     fetchAttempted += batch.length;
     const results = await Promise.all(
       batch.map(async (source) => {

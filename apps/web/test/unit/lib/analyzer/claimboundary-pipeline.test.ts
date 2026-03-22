@@ -1352,11 +1352,15 @@ describe("Stage 1: runPreliminarySearch", () => {
   });
 
   const mockSearchConfig = {} as any;
-  const mockPipelineConfig = { preliminarySearchQueriesPerClaim: 1, preliminaryMaxSources: 3 } as any;
+  const mockPipelineConfig = {
+    preliminarySearchQueriesPerClaim: 1,
+    preliminaryMaxSources: 3,
+    sourceFetchTimeoutMs: 23456,
+  } as any;
 
   it("should return evidence from search + fetch + extraction pipeline", async () => {
     const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
-    const state = { searchQueries: [], llmCalls: 0 } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
 
     mockSearch.mockResolvedValue({
       results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
@@ -1391,7 +1395,14 @@ describe("Stage 1: runPreliminarySearch", () => {
     expect(result[0].sourceUrl).toBe("https://example.com/1");
     expect(result[0].evidenceScope?.methodology).toBe("data analysis");
     expect(state.searchQueries).toHaveLength(1);
+    expect(state.sources).toHaveLength(1);
+    expect(state.sources[0].url).toBe("https://example.com/1");
+    expect(state.sources[0].searchQuery).toBe("test hint");
     expect(state.llmCalls).toBe(1);
+    expect(mockFetchUrl).toHaveBeenCalledWith(
+      "https://example.com/1",
+      expect.objectContaining({ timeoutMs: 23456, maxLength: 15000 }),
+    );
   });
 
   it("should limit to top 3 rough claims", async () => {
@@ -1402,7 +1413,7 @@ describe("Stage 1: runPreliminarySearch", () => {
       { statement: "Claim 4", searchHint: "hint4" },
       { statement: "Claim 5", searchHint: "hint5" },
     ];
-    const state = { searchQueries: [], llmCalls: 0 } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
 
     // Make search return empty results so we don't need further mocks
     mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
@@ -1415,7 +1426,7 @@ describe("Stage 1: runPreliminarySearch", () => {
 
   it("should skip sources with too-short content", async () => {
     const roughClaims = [{ statement: "Test", searchHint: "test" }];
-    const state = { searchQueries: [], llmCalls: 0 } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
 
     mockSearch.mockResolvedValue({
       results: [{ url: "https://example.com/short", title: "Short", snippet: "x" }],
@@ -2781,6 +2792,39 @@ describe("Stage 2: fetchSources", () => {
     expect(state.sources).toHaveLength(1);
     expect(state.sources[0].url).toBe("https://example.com/1");
     expect(state.sources[0].fetchSuccess).toBe(true);
+  });
+
+  it("should respect configured timeout and parallelExtractionLimit", async () => {
+    const state = { sources: [], warnings: [] } as any;
+    const relevantSources = [
+      { url: "https://example.com/1" },
+      { url: "https://example.com/2" },
+    ];
+
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(200),
+      title: "Configured Source",
+      contentType: "text/html",
+    });
+
+    const result = await fetchSources(
+      relevantSources,
+      "test query",
+      state,
+      { sourceFetchTimeoutMs: 34567, parallelExtractionLimit: 1 },
+    );
+
+    expect(result).toHaveLength(2);
+    expect(mockFetchUrl).toHaveBeenNthCalledWith(
+      1,
+      "https://example.com/1",
+      expect.objectContaining({ timeoutMs: 34567, maxLength: 15000 }),
+    );
+    expect(mockFetchUrl).toHaveBeenNthCalledWith(
+      2,
+      "https://example.com/2",
+      expect.objectContaining({ timeoutMs: 34567, maxLength: 15000 }),
+    );
   });
 
   it("should skip already-fetched URLs", async () => {

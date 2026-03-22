@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | Low-Risk ClaimBoundary Speed/Cost Slice — P1-C / P1-D / P1-E
+**Task:** Execute the approved low-risk speed/cost subset after WS-2 first slice: record preliminary URLs in `state.sources`, wire `parallelExtractionLimit`, and align preliminary fetch timeout usage.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the slice purely structural. Preliminary fetches now add successful URLs into `state.sources` for later diagnostics/provenance, reuse the configured `sourceFetchTimeoutMs`, and `fetchSources(...)` now honors `parallelExtractionLimit` instead of a hardcoded concurrency of 3. Deliberately did **not** include optional `P1-B` preliminary-search parallelization in the same change.
+**Open items:** Optional `P1-B` remains deferred. Per the Mar-22 execution plan, the next execution item is now a Phase 2 v3 design-only architecture brief rather than more live tuning or broader optimization work.
+**Warnings:** The preliminary-source `searchQuery` stored in `state.sources` reflects the actual generated preliminary query (for example the `searchHint`-based query), not necessarily the original rough-claim statement. This is intentional and now covered by tests.
+**For next agent:** Treat this low-risk subset as complete. Do not reopen Phase 2 v1/v2. If priorities stay unchanged, move to the Phase 2 v3 design brief or another explicitly approved architecture/planning task rather than extending optimization scope opportunistically.
+**Learnings:** no
+
+---
 ### 2026-03-22 | Senior Developer | Codex (GPT-5) | WS-2 First Slice — Pipeline Leaf Helpers Extracted
 **Task:** Execute the first WS-2 decomposition slice after WS-1 by extracting a very small, low-risk leaf module from `claimboundary-pipeline.ts`.
 **Files touched:** `apps/web/src/lib/analyzer/pipeline-utils.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`

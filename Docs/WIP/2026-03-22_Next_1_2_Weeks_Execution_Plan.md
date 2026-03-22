@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-2 complete; first WS-2 slice completed on 2026-03-22; next step is the low-risk speed/cost subset
+**Status:** In progress — Priorities 0-4 complete except optional P1-B; next step is the Phase 2 v3 design brief
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -188,6 +188,13 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - The chosen subset is verified with safe tests/build
 - No new quality investigation is needed to interpret the change
 
+**Progress update (2026-03-22):**
+- **P1-C** complete: preliminary source fetches now also populate `state.sources` for later auditability/debugging.
+- **P1-D** complete: `fetchSources(...)` now honors `parallelExtractionLimit` instead of using a hardcoded concurrency.
+- **P1-E** complete: preliminary source fetches now use the configured `sourceFetchTimeoutMs`.
+- Verification: targeted ClaimBoundary test suite green (`292/292`) and web build green.
+- **P1-B** remains explicitly deferred; it was not bundled into this low-risk slice.
+
 ---
 
 ### Priority 5 — Phase 2 v3 as a Design Track, Not an Implementation Track
@@ -232,7 +239,8 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 
 **Progress update (2026-03-22):**
 - Step 1 is complete (leaf helper extraction only; no stage extraction yet)
-- Next execution item: low-risk Speed/Cost subset, starting with P1-C / P1-D / P1-E
+- Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
+- Next execution item: Phase 2 v3 as a design-only architecture brief
 
 ---
 
