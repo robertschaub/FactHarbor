@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priority 0 closed, Priority 1 completed on 2026-03-22; next step is WS-1
+**Status:** In progress — Priorities 0-2 complete; first WS-2 slice completed on 2026-03-22; next step is the low-risk speed/cost subset
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -156,6 +156,12 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - The first WS-2 slice is merged and verified
 - The orchestrator direction is validated without destabilizing the pipeline
 
+**Status update (2026-03-22):**
+- First slice completed.
+- Extracted a new leaf module `pipeline-utils.ts` from `claimboundary-pipeline.ts`.
+- Scope kept intentionally narrow: only pure helper functions and re-exports, no stage logic moved.
+- Verification: targeted ClaimBoundary test suite green (`291/291`) and web build green.
+
 ---
 
 ### Priority 4 — Only the Low-Risk Part of the Speed/Cost Plan
@@ -223,6 +229,10 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 1. Prepare and execute the first WS-2 decomposition slice
 2. Take the low-risk Speed/Cost subset (P1-C, P1-D, P1-E; optionally P1-B)
 3. Start Phase 2 v3 as a design-only architecture brief
+
+**Progress update (2026-03-22):**
+- Step 1 is complete (leaf helper extraction only; no stage extraction yet)
+- Next execution item: low-risk Speed/Cost subset, starting with P1-C / P1-D / P1-E
 
 ---
 

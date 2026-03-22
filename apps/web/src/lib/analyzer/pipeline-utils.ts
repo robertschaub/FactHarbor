@@ -1,0 +1,189 @@
+/**
+ * ClaimBoundary Pipeline Utilities
+ *
+ * Leaf helpers extracted from claimboundary-pipeline.ts.
+ * These functions are structural utilities used by multiple stages and/or tests.
+ */
+
+import type {
+  AtomicClaim,
+  CBClaimVerdict,
+  ClaimVerdict7Point,
+  EvidenceItem,
+  SourceType,
+} from "./types";
+import { isJobAborted } from "@/lib/job-abort";
+
+/**
+ * Checks if a job has been aborted via the abort-job endpoint.
+ * Throws an error if the job was cancelled.
+ */
+export function checkAbortSignal(jobId: string | undefined): void {
+  if (jobId && isJobAborted(jobId)) {
+    throw new Error(`Job ${jobId} was cancelled`);
+  }
+}
+
+/**
+ * Detect whether the input is a statement or a question/article.
+ * Exported for unit testing.
+ */
+export function detectInputType(input: string): "claim" | "article" {
+  const trimmed = input.trim();
+  if (trimmed.length < 200) return "claim";
+  return "article";
+}
+
+/**
+ * Select top N sources by relevance score (desc), with original search rank as tie-break (asc).
+ */
+export function selectTopSources<T extends { relevanceScore: number; originalRank: number }>(
+  sources: T[],
+  topN: number,
+): T[] {
+  return [...sources]
+    .sort((a, b) => b.relevanceScore - a.relevanceScore || a.originalRank - b.originalRank)
+    .slice(0, topN);
+}
+
+export function classifySourceFetchFailure(
+  error: unknown,
+): { type: string; status?: number; message: string } {
+  const fallback = { type: "unknown", message: "Unknown fetch failure" };
+  if (!error) return fallback;
+
+  const status =
+    typeof (error as any)?.status === "number"
+      ? (error as any).status
+      : typeof (error as any)?.statusCode === "number"
+        ? (error as any).statusCode
+        : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+
+  if ((error as any)?.name === "AbortError" || normalized.includes("timeout")) {
+    return { type: "timeout", status, message };
+  }
+  if (status === 401 || normalized.includes("http 401")) {
+    return { type: "http_401", status: 401, message };
+  }
+  if (status === 403 || normalized.includes("http 403")) {
+    return { type: "http_403", status: 403, message };
+  }
+  if (status === 404 || normalized.includes("http 404")) {
+    return { type: "http_404", status: 404, message };
+  }
+  if (status === 429 || normalized.includes("http 429")) {
+    return { type: "http_429", status: 429, message };
+  }
+  if ((typeof status === "number" && status >= 500) || normalized.includes("http 5")) {
+    return { type: "http_5xx", status, message };
+  }
+  if (normalized.includes("invalid pdf") || normalized.includes("failed to extract pdf text")) {
+    return { type: "pdf_parse_failure", status, message };
+  }
+  if (normalized.includes("econnrefused")) {
+    return { type: "connection_refused", status, message };
+  }
+  if (
+    normalized.includes("enotfound") ||
+    normalized.includes("eai_again") ||
+    normalized.includes("econnreset") ||
+    normalized.includes("fetch failed") ||
+    normalized.includes("network")
+  ) {
+    return { type: "network", status, message };
+  }
+
+  return { type: "unknown", status, message };
+}
+
+/**
+ * Map LLM category strings to EvidenceItem.category enum values.
+ */
+export function mapCategory(category: string): EvidenceItem["category"] {
+  const normalized = category.toLowerCase().replace(/[_\s-]+/g, "_");
+  const validCategories: Record<string, EvidenceItem["category"]> = {
+    legal_provision: "legal_provision",
+    evidence: "evidence",
+    direct_evidence: "direct_evidence",
+    expert_quote: "expert_quote",
+    expert_testimony: "expert_quote",
+    statistic: "statistic",
+    statistical_data: "statistic",
+    event: "event",
+    criticism: "criticism",
+    case_study: "evidence",
+  };
+  return validCategories[normalized] ?? "evidence";
+}
+
+/**
+ * Normalize source URL to a distinct-domain key for sufficiency checks.
+ */
+export function extractDomain(sourceUrl?: string): string | null {
+  if (!sourceUrl || typeof sourceUrl !== "string") return null;
+  try {
+    const hostname = new URL(sourceUrl).hostname.trim().toLowerCase();
+    if (!hostname) return null;
+    return hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Map LLM sourceType strings to SourceType enum values.
+ */
+export function mapSourceType(sourceType?: string): SourceType {
+  if (!sourceType) return "other";
+  const normalized = sourceType.toLowerCase().replace(/[_\s-]+/g, "_");
+  const validTypes: Record<string, SourceType> = {
+    peer_reviewed_study: "peer_reviewed_study",
+    fact_check_report: "fact_check_report",
+    government_report: "government_report",
+    legal_document: "legal_document",
+    news_primary: "news_primary",
+    news_secondary: "news_secondary",
+    expert_statement: "expert_statement",
+    organization_report: "organization_report",
+  };
+  return validTypes[normalized] ?? "other";
+}
+
+export function normalizeExtractedSourceType(sourceType?: string): SourceType | undefined {
+  return mapSourceType(sourceType);
+}
+
+export function createErrorFingerprint(error: unknown): string {
+  const raw = error instanceof Error
+    ? `${error.name}:${error.message}:${error.stack ?? ""}`
+    : String(error);
+  return raw.replace(/\s+/g, " ").slice(0, 320);
+}
+
+export function createUnverifiedFallbackVerdict(
+  claim: AtomicClaim,
+  verdictReason: string,
+  reasoning: string,
+): CBClaimVerdict {
+  return {
+    id: `CV_${claim.id}`,
+    claimId: claim.id,
+    truthPercentage: 50,
+    verdictReason,
+    verdict: "UNVERIFIED" as ClaimVerdict7Point,
+    confidence: 0,
+    confidenceTier: "INSUFFICIENT" as const,
+    reasoning,
+    harmPotential: claim.harmPotential,
+    thesisRelevance: claim.thesisRelevance,
+    isContested: false,
+    supportingEvidenceIds: [],
+    contradictingEvidenceIds: [],
+    boundaryFindings: [],
+    consistencyResult: { claimId: claim.id, percentages: [50], average: 50, spread: 0, stable: true, assessed: false },
+    challengeResponses: [],
+    triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak" as const, factor: 1.0 },
+  };
+}

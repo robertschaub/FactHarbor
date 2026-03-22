@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-22 | Senior Developer | Codex (GPT-5) | WS-2 First Slice — Pipeline Leaf Helpers Extracted
+**Task:** Execute the first WS-2 decomposition slice after WS-1 by extracting a very small, low-risk leaf module from `claimboundary-pipeline.ts`.
+**Files touched:** `apps/web/src/lib/analyzer/pipeline-utils.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the slice intentionally narrow: moved only pure helper functions into new `pipeline-utils.ts` (`checkAbortSignal`, `detectInputType`, `selectTopSources`, `classifySourceFetchFailure`, `mapCategory`, `extractDomain`, `mapSourceType`, `normalizeExtractedSourceType`, `createErrorFingerprint`, `createUnverifiedFallbackVerdict`). No stage logic moved. `claimboundary-pipeline.ts` re-exports the public helpers used by tests, so external imports remain stable.
+**Open items:** This completes only the first WS-2 leaf slice. No stage module extraction has started yet. Per the Mar-22 execution plan, the next execution item is the low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`, optionally `P1-B` later).
+**Warnings:** `detectInputType` remains existing deterministic fallback logic; this slice only moved it, it did not expand its analytical role. Do not interpret this slice as a semantic change.
+**For next agent:** Treat `pipeline-utils.ts` as the new home for small shared ClaimBoundary helpers. The next safe step is not another large WS-2 move by default; it is the low-risk optimization subset unless priorities change.
+**Learnings:** no
+
+---
 ### 2026-03-22 | Senior Developer | Claude Code (Opus 4.6) | WS-1 Dead Code Removal — 3,682 lines deleted
 **Task:** Execute WS-1 from the refactoring plan: remove dead code with zero callers.
 **Files touched:** 22 files (14 deleted source, 4 deleted test, 6 deleted prompt, 3 edited references).
