@@ -1218,3 +1218,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The extraction is intentionally structural only. Do not treat `boundary-clustering-stage.ts` as a new independent stage contract; `claimboundary-pipeline.ts` still owns orchestration and remains the public import surface.
 **For next agent:** This slice is verified and ready to commit. If WS-2 continues later, prefer another isolated module boundary of similar size and keep tests importing through `claimboundary-pipeline.ts` unless there is an explicit decision to change the public analyzer surface.
 **Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | WS-2 Stage 5 Aggregation Extraction
+**Task:** Continue the approved low-risk WS-2 decomposition work by extracting Stage 5 aggregation and quality-gate logic out of `claimboundary-pipeline.ts` without changing analysis behavior.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Moved Stage 5/6 aggregation helpers into a dedicated `aggregation-stage.ts` module and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface so existing imports/tests keep resolving through the pipeline module. Preserved existing behavior rather than tightening parsing or changing quality-gate semantics; this slice is structural only.
+**Open items:** No immediate follow-up is required for this slice. If WS-2 continues, the next cut should again be a small approved slice rather than a bundled push into research-loop refactoring.
+**Warnings:** `aggregation-stage.ts` now contains a substantial chunk of post-verdict logic. Treat it as an extracted stage module, not as a signal to change public analyzer imports or to mix in new quality behavior.
+**For next agent:** This slice is verified and ready to commit. The repo now has three completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`); the next decision is whether to continue WS-2 with another isolated slice or stop before higher-coupling work.
+**Learnings:** no

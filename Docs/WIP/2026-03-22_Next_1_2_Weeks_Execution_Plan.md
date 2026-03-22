@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; an additional low-risk WS-2 slice is complete; Phase 2 v3 design brief has been reviewed and tightened
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; three low-risk WS-2 slices are complete; Phase 2 v3 design brief has been reviewed and tightened
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -156,13 +156,16 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - The first WS-2 slice is merged and verified
 - The orchestrator direction is validated without destabilizing the pipeline
 
-**Status update (2026-03-22):**
+**Status update (2026-03-23):**
 - First slice completed.
 - Extracted a new leaf module `pipeline-utils.ts` from `claimboundary-pipeline.ts`.
 - Scope kept intentionally narrow: only pure helper functions and re-exports, no stage logic moved.
 - Verification: targeted ClaimBoundary test suite green (`291/291`) and web build green.
 - Second slice completed.
 - Extracted Stage 3 boundary clustering into `boundary-clustering-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
+- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
+- Third slice completed.
+- Extracted Stage 5 aggregation/quality-gate logic into `aggregation-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
 - Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
 
 ---
@@ -234,10 +237,10 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 2. Complete config provenance repair
 3. Execute WS-1 dead code removal
 
-**Progress update (2026-03-22):**
+**Progress update (2026-03-23):**
 - Steps 1, 2, and 3 are complete
 - WS-1 removed 3,682 lines across 22 files (14 source + 4 test + 6 prompt). Build clean, 1329 tests passing.
-- Next execution item: WS-2 first slice (Week 2)
+- Next execution item: another separately approved WS-2 slice, not `P1-B` by default
 
 ### Week 2
 
@@ -245,13 +248,14 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 2. Take the low-risk Speed/Cost subset (P1-C, P1-D, P1-E; optionally P1-B)
 3. Start Phase 2 v3 as a design-only architecture brief
 
-**Progress update (2026-03-22):**
+**Progress update (2026-03-23):**
 - Step 1 is complete:
   - leaf helper extraction (`pipeline-utils.ts`)
   - isolated Stage 3 extraction (`boundary-clustering-stage.ts`)
+  - isolated Stage 5 extraction (`aggregation-stage.ts`)
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
 - Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
-- Next execution item: optional `P1-B`, or another separately approved non-Plastik refactor slice if that is still the preferred direction
+- Next execution item: another separately approved WS-2 slice if refactoring remains the preferred direction; `P1-B` stays optional and deferred
 
 ---
 
@@ -306,7 +310,7 @@ This plan is ready for review on these decision points:
 
 1. Is **parking Plastik Phase 2** now the right product tradeoff, or should v3 move up in priority?
 2. Should **config provenance repair** stay ahead of the refactor plan?
-3. Is the **WS-1 -> WS-2(first slice) -> low-risk speed plan** order the right sequence?
+3. Is the **WS-1 -> incremental WS-2 slices -> low-risk speed plan** order the right sequence?
 4. Should any part of the Speed/Cost plan be moved earlier or explicitly deferred?
 
 ---
@@ -318,7 +322,7 @@ Recommended order:
 1. Close and park the Plastik multilingual limitation
 2. Repair config provenance
 3. Execute WS-1 dead code cleanup
-4. Start WS-2 with a small first slice
+4. Continue WS-2 only in small approved slices
 5. Take only the low-risk part of the Speed/Cost plan
 6. Reopen Plastik only as a fresh Phase 2 v3 architecture track
 

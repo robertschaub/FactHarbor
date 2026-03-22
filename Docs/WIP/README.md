@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-22
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, two low-risk WS-2 slices are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, and a Phase 2 v3 design-only architecture brief has been reviewed and tightened for later use.
+**Last Updated**: 2026-03-23
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, three low-risk WS-2 slices are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, and a Phase 2 v3 design-only architecture brief has been reviewed and tightened for later use.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, two WS-2 slices are complete (`pipeline-utils.ts` plus Stage 3 `boundary-clustering-stage.ts` extraction), the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, and the Phase 2 v3 work now exists as a reviewed design-only architecture brief rather than an active implementation track; optional `P1-B` remains deferred.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, three WS-2 slices are complete (`pipeline-utils.ts`, Stage 3 `boundary-clustering-stage.ts`, and Stage 5 `aggregation-stage.ts` extraction), the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, and the Phase 2 v3 work now exists as a reviewed design-only architecture brief rather than an active implementation track; optional `P1-B` remains deferred.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -20,7 +20,7 @@ For completed work, historical documents, and reference materials, see:
 ## Active Quality Plans (governing current work)
 
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; additional WS-2 slice complete; Phase 2 v3 brief reviewed/tightened
+**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; three WS-2 slices complete; Phase 2 v3 brief reviewed/tightened
 - **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 - **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
 - **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.
