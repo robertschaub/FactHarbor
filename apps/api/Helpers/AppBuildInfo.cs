@@ -6,6 +6,14 @@ namespace FactHarbor.Api.Helpers;
 /// Holds build-time metadata resolved once at startup and injected as a singleton.
 /// GitCommitHash is stored on every Job at creation so admins can trace any job
 /// back to the exact deployed code version that ran it.
+///
+/// Format:
+///   Clean working tree : "{hash}"              e.g. "cdd78d0f"
+///   Dirty working tree : "{hash}-{timestamp}"  e.g. "cdd78d0f-20260322T1904"
+///
+/// The timestamp suffix marks local dev runs with uncommitted changes so jobs
+/// cannot be confused with a clean, reproducible commit state. The timestamp
+/// is the UTC startup time (minutes precision), making each dirty session unique.
 /// </summary>
 public sealed record AppBuildInfo(string? GitCommitHash)
 {
@@ -15,23 +23,50 @@ public sealed record AppBuildInfo(string? GitCommitHash)
 
     /// <summary>
     /// Resolves the git commit hash by:
-    /// 1. Reading the GIT_COMMIT env var (set by CI/CD at deployment)
-    /// 2. Falling back to `git rev-parse HEAD` (local dev, 3-second hard timeout)
+    /// 1. Reading the GIT_COMMIT env var (set by CI/CD at deployment — always clean)
+    /// 2. Falling back to `git rev-parse HEAD` + dirty check (local dev, 3-second timeout)
     /// 3. Returning null if neither is available
     /// </summary>
     public static AppBuildInfo Resolve()
     {
-        // 1. Deployment-injected env var — validated before use.
+        // 1. Deployment-injected env var — always a clean commit on the VPS.
         var envHash = Environment.GetEnvironmentVariable("GIT_COMMIT")?.Trim().ToLowerInvariant();
         if (!string.IsNullOrEmpty(envHash) && IsValidHash(envHash))
             return new AppBuildInfo(envHash);
 
         // 2. Local dev fallback: run git with a hard 3-second wall-clock timeout.
         //    We read stdout on a background thread so WaitForExit(3000) is the real gate.
-        //    ReadToEnd() alone would block indefinitely if the process hangs.
         try
         {
-            var psi = new ProcessStartInfo("git", "rev-parse HEAD")
+            var hash = RunGit("rev-parse HEAD");
+            if (hash is null || !IsValidHash(hash))
+                return new AppBuildInfo(GitCommitHash: null);
+
+            // Check for uncommitted changes. Any output from --porcelain means dirty.
+            var porcelain = RunGit("status --porcelain");
+            if (!string.IsNullOrWhiteSpace(porcelain))
+            {
+                // Append a startup timestamp so dirty-state jobs are distinguishable
+                // from each other and clearly separated from clean commit runs.
+                var ts = DateTime.UtcNow.ToString("yyyyMMddTHHmm");
+                return new AppBuildInfo($"{hash}-{ts}");
+            }
+
+            return new AppBuildInfo(hash);
+        }
+        catch { /* git not available or not in a repo */ }
+
+        return new AppBuildInfo(GitCommitHash: null);
+    }
+
+    /// <summary>
+    /// Runs a git command and returns trimmed stdout, or null on timeout/error.
+    /// </summary>
+    private static string? RunGit(string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("git", arguments)
             {
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -39,32 +74,17 @@ public sealed record AppBuildInfo(string? GitCommitHash)
                 WorkingDirectory = AppContext.BaseDirectory
             };
             using var proc = Process.Start(psi);
-            if (proc is not null)
-            {
-                // Read stdout on a background thread so the WaitForExit timeout is effective.
-                var readTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-                if (proc.WaitForExit(3000))
-                {
-                    // Process exited — give the read task a moment to drain any remaining
-                    // buffered output. In practice it completes immediately after exit,
-                    // but Wait() makes the drain definitive rather than a race check.
-                    readTask.Wait(500);
-                    if (readTask.IsCompletedSuccessfully)
-                    {
-                        var hash = readTask.Result.Trim().ToLowerInvariant();
-                        if (IsValidHash(hash))
-                            return new AppBuildInfo(hash);
-                    }
-                }
-                else
-                {
-                    // Timed out — kill the process to avoid zombies.
-                    try { proc.Kill(); } catch { }
-                }
-            }
-        }
-        catch { /* git not available or not in a repo */ }
+            if (proc is null) return null;
 
-        return new AppBuildInfo(GitCommitHash: null);
+            var readTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
+            if (!proc.WaitForExit(3000))
+            {
+                try { proc.Kill(); } catch { }
+                return null;
+            }
+            readTask.Wait(500);
+            return readTask.IsCompletedSuccessfully ? readTask.Result.Trim().ToLowerInvariant() : null;
+        }
+        catch { return null; }
     }
 }
