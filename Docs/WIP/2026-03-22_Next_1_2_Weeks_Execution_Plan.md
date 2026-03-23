@@ -157,22 +157,18 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - The orchestrator direction is validated without destabilizing the pipeline
 
 **Status update (2026-03-23):**
-- First slice completed.
-- Extracted a new leaf module `pipeline-utils.ts` from `claimboundary-pipeline.ts`.
-- Scope kept intentionally narrow: only pure helper functions and re-exports, no stage logic moved.
-- Verification: targeted ClaimBoundary test suite green (`291/291`) and web build green.
-- Second slice completed.
-- Extracted Stage 3 boundary clustering into `boundary-clustering-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
-- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
-- Third slice completed.
-- Extracted Stage 5 aggregation/quality-gate logic into `aggregation-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
-- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1329/1329`).
-- Fourth slice completed.
-- Extracted Stage 4 verdict-generation orchestration into `verdict-generation-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
-- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1330/1330`).
-- Fifth slice completed.
-- Extracted Stage 1 claim extraction into `claim-extraction-stage.ts` and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface for existing tests/imports.
-- Verification: targeted ClaimBoundary test suite green (`292/292`), web build green, and full safe test suite green (`1330/1330`).
+- **WS-2 complete.** The `claimboundary-pipeline.ts` monolith has been fully decomposed into modular, testable stages:
+  - `claim-extraction-stage.ts` (Stage 1)
+  - `research-orchestrator.ts` (Stage 2 Orchestration & Helpers)
+  - `research-query-stage.ts` (Stage 2 Queries)
+  - `research-acquisition-stage.ts` (Stage 2 Acquisition)
+  - `research-extraction-stage.ts` (Stage 2 Extraction)
+  - `boundary-clustering-stage.ts` (Stage 3)
+  - `verdict-generation-stage.ts` (Stage 4)
+  - `aggregation-stage.ts` (Stage 5)
+  - `pipeline-utils.ts` (Leaf helpers)
+- The refactor wave is materially complete. The pipeline code has been reduced from ~5,700 lines to ~900 lines of high-level orchestration.
+- Public API surface remains stable via re-exports.
 
 ---
 
