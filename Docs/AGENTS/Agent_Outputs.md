@@ -1363,5 +1363,15 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Key decisions:** Confirmed from official Anthropic/OpenAI docs that exact live rate limits are org-/tier-specific, exposed via headers, and not a single fixed concurrency number. Switched the new guard from provider-wide + custom outer retry to lane-aware throttling (`anthropic:sonnet` default 2, other lanes 3) and relied on the AI SDK's built-in retry handling because it already honors `retry-after` / `retry-after-ms` on retryable API call failures. Also enriched final `llm_provider_error` warnings with request-id / retry-after / remaining-limit headers when present.
 **Open items:** This hardens only the Stage-4 LLM path. It does not fix the module-global metrics collector, and it does not yet add equivalent guarding for future SR calibration traffic if that path is enabled. Real parallel-run validation on the local stack is still recommended before deployment.
 **Warnings:** `apps/web/.env.local` was kept local-only and not committed. A latent pipeline-test mock issue surfaced because `classifyError()` now touches `SearchProviderError`; the web-search mock was converted to a partial mock to restore that export.
-**For next agent:** If Stage-4 still flakes under load, inspect real failure headers first. The next safe tuning knob is `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET`, not runner-global concurrency. Verified with `npm -w apps/web run test -- test/unit/lib/analyzer/llm-provider-guard.test.ts`, `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and `npm -w apps/web run build`.
+**For next agent:** See `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage4_Provider_Guard_Reliability_Alignment.md` for the detailed incident and design rationale. If Stage-4 still flakes under load, inspect real failure headers first. The next safe tuning knob is `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET`, not runner-global concurrency. Verified with `npm -w apps/web run test -- test/unit/lib/analyzer/llm-provider-guard.test.ts`, `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and `npm -w apps/web run build`.
+**Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage-4 Provider Guard Detailed Handoff
+**Task:** Write the detailed incident and fix documentation for the Stage-4 provider-guard alignment after verifying official provider-limit behavior.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage4_Provider_Guard_Reliability_Alignment.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Captured the observed incident, the provider-doc findings, why the first outer-retry version was inefficient, and why the final design uses lane-aware throttling plus SDK-native retries. Documented concrete tuning guidance and what remains out of scope.
+**Open items:** Real parallel validation on the running stack is still required; the document is guidance, not proof of deployed stability.
+**Warnings:** The detailed handoff assumes the current `ai@6.0.78` behavior continues to honor `retry-after` / `retry-after-ms`. Re-check this if the SDK is upgraded.
+**For next agent:** Use the handoff file as the authoritative explanation of the Stage-4 backpressure fix and its tuning model.
 **Learnings:** no

@@ -1,9 +1,20 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-21
+**Last Updated**: 2026-03-23
 **Phase**: **Alpha**
 **Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Phase 2 validation complete (production-ready). MT-1/MT-2/MT-3 structural pipeline fixes implemented. Cross-provider debate active (OpenAI challenger). Stage 1 broad-claim contract preservation is now materially fixed via a post-Pass-2 claim-contract validator. `verdictDirectionPolicy` is re-enabled as `retry_once_then_safe_downgrade`; `verdictGroundingPolicy` remains `disabled`. The primary open quality issue is now downstream Plastik-family variability in Stage 2/4 (search framing, evidence balance, verdict direction), not claim decomposition.
+
+---
+
+## Recent Changes (2026-03-23)
+
+**Stage 4 reliability hardening + incident visibility:**
+- ✅ **Verdict-generation incident surfaced correctly**: Jobs/UI now distinguish `analysis_generation_failed` from ordinary `insufficient_evidence`, so Stage-4 fallback reports no longer masquerade as normal low-evidence outcomes.
+- ✅ **Stage-4 provider guard aligned with official retry behavior**: Added lane-aware LLM backpressure control for the verdict path (`anthropic:sonnet` default limit `2`, other lanes `3`) instead of forcing runner-global serialization.
+- ✅ **Custom outer retry removed**: FactHarbor now relies on the installed AI SDK retry path for retryable API-call failures, which already honors `retry-after` / `retry-after-ms` headers.
+- ✅ **Provider diagnostics enriched**: Final `llm_provider_error` warnings now capture request IDs, retry-after hints, and remaining-limit headers when available for faster tuning of real overload incidents.
+- ⚠️ **Validation posture**: Parallel quality validation should still be treated cautiously until the new guard is validated with live concurrent control runs. If tuning is required, adjust `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET` before changing `FH_RUNNER_MAX_CONCURRENCY`.
 
 ---
 
