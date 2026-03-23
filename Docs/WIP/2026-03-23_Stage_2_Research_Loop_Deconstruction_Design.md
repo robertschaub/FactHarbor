@@ -1,6 +1,6 @@
 # Design: Stage 2 Research Loop Deconstruction
 **Date:** 2026-03-23
-**Status:** DRAFT (WIP)
+**Status:** IN PROGRESS — Slice 1 complete (State Utils & Budget Helpers extracted)
 **Author:** Senior Architect (Gemini 3.0 Pro)
 **Context:** Final phase of WS-2 (ClaimBoundary Pipeline decomposition).
 
@@ -65,6 +65,30 @@ Given the size (~1000 lines) and complexity of Stage 2, a single file `research-
 3.  **Slice 3: Acquisition.** Extract the fetch and search logic into `research-acquisition-stage.ts`.
 4.  **Slice 4: Query Generation.** Extract the query LLM logic into `research-query-stage.ts`.
 5.  **Slice 5: Orchestration.** Move the final `researchEvidence` loop to `research-orchestrator.ts`.
+
+### Progress Update — 2026-03-23
+
+**Slice 1 complete.**
+
+- Added `apps/web/src/lib/analyzer/research-orchestrator.ts`
+- Moved the following helpers out of `claimboundary-pipeline.ts`:
+  - `findLeastResearchedClaim`
+  - `findLeastContradictedClaim`
+  - `allClaimsSufficient`
+  - `getPerClaimQueryBudget`
+  - `getClaimQueryBudgetUsed`
+  - `getClaimQueryBudgetRemaining`
+  - `consumeClaimQueryBudget`
+- Kept the public import surface stable via re-exports from `claimboundary-pipeline.ts`
+- Verification: `claimboundary-pipeline.test.ts` green (`292/292`) and `npm -w apps/web run build` green
+
+**What remains intentionally in the orchestrator:**
+- `researchEvidence`
+- `runResearchIteration`
+- preliminary seeding / source reconciliation
+- all query generation, acquisition, extraction, and applicability logic
+
+This keeps Slice 1 structural-only and avoids moving any async loop or LLM/search behavior before the first Stage 2 extraction proves stable.
 
 ---
 

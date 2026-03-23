@@ -1308,3 +1308,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This slice is structural only despite its size. Do not treat `claim-extraction-stage.ts` as approval to change Stage 1 prompts, validation semantics, or research-loop boundaries.
 **For next agent:** The repo now has five completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`, `verdict-generation-stage.ts`, `claim-extraction-stage.ts`). `claimboundary-pipeline.ts` is down to the main entry point plus the Stage 2 research loop; stop here unless the next higher-coupling extraction is explicitly authorized.
 **Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage 2 Slice 1 State Utils Extraction
+**Task:** Start the approved Stage 2 deconstruction with the smallest safe slice by extracting pure State-2 targeting/sufficiency/budget helpers out of `claimboundary-pipeline.ts`.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `Docs/WIP/2026-03-23_Stage_2_Research_Loop_Deconstruction_Design.md`, `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Created `research-orchestrator.ts` as the first Stage 2 module and moved only the targeting/sufficiency/query-budget helper surface into it. Kept `researchEvidence`, `runResearchIteration`, preliminary seeding, source reconciliation, and all LLM/search logic in `claimboundary-pipeline.ts`. Preserved the public import surface through re-exports from the pipeline module.
+**Open items:** Slice 2 remains a separate decision. The remaining Stage 2 core is still the async research loop plus query/acquisition/extraction logic.
+**Warnings:** This does not yet make `research-orchestrator.ts` the owner of Stage 2 orchestration; it is a staging anchor only. There are unrelated working-tree changes in smoke-test/Vitest files that were deliberately left untouched.
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md` for the exact boundary and verification. Verified with `claimboundary-pipeline.test.ts` (`292/292`) and `npm -w apps/web run build`.
+**Learnings:** no
