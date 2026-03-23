@@ -2504,6 +2504,13 @@ describe("Stage 2: researchEvidence", () => {
     expect(budgetWarnings[0].details?.stage).toBe("research_budget");
   });
 
+  // SKIPPED: This integration-level test relies on sequential mock state across
+  // module boundaries (research-orchestrator → research-extraction-stage → research-query-stage).
+  // After Stage 2 extraction, the llmStage++ mock approach breaks because vi.mock boundaries
+  // don't share state predictably across dynamic imports. The behavior tested here
+  // (preliminary evidence not satisfying sufficiency threshold) is validated by the
+  // CB integration tests (test:cb-integration). To restore as a unit test, the mock
+  // strategy would need per-module call tracking rather than a global sequence counter.
   it.skip("does not let preliminary evidence satisfy sufficiency before main research runs", async () => {
     const { researchEvidence } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig } = await import("@/lib/config-loader");

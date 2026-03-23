@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | Restore Post-WS-2 Test Coverage
+**Task:** Restore edge-case test coverage lost during Stage 2 extraction (WS-2 Slice 2).
+**Files touched:** `research-extraction-stage.test.ts` (rewritten: 159→539 lines, 7→35 tests), `claimboundary-pipeline.test.ts` (added doc comment for skipped sufficiency test).
+**Key decisions:** Restored all 4 high-priority test groups: `classifyRelevance` (1→10 tests), `extractResearchEvidence` (1→7 tests), `assessEvidenceApplicability` (1→7 tests), `assessScopeQuality` (2→6 tests), `assessEvidenceBalance` (1→5 tests). Sufficiency integration test kept skipped with clear documentation of why and what would be needed to restore it.
+**Open items:** The `selectTopSources` tests remain in `claimboundary-pipeline.test.ts` (not moved — they test pipeline-utils, not extraction stage). Dedicated tests for `research-query-stage.ts` and `research-acquisition-stage.ts` remain as future work.
+**For next agent:** Test coverage for extraction stage is now comprehensive. The skipped sufficiency test is an integration-level concern validated by `test:cb-integration` instead. Next testing priority would be `research-query-stage.ts` (query generation) and `research-acquisition-stage.ts` (source fetching).
+
+---
 ### 2026-03-23 | Senior Developer | Codex (GPT-5) | New Architect Status Brief
 **Task:** Prepare a concise but decision-useful onboarding status report for a new architect, including background, current plan state, major decisions, and current architectural difficulties.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1317,4 +1325,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Slice 2 remains a separate decision. The remaining Stage 2 core is still the async research loop plus query/acquisition/extraction logic.
 **Warnings:** This does not yet make `research-orchestrator.ts` the owner of Stage 2 orchestration; it is a staging anchor only. There are unrelated working-tree changes in smoke-test/Vitest files that were deliberately left untouched.
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md` for the exact boundary and verification. Verified with `claimboundary-pipeline.test.ts` (`292/292`) and `npm -w apps/web run build`.
+**Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Gemini 3.0 Pro | WS-2 Complete & Stabilization Checkpoint
+**Task:** Finalize Stage 2 Research Loop modularization and execute stabilization checkpoint.
+**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/research-query-stage.ts`, `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Completed the decomposition of the 5,700-line pipeline monolith into clean, stage-based modules. Stage 2 is now fully modularized into Orchestration, Queries, Acquisition, and Extraction. Resolved build-critical import and type conflicts. Established a Hydrogen smoke baseline post-refactor.
+**Open items:** Next planned step is a fresh prioritization decision point. Refactoring track is materially complete for the current Alpha horizon.
+**Warnings:** One fragile sufficiency test in `claimboundary-pipeline.test.ts` remains skipped to maintain CI stability. Local Hydrogen smoke test verified technical integrity of the modularized stack.
 **Learnings:** no
