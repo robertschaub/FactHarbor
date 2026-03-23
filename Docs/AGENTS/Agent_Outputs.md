@@ -1345,3 +1345,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `P1-A` remains quality-affecting. It must not be bundled with `P1-B`, and it must not start before the validation gate is complete.
 **For next agent:** Use `Docs/WIP/2026-03-23_Post_WS2_Decision_Point.md` as the current next-step decision document, not the Mar-22 plan. The correct sequence is now `validate -> P1-A -> evaluate`.
 **Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage-4 Verdict Failure Incident Triage
+**Task:** Investigate repeated `UNVERIFIED` fallback reports and patch the UI/API so verdict-generation failures are not presented as ordinary insufficient-evidence outcomes.
+**Files touched:** `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/jobs/page.tsx`, `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the bad reports were not normal evidence-scarcity runs but `analysis_generation_failed` fallbacks caused by `Stage4LLMCallError` during `VERDICT_ADVOCATE`. Added `analysisIssueCode` / `analysisIssueMessage` to job list/detail API responses and updated the jobs list/detail UI to show `Analysis generation failed` / `Internal analysis failure` instead of duplicating `Insufficient evidence` for these fallback reports.
+**Open items:** The underlying operational cause is not fixed by this patch. The strongest current diagnosis is Stage-4 provider overload under concurrent validation load. Validation should be rerun serially, and the runner should be tested with `FH_RUNNER_MAX_CONCURRENCY=1` before any new optimization work starts.
+**Warnings:** `npm -w apps/web run build` passed. API code was compile-checked with `dotnet msbuild /t:Compile`; full `dotnet build` could not complete because the running local `FactHarbor.Api.exe` was locking `bin\\Debug\\net8.0`. Metrics for overlapping jobs remain partially untrustworthy because `apps/web/src/lib/analyzer/metrics-integration.ts` still uses a module-global collector.
+**For next agent:** Treat the recent Bolsonaro / flat-earth / round-earth `UNVERIFIED` jobs as Stage-4 fallback incidents, not as proof of ordinary low evidence. Before deeper root-cause work, inspect the new UI/API behavior on those jobs and rerun controls serially. A later hardening pass should separate `analysis_generation_failed` from evidence warnings across export/report surfaces too.
+**Learnings:** no

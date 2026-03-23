@@ -82,6 +82,8 @@ type Job = {
   reportMarkdown: string | null;
   pipelineVariant?: string;
   isHidden?: boolean;
+  analysisIssueCode?: string | null;
+  analysisIssueMessage?: string | null;
   /** Admin-only: git commit hash of the deployed code that ran this job */
   gitCommitHash?: string | null;
 };
@@ -180,6 +182,25 @@ function normalizePercentage(value: number): number {
   if (!Number.isFinite(value)) return 50;
   const normalized = value >= 0 && value <= 1 ? value * 100 : value;
   return Math.max(0, Math.min(100, Math.round(normalized)));
+}
+
+function shouldShowAnalysisFailureLabel(verdictLabel: string | undefined, hasAnalysisGenerationFailure: boolean): boolean {
+  return hasAnalysisGenerationFailure && verdictLabel === "UNVERIFIED";
+}
+
+function getVerdictAssessmentDisplay(
+  verdictLabel: string | undefined,
+  displayPct: number | undefined,
+  showAnalysisFailureLabel: boolean,
+): string {
+  if (showAnalysisFailureLabel) return "Analysis generation failed";
+  if (!verdictLabel || displayPct === undefined) return "";
+  return formatVerdictText(displayPct, verdictLabel);
+}
+
+function getConfidenceDisplayLabel(confidence: number | undefined, showAnalysisFailureLabel: boolean): string {
+  if (showAnalysisFailureLabel) return "Internal analysis failure";
+  return getConfidenceTierLabel(confidence ?? 0);
 }
 
 function resolveTruthPercentage(
@@ -953,6 +974,16 @@ export default function JobPage() {
   const allAnalysisWarnings: AnalysisWarning[] = Array.isArray(result?.analysisWarnings)
     ? result.analysisWarnings
     : [];
+  const analysisGenerationFailureWarning = allAnalysisWarnings.find(
+    (warning) => warning?.type === "analysis_generation_failed",
+  );
+  const hasAnalysisGenerationFailure =
+    job?.analysisIssueCode === "analysis_generation_failed" ||
+    Boolean(analysisGenerationFailureWarning);
+  const analysisGenerationFailureMessage =
+    job?.analysisIssueMessage ||
+    analysisGenerationFailureWarning?.message ||
+    null;
   const warningDiagnostics = allAnalysisWarnings.map((warning) => {
     const classification = classifyWarningForDisplay(warning);
     const bucket = classification.isProviderIssue
@@ -1607,7 +1638,11 @@ export default function JobPage() {
         <div className={styles.reportStack}>
           {pipelineVariant === "monolithic_dynamic" ? (
             <ReportSection title="Report" className={styles.reportSurfaceCard}>
-              <DynamicResultViewer result={result} />
+              <DynamicResultViewer
+                result={result}
+                hasAnalysisGenerationFailure={hasAnalysisGenerationFailure}
+                analysisGenerationFailureMessage={analysisGenerationFailureMessage}
+              />
             </ReportSection>
           ) : (
             <>
@@ -1649,6 +1684,7 @@ export default function JobPage() {
               {/* CB Pipeline: dedicated verdict banner using top-level fields */}
               {isCBSchema && typeof result?.truthPercentage === "number" && (() => {
                 const cbVerdictLabel = percentageToArticleVerdict(result.truthPercentage, result.confidence ?? 0);
+                const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(cbVerdictLabel, hasAnalysisGenerationFailure);
                 const cbColor = ARTICLE_VERDICT_COLORS[cbVerdictLabel] || ARTICLE_VERDICT_COLORS["UNVERIFIED"];
                 const cbUiPalette = getVerdictUiPalette(cbVerdictLabel, cbColor);
                 const cbAccent = getVerdictAccentColor(cbVerdictLabel, cbColor);
@@ -1661,9 +1697,11 @@ export default function JobPage() {
                 const cbMixedSplitLabel = `${roundedDisplayCbPct}/${100 - roundedDisplayCbPct}`;
                 const cbTruthAssessmentValue = cbVerdictLabel === "MIXED"
                   ? `${cbMixedSplitLabel} split`
-                  : formatVerdictText(displayCbPct, cbVerdictLabel);
+                  : getVerdictAssessmentDisplay(cbVerdictLabel, displayCbPct, showAnalysisFailureLabel);
                 const cbTruthAssessmentHelperText = cbVerdictLabel === "MIXED"
                   ? `${roundedDisplayCbPct}% true`
+                  : showAnalysisFailureLabel
+                    ? "Fallback UNVERIFIED verdict after verdict-stage failure"
                   : isFalseBand(cbVerdictLabel)
                     ? `${Math.round(result.truthPercentage)}% true`
                     : undefined;
@@ -1686,6 +1724,16 @@ export default function JobPage() {
                         >
                           {getVerdictLabel(cbVerdictLabel).toUpperCase().replace(/\s+/g, "-")}
                         </div>
+                          {showAnalysisFailureLabel && (
+                            <div className={styles.qualityStatusBanner}>
+                              <div className={styles.qualityStatusText}>
+                                Verdict generation failed. This report is showing fallback UNVERIFIED verdicts.
+                              </div>
+                              {analysisGenerationFailureMessage && (
+                                <div className={styles.qualityStatusMeta}>{analysisGenerationFailureMessage}</div>
+                              )}
+                            </div>
+                          )}
                           {verdictHeadline && (
                             <ExpandableText
                               text={verdictHeadline}
@@ -1707,10 +1755,10 @@ export default function JobPage() {
                           />
                           <VerdictMetricBlock
                             label="Confidence"
-                            value={getConfidenceTierLabel(result.confidence ?? 0)}
+                            value={getConfidenceDisplayLabel(result.confidence ?? 0, showAnalysisFailureLabel)}
                             percentage={confidencePct}
                             fillColor="var(--link)"
-                            helperText={`${confidencePct}% confidence`}
+                            helperText={showAnalysisFailureLabel ? "Confidence unavailable due to analysis failure" : `${confidencePct}% confidence`}
                           />
                         </div>
                         </div>
@@ -1855,6 +1903,8 @@ export default function JobPage() {
                           claim={enrichedCv}
                           claimBoundaries={claimBoundaries}
                           totalBoundaryCount={claimBoundaries.length}
+                          hasAnalysisGenerationFailure={hasAnalysisGenerationFailure}
+                          analysisGenerationFailureMessage={analysisGenerationFailureMessage}
                           onNavigate={navigateTo}
                         />
                       );
@@ -3450,16 +3500,21 @@ function ClaimCard({
   claim,
   claimBoundaries = [],
   totalBoundaryCount = 0,
+  hasAnalysisGenerationFailure = false,
+  analysisGenerationFailureMessage = null,
   onNavigate,
 }: {
   claim: any;
   claimBoundaries?: any[];
   totalBoundaryCount?: number;
+  hasAnalysisGenerationFailure?: boolean;
+  analysisGenerationFailureMessage?: string | null;
   onNavigate?: (refId: string) => void;
 }) {
   const claimTruth = getClaimTruthPercentage(claim);
   const claimConfidence = claim?.confidence ?? 0;
   const claimVerdictLabel = percentageToClaimVerdict(claimTruth, claimConfidence);
+  const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(claimVerdictLabel, hasAnalysisGenerationFailure);
   const color = CLAIM_VERDICT_COLORS[claimVerdictLabel] || CLAIM_VERDICT_COLORS["UNVERIFIED"];
   const displayClaimPct = isFalseBand(claimVerdictLabel) ? 100 - claimTruth : claimTruth;
 
@@ -3478,10 +3533,18 @@ function ClaimCard({
       <div className={styles.claimText}>
         {claim.claimText}
       </div>
-      <div className={styles.claimVerdictRow} style={{ backgroundColor: color.bg, borderColor: color.border, color: color.text }}>
+      <div
+        className={styles.claimVerdictRow}
+        style={{ backgroundColor: color.bg, borderColor: color.border, color: color.text }}
+        title={showAnalysisFailureLabel ? (analysisGenerationFailureMessage || "Verdict generation failed") : undefined}
+      >
         <span className={styles.claimVerdictMain}>{color.icon} {getVerdictLabel(claimVerdictLabel)}</span>
-        <span className={styles.claimVerdictPct}>{formatVerdictText(displayClaimPct, claimVerdictLabel)}</span>
-        <span className={styles.claimVerdictConf}>{getConfidenceTierLabel(claim.confidence)}</span>
+        <span className={styles.claimVerdictPct}>
+          {getVerdictAssessmentDisplay(claimVerdictLabel, displayClaimPct, showAnalysisFailureLabel)}
+        </span>
+        <span className={styles.claimVerdictConf}>
+          {getConfidenceDisplayLabel(claim.confidence, showAnalysisFailureLabel)}
+        </span>
         {claim.truthPercentageRange && (
           <span className={styles.claimVerdictRange}>
             range: {isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.max : claim.truthPercentageRange.min}%–{isFalseBand(claimVerdictLabel) ? 100 - claim.truthPercentageRange.min : claim.truthPercentageRange.max}%
@@ -3634,7 +3697,15 @@ function ClaimHighlighter({ originalText, claimVerdicts }: { originalText: strin
 // Dynamic Result Viewer - NEW v2.6.35
 // ============================================================================
 
-function DynamicResultViewer({ result }: { result: any }) {
+function DynamicResultViewer({
+  result,
+  hasAnalysisGenerationFailure = false,
+  analysisGenerationFailureMessage = null,
+}: {
+  result: any;
+  hasAnalysisGenerationFailure?: boolean;
+  analysisGenerationFailureMessage?: string | null;
+}) {
   const citationsCount = result.citations?.length || 0;
   // Estimate sentence count from summary (dynamic pipeline uses summary, not narrativeMarkdown)
   const narrativeText = result.summary || result.narrativeMarkdown || "";
@@ -3657,11 +3728,13 @@ function DynamicResultViewer({ result }: { result: any }) {
         const dynVerdict = (result.verdict.label || "").toUpperCase();
         const dynScore = result.verdict.score;
         const dynConf = result.verdict.confidence;
+        const showAnalysisFailureLabel = shouldShowAnalysisFailureLabel(dynVerdict, hasAnalysisGenerationFailure);
         const dynFalse = isFalseBand(dynVerdict);
         const dynDisplayPct = dynScore !== undefined ? (dynFalse ? 100 - dynScore : dynScore) : undefined;
         const dynWord = dynFalse ? "false" : "true";
         const dynVerdictText = dynVerdict === "MIXED" && dynDisplayPct !== undefined
           ? `${dynDisplayPct}/${100 - dynDisplayPct} split`
+          : showAnalysisFailureLabel ? "Analysis generation failed"
           : dynVerdict === "UNVERIFIED" ? "Insufficient evidence"
           : dynDisplayPct !== undefined ? `${dynDisplayPct}% ${dynWord}` : "";
         return (
@@ -3673,7 +3746,12 @@ function DynamicResultViewer({ result }: { result: any }) {
             )}
           </div>
           {dynConf !== undefined && (
-            <div className={styles.verdictConfidence}>· {getConfidenceTierLabel(dynConf)}</div>
+            <div
+              className={styles.verdictConfidence}
+              title={showAnalysisFailureLabel ? (analysisGenerationFailureMessage || "Verdict generation failed") : undefined}
+            >
+              · {getConfidenceDisplayLabel(dynConf, showAnalysisFailureLabel)}
+            </div>
           )}
           {result.verdict.reasoning && (
             <ExpandableText text={result.verdict.reasoning} className={styles.verdictReasoning} modalTitle="Verdict Reasoning" />

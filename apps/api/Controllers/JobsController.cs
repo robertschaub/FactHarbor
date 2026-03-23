@@ -57,8 +57,11 @@ public sealed class JobsController : ControllerBase
 
         return Ok(new
         {
-            jobs = items.Select(j => new
+            jobs = items.Select(j =>
             {
+                var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
+                return new
+                {
                 jobId = j.JobId,
                 status = j.Status,
                 progress = j.Progress,
@@ -71,8 +74,11 @@ public sealed class JobsController : ControllerBase
                 truthPercentage = j.TruthPercentage,
                 confidence = j.Confidence,
                 isHidden = j.IsHidden,
+                analysisIssueCode = analysisIssue.code,
+                analysisIssueMessage = analysisIssue.message,
                 // Admin-only: enables cross-job queries like "which jobs ran on hash X?"
                 gitCommitHash = isAdmin ? j.GitCommitHash : null
+                };
             }),
             pagination = new
             {
@@ -98,6 +104,7 @@ public sealed class JobsController : ControllerBase
         }
 
         var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+        var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
 
         return Ok(new
         {
@@ -114,6 +121,8 @@ public sealed class JobsController : ControllerBase
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
             isHidden = j.IsHidden,
+            analysisIssueCode = analysisIssue.code,
+            analysisIssueMessage = analysisIssue.message,
             // Admin-only diagnostic fields
             gitCommitHash = isAdmin ? j.GitCommitHash : null,
             resultJson = resultObj,
@@ -291,5 +300,49 @@ public sealed class JobsController : ControllerBase
             var payload = JsonSerializer.Serialize(new { id = e.Id, tsUtc = e.TsUtc.ToString("o"), level = e.Level, message = e.Message });
             await Response.WriteAsync($"data: {payload}\n\n");
         }
+    }
+
+    private static (string? code, string? message) ExtractPrimaryAnalysisIssue(string? resultJson)
+    {
+        if (string.IsNullOrWhiteSpace(resultJson))
+            return (null, null);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(resultJson);
+            if (!doc.RootElement.TryGetProperty("analysisWarnings", out var warnings) ||
+                warnings.ValueKind != JsonValueKind.Array)
+            {
+                return (null, null);
+            }
+
+            foreach (var warning in warnings.EnumerateArray())
+            {
+                if (!warning.TryGetProperty("type", out var typeProp) ||
+                    typeProp.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                var type = typeProp.GetString();
+                if (!string.Equals(type, "analysis_generation_failed", StringComparison.Ordinal))
+                    continue;
+
+                string? message = null;
+                if (warning.TryGetProperty("message", out var messageProp) &&
+                    messageProp.ValueKind == JsonValueKind.String)
+                {
+                    message = messageProp.GetString();
+                }
+
+                return (type, message);
+            }
+        }
+        catch
+        {
+            // Keep list/detail responses resilient even when resultJson is malformed.
+        }
+
+        return (null, null);
     }
 }

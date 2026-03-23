@@ -27,6 +27,8 @@ type JobSummary = {
   truthPercentage?: number;
   confidence?: number;
   isHidden?: boolean;
+  analysisIssueCode?: string | null;
+  analysisIssueMessage?: string | null;
 };
 
 type PaginationInfo = {
@@ -278,6 +280,20 @@ export default function JobsPage() {
     }
   };
 
+  const getVerdictMetaText = (job: JobSummary): string | null => {
+    if (job.analysisIssueCode === "analysis_generation_failed") {
+      return "Analysis generation failed";
+    }
+    if (!job.verdictLabel || job.truthPercentage === undefined) {
+      return null;
+    }
+
+    const displayPct = isFalseBand(job.verdictLabel)
+      ? 100 - job.truthPercentage
+      : job.truthPercentage;
+    return formatVerdictText(displayPct, job.verdictLabel);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -370,14 +386,21 @@ export default function JobsPage() {
                   {job.verdictLabel && (() => {
                     const vBadge = getVerdictBadge(job.verdictLabel);
                     if (!vBadge) return null;
-                    const displayPct = job.truthPercentage !== undefined
-                      ? (isFalseBand(job.verdictLabel) ? 100 - job.truthPercentage : job.truthPercentage)
-                      : undefined;
+                    const verdictMeta = getVerdictMetaText(job);
+                    const confidenceMeta = job.analysisIssueCode === "analysis_generation_failed"
+                      ? null
+                      : (job.confidence !== undefined ? getConfidenceTierLabel(job.confidence) : null);
+                    const tooltip = job.analysisIssueCode === "analysis_generation_failed"
+                      ? (job.analysisIssueMessage || `Verdict: ${vBadge.text}`)
+                      : `Verdict: ${vBadge.text}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`;
                     return (
                       <div style={{ margin: "0 0 4px" }}>
-                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={`Verdict: ${vBadge.text}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`}>
-                          {vBadge.icon} {vBadge.text} <span style={{ fontWeight: 400 }}>{displayPct !== undefined && <>· {formatVerdictText(displayPct, job.verdictLabel)}</>}
-                          {job.confidence !== undefined && <> · {getConfidenceTierLabel(job.confidence)}</>}</span>
+                        <span className={`${styles.verdictBadge} ${vBadge.className}`} title={tooltip}>
+                          {vBadge.icon} {vBadge.text}
+                          <span style={{ fontWeight: 400 }}>
+                            {verdictMeta && <> · {verdictMeta}</>}
+                            {confidenceMeta && <> · {confidenceMeta}</>}
+                          </span>
                         </span>
                       </div>
                     );
