@@ -1,6 +1,6 @@
 # Design: Stage 2 Research Loop Deconstruction
 **Date:** 2026-03-23
-**Status:** IN PROGRESS — Slice 1 complete (State Utils & Budget Helpers extracted)
+**Status:** IN PROGRESS — Slices 1 & 2 complete (State Utils & Extraction Logic extracted)
 **Author:** Senior Architect (Gemini 3.0 Pro)
 **Context:** Final phase of WS-2 (ClaimBoundary Pipeline decomposition).
 
@@ -82,11 +82,24 @@ Given the size (~1000 lines) and complexity of Stage 2, a single file `research-
 - Kept the public import surface stable via re-exports from `claimboundary-pipeline.ts`
 - Verification: `claimboundary-pipeline.test.ts` green (`292/292`) and `npm -w apps/web run build` green
 
+**Slice 2 complete.**
+
+- Added `apps/web/src/lib/analyzer/research-extraction-stage.ts`
+- Moved the following logic and schemas out of `claimboundary-pipeline.ts`:
+  - `classifyRelevance`
+  - `extractResearchEvidence`
+  - `assessEvidenceApplicability` (Fix 3 jurisdiction filtering)
+  - `assessScopeQuality`
+  - `assessEvidenceBalance`
+- Added dedicated unit tests in `research-extraction-stage.test.ts`.
+- Corrected import wiring to use isolated modules (`./llm`, `./debug`).
+- Verification: `npm run build` green, Unit tests green.
+
 **What remains intentionally in the orchestrator:**
-- `researchEvidence`
-- `runResearchIteration`
-- preliminary seeding / source reconciliation
-- all query generation, acquisition, extraction, and applicability logic
+- `researchEvidence` (main loop)
+- `runResearchIteration` (loop step orchestrator)
+- `generateResearchQueries` (Slice 4 target)
+- `fetchSources` (Slice 3 target)
 
 This keeps Slice 1 structural-only and avoids moving any async loop or LLM/search behavior before the first Stage 2 extraction proves stable.
 
