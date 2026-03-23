@@ -64,16 +64,20 @@ These two steps alone account for **7.2 minutes** — previously hidden in "post
 - **SR prefetch parallelism**: Currently evaluates domains sequentially. Parallel domain evaluation could cut 3 min to ~30-60s.
 - **SR caching**: Domains evaluated in prior runs don't need re-evaluation. Cache is 90 days but may not be populated yet.
 
-### A. Verdict debate is 57% of wall-clock time — all sequential
+### A. Verdict debate is 57% of wall-clock time
 
-The debate processes claims **one at a time**:
+> **⚠ STALE (2026-03-23):** The per-claim sequential loop described below no longer exists. The current Stage 4 (`verdict-stage.ts`) already batches all claims per debate step: one `advocateVerdict` call covers all claims, Steps 2+3 (`selfConsistencyCheck` + `adversarialChallenge`) run in parallel via `Promise.all`, and `validateVerdicts` runs grounding + direction checks in parallel. The remaining wall-clock cost is the inherent latency of 5 sequential LLM call steps (advocate → SC+challenger → reconciler → validation), not per-claim serialization. See P1-A2 retirement note in §3.
+
+~~The debate processes claims **one at a time**:~~
 ```
-AC_01: advocate → SC1 → SC2 → challenger → reconciler → grounding → direction
-AC_02: advocate → SC1 → SC2 → challenger → reconciler → grounding → direction
-AC_03: advocate → SC1 → SC2 → challenger → reconciler → grounding → direction
+STALE — actual architecture is batched per step, not per claim:
+  Step 1: advocateVerdict(ALL claims)        — 1 LLM call
+  Steps 2+3: Promise.all([SC, challenger])   — 2 parallel calls
+  Step 4: reconcileVerdicts(ALL claims)      — 1 LLM call
+  Step 5: Promise.all([grounding, direction])— 2 parallel calls
 ```
 
-For 3 claims: 21 sequential LLM calls (~7 calls × ~30s each = ~210s per claim, ~630s total). Claims are completely independent during debate — there's no data dependency between AC_01's verdict and AC_02's verdict.
+~~For 3 claims: 21 sequential LLM calls (~7 calls × ~30s each = ~210s per claim, ~630s total). Claims are completely independent during debate — there's no data dependency between AC_01's verdict and AC_02's verdict.~~
 
 ### B. Preliminary search is fully sequential — no parallelism
 
@@ -113,13 +117,13 @@ Preliminary-fetched sources are seeded as evidence items but NOT added to `state
 | # | Fix | Time Save | Cost Save | Risk | Effort |
 |---|-----|-----------|-----------|------|--------|
 | **P1-A** | **Clustering → Haiku** — single largest time-save per effort. One Sonnet call currently takes 4.2 min for 100+ scopes. Haiku should complete in 60-90s. UCM config change (`getModelForTask` task key for clustering). | **-3 min per analysis** | **-$0.04** | Medium — boundary quality may change | Low (UCM config) |
-| **P1-A2** | **Parallelize verdict debate across claims** — change `for...of` loop in `validateVerdicts` to `Promise.all` with concurrency limit. Claims are independent during debate. | **-40% of post-research** (~4 min for 3 claims) | None | Low — claims don't interact during debate | Medium |
+| **P1-A2** | ~~**Parallelize verdict debate across claims**~~ **RETIRED (STALE, 2026-03-23):** The documented `for...of` → `Promise.all` concept no longer matches the code. Stage 4 already batches all claims per debate step (one LLM call per step, not per claim), Steps 2+3 already run in parallel, and validation checks already run in parallel. The per-claim sequential loop this item targeted does not exist. | ~~-40% of post-research~~ N/A | N/A | N/A | N/A |
 | **P1-B** | **Parallelize preliminary search** — run claims concurrently, use `Promise.all` for source fetches within each query (like `fetchSources` already does for main research) | **-60% of preliminary** (~50s) | None | Low — claims/queries are independent | Medium |
 | **P1-C** | **Record preliminary URLs in `state.sources`** — prevent duplicate fetches during main research | **-10-30s per duplicate URL** | **-$0.002/duplicate** (saved LLM extraction) | Very low — additive change | Low |
 | **P1-D** | **Wire `parallelExtractionLimit` config to `fetchSources`** — replace hardcoded `FETCH_CONCURRENCY = 3` with UCM value | Tunable | None | Very low — existing config field | Low |
 | **P1-E** | **Align fetch timeouts** — use `sourceFetchTimeoutMs` from pipeline config for preliminary search too | Consistency | None | Very low — config alignment | Low |
 
-**Phase 1 estimated total impact: -5 to -8 minutes per analysis (30-40% reduction).**
+**Phase 1 estimated total impact (revised 2026-03-23):** With P1-A2 retired as stale (the batched debate architecture already exists), the remaining Phase 1 items are P1-A (clustering model downgrade, quality-affecting, deferred), P1-B (preliminary search parallelism, deferred), and the completed low-risk subset (P1-C, P1-D, P1-E). The original -5 to -8 minute estimate included P1-A2's projected savings; actual remaining savings depend on P1-A and P1-B if they are later approved.
 
 ### Phase 2 — Medium Risk, Medium Impact (LLM call reduction)
 
@@ -146,8 +150,10 @@ Preliminary-fetched sources are seeded as evidence items but NOT added to `state
 
 ```
 Phase 1 (structural parallelism — no quality risk):
-  P1-C → P1-D → P1-E → P1-B → P1-A
-  (cheapest/safest fixes first, biggest impact last)
+  P1-C → P1-D → P1-E   (COMPLETE as of 2026-03-22)
+  P1-B                    (deferred — preliminary search parallelism)
+  P1-A                    (deferred — clustering model downgrade, quality-affecting)
+  P1-A2                   (RETIRED — stale, batched architecture already exists)
 
 Phase 2 (LLM call reduction — needs measurement first):
   P2-B measurement → P2-A experiment → P2-C implementation
@@ -156,15 +162,15 @@ Phase 3 (config cleanup — opportunistic):
   P3-A → P3-D → P3-B → P3-C
 ```
 
-### Why P1-A is last in Phase 1 despite being highest impact
+### Phase 1 status summary (updated 2026-03-23)
 
-Parallelizing the verdict debate requires careful handling of:
-- Shared `state.warnings` array (needs synchronized access)
-- `onEvent` progress reporting (concurrent events could interleave)
-- LLM rate limits (3 parallel Sonnet calls may hit provider throttling)
-- Error handling (one claim's verdict failure shouldn't crash others)
+**Completed:** P1-C, P1-D, P1-E (low-risk structural wins).
 
-The simpler fixes (P1-B through P1-E) can be shipped and validated first.
+**Retired:** P1-A2 — the per-claim sequential debate loop it targeted no longer exists. The current Stage 4 already batches all claims per debate step, runs Steps 2+3 in parallel, and runs validation checks in parallel. No implementation action remains.
+
+**Deferred:** P1-B (preliminary search parallelism — optional, low priority). P1-A (clustering → Haiku model downgrade — quality-affecting, needs separate validation to confirm boundary quality is preserved; not a structural parallelism fix).
+
+Phase 1 structural wins are effectively complete. P1-A is a separate future quality experiment, not a parallelism change.
 
 ---
 
