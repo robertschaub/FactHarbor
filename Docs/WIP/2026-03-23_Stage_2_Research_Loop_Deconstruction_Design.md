@@ -1,6 +1,6 @@
 # Design: Stage 2 Research Loop Deconstruction
 **Date:** 2026-03-23
-**Status:** IN PROGRESS — Slices 1, 2, 3 & 4 complete (State, Extraction, Acquisition, and Queries extracted)
+**Status:** COMPLETE — Stage 2 fully deconstructed into modular components.
 **Author:** Senior Architect (Gemini 3.0 Pro)
 **Context:** Final phase of WS-2 (ClaimBoundary Pipeline decomposition).
 
@@ -111,12 +111,17 @@ Given the size (~1000 lines) and complexity of Stage 2, a single file `research-
   - `GenerateQueriesOutputSchema`
 - Verification: `npm run build` green, Unit tests green.
 
-**What remains intentionally in the orchestrator:**
-- `researchEvidence` (main loop)
-- `runResearchIteration` (loop step orchestrator)
-- `seedEvidenceFromPreliminarySearch` (Slice 5 target)
+**Slice 5 complete.**
 
-This keeps Slice 1 structural-only and avoids moving any async loop or LLM/search behavior before the first Stage 2 extraction proves stable.
+- Updated `apps/web/src/lib/analyzer/research-orchestrator.ts` to include the full research loop.
+- Moved the remaining orchestration logic out of `claimboundary-pipeline.ts`:
+  - `researchEvidence` (main iterative loop)
+  - `runResearchIteration` (single loop step)
+  - `seedEvidenceFromPreliminarySearch` (Stage 1 -> Stage 2 bridge)
+- All Stage 2 functions are now modularized.
+- Verification: `npm run build` green, Unit tests green.
+
+**Final Result:** `claimboundary-pipeline.ts` is now a slim orchestrator (~900 lines), while all Stage 2 complexity resides in modular, testable files.
 
 ---
 
