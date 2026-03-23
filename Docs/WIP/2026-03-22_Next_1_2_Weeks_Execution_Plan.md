@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; five low-risk WS-2 slices and WS-4 search provider consolidation complete; Phase 2 v3 design brief has been reviewed and tightened
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; five low-risk WS-2 slices and WS-4 search provider consolidation complete; Phase 2 v3 design brief reviewed/tightened; P1-A2 retired as stale (2026-03-23)
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -264,7 +264,9 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
 - Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
 - WS-4 search provider clone consolidation is complete: extracted shared utilities into `search-provider-utils.ts`, reducing 181 lines of clone boilerplate across 7 provider files
-- Next execution item: P1-A2 (verdict debate parallelization); `P1-B` stays optional and deferred
+- **P1-A2 retired (2026-03-23):** The per-claim sequential debate loop P1-A2 targeted no longer exists; Stage 4 already batches all claims per step, Steps 2+3 run in parallel, and validation checks run in parallel. See updated optimization plan for details.
+- WS-3 evaluate-source route decomposition is complete: `route.ts` decomposed from 2,959 to 281 lines across 5 new modules; all 8 mutable module-level globals eliminated via `SrEvalConfig`
+- Next structural implementation step: to be decided. `P1-B` stays optional and deferred. `P1-A` (clustering model downgrade) remains a separate future quality experiment.
 
 ---
 

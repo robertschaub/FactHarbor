@@ -10,52 +10,10 @@
 import { describe, expect, it } from "vitest";
 
 // ============================================================================
-// BRAND VARIANT GENERATION (copied from route.ts for testing)
-// In production, these could be extracted to a shared utility
+// BRAND VARIANT GENERATION (imported from extracted module)
 // ============================================================================
 
-function generateBrandVariants(brand: string): string[] {
-  const variants = new Set<string>();
-  const b = (brand ?? "").toLowerCase().trim();
-  if (!b || b.length < 3) return [];
-
-  variants.add(b);
-
-  // Hyphen variants
-  if (b.includes("-")) {
-    const parts = b.split("-").filter(Boolean);
-    if (parts.length >= 2) {
-      variants.add(parts.join(" "));
-      variants.add(parts.join(""));
-      for (const p of parts) {
-        if (p.length >= 4) variants.add(p);
-      }
-    }
-  }
-
-  // CamelCase-like detection
-  const camelSplit = b.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
-  if (camelSplit !== b && camelSplit.includes(" ")) {
-    variants.add(camelSplit);
-    variants.add(camelSplit.replace(/\s+/g, ""));
-  }
-
-  // Common suffix stripping
-  const suffixes = ["news", "net", "media", "times", "post", "daily", "tribune", "herald"];
-  for (const suffix of suffixes) {
-    if (b.endsWith(suffix) && b.length > suffix.length + 2) {
-      const base = b.slice(0, -suffix.length);
-      if (base.length >= 3) {
-        variants.add(base);
-        variants.add(`${base} ${suffix}`);
-      }
-    }
-  }
-
-  // Filter stopwords
-  const stopwords = new Set(["the", "and", "for", "www", "com", "org", "net"]);
-  return [...variants].filter((v) => v.length >= 3 && !stopwords.has(v));
-}
+import { generateBrandVariants } from "@/lib/source-reliability/sr-eval-evidence-pack";
 
 describe("generateBrandVariants", () => {
   describe("hyphen handling", () => {
@@ -196,11 +154,11 @@ describe("Problem Case: Propaganda Sources", () => {
     // Given: LLM classifies as propaganda_outlet with score 0.37
     const llmScore = 0.37;
     const sourceType = "propaganda_outlet";
-    
+
     // When: Post-processing applies cap
     const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
-    
+
     // Then: Score should be capped to 0.14
     expect(finalScore).toBe(0.14);
     expect(scoreToFactualRating(finalScore)).toBe("highly_unreliable");
@@ -210,11 +168,11 @@ describe("Problem Case: Propaganda Sources", () => {
     // Given: LLM classifies as state_controlled_media with score 0.55
     const llmScore = 0.55;
     const sourceType = "state_controlled_media";
-    
+
     // When: Post-processing applies cap
     const cap = SOURCE_TYPE_EXPECTED_CAPS[sourceType];
     const finalScore = cap !== undefined ? Math.min(llmScore, cap) : llmScore;
-    
+
     // Then: Score should be capped to 0.42
     expect(finalScore).toBe(0.42);
     expect(scoreToFactualRating(finalScore)).toBe("leaning_unreliable");

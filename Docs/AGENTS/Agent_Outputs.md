@@ -1,6 +1,31 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | WS-3 Evaluate-Source Route Decomposition
+**Task:** Decompose `evaluate-source/route.ts` (2,959 lines) into 5 modules, eliminating 8 request-unsafe mutable globals.
+**Files touched:** `route.ts` (2,959→281 lines), 5 new modules in `apps/web/src/lib/source-reliability/`: `sr-eval-types.ts` (210), `sr-eval-prompts.ts` (747), `sr-eval-evidence-pack.ts` (901), `sr-eval-enrichment.ts` (266), `sr-eval-engine.ts` (676). Test `evaluator-logic.test.ts` updated to import from new modules.
+**Key decisions:** Replaced 8 `let` module-level variables with a single `SrEvalConfig` interface built per-request in POST(). `rateLimitState` kept in route.ts (intentionally cross-request). `languageDetectionCache` and `translationCache` kept as module-level Maps (safe caches). `buildSrSearchConfigFromEvalSearch` and `RequestSchema` kept in route.ts (config construction / POST-only). `normalizeEvidenceQualityAssessmentConfig` now takes a default config param for testability.
+**Open items:** None. WS-3 complete.
+**Warnings:** The prompts module (747 lines) is the largest new file — mostly large string templates. Not a decomposition concern, just large by nature.
+**For next agent:** Evaluate-source is now modular. Route.ts is a thin handler: auth → parse → config → rate limit → evaluate. All 8 mutable globals are eliminated. `SrEvalConfig` is the config threading mechanism.
+**Learnings:** no
+
+---
+### 2026-03-23 | Technical Writer | Claude Code (Opus 4.6) | Retire P1-A2 and Fix Optimization Plan/Code Mismatch
+**Task:** Update optimization documentation to retire P1-A2 as stale and correct the plan/code mismatch in Stage 4 architecture description.
+**Files touched:** `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- P1-A2 marked RETIRED (STALE): the `for...of` per-claim loop it targeted does not exist — Stage 4 already batches all claims per debate step, Steps 2+3 already run via `Promise.all`, and validation checks already run in parallel.
+- Fixed the §4 heading/body mismatch that conflated P1-A (clustering → Haiku) with P1-A2 (verdict debate parallelization). Replaced with a clear Phase 1 status summary.
+- Revised Phase 1 estimated impact to reflect that the original savings projection included P1-A2.
+- Updated execution plan to remove P1-A2 as next step and point to WS-3 instead.
+- Clarified "what remains": Phase 1 structural wins complete, P1-B deferred, P1-A is a separate future quality experiment.
+**Open items:** None — documentation-only change.
+**Warnings:** P1-A (clustering → Haiku) is NOT retired. It remains a valid future experiment but is quality-affecting and needs separate validation. Do not conflate P1-A retirement with P1-A2 retirement.
+**For next agent:** The optimization plan now accurately reflects the current Stage 4 architecture. No future agent should treat P1-A2 as a pending implementation item. If further Stage 4 speed optimization is needed, it would require a fresh analysis of the batched architecture's bottlenecks, not the retired per-claim parallelization concept.
+**Learnings:** no
+
+---
 ### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | WS-4 Search Provider Clone Consolidation
 **Task:** Execute WS-4: extract shared boilerplate from 7 search provider files into `search-provider-utils.ts`.
 **Files touched:** `apps/web/src/lib/search-provider-utils.ts` (new), `search-google-cse.ts`, `search-serper.ts`, `search-serpapi.ts`, `search-brave.ts`, `search-wikipedia.ts`, `search-semanticscholar.ts`, `search-factcheck-api.ts` (all modified).
