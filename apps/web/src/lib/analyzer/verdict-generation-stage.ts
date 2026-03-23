@@ -31,7 +31,7 @@ import {
   DEFAULT_VERDICT_STAGE_CONFIG,
 } from "./verdict-stage";
 
-import { generateText } from "ai";
+import { APICallError, generateText } from "ai";
 import {
   getModelForTask,
   getStructuredOutputProviderOptions,
@@ -40,9 +40,13 @@ import {
 } from "./llm";
 import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
+import {
+  runWithLlmProviderGuard,
+} from "./llm-provider-guard";
 
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, CalcConfig } from "@/lib/config-schemas";
+import { classifyError } from "@/lib/error-classification";
 
 import { recordLLMCall } from "./metrics-integration";
 
@@ -258,6 +262,47 @@ export function createProductionLLMCall(
       return err;
     };
 
+    const maybeAppendProviderErrorWarning = (
+      error: unknown,
+      provider: string,
+      modelName: string,
+      reason: string,
+    ) => {
+      const classified = classifyError(error);
+      if (classified.provider !== "llm") return;
+
+      const apiCallHeaders = APICallError.isInstance(error) ? error.responseHeaders : undefined;
+      const apiRequestId =
+        apiCallHeaders?.["request-id"] ??
+        apiCallHeaders?.["x-request-id"] ??
+        null;
+      const retryAfter =
+        apiCallHeaders?.["retry-after-ms"] ??
+        apiCallHeaders?.["retry-after"] ??
+        null;
+
+      warnings?.push({
+        type: "llm_provider_error",
+        severity: "warning",
+        message: `Stage 4 LLM provider failure for "${promptKey}" via "${provider}/${modelName}": ${classified.message}`,
+        details: {
+          stage,
+          promptKey,
+          provider,
+          model: modelName,
+          category: classified.category,
+          reason,
+          statusCode: APICallError.isInstance(error) ? error.statusCode : undefined,
+          requestId: apiRequestId,
+          retryAfter,
+          anthropicRequestsRemaining: apiCallHeaders?.["anthropic-ratelimit-requests-remaining"],
+          anthropicTokensRemaining: apiCallHeaders?.["anthropic-ratelimit-tokens-remaining"],
+          openaiRequestsRemaining: apiCallHeaders?.["x-ratelimit-remaining-requests"],
+          openaiTokensRemaining: apiCallHeaders?.["x-ratelimit-remaining-tokens"],
+        },
+      });
+    };
+
     const isOpenAiTpmError = (error: unknown): boolean => {
       const msg = error instanceof Error ? error.message : String(error ?? "");
       const lower = msg.toLowerCase();
@@ -400,13 +445,28 @@ export function createProductionLLMCall(
         ],
         temperature: options?.temperature ?? 0.0,
         maxOutputTokens: 16384, // Phase 2.3: prevent output truncation on high-evidence verdicts (3 claims × 6 boundaries)
+        // Keep provider retries in the AI SDK, which already honors retry-after /
+        // retry-after-ms response headers on retryable API call failures.
+        maxRetries: 2,
         providerOptions: getStructuredOutputProviderOptions(activeModel.provider),
       });
     };
 
+    const callModelWithGuard = async (activeModel: typeof model): Promise<any> => {
+      // Note: verdict-stage.ts already has inner retry loops for self-consistency and
+      // validation batches, and the AI SDK adds retry-after-aware retries for
+      // retryable APICallError responses. Keep this guard focused on concurrency
+      // shaping only; adding another custom retry layer here would multiply attempts.
+      return runWithLlmProviderGuard(
+        activeModel.provider as LLMProviderType,
+        activeModel.modelName,
+        () => callModel(activeModel),
+      );
+    };
+
     let attemptModel = model;
     try {
-      result = await callModel(attemptModel);
+      result = await callModelWithGuard(attemptModel);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorType = error instanceof Error ? error.name : undefined;
@@ -441,7 +501,7 @@ export function createProductionLLMCall(
         attemptModel = fallback;
 
         try {
-          result = await callModel(attemptModel);
+          result = await callModelWithGuard(attemptModel);
         } catch (retryError) {
           const retryMessage = retryError instanceof Error ? retryError.message : String(retryError);
           const retryErrorType = retryError instanceof Error ? retryError.name : undefined;
@@ -462,6 +522,13 @@ export function createProductionLLMCall(
             debateRole: options?.callContext?.debateRole,
           });
 
+          maybeAppendProviderErrorWarning(
+            retryError,
+            attemptModel.provider,
+            attemptModel.modelName,
+            "tpm_guard_retry_failed",
+          );
+
           throw toError(
             `Stage 4: LLM call failed for "${promptKey}"`,
             {
@@ -476,6 +543,12 @@ export function createProductionLLMCall(
           );
         }
       } else {
+        maybeAppendProviderErrorWarning(
+          error,
+          attemptModel.provider,
+          attemptModel.modelName,
+          "llm_call_failed",
+        );
         throw toError(
           `Stage 4: LLM call failed for "${promptKey}"`,
           {

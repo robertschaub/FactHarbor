@@ -680,9 +680,13 @@ vi.mock("@/lib/config-snapshots", () => ({
   })),
 }));
 
-vi.mock("@/lib/web-search", () => ({
-  searchWebWithProvider: vi.fn(),
-}));
+vi.mock("@/lib/web-search", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/web-search")>();
+  return {
+    ...actual,
+    searchWebWithProvider: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/analyzer/pipeline-utils", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/analyzer/pipeline-utils")>();
@@ -3861,6 +3865,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
   it("should throw Stage4LLMCallError with structured diagnostics on unrecovered provider failure", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockReset();
     mockGenerateText.mockRejectedValue(new Error("provider unavailable"));
 
     const { getModelForTask: mockGetModel } = await import("@/lib/analyzer/llm");
@@ -3872,18 +3877,18 @@ describe("Stage 4: createProductionLLMCall", () => {
 
     const llmCall = createProductionLLMCall({ llmProvider: "anthropic" } as any);
 
-    try {
-      await llmCall("VERDICT_ADVOCATE", { userMessage: "x" }, { tier: "sonnet" });
-      throw new Error("expected failure");
-    } catch (err) {
-      const e = err as Error & { details?: Record<string, unknown> };
-      expect(e.name).toBe("Stage4LLMCallError");
-      expect(e.message).toContain("Stage 4: LLM call failed");
-      expect(e.details?.stage).toBe("stage4_verdict");
-      expect(e.details?.promptKey).toBe("VERDICT_ADVOCATE");
-      expect(e.details?.provider).toBe("anthropic");
-      expect(e.details?.model).toBe("claude-sonnet-4-5-20250929");
-    }
+    await expect(
+      llmCall("VERDICT_ADVOCATE", { userMessage: "x" }, { tier: "sonnet" }),
+    ).rejects.toMatchObject({
+      name: "Stage4LLMCallError",
+      message: expect.stringContaining("Stage 4: LLM call failed"),
+      details: expect.objectContaining({
+        stage: "stage4_verdict",
+        promptKey: "VERDICT_ADVOCATE",
+        provider: "anthropic",
+        model: "claude-sonnet-4-5-20250929",
+      }),
+    });
   });
 
   it("should not emit warning when provider override has valid credentials", async () => {
