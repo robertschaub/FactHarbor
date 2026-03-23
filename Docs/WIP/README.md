@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-23
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, **WS-2 (Full Pipeline Decomposition) is complete**, WS-3 evaluate-source decomposition, and WS-4 search provider consolidation are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` retired as stale (Stage 4 already batches), and a Phase 2 v3 design-only architecture brief has been reviewed and tightened for later use.
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, **WS-2 (Full Pipeline Decomposition) is complete**, WS-3 evaluate-source decomposition, and WS-4 search provider consolidation are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` retired as stale (Stage 4 already batches), and the repository is now at a **post-WS-2 validation gate** before any new optimization track begins.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, **WS-2 (Full Pipeline Decomposition) is complete (all 5 stages modularized)**, the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` (verdict debate parallelization) has been retired as stale because the current Stage 4 already batches all claims per step, and the Phase 2 v3 work now exists as a reviewed design-only architecture brief rather than an active implementation track; optional `P1-B` and quality-affecting `P1-A` remain deferred.
+**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, **WS-2 (Full Pipeline Decomposition) is complete (all 5 stages modularized)**, the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` (verdict debate parallelization) has been retired as stale because the current Stage 4 already batches all claims per step, and the next decision is now **validation first, then at most isolated `P1-A`**, not a direct jump into the broader optimization track. `P1-B` remains deferred and separate.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -20,10 +20,16 @@ For completed work, historical documents, and reference materials, see:
 ## Active Quality Plans (governing current work)
 
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; five WS-2 slices + WS-4 complete; Phase 2 v3 brief reviewed/tightened; `P1-A2` retired as stale
+**Status:** Complete — closed execution record; successor next-step decisions moved to post-WS-2 decision point
 - **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 - **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
-- **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.
+- **Role:** This is now the **completed execution record** for the Mar-22 window.
+
+### Post-WS-2 Decision Point (2026-03-23)
+**Status:** Reviewed — validation gate first, then isolated `P1-A` if clean
+- **Document:** [2026-03-23_Post_WS2_Decision_Point.md](2026-03-23_Post_WS2_Decision_Point.md)
+- **Scope:** Chooses the next work window after the full refactor wave. Current recommendation is: deploy/validate first, then only a single quality-affecting optimization experiment (`P1-A`) if the validation gate passes.
+- **Role:** This is the **current next-step decision document**.
 
 ### Plastik Phase 2 v3 Architecture Brief (2026-03-22)
 **Status:** Design-only — reviewed and tightened; no implementation approved

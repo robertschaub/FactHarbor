@@ -1,6 +1,6 @@
 # Decision Point: Post-WS-2 Execution Order
 **Date:** 2026-03-23
-**Status:** PROPOSAL
+**Status:** REVIEWED — validation gate first, then isolated optimization experiment
 **Author:** Senior Architect (Gemini 3.0 Pro)
 
 ---
@@ -20,8 +20,8 @@ Focus on solving the Plastik family input-neutrality problem (~47pp spread) usin
 *   **Benefit:** Addresses the primary known limitation of the current Alpha.
 
 ### Option B: Open the "Optimization Track" (Speed & Cost)
-Implement the deferred items from the Optimization Plan (P1-A Clustering Model Downgrade, P1-B Preliminary Parallelization).
-*   **Risk:** Low-Medium. Requires careful quality monitoring to ensure model downgrades don't break verdicts.
+Implement deferred optimization items from the Optimization Plan, but only **after** a clean post-refactor validation gate.
+*   **Risk:** Low-Medium. `P1-A` is quality-affecting and must not be mixed with unvalidated post-refactor behavior.
 *   **Benefit:** Significant reduction in token costs and job latency.
 
 ### Option C: UI/UX & Frontend Hardening
@@ -32,11 +32,27 @@ Extract and modularize the frontend logic in `apps/web` (Dashboard, Report view)
 ---
 
 ## 3. Recommendation
-I recommend **Option B (Optimization)** for the next 2-3 days, specifically **P1-A (Clustering Model Downgrade)** and **P1-B (Parallel Preliminary Search)**. 
+Do **not** jump directly into Option B.
 
-**Rationale:** The new modular architecture is now ready to handle model-per-stage overrides cleanly. Cost reduction is a prerequisite for high-volume testing of future quality improvements (Option A).
+The correct next sequence is:
+1. **Validation gate first** on the current deployed `main`
+2. If validation is clean: run **P1-A** (`clustering -> Haiku`) as a single isolated experiment
+3. Re-evaluate quality/cost impact
+4. Decide on **P1-B** separately afterward
+
+**Rationale:** The refactor wave was large enough that quality-affecting optimization must not be introduced without a fresh clean baseline. A single Hydrogen validation run is enough to confirm that current behavior is intact before opening the optimization track.
 
 ---
 
 ## 4. Next Step
-Confirm the preferred track. If Option B is chosen, I will prepare the detailed implementation slice for P1-A/B.
+Immediate next step:
+
+1. Deploy current `main`
+2. Run a Hydrogen validation job on the deployed stack
+3. Record `truth %`, `confidence`, `verdict`, and notable warnings
+4. If the run is clean, prepare **P1-A only** as the next experiment
+
+**Not approved yet:**
+- bundling `P1-A` and `P1-B` together
+- reopening the Plastik quality track
+- opening a new frontend/UI workstream before the validation gate

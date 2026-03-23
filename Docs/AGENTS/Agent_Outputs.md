@@ -1335,3 +1335,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Next planned step is a fresh prioritization decision point. Refactoring track is materially complete for the current Alpha horizon.
 **Warnings:** One fragile sufficiency test in `claimboundary-pipeline.test.ts` remains skipped to maintain CI stability. Local Hydrogen smoke test verified technical integrity of the modularized stack.
 **Learnings:** no
+
+---
+### 2026-03-23 | Senior Developer | Codex (GPT-5) | Post-WS-2 Decision Docs Alignment
+**Task:** Align the governing WIP docs with the reviewed post-WS-2 decision: validate first, then only consider isolated `P1-A`.
+**Files touched:** `Docs/WIP/2026-03-23_Post_WS2_Decision_Point.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the decision point so it no longer recommends jumping straight into broad Option B. The current sequence is now explicit: deploy/validate first, then if clean prepare `P1-A` as a single experiment, and keep `P1-B` deferred and separate. Marked the Mar-22 plan as complete and repositioned it as a closed execution record rather than the active next-step plan.
+**Open items:** The actual Hydrogen/VPS validation result still determines whether `P1-A` should be opened. Until that gate passes, no new optimization work should start.
+**Warnings:** `P1-A` remains quality-affecting. It must not be bundled with `P1-B`, and it must not start before the validation gate is complete.
+**For next agent:** Use `Docs/WIP/2026-03-23_Post_WS2_Decision_Point.md` as the current next-step decision document, not the Mar-22 plan. The correct sequence is now `validate -> P1-A -> evaluate`.
+**Learnings:** no

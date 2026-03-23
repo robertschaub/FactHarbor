@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; five low-risk WS-2 slices and WS-4 search provider consolidation complete; Phase 2 v3 design brief reviewed/tightened; P1-A2 retired as stale (2026-03-23)
+**Status:** Complete — priorities 0-5 are materially finished; this plan is now closed and superseded for next-step decisions by `2026-03-23_Post_WS2_Decision_Point.md`
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -9,7 +9,10 @@
 
 ## Document Role
 
-This document is the **governing short-horizon execution plan** for the next 1-2 weeks.
+This document was the **governing short-horizon execution plan** for the Mar-22 work window.
+
+It is now a completed execution record. For the next action after WS-2 stabilization, use:
+- `2026-03-23_Post_WS2_Decision_Point.md`
 
 It is intentionally different from these two source plans:
 - `2026-03-18_Refactoring_Plan_Code_Cleanup.md`
@@ -318,6 +321,24 @@ This plan is ready for review on these decision points:
 1. Is **parking Plastik Phase 2** now the right product tradeoff, or should v3 move up in priority?
 2. Should **config provenance repair** stay ahead of the refactor plan?
 3. Is the **WS-1 -> incremental WS-2 slices -> low-risk speed plan** order the right sequence?
+
+---
+
+## 8. Close-Out Status (2026-03-23)
+
+This plan is now materially complete:
+- Plastik Phase 2 remains parked as a known limitation
+- config provenance repair is complete
+- WS-1 is complete
+- WS-2, including full Stage 2 research-loop deconstruction, is complete
+- WS-3 and WS-4 are complete
+- low-risk optimization subset `P1-C/D/E` is complete
+- `P1-A2` is retired as stale
+
+The next step is **not** automatic implementation. The current decision line is:
+- validate the post-refactor stack first
+- then, only if clean, prepare `P1-A` as an isolated experiment
+- keep `P1-B` separate and deferred until after that evaluation
 4. Should any part of the Speed/Cost plan be moved earlier or explicitly deferred?
 
 ---
