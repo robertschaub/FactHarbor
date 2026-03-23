@@ -32,23 +32,7 @@ Multi agent collaboration shall be possible all the time, so that another agent 
 ---
 
 ## Tasks Pending:
----
-As Senior Developer and Interaction Designer, 
-The HTML reports are much nicer than the screen reports. 
-Change the screen reports to be visually structured as the HTML reports."
-Specifics:
-Keep "FactHarbor Report" title and toolbars
-Support system default color mode (bright + dark)
-Use current UI verdict coloring
-At verdict box: no huge % font, no small graphic indicator
-Merge [Summary] and [Sources] into one [Report] tab (like HTML)
-Only show [Json] for admins
-For non-admins, hide [Events] when job successfully completed
-Hide [Report] when it's the only tab
-Long texts with [Show More] boxes
-Support cross-links and back button
-Keep "Background", "Analysis Notes", "Developer diagnostics"
-Make sure everything show nicely also on mobile phones
+
 ---
 As Senior Developer; 
 When the user reads a specific report, support the user to navigate between the elements in the UI, so that all items that are logically linked can be navigated. Cross links between items in "Summary" and "Sources" tabs shall also be supported. Maybe to support this well some layout changes would be needed - propose if needed.
@@ -68,6 +52,25 @@ Report everything into .md files and make the ready for review.
 As Senior Developer and UCM Expert,
 Investigate issues with UCM and fix them, so that UCM does not anymore contain unstructured nested items that cannot really be configured, like the configuration shown in the attachement. Make all UCM elements nicely editable for a human administrator. First investigate find potential issues (in  both pipelines ant in all UCM items), investigate potential solutions and make proposals, for things where a second opinion is desired, automatically ask an other AI Agent Expert as Claude Opus 4.6. To make final decisions Guide the human caption by promping him to select from alternatives.
 All implementation work shall be made on a new worktree.
+---
+As Lead Arcchitect,
+Consolidate all documentation in WIP.
+To do so, request assistance from other agents to investigate implementation status for specific topics.
+
+Make sure all still open topics are well described, well structured and mentioned in the backlog. 
+Update and clean up the backlog and status files.
+
+Keep any content inside any document that either:
+-documents current implementation and intent, current status, future plans and ideas
+-current or envisioned future organisational aspects, future reccomended actions.
+-discusses future implementation, intent and plans
+-decisions important to remember (brief summaries are sufficient)
+-past analysis reports that are still relevant for the future
+In other words: keep anything that reflects present, looks into the future or is still relevant for the future.
+
+Move any other (=historical) content  that does not fullfil any of the mentioned criteria to keep into the Archive folder.
+Pages that contain both current and historical content shall be splitted and the historical part shall be moved into a file with _arch suffix.
+
 ---
 
 Cleanup all documentation (.md and .xWiki):
@@ -138,6 +141,8 @@ Cleanup and reorganize documentation:
 ---
 
 ## Tasks in Progress:
+---
+Make sure all statements with direct touchpoints with ETH/Uni/Tobias' papares are well balanced (not over-stated and not under-stated).
 
 ---
 
