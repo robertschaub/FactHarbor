@@ -41,7 +41,7 @@ export function requireApiKey(
     return null;
   }
 
-  console.log(`[Search] ${providerName}: API key configured (length: ${key.length})`);
+  console.log(`[Search] ${providerName}: API key configured`);
   return key;
 }
 
@@ -55,7 +55,7 @@ export function warnIfMissingApiKey(providerName: string, envVarName: string): s
     console.warn(`[Search] ${providerName}: ⚠️ API key not configured. Using shared rate pool (may fail with 429).`);
     return null;
   }
-  console.log(`[Search] ${providerName}: API key configured (length: ${key.length})`);
+  console.log(`[Search] ${providerName}: API key configured`);
   return key;
 }
 

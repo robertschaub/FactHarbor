@@ -19,6 +19,7 @@ export default defineConfig({
       "test/unit/lib/analyzer/adversarial-context-leak.test.ts",
       // npm run test:cb-integration — Full CB pipeline with real LLM calls
       "test/integration/claimboundary-integration.test.ts",
+      "test/integration/hydrogen-smoke.test.ts",
       // npm run test:calibration — Framing symmetry calibration (full pipeline x2 per pair)
       "test/calibration/framing-symmetry.test.ts",
     ]
