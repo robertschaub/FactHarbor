@@ -1,4 +1,5 @@
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
 
 type GoogleCseItem = {
   title?: string;
@@ -60,22 +61,8 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
 
     if (!res.ok) {
       console.error(`[Search] Google CSE: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      let errorBody = "";
-      try {
-        errorBody = await res.text();
-        console.error(`[Search] Google CSE: Error response body:`, errorBody.substring(0, 500));
-      } catch (e) {
-        // Ignore parse errors
-      }
-      // Throw fatal error for rate limits and quota exhaustion so callers can detect it
-      if (res.status === 429 || res.status === 403 || errorBody.includes("quota") || errorBody.includes("limit exceeded")) {
-        throw new SearchProviderError(
-          "Google-CSE",
-          res.status,
-          true,
-          `Google CSE HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
-        );
-      }
+      const errorBody = await extractErrorBody("Google-CSE", res);
+      classifyHttpError("Google-CSE", res.status, errorBody, ["quota", "limit exceeded"]);
       return [];
     }
 
@@ -115,15 +102,6 @@ export async function searchGoogleCse(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Google CSE: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    // Re-throw SearchProviderError so callers can detect fatal provider failures
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] Google CSE: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] Google CSE: Request timed out after ${DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("Google-CSE", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }

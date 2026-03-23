@@ -1,7 +1,7 @@
 # Execution Plan — Next 1-2 Weeks
 
 **Date:** 2026-03-22
-**Status:** In progress — Priorities 0-5 complete except optional P1-B; five low-risk WS-2 slices are complete; Phase 2 v3 design brief has been reviewed and tightened
+**Status:** In progress — Priorities 0-5 complete except optional P1-B; five low-risk WS-2 slices and WS-4 search provider consolidation complete; Phase 2 v3 design brief has been reviewed and tightened
 **Author:** Codex (GPT-5)
 **Scope:** Practical execution order for the next 1-2 weeks after the Plastik Stage 2 investigation and failed Phase 2 v1/v2 experiments
 
@@ -263,7 +263,8 @@ This plan does **not** assume that Plastik Phase 2 v3 must be implemented immedi
   - isolated Stage 1 claim-extraction extraction (`claim-extraction-stage.ts`)
 - Step 2 is complete for the selected low-risk subset (`P1-C`, `P1-D`, `P1-E`); `P1-B` remains deferred
 - Step 3 is complete (Phase 2 v3 design-only brief written; no implementation reopened)
-- Next execution item: pause WS-2 before the higher-coupling Stage 2 research loop; `P1-B` stays optional and deferred
+- WS-4 search provider clone consolidation is complete: extracted shared utilities into `search-provider-utils.ts`, reducing 181 lines of clone boilerplate across 7 provider files
+- Next execution item: P1-A2 (verdict debate parallelization); `P1-B` stays optional and deferred
 
 ---
 

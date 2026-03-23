@@ -5,6 +5,7 @@
  */
 
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { requireApiKey, extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
 
 export type FactCheckReview = {
   publisher: {
@@ -35,13 +36,9 @@ const DEFAULT_TIMEOUT_MS = 15_000;
 
 // Standard provider contract (for web-search.ts AUTO mode)
 export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const apiKey = process.env.GOOGLE_FACTCHECK_API_KEY;
   console.log(`[Search] Google-FactCheck: Starting search for query: "${options.query.substring(0, 50)}..."`);
-
-  if (!apiKey || apiKey.includes("PASTE")) {
-    console.error("[Search] Google-FactCheck: ❌ API key not configured");
-    return [];
-  }
+  const apiKey = requireApiKey("Google-FactCheck", "GOOGLE_FACTCHECK_API_KEY");
+  if (!apiKey) return [];
 
   // API key in query string (required by Google Fact Check API).
   // Never log full params.toString() — use urlForLog pattern below.
@@ -88,26 +85,9 @@ export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<
 
     if (!res.ok) {
       console.error(`[Search] Google-FactCheck: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      let errorBody = "";
-      try {
-        errorBody = await res.text();
-        console.error(`[Search] Google-FactCheck: Error response body:`, errorBody.substring(0, 500));
-      } catch (e) {
-        // Ignore parse errors
-      }
-      
-      if (res.status === 429 || res.status === 403) {
-        throw new SearchProviderError(
-          "Google-FactCheck",
-          res.status,
-          true,
-          `Google Fact Check API HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
-        );
-      }
-      if (res.status === 400) {
-        // Bad query, just return empty
-        return [];
-      }
+      const errorBody = await extractErrorBody("Google-FactCheck", res);
+      classifyHttpError("Google-FactCheck", res.status, errorBody);
+      // FactCheck-specific: 400 = bad query, just return empty
       return [];
     }
 
@@ -145,15 +125,7 @@ export async function searchGoogleFactCheck(options: WebSearchOptions): Promise<
     console.log(`[Search] Google-FactCheck: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] Google-FactCheck: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] Google-FactCheck: Request timed out after ${options.timeoutMs ?? DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("Google-FactCheck", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }
 

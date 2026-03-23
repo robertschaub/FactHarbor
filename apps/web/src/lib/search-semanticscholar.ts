@@ -4,7 +4,8 @@
  * https://api.semanticscholar.org/api-docs/graph#tag/Paper-Data/operation/get_graph_get_paper_search
  */
 
-import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { WebSearchOptions, WebSearchResult } from "./web-search";
+import { warnIfMissingApiKey, extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
 
 type SemanticScholarPaper = {
   paperId: string;
@@ -57,14 +58,8 @@ function acquireSlot(): Promise<void> {
 }
 
 export async function searchSemanticScholar(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const apiKey = process.env.SEMANTIC_SCHOLAR_API_KEY;
   console.log(`[Search] Semantic-Scholar: Starting search for query: "${options.query.substring(0, 50)}..."`);
-
-  if (!apiKey || apiKey.includes("PASTE")) {
-    console.warn("[Search] Semantic-Scholar: ⚠️ API key not configured. Using shared rate pool (may fail with 429).");
-  } else {
-    console.log(`[Search] Semantic-Scholar: API key configured (length: ${apiKey.length})`);
-  }
+  const apiKey = warnIfMissingApiKey("Semantic-Scholar", "SEMANTIC_SCHOLAR_API_KEY");
 
   const params = new URLSearchParams({
     query: options.query,
@@ -92,7 +87,7 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
     const headers: Record<string, string> = {
       "Accept": "application/json",
     };
-    if (apiKey && !apiKey.includes("PASTE")) {
+    if (apiKey) {
       headers["x-api-key"] = apiKey;
     }
 
@@ -106,22 +101,8 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
 
     if (!res.ok) {
       console.error(`[Search] Semantic-Scholar: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      let errorBody = "";
-      try {
-        errorBody = await res.text();
-        console.error(`[Search] Semantic-Scholar: Error response body:`, errorBody.substring(0, 500));
-      } catch (e) {
-        // Ignore parse errors
-      }
-      
-      if (res.status === 429 || res.status === 403) {
-        throw new SearchProviderError(
-          "Semantic-Scholar",
-          res.status,
-          true,
-          `Semantic Scholar API HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
-        );
-      }
+      const errorBody = await extractErrorBody("Semantic-Scholar", res);
+      classifyHttpError("Semantic-Scholar", res.status, errorBody);
       return [];
     }
 
@@ -164,14 +145,6 @@ export async function searchSemanticScholar(options: WebSearchOptions): Promise<
     console.log(`[Search] Semantic-Scholar: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] Semantic-Scholar: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] Semantic-Scholar: Request timed out after ${options.timeoutMs ?? DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("Semantic-Scholar", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }

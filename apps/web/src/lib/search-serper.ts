@@ -6,6 +6,7 @@
  */
 
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { requireApiKey, extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
 
 type SerperOrganicResult = {
   title?: string;
@@ -21,20 +22,9 @@ const SERPER_BASE = "https://google.serper.dev/search";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchSerper(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const apiKey = process.env.SERPER_API_KEY;
   console.log(`[Search] Serper: Starting search for query: "${options.query.substring(0, 50)}..."`);
-
-  if (!apiKey) {
-    console.error("[Search] Serper: ❌ No API key configured (SERPER_API_KEY not set)");
-    return [];
-  }
-  if (apiKey.includes("PASTE")) {
-    const message = "Serper API key contains placeholder text; configure a real SERPER_API_KEY value";
-    console.error(`[Search] Serper: ❌ ${message}`);
-    throw new SearchProviderError("Serper", undefined, true, message);
-  }
-
-  console.log(`[Search] Serper: API key configured (length: ${apiKey.length})`);
+  const apiKey = requireApiKey("Serper", "SERPER_API_KEY", { throwOnPlaceholder: true });
+  if (!apiKey) return [];
 
   const body: Record<string, unknown> = {
     q: options.query,
@@ -68,14 +58,8 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
 
     if (!res.ok) {
       console.error(`[Search] Serper: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      let errorBody = "";
-      try {
-        errorBody = await res.text();
-        console.error(`[Search] Serper: Error response body:`, errorBody.substring(0, 500));
-      } catch {
-        // Ignore parse errors
-      }
-      const lowerErrorBody = errorBody.toLowerCase();
+      const errorBody = await extractErrorBody("Serper", res);
+      // Serper-specific: throw non-fatal for 5xx server errors
       if (res.status >= 500 && res.status < 600) {
         throw new SearchProviderError(
           "Serper",
@@ -84,14 +68,7 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
           `Serper HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
         );
       }
-      if (res.status === 429 || res.status === 403 || lowerErrorBody.includes("quota") || lowerErrorBody.includes("limit")) {
-        throw new SearchProviderError(
-          "Serper",
-          res.status,
-          true,
-          `Serper HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
-        );
-      }
+      classifyHttpError("Serper", res.status, errorBody, ["quota", "limit"]);
       return [];
     }
 
@@ -117,14 +94,6 @@ export async function searchSerper(options: WebSearchOptions): Promise<WebSearch
     console.log(`[Search] Serper: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] Serper: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] Serper: Request timed out after ${options.timeoutMs ?? DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("Serper", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }

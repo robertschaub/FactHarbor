@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-23
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, five low-risk WS-2 slices are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, and a Phase 2 v3 design-only architecture brief has been reviewed and tightened for later use.
+**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, five low-risk WS-2 slices and WS-4 search provider consolidation are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, and a Phase 2 v3 design-only architecture brief has been reviewed and tightened for later use.
 
 ---
 
@@ -20,7 +20,7 @@ For completed work, historical documents, and reference materials, see:
 ## Active Quality Plans (governing current work)
 
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; five WS-2 slices complete; Phase 2 v3 brief reviewed/tightened
+**Status:** In progress — Priorities 0-5 complete except optional `P1-B`; five WS-2 slices + WS-4 complete; Phase 2 v3 brief reviewed/tightened
 - **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 - **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
 - **Role:** This is the **governing near-term execution plan**. Use it first when deciding what to do next.

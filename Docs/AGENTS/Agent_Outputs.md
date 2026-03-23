@@ -1,6 +1,31 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | WS-4 Search Provider Clone Consolidation
+**Task:** Execute WS-4: extract shared boilerplate from 7 search provider files into `search-provider-utils.ts`.
+**Files touched:** `apps/web/src/lib/search-provider-utils.ts` (new), `search-google-cse.ts`, `search-serper.ts`, `search-serpapi.ts`, `search-brave.ts`, `search-wikipedia.ts`, `search-semanticscholar.ts`, `search-factcheck-api.ts` (all modified).
+**Key decisions:** Extracted 5 shared utilities: `requireApiKey`, `warnIfMissingApiKey`, `extractErrorBody`, `classifyHttpError`, `handleFetchError`. Kept provider-specific patterns inline: Google CSE compound key check, Serper 5xx non-fatal throw, Wikipedia 429/500+ distinct handling, FactCheck 400 handling, Semantic Scholar rate limiter, all result mapping and request construction. `queryFactCheckApi` (second function in FactCheck) kept its own simpler error handling to avoid adding logging where there was none.
+**Open items:** None. WS-4 complete.
+**Warnings:** `createSearchLogger()` (mentioned in refactoring plan) was deliberately skipped — indirection would make debugging harder for minimal line savings. Google CSE keeps inline key validation due to compound two-variable check.
+**For next agent:** Search providers now share `search-provider-utils.ts` for error handling plumbing. Provider-specific behavior stays in each provider file. Next approved step per Captain decision: P1-A2 (verdict debate parallelization).
+**Learnings:** no
+
+---
+### 2026-03-23 | Lead Architect | Cline | Post-WS-2 Priority Review & Next Steps Recommendation
+**Task:** Review the post-WS-2 state (5 slices complete, research loop remaining) and recommend the next execution priority between P1-A2, WS-4, resuming WS-2, or P1-B.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- **WS-2 should remain paused:** The remaining Stage 2 research loop is highly coupled. Pausing here secures massive readability gains (~5,700 -> ~2,522 lines) without risking destabilization.
+- **P1-A2 is NOT the right next move yet:** Parallelizing the verdict debate has hidden complexity (shared warnings array, progress events, LLM rate limits). It shouldn't be mixed right after a major structural refactor.
+- **WS-4 IS the best next step:** Search Provider Clone Consolidation is a pure, low-risk structural cleanup that removes duplicated boilerplate across 7 files without changing concurrency or semantics.
+- **P1-B remains deferred:** Parallelizing preliminary search saves minimal time (~50s) but introduces search API rate-limit risks.
+- **Branch MUST be pushed:** The branch is significantly ahead of origin. Pushing now locks in the WS-1, WS-2, and P1-C/D/E wins before starting WS-4.
+**Open items:** Execute `git push` and begin `WS-4`.
+**Warnings:** Do not start P1-A2 without a dedicated plan for synchronizing `state.warnings` and handling LLM provider rate limits for concurrent calls.
+**For next agent:** Push the branch to origin, then start `WS-4` (Search Provider Clone Consolidation) by creating `search-provider-utils.ts` as specified in the refactoring plan.
+**Learnings:** no
+
+---
 ### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Brief Review Feedback Incorporated
 **Task:** Incorporate reviewer feedback into the new Phase 2 v3 architecture brief so it is safer to use later as the restart document.
 **Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/AGENTS/Agent_Outputs.md`

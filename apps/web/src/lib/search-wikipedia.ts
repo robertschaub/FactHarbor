@@ -5,6 +5,7 @@
  */
 
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { handleFetchError } from "./search-provider-utils";
 
 type WikipediaSearchResponse = {
   query?: {
@@ -103,15 +104,6 @@ export async function searchWikipedia(options: WebSearchOptions): Promise<WebSea
     console.log(`[Search] Wikipedia: Returning ${truncated.length} valid results`);
     return truncated;
   } catch (error) {
-    // Re-throw SearchProviderError so callers can detect fatal provider failures
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] Wikipedia: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] Wikipedia: Request timed out after ${options.timeoutMs ?? DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("Wikipedia", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }

@@ -1,4 +1,5 @@
 import { WebSearchOptions, WebSearchResult, SearchProviderError } from "./web-search";
+import { requireApiKey, extractErrorBody, classifyHttpError, handleFetchError } from "./search-provider-utils";
 
 type SerpApiResult = {
   title?: string;
@@ -14,19 +15,9 @@ const SERPAPI_BASE = "https://serpapi.com/search.json";
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearchResult[]> {
-  const apiKey = process.env.SERPAPI_API_KEY;
   console.log(`[Search] SerpAPI: Starting search for query: "${options.query.substring(0, 50)}..."`);
-
-  if (!apiKey) {
-    console.error("[Search] SerpAPI: ❌ No API key configured (SERPAPI_API_KEY not set)");
-    return [];
-  }
-  if (apiKey.includes("PASTE")) {
-    console.error("[Search] SerpAPI: ❌ API key contains placeholder text - please configure real value");
-    return [];
-  }
-
-  console.log(`[Search] SerpAPI: API key configured (length: ${apiKey.length})`);
+  const apiKey = requireApiKey("SerpAPI", "SERPAPI_API_KEY");
+  if (!apiKey) return [];
 
   const params = new URLSearchParams({
     engine: "google",
@@ -58,22 +49,8 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
 
     if (!res.ok) {
       console.error(`[Search] SerpAPI: ❌ HTTP error: ${res.status} ${res.statusText}`);
-      let errorBody = "";
-      try {
-        errorBody = await res.text();
-        console.error(`[Search] SerpAPI: Error response body:`, errorBody.substring(0, 500));
-      } catch (e) {
-        // Ignore parse errors
-      }
-      // Throw fatal error for rate limits and quota exhaustion so callers can detect it
-      if (res.status === 429 || res.status === 403 || errorBody.includes("out of searches") || errorBody.includes("quota")) {
-        throw new SearchProviderError(
-          "SerpAPI",
-          res.status,
-          true,
-          `SerpAPI HTTP ${res.status}: ${errorBody.substring(0, 200) || res.statusText}`,
-        );
-      }
+      const errorBody = await extractErrorBody("SerpAPI", res);
+      classifyHttpError("SerpAPI", res.status, errorBody, ["out of searches", "quota"]);
       return [];
     }
 
@@ -113,15 +90,6 @@ export async function searchSerpApi(options: WebSearchOptions): Promise<WebSearc
     console.log(`[Search] SerpAPI: Returning ${out.length} valid results`);
     return out;
   } catch (error) {
-    // Re-throw SearchProviderError so callers can detect fatal provider failures
-    if (error instanceof SearchProviderError) {
-      throw error;
-    }
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error(`[Search] SerpAPI: ❌ Fetch failed: ${errorMsg}`);
-    if (error instanceof Error && error.name === "TimeoutError") {
-      console.error(`[Search] SerpAPI: Request timed out after ${DEFAULT_TIMEOUT_MS}ms`);
-    }
-    return [];
+    return handleFetchError("SerpAPI", options.timeoutMs ?? DEFAULT_TIMEOUT_MS, error);
   }
 }
