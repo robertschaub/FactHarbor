@@ -1,6 +1,6 @@
 # Design: Stage 2 Research Loop Deconstruction
 **Date:** 2026-03-23
-**Status:** IN PROGRESS — Slices 1, 2 & 3 complete (State, Extraction, and Acquisition extracted)
+**Status:** IN PROGRESS — Slices 1, 2, 3 & 4 complete (State, Extraction, Acquisition, and Queries extracted)
 **Author:** Senior Architect (Gemini 3.0 Pro)
 **Context:** Final phase of WS-2 (ClaimBoundary Pipeline decomposition).
 
@@ -103,10 +103,18 @@ Given the size (~1000 lines) and complexity of Stage 2, a single file `research-
   - `reconcileEvidenceSourceIds` (source metadata backfilling)
 - Verification: `npm run build` green, Unit tests green.
 
+**Slice 4 complete.**
+
+- Added `apps/web/src/lib/analyzer/research-query-stage.ts`
+- Moved the following logic and schema out of `claimboundary-pipeline.ts`:
+  - `generateResearchQueries` (LLM-based query generation)
+  - `GenerateQueriesOutputSchema`
+- Verification: `npm run build` green, Unit tests green.
+
 **What remains intentionally in the orchestrator:**
 - `researchEvidence` (main loop)
 - `runResearchIteration` (loop step orchestrator)
-- `generateResearchQueries` (Slice 4 target)
+- `seedEvidenceFromPreliminarySearch` (Slice 5 target)
 
 This keeps Slice 1 structural-only and avoids moving any async loop or LLM/search behavior before the first Stage 2 extraction proves stable.
 
