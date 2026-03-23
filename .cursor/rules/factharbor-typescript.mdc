@@ -6,7 +6,12 @@ globs: apps/web/**/*.ts,apps/web/**/*.tsx
 # FactHarbor — TypeScript / Next.js Rules
 
 ## Key Context
-- Main pipeline: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (ClaimAssessmentBoundary, 5-stage default)
+- Orchestrator: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
+- Modular Stage Modules:
+  - `claim-extraction-stage.ts` (Stage 1)
+  - `boundary-clustering-stage.ts` (Stage 3)
+  - `verdict-generation-stage.ts` (Stage 4)
+  - `aggregation-stage.ts` (Stage 5)
 - Types: `apps/web/src/lib/analyzer/types.ts`
 - Internal runner route: `apps/web/src/app/api/internal/run-job/route.ts`
 

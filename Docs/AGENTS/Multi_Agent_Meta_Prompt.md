@@ -325,4 +325,4 @@ Routine task completions use the Agent Exchange Protocol (`AGENTS.md`), not `_Im
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-03-17
+**Last Reviewed:** 2026-03-23

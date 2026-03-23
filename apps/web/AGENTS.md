@@ -14,7 +14,7 @@ Applies to all files under `apps/web/`. For project-wide rules, see `/AGENTS.md`
 
 | Path | Purpose |
 |------|---------|
-| `src/lib/analyzer/` | Core analysis logic (pipelines, stages, filters) |
+| `src/lib/analyzer/` | **Modular Pipeline Stages**: `claim-extraction`, `boundary-clustering`, `verdict-generation`, `aggregation`. |
 | `src/app/api/` | API routes (public and internal runner triggers) |
 | `src/components/` | Shared UI components |
 | `prompts/` | Authoritative LLM prompt files (.prompt.md) |

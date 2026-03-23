@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-23 -->
 
 # Copilot / AI agent instructions — FactHarbor
 

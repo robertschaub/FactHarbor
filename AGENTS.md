@@ -163,26 +163,32 @@ UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-
 ```
 User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port 5000)
              ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
-             │  claimboundary-pipeline.ts          ├─ Services/ (JobService, RunnerClient)
-             │  verdict-stage.ts                   ├─ Data/ (Entities, FhDbContext)
-             │                                     └─ SQLite: factharbor.db
-             ├─ src/app/api/internal/run-job/     Swagger: http://localhost:5000/swagger
-             └─ LLM calls via AI SDK
+             │  ├─ claimboundary-pipeline.ts       ├─ Services/ (JobService, RunnerClient)
+             │  │  (Orchestrator)                 ├─ Data/ (Entities, FhDbContext)
+             │  ├─ claim-extraction-stage.ts       └─ SQLite: factharbor.db
+             │  ├─ boundary-clustering-stage.ts    Swagger: http://localhost:5000/swagger
+             │  ├─ verdict-generation-stage.ts
+             │  └─ aggregation-stage.ts
+             ├─ src/app/api/internal/run-job/     Tools:
+             └─ LLM calls via AI SDK              └─ tools/vscode-xwiki-preview
 ```
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` | ClaimAssessmentBoundary pipeline (default, 5 stages) |
-| `apps/web/src/lib/analyzer/verdict-stage.ts` | Verdict stage module (5-step LLM debate pattern) |
-| `apps/web/src/lib/analyzer/types.ts` | TypeScript types and interfaces |
-| `apps/web/src/lib/analyzer/aggregation.ts` | Verdict aggregation + claim weighting |
-| `apps/web/src/lib/analyzer/evidence-filter.ts` | Deterministic evidence quality filtering |
-| `apps/web/src/lib/analyzer/source-reliability.ts` | Source reliability: prefetch, lookup, weighting |
-| `apps/web/src/lib/config-storage.ts` | Unified Config Management: SQLite storage |
-| `apps/web/src/app/api/internal/run-job/route.ts` | Runner route (job execution entry point) |
-| `apps/api/Services/JobService.cs` | All DB writes (creates event rows for audit) |
+| `.../analyzer/claimboundary-pipeline.ts` | **Orchestrator**: Main entry and Stage 2 research loop. |
+| `.../analyzer/claim-extraction-stage.ts` | **Stage 1**: Claim extraction, Gate 1, and preliminary search. |
+| `.../analyzer/boundary-clustering-stage.ts` | **Stage 3**: Cluster evidence scopes into ClaimAssessmentBoundaries. |
+| `.../analyzer/verdict-generation-stage.ts` | **Stage 4**: Multi-step LLM debate and initial verdict generation. |
+| `.../analyzer/aggregation-stage.ts` | **Stage 5**: Verdict aggregation, claim weighting, and quality gates. |
+| `.../analyzer/types.ts` | TypeScript types and interfaces for the entire pipeline. |
+| `.../analyzer/pipeline-utils.ts` | Shared pure helper functions for all pipeline stages. |
+| `.../analyzer/source-reliability.ts` | Source reliability logic: prefetch, lookup, and weighting. |
+| `.../analyzer/evidence-filter.ts` | Deterministic evidence quality filtering (probativeValue). |
+| `.../config-storage.ts` | Unified Config Management: SQLite storage & UCM logic. |
+| `.../api/internal/run-job/route.ts` | Runner route: Job execution entry point. |
+| `apps/api/Services/JobService.cs` | API side: Database persistence and event-audit trails. |
 
 **Pattern references:** When adding new code, study existing patterns first. For controller patterns follow `JobsController.cs`, for service patterns follow `JobService.cs`, for pipeline modules study how `evidence-filter.ts` and `aggregation.ts` are structured.
 

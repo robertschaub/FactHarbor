@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
-**Version:** 2.0
-**Date:** 2026-03-17
+**Version:** 2.1
+**Date:** 2026-03-23
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -720,4 +720,4 @@ Before marking any task complete:
 ---
 
 **Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-03-17
+**Last Reviewed:** 2026-03-23
