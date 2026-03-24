@@ -113,7 +113,7 @@ def scan_tree(base_dir: Path, prefix: list | None = None) -> Tuple[List[Dict[str
     sort_order = _read_sort_order(base_dir)
 
     for item in items:
-        if item.name.startswith('.') or item.name == SORT_FILE:
+        if item.name.startswith('.') or item.name in (SORT_FILE, '_attachments'):
             continue
 
         if item.is_file() and item.suffix.lower() in WIKI_EXTS:
@@ -155,6 +155,96 @@ def scan_tree(base_dir: Path, prefix: list | None = None) -> Tuple[List[Dict[str
     _apply_sort_order(entries, sort_order)
 
     return entries, pages
+
+
+ATTACHMENT_DIR = '_attachments'
+IMAGE_REF_RE = re.compile(r'\[\[image:([^\]|]+?)((?:\|[^\]]*)?)\]\]')
+
+
+def scan_attachments(base_dir: Path, prefix: list | None = None) -> Dict[str, List[Tuple[str, Path]]]:
+    """
+    Scan for _attachments directories alongside xWiki pages.
+
+    Returns dict mapping parent directory path (e.g.
+    'Product Development/Presentations/Academic Cooperation')
+    to list of (filename, source_path) tuples.
+    """
+    if prefix is None:
+        prefix = []
+
+    result: Dict[str, List[Tuple[str, Path]]] = {}
+
+    try:
+        items = sorted(base_dir.iterdir(), key=lambda p: p.name.lower())
+    except OSError:
+        return result
+
+    for item in items:
+        if item.name.startswith('.'):
+            continue
+        if not item.is_dir():
+            continue
+        if item.name == ATTACHMENT_DIR:
+            parent_path = '/'.join(prefix)
+            files = [
+                (f.name, f)
+                for f in sorted(item.iterdir(), key=lambda p: p.name.lower())
+                if f.is_file() and not f.name.startswith('.')
+            ]
+            if files:
+                result[parent_path] = files
+        else:
+            result.update(scan_attachments(item, prefix + [item.name]))
+
+    return result
+
+
+def copy_and_rewrite_attachments(
+    pages: Dict[str, str],
+    attachments: Dict[str, List[Tuple[str, Path]]],
+    output_dir: Path,
+) -> int:
+    """
+    Copy attachment files into *output_dir*/_attachments/... and rewrite
+    ``[[image:filename]]`` references in *pages* to point to the copied paths.
+
+    Returns the number of image references rewritten.
+    """
+    att_base = output_dir / ATTACHMENT_DIR
+    rewrite_count = 0
+
+    # Build lookup: (parent_path, filename) -> relative URL from output root
+    url_map: Dict[Tuple[str, str], str] = {}
+    for parent_path, files in attachments.items():
+        dest_dir = att_base / parent_path if parent_path else att_base
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for filename, source in files:
+            shutil.copy2(source, dest_dir / filename)
+            url_map[(parent_path, filename)] = \
+                (dest_dir / filename).relative_to(output_dir).as_posix()
+
+    # Rewrite image refs in page content
+    for ref in list(pages.keys()):
+        segments = ref.split('.')
+        parent_path = '/'.join(segments[:-1])
+        if parent_path not in attachments:
+            continue
+
+        available = {fname for fname, _ in attachments[parent_path]}
+
+        def _replace(m: re.Match) -> str:
+            nonlocal rewrite_count
+            filename = m.group(1)
+            params = m.group(2) or ''
+            mapped = url_map.get((parent_path, filename))
+            if mapped and filename in available:
+                rewrite_count += 1
+                return f'[[image:{mapped}{params}]]'
+            return m.group(0)
+
+        pages[ref] = IMAGE_REF_RE.sub(_replace, pages[ref])
+
+    return rewrite_count
 
 
 def find_root_ref(pages: Dict[str, str]) -> str:
@@ -447,6 +537,14 @@ def main():
     tree, pages = scan_tree(content_dir)
     root_ref = find_root_ref(pages)
     print(f'  Found {len(pages)} pages, root: {root_ref}')
+
+    # Scan and copy page attachments (images etc.)
+    attachments = scan_attachments(content_dir)
+    if attachments:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        att_count = sum(len(files) for files in attachments.values())
+        rewrites = copy_and_rewrite_attachments(pages, attachments, output_dir)
+        print(f'  Attachments: {att_count} file(s) copied, {rewrites} image ref(s) rewritten')
 
     # Wrap tree in a root folder so the project name appears in the sidebar
     root_name = content_dir.name  # e.g. "FactHarbor"
