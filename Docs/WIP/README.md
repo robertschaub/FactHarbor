@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-23
-**Status**: WIP Consolidation #6 complete. Archived 30 WIP files, 6 STATUS files, 19 Handoffs. 19 active files remain. Primary track has now split: Plastik multilingual neutrality is parked as a known limitation after failed Phase 2 v1/v2 experiments, config provenance repair and WS-1 are complete, **WS-2 (Full Pipeline Decomposition) is complete**, WS-3 evaluate-source decomposition, and WS-4 search provider consolidation are complete, the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` retired as stale (Stage 4 already batches), and the repository is now at a **post-WS-2 validation gate** before any new optimization track begins.
+**Last Updated**: 2026-03-24
+**Status**: WIP Consolidation #7 complete. The Mar-22 execution wave is closed: config provenance repair, WS-1, **WS-2 (including full Stage 2 deconstruction)**, WS-3, and WS-4 are complete; the selected low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`) is complete; `P1-A2` is retired as stale. The active work is no longer “what comes after WS-2?” in the abstract, but a **post-validation control/coverage follow-up** after the Stage-4 provider-guard fix, the Stage-1 `claimDirection` prompt clarification, and the preliminary-evidence mapping repair. The active WIP set is now trimmed to **34** files.
 
 ---
 
@@ -9,7 +9,7 @@
 
 This directory contains **active design proposals, execution plans, and future work items** for the Alpha phase.
 
-**Forward direction:** Phase A shipped. B1 predicate-preservation / no-proxy-rephrasing shipped. Legacy SR evidence weighting is now default-off on `main`; Stage 4.5 SR calibration exists behind a flag. The broad-claim contract validator is implemented, but the clean post-restart Mar 22 live batch did not justify stronger “Stage 1 solved” language for current Plastik exact inputs. Plastik multilingual neutrality therefore remains parked as a known limitation after failed Phase 2 v1/v2 experiments. Config provenance repair is complete, WS-1 dead-code cleanup is complete, **WS-2 (Full Pipeline Decomposition) is complete (all 5 stages modularized)**, the selected low-risk optimization subset (`P1-C`, `P1-D`, `P1-E`) is complete, `P1-A2` (verdict debate parallelization) has been retired as stale because the current Stage 4 already batches all claims per step, and the next decision is now **validation first, then at most isolated `P1-A`**, not a direct jump into the broader optimization track. `P1-B` remains deferred and separate.
+**Forward direction:** Plastik multilingual neutrality remains parked as a known limitation, but the immediate focus has narrowed further. The Stage-4 reliability incident is fixed and reviewed; concurrent validation no longer reproduces the old `VERDICT_ADVOCATE` collapse. That validation also uncovered a separate Stage-1 `claimDirection` bug on flat-earth controls, which is now prompt-fixed, and a Stage-1 → Stage-2 preliminary-evidence mapping leak, which is now code-fixed in `31aea55d`. The active question is therefore: **does the restarted fixed stack now hold on live controls and boundary coverage?** Only after that gate closes should the project reopen broader optimization (`P1-A`) or any new quality track. `P1-B` remains deferred and separate.
 
 For completed work, historical documents, and reference materials, see:
 - **[Docs/ARCHIVE/](../ARCHIVE/)** — Completed plans, reviews, and historical documentation
@@ -19,17 +19,21 @@ For completed work, historical documents, and reference materials, see:
 
 ## Active Quality Plans (governing current work)
 
+### Post-Validation Control & Coverage Follow-up (2026-03-24)
+**Status:** Active — current next-step document
+- **Document:** [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
+- **Scope:** Tracks the current live validation gate after three recent fixes: Stage-4 provider-guard hardening, Stage-1 `claimDirection` clarification, and the preliminary-evidence multi-claim mapping repair.
+- **Role:** This is the **current next-step decision and validation document**.
+
 ### Next 1-2 Weeks Execution Plan (2026-03-22)
-**Status:** Complete — closed execution record; successor next-step decisions moved to post-WS-2 decision point
-- **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
-- **Scope:** Practical short-horizon execution order after Plastik Phase 2 v1/v2 closure: park the limitation, fix config provenance, start WS-1/WS-2 from the refactoring plan, then take only the low-risk subset of the speed/cost plan
-- **Role:** This is now the **completed execution record** for the Mar-22 window.
+**Status:** Archived historical execution record
+- **Document:** [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](../ARCHIVE/2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
+- **Scope:** Closed execution record for the Mar-22 window.
 
 ### Post-WS-2 Decision Point (2026-03-23)
-**Status:** Reviewed — validation gate first, then isolated `P1-A` if clean
-- **Document:** [2026-03-23_Post_WS2_Decision_Point.md](2026-03-23_Post_WS2_Decision_Point.md)
-- **Scope:** Chooses the next work window after the full refactor wave. Current recommendation is: deploy/validate first, then only a single quality-affecting optimization experiment (`P1-A`) if the validation gate passes.
-- **Role:** This is the **current next-step decision document**.
+**Status:** Archived — superseded by actual validation outcomes and follow-up fixes
+- **Document:** [2026-03-23_Post_WS2_Decision_Point.md](../ARCHIVE/2026-03-23_Post_WS2_Decision_Point.md)
+- **Scope:** Historical decision note before the Stage-4 incident triage, the flat-earth `claimDirection` diagnosis, and the preliminary-evidence mapping fix.
 
 ### Plastik Phase 2 v3 Architecture Brief (2026-03-22)
 **Status:** Design-only — reviewed and tightened; no implementation approved
@@ -89,8 +93,8 @@ These files contain pending items extracted from archived documents during WIP C
 - **Contains:** UCM drift Phase 2, Job Events Phase 2, Search provider investigation
 
 ### Bolsonaro Sentencing Evidence Loss Fix Plan (2026-03-18)
-**Status:** COMPLETE — implemented, tested, live-validated
-- **Document:** [2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md](2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md)
+**Status:** COMPLETE — historical reference
+- **Document:** [2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md](../ARCHIVE/2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md)
 - **Scope:** 5-part fix for Stage 2 jurisdiction classification misclassifying international factual journalism as foreign_reaction, plus structural top-5 fetch ordering bug. Two prior reviews incorporated.
 
 ### Report Quality Evolution Investigation (2026-03-19)

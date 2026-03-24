@@ -1,20 +1,47 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-23
+**Last Updated**: 2026-03-24
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary Pipeline v1.0 operational. Phase 2 validation complete (production-ready). MT-1/MT-2/MT-3 structural pipeline fixes implemented. Cross-provider debate active (OpenAI challenger). Stage 1 broad-claim contract preservation is now materially fixed via a post-Pass-2 claim-contract validator. `verdictDirectionPolicy` is re-enabled as `retry_once_then_safe_downgrade`; `verdictGroundingPolicy` remains `disabled`. The primary open quality issue is now downstream Plastik-family variability in Stage 2/4 (search framing, evidence balance, verdict direction), not claim decomposition.
+**Status**: ClaimAssessmentBoundary pipeline is operational and the major refactor wave is materially complete, but the current posture is **stabilization and focused control-quality validation**, not optimization. **WS-1 through WS-4 are complete**, the Stage-4 provider guard is live-validated under concurrent load, the Stage-1 `claimDirection` prompt has been clarified, and the preliminary-evidence multi-claim mapping leak is fixed in code (`31aea55d`). The current active gate is a post-fix live validation batch on the restarted stack; the main open non-quality bug is a separate jobs-list progress/verdict sync race.
+
+---
+
+## Current Focus (2026-03-24)
+
+- **Finish the current post-fix live batch** on commit `31aea55d` across Earth/Hydrogen/Plastik/Bolsonaro controls.
+- **Confirm boundary coverage integrity**: Boundaries with evidence should no longer appear populated-but-empty in the coverage matrix solely because seeded preliminary evidence lost `relevantClaimIds`.
+- **Keep optimization blocked**: `P1-A` and `P1-B` are still not approved while this validation gate is open.
+- **Follow up on runtime/UI consistency**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
+
+---
+
+## Recent Changes (2026-03-24)
+
+**Control-quality and boundary-coverage follow-up:**
+- ✅ **Stage-1 `claimDirection` prompt clarified**: `supports_thesis` / `contradicts_thesis` are now explicitly anchored to the user's thesis, not to scientific consensus or reality.
+- ✅ **Flat-earth false positive root-caused cleanly**: the bad `TRUE 100 / 95` result was traced to Stage-1 `claimDirection` mislabeling, not to Stage 4 or Stage 5 logic.
+- ✅ **Preliminary-evidence claim mapping leak fixed**: Stage 1 now preserves full `relevantClaimIds[]` into Stage 2 seeding instead of collapsing to a single legacy `claimId`, which previously caused Claim Assessment Boundaries with evidence but zero matrix coverage.
+- ⏳ **Live validation now targets the fixed stack**: a restarted local batch on commit `31aea55d` is the current gate for Earth/Hydrogen/Plastik/Bolsonaro controls and for the boundary-coverage repair.
+- ⚠️ **Open UI/runtime issue remains**: the jobs list can still display a verdict for a non-terminal job because result persistence and later stale progress events are not yet synchronized monotonically.
 
 ---
 
 ## Recent Changes (2026-03-23)
+
+**Refactor-wave closure:**
+- ✅ **WS-2 fully complete**: the entire Stage 2 research loop is now modularized; `claimboundary-pipeline.ts` is reduced to a slim orchestrator.
+- ✅ **WS-3 complete**: the `evaluate-source` route is decomposed into request-scoped modules with mutable request globals removed.
+- ✅ **WS-4 complete**: duplicated search-provider plumbing is consolidated into shared utilities.
+- ✅ **Post-WS-2 extraction coverage restored**: high-value Stage 2 extraction edge-case tests were restored after the research-loop decomposition.
 
 **Stage 4 reliability hardening + incident visibility:**
 - ✅ **Verdict-generation incident surfaced correctly**: Jobs/UI now distinguish `analysis_generation_failed` from ordinary `insufficient_evidence`, so Stage-4 fallback reports no longer masquerade as normal low-evidence outcomes.
 - ✅ **Stage-4 provider guard aligned with official retry behavior**: Added lane-aware LLM backpressure control for the verdict path (`anthropic:sonnet` default limit `2`, other lanes `3`) instead of forcing runner-global serialization.
 - ✅ **Custom outer retry removed**: FactHarbor now relies on the installed AI SDK retry path for retryable API-call failures, which already honors `retry-after` / `retry-after-ms` headers.
 - ✅ **Provider diagnostics enriched**: Final `llm_provider_error` warnings now capture request IDs, retry-after hints, and remaining-limit headers when available for faster tuning of real overload incidents.
-- ⚠️ **Validation posture**: Parallel quality validation should still be treated cautiously until the new guard is validated with live concurrent control runs. If tuning is required, adjust `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET` before changing `FH_RUNNER_MAX_CONCURRENCY`.
+- ✅ **Live concurrent validation passed for the reliability fix**: three overlapping jobs completed without `Stage4LLMCallError`, `analysis_generation_failed`, or `llm_provider_error`.
+- ⚠️ **Important scope note**: the reliability pass did **not** reopen optimization; it only cleared the Stage-4 overload incident. The same validation round also exposed the separate Stage-1 `claimDirection` quality bug that was fixed on 2026-03-24.
 
 ---
 
@@ -909,11 +936,11 @@ The POC set out to prove that AI can extract claims from arbitrary text, gather 
 All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full prioritized list.
 
 **Alpha priorities:**
-1. Cost reduction (Batch API, prompt caching, NPO/OSS credits)
-2. Quality validation with real LLM calls (claim fidelity, AtomicClaim extraction)
-3. UI polish (quality gate display, CB admin config, coverage matrix)
-4. Dead code cleanup (879 lines)
-5. Security hardening — *before any public deployment*
+1. Close the **current post-fix validation gate** (controls + boundary coverage on commit `31aea55d`)
+2. Fix the **jobs-list progress/verdict sync race** and any remaining post-refactor validation telemetry gaps
+3. Re-prioritize the next workstream only after the control-quality and boundary-coverage checks are clean
+4. Keep `P1-A` isolated and blocked until that gate passes; keep `P1-B` deferred
+5. Continue Alpha hardening work from the canonical [Backlog](Backlog.md)
 
 **See**:
 - [ClaimBoundary Architecture](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md) for implementation reference
@@ -922,6 +949,6 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 
 ---
 
-**Last Updated**: February 24, 2026
+**Last Updated**: 2026-03-24
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
-**Document Status**: POC declared complete. Remaining work reclassified as Alpha.
+**Document Status**: Current Alpha snapshot. Historical sections below remain for context; current prioritization lives in the top status block and in [Backlog](Backlog.md).

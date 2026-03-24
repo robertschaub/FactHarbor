@@ -2,13 +2,13 @@
 
 **Author:** Lead Architect (Claude Code, Opus 4.6)
 **Date:** 2026-03-18
-**Status:** Revised after Code Review + Lead Developer Review (2026-03-19)
+**Status:** Partially executed — WS-1, WS-2, WS-3, and WS-4 are complete; remaining streams are deferred
 **Reviews:**
-- [Code Review](2026-03-18_Review_CodeReviewer.md) — APPROVE WITH CHANGES (all findings incorporated)
-- [Lead Developer Review](2026-03-18_Review_LeadDeveloper.md) — APPROVE WITH REFINEMENTS (all refinements incorporated)
+- [Code Review](../ARCHIVE/2026-03-18_Review_CodeReviewer.md) — APPROVE WITH CHANGES (all findings incorporated)
+- [Lead Developer Review](../ARCHIVE/2026-03-18_Review_LeadDeveloper.md) — APPROVE WITH REFINEMENTS (all refinements incorporated)
 **Scope:** Behavior-preserving structural refactoring across `apps/web` and `apps/api`
 
-**Document role:** This is the **refactoring source plan**, not the governing short-horizon priority plan. It defines the cleanup/refactor work streams and their internal sequencing. For repository-level "what should happen next?" decisions, use `2026-03-22_Next_1_2_Weeks_Execution_Plan.md` first, then return here when the refactor track is selected.
+**Document role:** This is the **refactoring source plan**, not the governing current priority document. It defines the cleanup/refactor work streams and their internal sequencing. For repository-level "what should happen next?" decisions, use the current WIP index and the active [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md) first, then return here only when the refactor track is explicitly selected again.
 
 ---
 

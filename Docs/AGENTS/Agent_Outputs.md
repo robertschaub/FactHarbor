@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-24 | Senior Developer | Codex (GPT-5) | Status / Backlog / WIP Consolidation Refresh
+**Task:** Bring the high-level project docs up to date after the Mar-22/23 execution wave and the Mar-24 validation follow-up, update the backlog, and archive no-longer-active WIP documents.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md`, `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md`, archived WIP files moved under `Docs/ARCHIVE/`.
+**Key decisions:** Re-centered the active docs around the real current gate: post-validation control-quality and boundary-coverage follow-up after the Stage-4 provider-guard fix, the Stage-1 `claimDirection` prompt clarification, and the preliminary-evidence mapping repair. Added a new active WIP note for that gate, rewrote the top of `Current_Status.md` to remove stale “production-ready / optimize next” framing, refreshed `Backlog.md` with immediate priorities and recent completions, and archived the now-historical Mar-22/23 execution/decision/design/proposal docs plus the Mar-18 review artifacts and the completed Bolsonaro sentencing fix plan.
+**Open items:** The current live validation batch on commit `31aea55d` still needs to finish and be interpreted. The jobs-list progress/verdict sync race remains open and is now called out explicitly in both status and backlog.
+**Warnings:** `Agent_Outputs.md` intentionally still references now-archived file paths inside historical entries. That log is an audit trail and was not rewritten retroactively. Active docs and active handoffs were updated to point to the archive where needed.
+**For next agent:** Use `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md` as the current next-step document. Do not use the Mar-22 execution plan or Mar-23 decision note as active steering docs anymore; they are archived historical records. WIP Consolidation #7 archived 9 files and reduced the active WIP set to 34 files.
+**Learnings:** no
+
+---
 ### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | Fix preliminary-evidence claim-mapping leak
 **Task:** Fix systemic bug where seeded preliminary evidence loses multi-claim attribution, causing Claim Assessment Boundaries to show `evidenceCount > 0` but zero coverage in the matrix.
 **Files touched:** `apps/web/src/lib/analyzer/types.ts` (1 edit), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (1 edit), `apps/web/src/lib/analyzer/research-orchestrator.ts` (1 edit), `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (5 new tests).

@@ -6,6 +6,19 @@
 
 ---
 
+## Addendum (2026-03-24)
+
+Later follow-up changed the immediate next-step picture:
+- The **Stage-4 provider guard** has now passed concurrent live validation.
+- A separate **Stage-1 `claimDirection` bug** was identified on flat-earth controls and fixed at the prompt layer.
+- A separate **preliminary-evidence multi-claim mapping leak** was identified in the Stage-1 → Stage-2 handoff and fixed in code (`31aea55d`).
+- The current active steering document is now:
+  - [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
+
+Read this addendum first if you are using this handoff after 2026-03-24.
+
+---
+
 ## 1. Executive Summary
 
 The repository is currently in a **technically stable but strategically paused** state.
@@ -168,7 +181,10 @@ These are not current blockers, but they are the most likely future “second-le
 ## 7. Active Planning / What the New Architect Should Know
 
 ### Governing near-term plan
-- [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
+- [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
+
+### Archived Mar-22 execution record
+- [2026-03-22_Next_1_2_Weeks_Execution_Plan.md](C:/DEV/FactHarbor/Docs/ARCHIVE/2026-03-22_Next_1_2_Weeks_Execution_Plan.md)
 
 ### Refactoring source plan
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md)

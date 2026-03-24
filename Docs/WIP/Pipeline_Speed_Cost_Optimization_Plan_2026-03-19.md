@@ -1,11 +1,11 @@
 # Pipeline Speed & Cost Optimization Plan
 
 **Date:** 2026-03-19
-**Status:** DRAFT — awaiting review
+**Status:** Reviewed and partially executed — `P1-C/D/E` complete, `P1-A2` retired as stale, `P1-A` blocked by the current validation gate, `P1-B` deferred
 **Author:** Lead Architect (Claude Opus 4.6)
 **Data sources:** 10 recent production jobs (Mar 17-19), code analysis by 2 investigation agents (LLM cost agent + search/fetch timing agent)
 
-**Document role:** This is the **optimization source plan**, not the governing short-horizon priority plan. It defines candidate speed/cost improvements, tradeoffs, and validation paths. For repository-level "what should happen next?" decisions, use `2026-03-22_Next_1_2_Weeks_Execution_Plan.md` first, then return here when the optimization track is selected.
+**Document role:** This is the **optimization source plan**, not the governing current priority document. It defines candidate speed/cost improvements, tradeoffs, and validation paths. For repository-level "what should happen next?" decisions, use the current WIP index and the active [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md) first, then return here only when the optimization track is explicitly selected.
 
 ---
 

@@ -2,7 +2,32 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-17 (WIP Consolidation #6 — 30 WIP + 6 STATUS + 19 Handoffs archived)
+**Last Updated**: 2026-03-24 (WIP Consolidation #7 — Mar-22/23 execution and review docs archived)
+
+---
+
+### WIP Consolidation #7 (2026-03-24)
+
+**Description**: Archived the now-complete Mar-22 execution record, the superseded Mar-23 decision/proposal docs, the completed Stage 2 deconstruction design note, and related review artifacts. Added a new active WIP follow-up note for the current post-validation control/coverage gate instead of keeping those older documents live.
+
+**WIP files archived** (9):
+
+| File | Reason |
+|------|--------|
+| `2026-03-22_Next_1_2_Weeks_Execution_Plan.md` | Closed execution record for the Mar-22 window |
+| `2026-03-23_Post_WS2_Decision_Point.md` | Superseded by actual validation outcomes and follow-up fixes |
+| `2026-03-23_Stage_2_Research_Loop_Deconstruction_Design.md` | Complete design / execution record; Stage 2 deconstruction finished |
+| `2026-03-23_Consolidation_and_Stabilization_Plan.md` | Superseded proposal; its directives were already executed or replaced |
+| `2026-03-23_Strategic_Roadmap_Consolidation.md` | Superseded proposal; replaced by actual work and the new 2026-03-24 follow-up note |
+| `2026-03-18_Bolsonaro_Sentencing_Evidence_Loss_Fix_Plan.md` | Complete fix plan; now historical reference |
+| `2026-03-18_Review_Architect.md` | Historical review input incorporated into later execution |
+| `2026-03-18_Review_CodeReviewer.md` | Historical review input incorporated into later execution |
+| `2026-03-18_Review_LeadDeveloper.md` | Historical review input incorporated into later execution |
+
+**New active WIP file added** (1):
+- `2026-03-24_Post_Validation_Control_and_Coverage_Followup.md`
+
+**Active WIP count after cleanup:** 34 files
 
 ---
 

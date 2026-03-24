@@ -1,5 +1,8 @@
 # Broad Claim Contract Validator Plan (2026-03-20)
 
+**Status:** Implemented as the Stage-1 claim-contract validation baseline; retained as design rationale and rollout reference
+**Current note (2026-03-24):** This document explains the earlier broad-claim contract validator. The newer flat-earth control failure was a separate Stage-1 `claimDirection` labeling issue and was fixed independently at the prompt layer in `1e7e2c57`.
+
 ## Purpose
 
 Stabilize current ClaimBoundary handling of **broad colloquial evaluative predicates** such as:

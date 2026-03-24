@@ -2,34 +2,33 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: March 17, 2026 (added diagram documentation cleanup item)
+**Last Updated**: 2026-03-24
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
 **Phase note**: **POC is complete** (tagged `v1.0.0-poc`). FactHarbor is now in **Alpha phase**. Security/cost-control items remain **low urgency** during Alpha but are **high importance**. Reclassify to **high urgency** before any production/public exposure.
 
-**See Also**: `Docs/STATUS/Improvement_Recommendations.md` for detailed analysis and implementation guidance.
+**See Also**:
+- `Docs/STATUS/Current_Status.md` for the current high-level snapshot
+- `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md` for the current active validation gate and its rationale
 
 ---
 
-## ClaimAssessmentBoundary Pipeline — Alpha Remaining Work
+## Immediate Priorities (2026-03-24)
 
-The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete, tagged `v1.0.0-poc`). All 5 stages implemented, 1086 tests passing (53 files).
+These are the active near-term items after the refactor wave, the Stage-4 reliability incident, the Stage-1 `claimDirection` prompt fix, and the preliminary-evidence mapping repair.
 
-**Architecture document:** [ClaimBoundary_Pipeline_Architecture_2026-02-15.md](../ARCHIVE/ClaimBoundary_Pipeline_Architecture_2026-02-15.md)
-**Execution tracking:** [CB_Execution_State.md](../ARCHIVE/CB_Execution_State.md)
+| Item | Description | Domain | Urgency | Importance | Status | Notes |
+|------|-------------|--------|---------|------------|--------|-------|
+| **VAL-1** | **Close the current post-fix validation gate**: evaluate the restarted live batch on commit `31aea55d` (`Ist die Erde flach?`, `Ist die Erde rund?`, Hydrogen, Bolsonaro, Plastik EN/DE). Confirm control verdicts, check for zero `analysis_generation_failed`, and verify that boundary coverage no longer shows populated-but-empty rows caused by lost `relevantClaimIds`. | Analyzer / Quality | high | high | IN PROGRESS | Current active gate |
+| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | high | med | NOT STARTED | Exposed during Mar 24 control reruns |
+| **VAL-3** | **Boundary-coverage follow-through**: if `31aea55d` still leaves any boundaries with `evidenceCount > 0` but zero matrix coverage, inspect residual seeded-evidence paths and quantify mapped vs unmapped preliminary evidence per boundary. | Analyzer / Quality | high | high | NOT STARTED | Follow-up only if live batch is not fully clean |
+| **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | med | med | NOT STARTED | Still open after Stage-4 incident work |
+| **OPT-GATE** | **Keep optimization blocked until validation closes**: `P1-A` remains a separate quality-affecting experiment that is not approved while the current control/coverage gate is open. `P1-B` remains deferred. | Planning / Governance | high | high | BLOCKED | Do not reopen optimization by drift |
 
-| Step | Description | Domain | Urgency | Status | Notes |
-|------|-------------|--------|---------|--------|-------|
-| **Phase 1a** | **Metrics integration**: Wire metrics infrastructure into Stages 2, 3, 5 and add `debateRole` attribution. Critical for cost/observability. | Analyzer / Observability | high | done | Alpha Plan Phase 1 |
-| **Phase 1b** | **Model auto-resolution**: Eliminate ALL hardcoded model version strings from code and UCM. UCM stores tier aliases; code auto-resolves via `model-resolver.ts` using provider `-latest` aliases (version-lock by default). Covers all providers. | Maintenance / Stability | high | done | Commit `c0d452a` — `model-resolver.ts` implemented |
-| **Phase 1c** | **Manual-test checkpoint + runbook restart**: Temporarily defer Alpha execution while manual tests run, then resume from Gate 0 using `Docs/WIP/Phase1_Pipeline_Execution_Checklist_2026-02-25.md`. | QA / Execution Governance | high | IN PROGRESS | Captain direction (2026-02-25): manual tests first, then resume gated execution |
-| **Phase 5i** | **Final cleanup**: V-01 (contextId in AnalysisWarning), V-09 (8 skipped budget tests) | Cleanup | med | NOT STARTED | Alpha polish |
-| **Phase 5k** | **UI adaptations**: Admin config panel (24 CB params), coverage matrix + verdictNarrative + qualityGates components, xWiki diagrams | Web UI | med | NOT STARTED | Alpha polish |
-| **Phase 5h** | **Test coverage**: Neutrality, performance, adversarial tests for CB pipeline | Testing | med | NOT STARTED | Optional but recommended |
-| **Step 10** | **Define LLM call optimization targets for CB**: Cost/latency/quality targets based on CB's call pattern | Cost / Analyzer | med | NOT STARTED | |
+## Deferred / Long-Horizon CB Items
 
-**Deferred to v1.1:**
+These are still valid, but they are not the current gate.
 
 | Item | Description | Source |
 |------|-------------|--------|
@@ -38,6 +37,20 @@ The ClaimAssessmentBoundary pipeline v1.0 is **production-ready** (POC complete,
 | Advanced triangulation | Cross-boundary correlation analysis | Architecture §8.5.2 |
 | Contestation weight reduction | Requires `factualBasis` field on CBClaimVerdict | Legacy getClaimWeight() incompatibility |
 | Derivative detection improvements | Enhanced derivative source identification | Architecture §8.5.3 |
+
+---
+
+## Recently Completed (March 22-24, 2026)
+
+| Description | Domain | Completed | Reference |
+|---|---|---|---|
+| ✅ **Config provenance repair**: ClaimBoundary jobs now persist reliable per-job config provenance and snapshot data again. | Analyzer / Observability | 2026-03-22 | `1cb9b9cc`, `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md` |
+| ✅ **WS-2 completed end-to-end**: full Stage 2 research-loop deconstruction finished; `claimboundary-pipeline.ts` reduced to a slim orchestrator. | Analyzer / Refactoring | 2026-03-23 | `27fc325c`, `Docs/ARCHIVE/2026-03-23_Stage_2_Research_Loop_Deconstruction_Design.md` |
+| ✅ **WS-3 / WS-4 complete**: `evaluate-source` decomposed into request-scoped modules; search-provider clone boilerplate consolidated. | API / Web / Refactoring | 2026-03-23 | `25e4f633`, `04efbd19` |
+| ✅ **Stage-4 incident visibility + provider guard hardening**: fallback verdict failures now surface correctly, and the verdict path uses lane-aware backpressure aligned to provider docs. | Analyzer / Reliability | 2026-03-23 | `31aee703`, `75416ce8`, `aa123936` |
+| ✅ **Stage-4 reliability validation passed**: concurrent local control batch no longer reproduced `Stage4LLMCallError` / `VERDICT_ADVOCATE` collapse. | Analyzer / Reliability | 2026-03-23 | `Docs/AGENTS/Agent_Outputs.md` (2026-03-23 Stage 4 Provider Guard — Live Validation PASSED) |
+| ✅ **Stage-1 `claimDirection` prompt fix**: clarified that thesis direction is relative to the user's position, not to reality or consensus. | Analyzer / Prompt Quality | 2026-03-24 | `1e7e2c57`, `Docs/AGENTS/Agent_Outputs.md` |
+| ✅ **Preliminary-evidence multi-claim mapping fix**: preserved `relevantClaimIds[]` into Stage 2 seeding to repair boundary coverage leakage. | Analyzer / Quality | 2026-03-24 | `31aea55d`, `Docs/AGENTS/Agent_Outputs.md` |
 
 ---
 
