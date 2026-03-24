@@ -4605,6 +4605,89 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     expect(result.truthPercentageRange?.max).toBeCloseTo(60, 1);
   });
 
+  it("mislabeled contradicts_thesis on thesis-restating claims causes wrong inversion (regression guard)", async () => {
+    // Regression test for the "Die Erde ist flach" bug (2026-03-24):
+    // Claims that restate a scientifically-false thesis were labeled contradicts_thesis
+    // by the LLM, causing Stage 5 to invert FALSE→TRUE. This test documents the
+    // failure mode so that if claimDirection is wrong, the aggregate truth is visibly wrong.
+    //
+    // The fix is in the prompt (claimDirection definition). This test validates that
+    // correct labeling (supports_thesis) produces the expected aggregate.
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: { centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 }, derivativeMultiplier: 0.5 },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: { strongAgreementBoost: 0.15, moderateAgreementBoost: 0.05, singleBoundaryPenalty: -0.10 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+
+    const narrativeOutput = {
+      headline: "Regression guard",
+      evidenceBaseSummary: "test",
+      keyFinding: "Test.",
+      limitations: "None.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    // Scenario: thesis "X is flat", claims restate thesis → CORRECTLY supports_thesis
+    const claimsCorrect = [
+      createAtomicClaim({ id: "AC_01", claimDirection: "supports_thesis" }),
+      createAtomicClaim({ id: "AC_02", claimDirection: "supports_thesis" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claimsCorrect, boundaries, evidence);
+    // Stage 4 correctly says claims are FALSE (truth% ≈ 0)
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01", truthPercentage: 2, confidence: 95,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "contradicts" })],
+      }),
+      createCBClaimVerdict({
+        claimId: "AC_02", truthPercentage: 3, confidence: 94,
+        supportingEvidenceIds: ["EV_02"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "contradicts" })],
+      }),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claimsCorrect,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    // With correct supports_thesis labeling: no inversion → aggregate ≈ 2.5% (FALSE)
+    expect(result.truthPercentage).toBeLessThan(10);
+
+    // Now simulate the BUG: same claims mislabeled contradicts_thesis
+    const claimsBug = [
+      createAtomicClaim({ id: "AC_01", claimDirection: "contradicts_thesis" }),
+      createAtomicClaim({ id: "AC_02", claimDirection: "contradicts_thesis" }),
+    ];
+    const stateBug = { ...state, understanding: { ...state.understanding, atomicClaims: claimsBug } };
+    const coverageMatrixBug = buildCoverageMatrix(claimsBug, boundaries, evidence);
+
+    const resultBug = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrixBug, stateBug);
+
+    // With wrong contradicts_thesis: inversion → aggregate ≈ 97.5% (TRUE) — the observed bug
+    expect(resultBug.truthPercentage).toBeGreaterThan(90);
+  });
+
   it("excludes non-direct claims from aggregate truth weighting while keeping them visible", async () => {
     const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
     vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);

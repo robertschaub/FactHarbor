@@ -177,6 +177,11 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Each claim must be independently verifiable — do not create claims that only make sense in the context of other claims.
 - Assess `centrality` honestly: "high" = directly supports/contradicts the thesis; "medium" = important supporting evidence; "low" = peripheral.
+- **`claimDirection` refers ONLY to the claim's relationship with the user's stated thesis — NOT to scientific consensus, mainstream opinion, or factual accuracy.**
+  - `supports_thesis`: The claim restates, implies, or supports the user's stated position. A claim that says the same thing as `articleThesis` (even in different words) is `supports_thesis` — regardless of whether the thesis is scientifically true or false.
+  - `contradicts_thesis`: The claim opposes or negates the user's stated position.
+  - `contextual`: Background claim that neither supports nor opposes the thesis.
+  - **Common error to avoid:** If the user asserts something that contradicts scientific consensus (e.g., a fringe or debunked claim), the extracted atomic claims that restate or decompose that assertion are still `supports_thesis` — because they support what the user stated. The fact-checking verdict (Stage 4) is where truth is assessed, not here.
 - Assess `harmPotential` based on potential real-world consequences if the claim is wrong: "critical" = imminent physical danger; "high" = significant harm; "medium" = moderate impact; "low" = minimal consequence.
 - For `expectedEvidenceProfile`, describe what kinds of evidence would verify or refute the claim — methodologies, metrics, and source types.
 - **Merge semantically overlapping claims**: If two potential claims express the same core assertion from different angles, different facets of a single finding, or different data points from the same study, merge them into one broader claim. Do not produce separate claims for the same phenomenon. **Exception for ambiguous_single_claim inputs**: When claims represent genuinely distinct interpretation dimensions of an ambiguous predicate (e.g., technical vs. economic vs. environmental readings of "useless"), they are NOT semantically overlapping — they are independently verifiable and must remain separate. **Falsifiability test**: keep dimensions separate only if each can be independently verified or refuted with distinct evidence types and outcomes (e.g., technical feasibility uses engineering data while economic viability uses cost-benefit analyses); if two dimensions would rely on the same evidence body, merge them. **Atomicity interaction**: at "Very relaxed"/"Relaxed" atomicity levels, merge dimensions aggressively (1 broad claim or at most 2); at "Moderate" or above, keep 2-3 distinct dimensions.
@@ -237,7 +242,7 @@ Return a JSON object:
       "centrality": "high | medium | low",
       "harmPotential": "critical | high | medium | low",
       "isCentral": true,
-      "claimDirection": "supports_thesis | contradicts_thesis | contextual",
+      "claimDirection": "supports_thesis | contradicts_thesis | contextual — relationship to the user's thesis, NOT to reality/consensus",
       "thesisRelevance": "direct | tangential | irrelevant",
       "keyEntities": ["Entity A", "Entity B"],
       "checkWorthiness": "high | medium | low",
