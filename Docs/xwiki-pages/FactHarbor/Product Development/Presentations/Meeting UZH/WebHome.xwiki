@@ -666,12 +666,12 @@ flowchart LR
 {{/mermaid}}
 
 |=Step|=Type|=What happens
-|**1. Prompt Guidance**|LLM-guided (quality constraints are expressed in the extraction prompt)|The extraction prompt already pushes the model toward source-grounded, specific, non-hand-wavy evidence instead of vague commentary or unsupported paraphrase.
-|**2. Deterministic Filter**|Deterministic|Low-quality evidence is removed with structural pass/fail checks rather than one single score formula: e.g. statementLength < minLength, probativeValue == low, missing URL/excerpt, or statistic without digits. Monitoring formula: falsePositiveRate = highProbativeFiltered / filtered.
-|**3. Provenance Validation**|Deterministic|Evidence must remain tied to a real fetched source and valid URL provenance; synthetic or broken provenance paths are rejected before verdicting. There is no single numeric formula here: it is deterministic pass/fail validation of source linkage and provenance integrity.
-|**4. SR Weighting / LLM Calibration**|Hybrid (LLM-generated source scores, deterministic weighting formula)|Each source domain gets a credibility score from the Source Reliability subsystem, then the deterministic weighting step applies formulas such as adjustedTruth = 50 + (originalTruth - 50) * avgWeight and adjustedConfidence = confidence * (0.5 + avgWeight / 2). Alternatively, the optional Stage 4.5 LLM-backed SR calibration performs portfolio-level analysis of each verdict's source mix and applies bounded confidence adjustments (disabled by default, validation pending).
-|**5. Aggregation Pruning**|Deterministic|Before the final report is produced, tangential or low-value evidence is pruned with threshold logic rather than an LLM judgment: direct claims are always kept, but tangential claims must satisfy evidenceCount >= minEvidence (default 2), and can optionally be required to include at least one medium/high-quality evidence item.
-|**6. Validator Checks**|Hybrid (LLM-based validation plus deterministic warning/report logic)|Post-verdict checks look for grounding problems, direction mismatches, and other consistency issues. There is no single universal formula for this row, but deterministic enforcement logic is applied where needed, for example confidence penalties or warning thresholds after the LLM-based validation step.
+|**1. Prompt Guidance**|LLM-guided|Extraction prompt steers toward source-grounded, specific evidence over vague commentary
+|**2. Deterministic Filter**|Deterministic|Structural pass/fail checks: minimum length, probativeValue, URL/excerpt presence, statistic validation
+|**3. Provenance Validation**|Deterministic|Evidence must link to a real fetched source with valid URL provenance — synthetic paths rejected
+|**4. SR Weighting**|Hybrid|Source Reliability scores per domain (LLM-evaluated) adjust verdict confidence via deterministic weighting formulas
+|**5. Aggregation Pruning**|Deterministic|Tangential or low-evidence claims pruned before the final report
+|**6. Validator Checks**|Hybrid|Post-verdict grounding and direction checks flag consistency issues
 
 Source reliability scores are computed per-domain using multi-provider LLM evaluation, with cross-check refinement and persistent caching. A peer-reviewed study carries different weight than a social media post — automatically.
 
@@ -881,7 +881,6 @@ This is why the data model is central to the research platform claim. Retrieval 
 |Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
 |Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
 |LLM calls per analysis|~40-50
-|Test suite|1,345 tests passing (69 test files, build clean)
 |Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
 |License|Open-source, non-profit, fully transparent
 
@@ -899,11 +898,11 @@ The roadmap below combines core platform work with the most important missing us
 === Core Platform Roadmap ===
 
 |=Phase|=Status|=Core platform milestones
-|**POC**|Completed|Single host; 3x SQLite (factharbor, config, SR); shared secrets; manual ops
-|**Alpha**|Current|Invite-code access; rate limiting; prod + test VPS; pre-release hardening
-|**Beta**|Planned|User authentication; Access-Control; PostgreSQL; horizontal scaling; monitoring dashboards
-|**V1.0**|Planned|Public REST API; OpenTelemetry; log aggregation; disaster recovery
-|**V2.0+**|Vision|Federation; semantic similarity search; distributed consensus
+|**POC**|Completed|Single host, full pipeline operational
+|**Alpha**|Current|Invite-code access, rate limiting, pre-release hardening
+|**Beta**|Planned|User authentication, horizontal scaling, monitoring
+|**V1.0**|Planned|Public REST API, observability, disaster recovery
+|**V2.0+**|Vision|Federation, semantic search, distributed consensus
 
 === Highest-Value Missing Product Features ===
 
@@ -966,12 +965,12 @@ flowchart TB
 
 The pipeline works end-to-end today. To move from working prototype to a public service people can rely on, five engineering goals must be met:
 
-|=Goal|=Current State|=V1.0 Target|=Why It Matters
-|**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, PostgreSQL, queue-based job dispatch|A public service must handle hundreds of concurrent users without degradation
-|**Performance**|~3-5 min per single-claim analysis|< 90 seconds for single claims; parallel stage execution|Users will not wait 5 minutes — response time directly affects adoption
-|**Stability**|Operational but manual recovery; circuit breakers for provider failures|Auto-recovery, health monitoring (Prometheus + Grafana), graceful degradation|A public service must run unattended 24/7 without manual intervention
-|**Repeatability**|Same claim can produce different verdicts across runs (LLM stochasticity, live web evidence)|Verdict stability within defined tolerance bands; self-consistency gating; evidence caching|Trust requires that the same claim analysed twice yields substantially the same verdict — users and researchers must be able to reproduce results
-|**Cost Reduction**|~$0.15-0.25 per analysis (model tiering already saves 50-70%)|< $0.05 per analysis through aggressive caching, smaller models where sufficient, evidence reuse|At scale, every analysis costs real money — a non-profit must minimize per-analysis cost to remain sustainable
+|=Goal|=Current State|=V1.0 Target
+|**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
+|**Performance**|~3-5 min per analysis|< 90 seconds via caching and parallel execution
+|**Stability**|Operational but manual recovery|Auto-recovery, health monitoring, graceful degradation
+|**Repeatability**|Verdicts can vary across runs (LLM stochasticity, live evidence)|Stability within defined tolerance bands; evidence caching
+|**Cost Reduction**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -1004,16 +1003,13 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 |**CB Pipeline (all 5 stages)**|Working|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — fully operational end-to-end
 |**Multi-Provider LLM Debate**|Working|Anthropic advocate + OpenAI challenger, self-consistency, reconciler, validator
 |**Quality Gates (Gate 1 + Gate 4)**|Working|Claim validation and confidence tiering with UI panel
-|**UCM Configuration**|Working|200+ tunable parameters, hot-reloadable, Admin UI with comparison/export
+|**UCM Configuration**|Working|All analysis parameters tunable at runtime via Admin UI, hot-reloadable, with per-job config snapshots for reproducibility
 |**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, evidence weighting; Stage 4.5 LLM calibration implemented (disabled, validation pending)
-|**Multi-Provider Search**|Working|7 providers integrated (Google CSE, SerpAPI + Brave active by default; Serper, Wikipedia, Semantic Scholar, Google Fact Check available); fallback and accumulation mode
-|**Wikipedia & Semantic Scholar**|Working|Fully integrated search providers for academic papers and encyclopedic knowledge (enable via config)
-|**LLM Model Tiering**|Working|Claude Haiku 4.5 (budget) / Claude Sonnet 4.5 (standard) / GPT-4.1 (challenger) — 50-70% cost savings
+|**Multi-Provider Search**|Working|7 providers integrated (web search, Wikipedia, Semantic Scholar, Google Fact Check); automatic fallback
+|**LLM Model Tiering**|Working|Budget models for extraction, standard models for verdicts, cross-provider challenger for debate diversity
 |**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic
 |**Input Neutrality**|Working|"Was X fair?" vs "X was fair" within ±4% tolerance
-|**Test Suite**|Working|1,345 tests passing (69 test files, build clean)
 |**HTML Report Generation**|Working|Structured reports with evidence citations, per-boundary findings
-|**Codebase Modularization**|Complete|Pipeline decomposed (10 stage modules), dead code removed, search utils consolidated, evaluate-source route decomposed
 
 === What's Open ===
 
@@ -1021,12 +1017,9 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 |**User Authentication**|Not started|Currently invite-code only; needs proper user accounts, OAuth, RBAC
 |**Performance**|Needs improvement|~3-5 min per claim; target < 90 seconds via caching and parallel execution
 |**Repeatability**|Partially addressed|Self-consistency gating implemented; evidence caching and tolerance bands needed
-|**Metrics & Observability**|Working|MetricsCollector wired into pipeline; 41 warning types registered; job git-hash traceability; production dashboards and alerting not yet set up
-|**Security Hardening**|Partially done|SSRF DNS-rebinding hardening, cost quotas, and final auth cleanup needed before public release
-|**Database Migration**|Planned|SQLite → PostgreSQL for scalability and concurrent access
-|**Horizontal Scaling**|Not started|Single-host only; needs queue-based job dispatch and worker pool
-|**Claim Caching**|Partially implemented|Search-level caching implemented; full evidence reuse across analyses not yet built (30-50% savings possible)
-|**Provider Fallback**|Partially implemented|Debate provider fallback + search circuit breakers operational; full cross-provider LLM failover not yet wired
+|**Observability**|Partial|Pipeline metrics collection working; production dashboards and alerting not yet set up
+|**Horizontal Scaling**|Not started|Single-host only; needs queue-based dispatch for concurrent users
+|**Claim Caching**|Partial|Search-level caching working; full evidence reuse across analyses planned (30-50% cost savings expected)
 
 === Known Problems & Challenges ===
 
@@ -1053,10 +1046,8 @@ Running the same claim twice can produce meaningfully different verdicts. Three 
 
 |=Problem|=Details
 |**Broad claim over-decomposition**|Rhetorical claims sometimes decomposed too aggressively — weak sub-claims survive Gate 1 and dilute analysis quality
-|**Evidence contamination across jurisdictions**|Resolved — Phase A contamination fixes (Fix 0, 0-A, Fix 4, Fix 5) shipped and validated; relevance classification prompts now use contrastive examples to prevent misclassification
 |**Source reliability evaluation quality**|LLM-based source evaluation is functional but not yet benchmarked against human expert assessments
 |**Cost per analysis**|~$0.15-0.25 is acceptable for Alpha but too high for a free public service at scale
-|**No production dashboards**|Metrics collection is integrated into the pipeline, but no Prometheus/Grafana dashboards or alerting are set up yet
 
 ----
 
