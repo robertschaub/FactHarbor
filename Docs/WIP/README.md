@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-03-24  
-**Status**: WIP Consolidation #8 complete. The active WIP set is reduced to **22** files. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/).
+**Status**: WIP Consolidation #8 complete. The active WIP set is reduced to **19** files. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
 
 ---
 
@@ -67,9 +67,9 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [Multi_Agent_Cross_Provider_Debate_2026-02-27.md](Multi_Agent_Cross_Provider_Debate_2026-02-27.md)
 
 ### LiveCheck / Innosuisse future track
-- [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
-- [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
-- [LiveCheck_State_of_the_Art_Research_2026-03-18.md](LiveCheck_State_of_the_Art_Research_2026-03-18.md)
+- [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
+- [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
+- [LiveCheck_State_of_the_Art_Research_2026-03-18.md](../Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md)
 
 ---
 
@@ -96,6 +96,7 @@ The following active WIP docs were **trimmed to live summaries**. Their historic
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-03-24 | Knowledge move | 3 proposal/research docs reclassified from WIP to `Docs/Knowledge` | 19 |
 | 2026-03-24 | **#8** | 12 WIP files moved to archive + 12 mixed docs split to `_arch` companions | 22 |
 | 2026-03-24 | **#7** | 9 WIP files archived | 34 |
 | 2026-03-17 | **#6** | 30 WIP + 6 STATUS + 19 Handoffs. Split files → `_fwd` extracts. | 18 |

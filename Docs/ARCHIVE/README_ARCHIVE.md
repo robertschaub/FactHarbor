@@ -2,7 +2,7 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-24 (WIP Consolidation #8 — mixed WIP docs split, stale plans archived)
+**Last Updated**: 2026-03-24 (WIP Consolidation #8 + LiveCheck/Innosuisse knowledge reclassification)
 
 ---
 
@@ -19,9 +19,9 @@
 | `Model_Auto_Resolution_Plan.md` | Implemented |
 | `TestTuning_Mode_Design_2026-02-17.md` | Dormant proposal, not active |
 | `TestTuning_UI_Design_2026-02-17.md` | Dormant proposal, not active |
-| `Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md` | Superseded by stronger LiveCheck / Innosuisse docs |
-| `Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx` | Draft artifact superseded by markdown proposal docs |
-| `LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx` | Draft artifact superseded by markdown research note |
+| `Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md` | Superseded by stronger LiveCheck / Innosuisse docs; later reclassified to `Docs/Knowledge` |
+| `Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx` | Draft artifact superseded by markdown proposal docs; later reclassified to `Docs/Knowledge` |
+| `LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx` | Draft artifact superseded by markdown research note; later reclassified to `Docs/Knowledge` |
 | `2026-03-19_Independent_Report_Quality_Investigation.md` | Historical independent review absorbed into curated current summary |
 | `SR_Evidence_Quality_Assessment_Plan_2026-03-11.md` | Materially implemented in SR route/config |
 | `SR_Evidence_Weighting_Investigation_2026-03-16.md` | Historical root-cause record; open residuals moved to backlog |
@@ -42,6 +42,22 @@
 - `Plastik_Recycling_Report_Regression_Investigation_2026-03-16*`
 
 **Active WIP count after cleanup:** 22
+
+---
+
+### Knowledge Reclassification (2026-03-24)
+
+**Description**: Reclassified the LiveCheck / Innosuisse proposal set from `Docs/WIP` / `Docs/ARCHIVE` into `Docs/Knowledge`, because these files are reference/funding material rather than active implementation planning.
+
+**Files moved to `Docs/Knowledge`** (6):
+- `Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md`
+- `Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`
+- `LiveCheck_State_of_the_Art_Research_2026-03-18.md`
+- `Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md`
+- `Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx`
+- `LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx`
+
+**Active WIP count after reclassification:** 19
 
 ---
 

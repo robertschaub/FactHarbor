@@ -1468,3 +1468,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not bundle unrelated analyzer code changes into the docs commit. This consolidation touched docs only.
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_WIP_Consolidation_Round8.md` for the full keep/split/archive rationale and the resulting open-topic map.
 **Learnings:** no
+
+---
+### 2026-03-24 | Lead Architect | Codex (GPT-5) | Reclassify LiveCheck and Innosuisse Docs to Knowledge
+**Task:** Move all `Innosuisse_*` and `LiveCheck*` proposal/reference documents out of `Docs/WIP` / `Docs/ARCHIVE` into `Docs/Knowledge` and update the active tracking docs accordingly.
+**Files touched:** `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx`, `Docs/WIP/README.md`, `Docs/STATUS/Backlog.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reclassified LiveCheck / Innosuisse material as knowledge/funding reference rather than active implementation WIP. Updated the canonical future-track reference in `Backlog.md` to point to `Docs/Knowledge`, reduced the active WIP count from 22 to 19, and documented the reclassification in `README_ARCHIVE.md`.
+**Open items:** Historical `Agent_Outputs.md` entries still mention the old WIP paths because those logs are preserved as historical records.
+**Warnings:** This was a docs/location change only. No analyzer or runtime behavior changed.
+**For next agent:** Use `Docs/Knowledge` as the canonical home for LiveCheck / Innosuisse proposal material. Do not recreate those files in `Docs/WIP`.
+**Learnings:** no

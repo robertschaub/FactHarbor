@@ -51,7 +51,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | **SEARCH-1** | **Deep supplementary-provider integration**: pipeline-aware Wikipedia / Semantic Scholar / Fact Check usage beyond the already-shipped provider layer. | Search / Analyzer | low | med | `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` |
 | **SR-1** | **Stage 4.5 SR calibration experiment**: feature-flagged/off in code; only reopen after the current fixed-stack validation gate closes. | Analyzer / SR / Quality | low | med | `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md` |
 | **AGG-1** | **LLM-assessed triangulation / derivative weighting**: replace remaining deterministic aggregation heuristics that make analytical judgments. | Analyzer / Architecture | low | med | `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` |
-| **LIVE-1** | **LiveCheck / Innosuisse future track**: funding and research proposal line for live audio/video fact-checking. Keep distinct from the current Alpha validation track. | Product / Research / Funding | low | med | `Docs/WIP/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/WIP/LiveCheck_State_of_the_Art_Research_2026-03-18.md` |
+| **LIVE-1** | **LiveCheck / Innosuisse future track**: funding and research proposal line for live audio/video fact-checking. Keep distinct from the current Alpha validation track. | Product / Research / Funding | low | med | `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md` |
 
 ---
 
