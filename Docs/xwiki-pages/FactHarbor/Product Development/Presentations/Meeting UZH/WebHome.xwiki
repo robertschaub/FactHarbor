@@ -31,14 +31,14 @@ FactHarbor brings clarity and transparency to a world full of unclear, contested
 
 (% class="box warningmessage" %)
 (((
-**Non-profit and Transparent**
-FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
-We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
+**Public-Interest and Transparent**
+FactHarbor is a strictly **Open-Source** project with a clear public-interest orientation.
+The goal is full transparency — no hidden algorithms, inspectable evidence trails, and a governance model that is being formalized.
 )))
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is in preparation and could plausibly be founded and voluntarily registered in the **Handelsregister** within about **3-4 weeks**.
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
 )))
 
 == Cooperation Opportunities at a Glance ==
@@ -47,16 +47,16 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 (((
 **Three research questions** for an Innosuisse project ([[details>>||anchor="HProposedResearchQuestions28forInnosuisse29"]]):
 
-* **RQ1: Evidence sufficiency under resource constraints** — What minimum model capacity and evidence retrieval depth maintains verdict reliability within defined confidence bounds? No existing work studies this for a full multi-stage pipeline.
-* **RQ2: Cross-stage knowledge distillation** — Can the full pipeline (claim extraction → evidence retrieval → verdict debate → aggregation) be distilled into specialized small language models? ViClaim shows 550M encoders already outperform zero-shot frontier LLMs for classification.
-* **RQ3: Multilingual verdict stability under compression** — How does quantization and distillation affect verdict consistency across languages? Directly measurable using FactHarbor's EN/DE/FR pipeline and ViClaim's trilingual benchmark.
+* **RQ1: Evidence sufficiency under resource constraints** — What minimum evidence retrieval depth and model capacity preserves verdict reliability within defined confidence bounds? The novelty is not a single component, but measurement across a full multi-stage pipeline.
+* **RQ2: Cross-stage knowledge distillation** — Can selected pipeline subtasks (especially claim detection, relevance screening, and evidence classification) be distilled into specialized small models while preserving end-to-end verdict quality? ViClaim provides strong prior evidence for the claim-detection part.
+* **RQ3: Multilingual verdict stability under compression** — How do quantization and distillation affect verdict consistency across languages and repeated runs? This is measurable against FactHarbor's multilingual pipeline and external multilingual benchmarks.
 )))
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Eight collaboration areas** ([[details>>||anchor="HAdditionalCollaborationOpportunities"]]):
 
-* **Evidence-quality benchmarking** — formalize and benchmark our filtering against ViClaim and CheckThat! evaluation standards
+* **Evidence-quality benchmarking** — formalize and benchmark filtering and relevance scoring against retrieval and verification benchmarks such as CheckThat!, and against dedicated claim-detection benchmarks where appropriate
 * **Retrieval evaluation** — measure how well our iterative search captures relevant evidence; hybrid retrieval (lexical + semantic + reranking) is state-of-art
 * **Claim detection benchmarking** — evaluate Stage 1 against ViClaim (17K sentences, 3 languages) and CheckThat! datasets
 * **Source credibility benchmarking** — evaluate our multi-provider reliability scoring against expert assessments
@@ -71,7 +71,7 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 **More research-relevant topics** found in this document:
 
 * **Report stability** — the most significant quality challenge: same claim can produce different verdicts across runs. Defining formal stability metrics and reproducibility protocols for LLM-based fact-checking is an open research problem. ([[details>>||anchor="HKnownProblems26Challenges"]])
-* **V1.0 engineering goals as research questions** — speed, repeatability, precision, and cost reduction each map directly to RQ1-RQ3. Every V1.0 goal has a corresponding publishable research question. ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]])
+* **V1.0 engineering goals as research inputs** — speed, repeatability, precision, and cost reduction create measurable constraints and baselines for RQ1-RQ3, but still need formal evaluation design to become publishable research. ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]])
 * **Federated fact-checking** — how to reconcile conflicting verdicts across independent instances, detect cross-node contradictions, and maintain quality guarantees in a decentralized network. ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]])
 * **Community and collaboration layer** — shared work on claims: expert input, joint annotation, comparative fact-check views, and team-based workflows. ([[details>>||anchor="HCommunity26Collaboration"]])
 )))
@@ -100,16 +100,16 @@ A collaboration between FactHarbor and a Swiss research partner (ZHAW, UZH, or E
 === What the Research Partner Gains ===
 
 |=Benefit|=Why It Matters
-|**A deployed, operational system**|Unlike most research prototypes, FactHarbor runs end-to-end on real claims today. Research can happen on a live system producing real artifacts, not only synthetic benchmarks. HAMiSoN built demos and datasets; FactHarbor provides a full production pipeline as a testbed.
-|**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval — few equivalent systems exist. Each pipeline stage produces inspectable intermediate artifacts, and all analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
+|**A working alpha testbed**|Unlike many research prototypes, FactHarbor already runs end-to-end on real claims and produces inspectable artifacts. That makes it useful as an experimental platform, while still being honest about current Alpha-stage limitations.
+|**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval is available as a concrete experimental platform. Each pipeline stage produces inspectable intermediate artifacts, and analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
 |**Domain-agnostic scope**|Current Swiss NLP research (HAMiSoN, Climinator, CheckThat!) often focuses on specific domains (social media campaigns, climate claims). FactHarbor provides a **general-domain, topic-agnostic** setting for testing claim detection, evidence retrieval, and verification beyond a single topical area.
 |**Publishable open problems**|Resource-efficient pipeline distillation, multilingual verdict stability, evidence sufficiency bounds, report stability metrics, and cross-provider debate dynamics are all concrete topics that can support papers.
 |**Innosuisse implementation partner**|For Innosuisse Innovation Projects, FactHarbor serves as the concrete implementation partner and real-world validation environment — the applied side that complements academic research.
-|**Open-source visibility**|Contributions to an open-source, non-profit project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
+|**Open-source visibility**|Contributions to an open-source, public-interest project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Summary:** Research partners mainly gain a live, modular, topic-agnostic research testbed with real artifacts, publishable open problems, and a ready-made Innosuisse implementation partner.
+**Summary:** Research partners mainly gain a modular, topic-agnostic Alpha-stage research testbed with real artifacts, concrete open problems, and a plausible Innosuisse implementation partner.
 )))
 
 == Cooperation and Funding Options ==
@@ -974,7 +974,7 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Research angle:** These V1.0 goals map directly to the "resource-efficient fact verification" research framing. Speed and cost reduction connect to model distillation (RQ2). Repeatability connects to multilingual verdict stability (RQ3). Precision connects to evidence sufficiency bounds (RQ1). Each V1.0 engineering goal has a corresponding publishable research question.
+**Research angle:** These V1.0 goals create measurable constraints for the "resource-efficient fact verification" framing. Speed and cost reduction motivate model distillation (RQ2). Repeatability motivates stability and reproducibility work (RQ3). Precision motivates evidence sufficiency studies (RQ1). The engineering roadmap is therefore a useful experimental baseline, not a substitute for formal research design.
 )))
 
 ----
@@ -1000,14 +1000,14 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 === What Works ===
 
 |=Area|=Status|=Details
-|**CB Pipeline (all 5 stages)**|Working|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — fully operational end-to-end
+|**CB Pipeline (all 5 stages)**|Working in Alpha|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — operational end-to-end, with known repeatability and product-maturity gaps documented below
 |**Multi-Provider LLM Debate**|Working|Anthropic advocate + OpenAI challenger, self-consistency, reconciler, validator
 |**Quality Gates (Gate 1 + Gate 4)**|Working|Claim validation and confidence tiering with UI panel
 |**UCM Configuration**|Working|All analysis parameters tunable at runtime via Admin UI, hot-reloadable, with per-job config snapshots for reproducibility
 |**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, evidence weighting; Stage 4.5 LLM calibration implemented (disabled, validation pending)
 |**Multi-Provider Search**|Working|7 providers integrated (web search, Wikipedia, Semantic Scholar, Google Fact Check); automatic fallback
 |**LLM Model Tiering**|Working|Budget models for extraction, standard models for verdicts, cross-provider challenger for debate diversity
-|**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic
+|**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic in active pipeline code
 |**Input Neutrality**|Working|"Was X fair?" vs "X was fair" within ±4% tolerance
 |**HTML Report Generation**|Working|Structured reports with evidence citations, per-boundary findings
 
@@ -1122,7 +1122,7 @@ The Source Reliability (SR) module — which evaluates domain credibility using 
 
 == Open-Source Goals: Contributors & Sponsors ==
 
-FactHarbor is a **non-profit, open-source** project. Sustainability depends on building a community and securing institutional support:
+FactHarbor is an **open-source, public-interest** project. Sustainability depends on building a community and securing institutional support:
 
 === Contributors ===
 
@@ -1156,18 +1156,18 @@ FactHarbor is a **non-profit, open-source** project. Sustainability depends on b
 
 ZHAW's NLP group has produced the most directly relevant work in claim detection for fact-checking:
 
-* **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 30+ publications): Holistic misinformation analysis covering claim worthiness checking, stance detection, and multilingual verified claim retrieval. The project's message-level analysis maps directly to FactHarbor's Stage 1 (claim extraction) and Stage 4 (verdict debate).
+* **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 30+ publications): Holistic misinformation analysis covering claim worthiness checking, stance detection, and multilingual verified claim retrieval. The strongest overlap with FactHarbor is at the message level: claim detection, retrieval, and evidence interpretation.
 * **ViClaim** (EMNLP 2025, main conference): Multilingual multi-label claim detection dataset (17,116 sentences, 3 languages, 6 topics). Key finding: fine-tuned XLM-RoBERTa-Large (550M params) achieves F1=0.90 and **outperforms zero-shot o3-mini** (F1=0.78). Models trained on written text collapse on spoken text (F1 drops from 0.69 to 0.32).
 * **CheckThat! Lab** (CLEF, 2nd place 2023, 3rd place 2025): The longest-running shared task in automated fact-checking. ZHAW's kernel ensemble method for multimodal check-worthiness detection and hybrid retrieval pipeline for scientific source matching demonstrate competitive research capability.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Pipeline mapping:** HAMiSoN's claim worthiness → FactHarbor Stage 1. HAMiSoN's stance detection → FactHarbor Stage 4 debate. HAMiSoN's verified claim retrieval → FactHarbor Stage 2 research. The overlap is structural, not superficial.
+**Pipeline mapping:** HAMiSoN's claim worthiness aligns closely with FactHarbor Stage 1, and HAMiSoN's verified claim retrieval aligns with Stage 2. Stance detection is not the same as FactHarbor's debate stage, but it is a relevant neighboring capability at the message level.
 )))
 
 === Resource-Efficient Fact Verification (Core Research Angle) ===
 
-The central research question for a joint project: **What is the minimum model capacity required to reliably verify claims across a full multi-stage pipeline?**
+One plausible central research question for a joint project is: **What is the minimum model capacity required to verify claims reliably across a full multi-stage pipeline?**
 
 Current evidence supports this direction:
 * ViClaim (EMNLP 2025): 550M encoder matches or beats 3B-7B decoders on claim detection
@@ -1176,7 +1176,7 @@ Current evidence supports this direction:
 * AVeriTeC 2025 shared task: Now explicitly requires <10B parameters and <1 minute per claim — the community is moving here
 * EdgeJury (2026): Ensembles of 3B-8B models achieve 76.2% TruthfulQA with 8.4s latency
 
-No existing work has studied distillation of a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation). Most research addresses single stages. FactHarbor's operational pipeline provides the baseline for measuring quality degradation as model capacity decreases — a novel contribution.
+To the best of our current review, no existing work has studied distillation of a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation). Most research addresses single stages. FactHarbor's pipeline therefore offers a concrete baseline for measuring quality degradation as model capacity decreases.
 
 === Source Attribution (ACL 2024) ===
 
@@ -1194,18 +1194,18 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**RQ1: Evidence sufficiency under resource constraints** — What minimum evidence retrieval depth and model capacity maintains verdict reliability within defined confidence bounds? (Builds on Atanasova et al. TACL 2022, extends to full pipeline)
+**RQ1: Evidence sufficiency under resource constraints** — What minimum evidence retrieval depth and model capacity preserves verdict reliability within defined confidence bounds, and how should reliability be measured? (Builds on Atanasova et al. TACL 2022, extends to full pipeline)
 
-**RQ2: Cross-stage knowledge distillation** — Can a multi-stage LLM pipeline (claim extraction → evidence retrieval → verdict debate → aggregation) be distilled into specialized small language models preserving verdict quality? (Builds on DRAG, ACL 2025)
+**RQ2: Cross-stage knowledge distillation** — Which subtasks in a multi-stage pipeline (claim extraction → evidence retrieval → verdict debate → aggregation) can be replaced by specialized small models without materially degrading end-to-end verdict quality? (Builds on DRAG, ACL 2025)
 
-**RQ3: Multilingual verdict stability under compression** — How does quantization and distillation affect verdict consistency across languages? (Builds on ViClaim's 3-language results, AVeriTeC 2025 constraints)
+**RQ3: Multilingual verdict stability under compression** — How do quantization and distillation affect verdict consistency across languages and across repeated runs under the same settings? (Builds on ViClaim's 3-language results, AVeriTeC 2025 constraints)
 )))
 
 === Additional Collaboration Opportunities ===
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-* **Precision / evidence-quality improvement** — formalize and benchmark our filtering against ViClaim and CheckThat! evaluation standards
+* **Precision / evidence-quality improvement** — formalize and benchmark filtering, relevance scoring, and evidence selection against task-appropriate benchmarks
 * **Retrieval evaluation** — measure how well our iterative search captures relevant evidence; hybrid retrieval (lexical + semantic + reranking) is state-of-art (CheckThat! 2025)
 * **Claim detection benchmarking** — evaluate Stage 1 against ViClaim and CheckThat! datasets across languages
 * **Source credibility benchmarking** — evaluate our multi-provider reliability scoring
@@ -1221,7 +1221,7 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 (% class="box successmessage" %)
 (((
-**Live Demo** — Let me demonstrate the system with a live analysis. Pick any claim, in any language.
+**Live Demo** — I can demonstrate the system with a prepared example and, if useful, one additional audience-selected claim.
 )))
 
 ----
