@@ -1,3 +1,5 @@
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
+
 # Claude Code instructions — FactHarbor
 
 Full project rules, terminology, and architecture: @AGENTS.md (auto-loaded alongside this file — do not duplicate content here).
@@ -6,7 +8,7 @@ Full project rules, terminology, and architecture: @AGENTS.md (auto-loaded along
 
 Two apps + one tool:
 - `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts`, `src/lib/analyzer/verdict-stage.ts`.
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` (Orchestrator), `src/lib/analyzer/research-orchestrator.ts` (Stage 2 Orch), `src/lib/analyzer/research-query-stage.ts` (Stage 2 Queries), `src/lib/analyzer/research-acquisition-stage.ts` (Stage 2 Fetching), `src/lib/analyzer/research-extraction-stage.ts` (Stage 2 Extraction), `src/lib/analyzer/verdict-stage.ts` (Stage 4), `src/lib/analyzer/aggregation-stage.ts` (Stage 5).
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
 
 ## Primary data flow

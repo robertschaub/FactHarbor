@@ -32,7 +32,6 @@ Multi agent collaboration shall be possible all the time, so that another agent 
 ---
 
 ## Tasks Pending:
-
 ---
 As Senior Developer; 
 When the user reads a specific report, support the user to navigate between the elements in the UI, so that all items that are logically linked can be navigated. Cross links between items in "Summary" and "Sources" tabs shall also be supported. Maybe to support this well some layout changes would be needed - propose if needed.
