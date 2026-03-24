@@ -2,7 +2,46 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-24 (WIP Consolidation #7 — Mar-22/23 execution and review docs archived)
+**Last Updated**: 2026-03-24 (WIP Consolidation #8 — mixed WIP docs split, stale plans archived)
+
+---
+
+### WIP Consolidation #8 (2026-03-24)
+
+**Description**: Reduced WIP from 34 to 22 active files. Moved implemented or dormant WIP documents into archive, and split mixed current/historical documents into slim live WIP summaries plus `_arch` companions with the full historical detail.
+
+**WIP files archived** (12):
+
+| File | Reason |
+|------|--------|
+| `2026-03-20_Broad_Claim_Contract_Validator_Plan.md` | Implemented; retained in status/history, not active WIP |
+| `2026-03-06_Screen_Report_Visual_Redesign.md` | Redesign shipped; now historical |
+| `Model_Auto_Resolution_Plan.md` | Implemented |
+| `TestTuning_Mode_Design_2026-02-17.md` | Dormant proposal, not active |
+| `TestTuning_UI_Design_2026-02-17.md` | Dormant proposal, not active |
+| `Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md` | Superseded by stronger LiveCheck / Innosuisse docs |
+| `Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx` | Draft artifact superseded by markdown proposal docs |
+| `LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx` | Draft artifact superseded by markdown research note |
+| `2026-03-19_Independent_Report_Quality_Investigation.md` | Historical independent review absorbed into curated current summary |
+| `SR_Evidence_Quality_Assessment_Plan_2026-03-11.md` | Materially implemented in SR route/config |
+| `SR_Evidence_Weighting_Investigation_2026-03-16.md` | Historical root-cause record; open residuals moved to backlog |
+| `Gate1_Investigation_2026-03-09.md` | Historical investigation; remaining residuals already canonical in backlog/code |
+
+**Mixed WIP files split into live + `_arch` companions** (12):
+- `2026-03-18_Refactoring_Plan_Code_Cleanup*`
+- `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19*`
+- `Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16*`
+- `2026-03-19_Report_Quality_Evolution_Investigation*`
+- `Report_Quality_Criteria_Scorecard_2026-03-12*`
+- `2026-03-03_Wikipedia_SemanticScholar_Integration_Concept*`
+- `API_Cost_Reduction_Strategy_2026-02-13*`
+- `Infrastructure_and_Config_fwd*`
+- `LLM_Allocation_and_Cost_fwd*`
+- `Quality_Improvement_Pending_fwd*`
+- `2026-03-19_SR_LLM_Calibration_Plan*`
+- `Plastik_Recycling_Report_Regression_Investigation_2026-03-16*`
+
+**Active WIP count after cleanup:** 22
 
 ---
 

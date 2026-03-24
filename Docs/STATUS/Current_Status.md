@@ -3,7 +3,7 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-24
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational and the major refactor wave is materially complete, but the current posture is **stabilization and focused control-quality validation**, not optimization. **WS-1 through WS-4 are complete**, the Stage-4 provider guard is live-validated under concurrent load, the Stage-1 `claimDirection` prompt has been clarified, and the preliminary-evidence multi-claim mapping leak is fixed in code (`31aea55d`). The current active gate is a post-fix live validation batch on the restarted stack; the main open non-quality bug is a separate jobs-list progress/verdict sync race.
+**Status**: ClaimAssessmentBoundary pipeline is operational and the major refactor wave is materially complete, but the current posture is **stabilization and focused control-quality validation**, not optimization. **WS-1 through WS-4 are complete**, the Stage-4 provider guard is live-validated under concurrent load, the Stage-1 `claimDirection` prompt has been clarified, and the preliminary-evidence multi-claim mapping leak is fixed in code (`31aea55d`). The current active gate is a post-fix live validation batch on the restarted stack; the main open non-quality bug is a separate jobs-list progress/verdict sync race. **Bolsonaro is not currently a positive benchmark until it is re-baselined on the fixed stack, and Stage 4.5 SR calibration remains feature-flagged/off.**
 
 ---
 
@@ -11,6 +11,7 @@
 
 - **Finish the current post-fix live batch** on commit `31aea55d` across Earth/Hydrogen/Plastik/Bolsonaro controls.
 - **Confirm boundary coverage integrity**: Boundaries with evidence should no longer appear populated-but-empty in the coverage matrix solely because seeded preliminary evidence lost `relevantClaimIds`.
+- **Do not treat Bolsonaro as recovered** until a clean fixed-stack rerun confirms it.
 - **Keep optimization blocked**: `P1-A` and `P1-B` are still not approved while this validation gate is open.
 - **Follow up on runtime/UI consistency**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
 
@@ -111,7 +112,7 @@
 **Inverse Claim Asymmetry — Phases 0–3 complete:**
 - ✅ Phase 1: integrity policies implemented (`safeDowngradeVerdict`, `retryOnceThenSafeDowngrade`)
 - ✅ Phase 1 policies implemented — commit `8e4a0d0`
-- ⚠️ Phase 1 policies **disabled** as of 2026-03-05 (both set to `disabled` in active UCM config due to false-positive concerns). `warn_and_cap` softer mode planned — see variability investigation `Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`
+- ⚠️ Phase 1 policies **disabled** as of 2026-03-05 (both set to `disabled` in active UCM config due to false-positive concerns). `warn_and_cap` softer mode remains only a deferred idea — see `Docs/WIP/Quality_Improvement_Pending_fwd.md`
 - ✅ Phase 2 (7 tasks): 4 strict inverse fixture pairs, CE gate (`strictInverseGatePassed`), `InverseConsistencyDiagnostic`, root-cause tags, HTML panel, `inverse_consistency_error` warning, paired-job audit tool
 - ✅ Phase 3: `inverse-minwage-employment-en` mandatory in smoke lane, CE threshold enforced — commit `3fc9c0b`
 - ✅ Canary baselines: minwage-en CE=12 pp, fluoride-en CE=16 pp, gmo-de CE runs completed (2026-02-28)
@@ -750,7 +751,7 @@ P0 quality fix: Stage 1 Pass 2 was over-anchoring claims to preliminary evidence
 **Pending:**
 - Phase 3: Evidence payload compression (scope signals instead of full statements in Pass 2)
 - Phase 4: Validation against baseline scenarios with real LLM calls (SRF report + "sky is blue")
-- Full acceptance criteria: [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../WIP/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
+- Full acceptance criteria: [Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md](../ARCHIVE/Lead_Developer_Companion_Claim_Fidelity_2026-02-18.md)
 
 **Tests:** 853 passing (45 test files). New tests: fidelity filtering, safety-net rescue.
 

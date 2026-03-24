@@ -5,7 +5,7 @@
 **Original Author:** Senior Developer (Claude Code)
 **Revised by:** Lead Architect (Claude Code, Opus 4.6)
 **Reviewed by:** LLM Expert (Claude Code, Opus 4.6), Lead Developer (Claude Code, Opus 4.6)
-**Trigger:** §4.3 of `SR_Evidence_Weighting_Investigation_2026-03-16.md` flagged triangulation and derivative factor as deterministic heuristics making analytical judgments, violating the LLM Intelligence mandate in AGENTS.md.
+**Trigger:** §4.3 of `../ARCHIVE/SR_Evidence_Weighting_Investigation_2026-03-16.md` flagged triangulation and derivative factor as deterministic heuristics making analytical judgments, violating the LLM Intelligence mandate in AGENTS.md.
 
 ---
 
@@ -703,7 +703,7 @@ All 6 open questions from v2 have been resolved by the multi-role review:
 
 ## 17. Related Documents
 
-- `Docs/WIP/SR_Evidence_Weighting_Investigation_2026-03-16.md` — §4.3 flagged this issue
+- `Docs/ARCHIVE/SR_Evidence_Weighting_Investigation_2026-03-16.md` — §4.3 flagged this issue
 - `Docs/WIP/Combined_Claim_and_Boundary_Quality_Remediation_Plan_2026-03-16.md`
 - `Docs/ARCHITECTURE/Calculations.md` — §7 Triangulation Scoring, §4 Aggregation
 - `AGENTS.md` — LLM Intelligence mandate, String Usage Boundary, Multilingual Robustness

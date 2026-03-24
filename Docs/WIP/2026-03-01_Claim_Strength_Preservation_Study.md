@@ -4,7 +4,7 @@
 
 **Filed by:** Senior Developer (Claude Opus 4.6)
 **Trigger:** 6 analysis jobs for near-identical German inputs produced 32%–75% variance
-**Related:** Inverse Claim Asymmetry Plan (`2026-02-27_Inverse_Claim_Asymmetry_Plan.md`)
+**Related:** Inverse Claim Asymmetry Plan (`../ARCHIVE/2026-02-27_Inverse_Claim_Asymmetry_Plan.md`)
 **Scope boundary:** This document covers a NEW issue distinct from ICA Plan's verdict integrity gating. ICA Plan addresses post-verdict integrity; this issue occurs EARLIER at Stage 1 claim extraction.
 
 ---

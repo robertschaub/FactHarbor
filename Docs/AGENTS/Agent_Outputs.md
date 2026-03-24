@@ -1458,3 +1458,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The detailed handoff assumes the current `ai@6.0.78` behavior continues to honor `retry-after` / `retry-after-ms`. Re-check this if the SDK is upgraded.
 **For next agent:** Use the handoff file as the authoritative explanation of the Stage-4 backpressure fix and its tuning model.
 **Learnings:** no
+
+---
+### 2026-03-24 | Lead Architect | Codex (GPT-5) | WIP Consolidation Round 8
+**Task:** Consolidate `Docs/WIP`, split mixed live/historical docs, archive stale plans, and refresh status/backlog tracking after the March refactor and validation work.
+**Files touched:** `Docs/WIP/*`, `Docs/ARCHIVE/*`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_WIP_Consolidation_Round8.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reduced the active WIP set to 22 curated files; moved purely historical material into `Docs/ARCHIVE`; created `_arch` companions for mixed docs; repositioned WIP around the current fixed-stack validation gate and residual future-facing tracks instead of closed Mar-22/23 execution history.
+**Open items:** `VAL-1`, `VAL-2`, and possibly `VAL-3` remain open pending evaluation of the current live validation batch on commit `31aea55d`.
+**Warnings:** Do not bundle unrelated analyzer code changes into the docs commit. This consolidation touched docs only.
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_WIP_Consolidation_Round8.md` for the full keep/split/archive rationale and the resulting open-topic map.
+**Learnings:** no
