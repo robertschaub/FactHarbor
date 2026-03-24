@@ -9,13 +9,15 @@
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Provide information for inspection and discussion:**
-* show what FactHarbor already does well and where the most research-relevant gaps still are
-* test collaboration fit around **claim detection**, **evidence quality**, **resource-efficient verification**, **multilingual robustness**, **evaluation**, and **reproducibility**
-* discuss realistic collaboration and funding paths — primarily **Innosuisse** with ZHAW as research partner, with openness to UZH/ETH cooperation
+* show what FactHarbor already does well, where the main technical and research challenges still are, and where an academic partner could add the most value
+* assess collaboration fit around **claim detection**, **evidence quality**, **resource-efficient verification**, **speed / cost reduction**, **low-latency retrieval**, **multilingual robustness**, **evaluation**, and **reproducibility**
+* identify whether the strongest cooperation focus should be on near-term text-pipeline improvement, medium-term research platform work, or longer-term directions such as multimedia fact-checking
+* discuss realistic cooperation and funding paths across different academic partners and funding instruments, including Innosuisse, SNSF, Hasler Foundation, BRIDGE, and other suitable routes
 
 **Goal after inspection and discussion:**
-* a shared view on whether there is collaboration fit
-* a list of the most promising joint research questions and a concrete next step (e.g., Innosuisse Innovation Cheque)
+* a shared view on whether there is meaningful collaboration fit
+* a short list of the most promising research and implementation directions
+* a concrete next step if there is fit (for example an Innovation Cheque, a student thesis, or a small joint pilot)
 )))
 
 == FactHarbor Organisation ==
@@ -41,38 +43,37 @@ The goal is full transparency — no hidden algorithms, inspectable evidence tra
 The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
 )))
 
-== Cooperation Opportunities at a Glance ==
+== Cooperation Opportunities ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Three research questions** for an Innosuisse project ([[details>>||anchor="HProposedResearchQuestions28forInnosuisse29"]]):
+**Highest-priority needs right now:**
 
-* **RQ1: Evidence sufficiency under resource constraints** — What minimum evidence retrieval depth and model capacity preserves verdict reliability within defined confidence bounds? The novelty is not a single component, but measurement across a full multi-stage pipeline.
-* **RQ2: Cross-stage knowledge distillation** — Can selected pipeline subtasks (especially claim detection, relevance screening, and evidence classification) be distilled into specialized small models while preserving end-to-end verdict quality? ViClaim provides strong prior evidence for the claim-detection part.
-* **RQ3: Multilingual verdict stability under compression** — How do quantization and distillation affect verdict consistency across languages and repeated runs? This is measurable against FactHarbor's multilingual pipeline and external multilingual benchmarks.
+* **Speed and cost reduction** — today the system is useful, but still too slow and too expensive for large-scale public use
+* **Stability and reproducibility** — repeated runs should converge more reliably instead of producing avoidable verdict variance
+* **Evidence retrieval quality under latency constraints** — retrieval must become faster without losing too much relevance and evidence quality
+* **Claim normalization and multilingual robustness** — inputs vary widely in phrasing, language, and implicitness, especially in international-market settings
 )))
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Eight collaboration areas** ([[details>>||anchor="HAdditionalCollaborationOpportunities"]]):
+**Best collaboration starting points:**
 
-* **Evidence-quality benchmarking** — formalize and benchmark filtering and relevance scoring against retrieval and verification benchmarks such as CheckThat!, and against dedicated claim-detection benchmarks where appropriate
-* **Retrieval evaluation** — measure how well our iterative search captures relevant evidence; hybrid retrieval (lexical + semantic + reranking) is state-of-art
-* **Claim detection benchmarking** — evaluate Stage 1 against ViClaim (17K sentences, 3 languages) and CheckThat! datasets
-* **Source credibility benchmarking** — evaluate our multi-provider reliability scoring against expert assessments
-* **Reproducibility / stability protocols** — define tolerance bands, repeatability metrics, and formal evaluation procedures for LLM-based fact-checking
-* **Cost reduction via distillation** — replace expensive LLM API calls with fine-tuned encoders for classification subtasks (validated: 550M matches 7B)
-* **Multi-agent debate architecture** — study and improve the adversarial debate pattern itself
-* **CheckThat! 2026 participation** — joint entry in claim normalization, fact-checking article generation, or reasoning trace tasks
+* **Small models for high-volume subtasks** — strongest immediate lever for lowering latency and cost in Stage 1 and Stage 2 screening
+* **Low-latency retrieval / RAG** — strongest immediate lever for making evidence acquisition practical at interactive speeds
+* **Evaluation and reproducibility** — strongest scientific lever for turning the current alpha system into a publishable, benchmarked research platform, especially with clear **F1**, **MRR@5**, and report-stability baselines ([[details>>||anchor="HWhattheResearchPartnerGains"]])
+* **Prototype-and-measure collaboration** — test one or two high-leverage improvements directly in FactHarbor instead of starting with a broad research programme
+* **Shared evaluation data and annotation work** — use ViClaim, CheckThat!, and targeted FactHarbor examples to create compact evaluation sets for the most important failure modes
+* **Student theses and publication outputs** — focused subprojects and shared-task submissions provide low-risk ways to start collaboration and generate early results
 )))
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**More research-relevant topics** found in this document:
+**Medium- and longer-term research directions** found in this document:
 
-* **Report stability** — the most significant quality challenge: same claim can produce different verdicts across runs. Defining formal stability metrics and reproducibility protocols for LLM-based fact-checking is an open research problem. ([[details>>||anchor="HKnownProblems26Challenges"]])
-* **V1.0 engineering goals as research inputs** — speed, repeatability, precision, and cost reduction create measurable constraints and baselines for RQ1-RQ3, but still need formal evaluation design to become publishable research. ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]])
-* **Federated fact-checking** — how to reconcile conflicting verdicts across independent instances, detect cross-node contradictions, and maintain quality guarantees in a decentralized network. ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]])
+* **Reproducible fact-checking testbed** — per-job config snapshots, schema versioning, and configurable pipeline stages make FactHarbor useful not just as a product prototype, but as a platform for publishable baseline-vs-variant studies. ([[details>>||anchor="HWhattheResearchPartnerGains"]])
+* **Long-term goal: Real-Time Fact Checking** — live or near-live verification of audio, video, and mixed-media streams is a later-stage target, but it depends first on better claim detection, lower latency, and cheaper evidence acquisition. ([[details>>||anchor="HResearchOverlap"]])
+* **Federated fact-checking** — a medium-term research question: how to reconcile conflicting verdicts across independent instances, detect cross-node contradictions, and maintain quality guarantees in a decentralized network. ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]])
 * **Community and collaboration layer** — shared work on claims: expert input, joint annotation, comparative fact-check views, and team-based workflows. ([[details>>||anchor="HCommunity26Collaboration"]])
 )))
 
@@ -80,21 +81,21 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 
 == Why Collaborate: Mutual Benefits ==
 
-A collaboration between FactHarbor and a Swiss research partner (ZHAW, UZH, or ETH) is not one-directional — both sides bring what the other needs.
+FactHarbor's product ambition is international, and the current collaboration discussion keeps partner and funding options open rather than prioritizing a single institution or instrument. That collaboration is not one-directional — both sides bring what the other needs.
 
 === What FactHarbor Gains ===
 
 |=Benefit|=Why It Matters
 |**Rigorous evaluation methodology**|Research on claim detection (ViClaim, CheckThat!), evidence quality (DIRAS), and source attribution (ACL 2024) points to stronger evaluation protocols. FactHarbor currently evaluates quality informally; formal benchmarks would make the system more academically credible.
 |**Research framing**|A research partnership would help turn internal quality checks into publishable evaluation questions, benchmark protocols, and ablation studies — framed as "resource-efficient fact verification" rather than pure engineering.
-|**Access to research infrastructure**|University compute, multilingual NLP datasets (ViClaim, CheckThat! corpora), and a Swiss NLP collaboration network (SwissNLP, SwissText, Swiss AI Initiative).
-|**Grant vehicle**|Innosuisse Innovation Cheque (CHF 15K, feasibility) → Innosuisse Innovation Project (CHF 100K-500K) as primary path. Also: SNSF, Hasler Foundation, BRIDGE, Horizon Europe depending on partner and scope.
+|**Access to research infrastructure**|University compute, multilingual NLP datasets (ViClaim, CheckThat! corpora), and broader academic collaboration networks and relevant NLP research communities.
+|**Grant vehicle**|Possible routes include Innosuisse Innovation Cheque / Innovation Project, SNSF, Hasler Foundation, BRIDGE, and Horizon Europe, depending on partner, scope, and project maturity.
 |**Publication pipeline**|Joint papers at top venues (ACL, EMNLP, CLEF CheckThat!) create visibility and attract contributors. ViClaim (EMNLP 2025 main) shows this is achievable.
-|**Student contributors**|Bachelor/Master thesis projects on specific pipeline components — ZHAW already ran a 2023 bachelor thesis on claimworthiness detection.
+|**Student contributors**|Bachelor/Master thesis projects on specific pipeline components — a practical, low-risk way to explore focused research questions within the pipeline.
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and a credible path to Innosuisse funding and publications.
+**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and credible paths to funding and publications.
 )))
 
 === What the Research Partner Gains ===
@@ -102,42 +103,42 @@ A collaboration between FactHarbor and a Swiss research partner (ZHAW, UZH, or E
 |=Benefit|=Why It Matters
 |**A working alpha testbed**|Unlike many research prototypes, FactHarbor already runs end-to-end on real claims and produces inspectable artifacts. That makes it useful as an experimental platform, while still being honest about current Alpha-stage limitations.
 |**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval is available as a concrete experimental platform. Each pipeline stage produces inspectable intermediate artifacts, and analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
-|**Domain-agnostic scope**|Current Swiss NLP research (HAMiSoN, Climinator, CheckThat!) often focuses on specific domains (social media campaigns, climate claims). FactHarbor provides a **general-domain, topic-agnostic** setting for testing claim detection, evidence retrieval, and verification beyond a single topical area.
+|**Domain-agnostic scope**|Current academic fact-checking research (HAMiSoN, Climinator, CheckThat!) often focuses on specific domains (social media campaigns, climate claims). FactHarbor provides a **general-domain, topic-agnostic** setting for testing claim detection, evidence retrieval, and verification beyond a single topical area.
 |**Publishable open problems**|Resource-efficient pipeline distillation, multilingual verdict stability, evidence sufficiency bounds, report stability metrics, and cross-provider debate dynamics are all concrete topics that can support papers.
-|**Innosuisse implementation partner**|For Innosuisse Innovation Projects, FactHarbor serves as the concrete implementation partner and real-world validation environment — the applied side that complements academic research.
+|**Applied implementation partner**|FactHarbor can serve as the concrete implementation partner and real-world validation environment in collaborative projects — the applied side that complements academic research.
 |**Open-source visibility**|Contributions to an open-source, public-interest project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Summary:** Research partners mainly gain a modular, topic-agnostic Alpha-stage research testbed with real artifacts, concrete open problems, and a plausible Innosuisse implementation partner.
+**Summary:** Research partners mainly gain a modular, topic-agnostic Alpha-stage research testbed with real artifacts, concrete open problems, and a plausible applied implementation partner.
 )))
 
 == Cooperation and Funding Options ==
 
-=== Recommended Path: Innosuisse (with ZHAW) ===
+=== Possible Route: Innosuisse ===
 
 |=Step|=Instrument|=Amount|=Timeline|=Purpose
-|**1. Explore**|Innovation Cheque|CHF 15,000 (100% Innosuisse)|Decision: 4-6 weeks|Feasibility study: evaluate synergy between FactHarbor's pipeline and ZHAW's claim detection / misinformation research
-|**2. Build**|Innovation Project (with Implementation Partner)|CHF 100K-500K (Innosuisse covers research partner; FactHarbor co-funds 40-60%, mostly as developer time)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
-|**3. Publish**|SwissText 2026 / CLEF CheckThat! / ACL|—|Ongoing|Demo track or applied track submissions; shared task participation during the project
+|**Explore**|Innovation Cheque|CHF 15,000 (100% Innosuisse)|Decision: 4-6 weeks|Feasibility study: evaluate synergy between FactHarbor's pipeline and a suitable research partner's expertise in claim detection, retrieval, and misinformation research
+|**Build**|Innovation Project (with Implementation Partner)|CHF 100K-500K (Innosuisse covers research partner; FactHarbor co-funds 40-60%, mostly as developer time)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
+|**Publish**|CLEF CheckThat! / ACL / EMNLP / relevant applied-NLP venues|—|Ongoing|Demo-track or applied-track submissions, benchmark participation, and shared-task outputs during the project
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Why ZHAW?** ZHAW's NLP group (Prof. Cieliebak, von Daniken, Dr. Deriu) has directly relevant expertise — HAMiSoN (EUR 1.1M misinformation project, 30+ publications), ViClaim (EMNLP 2025), CheckThat! 2nd place — and a strong Innosuisse track record. Fachhochschulen have an explicit applied-research mandate that aligns naturally with Innosuisse's model.
+**Why it fits:** Innosuisse fits applied collaboration with a concrete implementation partner, but it is only one viable route among several and should be chosen only if it matches the partner, scope, and timing.
 )))
 
 === Alternative / Complementary Paths ===
 
 |=Route|=Best For|=Notes
-|**ETH — Prof. Elliott Ash**|Deep NLP research on claim detection, evidence retrieval, debate frameworks|AFaCTA (ACL 2024), e-FEVER, BallotBot (RAG). Strong publication record but no confirmed Innosuisse history. Could serve as academic advisor or co-PI alongside ZHAW.
+|**ETH — Prof. Elliott Ash**|Deep NLP research on claim detection, evidence retrieval, debate frameworks|AFaCTA (ACL 2024), e-FEVER, BallotBot (RAG). Strong publication record but no confirmed Innosuisse history. Could be a direct partner, academic advisor, or co-PI depending on project structure.
 |**UZH — Prof. Markus Leippold**|Climate-specific fact-checking, domain extension|Climinator (96% accuracy, debate architecture). Primarily climate-focused; general-domain extension would be novel for this group.
 |**SNSF / Hasler Foundation**|Fundamental research questions|Hasler "Responsible AI" programme previously funded "Scientific Claim Verification" (Sachan + Leippold + Ash). Suitable for longer-term, more theoretical work.
 |**BRIDGE Proof of Concept**|Academic-led commercialization|Initiated from the research partner side. Up to CHF 130K/year. Deadlines 2026: March 2, June 1, September 1, December 1.
-|**Student projects**|Low-cost exploration|Bachelor/Master theses on specific pipeline components. ZHAW already ran a 2023 thesis on claimworthiness detection.
+|**Student projects**|Low-cost exploration|Bachelor/Master theses on specific pipeline components. This can be a practical entry point for testing focused ideas before committing to a larger collaboration.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Released operation needs separate financing:** Research funding can support development, evaluation, and transfer work, but long-term public operation of a released service needs its own sustainability model. Plausible options include institutional partnerships, public-interest foundation grants, professional service / API contracts, community support, and infrastructure sponsors such as cloud or LLM-credit programmes.
+**Released operation needs separate financing:** Research funding can support development, evaluation, and transfer work, but long-term operation of a public-facing service needs its own sustainability model. Plausible options include institutional partnerships, public-interest foundation grants, professional service / API contracts, community support, and infrastructure sponsors such as cloud or LLM-credit programmes.
 )))
 ----
 
@@ -307,7 +308,7 @@ flowchart TB
 
 ----
 
-== AKEL (AI Knowledge Extraction Layer) Pipeline ==
+== ClaimAssessmentBoundary (CB) Pipeline ==
 
 
 {{mermaid}}
@@ -407,7 +408,7 @@ flowchart TB
 |2|**Research**|Iterative query generation, web search, relevance screening, source fetch, evidence extraction, and evidence filtering|Budget + Web Search
 |3|**Cluster Boundaries**|Collect scopes, optionally normalize equivalent scopes, then cluster into ClaimAssessmentBoundaries|Budget + Standard
 |4|**Verdict**|5-step adversarial LLM debate per claim (see below)|Sonnet (standard)
-|4.5|//**SR Calibration**// (optional)|LLM-backed source portfolio calibration — adjusts confidence based on evidence source quality. Disabled by default, validation pending.|Budget
+|4.5|//**SR Calibration**// (optional)|An optional calibration path exists for LLM-backed source portfolio adjustment, but it remains disabled by default pending validation.|Budget
 |5|**Aggregate**|Weighted aggregation with triangulation, narrative generation|Sonnet (standard)
 
 === LLM Call Topology ===
@@ -892,7 +893,7 @@ FactHarbor is currently in **Alpha**. The roadmap below mixes completed phases, 
 
 (% class="box infomessage" %)
 (((
-The roadmap below combines core platform work with the most important missing user-facing, integration, and cooperation-oriented capabilities. The federation diagram remains as the long-term architecture target.
+The roadmap below combines core platform work with the most important missing user-facing, integration, and cooperation-oriented capabilities. Post-V1.0 feature milestones use finer-grained labels such as V1.1+ and V1.5+. The federation diagram remains as the long-term architecture target.
 )))
 
 === Core Platform Roadmap ===
@@ -974,7 +975,7 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Research angle:** These V1.0 goals create measurable constraints for the "resource-efficient fact verification" framing. Speed and cost reduction motivate model distillation (RQ2). Repeatability motivates stability and reproducibility work (RQ3). Precision motivates evidence sufficiency studies (RQ1). The engineering roadmap is therefore a useful experimental baseline, not a substitute for formal research design.
+**Research angle:** These V1.0 goals create measurable constraints for the "resource-efficient fact verification" framing. Speed and cost reduction motivate small-model substitution and low-latency systems work. Repeatability motivates stability and reproducibility work. Precision motivates evidence sufficiency studies. The engineering roadmap is therefore a useful experimental baseline, not a substitute for formal research design.
 )))
 
 ----
@@ -1000,11 +1001,11 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 === What Works ===
 
 |=Area|=Status|=Details
-|**CB Pipeline (all 5 stages)**|Working in Alpha|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — operational end-to-end, with known repeatability and product-maturity gaps documented below
+|**ClaimAssessmentBoundary (CB) Pipeline (all 5 stages)**|Working in Alpha|Extract Claims, Research, Cluster Boundaries, Verdict, Aggregate — operational end-to-end, with known repeatability and product-maturity gaps documented below
 |**Multi-Provider LLM Debate**|Working|Anthropic advocate + OpenAI challenger, self-consistency, reconciler, validator
 |**Quality Gates (Gate 1 + Gate 4)**|Working|Claim validation and confidence tiering with UI panel
 |**UCM Configuration**|Working|All analysis parameters tunable at runtime via Admin UI, hot-reloadable, with per-job config snapshots for reproducibility
-|**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, evidence weighting; Stage 4.5 LLM calibration implemented (disabled, validation pending)
+|**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, and evidence weighting are active; the optional Stage 4.5 calibration path exists but remains disabled by default pending validation
 |**Multi-Provider Search**|Working|7 providers integrated (web search, Wikipedia, Semantic Scholar, Google Fact Check); automatic fallback
 |**LLM Model Tiering**|Working|Budget models for extraction, standard models for verdicts, cross-provider challenger for debate diversity
 |**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic in active pipeline code
@@ -1141,9 +1142,9 @@ FactHarbor is an **open-source, public-interest** project. Sustainability depend
 
 |=Goal|=Why
 |**Innosuisse Innovation Cheque** (immediate)|CHF 15K feasibility study, 100% funded, 4-6 week decision. Low-barrier first step to validate collaboration fit.
-|**Innosuisse Innovation Project** (primary target)|CHF 100K-500K joint R&D. 41% approval rate (2024). ZHAW as research partner, FactHarbor as implementation partner. Research partner costs covered by Innosuisse; FactHarbor co-funds 40-60% (mostly developer time).
-|**Hasler Foundation / SNSF / BRIDGE**|Complementary routes for fundamental research. Hasler "Responsible AI" already funded Swiss claim verification research (Sachan + Leippold + Ash).
-|**Foundation grants**|Public-interest support for media literacy, democracy, transparency, and public-service rollout (e.g., digitalSwitzerland advocates for Swiss fact-checking infrastructure)
+|**Innosuisse Innovation Project**|CHF 100K-500K joint R&D. 41% approval rate (2024). FactHarbor can act as implementation partner with a suitable academic research partner. Research partner costs covered by Innosuisse; FactHarbor co-funds 40-60% (mostly developer time).
+|**Hasler Foundation / SNSF / BRIDGE**|Complementary routes for more fundamental research. Similar programmes have already supported claim-verification and responsible-AI work in academia.
+|**Foundation grants**|Public-interest support for media literacy, democracy, transparency, and public-service rollout.
 |**Institutional partnerships**|Universities, libraries, and public broadcasters can contribute credibility, reach, and operational backing
 |**Infrastructure sponsors**|Cloud credits and LLM API credits address a large share of operating cost directly
 
@@ -1167,7 +1168,7 @@ ZHAW's NLP group has produced the most directly relevant work in claim detection
 
 === Resource-Efficient Fact Verification (Core Research Angle) ===
 
-One plausible central research question for a joint project is: **What is the minimum model capacity required to verify claims reliably across a full multi-stage pipeline?**
+One plausible central research question for a joint project is: **How far can fact-checking be pushed toward low-resource operation by using smaller specialized models without losing verdict reliability?**
 
 Current evidence supports this direction:
 * ViClaim (EMNLP 2025): 550M encoder matches or beats 3B-7B decoders on claim detection
@@ -1176,7 +1177,11 @@ Current evidence supports this direction:
 * AVeriTeC 2025 shared task: Now explicitly requires <10B parameters and <1 minute per claim — the community is moving here
 * EdgeJury (2026): Ensembles of 3B-8B models achieve 76.2% TruthfulQA with 8.4s latency
 
-To the best of our current review, no existing work has studied distillation of a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation). Most research addresses single stages. FactHarbor's pipeline therefore offers a concrete baseline for measuring quality degradation as model capacity decreases.
+This line is strongest when framed as **model-capacity efficiency** rather than retrieval speed alone. The clearest evidence is that specialized small or mid-size models can outperform much larger general LLMs on classification-heavy subtasks.
+
+**Related systems line: low-latency RAG.** This is adjacent, but not identical. Here the central question is how to make evidence retrieval fast enough for interactive use while preserving evidence quality. CheckThat! 2025 retrieval work is especially relevant: hybrid BM25 + dense retrieval + reranking reached strong **MRR@5** results; LLM-based query rewriting was excluded from the final pipeline because it increased inference time by about 60x for poor cost-benefit; and an Elasticsearch-based hybrid variant was kept as a viable option for latency-sensitive deployments even though it underperformed the heavier reranking stack.
+
+To the best of our current review, no existing work has studied a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation) with both questions evaluated systematically: model-capacity reduction on the one hand, and low-latency retrieval design on the other. Most research addresses only one stage. FactHarbor's pipeline therefore offers a concrete baseline for measuring the tradeoffs among model capacity, retrieval latency, retrieval depth, and verdict quality.
 
 === Source Attribution (ACL 2024) ===
 
@@ -1190,31 +1195,6 @@ Our evidence filter assigns //probativeValue// (high/medium/low) via LLM prompt 
 
 FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-advocate line explored in climate fact-checking systems such as Climinator (UZH/ETH, 96% accuracy on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation rules. Unlike domain-specific systems, this architecture is **topic-agnostic** — it works for climate, politics, health, economics, or other domains without modification.
 
-=== Proposed Research Questions (for Innosuisse) ===
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**RQ1: Evidence sufficiency under resource constraints** — What minimum evidence retrieval depth and model capacity preserves verdict reliability within defined confidence bounds, and how should reliability be measured? (Builds on Atanasova et al. TACL 2022, extends to full pipeline)
-
-**RQ2: Cross-stage knowledge distillation** — Which subtasks in a multi-stage pipeline (claim extraction → evidence retrieval → verdict debate → aggregation) can be replaced by specialized small models without materially degrading end-to-end verdict quality? (Builds on DRAG, ACL 2025)
-
-**RQ3: Multilingual verdict stability under compression** — How do quantization and distillation affect verdict consistency across languages and across repeated runs under the same settings? (Builds on ViClaim's 3-language results, AVeriTeC 2025 constraints)
-)))
-
-=== Additional Collaboration Opportunities ===
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-* **Precision / evidence-quality improvement** — formalize and benchmark filtering, relevance scoring, and evidence selection against task-appropriate benchmarks
-* **Retrieval evaluation** — measure how well our iterative search captures relevant evidence; hybrid retrieval (lexical + semantic + reranking) is state-of-art (CheckThat! 2025)
-* **Claim detection benchmarking** — evaluate Stage 1 against ViClaim and CheckThat! datasets across languages
-* **Source credibility benchmarking** — evaluate our multi-provider reliability scoring
-* **Reproducibility / stability protocols** — define tolerance bands, repeatability metrics, and evaluation procedures
-* **Cost reduction via distillation** — replace expensive LLM calls with fine-tuned encoders for classification subtasks (validated by ViClaim: 550M matches 7B)
-* **Multi-agent debate architecture** — study and improve the debate pattern itself
-* **CheckThat! 2026 participation** — joint entry in claim normalization, article generation, or reasoning trace tasks
-)))
-
 ----
 
 == Let Me Show You ==
@@ -1226,7 +1206,7 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 
 ----
 
-== Demo Walkthrough Guide ==
+== Demo Walkthrough Checklist ==
 
 **[[app.FactHarbor.ch>>https://app.factharbor.ch]]**
 
