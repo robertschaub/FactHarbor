@@ -18,6 +18,29 @@
 * a list of the most promising joint research questions and a concrete next step (e.g., Innosuisse Innovation Cheque)
 )))
 
+== FactHarbor Organisation ==
+
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Mission:**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
+
+(% class="box warningmessage" %)
+(((
+**Non-profit and Transparent**
+FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
+)))
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is in preparation and could plausibly be founded and voluntarily registered in the **Handelsregister** within about **3-4 weeks**.
+)))
+
 == Cooperation Opportunities at a Glance ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
@@ -54,29 +77,6 @@
 )))
 
 ----
-
-== FactHarbor Organisation ==
-
-Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
-(((
-(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
-(((
-**Mission:**
-FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
-)))
-)))
-
-(% class="box warningmessage" %)
-(((
-**Non-profit and Transparent**
-FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
-We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
-)))
-
-(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
-(((
-The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is in preparation and could plausibly be founded and voluntarily registered in the **Handelsregister** within about **3-4 weeks**.
-)))
 
 == Why Collaborate: Mutual Benefits ==
 
