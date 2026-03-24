@@ -164,9 +164,13 @@ UCM implementation: `apps/web/src/lib/config-storage.ts`. UCM docs: see Area-to-
 User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port 5000)
              ├─ src/lib/analyzer/                 ├─ Controllers/ (Jobs, Analyze, Internal)
              │  ├─ claimboundary-pipeline.ts       ├─ Services/ (JobService, RunnerClient)
-             │  │  (Orchestrator)                 ├─ Data/ (Entities, FhDbContext)
+             │  │  (CB Orchestrator)               ├─ Data/ (Entities, FhDbContext)
              │  ├─ claim-extraction-stage.ts       └─ SQLite: factharbor.db
-             │  ├─ boundary-clustering-stage.ts    Swagger: http://localhost:5000/swagger
+             │  ├─ research-orchestrator.ts        Swagger: http://localhost:5000/swagger
+             │  ├─ research-query-stage.ts
+             │  ├─ research-acquisition-stage.ts
+             │  ├─ research-extraction-stage.ts
+             │  ├─ boundary-clustering-stage.ts 
              │  ├─ verdict-generation-stage.ts
              │  └─ aggregation-stage.ts
              ├─ src/app/api/internal/run-job/     Tools:
@@ -177,8 +181,12 @@ User Input → apps/web (Next.js, port 3000)    → apps/api (ASP.NET Core, port
 
 | File | Purpose |
 |------|---------|
-| `.../analyzer/claimboundary-pipeline.ts` | **Orchestrator**: Main entry and Stage 2 research loop. |
+| `.../analyzer/claimboundary-pipeline.ts` | **CB Pipeline Orchestrator**: Main entry and high-level stage sequencing. |
 | `.../analyzer/claim-extraction-stage.ts` | **Stage 1**: Claim extraction, Gate 1, and preliminary search. |
+| `.../analyzer/research-orchestrator.ts` | **Stage 2 Orchestrator**: Iterative research loop control and budget management. |
+| `.../analyzer/research-query-stage.ts` | **Stage 2 Queries**: LLM-based search query generation. |
+| `.../analyzer/research-acquisition-stage.ts` | **Stage 2 Acquisition**: Multi-source fetching and retry logic. |
+| `.../analyzer/research-extraction-stage.ts` | **Stage 2 Extraction**: Relevance check and evidence extraction. |
 | `.../analyzer/boundary-clustering-stage.ts` | **Stage 3**: Cluster evidence scopes into ClaimAssessmentBoundaries. |
 | `.../analyzer/verdict-generation-stage.ts` | **Stage 4**: Multi-step LLM debate and initial verdict generation. |
 | `.../analyzer/aggregation-stage.ts` | **Stage 5**: Verdict aggregation, claim weighting, and quality gates. |
