@@ -2,6 +2,7 @@
 description: FactHarbor TypeScript/Next.js rules for apps/web
 globs: apps/web/**/*.ts,apps/web/**/*.tsx
 ---
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
 
 # FactHarbor — TypeScript / Next.js Rules
 
@@ -9,6 +10,10 @@ globs: apps/web/**/*.ts,apps/web/**/*.tsx
 - Orchestrator: `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
 - Modular Stage Modules:
   - `claim-extraction-stage.ts` (Stage 1)
+  - `research-orchestrator.ts` (Stage 2 Orchestrator)
+  - `research-query-stage.ts` (Stage 2 Queries)
+  - `research-acquisition-stage.ts` (Stage 2 Acquisition)
+  - `research-extraction-stage.ts` (Stage 2 Extraction)
   - `boundary-clustering-stage.ts` (Stage 3)
   - `verdict-generation-stage.ts` (Stage 4)
   - `aggregation-stage.ts` (Stage 5)

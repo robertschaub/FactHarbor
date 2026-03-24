@@ -1,3 +1,4 @@
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
 # AGENTS.md — FactHarbor Web (Next.js)
 
 Applies to all files under `apps/web/`. For project-wide rules, see `/AGENTS.md`.

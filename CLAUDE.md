@@ -8,7 +8,7 @@ Full project rules, terminology, and architecture: @AGENTS.md (auto-loaded along
 
 Two apps + one tool:
 - `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` (Orchestrator), `src/lib/analyzer/research-orchestrator.ts` (Stage 2 Orch), `src/lib/analyzer/research-query-stage.ts` (Stage 2 Queries), `src/lib/analyzer/research-acquisition-stage.ts` (Stage 2 Fetching), `src/lib/analyzer/research-extraction-stage.ts` (Stage 2 Extraction), `src/lib/analyzer/verdict-stage.ts` (Stage 4), `src/lib/analyzer/aggregation-stage.ts` (Stage 5).
+- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` (Orchestrator), `src/lib/analyzer/research-orchestrator.ts` (Stage 2 Orch), `src/lib/analyzer/research-query-stage.ts` (Stage 2 Queries), `src/lib/analyzer/research-acquisition-stage.ts` (Stage 2 Fetching), `src/lib/analyzer/research-extraction-stage.ts` (Stage 2 Extraction), `src/lib/analyzer/verdict-stage.ts` (Stage 4 Validation), `src/lib/analyzer/verdict-generation-stage.ts` (Stage 4 Debate), `src/lib/analyzer/aggregation-stage.ts` (Stage 5).
 - `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
 
 ## Primary data flow
