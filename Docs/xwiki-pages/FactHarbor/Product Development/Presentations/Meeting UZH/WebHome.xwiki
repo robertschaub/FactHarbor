@@ -18,6 +18,36 @@
 * a list of the most promising joint research questions and a concrete next step (e.g., Innosuisse Innovation Cheque)
 )))
 
+== Cooperation Opportunities at a Glance ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a; font-size:1.05em;" %)
+(((
+**Three research questions** for an Innosuisse project ([[details>>||anchor="HProposedResearchQuestions28forInnosuisse29"]]):
+
+(% style="margin-left:1em;" %)
+(((
+**RQ1** — What minimum model capacity and evidence depth maintains verdict reliability? (→ evidence sufficiency)
+**RQ2** — Can a full multi-stage LLM pipeline be distilled into small language models? (→ pipeline distillation)
+**RQ3** — How does model compression affect verdict consistency across languages? (→ multilingual robustness)
+)))
+
+**Eight collaboration areas** ([[details>>||anchor="HAdditionalCollaborationOpportunities"]]):
+
+(% style="margin-left:1em;" %)
+(((
+Evidence-quality benchmarking | Retrieval evaluation | Claim detection (ViClaim / CheckThat!) | Source credibility | Reproducibility protocols | Cost reduction via distillation | Multi-agent debate | CheckThat! 2026 participation
+)))
+
+**Four more research-relevant topics** found throughout this document:
+
+(% style="margin-left:1em;" %)
+(((
+Report stability as a measurable problem ([[details>>||anchor="HKnownProblems26Challenges"]]) | V1.0 goals map to RQ1-RQ3 ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]]) | Federation raises open questions in distributed fact-checking ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]]) | Community and collaboration layer ([[details>>||anchor="HCommunity26Collaboration"]])
+)))
+)))
+
+----
+
 == FactHarbor Organisation ==
 
 Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
