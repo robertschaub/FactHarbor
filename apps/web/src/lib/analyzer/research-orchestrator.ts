@@ -383,22 +383,38 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
   let remappedCount = 0;
 
   for (const pe of preliminary) {
-    // Normalize claim IDs: LLM preliminary evidence often uses wrong formats
-    // (e.g. "claim_01", "claim_iran_deaths_february" instead of "AC_01")
+    // Normalize claim IDs: prefer full relevantClaimIds array, fall back to legacy single claimId.
+    // LLM preliminary evidence often uses wrong formats (e.g. "claim_01" instead of "AC_01").
     let claimIds: string[] = [];
-    if (pe.claimId && knownClaimIds.has(pe.claimId)) {
+
+    // 1. Prefer relevantClaimIds[] when present (multi-claim attribution)
+    if (pe.relevantClaimIds && pe.relevantClaimIds.length > 0) {
+      claimIds = pe.relevantClaimIds.filter((id) => knownClaimIds.has(id));
+    }
+
+    // 2. Fall back to legacy single claimId
+    if (claimIds.length === 0 && pe.claimId && knownClaimIds.has(pe.claimId)) {
       claimIds = [pe.claimId];
-    } else if (fallbackClaimId) {
-      // If there is only one atomic claim, ALL preliminary evidence must belong to it.
+    }
+
+    // 3. Single-claim input fallback: all evidence belongs to the sole claim
+    if (claimIds.length === 0 && fallbackClaimId) {
       claimIds = [fallbackClaimId];
-      if (pe.claimId) remappedCount++;
-    } else if (pe.claimId && pe.claimId.startsWith("claim_")) {
-      // Heuristic: map "claim_01" to "AC_01", etc.
-      const num = pe.claimId.replace("claim_", "");
-      const mappedId = `AC_${num.padStart(2, "0")}`;
-      if (knownClaimIds.has(mappedId)) {
-        claimIds = [mappedId];
-        remappedCount++;
+      if (pe.claimId || (pe.relevantClaimIds && pe.relevantClaimIds.length > 0)) remappedCount++;
+    }
+
+    // 4. Heuristic remap: "claim_01" → "AC_01", etc.
+    if (claimIds.length === 0) {
+      const rawIds = pe.relevantClaimIds ?? (pe.claimId ? [pe.claimId] : []);
+      for (const rawId of rawIds) {
+        if (rawId.startsWith("claim_")) {
+          const num = rawId.replace("claim_", "");
+          const mappedId = `AC_${num.padStart(2, "0")}`;
+          if (knownClaimIds.has(mappedId)) {
+            claimIds.push(mappedId);
+            remappedCount++;
+          }
+        }
       }
     }
 

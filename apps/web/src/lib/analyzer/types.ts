@@ -1073,6 +1073,8 @@ export interface CBClaimUnderstanding {
     sourceTitle?: string;
     snippet: string;
     claimId: string;
+    /** Full claim mapping (preferred over single claimId when present) */
+    relevantClaimIds?: string[];
     probativeValue?: "high" | "medium" | "low";
     claimDirection?: "supports" | "contradicts" | "contextual";
     sourceType?: string;

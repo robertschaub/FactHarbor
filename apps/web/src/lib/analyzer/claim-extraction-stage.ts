@@ -578,6 +578,7 @@ export async function extractClaims(
       sourceTitle: pe.sourceTitle,
       snippet: pe.statement,
       claimId: pe.relevantClaimIds?.[0] ?? "",
+      relevantClaimIds: pe.relevantClaimIds ?? [],
       probativeValue: pe.probativeValue,
       claimDirection: pe.claimDirection,
       sourceType: pe.sourceType,

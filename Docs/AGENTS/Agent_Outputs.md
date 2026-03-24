@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | Fix preliminary-evidence claim-mapping leak
+**Task:** Fix systemic bug where seeded preliminary evidence loses multi-claim attribution, causing Claim Assessment Boundaries to show `evidenceCount > 0` but zero coverage in the matrix.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts` (1 edit), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (1 edit), `apps/web/src/lib/analyzer/research-orchestrator.ts` (1 edit), `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (5 new tests).
+**Key decisions:** Root cause was line 580 in `claim-extraction-stage.ts`: `claimId: pe.relevantClaimIds?.[0] ?? ""` collapsed the full `relevantClaimIds[]` array to a single value. Fix: (1) added `relevantClaimIds?: string[]` to the `CBClaimUnderstanding.preliminaryEvidence` type, (2) preserved full array in Stage-1 output alongside legacy `claimId`, (3) updated `seedEvidenceFromPreliminarySearch()` to prefer `relevantClaimIds[]` with 4-step fallback: full array → legacy claimId → single-claim fallback → heuristic remap.
+**Open items:** None — fix is complete and verified.
+**Warnings:** Legacy `claimId` field kept for backward compatibility (existing stored jobs, serialized state). New code should always use `relevantClaimIds`.
+**For next agent:** Coverage matrix (`buildCoverageMatrix`) was not changed — it already counts by `relevantClaimIds`. The fix ensures upstream data now populates that field correctly. Verify with a live run if desired.
+**Learnings:** no
+
+---
 ### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 claimDirection Prompt Fix
 **Task:** Implement minimal prompt fix for the confirmed `claimDirection` mislabeling bug.
 **Files touched:** `apps/web/prompts/claimboundary.prompt.md` (2 edits), `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (1 new test).

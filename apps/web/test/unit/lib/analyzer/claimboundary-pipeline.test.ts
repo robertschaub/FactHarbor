@@ -1604,6 +1604,131 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(state.evidenceItems[2].id).toBe("EV_003");
   });
 
+  it("should preserve multi-claim relevantClaimIds through seeding", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }, { id: "AC_03" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Multi-claim evidence",
+            claimId: "AC_01",
+            relevantClaimIds: ["AC_01", "AC_02", "AC_03"],
+            probativeValue: "high",
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
+  it("should filter relevantClaimIds to known atomic claims only", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_03" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Evidence with unknown IDs",
+            claimId: "",
+            relevantClaimIds: ["AC_01", "AC_02", "AC_03", "AC_99"],
+            probativeValue: "medium",
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_03"]);
+  });
+
+  it("should fall back to legacy claimId when relevantClaimIds is empty", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Legacy evidence",
+            claimId: "AC_02",
+            relevantClaimIds: [],
+            probativeValue: "medium",
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_02"]);
+  });
+
+  it("should not orphan seeded evidence when relevantClaimIds contains valid IDs", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Evidence for both claims",
+            claimId: "",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            probativeValue: "high",
+          },
+          {
+            sourceUrl: "https://example.com/2",
+            snippet: "Evidence for one claim",
+            claimId: "",
+            relevantClaimIds: ["AC_02"],
+            probativeValue: "medium",
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(2);
+    // No orphaned evidence — all items have non-empty relevantClaimIds
+    expect(state.evidenceItems.every((e: any) => e.relevantClaimIds.length > 0)).toBe(true);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+    expect(state.evidenceItems[1].relevantClaimIds).toEqual(["AC_02"]);
+  });
+
+  it("should apply heuristic remap to relevantClaimIds entries", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [{ id: "AC_01" }, { id: "AC_02" }],
+        preliminaryEvidence: [
+          {
+            sourceUrl: "https://example.com/1",
+            snippet: "Evidence with wrong format IDs",
+            claimId: "",
+            relevantClaimIds: ["claim_01", "claim_02"],
+            probativeValue: "medium",
+          },
+        ],
+      },
+      evidenceItems: [],
+    } as any;
+
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+  });
+
   it("should produce stub evidenceScope when pe.evidenceScope is undefined", () => {
     const state = {
       understanding: {
