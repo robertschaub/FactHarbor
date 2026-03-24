@@ -124,6 +124,20 @@ if (-not $ApiBaseUrl) {
 $ApiBaseUrl = $ApiBaseUrl.TrimEnd('/')
 $webEnvPrefix += "`$env:FH_API_BASE_URL='$ApiBaseUrl'; `$env:PORT='$WebPort'; "
 
+# Reseed prompts and configs into config.db so the dev server picks up file changes
+Write-Host "Reseeding prompts and configs..."
+try {
+    Push-Location "$PSScriptRoot\..\apps\web"
+    & npx tsx scripts/reseed-all-prompts.ts --quiet 2>&1 | ForEach-Object { Write-Host "  $_" }
+    Pop-Location
+    Write-Host "Reseed complete." -ForegroundColor Green
+} catch {
+    Write-Host "  Reseed failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "  Dev server will use existing config.db contents." -ForegroundColor Yellow
+    Pop-Location
+}
+Write-Host ""
+
 # Start Web in new terminal
 Write-Host "Starting Web..."
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
