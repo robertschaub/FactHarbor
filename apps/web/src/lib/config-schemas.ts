@@ -1678,10 +1678,9 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     claimSimilarityThreshold: 0.85,
     contextMergeThreshold: 0.7,
   },
-  mixedConfidenceThreshold: 40,
+  mixedConfidenceThreshold: 45,
   verdictIntegrityTolerance: 0.15,
   probativeValueWeights: {
-
     high: 1.0,
     medium: 0.9,
     low: 0.5,
