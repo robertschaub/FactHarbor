@@ -45,7 +45,7 @@ import {
 } from "./llm-provider-guard";
 
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
-import type { PipelineConfig, CalcConfig } from "@/lib/config-schemas";
+import type { PipelineConfig, CalcConfig, CalculationConfig } from "@/lib/config-schemas";
 import { classifyError } from "@/lib/error-classification";
 
 import { recordLLMCall } from "./metrics-integration";
@@ -110,7 +110,17 @@ export async function generateVerdicts(
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
   const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder, onEvent);
 
-  return runVerdictStage(claims, evidence, boundaries, coverageMatrix, llmCallFn, verdictConfig, warnings, onEvent);
+  return runVerdictStage(
+    claims, 
+    evidence, 
+    boundaries, 
+    coverageMatrix, 
+    llmCallFn, 
+    verdictConfig, 
+    warnings, 
+    onEvent,
+    calcConfig
+  );
 }
 
 // ============================================================================

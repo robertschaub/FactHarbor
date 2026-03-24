@@ -1364,6 +1364,14 @@ export const CalcConfigSchema = z.object({
 
   mixedConfidenceThreshold: z.number().int().min(0).max(100),
 
+  /**
+   * Deterministic safety net for verdict direction validation.
+   * Maximum allowed difference (as ratio 0-1) between weighted evidence ratio 
+   * and verdict truth percentage before an integrity failure is enforced.
+   * Default: 0.15 (15pp).
+   */
+  verdictIntegrityTolerance: z.number().min(0).max(0.5).optional(),
+
   // ClaimBoundary Stage 5: probative value multipliers for claim influence weighting
   probativeValueWeights: z
     .object({
@@ -1670,8 +1678,10 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     claimSimilarityThreshold: 0.85,
     contextMergeThreshold: 0.7,
   },
-  mixedConfidenceThreshold: 45,
+  mixedConfidenceThreshold: 40,
+  verdictIntegrityTolerance: 0.15,
   probativeValueWeights: {
+
     high: 1.0,
     medium: 0.9,
     low: 0.5,

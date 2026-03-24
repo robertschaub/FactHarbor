@@ -999,6 +999,99 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
   });
+
+  it("overrides false-positive LLM direction failure via deterministic plausibility check (AC_03 case)", async () => {
+    // Scenario: Truth 15% (Mostly False), 8 contradicts, 3 supports. 
+    // This is directionally consistent, but LLM incorrectly flags it.
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_03",
+      truthPercentage: 15,
+      confidence: 85,
+      supportingEvidenceIds: ["S1", "S2", "S3"],
+      contradictingEvidenceIds: ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_03" })];
+    const evidence = [
+      ...["S1", "S2", "S3"].map(id => createEvidenceItem({ id, claimDirection: "supports", relevantClaimIds: ["AC_03"] })),
+      ...["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"].map(id => createEvidenceItem({ id, claimDirection: "contradicts", relevantClaimIds: ["AC_03"] })),
+    ];
+    
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_03", groundingValid: true, issues: [] }];
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        // Mock LLM incorrectly flagging the direction as invalid
+        return [{ claimId: "AC_03", directionValid: false, issues: ["Truth 15% but only 3 support"] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const warnings: AnalysisWarning[] = [];
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries: [], coverageMatrix: buildCoverageMatrix(claims, [], evidence) },
+    );
+
+    // Should remain 15% truth (not downgraded to 50%) because the safety net overrode the LLM error
+    expect(result[0].truthPercentage).toBe(15);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(warnings.some(w => w.type === "verdict_integrity_failure")).toBe(false);
+  });
+
+  it("respects probativeValue weights in plausibility check", async () => {
+    // Scenario: Truth 85% (True). 
+    // Evidence: 1 High support, 2 Low contradicts. 
+    // Numeric count: majority contradicts (2 vs 1).
+    // Weighted count: support wins (1.0 vs 2 * 0.5 = 1.0 -> same hemisphere/neutral).
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 85,
+      confidence: 85,
+      supportingEvidenceIds: ["S1"],
+      contradictingEvidenceIds: ["C1", "C2"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "S1", claimDirection: "supports", probativeValue: "high", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "C1", claimDirection: "contradicts", probativeValue: "low", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "C2", claimDirection: "contradicts", probativeValue: "low", relevantClaimIds: ["AC_01"] }),
+    ];
+    
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_01", directionValid: false, issues: ["Numeric mismatch"] }];
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const warnings: AnalysisWarning[] = [];
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      { 
+        claims, 
+        boundaries: [], 
+        coverageMatrix: buildCoverageMatrix(claims, [], evidence),
+        calculationConfig: {
+          probativeValueWeights: { high: 1.0, medium: 0.9, low: 0.5 },
+        } as any
+      },
+    );
+
+    // Should remain 85% because weighted ratio (1.0 support / 1.0 contradict) is neutral (0.5), 
+    // which is considered plausible for any verdict direction in our Rules.
+    expect(result[0].truthPercentage).toBe(85);
+    expect(warnings.some(w => w.type === "verdict_integrity_failure")).toBe(false);
+  });
 });
 
 // ============================================================================

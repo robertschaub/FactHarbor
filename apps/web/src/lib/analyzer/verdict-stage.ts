@@ -43,6 +43,8 @@ import {
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
+import type { CalculationConfig, PipelineConfig } from "@/lib/config-schemas";
+import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
 export type VerdictGroundingPolicy = "disabled" | "safe_downgrade";
 export type VerdictDirectionPolicy = "disabled" | "retry_once_then_safe_downgrade";
@@ -304,6 +306,7 @@ export async function runVerdictStage(
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
   onEvent?: (message: string, progress: number) => void,
+  calculationConfig?: CalculationConfig,
 ): Promise<CBClaimVerdict[]> {
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
@@ -396,7 +399,7 @@ export async function runVerdictStage(
     llmCall,
     config,
     warnings,
-    { claims, boundaries, coverageMatrix },
+    { claims, boundaries, coverageMatrix, calculationConfig },
   );
 
   // Structural Consistency Check (deterministic)
@@ -892,6 +895,7 @@ export interface VerdictValidationRepairContext {
   claims: AtomicClaim[];
   boundaries: ClaimAssessmentBoundary[];
   coverageMatrix: CoverageMatrix;
+  calculationConfig?: CalculationConfig;
   repairExecutor?: (
     request: VerdictRepairRequest,
     llmCall: LLMCallFn,
@@ -990,53 +994,62 @@ export async function validateVerdicts(
     }
 
     if (direction && direction.valid === false) {
-      console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
-      warnings?.push({
-        type: "verdict_direction_issue",
-        severity: "info",
-        message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
-      });
+      // Deterministic safety net: if the LLM flags a direction issue, check if the 
+      // truth percentage is actually mathematically plausible given the evidence ratio.
+      const isPlausible = isVerdictDirectionPlausible(current, evidence, repairContext?.calculationConfig);
 
-      if (
-        config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
-        && current.verdictReason !== "verdict_integrity_failure"
-      ) {
-        const repaired = await attemptDirectionRepair(
-          current,
-          direction.issues,
-          evidence,
-          llmCall,
-          config,
-          repairContext,
-        );
+      if (isPlausible) {
+        console.info(`[VerdictStage] Overriding LLM direction failure for claim ${verdict.claimId} (truth ${current.truthPercentage}%) - determined plausible by evidence ratio.`);
+      } else {
+        console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
+        warnings?.push({
+          type: "verdict_direction_issue",
+          severity: "info",
+          message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
+        });
 
-        if (repaired) {
-          const retryDirection = await validateDirectionOnly(
-            repaired,
+        if (
+          config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
+          && current.verdictReason !== "verdict_integrity_failure"
+        ) {
+          const repaired = await attemptDirectionRepair(
+            current,
+            direction.issues,
             evidence,
             llmCall,
-            validationTier,
-            validationProvider,
+            config,
+            repairContext,
           );
-          if (retryDirection.valid !== false) {
-            current = repaired;
+
+          if (repaired) {
+            const retryDirection = await validateDirectionOnly(
+              repaired,
+              evidence,
+              llmCall,
+              validationTier,
+              validationProvider,
+            );
+            // Also apply plausibility check to the repaired verdict
+            if (retryDirection.valid !== false || isVerdictDirectionPlausible(repaired, evidence, repairContext?.calculationConfig)) {
+              current = repaired;
+            } else {
+              current = safeDowngradeVerdict(
+                current,
+                "direction",
+                retryDirection.issues,
+                warnings,
+                config.mixedConfidenceThreshold,
+              );
+            }
           } else {
             current = safeDowngradeVerdict(
               current,
               "direction",
-              retryDirection.issues,
+              direction.issues,
               warnings,
               config.mixedConfidenceThreshold,
             );
           }
-        } else {
-          current = safeDowngradeVerdict(
-            current,
-            "direction",
-            direction.issues,
-            warnings,
-            config.mixedConfidenceThreshold,
-          );
         }
       }
     }
@@ -1134,6 +1147,66 @@ async function runValidationCheckWithRetry(
 
 function joinIssues(issues: string[]): string {
   return issues.length > 0 ? issues.join("; ") : "unknown";
+}
+
+/**
+ * Deterministic sanity check for verdict direction.
+ * Returns true if the truth percentage is directionally consistent with the 
+ * weighted evidence ratio, allowing us to override false-positive LLM validation failures.
+ * 
+ * Uses probativeValue weights from CalculationConfig if provided.
+ */
+function isVerdictDirectionPlausible(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  calcConfig?: CalculationConfig,
+): boolean {
+  const citedEvidence = evidence.filter((e) =>
+    verdict.supportingEvidenceIds.includes(e.id) ||
+    verdict.contradictingEvidenceIds.includes(e.id)
+  );
+
+  if (citedEvidence.length === 0) return true;
+
+  // Use UCM weights or system defaults from DEFAULT_CALC_CONFIG
+  const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
+
+  let weightedSupports = 0;
+  let weightedContradicts = 0;
+
+  for (const e of citedEvidence) {
+    const weight = weights[e.probativeValue] ?? 0.5;
+    if (e.claimDirection === "supports") {
+      weightedSupports += weight;
+    } else if (e.claimDirection === "contradicts") {
+      weightedContradicts += weight;
+    }
+  }
+
+  const totalWeight = weightedSupports + weightedContradicts;
+  if (totalWeight === 0) return true;
+
+  // The expected truth ratio based on weighted evidence
+  const expectedRatio = weightedSupports / totalWeight;
+  const truthPercentage = verdict.truthPercentage;
+
+  // Rule 1: Clear Hemisphere Match for decisive verdicts
+  // If verdict is clear TRUE (>= 70), evidence ratio must be > 0.5.
+  if (truthPercentage >= 70 && expectedRatio > 0.5) return true;
+  // If verdict is clear FALSE (<= 30), evidence ratio must be < 0.5.
+  if (truthPercentage <= 30 && expectedRatio < 0.5) return true;
+
+  // Rule 2: Middle ground flexibility
+  // If the verdict is in the mixed range (31-69), we defer to LLM nuance.
+  if (truthPercentage > 30 && truthPercentage < 70) return true;
+
+  // Rule 3: Tolerance zone (Configurable in UCM - using 15pp system default)
+  // Provides a safety net for edge cases near the 70/30 boundaries.
+  const tolerance = calcConfig?.verdictIntegrityTolerance ?? DEFAULT_CALC_CONFIG.verdictIntegrityTolerance ?? 0.15;
+  const verdictRatio = truthPercentage / 100;
+  if (Math.abs(expectedRatio - verdictRatio) <= tolerance) return true;
+
+  return false;
 }
 
 function safeDowngradeVerdict(

@@ -1151,12 +1151,16 @@ You are an evidence direction validator. Your task is to check whether each verd
 
 ### Task
 
-For each claim verdict provided, verify:
-1. If the majority of cited evidence supports the claim, the truth percentage should be above 50%.
-2. If the majority of cited evidence contradicts the claim, the truth percentage should be below 50%.
-3. If evidence is mixed, the truth percentage should reflect the balance.
+For each claim verdict provided, verify whether the `truthPercentage` is directionally consistent with the `claimDirection` of the cited evidence items:
+1. **Low Truth Percentage (0-40%):** Consistent if the majority of cited evidence is marked as `contradicts` (denies the claim).
+2. **High Truth Percentage (60-100%):** Consistent if the majority of cited evidence is marked as `supports` (confirms the claim).
+3. **Mixed/Middle (40-60%):** Consistent if the evidence pool is mixed (both supports and contradicts) or mostly neutral.
 
-This is a lightweight directional sanity check. Flag mismatches but do NOT override the verdict.
+**Crucial Logic Rule:** 
+If a claim has many `contradicts` evidence items and a LOW truth percentage (e.g., 15%), this is **DIRECTIONALLY CORRECT**. The evidence opposes the claim, and the low percentage reflects that lack of truth. 
+Do NOT flag a low truth percentage as a mismatch just because the evidence contradicts the claim — they are in alignment.
+
+This is a lightweight directional sanity check. Flag only clear mismatches (e.g., 90% truth with mostly contradicting evidence, or 10% truth with mostly supporting evidence).
 
 ### Rules
 
