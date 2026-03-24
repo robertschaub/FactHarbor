@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-17 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
 
 # GEMINI.md
 
@@ -25,6 +25,7 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Web:** Next.js (`apps/web`)
 *   **API:** ASP.NET Core (`apps/api`)
 *   **Config:** UCM (Unified Config Management) via SQLite.
+*   **Analyzer:** Modularized `ClaimAssessmentBoundary` pipeline (Stages 1-5). Key stage components: `research-orchestrator`, `research-query-stage`, `research-acquisition-stage`, `research-extraction-stage`, `boundary-clustering-stage`, `verdict-generation-stage`, `aggregation-stage`.
 
 ## Behavior
 *   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
