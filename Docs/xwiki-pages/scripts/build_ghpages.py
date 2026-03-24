@@ -303,6 +303,7 @@ loadBundle();"""
 .view-toggle button[onclick*="source"] { display: none !important; }
 .view-toggle button[onclick*="split"] { display: none !important; }
 #dropOverlay { display: none !important; }
+.preview-pane > .pane-header { display: none !important; }
 #bundleMeta { display: none; color: var(--text-dim); font-size: .75em; margin-left: 8px; }
 """
     html = html.replace('</style>', hide_css + '</style>')
