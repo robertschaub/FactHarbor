@@ -3,17 +3,16 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-24
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational and the major refactor wave is materially complete, but the current posture is **stabilization and focused control-quality validation**, not optimization. **WS-1 through WS-4 are complete**, the Stage-4 provider guard is live-validated under concurrent load, the Stage-1 `claimDirection` prompt has been clarified, and the preliminary-evidence multi-claim mapping leak is fixed in code (`31aea55d`). The current active gate is a post-fix live validation batch on the restarted stack; the main open non-quality bug is a separate jobs-list progress/verdict sync race. **Bolsonaro is not currently a positive benchmark until it is re-baselined on the fixed stack, and Stage 4.5 SR calibration remains feature-flagged/off.**
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED** — control verdicts are directionally correct, reliability is clean, and the verdict-direction sanity guard works without overcorrection. The current quality priority is **QLT-1: Stage 1 predicate-strength stabilization**, empirically confirmed as the primary source of Plastik run-to-run instability (47pp spread traced to claim decomposition variance). Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
 ## Current Focus (2026-03-24)
 
-- **Finish the current post-fix live batch** on commit `31aea55d` across Earth/Hydrogen/Plastik/Bolsonaro controls.
-- **Confirm boundary coverage integrity**: Boundaries with evidence should no longer appear populated-but-empty in the coverage matrix solely because seeded preliminary evidence lost `relevantClaimIds`.
-- **Do not treat Bolsonaro as recovered** until a clean fixed-stack rerun confirms it.
-- **Keep optimization blocked**: `P1-A` and `P1-B` are still not approved while this validation gate is open.
-- **Follow up on runtime/UI consistency**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
+- **QLT-1: Stage 1 predicate-strength stabilization** — empirically confirmed as highest-leverage quality improvement. Plastik instability is primarily Stage 1: claim count (2 vs 3), decomposition facets, and predicate strength ("bringt nichts" vs "unwirksam") all vary across identical-input runs. Prompt-led fix targeting Pass 2 predicate preservation.
+- **Verdict-direction plausibility narrowed** — Rule 2 no longer auto-passes the entire 31-69% truth range; evidence ratio must also be mixed. Evidence bucketing now uses verdict's own ID partition.
+- **Keep optimization blocked**: P1-A and P1-B require explicit Captain approval.
+- **Follow up on runtime/UI consistency (VAL-2)**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
 
 ---
 

@@ -16,15 +16,14 @@
 
 ## Immediate Priorities (2026-03-24)
 
-These are the active near-term items after the refactor wave, the Stage-4 reliability incident, the Stage-1 `claimDirection` prompt fix, and the preliminary-evidence mapping repair.
+VAL-1 is closed. The current quality priority is QLT-1 (predicate-strength stabilization), empirically confirmed as the primary source of Plastik instability.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
-| **VAL-1** | **Close the current post-fix validation gate**: evaluate the restarted live batch on commit `31aea55d` (`Ist die Erde flach?`, `Ist die Erde rund?`, Hydrogen, Bolsonaro, Plastik EN/DE). Confirm control verdicts, check for zero `analysis_generation_failed`, and verify that boundary coverage no longer shows populated-but-empty rows caused by lost `relevantClaimIds`. | Analyzer / Quality | high | high | IN PROGRESS | Current active gate |
-| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | high | med | NOT STARTED | Exposed during Mar 24 control reruns |
-| **VAL-3** | **Boundary-coverage follow-through**: if `31aea55d` still leaves any boundaries with `evidenceCount > 0` but zero matrix coverage, inspect residual seeded-evidence paths and quantify mapped vs unmapped preliminary evidence per boundary. | Analyzer / Quality | high | high | NOT STARTED | Follow-up only if live batch is not fully clean |
+| **QLT-1** | **Stage 1 predicate-strength stabilization**: Plastik instability empirically confirmed as primarily Stage 1 (47pp spread across 5 identical runs due to claim count, facet, and predicate strength variation). Prompt-led fix: preserve original predicate force in Pass 2 extraction. Connects to claim-strength preservation study. | Analyzer / Quality | high | high | IN PROGRESS | Empirically grounded by 5× Plastik comparison (2026-03-24) |
+| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | med | med | NOT STARTED | Exposed during Mar 24 control reruns |
 | **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | med | med | NOT STARTED | Still open after Stage-4 incident work |
-| **OPT-GATE** | **Keep optimization blocked until validation closes**: `P1-A` remains a separate quality-affecting experiment that is not approved while the current control/coverage gate is open. `P1-B` remains deferred. | Planning / Governance | high | high | BLOCKED | Do not reopen optimization by drift |
+| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to QLT-1 quality work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
 
@@ -66,6 +65,9 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | ✅ **Stage-4 reliability validation passed**: concurrent local control batch no longer reproduced `Stage4LLMCallError` / `VERDICT_ADVOCATE` collapse. | Analyzer / Reliability | 2026-03-23 | `Docs/AGENTS/Agent_Outputs.md` (2026-03-23 Stage 4 Provider Guard — Live Validation PASSED) |
 | ✅ **Stage-1 `claimDirection` prompt fix**: clarified that thesis direction is relative to the user's position, not to reality or consensus. | Analyzer / Prompt Quality | 2026-03-24 | `1e7e2c57`, `Docs/AGENTS/Agent_Outputs.md` |
 | ✅ **Preliminary-evidence multi-claim mapping fix**: preserved `relevantClaimIds[]` into Stage 2 seeding to repair boundary coverage leakage. | Analyzer / Quality | 2026-03-24 | `31aea55d`, `Docs/AGENTS/Agent_Outputs.md` |
+| ✅ **VAL-1 validation gate closed**: 7 control jobs across Earth/Hydrogen/Bolsonaro/Plastik — all directionally correct, zero infrastructure failures, sanity guard working. | Analyzer / Quality | 2026-03-24 | `Docs/AGENTS/Agent_Outputs.md` |
+| ✅ **Verdict-direction plausibility narrowed**: Rule 2 no longer auto-passes 31-69% truth with one-sided evidence; evidence bucketing uses verdict's own ID partition. | Analyzer / Verdict | 2026-03-24 | `460be546` |
+| ✅ **Plastik instability root-caused to Stage 1**: 5× identical-input comparison confirmed claim count, facet, and predicate strength variation as primary instability source (47pp spread). | Analyzer / Quality | 2026-03-24 | `Docs/AGENTS/Handoffs/2026-03-24_Senior_Developer_Plastik_Decomposition_Comparison.md` |
 
 ---
 
