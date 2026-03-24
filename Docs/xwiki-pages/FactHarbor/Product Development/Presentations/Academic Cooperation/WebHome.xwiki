@@ -43,6 +43,108 @@ The goal is full transparency — no hidden algorithms, inspectable evidence tra
 The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
 )))
 
+== FactHarbor Analysis Core  ==
+User submits a claim or article.
+The system extracts verifiable atomic-claims,
+researches supporting and opposing evidence from web sources,
+runs a structured AI debate,
+and produces a transparent verdict — every conclusion traceable to its sources.
+
+=== AI Pipeline with Structured Debate ===
+
+
+{{mermaid}}
+flowchart TD
+    subgraph MAIN [" "]
+        direction LR
+        INPUT(["Your Claim<br/>or Article"])
+        A["Extract<br/>verifiable claims"]:::ai
+
+        B["Search supporting<br/>and opposing evidence"]:::web
+
+        Q["Filter quality<br/>and score reliability"]:::ai
+        C["Organize into<br/>evidence-defined boundaries"]:::ai
+
+        subgraph DEBATE ["Structured AI Debate"]
+            direction TB
+            D["Advocate"]:::ai
+            SC["Self-Consistency"]:::ai
+            E["Challenger"]:::ai
+            F["Reconciler"]:::ai
+            V["Validator"]:::ai
+            D --> SC & E
+            SC & E --> F --> V
+        end
+
+        OUTPUT(["Verdict and<br/>Structured Report"])
+
+        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
+    end
+
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
+    end
+
+    MAIN ~~~ LEGEND
+
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style MAIN fill:none,stroke:none
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+{{/mermaid}}
+
+
+=== Main Entities - From Claim to Verdict ===
+
+{{mermaid}}
+flowchart TB
+    UNDER["CB Claim Understanding"]
+    AC["Atomic Claim"]
+    SQ["Search Query"]
+    SRC["Source"]
+    EI["Evidence Item"]
+    ES["Evidence Scope"]
+    CAB["Claim Assessment Boundary"]
+    CV["CB Claim Verdict"]
+    BF["Boundary Finding"]
+    CM["Coverage Matrix"]
+    OA["Overall Assessment"]
+
+    UNDER -->|"contains"| AC
+    AC -->|"generates"| SQ
+    SQ -->|"discovers"| SRC
+    SRC -->|"yields"| EI
+    EI -->|"has"| ES
+    ES -->|"clusters into"| CAB
+    EI -->|"assigned to"| CAB
+    AC -->|"receives"| CV
+    CV -->|"cites"| EI
+    CV -->|"aggregates into"| OA
+    OA -->|"presents"| CAB
+    OA -->|"includes"| CM
+    CM -->|"rows"| AC
+    CM -->|"columns"| CAB
+    CV -->|"contains"| BF
+    BF -->|"per boundary"| CAB
+
+    classDef core fill:#e8f3e8,stroke:#7aa57f,stroke-width:3px,color:#1f4d2a
+    classDef aux fill:#f8fbff,stroke:#9fb4d9,stroke-width:1.4px,color:#27456b
+    class AC,SRC,EI,ES,CAB core
+    class UNDER,SQ,CV,BF,CM,OA aux
+{{/mermaid}}
+
+=== FactHarbor UI ===
+
+[[image:FH_UI.png||width="100%"]]
+
+[[app.FactHarbor.ch>>https://app.factharbor.ch]]
+
+
 == Cooperation Opportunities ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
@@ -79,6 +181,8 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 
 ----
 
+
+
 == Why Collaborate: Mutual Benefits ==
 
 FactHarbor's product ambition is international, and the current collaboration discussion keeps partner and funding options open rather than prioritizing a single institution or instrument. That collaboration is not one-directional — both sides bring what the other needs.
@@ -103,7 +207,7 @@ FactHarbor's product ambition is international, and the current collaboration di
 |=Benefit|=Why It Matters
 |**A working alpha testbed**|Unlike many research prototypes, FactHarbor already runs end-to-end on real claims and produces inspectable artifacts. That makes it useful as an experimental platform, while still being honest about current Alpha-stage limitations.
 |**Modular research testbed**|An end-to-end multi-agent debate system with live evidence retrieval is available as a concrete experimental platform. Each pipeline stage produces inspectable intermediate artifacts, and analysis parameters are configurable via UCM with per-job config snapshots for reproducibility.
-|**Domain-agnostic scope**|Current academic fact-checking research (HAMiSoN, Climinator, CheckThat!) often focuses on specific domains (social media campaigns, climate claims). FactHarbor provides a **general-domain, topic-agnostic** setting for testing claim detection, evidence retrieval, and verification beyond a single topical area.
+|**Domain-agnostic scope**|Current academic fact-checking research is often either **domain-specific** or **task-bounded**: Climinator is climate-specific, HAMiSoN centers on organised misinformation in social networks, and CheckThat! is broader but still structured as a multilingual shared-task benchmark rather than a general-domain end-to-end system. FactHarbor provides a **general-domain, topic-agnostic** setting for testing claim detection, evidence retrieval, and verification beyond a single topical area.
 |**Publishable open problems**|Resource-efficient pipeline distillation, multilingual verdict stability, evidence sufficiency bounds, report stability metrics, and cross-provider debate dynamics are all concrete topics that can support papers.
 |**Applied implementation partner**|FactHarbor can serve as the concrete implementation partner and real-world validation environment in collaborative projects — the applied side that complements academic research.
 |**Open-source visibility**|Contributions to an open-source, public-interest project are visible, citable, and reusable by the community — not locked behind a corporate NDA.
@@ -159,7 +263,7 @@ The technical pipeline, architecture, debate-flow, verdict-calibration, and data
 |Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
 |LLM calls per analysis|~40-50
 |Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
-|License|Open-source, non-profit, fully transparent
+|License / posture|Open-source, public-interest oriented, fully transparent
 
 ----
 
@@ -191,50 +295,6 @@ The roadmap below combines core platform work with the most important missing us
 |**Professional workflows**|API clients / SDKs; team workspaces; expert review workflow|V1.0 / V1.5+
 |**Cooperation features**|Collaborative annotation; comparative fact-check view; shared benchmarks and evaluation datasets|V1.5+ / V2.0+
 |**Federated cooperation**|Claim synchronization; cross-node contradiction detection; distributed verdict agreement|V2.0+
-
-=== Target: Federated Network (V2.0+) ===
-
-The long-term vision is a **federated architecture** — independent FactHarbor instances operated by different organizations can synchronize verified claims while maintaining local control and autonomy.
-
-{{mermaid}}
-flowchart TB
-    PROTOCOL["Shared Federation Protocol\n(no central authority)"]
-
-    subgraph NETWORK["Independent Organizations"]
-        direction LR
-
-        subgraph ORG1["Organization A"]
-            direction TB
-            U1["Local Users"] --> FH1["FactHarbor Instance 1"]
-        end
-
-        subgraph ORG2["Organization B"]
-            direction TB
-            U2["Local Users"] --> FH2["FactHarbor Instance 2"]
-        end
-
-        subgraph ORG3["Organization C"]
-            direction TB
-            U3["Local Users"] --> FH3["FactHarbor Instance 3"]
-        end
-    end
-
-    FH1 -. "claim + verdict sync" .-> PROTOCOL
-    FH2 -. "claim + verdict sync" .-> PROTOCOL
-    FH3 -. "claim + verdict sync" .-> PROTOCOL
-
-    style PROTOCOL fill:#f3e5f5,stroke:#7b1fa2,color:#000,stroke-width:2px
-    style NETWORK fill:#fafafa,stroke:#cfcfcf,color:#000
-    style ORG1 fill:#e8f5e9,stroke:#2e7d32,color:#000
-    style ORG2 fill:#e3f2fd,stroke:#1565c0,color:#000
-    style ORG3 fill:#fff3e0,stroke:#e65100,color:#000
-
-{{/mermaid}}
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Research opportunity:** The federation layer raises open questions in distributed fact-checking: how to reconcile conflicting verdicts across instances, detect cross-instance contradictions, and maintain quality guarantees in a decentralized network.
-)))
 
 ----
 
@@ -281,7 +341,7 @@ The pipeline works end-to-end today. To move from working prototype to a public 
 |**Multi-Provider LLM Debate**|Working|Anthropic advocate + OpenAI challenger, self-consistency, reconciler, validator
 |**Quality Gates (Gate 1 + Gate 4)**|Working|Claim validation and confidence tiering with UI panel
 |**UCM Configuration**|Working|All analysis parameters tunable at runtime via Admin UI, hot-reloadable, with per-job config snapshots for reproducibility
-|**Source Reliability v2**|Working|LLM-powered assessment, cache isolation, and evidence weighting are active; the optional Stage 4.5 calibration path exists but remains disabled by default pending validation
+|**Source Reliability v2**|Working|LLM-powered assessment and cache isolation are active; SR-based evidence weighting and the optional Stage 4.5 calibration path exist but remain disabled by default pending validation
 |**Multi-Provider Search**|Working|7 providers integrated (web search, Wikipedia, Semantic Scholar, Google Fact Check); automatic fallback
 |**LLM Model Tiering**|Working|Budget models for extraction, standard models for verdicts, cross-provider challenger for debate diversity
 |**Multilingual Analysis**|Working|DE, EN, FR, PT tested; no English-only logic in active pipeline code
@@ -431,7 +491,7 @@ FactHarbor is an **open-source, public-interest** project. Sustainability depend
 
 === Claim Detection (HAMiSoN / ViClaim / CheckThat!) ===
 
-ZHAW's NLP group has produced the most directly relevant work in claim detection for fact-checking:
+ZHAW's NLP group has produced some of the most directly relevant work in claim detection for fact-checking:
 
 * **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 30+ publications): Holistic misinformation analysis covering claim worthiness checking, stance detection, and multilingual verified claim retrieval. The strongest overlap with FactHarbor is at the message level: claim detection, retrieval, and evidence interpretation.
 * **ViClaim** (EMNLP 2025, main conference): Multilingual multi-label claim detection dataset (17,116 sentences, 3 languages, 6 topics). Key finding: fine-tuned XLM-RoBERTa-Large (550M params) achieves F1=0.90 and **outperforms zero-shot o3-mini** (F1=0.78). Models trained on written text collapse on spoken text (F1 drops from 0.69 to 0.32).
@@ -457,7 +517,14 @@ This line is strongest when framed as **model-capacity efficiency** rather than 
 
 **Related systems line: low-latency RAG.** This is adjacent, but not identical. Here the central question is how to make evidence retrieval fast enough for interactive use while preserving evidence quality. CheckThat! 2025 retrieval work is especially relevant: hybrid BM25 + dense retrieval + reranking reached strong **MRR@5** results; LLM-based query rewriting was excluded from the final pipeline because it increased inference time by about 60x for poor cost-benefit; and an Elasticsearch-based hybrid variant was kept as a viable option for latency-sensitive deployments even though it underperformed the heavier reranking stack.
 
-To the best of our current review, no existing work has studied a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation) with both questions evaluated systematically: model-capacity reduction on the one hand, and low-latency retrieval design on the other. Most research addresses only one stage. FactHarbor's pipeline therefore offers a concrete baseline for measuring the tradeoffs among model capacity, retrieval latency, retrieval depth, and verdict quality.
+To the best of our current review, we have not identified prior work that studies a **full multi-stage fact-checking pipeline** (claim extraction → evidence retrieval → verdict debate → aggregation) while also evaluating both questions systematically: model-capacity reduction on the one hand, and low-latency retrieval design on the other. Most published work appears to emphasize only one stage or one optimization axis. FactHarbor's pipeline therefore offers a concrete baseline for measuring the tradeoffs among model capacity, retrieval latency, retrieval depth, and verdict quality.
+
+=== Three Concrete Joint Research Tracks ===
+
+|=Track|=Main research question|=FactHarbor entry point|=Useful first metrics|=Plausible first experiment
+|**A. Resource-efficient screening**|How far can smaller specialized models replace expensive large-model work in early fact-checking stages without materially harming downstream verdict quality?|Stage 1 claim extraction and Stage 2 evidence-screening subtasks|**F1 / Macro-F1**, latency, cost per analysis, verdict-direction agreement|Swap one extraction or screening subtask for a 500M-1.5B class model on a compact multilingual benchmark
+|**B. Low-latency evidence retrieval**|How much retrieval latency can be removed while preserving the evidence that actually matters for the verdict?|Stage 2 query generation, acquisition, and reranking|**MRR@5**, retrieval latency, evidence yield per AtomicClaim, downstream evidence sufficiency|Compare the current retrieval stack with a capped hybrid pipeline that avoids slow query rewriting
+|**C. Reproducibility and multilingual robustness**|How stable are verdicts across reruns, paraphrases, and languages, and which interventions improve that stability?|Per-job config snapshots, current input-neutrality harness, multilingual pipeline|Truth-percentage spread, confidence spread, input-neutrality delta, cross-language delta|Build a small DE / EN / FR / PT rerun set and test claim normalization plus prompt or caching variants
 
 === Source Attribution (ACL 2024) ===
 
@@ -469,7 +536,7 @@ Our evidence filter assigns //probativeValue// (high/medium/low) via LLM prompt 
 
 === Multi-Agent Debate (Climinator parallel) ===
 
-FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-advocate line explored in climate fact-checking systems such as Climinator (UZH/ETH, 96% accuracy on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation rules. Unlike domain-specific systems, this architecture is **topic-agnostic** — it works for climate, politics, health, economics, or other domains without modification.
+FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-advocate line explored in climate fact-checking systems such as Climinator (UZH/ETH, 96% accuracy on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation rules. Unlike domain-specific systems, this architecture is **topic-agnostic by design** — it is intended to support climate, politics, health, economics, and other domains without topic-specific logic, although that breadth still requires continued validation across topics.
 
 ----
 
@@ -516,56 +583,6 @@ FactHarbor's 5-step debate is adjacent to, but not the same as, the mediator-adv
 ----
 
 == Technical Appendix ==
-
-== FactHarbor Analysis Pipeline ==
-
-A user submits any claim or article, in any language. The system extracts verifiable assertions, researches supporting and opposing evidence from real web sources, runs a structured AI debate, and produces a transparent verdict — every conclusion traceable to its sources.
-
-
-{{mermaid}}
-flowchart TD
-    subgraph MAIN [" "]
-        direction LR
-        INPUT(["Your Claim<br/>or Article"])
-        A["Extract<br/>verifiable claims"]:::ai
-
-        B["Search supporting<br/>and opposing evidence"]:::web
-
-        Q["Filter quality<br/>and score reliability"]:::ai
-        C["Organize into<br/>evidence-defined boundaries"]:::ai
-
-        subgraph DEBATE ["Structured AI Debate"]
-            direction TB
-            D["Advocate"]:::ai
-            SC["Self-Consistency"]:::ai
-            E["Challenger"]:::ai
-            F["Reconciler"]:::ai
-            V["Validator"]:::ai
-            D --> SC & E
-            SC & E --> F --> V
-        end
-
-        OUTPUT(["Verdict and<br/>Structured Report"])
-
-        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
-    end
-
-    subgraph LEGEND ["Legend"]
-        direction LR
-        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
-    end
-
-    MAIN ~~~ LEGEND
-
-    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
-    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
-    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
-    style MAIN fill:none,stroke:none
-    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
-
-    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
-    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
-{{/mermaid}}
 
 
 ----
@@ -1186,50 +1203,6 @@ erDiagram
 
 {{/mermaid}}
 
-The original ER diagram above stays authoritative. The styled copy below only emphasizes the core analytical entities visually.
-
-{{mermaid}}
-flowchart TB
-    UNDER["CB Claim Understanding"]
-    AC["Atomic Claim"]
-    SQ["Search Query"]
-    SRC["Source"]
-    EI["Evidence Item"]
-    ES["Evidence Scope"]
-    CAB["Claim Assessment Boundary"]
-    CV["CB Claim Verdict"]
-    BF["Boundary Finding"]
-    CM["Coverage Matrix"]
-    OA["Overall Assessment"]
-
-    UNDER -->|"contains"| AC
-    AC -->|"generates"| SQ
-    SQ -->|"discovers"| SRC
-    SRC -->|"yields"| EI
-    EI -->|"has"| ES
-    ES -->|"clusters into"| CAB
-    EI -->|"assigned to"| CAB
-    AC -->|"receives"| CV
-    CV -->|"cites"| EI
-    CV -->|"aggregates into"| OA
-    OA -->|"presents"| CAB
-    OA -->|"includes"| CM
-    CM -->|"rows"| AC
-    CM -->|"columns"| CAB
-    CV -->|"contains"| BF
-    BF -->|"per boundary"| CAB
-
-    classDef core fill:#e8f3e8,stroke:#7aa57f,stroke-width:3px,color:#1f4d2a
-    classDef aux fill:#f8fbff,stroke:#9fb4d9,stroke-width:1.4px,color:#27456b
-    class AC,SRC,EI,ES,CAB core
-    class UNDER,SQ,CV,BF,CM,OA aux
-{{/mermaid}}
-
-(% class="box infomessage" %)
-(((
-**Key insight:** A claim can have different truth values in different ClaimAssessmentBoundaries (e.g., a study may be "Mostly True" under one methodology but "Leaning False" under another). The data model captures this nuance via BoundaryFindings.
-)))
-
 === Why This Matters Beyond RAG ===
 
 Classic RAG improves access to external memory, but it does not by itself define how retrieved evidence should be decomposed, compared, validated, and audited. The original RAG paper already frames provenance as an open problem. Schimanski et al.'s ACL 2024 paper sharpens this further: evidence-based QA often fails on **source quality** and **answer attributability**. DIRAS (NAACL 2025) then shows that even //relevance// needs nuanced definitions and calibrated scores beyond shallow semantic matching.
@@ -1247,5 +1220,50 @@ FactHarbor's answer is a typed intermediate representation that constrains what 
 This is why the data model is central to the research platform claim. Retrieval happens in Stage 2, but the main scientific object is the structured analysis graph built around it: AtomicClaims, EvidenceItems, EvidenceScopes, ClaimAssessmentBoundaries, Verdicts, QualityGates, and supporting analytical artifacts such as the CoverageMatrix.
 
 ----
+=== Target: Federated Network (V2.0+) ===
+
+The long-term vision is a **federated architecture** — independent FactHarbor instances operated by different organizations can synchronize verified claims while maintaining local control and autonomy. The federation model is a long-term architecture target, not a near-term cooperation starting point.
+
+{{mermaid}}
+flowchart TB
+    PROTOCOL["Shared Federation Protocol\n(no central authority)"]
+
+    subgraph NETWORK["Independent Organizations"]
+        direction LR
+
+        subgraph ORG1["Organization A"]
+            direction TB
+            U1["Local Users"] --> FH1["FactHarbor Instance 1"]
+        end
+
+        subgraph ORG2["Organization B"]
+            direction TB
+            U2["Local Users"] --> FH2["FactHarbor Instance 2"]
+        end
+
+        subgraph ORG3["Organization C"]
+            direction TB
+            U3["Local Users"] --> FH3["FactHarbor Instance 3"]
+        end
+    end
+
+    FH1 -. "claim + verdict sync" .-> PROTOCOL
+    FH2 -. "claim + verdict sync" .-> PROTOCOL
+    FH3 -. "claim + verdict sync" .-> PROTOCOL
+
+    style PROTOCOL fill:#f3e5f5,stroke:#7b1fa2,color:#000,stroke-width:2px
+    style NETWORK fill:#fafafa,stroke:#cfcfcf,color:#000
+    style ORG1 fill:#e8f5e9,stroke:#2e7d32,color:#000
+    style ORG2 fill:#e3f2fd,stroke:#1565c0,color:#000
+    style ORG3 fill:#fff3e0,stroke:#e65100,color:#000
+
+{{/mermaid}}
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Research opportunity:** The federation layer raises open questions in distributed fact-checking: how to reconcile conflicting verdicts across instances, detect cross-instance contradictions, and maintain quality guarantees in a decentralized network.
+)))
+
+
 
 **Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]
