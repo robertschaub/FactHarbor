@@ -963,8 +963,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,
-  parallelExtractionLimit: 3,
- // Conservative default; can increase for providers with higher rate limits
+  parallelExtractionLimit: 3, // Conservative default; can increase for providers with higher rate limits
 
   // Pipeline thresholds
   evidenceSimilarityThreshold: 0.4,
@@ -1627,7 +1626,6 @@ export const CalcConfigSchema = z.object({
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
-export type CalculationConfig = CalcConfig;
 
 export const DEFAULT_CALC_CONFIG: CalcConfig = {
   // verdictBands: System constant in truth-scale.ts — removed from UCM config.

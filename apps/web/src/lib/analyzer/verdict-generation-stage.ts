@@ -45,7 +45,7 @@ import {
 } from "./llm-provider-guard";
 
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
-import type { PipelineConfig, CalcConfig, CalculationConfig } from "@/lib/config-schemas";
+import type { PipelineConfig, CalcConfig } from "@/lib/config-schemas";
 import { classifyError } from "@/lib/error-classification";
 
 import { recordLLMCall } from "./metrics-integration";

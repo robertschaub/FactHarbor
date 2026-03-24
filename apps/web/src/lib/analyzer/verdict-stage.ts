@@ -43,7 +43,7 @@ import {
 } from "./types";
 
 import { percentageToClaimVerdict } from "./truth-scale";
-import type { CalculationConfig, PipelineConfig } from "@/lib/config-schemas";
+import type { CalcConfig } from "@/lib/config-schemas";
 import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
 export type VerdictGroundingPolicy = "disabled" | "safe_downgrade";
@@ -306,7 +306,7 @@ export async function runVerdictStage(
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
   onEvent?: (message: string, progress: number) => void,
-  calculationConfig?: CalculationConfig,
+  calculationConfig?: CalcConfig,
 ): Promise<CBClaimVerdict[]> {
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
@@ -895,7 +895,7 @@ export interface VerdictValidationRepairContext {
   claims: AtomicClaim[];
   boundaries: ClaimAssessmentBoundary[];
   coverageMatrix: CoverageMatrix;
-  calculationConfig?: CalculationConfig;
+  calculationConfig?: CalcConfig;
   repairExecutor?: (
     request: VerdictRepairRequest,
     llmCall: LLMCallFn,
@@ -1154,19 +1154,22 @@ function joinIssues(issues: string[]): string {
  * Returns true if the truth percentage is directionally consistent with the 
  * weighted evidence ratio, allowing us to override false-positive LLM validation failures.
  * 
- * Uses probativeValue weights from CalculationConfig if provided.
+ * Uses probativeValue weights from CalcConfig if provided.
  */
 function isVerdictDirectionPlausible(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
-  calcConfig?: CalculationConfig,
+  calcConfig?: CalcConfig,
 ): boolean {
-  const citedEvidence = evidence.filter((e) =>
-    verdict.supportingEvidenceIds.includes(e.id) ||
-    verdict.contradictingEvidenceIds.includes(e.id)
-  );
+  // Build a lookup for cited evidence by ID for weighted scoring.
+  // Use the verdict's own supportingEvidenceIds / contradictingEvidenceIds as the
+  // authoritative attribution from Stage 4, rather than re-reading each item's
+  // claimDirection (which could disagree if the debate reassigned an item).
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
 
-  if (citedEvidence.length === 0) return true;
+  const supportIds = verdict.supportingEvidenceIds ?? [];
+  const contradictIds = verdict.contradictingEvidenceIds ?? [];
+  if (supportIds.length === 0 && contradictIds.length === 0) return true;
 
   // Use UCM weights or system defaults from DEFAULT_CALC_CONFIG
   const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
@@ -1174,14 +1177,15 @@ function isVerdictDirectionPlausible(
   let weightedSupports = 0;
   let weightedContradicts = 0;
 
-  for (const e of citedEvidence) {
-    const pv = e.probativeValue ?? "low";
-    const weight = weights[pv] ?? 0.5;
-    if (e.claimDirection === "supports") {
-      weightedSupports += weight;
-    } else if (e.claimDirection === "contradicts") {
-      weightedContradicts += weight;
-    }
+  for (const id of supportIds) {
+    const e = evidenceById.get(id);
+    const pv = e?.probativeValue ?? "low";
+    weightedSupports += weights[pv] ?? 0.5;
+  }
+  for (const id of contradictIds) {
+    const e = evidenceById.get(id);
+    const pv = e?.probativeValue ?? "low";
+    weightedContradicts += weights[pv] ?? 0.5;
   }
 
   const totalWeight = weightedSupports + weightedContradicts;
@@ -1198,8 +1202,10 @@ function isVerdictDirectionPlausible(
   if (truthPercentage <= 30 && expectedRatio < 0.5) return true;
 
   // Rule 2: Middle ground flexibility
-  // If the verdict is in the mixed range (31-69), we defer to LLM nuance.
-  if (truthPercentage > 30 && truthPercentage < 70) return true;
+  // If the verdict is in the mixed range (31-69) AND evidence is also mixed (ratio 0.3-0.7),
+  // defer to LLM nuance. But if evidence is unanimously one-sided (e.g., 0 supports with
+  // 10 contradicts at truth=65%), this is a genuine direction issue — don't auto-pass.
+  if (truthPercentage > 30 && truthPercentage < 70 && expectedRatio >= 0.3 && expectedRatio <= 0.7) return true;
 
   // Rule 3: Tolerance zone (Configurable in UCM - using 15pp system default)
   // Provides a safety net for edge cases near the 70/30 boundaries.
