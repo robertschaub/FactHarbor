@@ -20,30 +20,37 @@
 
 == Cooperation Opportunities at a Glance ==
 
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a; font-size:1.05em;" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Three research questions** for an Innosuisse project ([[details>>||anchor="HProposedResearchQuestions28forInnosuisse29"]]):
 
-(% style="margin-left:1em;" %)
-(((
-**RQ1** — What minimum model capacity and evidence depth maintains verdict reliability? (→ evidence sufficiency)
-**RQ2** — Can a full multi-stage LLM pipeline be distilled into small language models? (→ pipeline distillation)
-**RQ3** — How does model compression affect verdict consistency across languages? (→ multilingual robustness)
+* **RQ1: Evidence sufficiency under resource constraints** — What minimum model capacity and evidence retrieval depth maintains verdict reliability within defined confidence bounds? No existing work studies this for a full multi-stage pipeline.
+* **RQ2: Cross-stage knowledge distillation** — Can the full pipeline (claim extraction → evidence retrieval → verdict debate → aggregation) be distilled into specialized small language models? ViClaim shows 550M encoders already outperform zero-shot frontier LLMs for classification.
+* **RQ3: Multilingual verdict stability under compression** — How does quantization and distillation affect verdict consistency across languages? Directly measurable using FactHarbor's EN/DE/FR pipeline and ViClaim's trilingual benchmark.
 )))
 
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
 **Eight collaboration areas** ([[details>>||anchor="HAdditionalCollaborationOpportunities"]]):
 
-(% style="margin-left:1em;" %)
-(((
-Evidence-quality benchmarking | Retrieval evaluation | Claim detection (ViClaim / CheckThat!) | Source credibility | Reproducibility protocols | Cost reduction via distillation | Multi-agent debate | CheckThat! 2026 participation
+* **Evidence-quality benchmarking** — formalize and benchmark our filtering against ViClaim and CheckThat! evaluation standards
+* **Retrieval evaluation** — measure how well our iterative search captures relevant evidence; hybrid retrieval (lexical + semantic + reranking) is state-of-art
+* **Claim detection benchmarking** — evaluate Stage 1 against ViClaim (17K sentences, 3 languages) and CheckThat! datasets
+* **Source credibility benchmarking** — evaluate our multi-provider reliability scoring against expert assessments
+* **Reproducibility / stability protocols** — define tolerance bands, repeatability metrics, and formal evaluation procedures for LLM-based fact-checking
+* **Cost reduction via distillation** — replace expensive LLM API calls with fine-tuned encoders for classification subtasks (validated: 550M matches 7B)
+* **Multi-agent debate architecture** — study and improve the adversarial debate pattern itself
+* **CheckThat! 2026 participation** — joint entry in claim normalization, fact-checking article generation, or reasoning trace tasks
 )))
 
-**Four more research-relevant topics** found throughout this document:
-
-(% style="margin-left:1em;" %)
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-Report stability as a measurable problem ([[details>>||anchor="HKnownProblems26Challenges"]]) | V1.0 goals map to RQ1-RQ3 ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]]) | Federation raises open questions in distributed fact-checking ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]]) | Community and collaboration layer ([[details>>||anchor="HCommunity26Collaboration"]])
-)))
+**More research-relevant topics** found in this document:
+
+* **Report stability** — the most significant quality challenge: same claim can produce different verdicts across runs. Defining formal stability metrics and reproducibility protocols for LLM-based fact-checking is an open research problem. ([[details>>||anchor="HKnownProblems26Challenges"]])
+* **V1.0 engineering goals as research questions** — speed, repeatability, precision, and cost reduction each map directly to RQ1-RQ3. Every V1.0 goal has a corresponding publishable research question. ([[details>>||anchor="HGoalsforFirstPublicRelease28V1.029"]])
+* **Federated fact-checking** — how to reconcile conflicting verdicts across independent instances, detect cross-node contradictions, and maintain quality guarantees in a decentralized network. ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]])
+* **Community and collaboration layer** — shared work on claims: expert input, joint annotation, comparative fact-check views, and team-based workflows. ([[details>>||anchor="HCommunity26Collaboration"]])
 )))
 
 ----
