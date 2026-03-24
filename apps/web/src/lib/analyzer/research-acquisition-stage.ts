@@ -20,7 +20,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: { sourceFetchTimeoutMs?: number; parallelExtractionLimit?: number },
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -31,6 +31,9 @@ export async function fetchSources(
 
   // Configurable timeout — default 20 s (was 12 s). Legal/government sources load slowly.
   const fetchTimeoutMs = pipelineConfig?.sourceFetchTimeoutMs ?? 20000;
+  const extractionMaxLength = pipelineConfig?.sourceExtractionMaxLength ?? 15000;
+  const retryDelayMs = pipelineConfig?.iterationRetryDelayMs ?? 2000;
+  const minContentLength = pipelineConfig?.minEvidenceContentLength ?? 100;
 
   // Filter out already-fetched URLs
   const toFetch = relevantSources.filter(
@@ -48,7 +51,7 @@ export async function fetchSources(
         try {
           const content = await extractTextFromUrl(source.url, {
             timeoutMs: fetchTimeoutMs,
-            maxLength: 15000,
+            maxLength: extractionMaxLength,
           });
           return { source, content, ok: true as const };
         } catch (firstError: unknown) {
@@ -56,12 +59,14 @@ export async function fetchSources(
           // Deterministic failures (401/403/404) are not retried — they won't resolve.
           const classified = classifySourceFetchFailure(firstError);
           if (["timeout", "network", "http_5xx"].includes(classified.type)) {
-            await new Promise<void>((r) => setTimeout(r, 2000));
+            if (retryDelayMs > 0) {
+              await new Promise<void>((r) => setTimeout(r, retryDelayMs));
+            }
             try {
               const content = await extractTextFromUrl(source.url, {
                 // Retry timeout: always >= first attempt, cap at schema max (60 s).
                 timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
-                maxLength: 15000,
+                maxLength: extractionMaxLength,
               });
               return { source, content, ok: true as const };
             } catch (retryError: unknown) {
@@ -91,7 +96,7 @@ export async function fetchSources(
         }
         continue;
       }
-      if (result.content.text.length < 100) continue; // Too short to be useful
+      if (result.content.text.length < minContentLength) continue; 
 
       const fetchedSource: FetchedSource = {
         id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,

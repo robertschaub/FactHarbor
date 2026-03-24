@@ -45,7 +45,8 @@ export async function generateResearchQueries(
   remainingQueryBudget?: number,
   searchGeo?: { language?: string; geography?: string | null },
 ): Promise<Array<{ query: string; rationale: string }>> {
-  const maxQueries = Math.max(0, Math.min(3, remainingQueryBudget ?? 3));
+  const maxQueriesPerCall = pipelineConfig.researchMaxQueriesPerIteration ?? 3;
+  const maxQueries = Math.max(0, Math.min(maxQueriesPerCall, remainingQueryBudget ?? maxQueriesPerCall));
   if (maxQueries === 0) {
     return [];
   }

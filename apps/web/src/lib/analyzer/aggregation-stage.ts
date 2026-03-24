@@ -30,6 +30,7 @@ import type {
 } from "./types";
 import { INSUFFICIENT_CONFIDENCE_MAX } from "./types";
 import type { CalcConfig, PipelineConfig } from "@/lib/config-schemas";
+import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
 import type { LLMCallFn } from "./verdict-stage";
 import { percentageToArticleVerdict } from "./truth-scale";
@@ -184,7 +185,7 @@ export async function aggregateAssessment(
     ? Math.min(weightedConfidence, INSUFFICIENT_CONFIDENCE_MAX)
     : weightedConfidence;
 
-  const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? 40;
+  const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? DEFAULT_CALC_CONFIG.mixedConfidenceThreshold ?? 45;
   const verdictLabel = percentageToArticleVerdict(
     weightedTruthPercentage,
     effectiveWeightedConfidence,

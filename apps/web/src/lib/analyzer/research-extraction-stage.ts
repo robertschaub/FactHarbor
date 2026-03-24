@@ -187,14 +187,15 @@ export async function classifyRelevance(
       reasoning: s.reasoning.slice(0, 80),
     })));
 
-    const relevantSources = adjustedSources.filter((s) => s.relevanceScore >= 0.4);
+    const relevanceThreshold = pipelineConfig.relevanceFloor ?? 0.4;
+    const relevantSources = adjustedSources.filter((s) => s.relevanceScore >= relevanceThreshold);
 
     // Diagnostics: log discard summary
-    const discarded = adjustedSources.filter((s) => s.relevanceScore < 0.4);
+    const discarded = adjustedSources.filter((s) => s.relevanceScore < relevanceThreshold);
     if (discarded.length > 0) {
       const cappedCount = discarded.filter((s) => s.jurisdictionMatch === "foreign_reaction").length;
       const belowThreshold = discarded.length - cappedCount;
-      debugLog(`[Stage2] Discarded ${discarded.length} items: ${cappedCount} capped (foreign_reaction), ${belowThreshold} below threshold (0.4)`,
+      debugLog(`[Stage2] Discarded ${discarded.length} items: ${cappedCount} capped (foreign_reaction), ${belowThreshold} below threshold (${relevanceThreshold})`,
         discarded.map((s) => ({ url: s.url.slice(0, 80), raw: s.rawScore, adjusted: s.relevanceScore, jurisdiction: s.jurisdictionMatch })),
       );
     }

@@ -1175,7 +1175,8 @@ function isVerdictDirectionPlausible(
   let weightedContradicts = 0;
 
   for (const e of citedEvidence) {
-    const weight = weights[e.probativeValue] ?? 0.5;
+    const pv = e.probativeValue ?? "low";
+    const weight = weights[pv] ?? 0.5;
     if (e.claimDirection === "supports") {
       weightedSupports += weight;
     } else if (e.claimDirection === "contradicts") {

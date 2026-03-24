@@ -312,8 +312,6 @@ export const PipelineConfigSchema = z.object({
   probativeFilterEnabled: z.boolean().optional().describe("Enable probative value filtering"),
   provenanceValidationEnabled: z.boolean().optional().describe("Enable provenance validation gate"),
   pdfParseTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for PDF parsing (ms)"),
-  sourceFetchTimeoutMs: z.number().int().min(5000).max(60000).optional()
-    .describe("Timeout for fetching individual source URLs during research (ms, default: 20000). Increase for slow government or legal sources."),
 
   // === Parallel Extraction ===
   parallelExtractionLimit: z.number().int().min(1).max(10).optional()
@@ -492,6 +490,18 @@ export const PipelineConfigSchema = z.object({
   // Stage 2: Research
   claimSufficiencyThreshold: z.number().int().min(1).max(10).optional()
     .describe("Min evidence items per claim before considering it sufficient (default: 3)"),
+  relevanceFloor: z.number().min(0.1).max(0.9).optional()
+    .describe("Minimum relevance score (0-1) for a search result to be considered for extraction (default: 0.4)"),
+  sourceFetchTimeoutMs: z.number().int().min(1000).max(60000).optional()
+    .describe("Timeout in milliseconds for fetching an individual source URL (default: 20000)"),
+  minEvidenceContentLength: z.number().int().min(10).max(1000).optional()
+    .describe("Minimum character length for fetched source text to be considered usable (default: 100)"),
+  researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
+    .describe("Maximum number of search queries generated per research iteration (default: 3)"),
+  sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
+    .describe("Maximum characters extracted from an individual source for evidence processing (default: 15000)"),
+  iterationRetryDelayMs: z.number().int().min(0).max(10000).optional()
+    .describe("Delay in milliseconds between retries for transient fetch failures (default: 2000)"),
   sufficiencyMinMainIterations: z.number().int().min(0).max(10).optional()
     .describe("Min main loop iterations that must complete before sufficiency check can fire (default: 1). Prevents seeded preliminary evidence from short-circuiting real Stage 2 research."),
   contradictionReservedIterations: z.number().int().min(0).max(5).optional()
@@ -953,8 +963,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   probativeFilterEnabled: true,
   provenanceValidationEnabled: true,
   pdfParseTimeoutMs: 60000,
-  sourceFetchTimeoutMs: 20000,
-  parallelExtractionLimit: 3, // Conservative default; can increase for providers with higher rate limits
+  parallelExtractionLimit: 3,
+ // Conservative default; can increase for providers with higher rate limits
 
   // Pipeline thresholds
   evidenceSimilarityThreshold: 0.4,
@@ -1045,6 +1055,12 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
 
   // ClaimBoundary Stage 2 defaults
   claimSufficiencyThreshold: 3,
+  relevanceFloor: 0.4,
+  sourceFetchTimeoutMs: 20000,
+  minEvidenceContentLength: 100,
+  researchMaxQueriesPerIteration: 3,
+  sourceExtractionMaxLength: 15000,
+  iterationRetryDelayMs: 2000,
   sufficiencyMinMainIterations: 1,
   contradictionReservedIterations: 1,
   contradictionReservedQueries: 2,
@@ -1611,6 +1627,7 @@ export const CalcConfigSchema = z.object({
 });
 
 export type CalcConfig = z.infer<typeof CalcConfigSchema>;
+export type CalculationConfig = CalcConfig;
 
 export const DEFAULT_CALC_CONFIG: CalcConfig = {
   // verdictBands: System constant in truth-scale.ts — removed from UCM config.
