@@ -1,6 +1,6 @@
 # Executive Summary — FactHarbor Knowledge Base
 
-**Date:** 2026-02-22
+**Date:** 2026-03-24 (updated)
 **Scope:** All documents in `Docs/Knowledge/`
 
 ---
@@ -23,6 +23,10 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 | Meeting prep for Elliott Ash (historical) | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
 | Why evidence-following appears politically biased | [Epistemic Asymmetry](Truth_Seeking.md) | The information environment is not politically symmetric. This is a property of reality, not a pipeline bug. |
 | **Multi-source evidence retrieval spec** | [**Multi-Source Evidence Retrieval**](../Specification/Multi_Source_Evidence_Retrieval.md) | Wikipedia + Semantic Scholar + Google Fact Check Tools API. All free, ~8 hours implementation. Addresses #1 gap (C13 evidence asymmetry). |
+| **HAMiSoN**: ZHAW's misinformation research project, 7 lessons | [**HAMiSoN Analysis**](HAMiSoN_Lessons_for_FactHarbor.md) | EUR 1.1M, 30+ papers (EMNLP, IJCAI, ICWSM, CLEF). XLM-R (550M) beats zero-shot LLMs. Holistic message+network approach. Domain adaptation with N=100 samples. Proves ZHAW can lead multi-year research consortia. |
+| **ViClaim (EMNLP 2025)**: multilingual claim detection in videos | [**ViClaim Analysis**](ViClaim_EMNLP2025_Lessons_for_FactHarbor.md) | 1,798 videos / 17,116 sentences in EN/DE/ES. Fine-tuned XLM-R (0.90 F1) beats zero-shot o3-mini (0.78). Written→spoken transfer collapses (F1 0.69→0.32). Multi-label taxonomy (FCW/FNC/OPN) is more realistic than binary. Dataset available for Innosuisse research. |
+| **CheckThat! Lab**: longest-running fact-checking shared task (2018-2026) | [**CheckThat! Lab Analysis**](CheckThat_Lab_Lessons_for_FactHarbor.md) | 130+ teams/year, 20+ languages, full pipeline coverage. ZHAW 2nd (2023) and 3rd (2025). Ensemble methods win. Hybrid retrieval (lexical+semantic+reranking) is state-of-art. Validates FactHarbor's pipeline architecture. |
+| **Innosuisse partnership research** | [**Partnership Briefing**](../WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md) | ZHAW CAI (#1 candidate: Cieliebak, von Daniken), ETH Ash (#2). Innovation Cheque → full project path. "Low-resource fact-checking" framing. No Swiss competitor exists. |
 
 ---
 
