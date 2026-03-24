@@ -102,7 +102,7 @@ Use the following verified information to check the document's claims and assess
 
 | Document | Path | What it contains |
 |----------|------|-----------------|
-| **Document under review** | `Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Meeting UZH/WebHome.xwiki` | The cooperation presentation to review (xWiki 2.1 format) |
+| **Document under review** | `Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Academic Cooperation/WebHome.xwiki` | The cooperation presentation to review (xWiki 2.1 format) |
 | **Innosuisse Partnership Briefing** | `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md` | Full research into ZHAW, ETH Ash, grant strategy, Swiss landscape, competitive positioning |
 | **HAMiSoN Analysis** | `Docs/Knowledge/HAMiSoN_Lessons_for_FactHarbor.md` | Deep analysis of the HAMiSoN project: consortium, publications, methods, 7 lessons for FactHarbor |
 | **ViClaim Analysis** | `Docs/Knowledge/ViClaim_EMNLP2025_Lessons_for_FactHarbor.md` | Deep analysis of ViClaim paper: dataset details, model results, 7 lessons for FactHarbor |
@@ -148,7 +148,7 @@ Use the following verified information to check the document's claims and assess
 ## DOCUMENT UNDER REVIEW
 
 The document to review is located at:
-`Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Meeting UZH/WebHome.xwiki`
+`Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Academic Cooperation/WebHome.xwiki`
 
 It is in xWiki 2.1 markup format. Key syntax: `= H1 =`, `== H2 ==`, `=== H3 ===`, `**bold**`, `//italic//`, `[[Link>>URL]]`, `{{info}}...{{/info}}`, `{{mermaid}}...{{/mermaid}}`, `(% class="box successmessage" %)(((...)))` = green box.
 
