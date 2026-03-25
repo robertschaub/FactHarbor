@@ -126,14 +126,15 @@ flowchart TB
     CV -->|"aggregates into"| OA
     OA -->|"produces"| OUTPUT
 
-    %% Cross-references
-    CV -->|"evaluates"| AC
-    CV -->|"cites"| EI
-    CAB -->|"contains"| EI
-    OA -->|"presents"| CAB
-    OA -->|"includes"| CM
-    CM -->|"rows"| AC
-    CM -->|"columns"| CAB
+    %% Cross-references (dotted = structural, not primary flow)
+    OA -.->|"assesses"| INPUT
+    CV -.->|"evaluates"| AC
+    CV -.->|"cites"| EI
+    CAB -.->|"contains"| EI
+    OA -.->|"presents"| CAB
+    OA -.->|"includes"| CM
+    CM -.->|"rows"| AC
+    CM -.->|"columns"| CAB
 
     classDef io fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
     classDef out fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
