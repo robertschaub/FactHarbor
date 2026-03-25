@@ -383,7 +383,7 @@ export default function JobsPage() {
                   <div className={styles.jobPreview}>
                     {job.inputPreview || "No preview available"}
                   </div>
-                  {job.verdictLabel && (() => {
+                  {job.verdictLabel && isCompleteStatus(job.status) && (() => {
                     const vBadge = getVerdictBadge(job.verdictLabel);
                     if (!vBadge) return null;
                     const verdictMeta = getVerdictMetaText(job);

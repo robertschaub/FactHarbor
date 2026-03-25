@@ -92,8 +92,18 @@ public sealed class JobService
         var job = await GetJobAsync(jobId);
         if (job is null) return;
 
+        // Enforce monotonic progress for RUNNING→RUNNING updates to prevent
+        // out-of-order async events from making progress appear to go backward.
+        // Terminal states and restarts (which change status) set progress directly.
+        var previousStatus = job.Status;
         job.Status = status;
-        if (progress.HasValue) job.Progress = progress.Value;
+        if (progress.HasValue)
+        {
+            var isMonotonicViolation = status == "RUNNING" && previousStatus == "RUNNING"
+                                      && progress.Value < job.Progress;
+            if (!isMonotonicViolation)
+                job.Progress = progress.Value;
+        }
         job.UpdatedUtc = DateTime.UtcNow;
 
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });

@@ -1,6 +1,15 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | VAL-2: Jobs-List Progress/Verdict Sync Race Fix
+**Task:** Fix the race where non-terminal jobs show a persisted verdict while progress is stale.
+**Files touched:** `apps/web/src/app/jobs/page.tsx`, `apps/api/Services/JobService.cs`
+**Root cause:** Two independent issues. (1) `StoreResultAsync` sets `VerdictLabel`/`TruthPercentage`/`Confidence` on the job row before `UpdateStatusAsync` sets status to `SUCCEEDED` — the UI polls in between and shows a verdict badge on a RUNNING job. (2) `UpdateStatusAsync` unconditionally overwrites progress — out-of-order async HTTP events can make progress appear to go backward.
+**Fix shape:** (1) UI: verdict badge gated on `isCompleteStatus(job.status)` — only shows for SUCCEEDED/FAILED/CANCELLED/INTERRUPTED. (2) API: monotonic progress guard — RUNNING→RUNNING updates cannot decrease `job.Progress`. Terminal states and restarts bypass the guard.
+**Open items:** None. The fix is minimal and doesn't change analyzer behavior, event ordering, or data flow.
+**For next agent:** VAL-2 is done. Next priority is OBS-1 (per-job metrics collector).
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize QLT-3 and Sync Active Docs
 **Task:** Update canonical docs to reflect post-QLT-3 reality.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
