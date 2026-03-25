@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Apply Independent-Review Corrections
+**Task:** Apply 5 review corrections to EVD-1 policy draft.
+**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Corrections applied:** (1) Flat-Earth 31pp historical anomaly contextualized — pre-QLT-3 decomposition variance, not evidence instability. (2) Confidence band raised to 16–30pp monitor / >30pp investigate — fixes inconsistency where Plastik EN 26pp was implicitly red but intended as amber. (3) Classes B and E marked as provisional with insufficient repeated-run data. (4) Threshold basis note added — bands are performance-derived Alpha baselines, not user-validated product requirements. (5) Amber oscillation rule and validation-cadence definition added.
+**For next agent:** EVD-1 is now internally consistent and ready for Captain review.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Acceptable-Variance Policy Draft
 **Task:** Define reusable quality-governance framework for acceptable report variance.
 **Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
