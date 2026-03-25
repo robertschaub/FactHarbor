@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-3 Facet Consistency Fix
+**Task:** Implement and validate Stage-1 facet-consistency fix for complex broad-evaluative inputs (Muslims-family).
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added 3 targeted prompt rules: (1) no counter-narrative claims, (2) facet convergence for comparative predicates, (3) claim count stability. All three QLT-2-identified failure modes are fixed: claim count stabilized (2-3→3-3), claimDirection stabilized (S+C/X patterns→all S), counter-narrative and media claims eliminated (1/5→0/5). Truth% spread reduced 27pp→21pp. Remaining variance is evidence-driven.
+**Open items:** Facet 3 still varies semantically (but all options are now thesis-relevant). Other comparative inputs not yet tested.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md`. No further Stage-1 work justified for Muslims family. Remaining variance is Stage 2/4 (evidence-driven).
+
+---
 ### 2026-03-25 | Lead Architect | Codex (GPT-5) | Canonize QLT-2 Result and Sync Active Docs
 **Task:** Verify the new `QLT-2` characterization outputs, bring the active docs up to date, and commit the current canonical documentation state.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`, `Docs/AGENTS/Agent_Outputs.md`
