@@ -9,11 +9,9 @@
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **For inspection and discussion:**
-* What FactHarbor does well, where the main challenges are, and where an academic partner adds most value
-* Collaboration fit: **claim detection**, **evidence quality**, **resource-efficient verification**, **speed / cost**, **low-latency retrieval**, **multilingual robustness**, **evaluation**, **reproducibility**
-* Best cooperation focus: near-term pipeline improvement, medium-term research platform, or longer-term multimedia verification
-* Realistic funding paths: Innosuisse, SNSF, Hasler Foundation, BRIDGE, and others
-
+* What FactHarbor does, challenges, goals
+* Cooperation opportunities and funding paths
+*
 **Goal:**
 * Shared view on collaboration fit
 * Short list of most promising research directions
@@ -185,17 +183,17 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 (((
 **Highest-priority needs right now:**
 
-* **Speed and cost reduction** — useful today, but too slow and expensive for large-scale public use
-* **Stability and reproducibility** — repeated runs should converge more reliably
-* **Evidence retrieval precision** — must surface decision-relevant evidence more consistently, fewer wasted searches
-* **Claim normalization and multilingual robustness** — inputs vary in phrasing, language, and implicitness
+* **Speed and cost reduction**
+* **Stability and reproducibility**
+* **Evidence retrieval precision**
+* **Claim normalization and multilingual robustness**
 )))
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
 **Best collaboration starting points:**
 
-* **Small models for high-volume subtasks** — strongest lever for latency and cost in Stage 1 / Stage 2 screening
+* **Small models for high-volume subtasks** — strongest lever for latency and cost
 * **Low-latency retrieval / RAG** — strongest lever for interactive-speed evidence acquisition
 * **Evaluation and reproducibility** — strongest scientific lever: **F1**, **MRR@5**, report-stability baselines ([[details>>||anchor="HWhattheResearchPartnerGains"]])
 * **Prototype-and-measure** — test high-leverage improvements directly in FactHarbor, not a broad programme
@@ -224,7 +222,7 @@ Collaboration is not one-directional — both sides bring what the other needs.
 === What FactHarbor Gains ===
 
 |=Benefit|=Why It Matters
-|**Rigorous evaluation**|Formal benchmarks (ViClaim, CheckThat!, DIRAS, ACL 2024) instead of informal quality checks
+|**Rigorous evaluation**|Formal benchmarks (ViClaim, CheckThat!, DIRAS, ACL 2024)
 |**Research framing**|Turn internal quality work into publishable evaluation questions, framed as "resource-efficient fact verification"
 |**Research infrastructure**|University compute, multilingual NLP datasets, academic networks
 |**Grant vehicle**|Innosuisse, SNSF, Hasler, BRIDGE, Horizon Europe — depending on partner and scope
@@ -257,7 +255,7 @@ Collaboration is not one-directional — both sides bring what the other needs.
 
 |=Step|=Instrument|=Amount|=Timeline|=Purpose
 |**Explore**|Innovation Cheque|CHF 15,000 (100% Innosuisse)|Decision: 4-6 weeks|Feasibility study: evaluate synergy between FactHarbor's pipeline and a suitable research partner's expertise in claim detection, retrieval, and misinformation research
-|**Build**|Innovation Project (with Implementation Partner)|CHF 100K-500K (Innosuisse covers research partner; FactHarbor co-funds 40-60%, mostly as developer time)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
+|**Build**|Innovation Project (with Implementation Partner)|Typically CHF 100K-500K (no official cap; Innosuisse covers research partner; FactHarbor co-funds 40-60% incl. min 5% cash)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
 |**Publish**|CLEF CheckThat! / ACL / EMNLP / relevant applied-NLP venues|—|Ongoing|Demo-track or applied-track submissions, benchmark participation, and shared-task outputs during the project
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
@@ -268,10 +266,10 @@ Collaboration is not one-directional — both sides bring what the other needs.
 === Alternative / Complementary Paths ===
 
 |=Route|=Best For|=Notes
-|**ETH — Prof. Elliott Ash**|Deep NLP research on claim detection, evidence retrieval, debate frameworks|AFaCTA (ACL 2024), e-FEVER, BallotBot (RAG). Strong publication record but no confirmed Innosuisse history. Could be a direct partner, academic advisor, or co-PI depending on project structure.
-|**UZH — Prof. Markus Leippold**|Climate-specific fact-checking, domain extension|Climinator (96% accuracy, debate architecture). Primarily climate-focused; general-domain extension would be novel for this group.
-|**SNSF / Hasler Foundation**|Fundamental research questions|Hasler "Responsible AI" programme previously funded "Scientific Claim Verification" (Sachan + Leippold + Ash). Suitable for longer-term, more theoretical work.
-|**BRIDGE Proof of Concept**|Academic-led commercialization|Initiated from the research partner side. Up to CHF 130K/year. Deadlines 2026: March 2, June 1, September 1, December 1.
+|**ETH — Prof. Elliott Ash**|Claim detection, evidence retrieval, NLP for law and policy|Law, Economics & Data Science Group. AFaCTA (ACL 2024), e-FEVER, BallotBot (RAG). No confirmed Innosuisse history. Could be a direct partner, academic advisor, or co-PI.
+|**UZH — Prof. Markus Leippold**|Climate and political fact-checking, domain extension|Climinator (96% binary accuracy on climate claims, Mediator-Advocate framework). Now expanding beyond climate into political fact-checking with EU partners.
+|**SNSF / Hasler Foundation**|Fundamental research questions|Hasler "Responsible AI" funded "AI for Verification of Scientific Claims" (PI: Sachan, with Leippold + Ash). Suitable for longer-term, more theoretical work.
+|**BRIDGE Proof of Concept**|Academic-led commercialization|Initiated from the research partner side. Up to CHF 130K/year. Deadlines 2026: March 2, June 1, September 7, December 1.
 |**Student projects**|Low-cost exploration|Bachelor/Master theses on specific pipeline components. This can be a practical entry point for testing focused ideas before committing to a larger collaboration.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
@@ -287,9 +285,9 @@ Collaboration is not one-directional — both sides bring what the other needs.
 
 ZHAW's NLP group has produced some of the most directly relevant work in claim detection for fact-checking:
 
-* **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 30+ publications): Claim worthiness, stance detection, multilingual claim retrieval. Strongest FactHarbor overlap: claim detection, retrieval, evidence interpretation.
+* **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 26 publications to date): Claim worthiness, stance detection, multilingual claim retrieval. Strongest FactHarbor overlap: claim detection, retrieval, evidence interpretation.
 * **ViClaim** (EMNLP 2025 main): Multilingual claim detection (17K sentences, 3 languages, 6 topics). XLM-RoBERTa-Large (550M) achieves F1=0.90, **outperforms zero-shot o3-mini** (F1=0.78). Written→spoken text: F1 drops 0.69→0.32.
-* **CheckThat! Lab** (CLEF, 2nd 2023, 3rd 2025): Longest-running automated fact-checking shared task. ZHAW's kernel ensemble and hybrid retrieval pipeline show competitive capability.
+* **CheckThat! Lab** (CLEF, 2nd 2023 on multimodal check-worthiness, 3rd 2025 on scientific source retrieval): Longest-running automated fact-checking shared task. ZHAW's kernel ensemble and hybrid retrieval pipeline show competitive capability.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
@@ -330,7 +328,7 @@ Our evidence filter assigns //probativeValue// (high/medium/low) via LLM — a c
 
 === Multi-Agent Debate (Climinator parallel) ===
 
-FactHarbor's 5-step debate is adjacent to Climinator's mediator-advocate line (UZH/ETH, 96% on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation. **Topic-agnostic by design** — supports any domain without topic-specific logic, though breadth requires continued validation.
+FactHarbor's 5-step debate is adjacent to Climinator's Mediator-Advocate framework (UZH/ETH, 96% binary accuracy on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation. **Topic-agnostic by design** — supports any domain without topic-specific logic, though breadth requires continued validation.
 
 ----
 
@@ -338,7 +336,7 @@ FactHarbor's 5-step debate is adjacent to Climinator's mediator-advocate line (U
 
 **Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
 
-**Main gaps:** Performance (~5 min, target < 90s), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
+**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -376,7 +374,7 @@ FactHarbor is currently in **Alpha**.
 
 |=Goal|=Current State|=V1.0 Target
 |**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
-|**Performance**|~5 min per analysis|< 90 seconds via caching and parallel execution
+|**Performance**|<5 min per analysis|< 90 seconds via caching and parallel execution
 |**Stability**|Operational but manual recovery|Auto-recovery, health monitoring, graceful degradation
 |**Repeatability**|Verdicts can vary across runs (LLM stochasticity, live evidence)|Stability within defined tolerance bands; evidence caching
 |**Cost Reduction**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
