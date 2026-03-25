@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-1 Predicate Strength Validation
+**Task:** Implement and validate QLT-1 prompt fix for Stage 1 predicate-strength preservation.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Predicate_Strength_Validation.md`
+**Key decisions:** Added "Predicate strength preservation (CRITICAL)" rule to PASS2 prompt. 12-job validation: Plastik DE spread dropped from 47pp to 22pp (53% reduction), claim count stabilized at 3, predicate softening ("unwirksam") eliminated. All anchor controls correct. No regressions.
+**Open items:** Residual 22pp spread is from facet synonym variation, evidence variation, and LLM stochasticity — no single dominant cause remaining.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Predicate_Strength_Validation.md`.
+
+---
 ### 2026-03-24 | Senior Developer | Codex (GPT-5) | Status / Backlog / WIP Consolidation Refresh
 **Task:** Bring the high-level project docs up to date after the Mar-22/23 execution wave and the Mar-24 validation follow-up, update the backlog, and archive no-longer-active WIP documents.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md`, `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md`, archived WIP files moved under `Docs/ARCHIVE/`.
