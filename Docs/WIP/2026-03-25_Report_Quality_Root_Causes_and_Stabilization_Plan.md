@@ -1,8 +1,10 @@
 # Report Quality Root Causes and Stabilization Plan
 
 **Date:** 2026-03-25
-**Status:** Review-adjusted
+**Status:** Historical / pre-QLT-2 planning baseline
 **Purpose:** Consolidate the current understanding of FactHarbor's remaining report-quality problems, state the most likely root causes, and propose a practical next-step plan that improves quality without reopening broad speculative implementation.
+
+**Update note (later 2026-03-25):** `QLT-2` has since been executed. Use `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` for the active post-QLT-2 state. This document remains relevant as the pre-QLT-2 root-cause framing and rationale.
 
 ---
 

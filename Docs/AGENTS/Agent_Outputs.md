@@ -1,6 +1,26 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Codex (GPT-5) | Canonize QLT-2 Result and Sync Active Docs
+**Task:** Verify the new `QLT-2` characterization outputs, bring the active docs up to date, and commit the current canonical documentation state.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Accepted the `QLT-2` finding that the remaining instability now has a split root cause: Muslims-family inputs still justify a narrow Stage-1 refinement, while Plastik EN no longer does. Updated the planning docs so the pre-QLT-2 root-cause plan is treated as historical background, and made the `QLT-2` handoff part of the canonical repo state.
+**Open items:** `QLT-3`, `VAL-2`, and `OBS-1` remain the active forward work. No analyzer code was changed here.
+**Warnings:** Do not keep citing the pre-QLT-2 root-cause plan as if it were the current execution plan; the active next-step state is now in `Current_Status.md`, `Backlog.md`, and the `QLT-2` handoff.
+**For next agent:** Start from the `QLT-2` handoff and the updated top sections of `Current_Status.md` / `Backlog.md`. Treat the 2026-03-25 root-cause plan as rationale/history, not the latest task list.
+**Learnings:** no
+
+---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-2 Residual Instability Characterization
+**Task:** Run 13-job characterization batch (5 Plastik EN, 5 Muslims, 3 Flat Earth) to determine whether residual broad-evaluative instability is still Stage-1 driven.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`
+**Key decisions:** Root cause is now SPLIT: Plastik EN Stage 1 is stable (QLT-1 working), remaining 30pp spread is evidence/verdict-driven. Muslims Stage 1 is still unstable (claim count, direction, facets all vary), 27pp spread. Flat Earth control clean (2pp). A single "Stage-1 facet-stabilization fix" is justified for Muslims but would NOT help Plastik EN.
+**Open items:** (1) Whether a Muslims-targeted Stage-1 fix also helps other broad-evaluative families; (2) Whether Plastik EN's 30pp evidence-driven spread requires Stage-2/3 intervention or is acceptable; (3) Acceptable variance policy for genuinely mixed topics.
+**Warnings:** The pre-QLT-2 assumption that residual variance is "still mainly Stage 1" was correct for Muslims but wrong for Plastik EN. Future planning must not treat these families as having the same root cause.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`. Muslims needs a narrow Stage-1 direction/count/facet-consistency prompt fix. Plastik EN does not need Stage-1 work.
+**Learnings:** no
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-1 Predicate Strength Validation
 **Task:** Implement and validate QLT-1 prompt fix for Stage 1 predicate-strength preservation.
 **Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Predicate_Strength_Validation.md`

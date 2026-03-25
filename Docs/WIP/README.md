@@ -23,7 +23,8 @@ Anything that was purely historical, implemented, or superseded has been archive
 ### Current quality / stabilization steering
 - [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
 - [2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md](2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md)
-- These are the current next-step documents for post-VAL-1 quality stabilization and planning.
+- [2026-03-25_Senior_Developer_QLT2_Characterization.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md)
+- The root-cause plan remains live background context, but the current active next-step state after `QLT-2` is governed by `Current_Status.md`, `Backlog.md`, and the `QLT-2` handoff.
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)

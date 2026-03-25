@@ -3,14 +3,18 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED** and **QLT-1 materially improved the dominant broad-evaluative defect**: Plastik DE spread dropped from 47pp to 22pp, claim count stabilized, and predicate softening was eliminated in the validation batch. The system is now in **stabilization / monitor mode**, not emergency analyzer repair. The main remaining analytical risk is residual instability on broad evaluative inputs, plus a separate jobs-list trust bug (`VAL-2`). Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED**, **QLT-1 is materially successful** (Plastik DE 47pp→22pp, predicate softening eliminated), and **QLT-2 characterization is complete**. Key QLT-2 finding: the remaining instability has a **split root cause** — Plastik EN Stage 1 is now stable (30pp spread is evidence/verdict-driven), while Muslims Stage 1 is still unstable (27pp spread from claim count/direction/facet variation). A narrow Stage-1 refinement targeting direction/count/facet consistency is justified for inputs like the Muslims family, but would not help Plastik EN. Optimization tracks (P1-A, P1-B) remain secondary. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
 ## Current Focus (2026-03-25)
 
-- **QLT-1 is materially successful and moves into monitoring**: the Stage-1 predicate-strength bug is no longer the dominant uncontrolled defect. Residual broad-evaluative spread remains, but the main softening failure mode is fixed.
-- **Characterize the remaining residual instability**: next evidence-gathering priority is to determine whether remaining broad-evaluative spread is still mainly Stage-1 facet/decomposition drift, with Stage-2 evidence variation acting mostly as an amplifier. Start with Plastik EN, the Muslims-family input, and Flat-Earth control reruns.
+- **QLT-1 is materially successful and remains in monitoring**: the Stage-1 predicate-strength bug is no longer the dominant uncontrolled defect.
+- **QLT-2 characterization is complete**: 13-job batch (5 Plastik EN, 5 Muslims, 3 Flat Earth) determined that residual instability has a **split root cause**:
+  - **Plastik EN**: Stage 1 is stable (same 3 facets, predicate preserved, count stable). Remaining 30pp spread is evidence/verdict-driven — different web sources → different evidence mixes → different verdicts on the environmental claim (47pp per-claim swing).
+  - **Muslims**: Stage 1 is still unstable — claim count (2-3), direction (supports/contradicts/contextual), and facet categories all vary across runs. 27pp article spread.
+  - **Flat Earth**: Clean control (2pp spread, all FALSE).
+- **Next analytical step**: A narrow Stage-1 refinement targeting direction/count/facet consistency is justified for inputs like the Muslims family. This would NOT help Plastik EN (Stage 1 already stable there).
 - **Verdict-direction plausibility narrowed** — Rule 2 no longer auto-passes the entire 31-69% truth range; evidence ratio must also be mixed. Evidence bucketing now uses verdict's own ID partition.
 - **Follow up on runtime/UI consistency (`VAL-2`)**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
 - **Follow up on observability (`OBS-1`)**: the module-global metrics collector still weakens per-job forensics under overlapping runs.
@@ -20,11 +24,16 @@
 
 ## Recent Changes (2026-03-25)
 
-**QLT-1 validation and next-step clarification:**
+**QLT-2 characterization completed and QLT-1 validation confirmed:**
+- ✅ **QLT-2 complete (13 jobs, zero exclusions)**: Plastik EN ×5, Muslims ×5, Flat Earth ×3 on commit `49700231`.
+- ✅ **Split root cause identified**: Plastik EN Stage 1 is now stable (QLT-1 working); remaining 30pp spread is evidence/verdict-driven. Muslims Stage 1 is still unstable (27pp from claim count/direction/facet variation). Flat Earth clean control (2pp).
+- ✅ **QLT-1 confirmed holding for EN**: all 5 Plastik EN runs preserved “pointless” predicate, produced 3 claims with stable environmental/economic/practical facets.
+- ⚠️ **Muslims decomposition instability**: claim count varies (2-3), directions include supports/contradicts/contextual, and facet categories differ in every run. A narrow Stage-1 direction/count/facet-consistency fix is justified.
+- ⚠️ **Plastik EN environmental claim variance**: 47pp per-claim swing (15-62%) despite stable Stage 1 claims — driven by evidence mix variation. Not addressable at Stage 1.
+
+**QLT-1 validation (earlier):**
 - ✅ **QLT-1 validation completed**: predicate-strength preservation in Stage 1 Pass 2 materially reduced Plastik DE instability from 47pp to 22pp, stabilized claim count, and eliminated the previously observed predicate softening outlier.
 - ✅ **Anchor regressions not observed**: Round Earth, Hydrogen, Bolsonaro, and Flat Earth remained directionally correct on the post-QLT-1 stack.
-- ⚠️ **Flat-Earth control still shows residual decomposition variance**: the control stayed in the correct direction, but post-QLT-1 reruns still showed a 31pp article-level spread caused by different Stage-1 facet framing.
-- ⚠️ **Residual instability remains**: broad evaluative inputs are improved but not fully “solved.” The next quality question is no longer the old predicate-softening bug; it is whether residual spread is now mainly residual Stage-1 decomposition drift or live evidence variation.
 
 ## Recent Changes (2026-03-24)
 
