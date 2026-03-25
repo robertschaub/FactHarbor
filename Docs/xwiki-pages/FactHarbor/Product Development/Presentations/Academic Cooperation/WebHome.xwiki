@@ -268,7 +268,7 @@ Collaboration is not one-directional — both sides bring what the other needs.
 
 |=Step|=Instrument|=Amount|=Timeline|=Purpose
 |**Explore**|Innovation Cheque|CHF 15,000 (100% Innosuisse)|Decision: 4-6 weeks|Feasibility study: evaluate synergy between FactHarbor's pipeline and a suitable research partner's expertise in claim detection, retrieval, and misinformation research
-|**Build**|Innovation Project (with Implementation Partner)|Typically CHF 100K-500K (no official cap; Innosuisse covers research partner; FactHarbor co-funds 40-60% incl. min 5% cash)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
+|**Build**|Innovation Project (with Implementation Partner)|Typically CHF 100K-500K (no official cap; Innosuisse funds research partner; FactHarbor contributes 40-60% of total costs as In-Kind effort + min. 5% Cash; hardship clause may apply for NPOs)|Duration: up to 36 months|Joint R&D on resource-efficient fact verification — distillation, multilingual robustness, evaluation frameworks
 |**Publish**|CLEF CheckThat! / ACL / EMNLP / relevant applied-NLP venues|—|Ongoing|Demo-track or applied-track submissions, benchmark participation, and shared-task outputs during the project
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
