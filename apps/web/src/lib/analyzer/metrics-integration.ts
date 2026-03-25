@@ -7,38 +7,67 @@
  * Usage: Import this helper and add calls at key points in analyzer.ts
  */
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
 import type { FailureModeMetrics, LLMCallMetric, QualityHealthMetrics, SearchQueryMetric } from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 
-// Global metrics collector (set by initializeMetrics)
-let currentMetrics: MetricsCollector | null = null;
+/**
+ * Per-job metrics isolation using AsyncLocalStorage.
+ * Each concurrent analysis job gets its own MetricsCollector instance
+ * scoped to its async context — overlapping jobs cannot corrupt each other's metrics.
+ */
+const metricsStorage = new AsyncLocalStorage<MetricsCollector>();
+
+/** Get the MetricsCollector for the current async context (job), or null if none. */
+function getJobMetrics(): MetricsCollector | null {
+  return metricsStorage.getStore() ?? null;
+}
 
 /**
- * Initialize metrics collection for an analysis job
- * Call at the START of runAnalysis()
+ * Run an analysis function with per-job metrics isolation.
+ * Creates a MetricsCollector, binds it to the async context, and runs the function.
+ * All metrics calls (startPhase, recordLLMCall, etc.) within the function and any
+ * async callees will automatically use this job's collector.
  *
- * @param config - Optional pipeline config from unified config system
+ * Replaces the old initializeMetrics() + global pattern.
  */
-export function initializeMetrics(
+export async function runWithMetrics<T>(
   jobId: string,
   pipelineVariant: string,
-  config?: PipelineConfig,
-  searchConfig?: SearchConfig,
-): void {
-  currentMetrics = createMetricsCollector(jobId, pipelineVariant);
+  config: PipelineConfig | undefined,
+  searchConfig: SearchConfig | undefined,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const collector = createMetricsCollector(jobId, pipelineVariant);
 
   const pipeline = config ?? DEFAULT_PIPELINE_CONFIG;
   const search = searchConfig ?? DEFAULT_SEARCH_CONFIG;
 
-  // Set config - use pipeline/search configs if provided, otherwise fall back to defaults
-  currentMetrics.setConfig({
+  collector.setConfig({
     llmProvider: pipeline.llmProvider ?? DEFAULT_PIPELINE_CONFIG.llmProvider ?? "anthropic",
     searchProvider: search.provider || DEFAULT_SEARCH_CONFIG.provider,
     allowModelKnowledge: pipeline.allowModelKnowledge ?? DEFAULT_PIPELINE_CONFIG.allowModelKnowledge,
     isLLMTiering: pipeline.llmTiering ?? DEFAULT_PIPELINE_CONFIG.llmTiering,
     isDeterministic: pipeline.deterministic ?? DEFAULT_PIPELINE_CONFIG.deterministic,
   });
+
+  return metricsStorage.run(collector, fn);
+}
+
+/**
+ * @deprecated Use runWithMetrics() instead. Kept temporarily for compatibility.
+ * In a concurrent environment this is unsafe — it falls back to a no-op if
+ * called outside a runWithMetrics context.
+ */
+export function initializeMetrics(
+  _jobId: string,
+  _pipelineVariant: string,
+  _config?: PipelineConfig,
+  _searchConfig?: SearchConfig,
+): void {
+  // No-op — metrics are now initialized via runWithMetrics().
+  // This function exists only so existing imports don't break during migration.
 }
 
 /**
@@ -46,9 +75,7 @@ export function initializeMetrics(
  * Call at the START of each major phase
  */
 export function startPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict' | 'aggregate'): void {
-  if (currentMetrics) {
-    currentMetrics.startPhase(phase);
-  }
+  getJobMetrics()?.startPhase(phase);
 }
 
 /**
@@ -56,9 +83,7 @@ export function startPhase(phase: 'understand' | 'research' | 'cluster' | 'verdi
  * Call at the END of each major phase
  */
 export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict' | 'aggregate'): void {
-  if (currentMetrics) {
-    currentMetrics.endPhase(phase);
-  }
+  getJobMetrics()?.endPhase(phase);
 }
 
 /**
@@ -66,9 +91,7 @@ export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict
  * Call AFTER each LLM generation completes
  */
 export function recordLLMCall(call: LLMCallMetric): void {
-  if (currentMetrics) {
-    currentMetrics.recordLLMCall(call);
-  }
+  getJobMetrics()?.recordLLMCall(call);
 }
 
 /**
@@ -76,9 +99,7 @@ export function recordLLMCall(call: LLMCallMetric): void {
  * Call AFTER each search completes
  */
 export function recordSearchQuery(query: SearchQueryMetric): void {
-  if (currentMetrics) {
-    currentMetrics.recordSearchQuery(query);
-  }
+  getJobMetrics()?.recordSearchQuery(query);
 }
 
 /**
@@ -91,12 +112,10 @@ export function recordGate1Stats(stats: {
   filteredReasons: Record<string, number>;
   centralClaimsKept: number;
 }): void {
-  if (currentMetrics) {
-    currentMetrics.setGate1Stats({
-      ...stats,
-      filteredClaims: stats.totalClaims - stats.passedClaims,
-    });
-  }
+  getJobMetrics()?.setGate1Stats({
+    ...stats,
+    filteredClaims: stats.totalClaims - stats.passedClaims,
+  });
 }
 
 /**
@@ -104,6 +123,7 @@ export function recordGate1Stats(stats: {
  * Call AFTER verdict confidence assessment
  */
 export function recordGate4Stats(verdicts: any[]): void {
+  const currentMetrics = getJobMetrics();
   if (!currentMetrics) return;
 
   const stats = {
@@ -142,6 +162,7 @@ export function recordSchemaCompliance(compliance: {
   extractEvidence?: Array<{ sourceId: string; success: boolean; retries: number; errorType?: string }>;
   verdict?: { success: boolean; retries: number; errorType?: string };
 }): void {
+  const currentMetrics = getJobMetrics();
   if (!currentMetrics) return;
 
   currentMetrics.setSchemaCompliance({
@@ -156,6 +177,7 @@ export function recordSchemaCompliance(compliance: {
  * Call AFTER analysis completes
  */
 export function recordOutputQuality(result: any): void {
+  const currentMetrics = getJobMetrics();
   if (!currentMetrics) return;
 
   const claims = result.claims || result.claimVerdicts || [];
@@ -412,6 +434,7 @@ function derivePrimaryTopic(result: any): string {
  * Call at the END of runAnalysis() (in finally block)
  */
 export async function finalizeMetrics(): Promise<void> {
+  const currentMetrics = getJobMetrics();
   if (!currentMetrics) return;
 
   try {
@@ -420,9 +443,8 @@ export async function finalizeMetrics(): Promise<void> {
   } catch (error) {
     console.error('Failed to persist metrics:', error);
     // Don't throw - metrics should never break analysis
-  } finally {
-    currentMetrics = null;
   }
+  // No need to null-out — the AsyncLocalStorage context ends when runWithMetrics() returns.
 }
 
 /**

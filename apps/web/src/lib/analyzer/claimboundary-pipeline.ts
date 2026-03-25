@@ -135,7 +135,7 @@ import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-sna
 
 // Metrics integration
 import {
-  initializeMetrics,
+  runWithMetrics,
   startPhase,
   endPhase,
   recordLLMCall,
@@ -256,11 +256,6 @@ export async function runClaimBoundaryAnalysis(
     });
   }
 
-  // Initialize metrics collection for this job after config load to capture runtime providers
-  if (input.jobId) {
-    initializeMetrics(input.jobId, "claimboundary", initialPipelineConfig, initialSearchConfig);
-  }
-
   // Log config load status — warn on error fallbacks so admins know UCM config was not applied
   for (const [name, result] of [
     ["pipeline", pipelineResult],
@@ -273,6 +268,15 @@ export async function runClaimBoundaryAnalysis(
       console.log(`[Pipeline] UCM ${name} config: no stored config, using defaults.`);
     }
   }
+
+  // Run the analysis inside a per-job metrics context. AsyncLocalStorage ensures
+  // overlapping concurrent jobs each get their own isolated MetricsCollector.
+  return runWithMetrics(
+    input.jobId ?? "unknown",
+    "claimboundary",
+    initialPipelineConfig,
+    initialSearchConfig,
+    async () => {
 
   try {
     // --- URL content pre-fetch (restored from v2.x pipeline) ---
@@ -896,6 +900,8 @@ export async function runClaimBoundaryAnalysis(
       clearAbortSignal(input.jobId);
     }
   }
+
+  }); // end runWithMetrics
 }
 
 // Stage 1 (claim extraction) extracted to claim-extraction-stage.ts

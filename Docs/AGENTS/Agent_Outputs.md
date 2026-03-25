@@ -1,6 +1,15 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | OBS-1: Request-Safe Per-Job Metrics Isolation
+**Task:** Replace module-global metrics collector with per-job isolated metrics using AsyncLocalStorage.
+**Files touched:** `apps/web/src/lib/analyzer/metrics-integration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
+**Root cause:** `let currentMetrics: MetricsCollector | null = null` was a module-level global. When concurrent jobs ran, `initializeMetrics()` for job B overwrote job A's collector — job A's subsequent metrics calls (startPhase, recordLLMCall, etc.) wrote to job B's collector, corrupting both.
+**Fix shape:** Replaced the global with Node.js `AsyncLocalStorage<MetricsCollector>`. New `runWithMetrics()` function creates a collector and binds it to the async context. All existing metrics functions (`startPhase`, `recordLLMCall`, etc.) now read from `metricsStorage.getStore()` — zero call-site changes in stage files. The pipeline orchestrator wraps the analysis in `runWithMetrics()`.
+**Open items:** `initializeMetrics()` is deprecated but kept as a no-op shim. Old import in pipeline replaced with `runWithMetrics`.
+**For next agent:** OBS-1 is done. Metrics are now per-job isolated via AsyncLocalStorage. No analyzer behavior changed.
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize VAL-2 and Sync Active Docs
 **Task:** Update canonical docs to reflect VAL-2 completion.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
