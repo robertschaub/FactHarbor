@@ -56,21 +56,6 @@ export async function runWithMetrics<T>(
 }
 
 /**
- * @deprecated Use runWithMetrics() instead. Kept temporarily for compatibility.
- * In a concurrent environment this is unsafe — it falls back to a no-op if
- * called outside a runWithMetrics context.
- */
-export function initializeMetrics(
-  _jobId: string,
-  _pipelineVariant: string,
-  _config?: PipelineConfig,
-  _searchConfig?: SearchConfig,
-): void {
-  // No-op — metrics are now initialized via runWithMetrics().
-  // This function exists only so existing imports don't break during migration.
-}
-
-/**
  * Start timing a phase
  * Call at the START of each major phase
  */
@@ -495,57 +480,23 @@ export async function withMetrics<T>(
 // ============================================================================
 
 /**
- * Example of how to integrate into analyzer.ts:
+ * Example of how to integrate metrics into a pipeline:
  *
  * ```typescript
- * // At the top of analyzer.ts
- * import {
- *   initializeMetrics,
- *   startPhase,
- *   endPhase,
- *   recordLLMCall,
- *   recordGate1Stats,
- *   recordGate4Stats,
- *   recordOutputQuality,
- *   finalizeMetrics,
- * } from './analyzer/metrics-integration';
+ * import { runWithMetrics, startPhase, endPhase, finalizeMetrics } from './metrics-integration';
  *
- * // At start of runAnalysis()
- * initializeMetrics(jobId, 'orchestrated');
- *
- * try {
- *   // Phase 1: Understand
- *   startPhase('understand');
- *   const understanding = await understandClaim(...);
- *   endPhase('understand');
- *
- *   // Phase 2: Research
- *   startPhase('research');
- *   const sources = await findSources(...);
- *   endPhase('research');
- *
- *   // Phase 3: Verdict
- *   startPhase('verdict');
- *   const verdicts = await generateVerdicts(...);
- *   endPhase('verdict');
- *
- *   // Record quality gates
- *   recordGate1Stats({
- *     totalClaims: allClaims.length,
- *     passedClaims: filteredClaims.length,
- *     filteredReasons: { 'opinion': 2, 'prediction': 1 },
- *     centralClaimsKept: 3,
- *   });
- *
- *   recordGate4Stats(verdicts);
- *
- *   // Record final quality
- *   recordOutputQuality(result);
- *
- *   return result;
- *
- * } finally {
- *   await finalizeMetrics();
- * }
+ * return runWithMetrics(jobId, 'claimboundary', config, searchConfig, async () => {
+ *   try {
+ *     startPhase('understand');
+ *     // ... analysis work ...
+ *     endPhase('understand');
+ *     return result;
+ *   } finally {
+ *     await finalizeMetrics();
+ *   }
+ * });
  * ```
+ *
+ * All metrics functions (startPhase, recordLLMCall, etc.) automatically use
+ * the per-job collector from AsyncLocalStorage — no jobId threading needed.
  */
