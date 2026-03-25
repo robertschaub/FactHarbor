@@ -177,17 +177,34 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 
 ----
 
-== Cooperation Opportunities ==
+== Where We Stand ==
+
+**Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
+
+**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Highest-priority needs right now:**
-
-* **Speed and cost reduction**
-* **Stability and reproducibility**
-* **Evidence retrieval precision**
-* **Claim normalization and multilingual robustness**
+**Research opportunity:** Report stability is a measurable problem — formal stability metrics, tolerance bands, and reproducibility protocols for LLM-based fact-checking.
 )))
+
+=== Key Facts ===
+
+|=Metric|=Value
+|Pipeline stages|5 + optional Stage 4.5 (SR Calibration), with 2 mandatory quality gates
+|Debate steps per claim|5 (adversarial, multi-provider)
+|LLM providers|4 integrated (Anthropic Sonnet 4.5 + OpenAI GPT-4.1 active in debate; Google Gemini + Mistral available)
+|Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
+|Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
+|LLM calls per analysis|~40-50
+|Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
+|License / posture|Open-source, public-interest oriented, fully transparent
+
+//Full status tables in the [[appendix>>||anchor="HAppendix3ACurrentStatusDetail"]].//
+
+----
+
+== Cooperation Opportunities ==
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -195,44 +212,26 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 
 * **Small models for high-volume subtasks** — strongest lever for latency and cost
 * **Low-latency retrieval / RAG** — strongest lever for interactive-speed evidence acquisition
-* **Evaluation and reproducibility** — strongest scientific lever: **F1**, **MRR@5**, report-stability baselines ([[details>>||anchor="HWhattheResearchPartnerGains"]])
-* **Prototype-and-measure** — test high-leverage improvements directly in FactHarbor, not a broad programme
-* **Shared evaluation data** — ViClaim, CheckThat!, and FactHarbor examples for compact evaluation sets
+* **Evaluation and reproducibility** — establish FactHarbor as a benchmarked, publishable research platform; co-develop evaluation sets and ground-truth annotations
+* **Prototype-and-measure** — test high-leverage improvements directly in FactHarbor with fast feedback loops
 * **Student theses and publications** — focused subprojects and shared-task submissions as low-risk starting points
 )))
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Medium- and longer-term research directions**:
+**Medium- and longer-term directions**:
 
-* **Reproducible fact-checking testbed** — per-job config snapshots and configurable stages enable publishable baseline-vs-variant studies ([[details>>||anchor="HWhattheResearchPartnerGains"]])
-* **Real-Time Fact Checking** — later-stage goal: live verification of audio, video, and mixed media ([[details>>||anchor="HResearchOverlap"]])
-* **Federated fact-checking** — reconcile conflicting verdicts across independent instances in a decentralized network ([[details>>||anchor="HTarget3AFederatedNetwork28V2.02B29"]])
-* **Community and collaboration** — expert input, joint annotation, comparative views, team workflows ([[details>>||anchor="HCommunity26Collaboration"]])
+* **Reproducible fact-checking testbed** — per-job config snapshots and configurable stages enable publishable baseline-vs-variant studies
+* **Real-Time Fact Checking** — later-stage goal: live verification of audio, video, and mixed media
+* **Federated fact-checking** — reconcile conflicting verdicts across independent instances in a decentralized network
+* **Community and collaboration** — expert input, joint annotation, comparative views, team workflows
 )))
 
 ----
 
-
-
 == Why Collaborate: Mutual Benefits ==
 
 Collaboration is not one-directional — both sides bring what the other needs.
-
-=== What FactHarbor Gains ===
-
-|=Benefit|=Why It Matters
-|**Rigorous evaluation**|Formal benchmarks (ViClaim, CheckThat!, DIRAS, ACL 2024)
-|**Research framing**|Turn internal quality work into publishable evaluation questions, framed as "resource-efficient fact verification"
-|**Research infrastructure**|University compute, multilingual NLP datasets, academic networks
-|**Grant vehicle**|Innosuisse, SNSF, Hasler, BRIDGE, Horizon Europe — depending on partner and scope
-|**Publication pipeline**|Joint papers at ACL, EMNLP, CLEF CheckThat! — ViClaim (EMNLP 2025 main) shows this works
-|**Student contributors**|Bachelor/Master theses on specific pipeline components — low-risk exploration
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and credible paths to funding and publications.
-)))
 
 === What the Research Partner Gains ===
 
@@ -249,6 +248,21 @@ Collaboration is not one-directional — both sides bring what the other needs.
 **Summary:** Research partners mainly gain a modular, topic-agnostic Alpha-stage research testbed with real artifacts, concrete open problems, and a plausible applied implementation partner.
 )))
 
+=== What FactHarbor Gains ===
+
+|=Benefit|=Why It Matters
+|**Rigorous evaluation**|Formal benchmarks (ViClaim, CheckThat!, DIRAS, ACL 2024)
+|**Research framing**|Turn internal quality work into publishable evaluation questions, framed as "resource-efficient fact verification"
+|**Research infrastructure**|University compute, multilingual NLP datasets, academic networks
+|**Grant vehicle**|Innosuisse, SNSF, Hasler, BRIDGE, Horizon Europe — depending on partner and scope
+|**Publication pipeline**|Joint papers at ACL, EMNLP, CLEF CheckThat! — ViClaim (EMNLP 2025 main) shows this works
+|**Student contributors**|Bachelor/Master theses on specific pipeline components — low-risk exploration
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Summary:** FactHarbor mainly gains formal evaluation methods, research framing, infrastructure access, and credible paths to funding and publications.
+)))
+
 == Cooperation and Funding Options ==
 
 === Possible Route: Innosuisse ===
@@ -263,14 +277,12 @@ Collaboration is not one-directional — both sides bring what the other needs.
 **Why it fits:** Innosuisse fits applied collaboration with a concrete implementation partner, but it is only one viable route among several and should be chosen only if it matches the partner, scope, and timing.
 )))
 
-=== Alternative / Complementary Paths ===
+=== Alternative / Complementary Funding ===
 
 |=Route|=Best For|=Notes
-|**ETH — Prof. Elliott Ash**|Claim detection, evidence retrieval, NLP for law and policy|Law, Economics & Data Science Group. AFaCTA (ACL 2024), e-FEVER, BallotBot (RAG). No confirmed Innosuisse history. Could be a direct partner, academic advisor, or co-PI.
-|**UZH — Prof. Markus Leippold**|Climate and political fact-checking, domain extension|Climinator (96% binary accuracy on climate claims, Mediator-Advocate framework). Now expanding beyond climate into political fact-checking with EU partners.
-|**SNSF / Hasler Foundation**|Fundamental research questions|Hasler "Responsible AI" funded "AI for Verification of Scientific Claims" (PI: Sachan, with Leippold + Ash). Suitable for longer-term, more theoretical work.
-|**BRIDGE Proof of Concept**|Academic-led commercialization|Initiated from the research partner side. Up to CHF 130K/year. Deadlines 2026: March 2, June 1, September 7, December 1.
-|**Student projects**|Low-cost exploration|Bachelor/Master theses on specific pipeline components. This can be a practical entry point for testing focused ideas before committing to a larger collaboration.
+|**SNSF / Hasler Foundation**|Fundamental research|Hasler "Responsible AI" funded "AI for Verification of Scientific Claims" (PI: Sachan, with Leippold + Ash). Longer-term, more theoretical work.
+|**BRIDGE Proof of Concept**|Academic-led commercialization|Researcher-initiated. Up to CHF 130K/year. Deadlines 2026: March 2, June 1, September 7, December 1.
+|**Student projects**|Low-cost exploration|Bachelor/Master theses on specific pipeline components — practical entry point before a larger collaboration.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
@@ -281,89 +293,45 @@ Collaboration is not one-directional — both sides bring what the other needs.
 
 == Research Overlap ==
 
-=== Claim Detection (HAMiSoN / ViClaim / CheckThat!) ===
+=== Core Research Question ===
 
-ZHAW's NLP group has produced some of the most directly relevant work in claim detection for fact-checking:
+**How far can fact-checking be pushed toward low-resource operation using smaller specialized models — without losing verdict reliability?**
 
-* **HAMiSoN** (EUR 1.1M, CHIST-ERA, 2023-2025, 26 publications to date): Claim worthiness, stance detection, multilingual claim retrieval. Strongest FactHarbor overlap: claim detection, retrieval, evidence interpretation.
-* **ViClaim** (EMNLP 2025 main): Multilingual claim detection (17K sentences, 3 languages, 6 topics). XLM-RoBERTa-Large (550M) achieves F1=0.90, **outperforms zero-shot o3-mini** (F1=0.78). Written→spoken text: F1 drops 0.69→0.32.
-* **CheckThat! Lab** (CLEF, 2nd 2023 on multimodal check-worthiness, 3rd 2025 on scientific source retrieval): Longest-running automated fact-checking shared task. ZHAW's kernel ensemble and hybrid retrieval pipeline show competitive capability.
+Recent results show this is feasible:
 
-(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
-(((
-**Pipeline mapping:** HAMiSoN claim worthiness → Stage 1; verified claim retrieval → Stage 2. Stance detection is adjacent to (not the same as) FactHarbor's debate stage.
-)))
+|=Evidence|=Finding
+|ViClaim (EMNLP 2025)|550M encoder matches or beats 3B-7B decoders on claim detection (F1=0.90 vs o3-mini F1=0.78)
+|SIGIR 2024|Fine-tuned XLM-RoBERTa (0.743 F1) beats GPT-4 (0.624) across 114 languages
+|DRAG (ACL 2025)|RAG knowledge distilled from LLMs to small models: 27.7% improvement
+|AVeriTeC 2025|Shared task now requires <10B parameters and <1 minute per claim
+|EdgeJury (2026)|Ensembles of 3B-8B models: 76.2% TruthfulQA, 8.4s latency
 
-=== Resource-Efficient Fact Verification (Core Research Angle) ===
+**Adjacent question: low-latency retrieval.** How to make evidence retrieval fast enough for interactive use. CheckThat! 2025 found hybrid BM25 + dense retrieval + reranking delivers strong **MRR@5**, while LLM query rewriting costs 60x inference time for poor benefit.
 
-One plausible central research question for a joint project is: **How far can fact-checking be pushed toward low-resource operation by using smaller specialized models without losing verdict reliability?**
+No prior work we have identified studies a **full multi-stage pipeline** (extraction → retrieval → debate → aggregation) while evaluating both model-capacity reduction and retrieval latency. FactHarbor offers a concrete baseline for these tradeoffs.
 
-Current evidence supports this direction:
-* ViClaim (EMNLP 2025): 550M encoder matches or beats 3B-7B decoders on claim detection
-* SIGIR 2024: Fine-tuned XLM-RoBERTa (0.743 F1) beats GPT-4 (0.624) on claim detection across 114 languages
-* DRAG (ACL 2025): RAG knowledge can be distilled from LLMs to small models with 27.7% improvement
-* AVeriTeC 2025 shared task: Now explicitly requires <10B parameters and <1 minute per claim — the community is moving here
-* EdgeJury (2026): Ensembles of 3B-8B models achieve 76.2% TruthfulQA with 8.4s latency
+=== Concrete Potentiial Joint Research Tracks ===
 
-Strongest framing: **model-capacity efficiency** — specialized small models can outperform much larger LLMs on classification-heavy subtasks.
+|=Track|=Research question|=Entry point|=Key metrics|=First experiment
+|**A. Resource-efficient screening**|Can smaller models replace large-model work in early stages without harming verdict quality?|Stage 1 + 2 screening subtasks|**F1 / Macro-F1**, latency, cost, verdict agreement|Swap one subtask for a 500M-1.5B model on a multilingual benchmark
+|**B. Low-latency retrieval**|How much retrieval latency can be removed while preserving verdict-relevant evidence?|Stage 2 query generation + reranking|**MRR@5**, latency, evidence yield, sufficiency|Compare current stack with a capped hybrid pipeline
+|**C. Reproducibility**|How stable are verdicts across reruns, paraphrases, and languages?|Config snapshots, neutrality harness|Truth-% spread, confidence spread, cross-language delta|DE / EN / FR / PT rerun set with normalization variants
 
-**Adjacent line: low-latency RAG.** How to make retrieval fast enough for interactive use while preserving evidence quality. CheckThat! 2025: hybrid BM25 + dense retrieval + reranking reached strong **MRR@5**; LLM query rewriting excluded (60x inference time, poor cost-benefit); Elasticsearch hybrid kept for latency-sensitive use.
+=== Related Academic Work and Potential Partners ===
 
-We have not identified prior work studying a **full multi-stage pipeline** (extraction → retrieval → debate → aggregation) while evaluating both model-capacity reduction and low-latency retrieval. Most work addresses one stage or one axis. FactHarbor offers a concrete baseline for these tradeoffs.
-
-=== Three Concrete Joint Research Tracks ===
-
-|=Track|=Main research question|=FactHarbor entry point|=Useful first metrics|=Plausible first experiment
-|**A. Resource-efficient screening**|How far can smaller specialized models replace expensive large-model work in early fact-checking stages without materially harming downstream verdict quality?|Stage 1 claim extraction and Stage 2 evidence-screening subtasks|**F1 / Macro-F1**, latency, cost per analysis, verdict-direction agreement|Swap one extraction or screening subtask for a 500M-1.5B class model on a compact multilingual benchmark
-|**B. Low-latency evidence retrieval**|How much retrieval latency can be removed while preserving the evidence that actually matters for the verdict?|Stage 2 query generation, acquisition, and reranking|**MRR@5**, retrieval latency, evidence yield per AtomicClaim, downstream evidence sufficiency|Compare the current retrieval stack with a capped hybrid pipeline that avoids slow query rewriting
-|**C. Reproducibility and multilingual robustness**|How stable are verdicts across reruns, paraphrases, and languages, and which interventions improve that stability?|Per-job config snapshots, current input-neutrality harness, multilingual pipeline|Truth-percentage spread, confidence spread, input-neutrality delta, cross-language delta|Build a small DE / EN / FR / PT rerun set and test claim normalization plus prompt or caching variants
-
-=== Source Attribution (ACL 2024) ===
-
-ACL 2024 //Faithful LLM Specialists//: LLMs can cite wrong sources or misrepresent them. FactHarbor addresses this structurally — every verdict traces to specific evidence items with source reliability scores. A post-verdict **grounding check** (Step 5: Validator) runs in advisory mode.
-
-=== Evidence Quality Scoring (DIRAS, NAACL 2025) ===
-
-Our evidence filter assigns //probativeValue// (high/medium/low) via LLM — a categorical approach. DIRAS shows that explicit relevance definitions and continuous calibrated scores improve scoring significantly. A DIRAS-style approach could strengthen our evidence weighting.
-
-=== Multi-Agent Debate (Climinator parallel) ===
-
-FactHarbor's 5-step debate is adjacent to Climinator's Mediator-Advocate framework (UZH/ETH, 96% binary accuracy on climate claims). FactHarbor adds self-consistency checking, cross-provider diversity, and evidence-weighted contestation. **Topic-agnostic by design** — supports any domain without topic-specific logic, though breadth requires continued validation.
+|=Area|=Key work|=FactHarbor connection|=Partnership fit
+|**Claim detection**|HAMiSoN (CHIST-ERA, EUR 1.1M, 2023-2025, 26 pubs); ViClaim (EMNLP 2025 main, 17K sentences, 3 languages); CheckThat! Lab (CLEF, longest-running shared task)|Claim worthiness → Stage 1; verified claim retrieval → Stage 2|ZHAW NLP group — strongest direct overlap with FactHarbor's pipeline stages
+|**Source attribution**|AFaCTA (ACL 2024, ETH): LLMs can cite wrong sources or misrepresent them|Every verdict traces to evidence items with reliability scores; grounding check (Step 5) in advisory mode|**ETH — Prof. Elliott Ash** (Law, Economics & Data Science Group). Also: e-FEVER, BallotBot (RAG). Could be partner, advisor, or co-PI.
+|**Evidence quality**|DIRAS (NAACL 2025): explicit relevance definitions and calibrated scores outperform categorical approaches|Our evidence filter uses categorical //probativeValue// — DIRAS-style scoring could strengthen this|—
+|**Multi-agent debate**|Climinator (UZH/ETH, 96% binary accuracy on climate claims, Mediator-Advocate framework)|FactHarbor's 5-step debate adds self-consistency, cross-provider diversity, evidence-weighted contestation — **topic-agnostic by design**|**UZH — Prof. Markus Leippold**. Now expanding beyond climate into political fact-checking with EU partners.
 
 ----
 
-== Where We Stand ==
-
-**Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
-
-**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Research opportunity:** Report stability is a measurable problem — formal stability metrics, tolerance bands, and reproducibility protocols for LLM-based fact-checking.
-)))
-
-//Full status tables in the [[appendix>>||anchor="HAppendix3ACurrentStatusDetail"]].//
-
-=== Key Facts ===
-
-|=Metric|=Value
-|Pipeline stages|5 + optional Stage 4.5 (SR Calibration), with 2 mandatory quality gates
-|Debate steps per claim|5 (adversarial, multi-provider)
-|LLM providers|4 integrated (Anthropic Sonnet 4.5 + OpenAI GPT-4.1 active in debate; Google Gemini + Mistral available)
-|Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
-|Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
-|LLM calls per analysis|~40-50
-|Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
-|License / posture|Open-source, public-interest oriented, fully transparent
-
-----
-
-== Roadmap ==
+== FactHarbor Roadmap ==
 
 FactHarbor is currently in **Alpha**.
 
-|=Phase|=Status|=Core platform milestones
+|=Phase|=Status|=Milestones
 |**POC**|Completed|Single host, full pipeline operational
 |**Alpha**|Current|Invite-code access, rate limiting, pre-release hardening
 |**Beta**|Planned|User authentication, horizontal scaling, monitoring
@@ -372,33 +340,28 @@ FactHarbor is currently in **Alpha**.
 
 === V1.0 Engineering Goals ===
 
-|=Goal|=Current State|=V1.0 Target
+|=Goal|=Current|=Target
+|**Performance**|~5 min per analysis|< 90 seconds via caching and parallel execution
+|**Cost**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
 |**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
-|**Performance**|<5 min per analysis|< 90 seconds via caching and parallel execution
-|**Stability**|Operational but manual recovery|Auto-recovery, health monitoring, graceful degradation
-|**Repeatability**|Verdicts can vary across runs (LLM stochasticity, live evidence)|Stability within defined tolerance bands; evidence caching
-|**Cost Reduction**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
+|**Repeatability**|Verdicts vary across runs|Tolerance bands, evidence caching
+|**Stability**|Manual recovery|Auto-recovery, health monitoring
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**Research angle:** These V1.0 goals create measurable constraints for "resource-efficient fact verification": speed/cost motivate small-model substitution, repeatability motivates reproducibility work, precision motivates evidence sufficiency studies.
+**Research angle:** These goals create measurable constraints for "resource-efficient fact verification" — speed/cost motivate small-model substitution, repeatability motivates reproducibility work.
 )))
 
-----
-
-== Where We're Going ==
+=== Beyond V1.0 ===
 
 |=Direction|=Key capabilities|=Target
-|**Platform integrations**|Public REST API, browser extensions, embeddable widgets, ClaimReview Schema.org, mobile apps|V1.0 – V1.5+
-|**Advanced analysis**|Image/video verification, semantic search, evidence reuse and caching|V1.1+ – V2.0+
-|**Community & collaboration**|Expert review, collaborative annotation, team workspaces|V1.5+ – V2.0+
-|**Federation**|Claim synchronization, distributed verdict consensus, cross-node contradiction detection|V2.0+
-|**Source Reliability service**|Standalone SR API for other platforms, newsrooms, researchers, browser extensions|V1.5+
-|**Accessibility**|WCAG 2.1 AA, multilingual UI (10+ languages), RTL support|Beta+ – V1.5+
+|**Platform integrations**|REST API, browser extensions, widgets, ClaimReview, mobile|V1.0 – V1.5+
+|**Advanced analysis**|Image/video verification, semantic search, evidence reuse|V1.1+ – V2.0+
+|**Community**|Expert review, collaborative annotation, team workspaces|V1.5+ – V2.0+
+|**Federation**|Claim sync, distributed verdict consensus, contradiction detection|V2.0+
+|**SR as a service**|Standalone Source Reliability API for external consumers|V1.5+
 
-**Sustainability** depends on academic contributors, developer community, fact-checking organizations, and student projects — plus funding via Innosuisse, Hasler/SNSF/BRIDGE, foundation grants, and infrastructure sponsors.
-
-//Full feature tables and contributor/sponsor detail in the [[appendix>>||anchor="HAppendix3AVisionBeyondV1.0"]].//
+//Full feature tables in the [[appendix>>||anchor="HAppendix3AVisionBeyondV1.0"]].//
 
 ----
 
@@ -412,30 +375,30 @@ FactHarbor is currently in **Alpha**.
 
 === 1. User Experience: Submit & Explore ===
 
-* **Submit a claim**
-* **Job progress**
-* **Verdict overview**
-* **Per-claim verdicts**
-* **Boundary findings**
-* **Evidence trail**
-* **Quality gates panel**
+* **Submit a claim** — enter any text or URL, in any language
+* **Job progress** — real-time stage-by-stage pipeline updates
+* **Verdict overview** — overall assessment with truth percentage and confidence
+* **Per-claim verdicts** — individual AtomicClaim results with evidence citations
+* **Boundary findings** — how evidence clusters into ClaimAssessmentBoundaries
+* **Evidence trail** — every source, every evidence item, fully traceable
+* **Quality gates panel** — Gate 1 (claim validation) and Gate 4 (confidence tiering)
 
 === 2. Admin: Configuration & Control ===
 
-* **Admin dashboard**
-* **Pipeline config**
-* **Search config**
-* **Calculation config**
-* **Config comparison**
-* **Job history**
+* **Admin dashboard** — system overview and job management
+* **Pipeline config** — tune analysis parameters at runtime (UCM)
+* **Search config** — provider selection, query limits, fallback order
+* **Calculation config** — weights, thresholds, aggregation rules
+* **Config comparison** — diff between per-job snapshots and current defaults
+* **Job history** — full audit trail with event log
 
 === 3. Source Reliability Database ===
 
-* **SR overview**
-* **Domain lookup**
-* **Score breakdown**
-* **Source types**
-* **Impact on verdict**
+* **SR overview** — cached domain evaluations across analyses
+* **Domain lookup** — search any domain for its reliability assessment
+* **Score breakdown** — multi-factor LLM evaluation per domain
+* **Source types** — classification (peer-reviewed, news, official, etc.)
+* **Impact on verdict** — how source reliability feeds into evidence weighting
 
 ----
 
