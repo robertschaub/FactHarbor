@@ -101,7 +101,7 @@ flowchart TD
 
 {{mermaid}}
 flowchart TB
-    INPUT["Claim or Article"]:::io
+    INPUT["Claim or Article"]
     AC["Atomic Claim"]
     SQ["Evidence Search Query"]
     SRC["Evidence Source"]
@@ -112,7 +112,7 @@ flowchart TB
     BF["Boundary Verdict"]
     CM["Coverage Matrix"]
     OA["Overall Assessment"]
-    OUTPUT["Verdict and<br/>Structured Report"]:::out
+    OUTPUT["Verdict and<br/>Structured Report"]
 
     %% Main spine: top to bottom
     INPUT -->|"decomposed into"| AC
@@ -121,27 +121,39 @@ flowchart TB
     SRC -->|"yields"| EI
     EI -->|"has"| ES
     ES -->|"clusters into"| CAB
-    CAB -->|"has"| BF
-    BF -->|"part of"| CV
-    CV -->|"aggregates into"| OA
+    CAB -->|"evaluated in"| CV
+    CV -->|"feeds into"| OA
     OA -->|"produces"| OUTPUT
 
     %% Cross-references (dotted = structural, not primary flow)
     OA -.->|"assesses"| INPUT
     CV -.->|"evaluates"| AC
     CV -.->|"cites"| EI
+    CV -.->|"contains"| BF
+    CAB -.->|"has"| BF
     CAB -.->|"contains"| EI
     OA -.->|"presents"| CAB
     OA -.->|"includes"| CM
     CM -.->|"rows"| AC
     CM -.->|"columns"| CAB
 
-    classDef io fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
-    classDef out fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
-    classDef core fill:#e8f3e8,stroke:#7aa57f,stroke-width:3px,color:#1f4d2a
-    classDef aux fill:#f8fbff,stroke:#9fb4d9,stroke-width:1.4px,color:#27456b
-    class AC,SRC,EI,ES,CAB core
-    class SQ,CV,BF,CM,OA aux
+    classDef input fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    classDef research fill:#FFF3E0,stroke:#E65100,color:#BF360C,stroke-width:2px
+    classDef evidence fill:#E8F5E9,stroke:#2E7D32,color:#1B5E20,stroke-width:2px
+    classDef verdict fill:#F3E5F5,stroke:#7B1FA2,color:#4A148C,stroke-width:2px
+    classDef output fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    class INPUT input
+    class AC,SQ,SRC research
+    class EI,ES,CAB evidence
+    class CV,BF,CM verdict
+    class OA,OUTPUT output
+
+    OUTPUT ~~~ LEGEND
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["Input"]:::input ~~~ L2["Research"]:::research ~~~ L3["Evidence"]:::evidence ~~~ L4["Verdict"]:::verdict ~~~ L5["Output"]:::output
+    end
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
 {{/mermaid}}
 
 === FactHarbor UI ===
