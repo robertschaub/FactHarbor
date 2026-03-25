@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize VAL-2 and Sync Active Docs
+**Task:** Update canonical docs to reflect VAL-2 completion.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** VAL-2 moved to DONE. OBS-1 is now the sole active engineering priority. Optimization remains secondary.
+**For next agent:** Active priority is OBS-1 (per-job metrics isolation).
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | VAL-2: Jobs-List Progress/Verdict Sync Race Fix
 **Task:** Fix the race where non-terminal jobs show a persisted verdict while progress is stale.
 **Files touched:** `apps/web/src/app/jobs/page.tsx`, `apps/api/Services/JobService.cs`

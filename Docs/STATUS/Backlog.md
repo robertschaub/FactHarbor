@@ -16,12 +16,12 @@
 
 ## Immediate Priorities (2026-03-25)
 
-Stage-1 quality stabilization is complete (QLT-1/2/3 all done). Remaining variance is evidence/verdict-driven. Active priorities are trust/observability (VAL-2, OBS-1).
+Stage-1 quality stabilization is complete (QLT-1/2/3 all done). VAL-2 is fixed. Active priority is observability (OBS-1).
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
-| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | high | med | NOT STARTED | User-visible trust issue |
-| **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | med | med | NOT STARTED | Still open after Stage-4 incident work |
+| **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | high | med | NOT STARTED | Active priority |
+| **VAL-2** | **Jobs-list progress/verdict sync race**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | — | — | DONE | `f86811fe` |
 | **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE 47pp→22pp. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
 | **QLT-3** | **Muslims-family Stage-1 facet-consistency fix**: materially successful. Claim count stabilized (3/3/3/3/3), direction stabilized (all `supports_thesis`), counter-narrative claims eliminated. Spread 27pp→21pp. Remaining variance is evidence-driven. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
 | **QLT-2** | **Residual broad-evaluative instability characterization**: COMPLETE. Split root cause identified and both branches addressed (QLT-1 for Plastik, QLT-3 for Muslims). | Analyzer / Quality | — | — | DONE | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
@@ -60,6 +60,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **VAL-2 jobs-list sync race fixed**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | 2026-03-25 | `f86811fe` |
 | ✅ **QLT-3 facet-consistency fix**: Muslims-family claim count stabilized (2-3→3-3), `claimDirection` all `supports_thesis`, counter-narrative/media claims eliminated. Truth spread 27pp→21pp. | Analyzer / Quality | 2026-03-25 | `317319fb`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
 | ✅ **QLT-2 characterization**: 13-job batch found split root cause — Plastik EN evidence-driven, Muslims Stage-1 unstable. | Analyzer / Quality | 2026-03-25 | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
 | ✅ **QLT-1 validation**: Plastik DE predicate-strength stabilization confirmed (47pp→22pp), all anchors clean. | Analyzer / Quality | 2026-03-25 | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
