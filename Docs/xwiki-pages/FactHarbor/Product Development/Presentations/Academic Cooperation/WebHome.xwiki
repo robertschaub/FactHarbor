@@ -11,7 +11,7 @@
 **For inspection and discussion:**
 * What FactHarbor does, challenges, goals
 * Cooperation opportunities and funding paths
-*
+
 **Goal:**
 * Shared view on collaboration fit
 * Short list of most promising research directions
@@ -97,7 +97,7 @@ flowchart TD
 {{/mermaid}}
 
 
-=== Main Entities - From Claim to Verdict ===
+=== Main Entities - from Claim to Verdict ===
 
 {{mermaid}}
 flowchart TB
