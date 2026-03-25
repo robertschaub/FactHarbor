@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Controllable Variance Investigation
+**Task:** Investigate remaining controllable variance sources after Stage-1 stabilization.
+**Files touched:** `Docs/WIP/2026-03-25_Controllable_Variance_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** Dominant remaining variance is evidence direction ratio (different web sources → different support/contradict balance, 50pp per-claim swing on Plastik EN environmental claim). Highest-leverage controllable lever: per-claim evidence direction balancing at Stage 2 — but it's a design change, not a bug fix, with bias risk on one-sided topics. Bolsonaro demonstrates stable verdicts on directionally clear topics. No family is red under EVD-1. Recommendation: stay in monitor mode.
+**For next agent:** If a future quality track opens, start with per-claim evidence direction measurement. Do not tune temperatures or clustering as first intervention. Full report at `Docs/WIP/2026-03-25_Controllable_Variance_Investigation.md`.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize EVD-1 Captain Approval
 **Task:** Update canonical docs to reflect Captain approval of EVD-1 variance policy.
 **Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1604,4 +1611,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Commit the current doc set so the QLT-1 validation handoff and the review-adjusted plan become canonical together. Historical lower sections in `Current_Status.md` still remain by design and may merit future curation, but they no longer contradict the top-level state.
 **Warnings:** Do not cite the 2026-03-24 scorecard’s control/facet-stability conclusions as the latest view; the 2026-03-25 validation handoff supersedes them. `QLT-2` should not start without using the new exit criteria.
 **For next agent:** Use the updated `QLT-2` definition in `Backlog.md` and the review-adjusted stabilization plan as the active planning baseline. If you execute QLT-2, include `Ist die Erde flach? × 3` and explicit facet-category comparison.
+**Learnings:** no
+
+---
+### 2026-03-25 | General | Codex (GPT-5) | Repeated-Input Verdict Spread Check
+**Task:** Inspect repeated-input runs in `apps/api/factharbor.db` and determine whether verdict spread is mainly explained by Stage-1 atomic-claim extraction variance or whether meaningful spread remains when Stage 1 is stable.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Used exact repeated `Jobs.InputValue` clusters and parsed stored `ResultJson.understanding.atomicClaims`. Treated a Stage-1 signature as the ordered tuple of `(statement, claimDirection, category)` across extracted atomic claims, then compared total truth-percentage spread against within-signature spread for the requested families.
+**Open items:** If deeper attribution is needed, repeat the same decomposition within tighter same-commit windows for multi-commit families and optionally cluster semantically equivalent atomic-claim phrasings rather than only exact claim tuples.
+**Warnings:** Several families (`Plastik DE`, `Plastik EN`, `Muslims`, `Flat Earth`, lowercase `Hydrogen`) span multiple `GitCommitHash` values, so their total spread mixes analyzer-version drift with run-to-run variation. All inspected clusters used one `PromptContentHash`, so prompt-file drift did not confound this check.
+**For next agent:** The cleanest evidence of post-Stage-1 residual spread is in the single-commit Bolsonaro due-process clusters: same exact two-claim Stage-1 signatures still produced truth ranges of `49-66` (EN) and `47-61` (PT), crossing verdict labels.
 **Learnings:** no
