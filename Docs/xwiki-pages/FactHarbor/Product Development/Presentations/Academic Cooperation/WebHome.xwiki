@@ -310,7 +310,7 @@ Recent results show this is feasible:
 
 No prior work we have identified studies a **full multi-stage pipeline** (extraction → retrieval → debate → aggregation) while evaluating both model-capacity reduction and retrieval latency. FactHarbor offers a concrete baseline for these tradeoffs.
 
-=== Concrete Potentiial Joint Research Tracks ===
+=== Concrete Potential Joint Research Tracks ===
 
 |=Track|=Research question|=Entry point|=Key metrics|=First experiment
 |**A. Resource-efficient screening**|Can smaller models replace large-model work in early stages without harming verdict quality?|Stage 1 + 2 screening subtasks|**F1 / Macro-F1**, latency, cost, verdict agreement|Swap one subtask for a 500M-1.5B model on a multilingual benchmark
