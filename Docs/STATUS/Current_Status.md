@@ -1,20 +1,30 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-24
+**Last Updated**: 2026-03-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED** — control verdicts are directionally correct, reliability is clean, and the verdict-direction sanity guard works without overcorrection. The current quality priority is **QLT-1: Stage 1 predicate-strength stabilization**, empirically confirmed as the primary source of Plastik run-to-run instability (47pp spread traced to claim decomposition variance). Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED** and **QLT-1 materially improved the dominant broad-evaluative defect**: Plastik DE spread dropped from 47pp to 22pp, claim count stabilized, and predicate softening was eliminated in the validation batch. The system is now in **stabilization / monitor mode**, not emergency analyzer repair. The main remaining analytical risk is residual instability on broad evaluative inputs, plus a separate jobs-list trust bug (`VAL-2`). Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
-## Current Focus (2026-03-24)
+## Current Focus (2026-03-25)
 
-- **QLT-1: Stage 1 predicate-strength stabilization** — empirically confirmed as highest-leverage quality improvement. Plastik instability is primarily Stage 1: claim count (2 vs 3), decomposition facets, and predicate strength ("bringt nichts" vs "unwirksam") all vary across identical-input runs. Prompt-led fix targeting Pass 2 predicate preservation.
+- **QLT-1 is materially successful and moves into monitoring**: the Stage-1 predicate-strength bug is no longer the dominant uncontrolled defect. Residual broad-evaluative spread remains, but the main softening failure mode is fixed.
+- **Characterize the remaining residual instability**: next evidence-gathering priority is to determine whether remaining broad-evaluative spread is still mainly Stage-1 facet/decomposition drift, with Stage-2 evidence variation acting mostly as an amplifier. Start with Plastik EN, the Muslims-family input, and Flat-Earth control reruns.
 - **Verdict-direction plausibility narrowed** — Rule 2 no longer auto-passes the entire 31-69% truth range; evidence ratio must also be mixed. Evidence bucketing now uses verdict's own ID partition.
-- **Keep optimization blocked**: P1-A and P1-B require explicit Captain approval.
-- **Follow up on runtime/UI consistency (VAL-2)**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
+- **Follow up on runtime/UI consistency (`VAL-2`)**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
+- **Follow up on observability (`OBS-1`)**: the module-global metrics collector still weakens per-job forensics under overlapping runs.
+- **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval and should not be mixed into the current stabilization work.
 
 ---
+
+## Recent Changes (2026-03-25)
+
+**QLT-1 validation and next-step clarification:**
+- ✅ **QLT-1 validation completed**: predicate-strength preservation in Stage 1 Pass 2 materially reduced Plastik DE instability from 47pp to 22pp, stabilized claim count, and eliminated the previously observed predicate softening outlier.
+- ✅ **Anchor regressions not observed**: Round Earth, Hydrogen, Bolsonaro, and Flat Earth remained directionally correct on the post-QLT-1 stack.
+- ⚠️ **Flat-Earth control still shows residual decomposition variance**: the control stayed in the correct direction, but post-QLT-1 reruns still showed a 31pp article-level spread caused by different Stage-1 facet framing.
+- ⚠️ **Residual instability remains**: broad evaluative inputs are improved but not fully “solved.” The next quality question is no longer the old predicate-softening bug; it is whether residual spread is now mainly residual Stage-1 decomposition drift or live evidence variation.
 
 ## Recent Changes (2026-03-24)
 
@@ -22,7 +32,7 @@
 - ✅ **Stage-1 `claimDirection` prompt clarified**: `supports_thesis` / `contradicts_thesis` are now explicitly anchored to the user's thesis, not to scientific consensus or reality.
 - ✅ **Flat-earth false positive root-caused cleanly**: the bad `TRUE 100 / 95` result was traced to Stage-1 `claimDirection` mislabeling, not to Stage 4 or Stage 5 logic.
 - ✅ **Preliminary-evidence claim mapping leak fixed**: Stage 1 now preserves full `relevantClaimIds[]` into Stage 2 seeding instead of collapsing to a single legacy `claimId`, which previously caused Claim Assessment Boundaries with evidence but zero matrix coverage.
-- ⏳ **Live validation now targets the fixed stack**: a restarted local batch on commit `31aea55d` is the current gate for Earth/Hydrogen/Plastik/Bolsonaro controls and for the boundary-coverage repair.
+- ✅ **Live validation completed**: the restarted local batch on commit `31aea55d` passed and the gate is closed.
 - ⚠️ **Open UI/runtime issue remains**: the jobs list can still display a verdict for a non-terminal job because result persistence and later stale progress events are not yet synchronized monotonically.
 
 ---
@@ -49,12 +59,12 @@
 
 **Plastik quality stabilization + auditability improvements:**
 - ✅ **Stage 1 claim-contract validator**: New `CLAIM_CONTRACT_VALIDATION` step runs after Pass 2 and before Gate 1, with one retry and fail-open behavior. This materially fixed broad evaluative predicate drift for the targeted failure mode.
-- ✅ **Predicate preservation validated**: Validator-era multilingual checks preserved the original evaluative predicate across DE/EN/FR broad-claim runs; remaining spread is downstream of Stage 1.
+- ✅ **Predicate preservation materially improved**: the claim-contract validator improved broad evaluative predicate handling, and the later QLT-1 prompt fix removed the previously observed predicate-softening outlier. Residual spread still remains, but the original dominant predicate bug is no longer the main issue.
 - ✅ **Legacy SR weighting disabled by default**: `evidenceWeightingEnabled` remains off by default; Stage 4.5 SR calibration stays feature-flagged.
 - ✅ **Direction repair re-enabled**: `verdictDirectionPolicy` now defaults to `retry_once_then_safe_downgrade`. Controlled A1 validation showed no overcorrection and reduced Plastik-family spread materially.
 - ✅ **Stage 2 prompt refinements prepared**: `EXTRACT_EVIDENCE` and `GENERATE_QUERIES` now carry generic broad-evaluative claim guidance to reduce evidence-direction ambiguity and strengthen contradiction iterations.
 - ✅ **Job git-hash traceability**: Jobs now record the deployed git commit hash, and admin tooling can trace all jobs that ran on a given commit.
-- ⏳ **Open quality focus**: Remaining Plastik-family instability is now treated as a downstream problem (search framing / evidence allocation / verdict behavior), not a Stage 1 decomposition problem.
+- ⚠️ **Historical note corrected**: the earlier assumption that remaining Plastik instability was downstream of Stage 1 was overturned by the 2026-03-24 decomposition comparison. QLT-1 then reduced the dominant Stage-1 predicate issue, leaving a smaller residual instability problem to characterize.
 
 ---
 

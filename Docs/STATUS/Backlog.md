@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-24
+**Last Updated**: 2026-03-25
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -10,20 +10,21 @@
 
 **See Also**:
 - `Docs/STATUS/Current_Status.md` for the current high-level snapshot
-- `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md` for the current active validation gate and its rationale
+- `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` for the current root-cause summary and next-step plan
 
 ---
 
-## Immediate Priorities (2026-03-24)
+## Immediate Priorities (2026-03-25)
 
-VAL-1 is closed. The current quality priority is QLT-1 (predicate-strength stabilization), empirically confirmed as the primary source of Plastik instability.
+VAL-1 is closed and QLT-1 is materially successful. The current work is stabilization, residual-instability characterization, and trust/observability cleanup.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
-| **QLT-1** | **Stage 1 predicate-strength stabilization**: Plastik instability empirically confirmed as primarily Stage 1 (47pp spread across 5 identical runs due to claim count, facet, and predicate strength variation). Prompt-led fix: preserve original predicate force in Pass 2 extraction. Connects to claim-strength preservation study. | Analyzer / Quality | high | high | IN PROGRESS | Empirically grounded by 5× Plastik comparison (2026-03-24) |
-| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | med | med | NOT STARTED | Exposed during Mar 24 control reruns |
+| **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE spread improved from 47pp to 22pp, claim count stabilized, and predicate softening was eliminated in the validation batch. Move to monitor mode; do not reopen broad prompt tuning without new evidence. | Analyzer / Quality | med | high | MONITOR | See `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
+| **QLT-2** | **Residual broad-evaluative instability characterization**: run focused repeated-input comparisons on Plastik EN, the Muslims-family input, and `Ist die Erde flach?` control reruns to determine whether the remaining spread is still mainly residual Stage-1 facet/decomposition drift, with Stage-2 evidence variation acting mostly as an amplifier. | Analyzer / Quality | high | high | NOT STARTED | Track facet categories explicitly across runs. Exit condition: article spread `<=20pp` and dominant per-claim spread `<=30pp`; otherwise continue investigation before further analyzer changes. |
+| **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | high | med | NOT STARTED | User-visible trust issue |
 | **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | med | med | NOT STARTED | Still open after Stage-4 incident work |
-| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to QLT-1 quality work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
+| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to the current stabilization and quality-characterization work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
 
@@ -46,7 +47,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | Item | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|---|
 | **REF-1** | **Residual refactor streams (`WS-5`/`WS-6`/`WS-7`)**: jobs report page decomposition, admin config page decomposition, and low-priority admin route boilerplate cleanup remain as deferred structural work. | Web / API / Refactoring | low | med | `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` |
-| **QLT-1** | **Claim strength preservation study**: separate from the broad-claim contract validator; still-open Stage-1 quality investigation into claim softening / weakening. | Analyzer / Quality | med | high | `Docs/WIP/2026-03-01_Claim_Strength_Preservation_Study.md` |
+| ~~**QLT-1**~~ | ~~Claim strength preservation study~~ — **moved to Immediate Priorities / monitor mode after implementation and validation** | — | — | — | — |
 | **SEARCH-1** | **Deep supplementary-provider integration**: pipeline-aware Wikipedia / Semantic Scholar / Fact Check usage beyond the already-shipped provider layer. | Search / Analyzer | low | med | `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` |
 | **SR-1** | **Stage 4.5 SR calibration experiment**: feature-flagged/off in code; only reopen after the current fixed-stack validation gate closes. | Analyzer / SR / Quality | low | med | `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md` |
 | **AGG-1** | **LLM-assessed triangulation / derivative weighting**: replace remaining deterministic aggregation heuristics that make analytical judgments. | Analyzer / Architecture | low | med | `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` |

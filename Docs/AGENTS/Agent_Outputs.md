@@ -1495,3 +1495,23 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Successor must validate the active batch (Flat-earth, Boundary Coverage) before starting any new implementation work.
 **Warnings:** Stay within the boundaries of the active gate doc (2026-03-24 Follow-up). No premature P1-A/B optimization.
 **Learnings:** no
+
+---
+### 2026-03-25 | Lead Architect | Codex (GPT-5) | Report Quality Root Causes and Stabilization Plan
+**Task:** Consolidate the latest report-quality findings into a review-ready root-cause summary and next-step plan, then sync the canonical status/backlog docs to the post-QLT-1 state.
+**Files touched:** `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Documented that the dominant predicate-softening bug is materially improved, that residual broad-evaluative instability is now the main analytical risk, and that the next best move is targeted characterization (`QLT-2`) plus trust/observability cleanup (`VAL-2`, `OBS-1`) rather than another broad analyzer tuning wave.
+**Open items:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` is still untracked and should be formally committed or otherwise handled. `Current_Status.md` still contains older historical sections below the top block that may merit further cleanup later.
+**Warnings:** This update changes planning posture. Do not read older March 24 top-level status/backlog summaries as canonical after this point.
+**For next agent:** Start from the new WIP plan doc and the updated status/backlog. Treat QLT-1 as materially successful but still monitored; do not reopen deep analyzer changes until `QLT-2` evidence says they are needed.
+**Learnings:** no
+
+---
+### 2026-03-25 | Lead Architect | Codex (GPT-5) | Review Corrections for Stabilization Plan and QLT-2
+**Task:** Apply the independent review corrections to the post-QLT-1 stabilization docs and make the current validation state safer for downstream planning.
+**Files touched:** `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-24_Quality_Scorecard_Review.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Downgraded the control-stability overclaim to “directionally correct, but not universally facet-stable,” explicitly acknowledged the 31pp Flat-Earth residual decomposition spread and the EN 37pp per-claim variance, reframed Stage-2 evidence variation as mostly an amplifier of Stage-1 drift, tightened `QLT-2` to include Flat-Earth reruns plus facet-category tracking and explicit exit criteria, and marked the 2026-03-24 quality scorecard as historical/pre-QLT-1 context.
+**Open items:** Commit the current doc set so the QLT-1 validation handoff and the review-adjusted plan become canonical together. Historical lower sections in `Current_Status.md` still remain by design and may merit future curation, but they no longer contradict the top-level state.
+**Warnings:** Do not cite the 2026-03-24 scorecard’s control/facet-stability conclusions as the latest view; the 2026-03-25 validation handoff supersedes them. `QLT-2` should not start without using the new exit criteria.
+**For next agent:** Use the updated `QLT-2` definition in `Backlog.md` and the review-adjusted stabilization plan as the active planning baseline. If you execute QLT-2, include `Ist die Erde flach? × 3` and explicit facet-category comparison.
+**Learnings:** no

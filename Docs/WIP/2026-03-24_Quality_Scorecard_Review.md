@@ -3,8 +3,10 @@
 **Reviewer:** Lead Architect (Claude Opus 4.6)
 **Framework:** [Generic Report Quality Signals Scorecard](2026-03-24_Generic_Report_Quality_Signals_Scorecard.md)
 **Scope:** Post-VAL-1 assessment of current report quality across all input families with committed reference-good anchors
-**Status:** READY FOR REVIEW (v2 — updated with current stack state)
+**Status:** HISTORICAL / PRE-QLT-1 baseline review
 **Stack:** Commit `960b09c3` + all fixes through VAL-1 Round 3 closure. WS-1–WS-4 refactoring complete. Stage-1 `claimDirection` fix (`1e7e2c57`), boundary-coverage fix (`31aea55d`), claim-contract validator (Mar 20/21), verdict-direction repair (`retry_once_then_safe_downgrade`), weighted sanity check (`39a9ae6b`), UCM alignment (`960b09c3`). SR weighting disabled by default.
+
+**Historical note:** This review predates the full 2026-03-25 QLT-1 validation batch. In particular, its “controls” and facet-stability conclusions should not be treated as the latest canonical view once the post-QLT-1 validation handoff is available.
 
 ---
 

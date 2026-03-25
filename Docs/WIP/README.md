@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-24  
-**Status**: WIP Consolidation #8 complete. The active WIP set is reduced to **19** files. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
+**Last Updated**: 2026-03-25  
+**Status**: WIP Consolidation #8 complete. The active WIP set is reduced to a curated live set. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
 
 ---
 
@@ -20,9 +20,10 @@ Anything that was purely historical, implemented, or superseded has been archive
 
 ## Governing Current Work
 
-### Current validation gate
+### Current quality / stabilization steering
 - [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
-- This is the **current next-step document** for the fixed-stack validation gate.
+- [2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md](2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md)
+- These are the current next-step documents for post-VAL-1 quality stabilization and planning.
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)
@@ -54,6 +55,7 @@ Anything that was purely historical, implemented, or superseded has been archive
 ### Curated quality reference docs
 - [2026-03-19_Report_Quality_Evolution_Investigation.md](2026-03-19_Report_Quality_Evolution_Investigation.md)
 - [Report_Quality_Criteria_Scorecard_2026-03-12.md](Report_Quality_Criteria_Scorecard_2026-03-12.md)
+- [2026-03-24_Generic_Report_Quality_Signals_Scorecard.md](2026-03-24_Generic_Report_Quality_Signals_Scorecard.md)
 
 ---
 
