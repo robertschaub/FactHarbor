@@ -55,7 +55,7 @@ and produces a transparent verdict — every conclusion traceable to its sources
 flowchart TD
     subgraph MAIN [" "]
         direction LR
-        INPUT(["Your Claim<br/>or Article"])
+        INPUT(["Claim<br/>or Article"])
         A["Extract<br/>verifiable claims"]:::ai
 
         B["Search supporting<br/>and opposing evidence"]:::web
@@ -101,19 +101,21 @@ flowchart TD
 
 {{mermaid}}
 flowchart TB
-    UNDER["CB Claim Understanding"]
+    INPUT["Claim or Article"]:::io
     AC["Atomic Claim"]
-    SQ["Search Query"]
-    SRC["Source"]
+    SQ["Evidence Search Query"]
+    SRC["Evidence Source"]
     EI["Evidence Item"]
     ES["Evidence Scope"]
     CAB["Claim Assessment Boundary"]
-    CV["CB Claim Verdict"]
-    BF["Boundary Finding"]
+    CV["Claim Verdict"]
+    BF["Boundary Verdict"]
     CM["Coverage Matrix"]
     OA["Overall Assessment"]
+    OUTPUT["Verdict and<br/>Structured Report"]:::out
 
-    UNDER -->|"contains"| AC
+    INPUT -->|"decomposed into"| AC
+    OA -->|"assesses"| INPUT
     AC -->|"generates"| SQ
     SQ -->|"discovers"| SRC
     SRC -->|"yields"| EI
@@ -129,11 +131,14 @@ flowchart TB
     CM -->|"columns"| CAB
     CV -->|"contains"| BF
     BF -->|"per boundary"| CAB
+    OA -->|"produces"| OUTPUT
 
+    classDef io fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    classDef out fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
     classDef core fill:#e8f3e8,stroke:#7aa57f,stroke-width:3px,color:#1f4d2a
     classDef aux fill:#f8fbff,stroke:#9fb4d9,stroke-width:1.4px,color:#27456b
     class AC,SRC,EI,ES,CAB core
-    class UNDER,SQ,CV,BF,CM,OA aux
+    class SQ,CV,BF,CM,OA aux
 {{/mermaid}}
 
 === FactHarbor UI ===
