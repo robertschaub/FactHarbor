@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Variance Debate and QLT-4 Proposal
+**Task:** Structured LLM debate on whether to stay in monitor mode or implement a targeted variance intervention.
+**Files touched:** `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Debate outcome:** Challenger wins on mechanism (per-claim evidence direction floor is the right intervention), advocate wins on process (EVD-1 was just approved; don't bypass it). Resolution: propose as QLT-4 requiring explicit Captain approval. The intervention extends existing contrarian retrieval from article-level to per-claim granularity — 3 files, UCM-reversible, ~half-day effort. Success criterion: Plastik EN environmental claim spread drops from 47pp to ≤35pp without regressing controls.
+**For next agent:** Captain decision needed. If approved, implement per `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md` Section 3-4. If rejected, stay in monitor mode — no harm done.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Controllable Variance Investigation
 **Task:** Investigate remaining controllable variance sources after Stage-1 stabilization.
 **Files touched:** `Docs/WIP/2026-03-25_Controllable_Variance_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1621,4 +1628,24 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** If deeper attribution is needed, repeat the same decomposition within tighter same-commit windows for multi-commit families and optionally cluster semantically equivalent atomic-claim phrasings rather than only exact claim tuples.
 **Warnings:** Several families (`Plastik DE`, `Plastik EN`, `Muslims`, `Flat Earth`, lowercase `Hydrogen`) span multiple `GitCommitHash` values, so their total spread mixes analyzer-version drift with run-to-run variation. All inspected clusters used one `PromptContentHash`, so prompt-file drift did not confound this check.
 **For next agent:** The cleanest evidence of post-Stage-1 residual spread is in the single-commit Bolsonaro due-process clusters: same exact two-claim Stage-1 signatures still produced truth ranges of `49-66` (EN) and `47-61` (PT), crossing verdict labels.
+**Learnings:** no
+
+---
+### 2026-03-25 | LLM Expert | Codex (GPT-5) | Long-Run Variance Reduction Levers
+**Task:** Investigate long-run improvements for the root cause of normal LLM nondeterminism plus live retrieval variation, grounded in the repo's knowledge/specification docs.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Framed the problem around the repo's current conclusion that Stage 1 is materially stabilized and residual spread is now primarily Stage 2 evidence variation plus Stage 4 verdict stochasticity. Prioritized retrieval diversification and ranking quality above further prompt tuning, treated grounding as a hard-faithfulness control rather than a retrieval fix, and positioned calibration as a measurement/control layer that should accompany retrieval work but not substitute for it.
+**Open items:** If this investigation is turned into execution work, the next useful artifact would be a phased design doc that maps each lever to current modules (`research-query-stage.ts`, `research-extraction-stage.ts`, `grounding-check.ts`, `confidence-calibration.ts`) and to UCM/config implications.
+**Warnings:** Some long-run levers (distilled scorers, GraphRAG, formal NLI validation) require new evaluation datasets or external research integration; they should not be treated as near-term config tweaks.
+**For next agent:** Start from the multi-source retrieval spec plus the DIRAS / Faithful Specialists docs. The highest-leverage sequence is: retrieval diversity and reranking first, grounding/attributability gates second, then calibration/distillation once better evidence signals exist.
+**Learnings:** no
+
+---
+### 2026-03-25 | LLM Expert | Codex (GPT-5) | Long-Run Variance Reduction Assessment
+**Task:** Assess how FactHarbor should reduce long-run variance from normal LLM stochasticity plus live retrieval variation, grounded in the current status and the MAD / Schimanski / Stammbach knowledge docs.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Framed the problem as primarily Stage 2 retrieval variation plus Stage 4 adjudication variance, not Stage 1 decomposition, consistent with the 2026-03-25 status snapshot. Ranked the main levers as: stronger sufficiency/abstention, debate-triggered and tool-diverse retrieval, path-based plus cross-model debate heterogeneity, specialist relevance/grounding models, and structural reproducibility wrappers (snapshotting, canonical ordering, deterministic aggregation inputs). Emphasized that more homogeneous debate rounds are lower leverage than better evidence and stronger heterogeneity.
+**Open items:** If a follow-on design doc is wanted, turn the ranking into a phased roadmap with explicit experiment gates for retrieval, arbitration, and specialist-validator tracks.
+**Warnings:** Per AGENTS.md, deterministic additions must stay structural only. Do not answer semantic questions with new regex/keyword heuristics; use model-based or specialist-model inference instead.
+**For next agent:** Use `Docs/Knowledge/MAD_Pattern_Research_2026-02-26.md`, `Docs/Knowledge/Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md`, `Docs/Knowledge/Schimanski_Faithful_LLM_Specialists_ACL2024.md`, `Docs/Knowledge/Schimanski_DIRAS_NAACL2025.md`, `Docs/Knowledge/Global_FactChecking_Landscape_2026.md`, and `Docs/STATUS/Current_Status.md` as the primary basis if this assessment needs to be converted into architecture or backlog work.
 **Learnings:** no
