@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Acceptable-Variance Policy Draft
+**Task:** Define reusable quality-governance framework for acceptable report variance.
+**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** 5 input quality classes (A: clean factual through E: legal/political) with empirically grounded green/amber/red bands for article spread, per-claim spread, confidence spread, and verdict direction stability. Current family status: Flat Earth/Bolsonaro/Plastik DE are green; Plastik EN and Muslims are amber (evidence-driven per-claim variance); no family is red. Policy is a governance framework, not implementation — no code changes proposed.
+**Open items:** Captain review and approval needed. Specific threshold calibration may need adjustment as more data accumulates.
+**For next agent:** Read `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` for the full framework. Use Section 6 ("How to use") for future validation rounds.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize OBS-1 and Close Stabilization Wave
 **Task:** Update canonical docs to reflect OBS-1 completion and the end of the report-quality stabilization wave.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
