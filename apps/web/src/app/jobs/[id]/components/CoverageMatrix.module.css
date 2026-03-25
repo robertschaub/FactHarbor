@@ -142,7 +142,7 @@
   color: var(--cm-header-text);
 }
 
-/* Cell color coding by evidence count */
+/* Cell color coding by evidence count (fallback when no verdict data) */
 .cellEmpty {
   background: var(--cm-cell-empty);
   color: var(--cm-muted);
@@ -239,6 +239,7 @@
     --cm-cell-high-text: #eff6ff;
     --cm-muted: #94a3b8;
   }
+
 }
 
 @media (max-width: 768px) {
