@@ -281,118 +281,6 @@ Collaboration is not one-directional — both sides bring what the other needs.
 
 ----
 
-== Key Facts ==
-
-|=Metric|=Value
-|Pipeline stages|5 + optional Stage 4.5 (SR Calibration), with 2 mandatory quality gates
-|Debate steps per claim|5 (adversarial, multi-provider)
-|LLM providers|4 integrated (Anthropic Sonnet 4.5 + OpenAI GPT-4.1 active in debate; Google Gemini + Mistral available)
-|Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
-|Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
-|LLM calls per analysis|~40-50
-|Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
-|License / posture|Open-source, public-interest oriented, fully transparent
-
-----
-
-== Architecture Roadmap ==
-
-FactHarbor is currently in **Alpha**. The roadmap below mixes completed phases, the current phase, planned scaling work, and longer-term vision.
-
-=== Core Platform Roadmap ===
-
-|=Phase|=Status|=Core platform milestones
-|**POC**|Completed|Single host, full pipeline operational
-|**Alpha**|Current|Invite-code access, rate limiting, pre-release hardening
-|**Beta**|Planned|User authentication, horizontal scaling, monitoring
-|**V1.0**|Planned|Public REST API, observability, disaster recovery
-|**V2.0+**|Vision|Federation, semantic search, distributed consensus
-
-=== Highest-Value Missing Product Features ===
-
-|=Area|=Most important missing capabilities|=Likely target
-|**Reader experience**|Summary-first claim pages; stronger archive search/filtering; fast social-media check flow|Beta / V1.0
-|**Reader engagement**|Save/follow claims; alerts on verdict changes; feedback/challenge workflow; share/cite/export|V1.0 / V1.5+
-|**In-context verification**|In-article claim highlighting; browser extension for fact-checking while browsing|V1.1+ / V1.5+
-|**Platform integrations**|Embeddable widgets; ClaimReview markup; CMS plugins; mobile apps|V1.1+ / V1.5+
-|**Professional workflows**|API clients / SDKs; team workspaces; expert review workflow|V1.0 / V1.5+
-|**Cooperation features**|Collaborative annotation; comparative fact-check view; shared benchmarks and evaluation datasets|V1.5+ / V2.0+
-|**Federated cooperation**|Claim synchronization; cross-node contradiction detection; distributed verdict agreement|V2.0+
-
-----
-
-== Goals for First Public Release (V1.0) ==
-
-The pipeline works end-to-end today. To move from working prototype to a public service people can rely on, five engineering goals must be met:
-
-|=Goal|=Current State|=V1.0 Target
-|**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
-|**Performance**|~5 min per analysis|< 90 seconds via caching and parallel execution
-|**Stability**|Operational but manual recovery|Auto-recovery, health monitoring, graceful degradation
-|**Repeatability**|Verdicts can vary across runs (LLM stochasticity, live evidence)|Stability within defined tolerance bands; evidence caching
-|**Cost Reduction**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Research angle:** These V1.0 goals create measurable constraints for "resource-efficient fact verification": speed/cost motivate small-model substitution, repeatability motivates reproducibility work, precision motivates evidence sufficiency studies.
-)))
-
-----
-
-== Target User Groups ==
-
-|=User Group|=How They Use FactHarbor|=Key Need
-|**General Public**|Browse published analyses, explore the evidence landscape — no registration required|Transparent, accessible verdicts they can verify themselves
-|**Journalists & Content Creators**|Fact-check claims before publishing; cite FactHarbor verdicts with full provenance|API access, speed, credibility — evidence chains they can reference in their work
-|**Researchers & Academics**|Filter by verification status, confidence levels, source quality; export data for studies|Audit trails, reproducible results, exportable structured data
-|**Social Media Users**|Quick-check claims before sharing to avoid spreading misinformation|Fast turnaround, clear verdicts, easy to understand
-|**Educators**|Use real-world claim analyses as teaching material for critical thinking and media literacy|Multi-perspective evidence landscapes, not just binary verdicts
-
-(% class="box infomessage" %)
-(((
-**Design principle:** Anyone can browse without registration. Submission requires only a free account. Every verdict is fully transparent.
-)))
-
-----
-
-== Current Status ==
-
-**Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
-
-**Main gaps:** Performance (~5 min, target < 90s), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Research opportunity:** Report stability is a measurable problem — formal stability metrics, tolerance bands, and reproducibility protocols for LLM-based fact-checking.
-)))
-
-//Full status tables in the [[appendix>>||anchor="HAppendix3ACurrentStatusDetail"]].//
-
-----
-
-== Vision Beyond V1.0 ==
-
-|=Direction|=Key capabilities|=Target
-|**Platform integrations**|Public REST API, browser extensions, embeddable widgets, ClaimReview Schema.org, mobile apps|V1.0 – V1.5+
-|**Advanced analysis**|Image/video verification, semantic search, evidence reuse and caching|V1.1+ – V2.0+
-|**Community & collaboration**|Expert review, collaborative annotation, team workspaces|V1.5+ – V2.0+
-|**Federation**|Claim synchronization, distributed verdict consensus, cross-node contradiction detection|V2.0+
-|**Source Reliability service**|Standalone SR API for other platforms, newsrooms, researchers, browser extensions|V1.5+
-|**Accessibility**|WCAG 2.1 AA, multilingual UI (10+ languages), RTL support|Beta+ – V1.5+
-
-//Full feature tables in the [[appendix>>||anchor="HAppendix3AVisionBeyondV1.0"]].//
-
-----
-
-== Open-Source Goals ==
-
-**Sustainability** depends on academic contributors, developer community, fact-checking organizations, and student projects — plus funding via Innosuisse, Hasler/SNSF/BRIDGE, foundation grants, and infrastructure sponsors.
-
-//Full tables in the [[appendix>>||anchor="HAppendix3AContributors26Sponsors"]].//
-
-----
-
-
 == Research Overlap ==
 
 === Claim Detection (HAMiSoN / ViClaim / CheckThat!) ===
@@ -446,6 +334,76 @@ FactHarbor's 5-step debate is adjacent to Climinator's mediator-advocate line (U
 
 ----
 
+== Where We Stand ==
+
+**Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
+
+**Main gaps:** Performance (~5 min, target < 90s), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Research opportunity:** Report stability is a measurable problem — formal stability metrics, tolerance bands, and reproducibility protocols for LLM-based fact-checking.
+)))
+
+//Full status tables in the [[appendix>>||anchor="HAppendix3ACurrentStatusDetail"]].//
+
+=== Key Facts ===
+
+|=Metric|=Value
+|Pipeline stages|5 + optional Stage 4.5 (SR Calibration), with 2 mandatory quality gates
+|Debate steps per claim|5 (adversarial, multi-provider)
+|LLM providers|4 integrated (Anthropic Sonnet 4.5 + OpenAI GPT-4.1 active in debate; Google Gemini + Mistral available)
+|Search providers|7 (Google CSE, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check)
+|Verdict scale|7-point (TRUE to FALSE) with 4 confidence tiers
+|LLM calls per analysis|~40-50
+|Languages|Multi-language input and evidence (EN, DE, FR, PT, ...)
+|License / posture|Open-source, public-interest oriented, fully transparent
+
+----
+
+== Roadmap ==
+
+FactHarbor is currently in **Alpha**.
+
+|=Phase|=Status|=Core platform milestones
+|**POC**|Completed|Single host, full pipeline operational
+|**Alpha**|Current|Invite-code access, rate limiting, pre-release hardening
+|**Beta**|Planned|User authentication, horizontal scaling, monitoring
+|**V1.0**|Planned|Public REST API, observability, disaster recovery
+|**V2.0+**|Vision|Federation, semantic search, distributed consensus
+
+=== V1.0 Engineering Goals ===
+
+|=Goal|=Current State|=V1.0 Target
+|**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
+|**Performance**|~5 min per analysis|< 90 seconds via caching and parallel execution
+|**Stability**|Operational but manual recovery|Auto-recovery, health monitoring, graceful degradation
+|**Repeatability**|Verdicts can vary across runs (LLM stochasticity, live evidence)|Stability within defined tolerance bands; evidence caching
+|**Cost Reduction**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Research angle:** These V1.0 goals create measurable constraints for "resource-efficient fact verification": speed/cost motivate small-model substitution, repeatability motivates reproducibility work, precision motivates evidence sufficiency studies.
+)))
+
+----
+
+== Where We're Going ==
+
+|=Direction|=Key capabilities|=Target
+|**Platform integrations**|Public REST API, browser extensions, embeddable widgets, ClaimReview Schema.org, mobile apps|V1.0 – V1.5+
+|**Advanced analysis**|Image/video verification, semantic search, evidence reuse and caching|V1.1+ – V2.0+
+|**Community & collaboration**|Expert review, collaborative annotation, team workspaces|V1.5+ – V2.0+
+|**Federation**|Claim synchronization, distributed verdict consensus, cross-node contradiction detection|V2.0+
+|**Source Reliability service**|Standalone SR API for other platforms, newsrooms, researchers, browser extensions|V1.5+
+|**Accessibility**|WCAG 2.1 AA, multilingual UI (10+ languages), RTL support|Beta+ – V1.5+
+
+**Sustainability** depends on academic contributors, developer community, fact-checking organizations, and student projects — plus funding via Innosuisse, Hasler/SNSF/BRIDGE, foundation grants, and infrastructure sponsors.
+
+//Full feature tables and contributor/sponsor detail in the [[appendix>>||anchor="HAppendix3AVisionBeyondV1.0"]].//
+
+----
+
 == FactHarbor Application Demo  ==
 
 (% class="box successmessage" %)
@@ -453,8 +411,6 @@ FactHarbor's 5-step debate is adjacent to Climinator's mediator-advocate line (U
 **Live Demo of **
 **[[app.FactHarbor.ch>>https://app.factharbor.ch]]**
 )))
-
-
 
 === 1. User Experience: Submit & Explore ===
 
@@ -484,6 +440,20 @@ FactHarbor's 5-step debate is adjacent to Climinator's mediator-advocate line (U
 * **Impact on verdict**
 
 ----
+
+== Appendix: Target User Groups ==
+
+|=User Group|=How They Use FactHarbor|=Key Need
+|**General Public**|Browse published analyses, explore the evidence landscape — no registration required|Transparent, accessible verdicts they can verify themselves
+|**Journalists & Content Creators**|Fact-check claims before publishing; cite FactHarbor verdicts with full provenance|API access, speed, credibility — evidence chains they can reference in their work
+|**Researchers & Academics**|Filter by verification status, confidence levels, source quality; export data for studies|Audit trails, reproducible results, exportable structured data
+|**Social Media Users**|Quick-check claims before sharing to avoid spreading misinformation|Fast turnaround, clear verdicts, easy to understand
+|**Educators**|Use real-world claim analyses as teaching material for critical thinking and media literacy|Multi-perspective evidence landscapes, not just binary verdicts
+
+(% class="box infomessage" %)
+(((
+**Design principle:** Anyone can browse without registration. Submission requires only a free account. Every verdict is fully transparent.
+)))
 
 == Appendix: Current Status Detail ==
 
