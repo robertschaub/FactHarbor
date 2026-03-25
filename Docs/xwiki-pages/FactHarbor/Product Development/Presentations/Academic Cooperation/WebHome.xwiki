@@ -162,6 +162,10 @@ flowchart TB
 
 [[image:FH_UI.png||width="100%"]]
 
+=== Coverage Matrix ===
+
+[[image:CA_matrix.png||width="100%"]]
+
 === Verdicts ===
 
 **7-point scale** with confidence levels.
