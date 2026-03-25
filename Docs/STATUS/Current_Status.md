@@ -3,26 +3,27 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. **VAL-1 validation gate is CLOSED**, **QLT-1 is materially successful** (Plastik DE 47pp→22pp, predicate softening eliminated), and **QLT-2 characterization is complete**. Key QLT-2 finding: the remaining instability has a **split root cause** — Plastik EN Stage 1 is now stable (30pp spread is evidence/verdict-driven), while Muslims Stage 1 is still unstable (27pp spread from claim count/direction/facet variation). A narrow Stage-1 refinement targeting direction/count/facet consistency is justified for inputs like the Muslims family, but would not help Plastik EN. Optimization tracks (P1-A, P1-B) remain secondary. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. The next active engineering priorities are **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics). Optimization tracks (P1-A, P1-B) remain secondary. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
 ## Current Focus (2026-03-25)
 
-- **QLT-1 is materially successful and remains in monitoring**: the Stage-1 predicate-strength bug is no longer the dominant uncontrolled defect.
-- **QLT-2 characterization is complete**: 13-job batch (5 Plastik EN, 5 Muslims, 3 Flat Earth) determined that residual instability has a **split root cause**:
-  - **Plastik EN**: Stage 1 is stable (same 3 facets, predicate preserved, count stable). Remaining 30pp spread is evidence/verdict-driven — different web sources → different evidence mixes → different verdicts on the environmental claim (47pp per-claim swing).
-  - **Muslims**: Stage 1 is still unstable — claim count (2-3), direction (supports/contradicts/contextual), and facet categories all vary across runs. 27pp article spread.
-  - **Flat Earth**: Clean control (2pp spread, all FALSE).
-- **Next analytical step**: A narrow Stage-1 refinement targeting direction/count/facet consistency is justified for inputs like the Muslims family. This would NOT help Plastik EN (Stage 1 already stable there).
+- **Stage-1 quality stabilization is materially complete**: QLT-1 (predicate strength), QLT-2 (characterization), and QLT-3 (facet consistency) are all done. Remaining variance for both Plastik and Muslims families is now primarily evidence/verdict-driven. No further Stage-1 prompt work is currently justified.
+- **Active engineering priorities**:
+  - **VAL-2**: Jobs-list progress/verdict sync race — user-visible trust issue where non-terminal jobs can show persisted verdicts while stale lower progress events still arrive.
+  - **OBS-1**: Request-safe metrics collector — module-global metrics collector weakens per-job forensics under overlapping runs.
 - **Verdict-direction plausibility narrowed** — Rule 2 no longer auto-passes the entire 31-69% truth range; evidence ratio must also be mixed. Evidence bucketing now uses verdict's own ID partition.
-- **Follow up on runtime/UI consistency (`VAL-2`)**: the jobs list can currently show a persisted verdict while stale lower progress events still arrive.
-- **Follow up on observability (`OBS-1`)**: the module-global metrics collector still weakens per-job forensics under overlapping runs.
-- **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval and should not be mixed into the current stabilization work.
+- **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval and should not be mixed into current work.
 
 ---
 
 ## Recent Changes (2026-03-25)
+
+**QLT-3 facet-consistency fix completed:**
+- ✅ **QLT-3 materially successful**: 3 targeted prompt rules (no counter-narrative claims, facet convergence, claim count stability) fixed all 3 QLT-2-identified Stage-1 failure modes for Muslims-family inputs. Claim count stabilized (2-3→3-3), `claimDirection` stabilized (S+C/X→all S), counter-narrative/media claims eliminated (1/5→0/5). Truth spread reduced 27pp→21pp. No regressions on controls.
+- ✅ **Stage-1 quality track now complete**: QLT-1 + QLT-3 together addressed all identified Stage-1 decomposition instability. Remaining variance for both Plastik and Muslims families is now evidence/verdict-driven, not claim-extraction-driven.
+- ⚠️ **Residual 21pp Muslims spread and 30pp Plastik EN spread**: both now appear driven by Stage 2 evidence variation and Stage 4 verdict stochasticity. No Stage-1 fix can reduce these further. Acceptable-variance policy is a future Captain decision.
 
 **QLT-2 characterization completed and QLT-1 validation confirmed:**
 - ✅ **QLT-2 complete (13 jobs, zero exclusions)**: Plastik EN ×5, Muslims ×5, Flat Earth ×3 on commit `49700231`.

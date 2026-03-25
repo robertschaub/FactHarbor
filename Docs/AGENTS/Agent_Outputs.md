@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize QLT-3 and Sync Active Docs
+**Task:** Update canonical docs to reflect post-QLT-3 reality.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Stage-1 quality stabilization track (QLT-1/2/3) is now complete. QLT-3 moved to monitor mode. VAL-2 and OBS-1 are the new active engineering priorities. Added EVD-1 (evidence-stability/acceptable-variance policy) as a low-priority future item for Captain decision. Remaining Plastik EN (30pp) and Muslims (21pp) variance is evidence/verdict-driven — no further Stage-1 work justified.
+**Open items:** None from this docs sync.
+**For next agent:** Active priorities are VAL-2 (jobs-list sync race) and OBS-1 (per-job metrics). Stage-1 quality work is done unless new evidence justifies reopening.
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-3 Facet Consistency Fix
 **Task:** Implement and validate Stage-1 facet-consistency fix for complex broad-evaluative inputs (Muslims-family).
 **Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md`, `Docs/AGENTS/Agent_Outputs.md`

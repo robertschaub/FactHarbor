@@ -21,10 +21,11 @@ Anything that was purely historical, implemented, or superseded has been archive
 ## Governing Current Work
 
 ### Current quality / stabilization steering
-- [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md)
-- [2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md](2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md)
-- [2026-03-25_Senior_Developer_QLT2_Characterization.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md)
-- The root-cause plan remains live background context, but the current active next-step state after `QLT-2` is governed by `Current_Status.md`, `Backlog.md`, and the `QLT-2` handoff.
+- [2026-03-24_Post_Validation_Control_and_Coverage_Followup.md](2026-03-24_Post_Validation_Control_and_Coverage_Followup.md) — background rationale; VAL-1 gate is closed
+- [2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md](2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md) — background root-cause context; the Stage-1 quality track (QLT-1/2/3) is now complete
+- [2026-03-25_Senior_Developer_QLT2_Characterization.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md) — split root-cause finding that guided QLT-3
+- [2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md) — final QLT validation result
+- **Post-QLT-3 posture**: Stage-1 quality stabilization is materially complete. Remaining variance is evidence/verdict-driven. Active priorities are now VAL-2 and OBS-1, governed by `Current_Status.md` and `Backlog.md`.
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)

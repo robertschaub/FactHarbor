@@ -16,16 +16,16 @@
 
 ## Immediate Priorities (2026-03-25)
 
-VAL-1 is closed, QLT-1 is materially successful, and QLT-2 characterization is complete. The current work is a narrow Stage-1 facet-consistency fix (QLT-3 for Muslims-type inputs) plus trust/observability cleanup (VAL-2, OBS-1).
+Stage-1 quality stabilization is complete (QLT-1/2/3 all done). Remaining variance is evidence/verdict-driven. Active priorities are trust/observability (VAL-2, OBS-1).
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
-| **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE spread improved from 47pp to 22pp, claim count stabilized, and predicate softening was eliminated in the validation batch. Move to monitor mode; do not reopen broad prompt tuning without new evidence. | Analyzer / Quality | med | high | MONITOR | See `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
-| **QLT-2** | **Residual broad-evaluative instability characterization**: COMPLETE. 13-job batch found split root cause: Plastik EN Stage 1 is stable (30pp spread is evidence-driven), Muslims Stage 1 is still unstable (27pp from count/direction/facet variation). Both exceed 20pp threshold. Flat Earth clean (2pp). | Analyzer / Quality | — | — | DONE | See `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
-| **QLT-3** | **Muslims-family Stage-1 facet-consistency fix**: narrow prompt-level fix in Stage 1 Pass 2 targeting claim count stability, consistent `supports_thesis` direction, and convergent facet selection for broad evaluative inputs with inherently complex decomposition. Does NOT address Plastik EN evidence-driven variance. | Analyzer / Quality | high | high | NOT STARTED | Justified by QLT-2 Muslims data: claim count 2-3, direction varies, facets differ every run. |
 | **VAL-2** | **Jobs-list progress/verdict sync race**: prevent non-terminal jobs from showing persisted verdicts while stale lower progress events can still arrive. Either enforce monotonic progress writes or hide verdict badges for non-terminal jobs. | Web / API / Runner | high | med | NOT STARTED | User-visible trust issue |
 | **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | med | med | NOT STARTED | Still open after Stage-4 incident work |
-| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to the current stabilization and quality-characterization work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
+| **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE 47pp→22pp. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
+| **QLT-3** | **Muslims-family Stage-1 facet-consistency fix**: materially successful. Claim count stabilized (3/3/3/3/3), direction stabilized (all `supports_thesis`), counter-narrative claims eliminated. Spread 27pp→21pp. Remaining variance is evidence-driven. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
+| **QLT-2** | **Residual broad-evaluative instability characterization**: COMPLETE. Split root cause identified and both branches addressed (QLT-1 for Plastik, QLT-3 for Muslims). | Analyzer / Quality | — | — | DONE | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
+| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
 
@@ -48,7 +48,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | Item | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|---|
 | **REF-1** | **Residual refactor streams (`WS-5`/`WS-6`/`WS-7`)**: jobs report page decomposition, admin config page decomposition, and low-priority admin route boilerplate cleanup remain as deferred structural work. | Web / API / Refactoring | low | med | `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` |
-| ~~**QLT-1**~~ | ~~Claim strength preservation study~~ — **moved to Immediate Priorities / monitor mode after implementation and validation** | — | — | — | — |
+| **EVD-1** | **Evidence-stability / acceptable-variance policy**: define acceptable truth% spread bands per input complexity tier. Currently Plastik EN (30pp) and Muslims (21pp) exceed the informal 20pp threshold but Stage 1 is now stable — remaining variance is evidence-driven. Captain decision needed on whether to pursue evidence-diversity requirements in Stage 2 or accept current variance. | Analyzer / Quality | low | med | FUTURE | Only if new evidence justifies reopening |
 | **SEARCH-1** | **Deep supplementary-provider integration**: pipeline-aware Wikipedia / Semantic Scholar / Fact Check usage beyond the already-shipped provider layer. | Search / Analyzer | low | med | `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` |
 | **SR-1** | **Stage 4.5 SR calibration experiment**: feature-flagged/off in code; only reopen after the current fixed-stack validation gate closes. | Analyzer / SR / Quality | low | med | `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md` |
 | **AGG-1** | **LLM-assessed triangulation / derivative weighting**: replace remaining deterministic aggregation heuristics that make analytical judgments. | Analyzer / Architecture | low | med | `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` |
@@ -56,10 +56,13 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 ---
 
-## Recently Completed (March 22-24, 2026)
+## Recently Completed (March 22-25, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **QLT-3 facet-consistency fix**: Muslims-family claim count stabilized (2-3→3-3), `claimDirection` all `supports_thesis`, counter-narrative/media claims eliminated. Truth spread 27pp→21pp. | Analyzer / Quality | 2026-03-25 | `317319fb`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
+| ✅ **QLT-2 characterization**: 13-job batch found split root cause — Plastik EN evidence-driven, Muslims Stage-1 unstable. | Analyzer / Quality | 2026-03-25 | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
+| ✅ **QLT-1 validation**: Plastik DE predicate-strength stabilization confirmed (47pp→22pp), all anchors clean. | Analyzer / Quality | 2026-03-25 | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
 | ✅ **Config provenance repair**: ClaimBoundary jobs now persist reliable per-job config provenance and snapshot data again. | Analyzer / Observability | 2026-03-22 | `1cb9b9cc`, `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md` |
 | ✅ **WS-2 completed end-to-end**: full Stage 2 research-loop deconstruction finished; `claimboundary-pipeline.ts` reduced to a slim orchestrator. | Analyzer / Refactoring | 2026-03-23 | `27fc325c`, `Docs/ARCHIVE/2026-03-23_Stage_2_Research_Loop_Deconstruction_Design.md` |
 | ✅ **WS-3 / WS-4 complete**: `evaluate-source` decomposed into request-scoped modules; search-provider clone boilerplate consolidated. | API / Web / Refactoring | 2026-03-23 | `25e4f633`, `04efbd19` |
