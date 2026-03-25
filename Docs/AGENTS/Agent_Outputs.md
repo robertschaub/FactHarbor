@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize EVD-1 Captain Approval
+**Task:** Update canonical docs to reflect Captain approval of EVD-1 variance policy.
+**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** EVD-1 is now APPROVED and operative. Analyzer work is in monitor mode — new implementation only if a validation round produces a red result. Amber items (Plastik EN, Muslims) are monitored, not actioned. Optimization remains Captain-gated. Policy revisit scheduled before Beta.
+**For next agent:** No active analyzer work. EVD-1 governs variance interpretation. Future work requires either a red threshold breach or explicit Captain approval. Read `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` Section 6 for the validation protocol.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Apply Independent-Review Corrections
 **Task:** Apply 5 review corrections to EVD-1 policy draft.
 **Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/AGENTS/Agent_Outputs.md`

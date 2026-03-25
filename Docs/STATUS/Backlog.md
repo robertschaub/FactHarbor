@@ -16,7 +16,7 @@
 
 ## Immediate Priorities (2026-03-25)
 
-Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). No remaining active engineering blocker. Current posture is monitor / decision mode.
+Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). EVD-1 variance policy is approved and operative. **Current posture: approved-policy monitor mode.** No active analyzer implementation work. New work is policy-triggered only (red threshold breach) or Captain-approved.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
@@ -48,7 +48,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | Item | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|---|
 | **REF-1** | **Residual refactor streams (`WS-5`/`WS-6`/`WS-7`)**: jobs report page decomposition, admin config page decomposition, and low-priority admin route boilerplate cleanup remain as deferred structural work. | Web / API / Refactoring | low | med | `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` |
-| **EVD-1** | **Acceptable-variance policy**: DRAFT complete. Defines 5 input quality classes (A–E) with empirically grounded truth%/confidence/per-claim spread bands and green/amber/red escalation rules. Pending Captain review and approval. | Quality / Governance | med | high | `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` |
+| **EVD-1** | **Acceptable-variance policy**: APPROVED. Operative Alpha-phase quality governance. 5 input classes (A–E) with green/amber/red bands. Analyzer work in monitor mode — new implementation only if red threshold breached. Revisit before Beta. | Quality / Governance | — | high | APPROVED | `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` |
 | **SEARCH-1** | **Deep supplementary-provider integration**: pipeline-aware Wikipedia / Semantic Scholar / Fact Check usage beyond the already-shipped provider layer. | Search / Analyzer | low | med | `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` |
 | **SR-1** | **Stage 4.5 SR calibration experiment**: feature-flagged/off in code; only reopen after the current fixed-stack validation gate closes. | Analyzer / SR / Quality | low | med | `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md` |
 | **AGG-1** | **LLM-assessed triangulation / derivative weighting**: replace remaining deterministic aggregation heuristics that make analytical judgments. | Analyzer / Architecture | low | med | `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` |

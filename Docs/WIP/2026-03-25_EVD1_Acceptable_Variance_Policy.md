@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-25
 **Role:** Lead Architect
-**Status:** DRAFT — requires Captain review and approval
+**Status:** APPROVED — operative Alpha-phase quality governance policy (Captain-approved 2026-03-25)
 
 ---
 
@@ -178,26 +178,29 @@ Compare each metric against the class-appropriate threshold. Record the result a
 
 ---
 
-## 8. Open Questions for Captain
+## 8. Captain Decisions (approved 2026-03-25)
 
-| Question | Options | Recommendation |
-|----------|---------|----------------|
-| **Are the proposed bands correct?** | Accept / adjust specific thresholds | Accept as-is for Alpha; revisit before Beta based on more data |
-| **Should Plastik EN amber trigger work?** | Investigate Stage 2 evidence diversity / Accept as inherent | Accept for now — the environmental claim is genuinely contested |
-| **Should Muslims amber trigger work?** | Investigate terrorism facet evidence / Accept | Accept for now — terrorism comparisons inherently produce mixed evidence |
-| **How many runs are needed per family?** | 3 minimum / 5 recommended | 5 for broad evaluative (C/D), 3 for others |
-| **Should variance be exposed to users?** | Show confidence interval / Show single result / Show range | Out of scope for this policy — UX decision |
+| Question | Decision |
+|----------|----------|
+| **Are the proposed bands correct?** | Accepted as-is for Alpha. Revisit before Beta with more data. |
+| **Should Plastik EN amber trigger work?** | No — accept as inherent. The environmental claim is genuinely contested. Monitor only. |
+| **Should Muslims amber trigger work?** | No — accept as inherent. Terrorism comparisons inherently produce mixed evidence. Monitor only. |
+| **How many runs are needed per family?** | 5 for broad evaluative (C/D), 3 for others. |
+| **Should variance be exposed to users?** | Out of scope for this policy — separate UX decision. |
+| **When does this policy get revisited?** | Before Beta phase, or if a new family consistently hits red. |
 
 ---
 
-## 9. Recommendation
+## 9. Policy Status
 
-**Approve this policy as the Alpha-phase quality governance framework.** It:
+**This policy is now the operative Alpha-phase quality governance framework.** It:
 - Grounds thresholds in empirical data from 40+ validation runs across 7 input families
 - Separates analytical defects from evidence-driven variance from topic contestability
 - Gives future agents a reusable decision framework (classify → measure → compare → decide)
 - Does not require code changes
 - Can be refined as more validation data accumulates
+
+**Operational effect:** Analyzer work is in monitor mode under this policy. New implementation work is only triggered if a validation round produces a red result. Amber items are monitored, not actioned. No automatic next implementation workstream exists — future workstreams require explicit Captain approval.
 
 **This policy does not claim the system is "stable enough."** It claims the system now has a framework for answering that question consistently.
 
