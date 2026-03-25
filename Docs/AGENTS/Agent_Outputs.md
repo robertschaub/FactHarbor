@@ -1,6 +1,13 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize OBS-1 and Close Stabilization Wave
+**Task:** Update canonical docs to reflect OBS-1 completion and the end of the report-quality stabilization wave.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** All planned stabilization items (QLT-1/2/3, VAL-2, OBS-1) are now complete. Project is in monitor/decision mode. Next workstream requires Captain decision: EVD-1 (acceptable-variance policy), optimization (P1-A/P1-B), or another approved track. Residual evidence-driven variance (Plastik EN ~30pp, Muslims ~21pp) is documented but not treated as a blocker — it's a policy decision, not an engineering gap.
+**For next agent:** No active engineering blocker. Read `Current_Status.md` for the current posture. Captain approval needed before starting any new workstream.
+
+---
 ### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | OBS-1: Request-Safe Per-Job Metrics Isolation
 **Task:** Replace module-global metrics collector with per-job isolated metrics using AsyncLocalStorage.
 **Files touched:** `apps/web/src/lib/analyzer/metrics-integration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`

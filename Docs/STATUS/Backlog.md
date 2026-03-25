@@ -16,11 +16,11 @@
 
 ## Immediate Priorities (2026-03-25)
 
-Stage-1 quality stabilization is complete (QLT-1/2/3 all done). VAL-2 is fixed. Active priority is observability (OBS-1).
+Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). No remaining active engineering blocker. Current posture is monitor / decision mode.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
-| **OBS-1** | **Request-safe metrics collector**: replace the module-global metrics collector so overlapping jobs have trustworthy per-job metrics and incident forensics. | Analyzer / Observability | high | med | NOT STARTED | Active priority |
+| **OBS-1** | **Per-job metrics isolation**: replaced module-global collector with AsyncLocalStorage. Concurrent jobs no longer share metrics state. | Analyzer / Observability | — | — | DONE | `6e402208` |
 | **VAL-2** | **Jobs-list progress/verdict sync race**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | — | — | DONE | `f86811fe` |
 | **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE 47pp→22pp. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
 | **QLT-3** | **Muslims-family Stage-1 facet-consistency fix**: materially successful. Claim count stabilized (3/3/3/3/3), direction stabilized (all `supports_thesis`), counter-narrative claims eliminated. Spread 27pp→21pp. Remaining variance is evidence-driven. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
@@ -60,6 +60,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **OBS-1 per-job metrics isolation**: replaced module-global collector with AsyncLocalStorage; concurrent jobs no longer share metrics. | Analyzer / Observability | 2026-03-25 | `6e402208` |
 | ✅ **VAL-2 jobs-list sync race fixed**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | 2026-03-25 | `f86811fe` |
 | ✅ **QLT-3 facet-consistency fix**: Muslims-family claim count stabilized (2-3→3-3), `claimDirection` all `supports_thesis`, counter-narrative/media claims eliminated. Truth spread 27pp→21pp. | Analyzer / Quality | 2026-03-25 | `317319fb`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
 | ✅ **QLT-2 characterization**: 13-job batch found split root cause — Plastik EN evidence-driven, Muslims Stage-1 unstable. | Analyzer / Quality | 2026-03-25 | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |

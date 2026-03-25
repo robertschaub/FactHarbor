@@ -25,7 +25,7 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md](2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md) — background root-cause context; the Stage-1 quality track (QLT-1/2/3) is now complete
 - [2026-03-25_Senior_Developer_QLT2_Characterization.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md) — split root-cause finding that guided QLT-3
 - [2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md) — final QLT validation result
-- **Post-QLT-3 posture**: Stage-1 quality stabilization is materially complete. Remaining variance is evidence/verdict-driven. Active priorities are now VAL-2 and OBS-1, governed by `Current_Status.md` and `Backlog.md`.
+- **Post-stabilization posture**: The report-quality stabilization wave (QLT-1/2/3, VAL-2, OBS-1) is complete. No remaining active engineering blocker. Remaining variance is evidence/verdict-driven. The project is in **monitor / decision mode** — next workstream requires Captain approval. Governed by `Current_Status.md` and `Backlog.md`.
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)

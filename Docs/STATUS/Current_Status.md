@@ -3,22 +3,29 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-03-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) is fixed. The next active engineering priority is **OBS-1** (per-job metrics isolation). Optimization tracks (P1-A, P1-B) remain secondary. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. The report-quality stabilization wave has **no remaining active engineering blockers**. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and cannot be reduced further at Stage 1 — whether to pursue evidence-stability improvements is a Captain-level decision. Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
 ## Current Focus (2026-03-25)
 
 - **Stage-1 quality stabilization is materially complete**: QLT-1 (predicate strength), QLT-2 (characterization), and QLT-3 (facet consistency) are all done. Remaining variance for both Plastik and Muslims families is now primarily evidence/verdict-driven. No further Stage-1 prompt work is currently justified.
-- **Active engineering priority**:
-  - **OBS-1**: Request-safe metrics collector — module-global metrics collector weakens per-job forensics under overlapping runs.
+- **No active engineering blocker remains** in the stabilization wave. All planned items (QLT-1/2/3, VAL-2, OBS-1) are complete.
+- **OBS-1 is complete** (`6e402208`): per-job metrics isolated via `AsyncLocalStorage`. Concurrent jobs no longer share or corrupt each other's `MetricsCollector`.
 - **VAL-2 is complete** (`f86811fe`): verdict badge gated on terminal status; monotonic progress guard prevents backward progress.
-- **Verdict-direction plausibility narrowed** — Rule 2 no longer auto-passes the entire 31-69% truth range; evidence ratio must also be mixed. Evidence bucketing now uses verdict's own ID partition.
-- **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval and should not be mixed into current work.
+- **Current posture: monitor / decision mode.** The next step is a Captain decision among:
+  - `EVD-1`: evidence-stability / acceptable-variance policy (define acceptable truth% spread bands)
+  - Optimization tracks (P1-A, P1-B) — require explicit approval
+  - Another explicitly approved workstream
+- **Residual variance context**: Plastik EN (~30pp) and Muslims (~21pp) truth spreads are evidence/verdict-driven. Stage 1 is stable. No further prompt work is justified without new evidence.
 
 ---
 
 ## Recent Changes (2026-03-25)
+
+**OBS-1 per-job metrics isolation completed:**
+- ✅ **Metrics now request-scoped**: replaced module-global `currentMetrics` with `AsyncLocalStorage<MetricsCollector>`. Concurrent overlapping jobs each get their own isolated collector. Zero call-site changes in stage files.
+- ✅ **Stabilization wave complete**: all planned items (QLT-1/2/3, VAL-2, OBS-1) are done. No remaining active engineering blocker.
 
 **VAL-2 jobs-list sync race fixed:**
 - ✅ **Verdict badge gated on terminal status**: jobs list only shows verdict/truth%/confidence badges for SUCCEEDED/FAILED/CANCELLED/INTERRUPTED jobs. Eliminates the window where a RUNNING job displays a premature verdict.
