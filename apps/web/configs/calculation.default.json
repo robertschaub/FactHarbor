@@ -178,5 +178,10 @@
   "contrarianRetrievalEnabled": true,
   "contrarianMaxQueriesPerClaim": 2,
   "contrarianRuntimeCeilingPct": 15,
+  "perClaimContrarianRetrievalEnabled": false,
+  "perClaimBalanceSkewThreshold": 0.85,
+  "perClaimBalanceMinDirectional": 8,
+  "perClaimMinMinoritySources": 2,
+  "perClaimContrarianMaxTriggeredClaims": 2,
   "highHarmFloorLevels": ["critical", "high"]
 }

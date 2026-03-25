@@ -4,7 +4,8 @@ import {
   extractResearchEvidence,
   assessEvidenceApplicability,
   assessScopeQuality,
-  assessEvidenceBalance
+  assessEvidenceBalance,
+  assessPerClaimEvidenceBalance,
 } from "@/lib/analyzer/research-extraction-stage";
 import {
   loadAndRenderSection,
@@ -757,6 +758,76 @@ describe("Research Extraction Stage", () => {
       // 2 directional items < default minDirectional (3)
       const metrics = assessEvidenceBalance(items);
       expect(metrics.isSkewed).toBe(false);
+    });
+  });
+
+  // assessPerClaimEvidenceBalance (QLT-4)
+  describe("assessPerClaimEvidenceBalance", () => {
+    const makeEvidence = (claimId: string, direction: string, sourceUrl: string) =>
+      ({ claimDirection: direction, sourceUrl, relevantClaimIds: [claimId] } as any);
+
+    it("should detect per-claim skew with low minority sources", () => {
+      const items = [
+        // AC_01: 8 supports from 4 sources, 1 contradicts from 1 source
+        ...Array.from({ length: 8 }, (_, i) => makeEvidence("AC_01", "supports", `https://src${i % 4}.com/a`)),
+        makeEvidence("AC_01", "contradicts", "https://lone.com/b"),
+        // AC_02: balanced
+        ...Array.from({ length: 5 }, (_, i) => makeEvidence("AC_02", "supports", `https://s${i}.com/c`)),
+        ...Array.from({ length: 4 }, (_, i) => makeEvidence("AC_02", "contradicts", `https://c${i}.com/d`)),
+      ];
+      const result = assessPerClaimEvidenceBalance(items, ["AC_01", "AC_02"], 0.85, 8, 2);
+      expect(result).toHaveLength(2);
+
+      const ac01 = result.find((r) => r.claimId === "AC_01")!;
+      expect(ac01.isSkewed).toBe(true);
+      expect(ac01.minoritySources).toBe(1); // only 1 distinct contradicting URL
+      expect(ac01.needsContrarian).toBe(true);
+
+      const ac02 = result.find((r) => r.claimId === "AC_02")!;
+      expect(ac02.isSkewed).toBe(false);
+      expect(ac02.needsContrarian).toBe(false);
+    });
+
+    it("should not trigger when minority sources meet threshold", () => {
+      const items = [
+        ...Array.from({ length: 7 }, (_, i) => makeEvidence("AC_01", "supports", `https://s${i}.com/a`)),
+        makeEvidence("AC_01", "contradicts", "https://c1.com/b"),
+        makeEvidence("AC_01", "contradicts", "https://c2.com/c"),
+      ];
+      // 7 supports, 2 contradicts = ratio 0.78, below 0.85 threshold -> not skewed
+      const result = assessPerClaimEvidenceBalance(items, ["AC_01"], 0.85, 8, 2);
+      expect(result[0].isSkewed).toBe(false);
+      expect(result[0].needsContrarian).toBe(false);
+    });
+
+    it("should not trigger when below minDirectional", () => {
+      const items = [
+        ...Array.from({ length: 5 }, (_, i) => makeEvidence("AC_01", "supports", `https://s${i}.com/a`)),
+        makeEvidence("AC_01", "contradicts", "https://c1.com/b"),
+      ];
+      // 6 directional < minDirectional 8 -> skew check not active
+      const result = assessPerClaimEvidenceBalance(items, ["AC_01"], 0.85, 8, 2);
+      expect(result[0].isSkewed).toBe(false);
+      expect(result[0].needsContrarian).toBe(false);
+    });
+
+    it("should count distinct source URLs correctly (deduplication)", () => {
+      const items = [
+        // All supports from same URL — 1 distinct source
+        ...Array.from({ length: 9 }, () => makeEvidence("AC_01", "supports", "https://same.com/page")),
+        makeEvidence("AC_01", "contradicts", "https://other.com/x"),
+      ];
+      const result = assessPerClaimEvidenceBalance(items, ["AC_01"], 0.85, 8, 2);
+      expect(result[0].majoritySources).toBe(1); // only 1 distinct support URL
+      expect(result[0].minoritySources).toBe(1);
+      expect(result[0].needsContrarian).toBe(true); // skewed AND <2 minority sources
+    });
+
+    it("should handle claims with no relevant evidence", () => {
+      const items = [makeEvidence("AC_01", "supports", "https://a.com/x")];
+      const result = assessPerClaimEvidenceBalance(items, ["AC_02"], 0.85, 8, 2);
+      expect(result[0].total).toBe(0);
+      expect(result[0].needsContrarian).toBe(false);
     });
   });
 });

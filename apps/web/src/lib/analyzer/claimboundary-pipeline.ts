@@ -116,6 +116,7 @@ import {
   assessEvidenceApplicability,
   assessScopeQuality,
   assessEvidenceBalance,
+  assessPerClaimEvidenceBalance,
   type EvidenceBalanceMetrics,
 } from "./research-extraction-stage";
 import {
@@ -469,6 +470,69 @@ export async function runClaimBoundaryAnalysis(
         } else {
           console.info("[Pipeline] D5 contrarian retrieval skipped: approaching runtime ceiling");
         }
+      }
+    }
+
+    // QLT-4: Per-claim contrarian retrieval (experimental, default off)
+    const perClaimEnabled = initialCalcConfig.perClaimContrarianRetrievalEnabled ?? false;
+    if (perClaimEnabled) {
+      const pcSkew = initialCalcConfig.perClaimBalanceSkewThreshold ?? 0.85;
+      const pcMinDir = initialCalcConfig.perClaimBalanceMinDirectional ?? 8;
+      const pcMinSrc = initialCalcConfig.perClaimMinMinoritySources ?? 2;
+      const pcMaxClaims = initialCalcConfig.perClaimContrarianMaxTriggeredClaims ?? 2;
+      const pcMaxQueries = initialCalcConfig.contrarianMaxQueriesPerClaim ?? 2;
+
+      const claimIds = understanding.atomicClaims.map((c) => c.id);
+      const perClaimMetrics = assessPerClaimEvidenceBalance(
+        state.evidenceItems, claimIds, pcSkew, pcMinDir, pcMinSrc,
+      );
+
+      const claimsNeedingContrarian = perClaimMetrics
+        .filter((m) => m.needsContrarian)
+        .slice(0, pcMaxClaims);
+
+      if (claimsNeedingContrarian.length > 0) {
+        console.info(
+          `[Pipeline] QLT-4: ${claimsNeedingContrarian.length} claim(s) need per-claim contrarian: ` +
+          claimsNeedingContrarian.map((m) => `${m.claimId} (${m.minoritySources}/${pcMinSrc} min-src, ratio=${m.balanceRatio.toFixed(2)})`).join(", "),
+        );
+        onEvent(`Per-claim contrarian retrieval for ${claimsNeedingContrarian.length} claim(s)...`, 59);
+
+        const beforeCount = state.evidenceItems.length;
+        for (const metrics of claimsNeedingContrarian) {
+          const claim = understanding.atomicClaims.find((c) => c.id === metrics.claimId);
+          if (!claim) continue;
+          try {
+            await runResearchIteration(
+              claim, "contrarian", initialSearchConfig, initialPipelineConfig,
+              pcMaxQueries, new Date().toISOString().split("T")[0], state,
+            );
+          } catch (err) {
+            console.warn(`[Pipeline] QLT-4: contrarian for ${metrics.claimId} failed (non-fatal):`, err);
+          }
+        }
+        const newItems = state.evidenceItems.length - beforeCount;
+
+        // Re-assess per-claim balance after contrarian pass
+        const postMetrics = assessPerClaimEvidenceBalance(
+          state.evidenceItems, claimIds, pcSkew, pcMinDir, pcMinSrc,
+        );
+
+        // Emit telemetry for each triggered claim
+        for (const pre of claimsNeedingContrarian) {
+          const post = postMetrics.find((m) => m.claimId === pre.claimId);
+          state.warnings.push({
+            type: "per_claim_contrarian_triggered" as const,
+            severity: "info" as const,
+            message: `QLT-4: Claim ${pre.claimId} triggered per-claim contrarian. ` +
+              `Before: ${pre.minoritySources} minority src (ratio=${pre.balanceRatio.toFixed(2)}, ${pre.supporting}S/${pre.contradicting}C). ` +
+              `After: ${post?.minoritySources ?? "?"} minority src (ratio=${post?.balanceRatio.toFixed(2) ?? "?"}, ${post?.supporting ?? "?"}S/${post?.contradicting ?? "?"}C).`,
+          });
+        }
+
+        console.info(`[Pipeline] QLT-4: ${newItems} new evidence items from per-claim contrarian pass`);
+      } else {
+        console.info("[Pipeline] QLT-4: no claims exceeded per-claim skew threshold");
       }
     }
 
