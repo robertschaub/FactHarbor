@@ -1286,7 +1286,7 @@ describe("Stage 1: runGate1Validation", () => {
       createAtomicClaim({ id: "AC_01" }),
       createAtomicClaim({ id: "AC_02", statement: "Fails opinion only" }),
       createAtomicClaim({ id: "AC_03", statement: "Fails specificity only" }),
-      createAtomicClaim({ id: "AC_04", statement: "Fails both" }),
+      createAtomicClaim({ id: "AC_04", statement: "Fails both", thesisRelevance: "tangential" }),
     ];
 
     const gate1Fixture = {

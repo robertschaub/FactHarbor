@@ -557,6 +557,19 @@ export async function extractClaims(
   }
 
   // ------------------------------------------------------------------
+  // Emit warnings for thesis-direct claims rescued from the opinion+specificity filter.
+  if (gate1Result.rescuedThesisDirect && gate1Result.rescuedThesisDirect.length > 0) {
+    for (const claimId of gate1Result.rescuedThesisDirect) {
+      const claim = gate1Result.filteredClaims.find((c) => c.id === claimId);
+      state.warnings.push({
+        type: "gate1_thesis_direct_rescue",
+        severity: "info",
+        message: `Claim ${claimId} failed both opinion and specificity checks but rescued as thesis-direct claim. Stage 4 will assess with appropriate confidence.`,
+        details: { claimId, statement: claim?.statement?.slice(0, 120) },
+      });
+    }
+  }
+
   // Assemble CBClaimUnderstanding
   // ------------------------------------------------------------------
   return {
@@ -1780,7 +1793,7 @@ export async function runGate1Validation(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   analysisInput = "",
-): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[]; preFilterClaims?: AtomicClaim[]; gate1Reasoning?: Array<{ claimId: string; passedOpinion: boolean; passedSpecificity: boolean; passedFidelity: boolean; reasoning: string }> }> {
+): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[]; preFilterClaims?: AtomicClaim[]; gate1Reasoning?: Array<{ claimId: string; passedOpinion: boolean; passedSpecificity: boolean; passedFidelity: boolean; reasoning: string }>; rescuedThesisDirect?: string[] }> {
   if (claims.length === 0) {
     return {
       stats: {
@@ -1904,6 +1917,7 @@ export async function runGate1Validation(
     let fidelityFiltered = 0;
     let bothFiltered = 0;
     let specificityFiltered = 0;
+    const rescuedThesisDirect: string[] = [];
     const keptClaims = claims.filter((claim) => {
       // Remove if claim is not faithful to original input meaning
       // BUT exempt dimension-decomposed claims — they are inherent interpretations
@@ -1912,10 +1926,16 @@ export async function runGate1Validation(
         fidelityFiltered++;
         return false;
       }
-      // Remove if LLM says both opinion and specificity fail
+      // Remove if LLM says both opinion and specificity fail —
+      // EXCEPT thesis-direct claims: the user explicitly asked about this dimension.
+      // Stage 4's verdict debate handles evaluative claims with confidence calibration.
       if (failedBothIds.has(claim.id)) {
-        bothFiltered++;
-        return false;
+        if (claim.thesisRelevance === "direct") {
+          rescuedThesisDirect.push(claim.id);
+        } else {
+          bothFiltered++;
+          return false;
+        }
       }
       // Remove if specificityScore is below UCM-configured minimum —
       // but only when grounding was available (moderate/strong/weak).
@@ -2024,6 +2044,7 @@ export async function runGate1Validation(
         passedFidelity: v.passedFidelity,
         reasoning: v.reasoning,
       })),
+      rescuedThesisDirect,
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);

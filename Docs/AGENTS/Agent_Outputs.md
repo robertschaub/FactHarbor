@@ -11,6 +11,22 @@
 **For next agent:** Full report in `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. W15 is the recommended first task — see Backlog for spec. No formal track opened. Monitor mode continues.
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Gate 1 Thesis-Direct Rescue
+**Task:** Fix Gate 1 over-filtering of thesis-derived evaluative claims.
+**Root cause:** Combined opinion+specificity filter dropped claims that directly restate the user's thesis (e.g., "verdicts were fair" in Bolsonaro input). `thesisRelevance: "direct"` confirmed present on the filtered claim.
+**Fix:** Claims with `thesisRelevance === "direct"` exempt from the combined filter. Info-level `gate1_thesis_direct_rescue` warning emitted. Non-thesis claims still filtered normally.
+**Files:** `claim-extraction-stage.ts`, `types.ts`, `warning-display.ts`, `claimboundary-pipeline.test.ts`
+**Reviewed by:** Lead Architect (approved Option A), LLM Expert (confirmed code-level fix safer than prompt change).
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | B-Sequence Feature Validation
+**Task:** Validate whether shipped B-sequence quality features are operating as intended on real runs.
+**Jobs:** 5 diverse inputs (Plastik EN/DE, Flat Earth, Bolsonaro, Hydrogen).
+**Key findings:** 6/8 features validated and working (verifiability, misleadingness, self-consistency, evidence partitioning, direction validation, pro/con queries). 1 wiring gap: explanation quality rubric runs but output is dropped during resultJson serialization (2-line fix needed). 1 intentionally disabled (grounding enforcement). TIGERScore is off.
+**Wiring gap detail:** `assessment.explanationQualityCheck` is set at line 748 but `resultJson` assembly (lines 817-885) doesn't include it. Same for `tigerScore`.
+**For next agent:** Fix the wiring gap (add 2 fields to resultJson). No further B-sequence validation needed.
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | P1-B: Preliminary Search Parallelism
 **Task:** Reduce Stage 1 latency by parallelizing preliminary search work.
 **Files touched:** `claim-extraction-stage.ts` (parallel claims + queries + source fetches), `claimboundary-pipeline.test.ts` (fixed mock state for warnings).
@@ -1770,4 +1786,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** `grounding-check.ts` reads `DEFAULT_PIPELINE_CONFIG` directly instead of runtime config. `temporal-guard.ts` (UCM-5) does not exist yet; schema field is ready.
 **Warnings:** No default values were changed. All existing behavior is preserved.
 **For next agent:** All 5 UCM backlog items are structurally complete. To verify runtime config propagation, change a value in Admin and confirm it reaches the module.
+**Learnings:** no
+
+---
+### 2026-03-26 | Lead Architect | Codex (GPT-5) | Plastik DE UNVERIFIED Root Cause Note
+**Task:** Document why job `5c1b4633e56d4238bad682d2ed64e853` resolved to `UNVERIFIED` and prepare a targeted solution-finding prompt.
+**Files touched:** `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Identified the immediate cause as mixed-band truth plus low aggregated confidence, but traced the deeper differential cause to Stage-1 semantic/facet drift versus earlier control run `08a1c6d407564d74af633e6298d3ef84`. Recorded that `AC_03` shifted from resource-conservation framing to practical-feasibility framing, which changed downstream queries, boundaries, and self-consistency spread enough to flip the article verdict. Also noted a secondary verdict-stage structural-consistency bug for `AC_03`.
+**Open items:** A follow-on reviewer/architect investigation is still needed to decide whether the proper remedy is a narrow Stage-1 fix, a downstream fix, a bug fix only, or no change.
+**Warnings:** The working tree already contained unrelated uncommitted changes before this note was added. This write-up is documentation only and should not be mistaken for approval to reopen a broad stabilization wave.
+**For next agent:** Start with `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, then inspect the two referenced jobs and the current Stage-1 / verdict code before proposing any change. The strongest current hypothesis is targeted Stage-1 dimension drift on broad evaluative German absolutist phrasing.
 **Learnings:** no
