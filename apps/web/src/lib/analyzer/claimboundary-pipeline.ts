@@ -194,6 +194,7 @@ export {
   getClaimQueryBudgetRemaining,
   getClaimQueryBudgetUsed,
   getPerClaimQueryBudget,
+  type DiversitySufficiencyConfig,
 } from "./research-orchestrator";
 export {
   classifyRelevance,

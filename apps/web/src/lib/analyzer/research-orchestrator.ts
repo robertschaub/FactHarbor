@@ -5,16 +5,18 @@ import {
   FetchedSource,
   EvidenceScope,
 } from "./types";
-import { 
-  loadPipelineConfig, 
-  loadSearchConfig 
+import {
+  loadPipelineConfig,
+  loadSearchConfig,
+  loadCalcConfig,
 } from "@/lib/config-loader";
-import { 
-  PipelineConfig, 
-  SearchConfig 
+import {
+  PipelineConfig,
+  SearchConfig
 } from "@/lib/config-schemas";
-import { 
-  checkAbortSignal, 
+import {
+  checkAbortSignal,
+  extractDomain,
   mapSourceType,
   classifySourceFetchFailure,
 } from "./pipeline-utils";
@@ -59,12 +61,14 @@ export async function researchEvidence(
   jobId?: string
 ): Promise<void> {
   const effectiveJobId = jobId ?? state.jobId;
-  const [pipelineResult, searchResult] = await Promise.all([
+  const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default", effectiveJobId),
     loadSearchConfig("default", effectiveJobId),
+    loadCalcConfig("default", effectiveJobId),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
+  const calcConfig = calcResult.config;
 
   // Log config load status for research stage
   if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
@@ -72,6 +76,9 @@ export async function researchEvidence(
   }
   if (searchResult.contentHash === "__ERROR_FALLBACK__") {
     console.warn(`[Pipeline] UCM search config load failed in researchEvidence — using hardcoded defaults.`);
+  }
+  if (calcResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM calc config load failed in researchEvidence — using hardcoded defaults.`);
   }
 
   const currentDate = new Date().toISOString().split("T")[0];
@@ -101,6 +108,18 @@ export async function researchEvidence(
   // MT-3: distinct event count for coverage guard
   const distinctEventCount = state.understanding?.distinctEvents?.length ?? 0;
 
+  // Diversity-aware sufficiency: when enabled, Stage 2 also requires D5-level
+  // source-type/domain diversity before declaring a claim sufficient.
+  const diversityAware = pipelineConfig.diversityAwareSufficiency ?? false;
+  const diversityConfig: DiversitySufficiencyConfig | undefined = diversityAware
+    ? {
+        minSourceTypes: calcConfig.evidenceSufficiencyMinSourceTypes ?? 2,
+        minDistinctDomains: calcConfig.evidenceSufficiencyMinDistinctDomains ?? 3,
+        minItems: calcConfig.evidenceSufficiencyMinItems ?? 3,
+        includeSeeded: true, // D5 alignment: count all claim-mapped evidence
+      }
+    : undefined;
+
   const researchStartMs = Date.now();
   let consecutiveZeroYield = 0;
   let budgetExhaustionWarned = false;
@@ -124,7 +143,8 @@ export async function researchEvidence(
 
     // MT-1 + MT-3: Pass iteration count and distinct event count so sufficiency
     // cannot fire before the minimum required iterations have completed.
-    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount)) break;
+    // When diversityConfig is set, also requires D5-level source-type/domain diversity.
+    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount, diversityConfig)) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
     // Fix 4: Stop main loop when remaining budget equals contradiction reserve,
@@ -152,7 +172,7 @@ export async function researchEvidence(
       }
       break;
     }
-    const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems);
+    const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
     if (!targetClaim) break;
 
     // Emit progress update for this iteration (30% → 55%)
@@ -662,22 +682,58 @@ export async function runResearchIteration(
 
 /**
  * Find the claim with the fewest evidence items (for targeting).
+ *
+ * When `diversityConfig` is provided, claims that have enough items but
+ * fail the diversity threshold are prioritized over claims that simply have
+ * fewer items but already meet diversity. This ensures the research loop
+ * targets the gap that D5 will later penalize.
  */
 export function findLeastResearchedClaim(
   claims: AtomicClaim[],
   evidenceItems: EvidenceItem[],
+  diversityConfig?: DiversitySufficiencyConfig,
+  countThreshold?: number,
 ): AtomicClaim | null {
   if (claims.length === 0) return null;
 
-  let minCount = Infinity;
+  let minScore = Infinity;
   let target: AtomicClaim | null = null;
 
+  const includeSeeded = diversityConfig?.includeSeeded ?? false;
+  const effectiveThreshold = diversityConfig?.minItems ?? countThreshold;
+
   for (const claim of claims) {
-    const count = evidenceItems.filter(
-      (e) => e.relevantClaimIds?.includes(claim.id),
-    ).length;
-    if (count < minCount) {
-      minCount = count;
+    const claimEvidence = evidenceItems.filter((e) => {
+      if (!e.relevantClaimIds?.includes(claim.id)) return false;
+      if (!includeSeeded && e.isSeeded) return false;
+      return true;
+    });
+    const count = claimEvidence.length;
+
+    let score = count;
+
+    // When diversity-aware: claims that meet count threshold but fail diversity
+    // get a large negative score so they are targeted first.
+    if (diversityConfig && effectiveThreshold && count >= effectiveThreshold) {
+      const distinctSourceTypes = new Set(
+        claimEvidence.map(e => e.sourceType).filter(Boolean),
+      );
+      const distinctDomains = new Set(
+        claimEvidence
+          .map(e => extractDomain(e.sourceUrl))
+          .filter((d): d is string => Boolean(d)),
+      );
+      const meetsDiversity =
+        distinctSourceTypes.size >= diversityConfig.minSourceTypes ||
+        distinctDomains.size >= diversityConfig.minDistinctDomains;
+      if (!meetsDiversity) {
+        // Prioritize diversity-starved claims over count-starved claims
+        score = count - 10000;
+      }
+    }
+
+    if (score < minScore) {
+      minScore = score;
       target = claim;
     }
   }
@@ -711,7 +767,29 @@ export function findLeastContradictedClaim(
 }
 
 /**
+ * Optional diversity thresholds for Stage 2 sufficiency.
+ * When provided, sufficiency requires BOTH item count AND diversity.
+ * Mirrors the D5 Control 1 gate in claimboundary-pipeline.ts so
+ * Stage 2 can proactively gather diverse evidence instead of letting
+ * D5 penalize claims post-hoc.
+ */
+export interface DiversitySufficiencyConfig {
+  /** Minimum distinct source types (e.g., 2). Pass via CalcConfig.evidenceSufficiencyMinSourceTypes. */
+  minSourceTypes: number;
+  /** Minimum distinct normalized domains (e.g., 3). Pass via CalcConfig.evidenceSufficiencyMinDistinctDomains. */
+  minDistinctDomains: number;
+  /** D5-aligned item-count threshold. Overrides the pipeline `claimSufficiencyThreshold` when set. */
+  minItems: number;
+  /** When true, count seeded evidence toward sufficiency (matching D5 behavior). */
+  includeSeeded: boolean;
+}
+
+/**
  * Check if all claims have reached the sufficiency threshold.
+ *
+ * When `diversityConfig` is provided (diversityAwareSufficiency=true),
+ * a claim is only sufficient if it also meets EITHER the source-type OR
+ * domain diversity threshold — matching D5 Control 1's disjunctive OR gate.
  */
 export function allClaimsSufficient(
   claims: AtomicClaim[],
@@ -720,6 +798,7 @@ export function allClaimsSufficient(
   mainIterationsCompleted: number = 0,
   minMainIterations: number = 1,
   distinctEventCount: number = 0,
+  diversityConfig?: DiversitySufficiencyConfig,
 ): boolean {
   // Empty claims: vacuously sufficient (no research loop runs anyway)
   if (claims.length === 0) return true;
@@ -736,13 +815,38 @@ export function allClaimsSufficient(
   if (mainIterationsCompleted < effectiveMinIterations) return false;
 
   return claims.every((claim) => {
-    const count = evidenceItems.filter(
-      // Count only fully-extracted evidence (not seeded/preliminary items).
-      // Seeded items have isSeeded=true — they provide coverage baseline
-      // but should not satisfy sufficiency to prevent skipping main research.
-      (e) => e.relevantClaimIds?.includes(claim.id) && e.evidenceScope && !e.isSeeded,
-    ).length;
-    return count >= threshold;
+    // When diversity-aware, use D5-aligned item count and seeded-evidence policy.
+    // Default path: exclude seeded evidence and use pipeline sufficiency threshold.
+    const effectiveThreshold = diversityConfig ? diversityConfig.minItems : threshold;
+    const includeSeeded = diversityConfig?.includeSeeded ?? false;
+
+    const claimEvidence = evidenceItems.filter((e) => {
+      if (!e.relevantClaimIds?.includes(claim.id)) return false;
+      if (!e.evidenceScope) return false;
+      // Default path: exclude seeded to prevent skipping main research.
+      // D5-aligned path: include seeded (D5 counts all claim-mapped evidence).
+      if (!includeSeeded && e.isSeeded) return false;
+      return true;
+    });
+    if (claimEvidence.length < effectiveThreshold) return false;
+
+    // Diversity check (mirrors D5 Control 1 disjunctive OR gate)
+    if (diversityConfig) {
+      const distinctSourceTypes = new Set(
+        claimEvidence.map(e => e.sourceType).filter(Boolean),
+      );
+      const distinctDomains = new Set(
+        claimEvidence
+          .map(e => extractDomain(e.sourceUrl))
+          .filter((d): d is string => Boolean(d)),
+      );
+      const hasSufficientDiversity =
+        distinctSourceTypes.size >= diversityConfig.minSourceTypes ||
+        distinctDomains.size >= diversityConfig.minDistinctDomains;
+      if (!hasSufficientDiversity) return false;
+    }
+
+    return true;
   });
 }
 

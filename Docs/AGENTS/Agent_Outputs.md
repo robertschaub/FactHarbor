@@ -1877,3 +1877,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** None. No analytical behavior changed.
 **For next agent:** Future investigations can now inspect `understanding.inputClassification` and `understanding.contractValidationSummary` directly from stored job results instead of inferring runtime behavior.
 **Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Stage-2 D5 Diversity-Aware Sufficiency (revised)
+**Task:** Revise the existing diversity-aware sufficiency patch to close two review gaps: D5 item-count alignment and seeded-evidence policy.
+**Files touched:** `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+**Key decisions:** Gap 1: When `diversityAwareSufficiency=true`, sufficiency now uses `calcConfig.evidenceSufficiencyMinItems` (D5 threshold) instead of `pipelineConfig.claimSufficiencyThreshold`. Gap 2: D5-aligned path includes seeded evidence (matching D5 behavior) via `includeSeeded: true`. Default path unchanged (excludes seeded). Both controlled via `DiversitySufficiencyConfig` interface fields. Feature remains default-off.
+**Open items:** None. Ready for experimental validation when enabled.
+**Warnings:** When enabled, sufficiency semantics change: seeded evidence counts, item threshold comes from CalcConfig, diversity is required. This is intentional D5 alignment.
+**For next agent:** Enable `diversityAwareSufficiency=true` via Admin → Config for targeted testing. Compare D5 gate results (UNVERIFIED claims) between runs with and without the flag.
+**Learnings:** no

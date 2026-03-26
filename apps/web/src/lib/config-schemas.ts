@@ -554,6 +554,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Stage 2 query strategy mode: legacy or pro_con (default: legacy)"),
   perClaimQueryBudget: z.number().int().min(1).max(20).optional()
     .describe("Shared Stage 2 query budget per claim across all query sources (default: 8)"),
+  diversityAwareSufficiency: z.boolean().optional()
+    .describe("When true, Stage 2 sufficiency also requires source-type/domain diversity (matching D5 thresholds from CalcConfig). Claims with enough items but insufficient diversity will trigger additional research iterations. Default: false (experimental)."),
 
   // Stage 3: Clustering
   maxClaimBoundaries: z.number().int().min(2).max(10).optional()
@@ -1124,6 +1126,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contradictionReservedQueries: 2,
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
+  diversityAwareSufficiency: false,
 
   // ClaimBoundary Stage 3 defaults
   maxClaimBoundaries: 6,

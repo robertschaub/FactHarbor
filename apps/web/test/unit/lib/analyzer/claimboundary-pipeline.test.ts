@@ -24,6 +24,7 @@ import {
   findLeastResearchedClaim,
   findLeastContradictedClaim,
   allClaimsSufficient,
+  type DiversitySufficiencyConfig,
   assessScopeQuality,
   generateResearchQueries,
   classifyRelevance,
@@ -2018,6 +2019,184 @@ describe("allClaimsSufficient", () => {
 
     // 0 distinct events → effectiveMinIterations = 1 (normal)
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0)).toBe(true);
+  });
+});
+
+// --- Diversity-aware sufficiency tests ---
+
+describe("allClaimsSufficient with diversityConfig", () => {
+  const diversityConfig: DiversitySufficiencyConfig = {
+    minSourceTypes: 2,
+    minDistinctDomains: 3,
+    minItems: 3,
+    includeSeeded: true,
+  };
+
+  it("returns true when claim meets both count and diversity (source types)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://a.com/2" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
+    ] as any[];
+
+    // 3 items, 2 source types → passes count + diversity (source types ≥ 2)
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig)).toBe(true);
+  });
+
+  it("returns true when claim meets diversity via domains (not source types)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://c.com/1" },
+    ] as any[];
+
+    // 3 items, 1 source type but 3 domains → passes via domain diversity
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig)).toBe(true);
+  });
+
+  it("returns false when claim has enough items but fails diversity", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://a.com/2" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
+    ] as any[];
+
+    // 3 items, 1 source type, 1 domain → fails both diversity checks
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig)).toBe(false);
+  });
+
+  it("returns true without diversityConfig even if diversity is low (backward compat)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://a.com/2" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
+    ] as any[];
+
+    // Same low-diversity evidence, but no diversityConfig → count-only check passes
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0)).toBe(true);
+  });
+
+  it("multi-claim: returns false when one claim fails diversity", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      // AC_01: diverse
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+      // AC_02: not diverse
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://a.com/4" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "news_primary", sourceUrl: "https://a.com/5" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "F" }, sourceType: "news_primary", sourceUrl: "https://a.com/6" },
+    ] as any[];
+
+    // AC_02 has 1 source type, 1 domain → fails diversity
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig)).toBe(false);
+  });
+
+  it("counts seeded evidence when includeSeeded=true (D5 alignment)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      // 1 seeded + 2 non-seeded = 3 total, diverse
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+    ] as any[];
+
+    // With diversity config (includeSeeded=true): seeded counts → 3 items, 3 types → sufficient
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig)).toBe(true);
+
+    // Without diversity config (default path): seeded excluded → 2 items < 3 → insufficient
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0)).toBe(false);
+  });
+
+  it("uses D5 minItems threshold instead of pipeline threshold", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+    ] as any[];
+
+    // Pipeline threshold=5 would fail, but D5 minItems=3 from diversityConfig passes
+    expect(allClaimsSufficient(claims, evidence, 5, 1, 1, 0, diversityConfig)).toBe(true);
+    // Without diversity config, uses pipeline threshold=5 → insufficient
+    expect(allClaimsSufficient(claims, evidence, 5, 1, 1, 0)).toBe(false);
+  });
+});
+
+describe("findLeastResearchedClaim with diversityConfig", () => {
+  const diversityConfig: DiversitySufficiencyConfig = {
+    minSourceTypes: 2,
+    minDistinctDomains: 3,
+    minItems: 3,
+    includeSeeded: true,
+  };
+
+  it("targets diversity-starved claim over count-starved claim", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      // AC_01: 5 items, 1 source type, 1 domain → diversity-starved
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/2" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/3" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/4" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/5" },
+      // AC_02: 2 items, 2 source types → count-starved but diverse
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_02"], sourceType: "peer_reviewed_study", sourceUrl: "https://c.com/1" },
+    ] as any[];
+
+    // Without diversity: targets AC_02 (fewer items: 2 < 5)
+    expect(findLeastResearchedClaim(claims, evidence)?.id).toBe("AC_02");
+
+    // With diversity: targets AC_01 (has items but fails diversity)
+    expect(findLeastResearchedClaim(claims, evidence, diversityConfig, 3)?.id).toBe("AC_01");
+  });
+
+  it("falls back to count-based targeting when all claims meet diversity", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      // AC_01: 5 items, diverse
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "government_report", sourceUrl: "https://c.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://d.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://e.com/1" },
+      // AC_02: 2 items, diverse
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://f.com/1" },
+      { relevantClaimIds: ["AC_02"], sourceType: "peer_reviewed_study", sourceUrl: "https://g.com/1" },
+    ] as any[];
+
+    // Both diverse; AC_02 has fewer items → targeted
+    expect(findLeastResearchedClaim(claims, evidence, diversityConfig, 3)?.id).toBe("AC_02");
+  });
+
+  it("backward compat: without diversityConfig, uses count only", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], sourceType: "news_primary", sourceUrl: "https://a.com/2" },
+      { relevantClaimIds: ["AC_02"], sourceType: "news_primary", sourceUrl: "https://a.com/3" },
+    ] as any[];
+
+    // AC_02 has 1 item vs AC_01's 2 → AC_02 targeted
+    expect(findLeastResearchedClaim(claims, evidence)?.id).toBe("AC_02");
   });
 });
 
