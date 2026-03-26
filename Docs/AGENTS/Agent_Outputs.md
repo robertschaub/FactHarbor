@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Next Workstream Decision — Four-Reviewer Panel
+**Task:** Determine whether the next active workstream should target quality, optimization, or neither.
+**Files touched:** `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Method:** Four-reviewer panel (Quality, Optimization, Code Reality, Challenger) with deep code verification, reconciled by Lead Architect.
+**Key findings:** (1) No quality track justified — QLT-4 showed hypothesis-before-measurement fails, amber is acceptable, remaining variance is content-driven. (2) No optimization track justified — stale baselines, negligible dollar impact at Alpha. (3) Code reality audit found `maxResearchIterations` docs claim "4/5" is wrong (actual: 10), UCM-1/UCM-2 backlog items partially stale, SR evaluation vs calibration distinction not clear in docs. (4) Challenger identified cheap high-learning backlog items being ignored: W15 fetch batching, P1-B parallelism, B-sequence validation.
+**Decision:** Do neither yet. But execute W15 domain-aware fetch batching (reliability fix, ~50-100 lines) as the single best next task within monitor mode. Then P1-B (latency), then B-sequence validation ($3-5).
+**Open items:** Stale doc corrections (maxResearchIterations, UCM-1/UCM-2, SR eval vs calibration distinction).
+**For next agent:** Full report in `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. W15 is the recommended first task — see Backlog for spec. No formal track opened. Monitor mode continues.
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Public Version Provenance Fix
 **Task:** Fix `/api/version` returning `git_sha: null` in production.
 **Root cause:** Env var name mismatch. `deploy.sh` writes `GIT_COMMIT`; the version endpoint checked `GIT_SHA` / `VERCEL_GIT_COMMIT_SHA` / `SOURCE_VERSION` but not `GIT_COMMIT`. One-line fix: add `GIT_COMMIT` as first in the fallback chain.
