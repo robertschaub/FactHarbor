@@ -382,12 +382,15 @@ export async function runVerdictStage(
   const cleanedVerdicts = stripPhantomEvidenceIds(enforcedVerdicts, evidence, warnings);
 
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
+  // Recompute verdict label after confidence change to prevent stale MIXED
+  // when confidence drops below the UNVERIFIED threshold (e.g. 52%/28%).
   const spreadAdjustedVerdicts = cleanedVerdicts.map((v) => {
     const adjustedConfidence = applySpreadAdjustment(v.confidence, v.consistencyResult, config);
     return {
       ...v,
       confidence: adjustedConfidence,
       confidenceTier: confidenceToTier(adjustedConfidence),
+      verdict: percentageToClaimVerdict(v.truthPercentage, adjustedConfidence, undefined, config.mixedConfidenceThreshold),
     };
   });
 

@@ -1299,6 +1299,85 @@ describe("applySpreadAdjustment", () => {
 });
 
 // ============================================================================
+// POST-SPREAD VERDICT LABEL RECOMPUTATION
+// ============================================================================
+
+describe("post-spread verdict label recomputation", () => {
+  it("should relabel verdict when confidence drops below UNVERIFIED threshold after spread", () => {
+    // Simulate the Step 4c scenario: truth 52%, confidence crushed from 70 to 28 by spread
+    // At 52% / 28%, the truth-scale mapping should produce UNVERIFIED, not MIXED
+    // Use the structural consistency check as the indirect validator:
+    // a verdict at 52/28 labeled UNVERIFIED should pass, labeled MIXED should fail
+    const goodVerdict: CBClaimVerdict = {
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 52, verdict: "UNVERIFIED",
+      confidence: 28, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 52, confidence: 28, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_01", percentages: [], average: 0, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix([createAtomicClaim()], boundaries, evidence);
+
+    // UNVERIFIED at 52/28 should pass (no label mismatch)
+    const warnings = runStructuralConsistencyCheck([goodVerdict], evidence, boundaries, matrix);
+    expect(warnings.filter(w => w.includes("doesn't match expected"))).toHaveLength(0);
+
+    // MIXED at 52/28 should fail (stale label)
+    const badVerdict = { ...goodVerdict, verdict: "MIXED" as const };
+    const badWarnings = runStructuralConsistencyCheck([badVerdict], evidence, boundaries, matrix);
+    expect(badWarnings.filter(w => w.includes("doesn't match expected"))).toHaveLength(1);
+  });
+
+  it("should produce consistent verdict after spread adjustment in runStructuralConsistencyCheck", () => {
+    // After the fix, Step 4c recomputes verdict — 52%/28% should be UNVERIFIED
+    const verdict: CBClaimVerdict = {
+      id: "CV_AC_03", claimId: "AC_03", truthPercentage: 52, verdict: "UNVERIFIED",
+      confidence: 28, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 52, confidence: 28, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_03", percentages: [40, 63], average: 52, spread: 23, stable: false, assessed: true },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(
+      [createAtomicClaim({ id: "AC_03" })], boundaries, evidence,
+    );
+
+    const warnings = runStructuralConsistencyCheck([verdict], evidence, boundaries, matrix);
+    const labelMismatches = warnings.filter(w => w.includes("doesn't match expected"));
+    expect(labelMismatches).toHaveLength(0);
+  });
+
+  it("should still flag MIXED at 52/28 as structural consistency mismatch", () => {
+    // Prove that the structural checker WOULD catch a stale label
+    const verdict: CBClaimVerdict = {
+      id: "CV_AC_03", claimId: "AC_03", truthPercentage: 52, verdict: "MIXED",
+      confidence: 28, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [{ boundaryId: "CB_01", boundaryName: "STD", truthPercentage: 52, confidence: 28, evidenceDirection: "supports", evidenceCount: 3 }],
+      consistencyResult: { claimId: "AC_03", percentages: [40, 63], average: 52, spread: 23, stable: false, assessed: true },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+    const evidence = [createEvidenceItem()];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(
+      [createAtomicClaim({ id: "AC_03" })], boundaries, evidence,
+    );
+
+    const warnings = runStructuralConsistencyCheck([verdict], evidence, boundaries, matrix);
+    const labelMismatches = warnings.filter(w => w.includes("doesn't match expected"));
+    expect(labelMismatches).toHaveLength(1);
+    expect(labelMismatches[0]).toContain("UNVERIFIED");
+  });
+});
+
+// ============================================================================
 // FULL ORCHESTRATION
 // ============================================================================
 

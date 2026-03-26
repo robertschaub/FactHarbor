@@ -1797,3 +1797,43 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The working tree already contained unrelated uncommitted changes before this note was added. This write-up is documentation only and should not be mistaken for approval to reopen a broad stabilization wave.
 **For next agent:** Start with `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, then inspect the two referenced jobs and the current Stage-1 / verdict code before proposing any change. The strongest current hypothesis is targeted Stage-1 dimension drift on broad evaluative German absolutist phrasing.
 **Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Code-Path Verification
+**Task:** Verify two code-path claims in the Plastik solution proposal: the structural_consistency mismatch bug and the applicability of existing QLT-3 facet-convergence rules to `Plastic recycling bringt nichts`.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the verdict-label mismatch bug is real but the proposal places the fix at the wrong point in the pipeline. Reconciliation already recalculates verdict labels; the mismatch is introduced later when spread adjustment lowers confidence without recomputing `verdict`. Confirmed from the current prompt rules that the relevant intended class for a single input like `Plastic recycling bringt nichts` is `ambiguous_single_claim`, so the existing facet-convergence, predicate-preservation, and claim-count-stability rules already apply by spec.
+**Open items:** If the team wants certainty about actual runtime classification for the cited Plastik job, inspect the stored Pass 2 output or job trace. That is separate from the current code-path verification.
+**Warnings:** A generic final-stage verdict normalization would be too broad because the later high-harm confidence floor intentionally forces `UNVERIFIED` independent of the truth-scale band.
+**For next agent:** If implementing the bug fix, patch the Step 4c spread-adjustment map in `apps/web/src/lib/analyzer/verdict-stage.ts` so any confidence change also recomputes `verdict` with `percentageToClaimVerdict(...)`. Do not broaden the fix into a blanket final overwrite without accounting for the high-harm floor.
+**Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Recommendation Review
+**Task:** Review `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md` against the cited code and decide whether `Option A + C, defer B` is the right next move.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Judged `Option A` correct in principle but underspecified in placement: the bug is created by Step 4c spread adjustment lowering confidence without recomputing `verdict`, not by reconciliation. Judged `Option C` premature as written because the current prompt already contains predicate-preservation, no-proxy-rephrasing, facet-convergence, and claim-count-stability rules for `ambiguous_single_claim`, and Stage 1 already runs contract validation plus retry. Judged `Option B` still defer-worthy because it is a global calibration change that would mask instability rather than prove the current Stage-1 safeguards are working. Judged `Option D` not appropriate as the immediate response while a real correctness bug and an unresolved Stage-1 escape path remain.
+**Open items:** The concrete follow-up is to inspect the offending job's stored Pass 2 output and contract-validation result to determine whether the bad run was misclassified, validator fail-open, or a genuine miss despite existing prompt rules.
+**Warnings:** Do not implement a blanket final `percentageToClaimVerdict()` rewrite after all stages; that would conflict with the intentional high-harm confidence-floor downgrade path.
+**For next agent:** Recommended sequence is: 1) fix the Step 4c relabel bug with tests, 2) inspect/log runtime `inputClassification` plus claim-contract validation behavior for the cited Plastik DE jobs, 3) only then decide whether any Stage-1 enforcement change is needed. Treat new prompt text as a follow-up only if the existing ambiguous-single-claim safeguards are shown not to cover the runtime path.
+**Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Counter-Review
+**Task:** Challenge the main recommendation in `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md` using the cited root-cause note and the current verdict/aggregation/truth-scale code.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Concluded the proposal overstates Stage-1 causality relative to what the inspected code actually proves. The repo-grounded cliff is downstream: self-consistency is sampled with only two extra advocate reruns at temperature 0.4, mapped through a hard `>20pp -> 0.4` multiplier, then fed into article aggregation where confidence is reused as both weight and verdict input before the 45% MIXED/UNVERIFIED threshold. Also concluded the proposed Option A fix is mislocated because reconciliation already recomputes verdict labels; the mismatch is introduced later when confidence changes without a relabel.
+**Open items:** If the team wants to act beyond the relabel bug, the next justified step is downstream confidence-path characterization for this job family, not a Stage-1 prompt edit. Stage-1 changes should wait until runtime traces show the existing claim-extraction safeguards are actually missing this input.
+**Warnings:** The proposal's validation target of "zero UNVERIFIED across 5 runs" optimizes for suppressing a label rather than proving calibration correctness. Treat that as a red flag, not a shipping criterion.
+**For next agent:** Base the next decision on these exact code paths: `verdict-stage.ts` Step 4c spread adjustment, `aggregation-stage.ts` confidence-weighted aggregation, and `truth-scale.ts` 45% mixed-confidence threshold. If you patch the bug, do it after the last confidence-changing step that should still follow truth-scale semantics.
+**Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Fix post-spread verdict label staleness
+**Task:** Fix the structural-consistency bug where Step 4c spread adjustment changes confidence but leaves verdict label stale (e.g. 52%/28% labeled MIXED instead of UNVERIFIED).
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
+**Key decisions:** Added `percentageToClaimVerdict()` call in the Step 4c spread-adjustment map, exactly where `adjustedConfidence` and `confidenceTier` are already written. This is the precise location identified by the prior code-path verification — not reconciliation (which already recomputes), not a blanket final pass (which would conflict with high-harm floor).
+**Open items:** None for this fix. The broader Plastik UNVERIFIED instability (Stage-1 facet drift, spread multiplier cliff) remains a separate investigation.
+**Warnings:** The fix only corrects label staleness. It does not change whether a claim becomes UNVERIFIED — that's still driven by the spread multiplier and confidence threshold.
+**For next agent:** The structural_consistency checker should now stop firing for post-spread label mismatches. If it still fires for other mismatch classes, those are separate bugs.
+**Learnings:** no
