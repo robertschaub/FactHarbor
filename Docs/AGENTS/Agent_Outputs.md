@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Experiment — Inconclusive (Feature Never Fired)
+**Task:** Implement and validate QLT-4 per-claim contrarian retrieval experiment.
+**Files touched:** 7 code files (commit `b3e85c54`), handoff, agent outputs.
+**Result:** Feature was enabled via UCM but **never triggered** across all 11 validation jobs. The trigger thresholds (perClaimBalanceSkewThreshold=0.85, perClaimBalanceMinDirectional=8) are too conservative for real per-claim evidence distributions. Per-claim evidence counts are insufficient to exceed the activation criteria.
+**Plastik EN spread:** 37pp (wider than prior 30pp baseline — reflects natural variance, not QLT-4 effect since feature never fired).
+**Controls:** Flat Earth 0pp (all FALSE), Bolsonaro 7pp (all LEANING-TRUE) — clean, no regression.
+**Recommendation:** Either recalibrate thresholds (Option A: lower minDirectional to 4-5 and skewThreshold to 0.75) or accept that per-claim triggering is too granular (Option B). Keep default-off.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT4_Per_Claim_Contrarian_Experiment.md`. Implementation is correct (5 tests pass), only thresholds need adjustment.
+
+---
 ### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Variance Debate and QLT-4 Proposal
 **Task:** Structured LLM debate on whether to stay in monitor mode or implement a targeted variance intervention.
 **Files touched:** `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1648,4 +1658,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** If a follow-on design doc is wanted, turn the ranking into a phased roadmap with explicit experiment gates for retrieval, arbitration, and specialist-validator tracks.
 **Warnings:** Per AGENTS.md, deterministic additions must stay structural only. Do not answer semantic questions with new regex/keyword heuristics; use model-based or specialist-model inference instead.
 **For next agent:** Use `Docs/Knowledge/MAD_Pattern_Research_2026-02-26.md`, `Docs/Knowledge/Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md`, `Docs/Knowledge/Schimanski_Faithful_LLM_Specialists_ACL2024.md`, `Docs/Knowledge/Schimanski_DIRAS_NAACL2025.md`, `Docs/Knowledge/Global_FactChecking_Landscape_2026.md`, and `Docs/STATUS/Current_Status.md` as the primary basis if this assessment needs to be converted into architecture or backlog work.
+**Learnings:** no
+
+---
+### 2026-03-25 | Lead Architect | Codex (GPT-5) | Long-Run Variance Reduction Roadmap
+**Task:** Turn the debated long-run variance assessment into a concrete `Docs/WIP` roadmap grounded in the repo's Knowledge docs and current monitor-mode posture.
+**Files touched:** `Docs/WIP/2026-03-25_Long_Run_Variance_Reduction_Roadmap.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Used two expert consultations plus challenger/reconciler debate to conclude that the best future quality lever is retrieval-first variance reduction, followed conditionally by verdict-stage arbitration, with hard grounding gates, broad abstention, specialist scorers, and GraphRAG deferred until better validator maturity and evaluation data exist.
+**Open items:** No canonical status/backlog change was made. If the Captain wants to reopen quality work, the next artifact should be a scoped retrieval-first validation workstream proposal rather than direct implementation.
+**Warnings:** This document is future-facing only. It does not override approved-policy monitor mode or authorize new analyzer work by itself.
+**For next agent:** Start with `Docs/WIP/2026-03-25_Long_Run_Variance_Reduction_Roadmap.md` plus `Docs/Specification/Multi_Source_Evidence_Retrieval.md` if the project later opens a new optional quality workstream.
 **Learnings:** no
