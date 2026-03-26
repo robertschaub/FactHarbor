@@ -419,7 +419,7 @@ export async function generateVerdictNarrative(
           content: `Generate a structured narrative for the overall assessment (truth: ${Math.round(truthPercentage)}%, verdict: ${verdict}, confidence: ${Math.round(confidence)}%).`,
         },
       ],
-      temperature: 0.2,
+      temperature: pipelineConfig?.narrativeGenerationTemperature ?? 0.2,
       output: Output.object({ schema: VerdictNarrativeOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",

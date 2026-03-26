@@ -765,7 +765,7 @@ export async function runPreliminarySearch(
           try {
             const content = await extractTextFromUrl(searchResult.url, {
               timeoutMs: fetchTimeoutMs,
-              maxLength: 15000,
+              maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
             });
             if (content.text.length > 100) {
               if (!state.sources.some((s) => s.url === searchResult.url)) {
@@ -996,7 +996,7 @@ async function extractPreliminaryEvidence(
         },
         { role: "user", content: `Extract evidence from these ${sources.length} sources relating to: "${claimStatement}"` },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.extractEvidenceTemperature ?? 0.1,
       output: Output.object({ schema: ExtractEvidenceOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         (pipelineConfig.llmProvider) ?? "anthropic",
@@ -1609,7 +1609,7 @@ async function validateClaimContract(
           content: `Validate claim contract fidelity for ${claims.length} extracted claim(s).`,
         },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.claimContractValidationTemperature ?? 0.1,
       output: Output.object({ schema: ClaimContractOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -1771,7 +1771,7 @@ export async function runGate1Validation(
           )}`,
         },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.gate1ValidationTemperature ?? 0.1,
       output: Output.object({ schema: Gate1OutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         (pipelineConfig.llmProvider) ?? "anthropic",

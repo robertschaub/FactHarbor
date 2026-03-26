@@ -14,6 +14,7 @@ import { generateText } from "ai";
 import type { ClaimVerdict, EvidenceItem } from "./types";
 import { getModelForTask } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
+import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
 
 // ============================================================================
 // TYPES
@@ -69,7 +70,7 @@ export const DEFAULT_GROUNDING_PENALTY_CONFIG: GroundingPenaltyConfig = {
  *
  * @returns Array of term arrays, one per reasoning text
  */
-async function extractKeyTermsBatch(reasonings: string[]): Promise<string[][]> {
+async function extractKeyTermsBatch(reasonings: string[], pipelineConfig?: PipelineConfig): Promise<string[][]> {
   if (reasonings.length === 0) return [];
 
   const modelInfo = getModelForTask("extract_evidence"); // Haiku tier — fast, cheap
@@ -90,7 +91,7 @@ async function extractKeyTermsBatch(reasonings: string[]): Promise<string[][]> {
     const result = await generateText({
       model: modelInfo.model,
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.1,
+      temperature: pipelineConfig?.groundingCheckTemperature ?? DEFAULT_PIPELINE_CONFIG.groundingCheckTemperature ?? 0.1,
     });
 
     // Parse JSON response
@@ -166,6 +167,7 @@ interface AdjudicationBatchResult {
 
 async function adjudicateGroundingBatch(
   inputs: Array<{ reasoning: string; evidenceText: string }>,
+  pipelineConfig?: PipelineConfig,
 ): Promise<AdjudicationBatchResult> {
   if (inputs.length === 0) return { ratios: [], degraded: false };
 
@@ -186,7 +188,7 @@ async function adjudicateGroundingBatch(
     const result = await generateText({
       model: modelInfo.model,
       messages: [{ role: "user", content: rendered.content }],
-      temperature: 0.1,
+      temperature: pipelineConfig?.groundingCheckTemperature ?? DEFAULT_PIPELINE_CONFIG.groundingCheckTemperature ?? 0.1,
     });
 
     let text = result.text.trim();
@@ -267,6 +269,7 @@ function hydrateSupportingEvidenceIdsFromReasoning(
 export async function checkVerdictGrounding(
   claimVerdicts: ClaimVerdict[],
   allEvidence: EvidenceItem[],
+  pipelineConfig?: PipelineConfig,
 ): Promise<GroundingCheckResult> {
   if (!claimVerdicts || claimVerdicts.length === 0) {
     return { groundingRatio: 1, verdictDetails: [], warnings: [] };
@@ -327,6 +330,7 @@ export async function checkVerdictGrounding(
   const adjudicationResult = adjudicationInputs.length > 0
     ? await adjudicateGroundingBatch(
         adjudicationInputs.map(v => ({ reasoning: v.reasoning, evidenceText: v.evidenceText })),
+        pipelineConfig,
       )
     : { ratios: [], degraded: false };
 

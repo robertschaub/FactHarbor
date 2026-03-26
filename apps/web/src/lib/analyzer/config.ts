@@ -47,23 +47,24 @@ export const CONFIG = {
   // Example: FH_KEYFACTOR_HINTS='[{"evaluationCriteria":"Was due process followed?","factor":"Due Process","category":"procedural"}]'
   keyFactorHints: DEFAULT_PIPELINE_CONFIG.keyFactorHints,
 
+  // Research depth params — resolved from UCM via getActiveConfig()
   quick: {
-    maxResearchIterations: 4, // v2.8.2: was 2 - increased for better quality
-    maxSourcesPerIteration: 8, // Phase 8a: was 4 - doubled to reduce evidence famine
-    maxTotalSources: 24, // Phase 8a: was 12 - scaled with maxSourcesPerIteration
-    articleMaxChars: 4000,
-    minEvidenceItemsRequired: 6,
+    maxResearchIterations: DEFAULT_PIPELINE_CONFIG.maxResearchIterations ?? 4,
+    maxSourcesPerIteration: DEFAULT_PIPELINE_CONFIG.maxSourcesPerIteration ?? 8,
+    maxTotalSources: DEFAULT_PIPELINE_CONFIG.maxTotalSources ?? 24,
+    articleMaxChars: DEFAULT_PIPELINE_CONFIG.articleMaxChars ?? 4000,
+    minEvidenceItemsRequired: DEFAULT_PIPELINE_CONFIG.minEvidenceItemsRequired ?? 6,
   },
   deep: {
     maxResearchIterations: 5,
-    maxSourcesPerIteration: 8, // Phase 8a: was 4 - doubled to reduce evidence famine
-    maxTotalSources: 30, // Phase 8a: was 20 - scaled with maxSourcesPerIteration
+    maxSourcesPerIteration: DEFAULT_PIPELINE_CONFIG.maxSourcesPerIteration ?? 8,
+    maxTotalSources: 30,
     articleMaxChars: 8000,
     minEvidenceItemsRequired: 12,
   },
 
-  minCategories: 2,
-  fetchTimeoutMs: 20000, // Aligned with UCM sourceFetchTimeoutMs
+  minCategories: DEFAULT_PIPELINE_CONFIG.minCategories ?? 2,
+  fetchTimeoutMs: DEFAULT_PIPELINE_CONFIG.sourceFetchTimeoutMs ?? 20000,
 };
 
 // ============================================================================
@@ -100,8 +101,8 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
     keyFactorHints: effectiveConfig.keyFactorHints ?? DEFAULT_PIPELINE_CONFIG.keyFactorHints,
     quick: CONFIG.quick,
     deep: CONFIG.deep,
-    minCategories: CONFIG.minCategories,
-    fetchTimeoutMs: CONFIG.fetchTimeoutMs,
+    minCategories: effectiveConfig.minCategories ?? CONFIG.minCategories,
+    fetchTimeoutMs: effectiveConfig.sourceFetchTimeoutMs ?? CONFIG.fetchTimeoutMs,
   };
 }
 
@@ -111,8 +112,21 @@ export function getAnalyzerConfigValues(config?: PipelineConfig) {
  * @param config - Optional pipeline config from unified config system
  */
 export function getActiveConfig(config?: PipelineConfig) {
-  const deepModeEnabled = (config ?? DEFAULT_PIPELINE_CONFIG).analysisMode === "deep";
-  return deepModeEnabled ? CONFIG.deep : CONFIG.quick;
+  const effectiveConfig = config ?? DEFAULT_PIPELINE_CONFIG;
+  const deepModeEnabled = effectiveConfig.analysisMode === "deep";
+  const base = deepModeEnabled ? CONFIG.deep : CONFIG.quick;
+  // Mode-specific base provides the defaults. UCM fields are optional overrides.
+  // Limitation: UCM has a single config surface — no per-mode overrides.
+  // When an admin sets e.g. maxResearchIterations=6, it applies to BOTH modes.
+  // When they don't set it (undefined), the mode-specific base takes effect
+  // (quick=4, deep=5). This is the correct trade-off for a single-config UCM.
+  return {
+    maxResearchIterations: effectiveConfig.maxResearchIterations ?? base.maxResearchIterations,
+    maxSourcesPerIteration: effectiveConfig.maxSourcesPerIteration ?? base.maxSourcesPerIteration,
+    maxTotalSources: effectiveConfig.maxTotalSources ?? base.maxTotalSources,
+    articleMaxChars: effectiveConfig.articleMaxChars ?? base.articleMaxChars,
+    minEvidenceItemsRequired: effectiveConfig.minEvidenceItemsRequired ?? base.minEvidenceItemsRequired,
+  };
 }
 
 /**

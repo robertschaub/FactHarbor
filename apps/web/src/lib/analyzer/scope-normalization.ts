@@ -171,7 +171,7 @@ export async function normalizeScopeEquivalence(
           content: `Analyze these ${scopeCount} EvidenceScopes for semantic equivalence.`,
         },
       ],
-      temperature: 0,
+      temperature: pipelineConfig?.scopeNormalizationTemperature ?? 0,
       output: Output.object({ schema: ScopeNormalizationOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",

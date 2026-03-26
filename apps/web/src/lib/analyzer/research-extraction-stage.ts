@@ -133,7 +133,7 @@ export async function classifyRelevance(
           content: `Classify the relevance of ${searchResults.length} search results to this claim: "${claim.statement}"`,
         },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
       output: Output.object({ schema: RelevanceClassificationOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -275,7 +275,7 @@ export async function extractResearchEvidence(
           content: `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`,
         },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.extractEvidenceTemperature ?? 0.1,
       output: Output.object({ schema: Stage2ExtractEvidenceOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
@@ -448,7 +448,7 @@ export async function assessEvidenceApplicability(
         },
         { role: "user", content: "Classify each evidence item by applicability." },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
       output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         model.provider,

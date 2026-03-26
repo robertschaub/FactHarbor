@@ -85,7 +85,7 @@ export async function generateResearchQueries(
           content: `Generate search queries for this claim: "${claim.statement}"`,
         },
       ],
-      temperature: 0.2,
+      temperature: pipelineConfig?.queryGenerationTemperature ?? 0.2,
       output: Output.object({ schema: GenerateQueriesOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",

@@ -169,6 +169,19 @@
     "floorRatio": 0.1
   },
   "highHarmMinConfidence": 50,
+  "recencyVolatilityMultipliers": {
+    "week": 1.0,
+    "month": 0.8,
+    "year": 0.4,
+    "none": 0.2
+  },
+  "recencyVolumeAttenuationBrackets": [
+    { "maxCount": 0, "multiplier": 1.0 },
+    { "maxCount": 10, "multiplier": 0.9 },
+    { "maxCount": 25, "multiplier": 0.7 }
+  ],
+  "recencyVolumeAttenuationFallback": 0.5,
+  "temporalGuardConfidenceCeiling": 45,
   "evidenceBalanceSkewThreshold": 0.8,
   "evidenceBalanceMinDirectional": 3,
   "evidenceSufficiencyMinItems": 3,

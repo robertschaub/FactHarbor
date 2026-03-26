@@ -378,7 +378,7 @@ export async function callSRCalibrationLLM(
           content: `Calibrate verdict confidence for ${request.claims.length} claim(s) based on source reliability portfolios.`,
         },
       ],
-      temperature: 0.1,
+      temperature: pipelineConfig?.srCalibrationTemperature ?? 0.1,
       output: Output.object({ schema: SRCalibrationOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
