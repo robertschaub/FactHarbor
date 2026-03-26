@@ -1887,3 +1887,23 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** When enabled, sufficiency semantics change: seeded evidence counts, item threshold comes from CalcConfig, diversity is required. This is intentional D5 alignment.
 **For next agent:** Enable `diversityAwareSufficiency=true` via Admin → Config for targeted testing. Compare D5 gate results (UNVERIFIED claims) between runs with and without the flag.
 **Learnings:** no
+
+---
+### 2026-03-26 | Lead Architect | Codex (GPT-5) | Bolsonaro Seeded Evidence Mapping Review
+**Task:** Sharpen the analysis of weak Bolsonaro run `1abb0ea52a6c404baadaba360b0370de`, specifically whether empty coverage-matrix rows indicate a real analytical problem, using debate-style reviewer/challenger passes.
+**Files touched:** `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed that the empty matrix rows are not UI noise: they come from seeded preliminary evidence entering Stage 2 with `relevantClaimIds: []` after narrow remapping. For `1abb0ea5`, `23/77` evidence items are seeded and unmapped, exactly matching the matrix undercount. However, the same seeded-unmapped pattern also appears in stronger Bolsonaro runs, so it is a systemic contributing defect rather than the primary cause of weakness. Reconciled conclusion: Stage-2/D5 mapped-evidence starvation on `AC_01` remains the main weak-path mechanism, while the seeded-evidence mapping defect is a real interface bug worth a targeted follow-up.
+**Open items:** If Captain wants to act, the next justified work item is a narrow Stage-1/Stage-2 claim-handle alignment investigation or fix. This should be kept separate from Gate 1, D5 thresholding, and verdict-calibration work.
+**Warnings:** Do not misframe this as a UI issue or as sole root cause. Empty rows are a symptom of unmapped evidence, but fixing that alone may not solve claim-local diversity starvation.
+**For next agent:** Start from `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`. Treat the current state as: real seeded-evidence attribution defect, but primary weakness still sits in mapped evidence diversity for `AC_01`.
+**Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Diversity-Aware Sufficiency Validation
+**Task:** Validate `diversityAwareSufficiency=true` (commit `83a47aad`) on 8 runs (4 Bolsonaro, 2 Plastik DE, 2 Flat Earth).
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** **Validated.** 0/8 UNVERIFIED (vs 1/5 baseline). Bolsonaro confidence spread improved from 23pp (amber) to 5pp (green). No control regressions. No runtime cost increase visible. Feature eliminates the D5 starvation weak path that produced the earlier UNVERIFIED outlier.
+**Open items:** Recommend promoting `diversityAwareSufficiency=true` as new default. Captain approval needed.
+**Warnings:** N=4 Bolsonaro is sufficient for validation but not exhaustive. The truth spread remains amber (25pp) — that is evidence-driven, not feature-related.
+**For next agent:** If Captain approves, set `diversityAwareSufficiency: true` in `pipeline.default.json` + `DEFAULT_PIPELINE_CONFIG`, reseed. See full handoff at `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md`.
+**Learnings:** no
