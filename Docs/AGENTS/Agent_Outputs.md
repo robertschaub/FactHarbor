@@ -1,12 +1,20 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Post-Revert Doc Sync
+**Task:** Sync canonical docs after QLT-4 code revert so no wording implies the experiment still exists as a dormant runtime feature.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** All "code remains default-off" language replaced with "experimental code removed from codebase." Historical design context and handoff docs preserved. No new analyzer workstream opened. Backlog references updated to point to the revert handoff.
+**Open items:** None.
+**For next agent:** QLT-4 lifecycle is fully closed: proposed → implemented → tested → closed → removed. All canonical docs reflect this. Historical reasoning preserved in `Docs/AGENTS/Handoffs/2026-03-2{5,6}_*QLT4*.md`. Article-level contrarian retrieval (D5 C13) is unrelated and remains active.
+
+---
 ### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Closure Canonization
 **Task:** Canonize QLT-4 closure across status, backlog, and WIP docs after preflight verification confirmed the experiment targets a non-existent root cause.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
 **Key decisions:** QLT-4 is recorded as a CLOSED experimental branch. The mechanism finding is preserved: Plastik EN per-claim evidence is already directionally balanced (ratio 0.62, 21 minority items); remaining variance is content/quality-driven, not direction-scarcity-driven. Feature code stays default-off in codebase. The original proposal doc is preserved as historical design context with a closure status line. Approved-policy monitor mode continues unchanged.
 **Open items:** None. QLT-4 is fully closed.
-**For next agent:** QLT-4 is closed in all canonical docs. The per-claim contrarian retrieval code remains in the codebase (default-off) but has no active or pending quality track. Residual Plastik EN variance remains an open research question (evidence content/quality variation) — addressed by the Long Run Variance Reduction Roadmap if a future quality workstream is opened.
+**For next agent:** QLT-4 is closed in all canonical docs. The per-claim contrarian retrieval code was subsequently removed from the codebase (see next entry). Residual Plastik EN variance remains an open research question (evidence content/quality variation) — addressed by the Long Run Variance Reduction Roadmap if a future quality workstream is opened.
 
 ---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Code Revert
