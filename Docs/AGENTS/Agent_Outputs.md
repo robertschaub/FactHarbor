@@ -11,6 +11,15 @@
 **For next agent:** Full report in `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. W15 is the recommended first task — see Backlog for spec. No formal track opened. Monitor mode continues.
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | P1-B: Preliminary Search Parallelism
+**Task:** Reduce Stage 1 latency by parallelizing preliminary search work.
+**Files touched:** `claim-extraction-stage.ts` (parallel claims + queries + source fetches), `claimboundary-pipeline.test.ts` (fixed mock state for warnings).
+**What was parallelized:** (1) Claims processed in parallel via `Promise.all` (was serial `for` loop). (2) Queries within each claim processed in parallel. (3) Source fetches within each query processed in parallel (was serial). All three levels were previously fully sequential.
+**What was kept safe:** Results collected locally per claim task, then merged deterministically into shared state in a single synchronous pass. Source IDs assigned during merge to avoid ID races. URL dedup via `seenUrls` Set.
+**No new UCM parameter** — the existing `parallelExtractionLimit` and `fetchSameDomainDelayMs` already control fetch concurrency. Preliminary search parallelism is structural, not configurable.
+**For next agent:** 1356 tests pass, build clean. No analyzer semantic changes. Stage 1 latency should improve proportional to the number of independent claim×query×fetch tasks.
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | W15: Domain-Aware Fetch Batching
 **Task:** Implement same-domain fetch staggering to reduce fetch-collapse risk in Stage 2 source acquisition.
 **Files touched:** `research-acquisition-stage.ts` (new `extractDomain`, `computeBatchDelays` + stagger in `fetchSources`), `config-schemas.ts` + `pipeline.default.json` (`fetchSameDomainDelayMs`, default 500ms), `evidence-recency.ts` (fixed stale `CalculationConfig` alias), new `research-acquisition-stage.test.ts` (11 tests).

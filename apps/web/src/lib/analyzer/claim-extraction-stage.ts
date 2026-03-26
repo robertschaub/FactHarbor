@@ -715,143 +715,188 @@ export async function runPreliminarySearch(
   // Limit to top 3 rough claims to control cost (§8.1: "impliedClaim and top 2-3 rough claims")
   const claimsToSearch = roughClaims.slice(0, 3);
 
-  for (const claim of claimsToSearch) {
-    // Generate search queries from claim + searchHint
-    const queries = generateSearchQueries(claim, queriesPerClaim);
+  // P1-B: Parallelize across claims. Each claim's queries are independent.
+  // Collect results locally per claim to avoid shared-state races on state.sources,
+  // then merge deterministically afterward.
+  type LocalResult = {
+    evidence: PreliminaryEvidenceItem[];
+    searchQueries: typeof state.searchQueries;
+    sources: typeof state.sources;
+    warnings: typeof state.warnings;
+    llmCalls: number;
+  };
 
-    for (const query of queries) {
-      try {
-        const response = await searchWebWithProvider({
-          query,
-          maxResults: maxSources,
-          config: searchConfig,
-        });
+  const claimResults = await Promise.all(
+    claimsToSearch.map(async (claim): Promise<LocalResult> => {
+      const local: LocalResult = {
+        evidence: [],
+        searchQueries: [],
+        sources: [],
+        warnings: [],
+        llmCalls: 0,
+      };
 
-        // Track the search query
-        state.searchQueries.push({
-          query,
-          iteration: 0,
-          focus: "preliminary",
-          resultsCount: response.results.length,
-          timestamp: new Date().toISOString(),
-          searchProvider: response.providersUsed.join(", "),
-        });
-        if (response.results.length > 0) {
-          state.onEvent?.(`Preliminary search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
-        }
+      const queries = generateSearchQueries(claim, queriesPerClaim);
 
-        // Report search provider errors to warnings
-        if (response.errors && response.errors.length > 0) {
-          for (const provErr of response.errors) {
-            upsertSearchProviderWarning(state, {
-              provider: provErr.provider,
-              status: provErr.status,
-              message: provErr.message,
-              query,
-              stage: "preliminary_search",
-            });
-            state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
-          }
-        }
-
-        // Fetch and extract text from top results (limit to 3 per query)
-        const sourcesToFetch = response.results.slice(0, 3);
-        const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
-        const fetchErrorByType: Record<string, number> = {};
-        const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
-        let fetchFailed = 0;
-
-        for (const searchResult of sourcesToFetch) {
+      // Parallelize across queries within this claim
+      await Promise.all(
+        queries.map(async (query) => {
           try {
-            const content = await extractTextFromUrl(searchResult.url, {
-              timeoutMs: fetchTimeoutMs,
-              maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
+            const response = await searchWebWithProvider({
+              query,
+              maxResults: maxSources,
+              config: searchConfig,
             });
-            if (content.text.length > 100) {
-              if (!state.sources.some((s) => s.url === searchResult.url)) {
-                state.sources.push({
-                  id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
-                  url: searchResult.url,
-                  title: content.title || searchResult.title,
-                  trackRecordScore: null,
-                  fullText: content.text,
-                  fetchedAt: new Date().toISOString(),
-                  category: content.contentType || "text/html",
-                  fetchSuccess: true,
-                  searchQuery: query,
+
+            local.searchQueries.push({
+              query,
+              iteration: 0,
+              focus: "preliminary",
+              resultsCount: response.results.length,
+              timestamp: new Date().toISOString(),
+              searchProvider: response.providersUsed.join(", "),
+            });
+            if (response.results.length > 0) {
+              state.onEvent?.(`Preliminary search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+            }
+
+            if (response.errors && response.errors.length > 0) {
+              for (const provErr of response.errors) {
+                upsertSearchProviderWarning(state, {
+                  provider: provErr.provider,
+                  status: provErr.status,
+                  message: provErr.message,
+                  query,
+                  stage: "preliminary_search",
                 });
+                state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
               }
+            }
+
+            // Fetch sources in parallel (was serial per-source)
+            const sourcesToFetch = response.results.slice(0, 3);
+            const fetchErrorByType: Record<string, number> = {};
+            const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
+            let fetchFailed = 0;
+
+            const fetchResults = await Promise.all(
+              sourcesToFetch.map(async (searchResult) => {
+                try {
+                  const content = await extractTextFromUrl(searchResult.url, {
+                    timeoutMs: fetchTimeoutMs,
+                    maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
+                  });
+                  if (content.text.length > 100) {
+                    return {
+                      ok: true as const,
+                      url: searchResult.url,
+                      title: content.title || searchResult.title,
+                      text: content.text,
+                      contentType: content.contentType,
+                    };
+                  }
+                  return { ok: false as const, url: searchResult.url };
+                } catch (error: unknown) {
+                  const classified = classifySourceFetchFailure(error);
+                  fetchFailed++;
+                  fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
+                  if (fetchErrorSamples.length < 5) {
+                    fetchErrorSamples.push({
+                      url: searchResult.url,
+                      type: classified.type,
+                      status: classified.status,
+                      message: classified.message.slice(0, 240),
+                    });
+                  }
+                  return { ok: false as const, url: searchResult.url };
+                }
+              }),
+            );
+
+            const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
+            for (const result of fetchResults) {
+              if (!result.ok || !("text" in result)) continue;
+              local.sources.push({
+                id: "", // Placeholder — assigned during merge to avoid ID races
+                url: result.url,
+                title: result.title,
+                trackRecordScore: null,
+                fullText: result.text,
+                fetchedAt: new Date().toISOString(),
+                category: result.contentType || "text/html",
+                fetchSuccess: true,
+                searchQuery: query,
+              });
               fetchedSources.push({
-                url: searchResult.url,
-                title: content.title || searchResult.title,
-                text: content.text.slice(0, 8000), // Cap to control prompt size
+                url: result.url,
+                title: result.title,
+                text: result.text.slice(0, 8000),
               });
             }
-          } catch (error: unknown) {
-            const classified = classifySourceFetchFailure(error);
-            fetchFailed++;
-            fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
-            if (fetchErrorSamples.length < 5) {
-              fetchErrorSamples.push({
-                url: searchResult.url,
-                type: classified.type,
-                status: classified.status,
-                message: classified.message.slice(0, 240),
+
+            if (fetchFailed > 0 && sourcesToFetch.length > 0) {
+              const failureRatio = fetchFailed / sourcesToFetch.length;
+              local.warnings.push({
+                type: "source_fetch_failure",
+                severity: "info",
+                message:
+                  `Preliminary source fetch failed for ${fetchFailed}/${sourcesToFetch.length} source(s) on query "${query.slice(0, 120)}"`,
+                details: {
+                  stage: "preliminary_fetch",
+                  query,
+                  attempted: sourcesToFetch.length,
+                  failed: fetchFailed,
+                  failureRatio,
+                  errorByType: fetchErrorByType,
+                  errorSamples: fetchErrorSamples,
+                  occurrences: fetchFailed,
+                },
               });
+            }
+
+            if (fetchedSources.length === 0) return;
+
+            state.onEvent?.(`LLM call: preliminary evidence — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
+            const evidence = await extractPreliminaryEvidence(
+              claim.statement,
+              fetchedSources,
+              pipelineConfig,
+              currentDate,
+            );
+            local.llmCalls++;
+            local.evidence.push(...evidence);
+          } catch (err: any) {
+            console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
+            if (err?.name === "SearchProviderError" && err?.provider) {
+              upsertSearchProviderWarning(state, {
+                provider: err.provider,
+                message: String(err.message ?? "search provider error"),
+                query,
+                stage: "preliminary_search",
+              });
+              state.onEvent?.(`Preliminary search error: ${err.provider} - ${err.message}`, 0);
             }
           }
-        }
+        }),
+      );
 
-        if (fetchFailed > 0 && sourcesToFetch.length > 0) {
-          const failureRatio = fetchFailed / sourcesToFetch.length;
-          // Per-query fetch failures are routine (paywalls, 403s). Only info-level.
-          // Aggregate degradation is assessed separately at the research stage level.
-          state.warnings.push({
-            type: "source_fetch_failure",
-            severity: "info",
-            message:
-              `Preliminary source fetch failed for ${fetchFailed}/${sourcesToFetch.length} source(s) on query "${query.slice(0, 120)}"`,
-            details: {
-              stage: "preliminary_fetch",
-              query,
-              attempted: sourcesToFetch.length,
-              failed: fetchFailed,
-              failureRatio,
-              errorByType: fetchErrorByType,
-              errorSamples: fetchErrorSamples,
-              occurrences: fetchFailed,
-            },
-          });
-        }
+      return local;
+    }),
+  );
 
-        if (fetchedSources.length === 0) continue;
+  // Merge local results into shared state deterministically (single-threaded, no races).
+  const seenUrls = new Set(state.sources.map((s) => s.url));
+  for (const local of claimResults) {
+    state.searchQueries.push(...local.searchQueries);
+    state.warnings.push(...local.warnings);
+    state.llmCalls += local.llmCalls;
+    allEvidence.push(...local.evidence);
 
-        // Extract evidence from fetched sources using batched LLM call (Haiku)
-        state.onEvent?.(`LLM call: preliminary evidence — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
-        const evidence = await extractPreliminaryEvidence(
-          claim.statement,
-          fetchedSources,
-          pipelineConfig,
-          currentDate,
-        );
-        state.llmCalls++;
-
-        allEvidence.push(...evidence);
-      } catch (err: any) {
-        // Search failures are non-fatal for Stage 1 preliminary search, but should be reported
-        console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
-
-        // If this was a search provider error (not a general exception), report it
-        // The SearchProviderError has provider name, but generic exceptions don't
-        if (err?.name === "SearchProviderError" && err?.provider) {
-          upsertSearchProviderWarning(state, {
-            provider: err.provider,
-            message: String(err.message ?? "search provider error"),
-            query,
-            stage: "preliminary_search",
-          });
-          state.onEvent?.(`Preliminary search error: ${err.provider} - ${err.message}`, 0);
-        }
+    for (const src of local.sources) {
+      if (!seenUrls.has(src.url)) {
+        seenUrls.add(src.url);
+        src.id = `S_${String(state.sources.length + 1).padStart(3, "0")}`;
+        state.sources.push(src);
       }
     }
   }

@@ -1377,7 +1377,7 @@ describe("Stage 1: runPreliminarySearch", () => {
 
   it("should return evidence from search + fetch + extraction pipeline", async () => {
     const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
-    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
 
     mockSearch.mockResolvedValue({
       results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
@@ -1430,7 +1430,7 @@ describe("Stage 1: runPreliminarySearch", () => {
       { statement: "Claim 4", searchHint: "hint4" },
       { statement: "Claim 5", searchHint: "hint5" },
     ];
-    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
 
     // Make search return empty results so we don't need further mocks
     mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
@@ -1443,7 +1443,7 @@ describe("Stage 1: runPreliminarySearch", () => {
 
   it("should skip sources with too-short content", async () => {
     const roughClaims = [{ statement: "Test", searchHint: "test" }];
-    const state = { searchQueries: [], llmCalls: 0, sources: [] } as any;
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
 
     mockSearch.mockResolvedValue({
       results: [{ url: "https://example.com/short", title: "Short", snippet: "x" }],
