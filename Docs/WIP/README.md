@@ -49,6 +49,7 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md](Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md)
 - [2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md](2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md) — differential diagnosis for the `UNVERIFIED` Plastik DE run
 - [2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md](2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md) — reviewed final proposal: bug fix now, runtime-path characterization next
+- [2026-03-26_Plastik_DE_Runtime_Path_Investigation.md](2026-03-26_Plastik_DE_Runtime_Path_Investigation.md) — runtime-path investigation: existing Stage-1 safeguards appear active; remaining blind spot is missing persisted classification/contract-validation diagnostics
 
 ### Residual structural / optimization source plans
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md)
