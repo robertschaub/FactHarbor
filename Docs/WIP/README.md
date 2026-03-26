@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-25  
+**Last Updated**: 2026-03-26  
 **Status**: WIP Consolidation #8 complete. The active WIP set is reduced to a curated live set. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
 
 ---
@@ -47,6 +47,8 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md)
 - [LLM_Triangulation_Assessment_Plan_2026-03-17.md](LLM_Triangulation_Assessment_Plan_2026-03-17.md)
 - [Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md](Plastik_Recycling_Report_Regression_Investigation_2026-03-16.md)
+- [2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md](2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md) — differential diagnosis for the `UNVERIFIED` Plastik DE run
+- [2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md](2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md) — reviewed final proposal: bug fix now, runtime-path characterization next
 
 ### Residual structural / optimization source plans
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md)
