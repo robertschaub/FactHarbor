@@ -1597,44 +1597,6 @@ export const CalcConfigSchema = z.object({
    */
   contrarianRuntimeCeilingPct: z.number().min(5).max(50).optional(),
 
-  // === QLT-4: Per-Claim Contrarian Retrieval (experimental, default off) ===
-
-  /**
-   * Master switch for per-claim contrarian retrieval. When enabled, claims with
-   * extreme minority-source scarcity get a targeted contrarian pass after the
-   * article-level balance check. Default: false (safely inert).
-   */
-  perClaimContrarianRetrievalEnabled: z.boolean().optional(),
-
-  /**
-   * Per-claim skew threshold: the majority ratio above which a claim is considered
-   * directionally skewed. Uses the same semantics as evidenceBalanceSkewThreshold
-   * but applied per-claim. Default: 0.85 (stricter than article-level 0.8).
-   */
-  perClaimBalanceSkewThreshold: z.number().min(0.5).max(1).optional(),
-
-  /**
-   * Minimum directional evidence items per claim before the per-claim balance
-   * check activates. Claims with fewer items are too thin to judge skew.
-   * Default: 8.
-   */
-  perClaimBalanceMinDirectional: z.number().int().min(2).max(30).optional(),
-
-  /**
-   * Minimum distinct minority-direction source URLs required per claim.
-   * If a claim has fewer than this many distinct minority-side source URLs,
-   * contrarian retrieval triggers. Measured by unique normalized source URLs
-   * on the minority side. Default: 2.
-   */
-  perClaimMinMinoritySources: z.number().int().min(1).max(10).optional(),
-
-  /**
-   * Maximum number of claims that can trigger per-claim contrarian retrieval
-   * in a single pipeline run. Prevents budget exhaustion on inputs with many
-   * skewed claims. Default: 2.
-   */
-  perClaimContrarianMaxTriggeredClaims: z.number().int().min(1).max(6).optional(),
-
   /**
    * Harm levels that trigger the high-harm confidence floor.
    * Claims with harmPotential matching any of these levels AND confidence below
@@ -1852,12 +1814,6 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   contrarianRetrievalEnabled: true,
   contrarianMaxQueriesPerClaim: 2,
   contrarianRuntimeCeilingPct: 15,
-  // QLT-4: Per-claim contrarian retrieval (experimental, default off)
-  perClaimContrarianRetrievalEnabled: false,
-  perClaimBalanceSkewThreshold: 0.85,
-  perClaimBalanceMinDirectional: 8,
-  perClaimMinMinoritySources: 2,
-  perClaimContrarianMaxTriggeredClaims: 2,
   highHarmFloorLevels: ["critical", "high"],
 };
 

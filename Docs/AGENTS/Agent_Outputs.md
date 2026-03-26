@@ -9,6 +9,13 @@
 **For next agent:** QLT-4 is closed in all canonical docs. The per-claim contrarian retrieval code remains in the codebase (default-off) but has no active or pending quality track. Residual Plastik EN variance remains an open research question (evidence content/quality variation) — addressed by the Long Run Variance Reduction Roadmap if a future quality workstream is opened.
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Code Revert
+**Task:** Remove closed QLT-4 experiment from codebase.
+**Files touched:** 7 source/config/test files + handoff. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Code_Revert.md`.
+**Key decisions:** Clean revert of all QLT-4 surface. Article-level contrarian (D5) preserved. Historical docs kept.
+**For next agent:** No QLT-4 code/config remains. Feature was a dead end (per-claim evidence is already balanced).
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Preflight — Feature Never Triggered
 **Task:** Execution-integrity preflight before QLT-4 full rerun.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`, `Docs/AGENTS/Agent_Outputs.md`

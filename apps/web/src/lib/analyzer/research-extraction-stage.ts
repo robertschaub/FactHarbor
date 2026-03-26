@@ -85,20 +85,6 @@ export interface EvidenceBalanceMetrics {
   isSkewed: boolean;
 }
 
-/**
- * Per-claim evidence balance metrics including minority-source coverage.
- * Used by QLT-4 per-claim contrarian retrieval trigger.
- */
-export interface PerClaimBalanceMetrics extends EvidenceBalanceMetrics {
-  claimId: string;
-  /** Number of distinct source URLs on the minority direction side. */
-  minoritySources: number;
-  /** Number of distinct source URLs on the majority direction side. */
-  majoritySources: number;
-  /** Whether this claim needs contrarian retrieval based on source coverage. */
-  needsContrarian: boolean;
-}
-
 // ============================================================================
 // STAGE 2: CLASSIFICATION & EXTRACTION
 // ============================================================================
@@ -614,57 +600,3 @@ export function assessEvidenceBalance(
   };
 }
 
-/**
- * QLT-4: Assess evidence balance per claim, measuring minority-side source coverage.
- *
- * For each claim, filters evidence items by `relevantClaimIds`, computes
- * directional balance, and counts distinct source URLs on the minority side.
- * A claim "needs contrarian" if it is directionally skewed AND the minority
- * side has fewer than `minMinoritySources` distinct source URLs.
- *
- * "Minority direction" = the direction with fewer supporting/contradicting items.
- * Source URLs are normalized to lowercase for deduplication.
- */
-export function assessPerClaimEvidenceBalance(
-  evidenceItems: EvidenceItem[],
-  claimIds: string[],
-  skewThreshold: number,
-  minDirectional: number,
-  minMinoritySources: number,
-): PerClaimBalanceMetrics[] {
-  return claimIds.map((claimId) => {
-    // Filter evidence items relevant to this specific claim
-    const claimEvidence = evidenceItems.filter(
-      (e) => e.relevantClaimIds?.includes(claimId),
-    );
-
-    // Compute basic balance metrics
-    const balance = assessEvidenceBalance(claimEvidence, skewThreshold, minDirectional);
-
-    // Determine minority direction and count distinct source URLs per side
-    const isSupportsMinority = balance.supporting <= balance.contradicting;
-    const supportUrls = new Set<string>();
-    const contradictUrls = new Set<string>();
-
-    for (const e of claimEvidence) {
-      const url = e.sourceUrl?.toLowerCase().trim();
-      if (!url) continue;
-      if (e.claimDirection === "supports") supportUrls.add(url);
-      else if (e.claimDirection === "contradicts") contradictUrls.add(url);
-    }
-
-    const minoritySources = isSupportsMinority ? supportUrls.size : contradictUrls.size;
-    const majoritySources = isSupportsMinority ? contradictUrls.size : supportUrls.size;
-
-    // A claim needs contrarian if it is skewed AND minority source coverage is below floor
-    const needsContrarian = balance.isSkewed && minoritySources < minMinoritySources;
-
-    return {
-      ...balance,
-      claimId,
-      minoritySources,
-      majoritySources,
-      needsContrarian,
-    };
-  });
-}
