@@ -66,6 +66,7 @@ Anything that was purely historical, implemented, or superseded has been archive
 
 ### Search / provider integration
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md)
+- [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — debated long-run roadmap; retrieval-first if a future quality workstream is reopened
 
 ### Debate / model / cost proposals
 - [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md)

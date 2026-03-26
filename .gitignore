@@ -148,3 +148,4 @@ scripts/.deploy.env
 run_*.json
 
 /.vscode/settings.json
+/apps/web/config.db.backup-20260326-092015
