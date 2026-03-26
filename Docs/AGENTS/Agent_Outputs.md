@@ -1857,3 +1857,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This docs sync should be committed without unrelated code. The reviewed proposal no longer supports “implement Option C now”; future prompt edits should wait for runtime-path evidence.
 **For next agent:** Start from the consolidated proposal in `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`. Treat the current recommendation as: bug fix now, diagnostic investigation next, no multiplier tuning yet.
 **Learnings:** no
+
+---
+### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Gate 1 Debate Closure + EVD-1 Measurement + Docs Sync
+**Task:** Run Gate 1 rescue refinement debate, execute Bolsonaro x5 + Plastik DE x3 EVD-1 measurement, sync canonical docs.
+**Files touched:** `Docs/WIP/2026-03-26_Gate1_Rescue_Refinement_Debate.md` (new), `Docs/WIP/2026-03-26_EVD1_Bolsonaro_Plastik_Measurement.md` (new), `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** (1) Gate 1 thesis-direct rescue refinement DECLINED after two-agent debate — the UNVERIFIED was evidence-driven (balance 0.38 vs 0.76), AC_03 was the most stable claim, and a 3-claim run produced LEANING-TRUE. Over-filtering risk for evaluative questions too high. (2) Bolsonaro 5-run measurement: amber (25pp, UNVERIFIED 1/5 single outlier). (3) Plastik DE 3-run: green (14pp, zero UNVERIFIED, confidence 72-77). (4) No analyzer behavior change approved. (5) Optional OBS-2 (persist inputClassification + contractValidation) recorded as low-priority diagnostics item, not a quality-track reopening.
+**Open items:** OBS-2 (optional diagnostics). No active analyzer engineering work.
+**Warnings:** The Bolsonaro amber status means re-measure in the next validation round. If UNVERIFIED recurs in 2+ of 5, investigate evidence-allocation (3 vs 2 claims), NOT Gate 1 filtering.
+**For next agent:** The system is in EVD-1 monitor mode. No analyzer changes are approved. Gate 1 refinement is closed. The next quality action is only triggered by a red EVD-1 result. Captain approval required for optimization tracks (P1-A/B).
+**Learnings:** When a two-job comparison shows a large confound (4.4x evidence balance difference), do not implement a fix based on the secondary signal (claim count). Generate more data first. The N=5 measurement disproved the causal hypothesis cleanly.
