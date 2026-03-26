@@ -547,12 +547,15 @@ export async function runClaimBoundaryAnalysis(
     const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
     const insufficientClaims = understanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
 
+    // Shared active-claims reference: sufficient claims if any exist, otherwise all claims (fallback).
+    // Used by both the coverage matrix and verdict stage to stay consistent.
+    const activeClaims = sufficientClaims.length > 0 ? sufficientClaims : understanding.atomicClaims;
+
     // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
-    // Uses only sufficient claims — insufficient claims are excluded from the matrix
+    // Uses only active claims — insufficient claims are excluded from the matrix
     // to avoid ghost columns with sparse evidence that distort the display.
-    const matrixClaims = sufficientClaims.length > 0 ? sufficientClaims : understanding.atomicClaims;
     const coverageMatrix = buildCoverageMatrix(
-      matrixClaims,
+      activeClaims,
       boundaries,
       state.evidenceItems
     );
@@ -581,7 +584,7 @@ export async function runClaimBoundaryAnalysis(
     };
 
     // D5 Control 1: Only send sufficient claims through verdict stage
-    const verdictInputClaims = insufficientClaimIds.size > 0 ? sufficientClaims : understanding.atomicClaims;
+    const verdictInputClaims = activeClaims;
     let sufficientVerdicts: CBClaimVerdict[] = [];
     if (verdictInputClaims.length > 0) {
       try {
