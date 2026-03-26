@@ -718,11 +718,18 @@ export async function runPreliminarySearch(
   // P1-B: Parallelize across claims. Each claim's queries are independent.
   // Collect results locally per claim to avoid shared-state races on state.sources,
   // then merge deterministically afterward.
+  type ProviderErrorInfo = {
+    provider?: string;
+    status?: number;
+    message: string;
+    query: string;
+  };
   type LocalResult = {
     evidence: PreliminaryEvidenceItem[];
     searchQueries: typeof state.searchQueries;
     sources: typeof state.sources;
     warnings: typeof state.warnings;
+    providerErrors: ProviderErrorInfo[];
     llmCalls: number;
   };
 
@@ -733,8 +740,14 @@ export async function runPreliminarySearch(
         searchQueries: [],
         sources: [],
         warnings: [],
+        providerErrors: [],
         llmCalls: 0,
       };
+
+      // Track URLs fetched within this claim to avoid duplicate LLM extraction
+      // when two queries return the same source. (Merge-phase dedup handles
+      // cross-claim duplicates in state.sources.)
+      const claimFetchedUrls = new Set<string>();
 
       const queries = generateSearchQueries(claim, queriesPerClaim);
 
@@ -762,13 +775,13 @@ export async function runPreliminarySearch(
 
             if (response.errors && response.errors.length > 0) {
               for (const provErr of response.errors) {
-                upsertSearchProviderWarning(state, {
+                local.providerErrors.push({
                   provider: provErr.provider,
                   status: provErr.status,
                   message: provErr.message,
                   query,
-                  stage: "preliminary_search",
                 });
+                // onEvent is fire-and-forget notification — safe to call from parallel workers
                 state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
               }
             }
@@ -816,6 +829,9 @@ export async function runPreliminarySearch(
             const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
             for (const result of fetchResults) {
               if (!result.ok || !("text" in result)) continue;
+              // Skip if already fetched by another query for this claim
+              if (claimFetchedUrls.has(result.url)) continue;
+              claimFetchedUrls.add(result.url);
               local.sources.push({
                 id: "", // Placeholder — assigned during merge to avoid ID races
                 url: result.url,
@@ -868,11 +884,10 @@ export async function runPreliminarySearch(
           } catch (err: any) {
             console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
             if (err?.name === "SearchProviderError" && err?.provider) {
-              upsertSearchProviderWarning(state, {
+              local.providerErrors.push({
                 provider: err.provider,
                 message: String(err.message ?? "search provider error"),
                 query,
-                stage: "preliminary_search",
               });
               state.onEvent?.(`Preliminary search error: ${err.provider} - ${err.message}`, 0);
             }
@@ -891,6 +906,19 @@ export async function runPreliminarySearch(
     state.warnings.push(...local.warnings);
     state.llmCalls += local.llmCalls;
     allEvidence.push(...local.evidence);
+
+    // Reconcile provider errors collected during parallel execution.
+    // upsertSearchProviderWarning does find-or-update on state.warnings,
+    // so it must run single-threaded in the merge phase, not from parallel workers.
+    for (const pe of local.providerErrors) {
+      upsertSearchProviderWarning(state, {
+        provider: pe.provider,
+        status: pe.status,
+        message: pe.message,
+        query: pe.query,
+        stage: "preliminary_search",
+      });
+    }
 
     for (const src of local.sources) {
       if (!seenUrls.has(src.url)) {
