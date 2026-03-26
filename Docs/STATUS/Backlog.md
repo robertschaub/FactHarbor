@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-25
+**Last Updated**: 2026-03-26
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -25,6 +25,7 @@ Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done)
 | **QLT-1** | **Stage 1 predicate-strength stabilization**: materially successful. Plastik DE 47pp→22pp. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` |
 | **QLT-3** | **Muslims-family Stage-1 facet-consistency fix**: materially successful. Claim count stabilized (3/3/3/3/3), direction stabilized (all `supports_thesis`), counter-narrative claims eliminated. Spread 27pp→21pp. Remaining variance is evidence-driven. Monitor mode. | Analyzer / Quality | low | high | MONITOR | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |
 | **QLT-2** | **Residual broad-evaluative instability characterization**: COMPLETE. Split root cause identified and both branches addressed (QLT-1 for Plastik, QLT-3 for Muslims). | Analyzer / Quality | — | — | DONE | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
+| **QLT-4** | **Per-claim contrarian retrieval experiment**: CLOSED. Feature implemented (`b3e85c54`) but never triggered — Plastik EN per-claim evidence is already directionally balanced (ratio 0.62, 21 minority items). Remaining variance is content/quality-driven, not direction-scarcity-driven. Code remains default-off; no further validation justified. | Analyzer / Quality | — | — | CLOSED | `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md` |
 | **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
@@ -56,10 +57,11 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 ---
 
-## Recently Completed (March 22-25, 2026)
+## Recently Completed (March 22-26, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **QLT-4 per-claim contrarian retrieval experiment closed**: Feature implemented but never triggered on real data. Preflight (with enabled config + lowered thresholds) confirmed Plastik EN per-claim evidence is already directionally balanced. Remaining variance is content/quality-driven. Experimental branch closed; code remains default-off. | Analyzer / Quality | 2026-03-26 | `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md` |
 | ✅ **OBS-1 per-job metrics isolation**: replaced module-global collector with AsyncLocalStorage; concurrent jobs no longer share metrics. | Analyzer / Observability | 2026-03-25 | `6e402208` |
 | ✅ **VAL-2 jobs-list sync race fixed**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | 2026-03-25 | `f86811fe` |
 | ✅ **QLT-3 facet-consistency fix**: Muslims-family claim count stabilized (2-3→3-3), `claimDirection` all `supports_thesis`, counter-narrative/media claims eliminated. Truth spread 27pp→21pp. | Analyzer / Quality | 2026-03-25 | `317319fb`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md` |

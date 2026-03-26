@@ -3,7 +3,7 @@
 **Date:** 2026-03-25
 **Role:** Lead Architect
 **Method:** Structured LLM debate (Advocate vs Challenger), reconciled by architect
-**Status:** PROPOSAL — requires Captain approval before implementation
+**Status:** CLOSED (2026-03-26) — experimental branch QLT-4 was implemented and tested; preflight verification found the targeted root cause (per-claim direction scarcity) does not exist in practice. Plastik EN per-claim evidence is already directionally balanced (ratio 0.62, 21 minority items). Remaining variance is content/quality-driven. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`. The proposal below is preserved as historical design context.
 
 ---
 

@@ -1,13 +1,13 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-25
+**Last Updated**: 2026-03-26
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. The report-quality stabilization wave has **no remaining active engineering blockers**. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. No active analyzer implementation work — new work is policy-triggered only. Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. The report-quality stabilization wave has **no remaining active engineering blockers**. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. No active analyzer implementation work — new work is policy-triggered only. Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
-## Current Focus (2026-03-25)
+## Current Focus (2026-03-26)
 
 - **Stage-1 quality stabilization is materially complete**: QLT-1 (predicate strength), QLT-2 (characterization), and QLT-3 (facet consistency) are all done. Remaining variance for both Plastik and Muslims families is now primarily evidence/verdict-driven. No further Stage-1 prompt work is currently justified.
 - **No active engineering blocker remains** in the stabilization wave. All planned items (QLT-1/2/3, VAL-2, OBS-1) are complete.
@@ -15,6 +15,7 @@
 - **VAL-2 is complete** (`f86811fe`): verdict badge gated on terminal status; monotonic progress guard prevents backward progress.
 - **EVD-1 variance policy is APPROVED** and governs how residual variance is interpreted. Defines 5 input quality classes with green/amber/red bands grounded in stabilization-wave data. No family is currently red. Plastik EN and Muslims are amber (evidence-driven per-claim variance). See `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`.
 - **Current posture: approved-policy monitor mode.** No active analyzer implementation work. New work is only triggered if a validation round produces a red result under EVD-1.
+- **QLT-4 (per-claim contrarian retrieval) is CLOSED.** The experimental feature was implemented (`b3e85c54`) but never triggered on real data — even after enabling config and lowering thresholds. Preflight found that Plastik EN per-claim evidence already has substantial minority-direction coverage (ratio 0.62, 21 minority items per claim). Remaining variance is driven by evidence content/quality variation, not per-claim direction scarcity. The feature code remains in the codebase (default-off) but no further validation is justified. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`.
 - **Optimization tracks** (P1-A, P1-B) remain separate, Captain-gated decisions — not automatically triggered by EVD-1 monitor mode.
 - **Residual variance context**: Plastik EN (~30pp) and Muslims (~21pp) truth spreads are evidence/verdict-driven. Stage 1 is stable. No further prompt work is justified without new evidence.
 

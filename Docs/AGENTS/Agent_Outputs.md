@@ -1,6 +1,29 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Closure Canonization
+**Task:** Canonize QLT-4 closure across status, backlog, and WIP docs after preflight verification confirmed the experiment targets a non-existent root cause.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** QLT-4 is recorded as a CLOSED experimental branch. The mechanism finding is preserved: Plastik EN per-claim evidence is already directionally balanced (ratio 0.62, 21 minority items); remaining variance is content/quality-driven, not direction-scarcity-driven. Feature code stays default-off in codebase. The original proposal doc is preserved as historical design context with a closure status line. Approved-policy monitor mode continues unchanged.
+**Open items:** None. QLT-4 is fully closed.
+**For next agent:** QLT-4 is closed in all canonical docs. The per-claim contrarian retrieval code remains in the codebase (default-off) but has no active or pending quality track. Residual Plastik EN variance remains an open research question (evidence content/quality variation) — addressed by the Long Run Variance Reduction Roadmap if a future quality workstream is opened.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Preflight — Feature Never Triggered
+**Task:** Execution-integrity preflight before QLT-4 full rerun.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key finding:** QLT-4 config was OFF in UCM (the original execution-integrity bug). After enabling + lowering thresholds (skew 0.75, minDir 6, minMinority 3), the feature STILL did not trigger. Real per-claim evidence in Plastik EN is already balanced (ratio 0.62, 21 minority items) — the mechanism targets the wrong root cause. Actual variance is from evidence content/quality, not direction imbalance.
+**Decision:** Full rerun NOT justified. Feature cannot fire on real data. Recommend closing QLT-4 as inconclusive. Config reverted to default-off.
+**For next agent:** QLT-4 is a dead end. Plastik EN variance root cause (evidence content variation) is not addressable by contrarian retrieval. See preflight handoff for full evidence.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | EVD-1 Monitoring Batch — 12 Jobs
+**Task:** First monitoring batch under approved EVD-1 variance policy.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_Monitoring_Batch_12_Jobs.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Result:** No red or emergency. All families within EVD-1 green or amber. Controls correct. One Muslims `contradicts_thesis` recurrence (1/2 runs) — amber-level Stage 1 concern but green article outcome. Plastik EN improved (7pp vs prior 30pp) but only 2 runs. Hydrogen first repeated-run data (12pp green). No status/backlog update needed.
+**For next agent:** Read the full handoff for family-by-family analysis. Watch Muslims `contradicts_thesis` pattern — escalate to QLT-3 review if 2+ of next 5 runs reproduce it.
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Experiment — Inconclusive (Feature Never Fired)
 **Task:** Implement and validate QLT-4 per-claim contrarian retrieval experiment.
 **Files touched:** 7 code files (commit `b3e85c54`), handoff, agent outputs.
