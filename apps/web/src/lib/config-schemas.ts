@@ -487,6 +487,42 @@ export const PipelineConfigSchema = z.object({
   gate1GroundingRetryThreshold: z.number().min(0).max(1).optional()
     .describe("If >X% of claims fail Gate 1, trigger retry loop (default: 0.5)"),
 
+  // === Research Depth (UCM-1) ===
+  maxResearchIterations: z.number().int().min(1).max(10).optional()
+    .describe("Max research loop iterations. Quick default: 4, deep default: 5."),
+  maxSourcesPerIteration: z.number().int().min(1).max(20).optional()
+    .describe("Max sources fetched per research iteration (default: 8)."),
+  maxTotalSources: z.number().int().min(5).max(100).optional()
+    .describe("Max total sources across all iterations. Quick default: 24, deep default: 30."),
+  articleMaxChars: z.number().int().min(1000).max(50000).optional()
+    .describe("Max characters extracted from article-type inputs (default: 4000 quick, 8000 deep)."),
+  minEvidenceItemsRequired: z.number().int().min(1).max(50).optional()
+    .describe("Min evidence items required before analysis can proceed. Quick default: 6, deep default: 12."),
+  minCategories: z.number().int().min(1).max(10).optional()
+    .describe("Min distinct evidence categories required (default: 2)."),
+
+  // === Pipeline-Stage LLM Temperatures (UCM-3) ===
+  extractEvidenceTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for evidence extraction LLM calls (default: 0.1)."),
+  queryGenerationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for search query generation (default: 0.2)."),
+  relevanceClassificationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for relevance classification (default: 0.1)."),
+  narrativeGenerationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for narrative/aggregation generation (default: 0.2)."),
+  groundingCheckTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for grounding check LLM calls (default: 0.1)."),
+  claimContractValidationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for claim contract validation (default: 0.1)."),
+  gate1ValidationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for Gate 1 claim validation (default: 0.1)."),
+  scopeNormalizationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for scope normalization (default: 0.0)."),
+  srCalibrationTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for source reliability calibration (default: 0.1)."),
+  advocateTemperature: z.number().min(0).max(1).optional()
+    .describe("Temperature for advocate verdict generation (default: 0.0)."),
+
   // Stage 2: Research
   claimSufficiencyThreshold: z.number().int().min(1).max(10).optional()
     .describe("Min evidence items per claim before considering it sufficient (default: 3)"),
@@ -496,6 +532,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Timeout in milliseconds for fetching an individual source URL (default: 20000)"),
   minEvidenceContentLength: z.number().int().min(10).max(1000).optional()
     .describe("Minimum character length for fetched source text to be considered usable (default: 100)"),
+  fetchSameDomainDelayMs: z.number().int().min(0).max(5000).optional()
+    .describe("Stagger delay in milliseconds between same-domain requests within a fetch batch. Reduces fetch-collapse risk when multiple sources share a domain. 0 disables staggering. Default: 500."),
   researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
     .describe("Maximum number of search queries generated per research iteration (default: 3)"),
   sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
@@ -1052,11 +1090,32 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   preliminaryMaxSources: 5,
   gate1GroundingRetryThreshold: 0.5,
 
+  // Research Depth defaults (UCM-1) — "quick" mode values; deep mode uses analysisMode toggle
+  maxResearchIterations: 4,
+  maxSourcesPerIteration: 8,
+  maxTotalSources: 24,
+  articleMaxChars: 4000,
+  minEvidenceItemsRequired: 6,
+  minCategories: 2,
+
+  // Pipeline-Stage LLM Temperature defaults (UCM-3)
+  extractEvidenceTemperature: 0.1,
+  queryGenerationTemperature: 0.2,
+  relevanceClassificationTemperature: 0.1,
+  narrativeGenerationTemperature: 0.2,
+  groundingCheckTemperature: 0.1,
+  claimContractValidationTemperature: 0.1,
+  gate1ValidationTemperature: 0.1,
+  scopeNormalizationTemperature: 0.0,
+  srCalibrationTemperature: 0.1,
+  advocateTemperature: 0.0,
+
   // ClaimBoundary Stage 2 defaults
   claimSufficiencyThreshold: 3,
   relevanceFloor: 0.4,
   sourceFetchTimeoutMs: 20000,
   minEvidenceContentLength: 100,
+  fetchSameDomainDelayMs: 500,
   researchMaxQueriesPerIteration: 3,
   sourceExtractionMaxLength: 15000,
   iterationRetryDelayMs: 2000,
@@ -1519,6 +1578,24 @@ export const CalcConfigSchema = z.object({
    */
   highHarmMinConfidence: z.number().int().min(0).max(100).optional(),
 
+  // === Recency Penalty Internals (UCM-4) ===
+  recencyVolatilityMultipliers: z.object({
+    week: z.number().min(0).max(2),
+    month: z.number().min(0).max(2),
+    year: z.number().min(0).max(2),
+    none: z.number().min(0).max(2),
+  }).optional().describe("Topic volatility multipliers for recency penalty calculation. Higher = more penalty for stale evidence."),
+  recencyVolumeAttenuationBrackets: z.array(z.object({
+    maxCount: z.number().int().min(0).max(1000),
+    multiplier: z.number().min(0).max(2),
+  })).optional().describe("Evidence volume attenuation brackets: [{maxCount, multiplier}]. Applied in order by maxCount ascending."),
+  recencyVolumeAttenuationFallback: z.number().min(0).max(2).optional()
+    .describe("Fallback volume attenuation multiplier when evidence count exceeds all bracket maxCount values (default: 0.5)."),
+
+  // === Temporal Guard (UCM-5) ===
+  temporalGuardConfidenceCeiling: z.number().int().min(10).max(100).optional()
+    .describe("Confidence ceiling for recency-sensitive claims with ungrounded temporal status (default: 45)."),
+
   /**
    * Evidence pool balance skew threshold (0.0–1.0).
    * If the ratio of supporting/(supporting+contradicting) evidence exceeds this
@@ -1805,6 +1882,21 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     floorRatio: 0.1,
   },
   highHarmMinConfidence: 50,
+  // Recency Penalty Internals (UCM-4)
+  recencyVolatilityMultipliers: {
+    week: 1.0,
+    month: 0.8,
+    year: 0.4,
+    none: 0.2,
+  },
+  recencyVolumeAttenuationBrackets: [
+    { maxCount: 0, multiplier: 1.0 },
+    { maxCount: 10, multiplier: 0.9 },
+    { maxCount: 25, multiplier: 0.7 },
+  ],
+  recencyVolumeAttenuationFallback: 0.5,
+  // Temporal Guard (UCM-5)
+  temporalGuardConfidenceCeiling: 45,
   evidenceBalanceSkewThreshold: 0.8,
   evidenceBalanceMinDirectional: 3,
   evidenceSufficiencyMinItems: 3,

@@ -11,6 +11,7 @@
 
 // DELETED: AnalysisContext import (Phase 4 cleanup - orchestrated pipeline only)
 import type { EvidenceItem, ClaimUnderstanding } from "./types";
+import { DEFAULT_CALC_CONFIG, type CalcConfig } from "../config-schemas";
 
 /**
  * Helper to push unique date candidates
@@ -187,6 +188,7 @@ export class RecencyAssessor {
     maxPenalty: number,
     granularity: "week" | "month" | "year" | "none" | undefined,
     dateCandidates: number,
+    calcConfig?: CalcConfig,
   ): RecencyPenaltyResult {
     // --- Factor 1: Staleness Curve ---
     let monthsOld: number | null = null;
@@ -207,25 +209,19 @@ export class RecencyAssessor {
       }
     }
 
-    // --- Factor 2: Topic Volatility ---
-    const VOLATILITY_MAP: Record<string, number> = {
-      week: 1.0,
-      month: 0.8,
-      year: 0.4,
-      none: 0.2,
-    };
-    const volatilityMultiplier = granularity ? (VOLATILITY_MAP[granularity] ?? 0.7) : 0.7;
+    // --- Factor 2: Topic Volatility (UCM-4) ---
+    const volMap = calcConfig?.recencyVolatilityMultipliers ?? DEFAULT_CALC_CONFIG.recencyVolatilityMultipliers ?? { week: 1.0, month: 0.8, year: 0.4, none: 0.2 };
+    const volatilityMultiplier = granularity ? (volMap[granularity] ?? 0.7) : 0.7;
 
-    // --- Factor 3: Evidence Volume Attenuation ---
-    let volumeMultiplier: number;
-    if (dateCandidates === 0) {
-      volumeMultiplier = 1.0;
-    } else if (dateCandidates <= 10) {
-      volumeMultiplier = 0.9;
-    } else if (dateCandidates <= 25) {
-      volumeMultiplier = 0.7;
-    } else {
-      volumeMultiplier = 0.5;
+    // --- Factor 3: Evidence Volume Attenuation (UCM-4) ---
+    const brackets = calcConfig?.recencyVolumeAttenuationBrackets ?? DEFAULT_CALC_CONFIG.recencyVolumeAttenuationBrackets ?? [];
+    const fallback = calcConfig?.recencyVolumeAttenuationFallback ?? DEFAULT_CALC_CONFIG.recencyVolumeAttenuationFallback ?? 0.5;
+    let volumeMultiplier = fallback;
+    for (const bracket of brackets) {
+      if (dateCandidates <= bracket.maxCount) {
+        volumeMultiplier = bracket.multiplier;
+        break;
+      }
     }
 
     // --- Combined formula ---

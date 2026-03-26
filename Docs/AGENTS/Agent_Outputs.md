@@ -11,6 +11,13 @@
 **For next agent:** Full report in `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. W15 is the recommended first task — see Backlog for spec. No formal track opened. Monitor mode continues.
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | W15: Domain-Aware Fetch Batching
+**Task:** Implement same-domain fetch staggering to reduce fetch-collapse risk in Stage 2 source acquisition.
+**Files touched:** `research-acquisition-stage.ts` (new `extractDomain`, `computeBatchDelays` + stagger in `fetchSources`), `config-schemas.ts` + `pipeline.default.json` (`fetchSameDomainDelayMs`, default 500ms), `evidence-recency.ts` (fixed stale `CalculationConfig` alias), new `research-acquisition-stage.test.ts` (11 tests).
+**Mechanism:** Within each fetch batch, Nth same-domain request gets `(N-1) * delay` stagger. Cross-domain still parallel. `fetchSameDomainDelayMs: 0` disables.
+**For next agent:** 1356 tests pass, build clean. UCM-configurable. No semantic changes.
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Public Version Provenance Fix
 **Task:** Fix `/api/version` returning `git_sha: null` in production.
 **Root cause:** Env var name mismatch. `deploy.sh` writes `GIT_COMMIT`; the version endpoint checked `GIT_SHA` / `VERCEL_GIT_COMMIT_SHA` / `SOURCE_VERSION` but not `GIT_COMMIT`. One-line fix: add `GIT_COMMIT` as first in the fallback chain.
@@ -1744,4 +1751,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** No canonical status/backlog change was made. If the Captain wants to reopen quality work, the next artifact should be a scoped retrieval-first validation workstream proposal rather than direct implementation.
 **Warnings:** This document is future-facing only. It does not override approved-policy monitor mode or authorize new analyzer work by itself.
 **For next agent:** Start with `Docs/WIP/2026-03-25_Long_Run_Variance_Reduction_Roadmap.md` plus `Docs/Specification/Multi_Source_Evidence_Retrieval.md` if the project later opens a new optional quality workstream.
+**Learnings:** no
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | UCM Configuration Completeness (UCM-1 to UCM-5)
+**Task:** Move remaining hardcoded analysis-affecting parameters into UCM so they are admin-tunable without code changes.
+**Files touched:** `config-schemas.ts`, `pipeline.default.json`, `calculation.default.json`, `config.ts`, `evidence-recency.ts`, `claim-extraction-stage.ts`, `research-query-stage.ts`, `research-extraction-stage.ts`, `aggregation-stage.ts`, `grounding-check.ts`, `scope-normalization.ts`, `source-reliability-calibration.ts`
+**Key decisions:** UCM-1: Flat fields with `analysisMode`-based selection via `getActiveConfig()`. UCM-3: Per-task temperatures (not a single unified field) because query generation (0.2) is deliberately warmer than extraction (0.1). UCM-4: Brackets + fallback pattern to avoid Infinity in JSON. UCM-5: Schema-only placeholder (temporal-guard.ts does not exist yet). Grounding-check uses `DEFAULT_PIPELINE_CONFIG` constant since threading runtime config would change its public API.
+**Open items:** `grounding-check.ts` reads `DEFAULT_PIPELINE_CONFIG` directly instead of runtime config. `temporal-guard.ts` (UCM-5) does not exist yet; schema field is ready.
+**Warnings:** No default values were changed. All existing behavior is preserved.
+**For next agent:** All 5 UCM backlog items are structurally complete. To verify runtime config propagation, change a value in Admin and confirm it reaches the module.
 **Learnings:** no

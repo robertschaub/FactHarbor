@@ -12,6 +12,34 @@ import { PipelineConfig } from "@/lib/config-schemas";
 // STAGE 2: ACQUISITION (SEARCH & FETCH)
 // ============================================================================
 
+/** Extract normalized hostname from a URL for same-domain grouping. */
+export function extractDomain(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return url.toLowerCase();
+  }
+}
+
+/**
+ * Compute per-URL stagger delays within a batch to avoid firing all same-domain
+ * requests simultaneously. Different domains get zero delay; the Nth request to
+ * the same domain within a batch gets (N-1) * delayMs milliseconds of stagger.
+ */
+export function computeBatchDelays(
+  urls: string[],
+  sameDomainDelayMs: number,
+): number[] {
+  if (sameDomainDelayMs <= 0) return urls.map(() => 0);
+  const domainCount = new Map<string, number>();
+  return urls.map((url) => {
+    const domain = extractDomain(url);
+    const nth = domainCount.get(domain) ?? 0;
+    domainCount.set(domain, nth + 1);
+    return nth * sameDomainDelayMs;
+  });
+}
+
 /**
  * Fetch sources and add to state.sources[].
  * Returns successfully fetched sources with their extracted text.
@@ -20,7 +48,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength">,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -34,6 +62,7 @@ export async function fetchSources(
   const extractionMaxLength = pipelineConfig?.sourceExtractionMaxLength ?? 15000;
   const retryDelayMs = pipelineConfig?.iterationRetryDelayMs ?? 2000;
   const minContentLength = pipelineConfig?.minEvidenceContentLength ?? 100;
+  const sameDomainDelayMs = pipelineConfig?.fetchSameDomainDelayMs ?? 500;
 
   // Filter out already-fetched URLs
   const toFetch = relevantSources.filter(
@@ -45,8 +74,11 @@ export async function fetchSources(
   for (let i = 0; i < toFetch.length; i += fetchConcurrency) {
     const batch = toFetch.slice(i, i + fetchConcurrency);
     fetchAttempted += batch.length;
+    // Stagger same-domain requests to avoid burst-loading the same server.
+    const delays = computeBatchDelays(batch.map((s) => s.url), sameDomainDelayMs);
     const results = await Promise.all(
-      batch.map(async (source) => {
+      batch.map(async (source, idx) => {
+        if (delays[idx] > 0) await new Promise<void>((r) => setTimeout(r, delays[idx]));
         // First attempt
         try {
           const content = await extractTextFromUrl(source.url, {
