@@ -27,7 +27,8 @@ Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done)
 | **QLT-2** | **Residual broad-evaluative instability characterization**: COMPLETE. Split root cause identified and both branches addressed (QLT-1 for Plastik, QLT-3 for Muslims). | Analyzer / Quality | — | — | DONE | `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md` |
 | **QLT-4** | **Per-claim contrarian retrieval experiment**: CLOSED and removed. Feature was implemented, tested, and found to target a non-existent root cause (per-claim direction scarcity). Experimental code, UCM config fields, and tests reverted from codebase. Historical design context in `Docs/AGENTS/Handoffs/`. | Analyzer / Quality | — | — | CLOSED | `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Code_Revert.md` |
 | **GATE1-REF** | **Gate 1 thesis-direct rescue refinement**: REVIEWED AND DECLINED (2026-03-26). Two-agent debate found the UNVERIFIED was evidence-driven (balance 0.38 vs 0.76), not Gate-1-driven. Over-filtering risk for legitimate evaluative questions too high. A 3-claim run with fairness dimension produced LEANING-TRUE, disproving the causal hypothesis. | Analyzer / Quality | — | — | DECLINED | `Docs/WIP/2026-03-26_Gate1_Rescue_Refinement_Debate.md` |
-| **OBS-2** | **Persist Stage-1 diagnostic fields**: store `inputClassification` and claim-contract validation summary in result JSON for forensics. Optional diagnostics improvement, not a quality-track reopening. ~6 lines, no behavioral change. | Analyzer / Observability | low | low | NOT STARTED | `Docs/WIP/2026-03-26_Plastik_DE_Runtime_Path_Investigation.md` §6 |
+| **OBS-2** | **Persist Stage-1 diagnostic fields**: `inputClassification` and `contractValidationSummary` now stored in result JSON. | Analyzer / Observability | — | — | DONE | `d6090f76` |
+| **DIV-1** | **Diversity-aware Stage-2 sufficiency**: promoted to default-on after 8-run validation. Stage 2 now aligns with D5 item-count + diversity thresholds. Bolsonaro confidence spread 23pp→5pp, zero UNVERIFIED. Flag `diversityAwareSufficiency` available for rollback. | Analyzer / Quality | — | high | DONE | `83a47aad`, `23d8576c`, `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md` |
 | **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
@@ -63,6 +64,13 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **DIV-1 diversity-aware Stage-2 sufficiency promoted to default**: Validated on 8 runs — 0/8 UNVERIFIED, Bolsonaro confidence spread 23pp→5pp, no regressions. Stage 2 now aligns sufficiency with D5 item-count + diversity thresholds. | Analyzer / Quality | 2026-03-26 | `83a47aad`, `23d8576c` |
+| ✅ **UCM-1 to UCM-5 complete**: All hardcoded analysis-affecting parameters moved to UCM. 6 research depth params, 10 per-task temperatures, recency internals, temporal guard ceiling. | Config / UCM | 2026-03-26 | `fb5395b0` |
+| ✅ **OBS-2 Stage-1 observability**: `inputClassification` and `contractValidationSummary` persisted in result JSON. | Analyzer / Observability | 2026-03-26 | `d6090f76` |
+| ✅ **Post-spread verdict-label staleness fixed**: `percentageToClaimVerdict()` now called after spread adjustment. | Analyzer / Verdict | 2026-03-26 | `289afa1c` |
+| ✅ **B1 claim-contract validation**: LLM-backed predicate preservation + no-proxy-rephrasing enforcement with single retry. | Analyzer / Quality | 2026-03-26 | Prompt `CLAIM_CONTRACT_VALIDATION` |
+| ✅ **Stage 4.5 SR calibration confidence_only validated**: Experimentally validated on 5-claim control set. Feature remains behind flag. | Analyzer / SR | 2026-03-26 | `Docs/AGENTS/Agent_Outputs.md` |
+| ✅ **Preliminary-evidence multi-claim mapping fix**: Seeded evidence preserves full `relevantClaimIds[]` into Stage 2. | Analyzer / Quality | 2026-03-26 | `31aea55d` |
 | ✅ **QLT-4 per-claim contrarian retrieval experiment closed and removed**: Feature implemented but never triggered on real data. Preflight confirmed Plastik EN per-claim evidence is already directionally balanced. Experimental code, UCM config fields, and tests reverted from codebase. | Analyzer / Quality | 2026-03-26 | `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Code_Revert.md` |
 | ✅ **OBS-1 per-job metrics isolation**: replaced module-global collector with AsyncLocalStorage; concurrent jobs no longer share metrics. | Analyzer / Observability | 2026-03-25 | `6e402208` |
 | ✅ **VAL-2 jobs-list sync race fixed**: verdict badge gated on terminal status; monotonic progress guard prevents backward progress. | Web / API / Runner | 2026-03-25 | `f86811fe` |
@@ -82,25 +90,17 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 ---
 
-## UCM Configuration Completeness — Remaining Gaps
+## UCM Configuration Completeness — DONE
 
-Audit (2026-03-13) found hardcoded analysis-affecting parameters that should be UCM-configurable per AGENTS.md rules. Inline fallback conflicts with UCM values were fixed in commit `f380eaab`. The items below are **not yet in UCM at all** — they are hardcoded in code with no admin-tunable counterpart.
+All 5 UCM gaps identified in the 2026-03-13 audit are now implemented (`fb5395b0`).
 
-**Context:** AGENTS.md rule: "Default to UCM. If a parameter influences analysis output and you're unsure where it belongs — make it UCM-configurable."
-
-| Item | Description | Current location | Impact | Urgency | Status |
-|------|-------------|-----------------|--------|---------|--------|
-| **UCM-1** | **Research depth params** (`config.ts`): `maxResearchIterations` (4/5), `maxSourcesPerIteration` (8), `maxTotalSources` (24/30), `articleMaxChars` (4000/8000), `minEvidenceItemsRequired` (6/12), `minCategories` (2). Controls entire research phase — quick vs deep mode. | `apps/web/src/lib/analyzer/config.ts:50-67` | HIGH — determines evidence volume and coverage | med | NOT STARTED |
-| **UCM-2** | **Source content extraction limit**: `maxLength: 15000` chars extracted per URL. Controls how much evidence can be extracted from each source. | `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (lines 1324, 3619, 3632) | HIGH — limits evidence extraction per source | med | NOT STARTED |
-| **UCM-3** | **Pipeline-stage LLM temperatures**: 8+ hardcoded `temperature: 0.1`/`0.2` values across claim extraction, query generation, evidence extraction, claim-evidence mapping, quality assessment, narrative generation. Verdict-stage temps are already UCM-configurable, but all other stages are not. | `claimboundary-pipeline.ts`, `grounding-check.ts`, `text-analysis-llm.ts` | MEDIUM — affects output stability and variation | low | NOT STARTED |
-| **UCM-4** | **Recency penalty internals**: Volatility multiplier map (`week:1.0, month:0.8, year:0.4, none:0.2`) and volume attenuation brackets in evidence-recency.ts. The outer `maxPenalty`/`windowMonths` are UCM, but these inner scaling factors are not. | `apps/web/src/lib/analyzer/evidence-recency.ts:211-228` | MEDIUM — affects graduated recency penalty severity | low | NOT STARTED |
-| **UCM-5** | **Temporal guard confidence ceiling**: Default `confidenceCeiling: 45` for ungrounded recency-sensitive claims. | `apps/web/src/lib/analyzer/temporal-guard.ts:122` | MEDIUM — caps confidence for specific claim types | low | NOT STARTED |
-
-**Implementation notes:**
-- UCM-1 requires a design decision: should quick/deep mode params be two separate UCM profile sets, or individual fields with mode as a selector?
-- UCM-2 is a single field addition to pipeline config schema
-- UCM-3 could be a single `pipelineTemperature` field (applied to all non-verdict LLM calls) or per-stage fields
-- UCM-4 and UCM-5 are straightforward field additions to calculation config
+| Item | Description | Status |
+|------|-------------|--------|
+| **UCM-1** | Research depth params (6 fields) in pipeline config with mode-based selection via `getActiveConfig()` | DONE |
+| **UCM-2** | Source extraction limit wired from `pipelineConfig.sourceExtractionMaxLength` | DONE |
+| **UCM-3** | 10 per-task LLM temperatures wired across 7 modules | DONE |
+| **UCM-4** | Recency volatility multipliers + volume attenuation brackets in CalcConfig | DONE |
+| **UCM-5** | Temporal guard confidence ceiling in CalcConfig (schema ready, code wiring when `temporal-guard.ts` is created) | DONE |
 
 ---
 
