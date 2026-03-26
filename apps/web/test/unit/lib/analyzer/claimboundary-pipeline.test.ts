@@ -1310,6 +1310,34 @@ describe("Stage 1: runGate1Validation", () => {
     expect(result.stats.filteredCount).toBe(1);
   });
 
+  it("should rescue thesis-direct claims that fail both opinion and specificity", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Fails both but thesis-direct", thesisRelevance: "direct" }),
+      createAtomicClaim({ id: "AC_03", statement: "Fails both non-thesis", thesisRelevance: "tangential" }),
+    ];
+
+    const gate1Fixture = {
+      validatedClaims: [
+        { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+        { claimId: "AC_02", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "evaluative thesis" },
+        { claimId: "AC_03", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "evaluative non-thesis" },
+      ],
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(gate1Fixture);
+
+    const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17");
+
+    // AC_02 fails both but rescued (thesis-direct). AC_03 fails both and filtered (tangential).
+    expect(result.filteredClaims).toHaveLength(2);
+    expect(result.filteredClaims.map((c) => c.id)).toEqual(["AC_01", "AC_02"]);
+    expect(result.stats.filteredCount).toBe(1);
+    expect(result.rescuedThesisDirect).toEqual(["AC_02"]);
+  });
+
   it("should filter claims with specificityScore below minimum", async () => {
     const claims = [
       createAtomicClaim({ id: "AC_01", specificityScore: 0.8 }),
