@@ -1829,6 +1829,16 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Plastik DE 4x EVD-1 Measurement
+**Task:** Run 4x `Plastik recycling bringt nichts` to determine if the UNVERIFIED result was a tail outlier or recurring.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Plastik_DE_4x_Measurement.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** 4/4 runs produced LEANING-FALSE (3x) or MOSTLY-FALSE (1x). Zero UNVERIFIED, zero warnings. Truth spread 9pp (green), confidence spread 20pp (amber). AC_03 dimension varies but predicate is preserved and does not cause verdict instability. Earlier UNVERIFIED classified as **tail outlier**.
+**Open items:** Confidence spread is amber (20pp) — monitor, not actionable. AC_03 dimension drift is moderate but harmless on current stack.
+**Warnings:** None.
+**For next agent:** Stay in monitor mode for this family. Do not reopen Stage-1 investigation. See full handoff at `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Plastik_DE_4x_Measurement.md`.
+**Learnings:** no
+
+---
 ### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Fix post-spread verdict label staleness
 **Task:** Fix the structural-consistency bug where Step 4c spread adjustment changes confidence but leaves verdict label stale (e.g. 52%/28% labeled MIXED instead of UNVERIFIED).
 **Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
