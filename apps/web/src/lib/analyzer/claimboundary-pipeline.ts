@@ -510,13 +510,6 @@ export async function runClaimBoundaryAnalysis(
     state.claimBoundaries = boundaries;
     endPhase("cluster");
 
-    // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
-    const coverageMatrix = buildCoverageMatrix(
-      understanding.atomicClaims,
-      boundaries,
-      state.evidenceItems
-    );
-
     // D5 Control 1: Evidence Sufficiency Gate — per-claim evidence check
     const sufficiencyMinItems = initialCalcConfig.evidenceSufficiencyMinItems ?? 3;
     const sufficiencyMinSourceTypes = initialCalcConfig.evidenceSufficiencyMinSourceTypes ?? 2;
@@ -553,6 +546,16 @@ export async function runClaimBoundaryAnalysis(
     }
     const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
     const insufficientClaims = understanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
+
+    // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
+    // Uses only sufficient claims — insufficient claims are excluded from the matrix
+    // to avoid ghost columns with sparse evidence that distort the display.
+    const matrixClaims = sufficientClaims.length > 0 ? sufficientClaims : understanding.atomicClaims;
+    const coverageMatrix = buildCoverageMatrix(
+      matrixClaims,
+      boundaries,
+      state.evidenceItems
+    );
 
     // Build resolved verdict config early so diversity + credential checks use it
     const resolvedVerdictConfig = buildVerdictStageConfig(initialPipelineConfig, initialCalcConfig);
