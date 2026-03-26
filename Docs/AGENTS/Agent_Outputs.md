@@ -1867,3 +1867,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The Bolsonaro amber status means re-measure in the next validation round. If UNVERIFIED recurs in 2+ of 5, investigate evidence-allocation (3 vs 2 claims), NOT Gate 1 filtering.
 **For next agent:** The system is in EVD-1 monitor mode. No analyzer changes are approved. Gate 1 refinement is closed. The next quality action is only triggered by a red EVD-1 result. Captain approval required for optimization tracks (P1-A/B).
 **Learnings:** When a two-job comparison shows a large confound (4.4x evidence balance difference), do not implement a fix based on the secondary signal (claim count). Generate more data first. The N=5 measurement disproved the causal hypothesis cleanly.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Stage-1 Observability (OBS-2)
+**Task:** Persist `inputClassification` and `contractValidationSummary` in stored result JSON for future investigations.
+**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts`
+**Key decisions:** Added two optional fields to `CBClaimUnderstanding`: `inputClassification` (string from Pass 2) and `contractValidationSummary` (compact `{ran, preservesContract, rePromptRequired, summary}`). Hoisted summary capture before the retry decision block. Fail-open case records `ran: true` with explanatory summary. Both fields are optional for backward compatibility.
+**Open items:** None. This is additive observability only.
+**Warnings:** None. No analytical behavior changed.
+**For next agent:** Future investigations can now inspect `understanding.inputClassification` and `understanding.contractValidationSummary` directly from stored job results instead of inferring runtime behavior.
+**Learnings:** no

@@ -1104,6 +1104,15 @@ export interface CBClaimUnderstanding {
     passedFidelity: boolean;
     reasoning: string;
   }>;
+  /** Stage-1 input classification used by Pass 2. Stored for observability. */
+  inputClassification?: string;
+  /** Compact contract-validation summary. Stored for observability. */
+  contractValidationSummary?: {
+    ran: boolean;
+    preservesContract: boolean;
+    rePromptRequired: boolean;
+    summary: string;
+  };
 }
 
 /**

@@ -246,6 +246,8 @@ export async function extractClaims(
   let activePass2 = pass2;
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
+  // Observability: capture contract validation outcome for stored result
+  let contractValidationSummary: { ran: boolean; preservesContract: boolean; rePromptRequired: boolean; summary: string } | undefined;
 
   if (contractValidationEnabled) {
     state.onEvent?.("Validating claim contract fidelity...", 24);
@@ -260,6 +262,18 @@ export async function extractClaims(
       pipelineConfig,
     );
     state.llmCalls++;
+
+    // Capture observability summary
+    if (contractResult) {
+      contractValidationSummary = {
+        ran: true,
+        preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract,
+        rePromptRequired: contractResult.inputAssessment.rePromptRequired,
+        summary: contractResult.inputAssessment.summary ?? "",
+      };
+    } else {
+      contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
+    }
 
     if (contractResult && contractResult.inputAssessment.rePromptRequired && contractMaxRetries > 0) {
       // Build corrective guidance from failing claims
@@ -601,6 +615,9 @@ export async function extractClaims(
     // D2: Audit data — pre-filter claims and Gate 1 reasoning for diagnostics
     preFilterAtomicClaims: (gate1Result as any).preFilterClaims,
     gate1Reasoning: (gate1Result as any).gate1Reasoning,
+    // Observability: Stage-1 diagnostics for future investigations
+    inputClassification: bestPass2.inputClassification ?? undefined,
+    contractValidationSummary,
   };
 }
 

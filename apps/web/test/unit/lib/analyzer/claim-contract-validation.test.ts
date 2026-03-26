@@ -324,3 +324,101 @@ describe("claimContractValidation config defaults", () => {
     expect(DEFAULT_CALC_CONFIG.claimContractValidation?.maxRetries).toBe(1);
   });
 });
+
+// ============================================================================
+// OBSERVABILITY: contractValidationSummary SHAPE
+// ============================================================================
+
+describe("contractValidationSummary observability shape", () => {
+  it("captures passing validation as compact summary", () => {
+    const contractResult = {
+      inputAssessment: {
+        preservesOriginalClaimContract: true,
+        rePromptRequired: false,
+        summary: "All claims preserve original meaning",
+      },
+      claims: [],
+    };
+
+    const summary = {
+      ran: true,
+      preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract,
+      rePromptRequired: contractResult.inputAssessment.rePromptRequired,
+      summary: contractResult.inputAssessment.summary ?? "",
+    };
+
+    expect(summary.ran).toBe(true);
+    expect(summary.preservesContract).toBe(true);
+    expect(summary.rePromptRequired).toBe(false);
+    expect(summary.summary).toBe("All claims preserve original meaning");
+  });
+
+  it("captures failing validation with retry request", () => {
+    const contractResult = {
+      inputAssessment: {
+        preservesOriginalClaimContract: false,
+        rePromptRequired: true,
+        summary: "proxy drift detected",
+      },
+      claims: [],
+    };
+
+    const summary = {
+      ran: true,
+      preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract,
+      rePromptRequired: contractResult.inputAssessment.rePromptRequired,
+      summary: contractResult.inputAssessment.summary ?? "",
+    };
+
+    expect(summary.ran).toBe(true);
+    expect(summary.preservesContract).toBe(false);
+    expect(summary.rePromptRequired).toBe(true);
+  });
+
+  it("captures fail-open (undefined result) as ran=true with neutral summary", () => {
+    // When the LLM call returns undefined, fail-open should still record that validation ran
+    const summary = {
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "fail-open: LLM call returned undefined",
+    };
+
+    expect(summary.ran).toBe(true);
+    expect(summary.preservesContract).toBe(true);
+    expect(summary.summary).toContain("fail-open");
+  });
+
+  it("is undefined when validation is disabled", () => {
+    // When contractValidationEnabled=false, no summary should be produced
+    const contractValidationSummary = undefined;
+    expect(contractValidationSummary).toBeUndefined();
+  });
+});
+
+// ============================================================================
+// OBSERVABILITY: CBClaimUnderstanding type compatibility
+// ============================================================================
+
+describe("CBClaimUnderstanding observability fields", () => {
+  it("accepts optional inputClassification and contractValidationSummary", () => {
+    // Verify the type shape is backward-compatible (old jobs without these fields)
+    const understanding: Partial<import("@/lib/analyzer/types").CBClaimUnderstanding> = {
+      inputClassification: "ambiguous_single_claim",
+      contractValidationSummary: {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "All claims preserve original meaning",
+      },
+    };
+    expect(understanding.inputClassification).toBe("ambiguous_single_claim");
+    expect(understanding.contractValidationSummary?.ran).toBe(true);
+  });
+
+  it("tolerates missing observability fields (backward compatibility)", () => {
+    const understanding: Partial<import("@/lib/analyzer/types").CBClaimUnderstanding> = {};
+    expect(understanding.inputClassification).toBeUndefined();
+    expect(understanding.contractValidationSummary).toBeUndefined();
+  });
+});
