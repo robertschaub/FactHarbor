@@ -1126,7 +1126,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   contradictionReservedQueries: 2,
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
-  diversityAwareSufficiency: false,
+  diversityAwareSufficiency: true,
 
   // ClaimBoundary Stage 3 defaults
   maxClaimBoundaries: 6,
