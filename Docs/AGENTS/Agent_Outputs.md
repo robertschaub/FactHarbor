@@ -1,6 +1,34 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Public Version Provenance Fix
+**Task:** Fix `/api/version` returning `git_sha: null` in production.
+**Root cause:** Env var name mismatch. `deploy.sh` writes `GIT_COMMIT`; the version endpoint checked `GIT_SHA` / `VERCEL_GIT_COMMIT_SHA` / `SOURCE_VERSION` but not `GIT_COMMIT`. One-line fix: add `GIT_COMMIT` as first in the fallback chain.
+**Files touched:** `apps/web/src/app/api/version/route.ts`
+**For next agent:** After next deploy, `/api/version` will return the deployed commit hash publicly. No admin access needed for provenance checks.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Post-Deploy Parity Verification — Full Parity Confirmed
+**Task:** Verify production matches intended local baseline after `deploy-remote.ps1 -ForceConfigs`.
+**Method:** Probe job commit hash, admin config API hash comparison, prompt content string verification.
+**Result:** **Full parity confirmed.** Production at `cbc4cde4` — contains QLT-3, VAL-2, OBS-1. All 4 non-prompt config hashes match exactly. Prompt `claimboundary` hash matches and QLT-3 rules verified present in production content. No gaps.
+**For next agent:** Production is at parity. No further deploy action needed.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Local vs Deployed Parity Investigation
+**Task:** Structured comparison of local baseline vs deployed production commit `840e58d6`.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Local_vs_Deployed_Parity.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** 4 meaningful runtime differences: (1) QLT-3 prompt (3 facet-consistency rules) — **the single analytical difference**, (2) VAL-2 verdict badge gate + monotonic progress, (3) OBS-1 AsyncLocalStorage metrics isolation. Non-prompt UCM configs are likely identical (same file defaults, both force-reseeded). QLT-4 is net-zero (added+reverted). Config schemas identical.
+**For next agent:** Deploy `.\scripts\deploy-remote.ps1 -ForceConfigs` to bring production to parity. No QLT-4 risk — fully reverted.
+
+---
+### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Local UCM Cleanup — Stale Experiment Keys Removed
+**Task:** Review and clean local UCM config drift from experiment-era admin customizations.
+**Findings:** `pipeline/default` active blob contained 2 stale keys (`crossLinguisticQueryEnabled`, `supplementarySkewThreshold`) from Phase 2 v2 cross-linguistic experiment. `calculation/default`, `search/default`, and `sr/default` were clean. Zero live QLT-4 code remnants in source or tests.
+**Action:** Backed up `config.db`, force-reseeded via `reseed-all-prompts.ts --force`. Pipeline config updated from `232eba4f` → `86c66ac6`. Stale keys removed. All 4 non-prompt configs verified clean.
+**For next agent:** Local UCM baseline is now aligned with file-backed defaults. No stale experiment surface remains in code, config, or UCM.
+
+---
 ### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Post-Revert Doc Sync
 **Task:** Sync canonical docs after QLT-4 code revert so no wording implies the experiment still exists as a dormant runtime feature.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`

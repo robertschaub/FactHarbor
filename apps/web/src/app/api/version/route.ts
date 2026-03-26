@@ -9,7 +9,10 @@ export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const isAdmin = checkAdminKey(req);
+  // GIT_COMMIT is the canonical env var set by deploy.sh (matches AppBuildInfo.cs on the API side).
+  // VERCEL_GIT_COMMIT_SHA / GIT_SHA / SOURCE_VERSION are platform-specific fallbacks.
   const gitSha =
+    process.env.GIT_COMMIT ||
     process.env.VERCEL_GIT_COMMIT_SHA ||
     process.env.GIT_SHA ||
     process.env.SOURCE_VERSION ||
