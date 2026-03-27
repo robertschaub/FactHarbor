@@ -211,6 +211,8 @@ All success criteria met:
 
 ## 9. Recommendation
 
+> **Superseded:** This section reflects the initial experiment conclusion. The flag was subsequently promoted to default-on (`b5fad127`) after a current-stack A/B gate. See `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` for the final decision and post-promotion confirmation runs.
+
 **Promote to optional control.**
 
 - Default remains `false` in `pipeline.default.json`
@@ -224,5 +226,5 @@ All success criteria met:
 ## Open Items
 
 - 4-8 items per Bolsonaro run remain with semantic slug IDs (the LLM returned `[]` for those). These are genuinely ambiguous items — not a bug, but the honest-signal property working as designed.
-- The default is `false`. Captain should decide whether to promote to `true` based on this validation.
+- ~~The default is `false`. Captain should decide whether to promote to `true` based on this validation.~~ → Promoted to default-on (`b5fad127`).
 - Successful-path unit test coverage added (2026-03-27 tightening pass). Guard-only test gap is closed.
