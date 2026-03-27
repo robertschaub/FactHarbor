@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-26
+**Last Updated**: 2026-03-27
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,7 +14,7 @@
 
 ---
 
-## Immediate Priorities (2026-03-25)
+## Immediate Priorities (2026-03-27)
 
 Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). EVD-1 variance policy is approved and operative. **Current posture: approved-policy monitor mode.** No active analyzer implementation work. New work is policy-triggered only (red threshold breach) or Captain-approved.
 
@@ -29,6 +29,7 @@ Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done)
 | **GATE1-REF** | **Gate 1 thesis-direct rescue refinement**: REVIEWED AND DECLINED (2026-03-26). Two-agent debate found the UNVERIFIED was evidence-driven (balance 0.38 vs 0.76), not Gate-1-driven. Over-filtering risk for legitimate evaluative questions too high. A 3-claim run with fairness dimension produced LEANING-TRUE, disproving the causal hypothesis. | Analyzer / Quality | — | — | DECLINED | `Docs/WIP/2026-03-26_Gate1_Rescue_Refinement_Debate.md` |
 | **OBS-2** | **Persist Stage-1 diagnostic fields**: `inputClassification` and `contractValidationSummary` now stored in result JSON. | Analyzer / Observability | — | — | DONE | `d6090f76` |
 | **DIV-1** | **Diversity-aware Stage-2 sufficiency**: promoted to default-on after 8-run validation. Stage 2 now aligns with D5 item-count + diversity thresholds. Bolsonaro confidence spread 23pp→5pp, zero UNVERIFIED. Flag `diversityAwareSufficiency` available for rollback. | Analyzer / Quality | — | high | DONE | `83a47aad`, `23d8576c`, `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md` |
+| **REMAP-1** | **Seeded preliminary-evidence LLM remap (Option C)**: implemented and validated as an optional control. One batched Haiku remap restores claim-local attribution for unresolved seeded evidence before Stage 2 seeding. **Default remains `false`**; the promotion-to-default gate is parked pending the final same-input confirmation batch and remapped-evidence quality spot-check. | Analyzer / Quality / Observability | low | med | PARKED | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`, `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` |
 | **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
@@ -60,10 +61,11 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 ---
 
-## Recently Completed (March 22-26, 2026)
+## Recently Completed (March 22-27, 2026)
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **REMAP-1 Option C implemented and validated as optional control**: post-Pass-2 Haiku remap for unresolved seeded preliminary evidence is now available behind `preliminaryEvidenceLlmRemapEnabled`. Validation recovered 69-85% seeded mappings on Bolsonaro-family runs with zero Plastik DE regression. Promotion decision remains parked; default stays off. | Analyzer / Quality / Observability | 2026-03-27 | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`, `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` |
 | ✅ **DIV-1 diversity-aware Stage-2 sufficiency promoted to default**: Validated on 8 runs — 0/8 UNVERIFIED, Bolsonaro confidence spread 23pp→5pp, no regressions. Stage 2 now aligns sufficiency with D5 item-count + diversity thresholds. | Analyzer / Quality | 2026-03-26 | `83a47aad`, `23d8576c` |
 | ✅ **UCM-1 to UCM-5 complete**: All hardcoded analysis-affecting parameters moved to UCM. 6 research depth params, 10 per-task temperatures, recency internals, temporal guard ceiling. | Config / UCM | 2026-03-26 | `fb5395b0` |
 | ✅ **OBS-2 Stage-1 observability**: `inputClassification` and `contractValidationSummary` persisted in result JSON. | Analyzer / Observability | 2026-03-26 | `d6090f76` |

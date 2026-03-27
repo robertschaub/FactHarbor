@@ -1,6 +1,43 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-27 | Lead Architect | Claude Code (Opus 4.6) | Single-Source Evidence Flooding Investigation + Multi-Agent Debate
+**Task:** Investigate why job `efc5e66f` (Bolsonaro, MIXED 56/51) produced LEANING-FALSE on AC_01 instead of expected LEANING-TRUE.
+**Files touched:** `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** (1) Single URL (civilizationworks.org, trackRecordScore=0.38) produced 11 evidence items — all `contradicts`/`high`/`organization_report` — flipping AC_01 from typical ~60 TP to 38. (2) SR is missing from the active verdict path — legacy weighting branch exists but only addresses supporting evidence, not contradicting. (3) No per-source item cap exists. (4) No within-source redundancy detection. (5) The seeded evidence LLM remap (`preliminaryEvidenceLlmRemapEnabled: true`) is NOT responsible — civilizationworks items are all Stage 2, not seeded.
+**Debate:** Four-position debate (per-source cap advocate, SR integration advocate, LLM consolidation advocate, challenger/do-nothing). Consolidated and revised per GPT Senior Architect review.
+**Proposal (revised):** Fix 1 + Fix 2 ship together. Fix 1: SR-aware verdict reasoning = payload (per-source portfolio summary in `verdict-stage.ts`) + prompt-contract (3 verdict sections in `claimboundary.prompt.md`) + prompt reseed. Fix 2: per-source item cap (`maxEvidenceItemsPerSource: 5`, blunt safety rail in extraction stage). Fix 3 deferred.
+**Review corrections:** (1) Fix 1 scope expanded — not ~10 lines. (2) "SR inert" narrowed. (3) Fix 2 moved to same rollout. (4) Legacy weighting acknowledged as non-fallback for this case. (5) Cap tie-breaking described as blunt.
+**Open items:** Prompt-contract changes require explicit human approval. Validation: 4 runs.
+**For next agent:** Full investigation at `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`. Ship Fix 1 + Fix 2 together. Fix 1 needs: (a) per-source portfolio summary in verdict payload modeled on `source-reliability-calibration.ts`, (b) prompt instructions in VERDICT_ADVOCATE/CHALLENGER/RECONCILIATION, (c) prompt reseed.
+
+---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence LLM Remap — Validation Tightening
+**Task:** Close two gaps before promotion decision: (1) add successful-path unit test with mocked LLM, (2) run one additional Bolsonaro live validation.
+**Files touched:** `claimboundary-pipeline.test.ts` (1 new test + `beforeEach` for describe block), `2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md` (updated tables and observations).
+**Test added:** Mocked LLM remap test — 2 claims, 3 prelim items (1 resolved, 2 unresolved semantic slugs), mock returns claim-specific mappings + invalid `AC_99`. Verifies: in-place mutation, invalid-ID filtering, resolved item untouched, no blanket attribution, llmCalls increment, correct prompt section call.
+**Live run:** Bolsonaro-3 (`efc5e66f`) — extended input, 3 claims. MIXED 56.3/51.5. 27 seeded, 23 mapped, 4 unmapped — **85% remap success**. All claims have 4-6 sourceTypes, 9-10 domains. AC_02 UNVERIFIED is confidence-driven (41%), not diversity-starvation-driven (20 items, 4 sourceTypes, 9 domains).
+**Verification:** 1393 tests pass, build clean.
+**For next agent:** Handoff updated at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`. Both validation gaps closed. Promotion decision rests on 5 live runs (3 Bolsonaro, 1 Plastik DE, 1 Hydrogen) + 17 unit tests.
+
+---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence LLM Remap — Option C Implemented & Validated
+**Task:** Implement and validate Option C (post-Pass-2 LLM remap) for unresolved seeded preliminary evidence claim mapping.
+**Files touched:** `research-orchestrator.ts` (remap function + call site), `claimboundary-pipeline.ts` (barrel exports), `config-schemas.ts` + `pipeline.default.json` (`preliminaryEvidenceLlmRemapEnabled`), `claimboundary.prompt.md` (`REMAP_SEEDED_EVIDENCE` section), `claimboundary-pipeline.test.ts` (16 new tests).
+**Key decisions:** (1) Integration point in `researchEvidence()` before `seedEvidenceFromPreliminarySearch()` — remap modifies understanding's preliminary evidence in-place, then existing seeding picks up updated IDs. (2) `wouldResolveExistingRemap()` helper replicates 4-step heuristic to identify only genuinely unresolved items. (3) Default `false` per task brief (experiment-first lifecycle). (4) Fail-open on any LLM or schema failure.
+**Validation:** 4 runs — Bolsonaro-1 (83% remap, LEANING-TRUE 61.6/67.8), Bolsonaro-2 (69% remap, LEANING-TRUE 64.0/66.5), Plastik DE (zero regression, all 43 mapped), Hydrogen (76% remap, MOSTLY-FALSE 18.5/77.7). Zero UNVERIFIED. No blanket inflation. Baseline had 0% seeded mapping for Bolsonaro.
+**Open items:** Default `false` — Captain decision to promote to `true`.
+**For next agent:** Full validation report at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`. 1392 tests pass, build clean. UCM flag already active in local config.db. Ready for Captain review.
+
+---
+### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Seeded Evidence Mapping Fix — Revised Proposal (Rev 2)
+**Task:** Revise the seeded-evidence mapping proposal to reject Option B (all-claims fallback) and recommend Option C (post-Pass-2 LLM remap).
+**Files touched:** `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Option B explicitly rejected — it fabricates claim attribution rather than repairing it, inflates diversity-aware sufficiency, D5, and coverage matrix metrics for all claims including irrelevant ones. (2) Option C recommended — one batched Haiku remap call after Pass 2, only for unmapped items, preserves right to return empty mappings. (3) Options A/D rejected (deterministic heuristics / prompt fragility). (4) Option E acknowledged as architecturally cleanest but too large for an interface-repair fix.
+**Open items:** Implementation of Option C requires Senior Developer — prompt design (`REMAP_SEEDED_EVIDENCE`), Zod schema, integration in claim-extraction-stage.ts after Pass 2, UCM toggle.
+**For next agent:** Full proposal at `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`. Validation plan uses 4 runs (2× Bolsonaro, 1× Plastik DE, 1× Hydrogen). Anti-success criteria defined to detect disguised Option B behavior. Integration point is claim-extraction-stage.ts ~line 239, after Pass 2 and before understanding assembly.
+
+---
 ### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Next Workstream Decision — Four-Reviewer Panel
 **Task:** Determine whether the next active workstream should target quality, optimization, or neither.
 **Files touched:** `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1906,4 +1943,34 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Recommend promoting `diversityAwareSufficiency=true` as new default. Captain approval needed.
 **Warnings:** N=4 Bolsonaro is sufficient for validation but not exhaustive. The truth spread remains amber (25pp) — that is evidence-driven, not feature-related.
 **For next agent:** If Captain approves, set `diversityAwareSufficiency: true` in `pipeline.default.json` + `DEFAULT_PIPELINE_CONFIG`, reseed. See full handoff at `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md`.
+**Learnings:** no
+
+---
+### 2026-03-26 | Lead Architect | Codex (GPT-5) | Review of Seeded Evidence Mapping Fix Proposal
+**Task:** Review `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`, especially the proposed multi-claim all-claims fallback for unmapped seeded preliminary evidence.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Accepted the diagnosis of a systemic seeded preliminary-evidence mapping defect, but rejected the proposed Option B all-claims fallback as too coarse. Because Stage 2 diversity-aware sufficiency and D5 both count claim-mapped evidence structurally, mapping every unmapped seeded item to every claim would artificially inflate per-claim item, source-type, and domain counts. Cross-run comparison also showed the same seeded-unmapped pattern in stronger Bolsonaro runs, so the weak `1abb0ea5` result is not uniquely explained by mapping loss. Preferred next step remains a narrower interface fix (stable handles, explicit mapping artifact, or small LLM-backed remap), not blanket over-attribution.
+**Open items:** If this topic stays active, produce a narrower fix proposal that preserves claim-local attribution instead of assigning semantic-slug preliminary evidence to all claims.
+**Warnings:** Do not implement Option B as written. It would likely distort D5 sufficiency and the validated diversity-aware sufficiency experiment by turning topic-level seeded evidence into claim-level sufficiency evidence for every claim.
+**For next agent:** Treat `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md` as useful on root cause, but not on the recommended fix. Start from the code paths in `apps/web/src/lib/analyzer/research-orchestrator.ts` and `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` and design a claim-preserving remap.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Proposal Review
+**Task:** Review `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` and assess the proposed 3-fix mitigation for civilizationworks-driven evidence flooding.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the core runtime diagnosis: verdict prompts currently receive per-item `sourceType` / `probativeValue` / provenance metadata but no `trackRecordScore` or `trackRecordConfidence`, while both SR calibration and legacy post-hoc weighting are default-off in live config. Also confirmed there is no per-source extraction cap and no active within-source consolidation. Rejected the claim that SR is universally "unused" in code as overstated; a legacy weighting path exists, but it is disabled by default and would not be a sufficient fix. Recommended sequencing adjustment: Fix 1 is valid, but Fix 2 should be treated as the likely required safety rail, not merely a later option, because the existing challenger prompt already asks the LLM to detect shared-source dependence and did not stop this failure mode.
+**Open items:** If implementation is approved, decide whether Fix 1 is only payload enrichment or a real prompt-contract change. If the latter, it needs explicit human approval plus prompt reseeding under `apps/web/prompts/claimboundary.prompt.md`.
+**Warnings:** Do not frame Fix 1 as a pure `verdict-stage.ts` code tweak. Reliable SR-aware reasoning likely requires prompt guidance in addition to payload fields. Also do not rely on legacy `applyEvidenceWeighting()` as the fallback answer; its current shape is post-hoc and limited.
+**For next agent:** Start with `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, and `apps/web/src/lib/analyzer/research-extraction-stage.ts`. Preserve the AGENTS rule that semantic consolidation must stay LLM-driven; deterministic caps are acceptable only as structural plumbing.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Developer | Codex (GPT-5) | Seeded Evidence Remap Canonization and Commit Split
+**Task:** Sync the seeded-evidence remap work into canonical docs and commit the repo in meaningful chunks.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`, `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`, `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`
+**Key decisions:** Canonized the current remap state as: implemented and validated as an **optional control**, default `false`, promotion gate parked. Updated `Current_Status.md` and `Backlog.md` to reflect that `preliminaryEvidenceLlmRemapEnabled` is available but not promoted to default-on. Updated the WIP index to include the parked promotion-gate resume point and the seeded-evidence proposal chain. Split commits intentionally: code landed first as `b70f1662` (`feat(analyzer): add seeded evidence llm remap experiment`), docs/status sync follows separately.
+**Open items:** The final promote-or-hold decision for `preliminaryEvidenceLlmRemapEnabled` is still parked. Remaining verification lives in `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`.
+**Warnings:** Do not treat the remap as canonical default-on behavior yet. The paused promotion gate still needs the OFF comparison runs and remapped-evidence spot-check before any default flip.
+**For next agent:** Resume the default-on decision from `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`. Treat the current canonical state as: feature exists, default remains off, selective validation/use is approved.
 **Learnings:** no

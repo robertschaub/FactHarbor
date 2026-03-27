@@ -1,13 +1,13 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-26
+**Last Updated**: 2026-03-27
 **Phase**: **Alpha**
 **Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. The report-quality stabilization wave has **no remaining active engineering blockers**. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. No active analyzer implementation work — new work is policy-triggered only. Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
 
 ---
 
-## Current Focus (2026-03-26)
+## Current Focus (2026-03-27)
 
 - **Stage-1 quality stabilization is materially complete**: QLT-1 (predicate strength), QLT-2 (characterization), and QLT-3 (facet consistency) are all done. Remaining variance for both Plastik and Muslims families is now primarily evidence/verdict-driven. No further Stage-1 prompt work is currently justified.
 - **No active engineering blocker remains** in the stabilization wave. All planned items (QLT-1/2/3, VAL-2, OBS-1) are complete.
@@ -16,11 +16,19 @@
 - **Diversity-aware Stage-2 sufficiency promoted to default-on** (`23d8576c`). Validated on 8 runs (4 Bolsonaro, 2 Plastik DE, 2 Flat Earth): 0/8 UNVERIFIED, Bolsonaro confidence spread improved from 23pp (amber) to 5pp (green), no control regressions. Stage 2 now aligns sufficiency with D5 item-count + diversity thresholds, preventing claims from appearing "researched enough" by raw count and then being zeroed out by D5. Flag `diversityAwareSufficiency` remains available for rollback.
 - **UCM Configuration Completeness (UCM-1 to UCM-5) complete** (`fb5395b0`). All 5 backlog items implemented: research depth params, source extraction limit, 10 per-task LLM temperatures, recency penalty internals, and temporal guard ceiling are now admin-tunable via UCM.
 - **OBS-2 complete** (`d6090f76`). `inputClassification` and `contractValidationSummary` now persisted in result JSON for future forensics.
+- **Seeded preliminary-evidence LLM remap implemented and validated as an optional control**. `preliminaryEvidenceLlmRemapEnabled` adds one batched Haiku remap before Stage 2 seeding to recover claim-local attribution for seeded items that still carry semantic slug IDs. Validation showed strong Bolsonaro remap recovery (69-85%), zero regression on Plastik DE, and clean tests/build. **Default remains `false`**; the promotion-to-default gate is parked pending a final same-input confirmation/spot-check. See `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md` and `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`.
 - **Post-spread verdict-label staleness fixed** (`289afa1c`). Claims whose confidence drops below the UNVERIFIED threshold after spread adjustment now get correctly relabeled.
 - **B1 claim-contract validation implemented and validated**. Predicate preservation + no-proxy-rephrasing rules enforced via LLM-backed contract validator with single retry. Plastik DE/EN/FR all produce correct predicate-preserving claims.
 - **Current posture: approved-policy monitor mode.** No active analyzer implementation work. New work is only triggered if a validation round produces a red result under EVD-1.
 - **QLT-4 (per-claim contrarian retrieval) is CLOSED and removed.** Experimental code, UCM config fields, and tests reverted. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`.
 - **Optimization tracks** (P1-A, P1-B) remain separate, Captain-gated decisions — not automatically triggered by EVD-1 monitor mode.
+
+## Recent Changes (2026-03-27)
+
+**Seeded preliminary-evidence remap experiment implemented:**
+- ✅ **Option C implemented**: unresolved seeded preliminary evidence can now be remapped to final `AC_*` claims with one batched Haiku call before Stage 2 seeding. Existing exact/numeric remap behavior is preserved; the new step only runs for items that would otherwise remain unmapped.
+- ✅ **Validated as optional control**: live validation recovered seeded claim mapping on Bolsonaro-family runs without blanket inflation and without regressing Plastik DE or Hydrogen controls.
+- ⏸️ **Promotion gate parked**: `preliminaryEvidenceLlmRemapEnabled` stays default-off while the final promote-or-hold verification is paused in `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`.
 
 ---
 

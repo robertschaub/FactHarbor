@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-26  
+**Last Updated**: 2026-03-27  
 **Status**: WIP Consolidation #8 complete. The active WIP set is reduced to a curated live set. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
 
 ---
@@ -52,6 +52,10 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [2026-03-26_Plastik_DE_Runtime_Path_Investigation.md](2026-03-26_Plastik_DE_Runtime_Path_Investigation.md) — runtime-path investigation: existing Stage-1 safeguards active; remaining blind spot is missing persisted classification/contract-validation diagnostics
 - [2026-03-26_Gate1_Rescue_Refinement_Debate.md](2026-03-26_Gate1_Rescue_Refinement_Debate.md) — **DECIDED: Gate 1 refinement declined.** Two-agent debate found UNVERIFIED driven by evidence variation, not Gate 1. Over-filtering risk too high.
 - [2026-03-26_EVD1_Bolsonaro_Plastik_Measurement.md](2026-03-26_EVD1_Bolsonaro_Plastik_Measurement.md) — 5-run Bolsonaro (amber, UNVERIFIED did not recur) + 3-run Plastik DE (green). No action justified.
+- [2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md](2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md) — review-ready analysis of the `1abb0ea5` weak Bolsonaro run. Concludes that empty coverage-matrix rows expose a real seeded-evidence claim-mapping defect, but that defect is contributory rather than the primary cause; Stage-2 mapped-evidence starvation remains the main weak-path mechanism.
+- [2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md](2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md) — **REVIEW-READY** revised proposal. Rejects Option B (all-claims fallback) as attribution fabrication. Recommends Option C: narrow post-Pass-2 LLM remap for unmapped seeded evidence. Supersedes Rev 1 (`2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md`) and the Option B recommendation in the original investigation (`2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`).
+- [2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md](2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md) — parked resume point for the final promote-or-hold decision on `preliminaryEvidenceLlmRemapEnabled`. Records completed ON runs, missing OFF comparison runs, and the remaining remapped-evidence spot-check.
+- [2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md](2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md) — **REVIEW-READY** investigation into single-source evidence flooding. One URL (civilizationworks.org, SR=0.38) produced 11 items that flipped AC_01 to LEANING-FALSE. Root cause: SR scores are inert in the pipeline + no per-source item cap. Proposes 3-fix sequence: (1) pass SR to verdict prompts, (2) per-source cap, (3) same-source consolidation.
 
 ### Residual structural / optimization source plans
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md)
