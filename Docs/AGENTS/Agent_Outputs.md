@@ -2137,3 +2137,43 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The existing design caveat still applies by construction: stable advocate-side consistency is not proof of full-pool correctness.
 **For next agent:** Treat this implementation as review-approved. If additional verification is desired, the next step is live validation on the Homeopathy-family scenario that originally triggered the investigation.
 **Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Outage Resilience Commit 83a50d8c Review
+**Task:** Review the claimed “complete outage resilience” state after commit `83a50d8c`.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Found two substantive gaps. First, the new watchdog auto-resume resumes on any HTTP response from the Anthropic endpoint, including unauthenticated `401`, so pauses caused by auth errors, rate limits, or provider-side outages can clear incorrectly. The included integration test explicitly encodes `401` as a successful auto-resume. Second, the “current job fails cleanly” claim only holds after the breaker is already open. `claimboundary-pipeline.ts` rethrows only when `isSystemPaused()` is true, but provider-health opens the circuit only after 3 consecutive failures; a first outage-hit Stage 4 failure can still fall through to damaged fallback verdicts before the pause trips.
+**Open items:** Gate auto-resume by pause cause (or by a real half-open/provider-health probe) instead of “any HTTP response”, and close the first-job fallback gap if the goal is truly zero damaged fallback reports during an outage.
+**Warnings:** The current implementation is good progress for raw internet outage recovery, but it is not yet equivalent to a robust provider-health circuit for all pause causes.
+**For next agent:** Re-check `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/src/lib/provider-health.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, and `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts` before declaring outage resilience “complete”.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Outage Resilience Follow-Up Re-Review
+**Task:** Re-review the outage-resilience changes after the network-only auto-resume guard and plan-doc correction.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** No review findings remain on the two previously identified issues. `internal-runner-queue.ts` now gates auto-resume behind `isPausedDueToNetwork()`, so auth/rate-limit pauses are not eligible for the watchdog probe, and `drain-runner-pause.integration.test.ts` now directly asserts that non-network pauses do not call the probe. The plan doc also now correctly documents that the first outage-hit job can still produce fallback verdicts before the breaker trips and identifies A.3 / within-job counting as the remaining path to close that gap.
+**Open items:** The first-job gap remains a documented follow-on rather than an implemented fix.
+**Warnings:** There is still a low-risk maintenance concern that the network pattern list is duplicated between `error-classification.ts` and `internal-runner-queue.ts`; not a review finding, but worth keeping aligned if patterns evolve.
+**For next agent:** Treat the previous two outage-resilience review findings as closed. If this area is reopened, focus on A.3 pre-call probing or a within-job failure counter rather than watchdog semantics.
+**Learnings:** no
+
+---
+### 2026-03-27 | Senior Developer | Codex (GPT-5) | A.3 Pre-Stage-4 Connectivity Probe
+**Task:** Implement A.3 so Stage 4 fast-fails on clear LLM connectivity loss instead of producing first-outage-hit fallback verdicts.
+**Files touched:** `apps/web/src/lib/connectivity-probe.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/test/unit/lib/connectivity-probe.test.ts`, `apps/web/test/unit/lib/analyzer/verdict-preflight.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added a shared LLM connectivity probe module with provider-aware default endpoints and a 5s timeout. Refactored Stage 4 entry in `claimboundary-pipeline.ts` into `runVerdictStageWithPreflight()`, which probes before verdict generation, aborts cleanly on transport failure, and records clear network failures into provider-health so repeated preflight failures can still open the LLM circuit and pause the system. Reused the same probe module in the watchdog auto-resume path instead of keeping duplicate fetch logic.
+**Open items:** Stage 2 LLM failures still do not feed provider-health. Preflight timeout failures abort the current job fast but do not currently count toward opening the LLM circuit because timeout classification remains separate from clear network-connectivity failures.
+**Warnings:** The preflight intentionally probes the configured primary LLM provider endpoint, which is correct for the internet-outage gap this task targeted. It does not attempt multi-provider semantic health checks for every per-role override.
+**For next agent:** Safe verification passed end-to-end: `npm test`, `npm -w apps/web run build`, plus focused runs for `test/unit/lib/connectivity-probe.test.ts`, `test/unit/lib/analyzer/verdict-preflight.test.ts`, `test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and `test/unit/lib/drain-runner-pause.integration.test.ts`. If this area is extended, the next likely decision is whether preflight timeouts should also count toward provider-health pause/open behavior.
+**Learnings:** no
+
+---
+### 2026-03-27 | Senior Developer | Codex (GPT-5) | Network Matcher Dedup Follow-Up
+**Task:** Apply the low-priority cleanup to deduplicate the watchdog's network-connectivity matcher.
+**Files touched:** `apps/web/src/lib/error-classification.ts`, `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/test/unit/lib/error-classification.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Exported `isNetworkConnectivityFailureText()` from `error-classification.ts`, switched `classifyError()` to use it internally, and updated `internal-runner-queue.ts` to reuse the same helper instead of carrying its own regex list. Added focused unit coverage for the exported helper.
+**Open items:** None from this cleanup itself. The broader provider-scan suggestion remains intentionally out of scope.
+**Warnings:** This is a maintenance-only follow-up; behavior should remain unchanged.
+**For next agent:** Focused verification passed: `npm -w apps/web exec vitest run test/unit/lib/error-classification.test.ts test/unit/lib/auto-pause-flow.integration.test.ts test/unit/lib/drain-runner-pause.integration.test.ts`.
+**Learnings:** no

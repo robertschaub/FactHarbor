@@ -209,19 +209,24 @@ Persist intermediate pipeline state after each major stage. Failed or interrupte
 
 ## 7. Recommended Sequence
 
-1. **Option A.1+A.2 done** — classification fix + Stage 4 failure recording. The circuit breaker can now trip during internet outages.
-2. **Option A.3 (probe)** — fast-fail connectivity check before Stage 4. Reduces wasted time from minutes to seconds per job. Small follow-on.
-3. **Option B** — pipeline hold/resume for short outages. Medium.
-4. **Option C** — job checkpointing. Long-term.
+1. **Option A.1+A.2+A.3+A.4+A.5 done** — Stage 4 now has both failure recording and a preflight reachability check. Clear network outages abort the current job before debate starts, and repeated clear network failures still feed the LLM circuit breaker.
+2. **Option B** — pipeline hold/resume for short outages. Medium.
+3. **Option C** — job checkpointing. Long-term.
 
 ### What is now protected
 
-After A.1+A.2+A.4+A.5: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOTFOUND, ECONNREFUSED, etc.), the LLM circuit breaker opens and `pauseSystem()` fires. Queued jobs stop being dequeued. If the system is already paused when the Stage 4 catch block runs, the job aborts cleanly instead of producing fallback verdicts (A.4). The watchdog probes Anthropic periodically and auto-resumes when connectivity returns (A.5) — but only for network-caused pauses, not for auth/rate-limit pauses.
+After A.1+A.2+A.3+A.4+A.5:
+
+- If the configured primary LLM provider is clearly unreachable before Stage 4 starts, the preflight probe aborts the job immediately instead of producing fallback UNVERIFIED verdicts.
+- Clear network preflight failures (for example ENOTFOUND / ECONNREFUSED / fetch-layer failures) are recorded against the LLM provider health state, so repeated failures can still open the circuit and pause the system.
+- If 3 consecutive Stage 4 LLM calls or clear network preflight checks fail, the LLM circuit breaker opens and `pauseSystem()` fires. Queued jobs stop being dequeued.
+- If the system is already paused when the Stage 4 catch block runs, the job aborts cleanly instead of producing fallback verdicts (A.4).
+- The watchdog probes Anthropic periodically and auto-resumes when connectivity returns (A.5) — but only for network-caused pauses, not for auth/rate-limit pauses.
 
 ### What remains unprotected
 
-- **First outage-hit job can still produce fallback verdicts.** The breaker requires 3 consecutive failures to trip. If an outage starts mid-job, the first Stage 4 failure can produce fallback verdicts before the pause is active. A.4 only protects when `isSystemPaused()` is already true. A pre-call connectivity probe (A.3) or a within-job failure counter would close this gap.
 - Stage 2 LLM failures are not recorded to the breaker (Stage 2 errors are handled inline and the pipeline continues).
+- Preflight timeouts still fail the current job fast, but they do **not** currently count toward opening the LLM circuit because timeout classification stays separate from clear network-connectivity failures.
 
 ---
 
@@ -229,11 +234,17 @@ After A.1+A.2+A.4+A.5: if 3 consecutive Stage 4 LLM calls fail with network erro
 
 - [x] Option A.1 — classification fix (implemented)
 - [x] Option A.2 — Stage 4 failure recording (implemented)
+- [x] Option A.3 — pre-call connectivity probe for fast-fail (implemented)
 - [x] Option A.4 — abort current job when system paused (no damaged fallback results)
 - [x] Option A.5 — auto-resume probe in watchdog (HEAD to Anthropic API, resume if reachable)
-- [ ] Option A.3 — pre-call connectivity probe for fast-fail (follow-on)
 - [ ] Option B — pipeline hold/resume
 - [ ] Option C — job checkpointing
+
+### A.3: Pre-Stage-4 connectivity probe
+
+Immediately before verdict generation, `claimboundary-pipeline.ts` now probes the configured primary LLM provider endpoint with a lightweight HEAD request. Any HTTP response counts as reachable. If the probe fails at the transport layer, the job aborts before the Stage 4 debate starts.
+
+For clear network-connectivity failures that classify as LLM provider outages, the preflight also records the failure against provider health so repeated failures still open the existing LLM circuit breaker and pause the system. This closes the original "first outage-hit job can still produce fallback verdicts" gap for clear network outages.
 
 ### A.4: Abort job on system pause
 

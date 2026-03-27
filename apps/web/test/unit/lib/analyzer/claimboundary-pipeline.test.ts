@@ -704,6 +704,16 @@ vi.mock("@/lib/retrieval", () => ({
   extractTextFromUrl: vi.fn(),
 }));
 
+vi.mock("@/lib/connectivity-probe", () => ({
+  probeLLMConnectivity: vi.fn(async () => ({ reachable: true, statusCode: 200, durationMs: 5 })),
+}));
+
+vi.mock("@/lib/provider-health", () => ({
+  isSystemPaused: vi.fn(() => false),
+  pauseSystem: vi.fn(),
+  recordProviderFailure: vi.fn(() => ({ circuitOpened: false })),
+}));
+
 vi.mock("@/lib/analyzer/source-reliability", () => ({
   prefetchSourceReliability: vi.fn(async () => ({
     domains: [],

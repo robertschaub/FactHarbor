@@ -6,7 +6,11 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { classifyError, buildErrorId } from "@/lib/error-classification";
+import {
+  classifyError,
+  buildErrorId,
+  isNetworkConnectivityFailureText,
+} from "@/lib/error-classification";
 import { SearchProviderError } from "@/lib/web-search";
 
 describe("error-classification", () => {
@@ -262,5 +266,20 @@ describe("buildErrorId", () => {
   it("handles Exception and Failure suffixes", () => {
     expect(buildErrorId("NullPointerException: ref is null")).toBe("NULL_POINTER_EXCEPTION_REF_NULL");
     expect(buildErrorId("AuthFailure: invalid key")).toBe("AUTH_FAILURE_INVALID_KEY");
+  });
+});
+
+describe("isNetworkConnectivityFailureText", () => {
+  it("matches known network-connectivity failure strings", () => {
+    expect(isNetworkConnectivityFailureText("getaddrinfo ENOTFOUND api.anthropic.com")).toBe(true);
+    expect(isNetworkConnectivityFailureText("connect ECONNREFUSED 104.18.7.46:443")).toBe(true);
+    expect(isNetworkConnectivityFailureText("fetch failed")).toBe(true);
+  });
+
+  it("does not match auth, rate-limit, or empty values", () => {
+    expect(isNetworkConnectivityFailureText("Unauthorized")).toBe(false);
+    expect(isNetworkConnectivityFailureText("Too many requests")).toBe(false);
+    expect(isNetworkConnectivityFailureText("")).toBe(false);
+    expect(isNetworkConnectivityFailureText(undefined)).toBe(false);
   });
 });

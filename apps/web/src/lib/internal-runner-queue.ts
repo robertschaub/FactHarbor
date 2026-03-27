@@ -1,6 +1,7 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { debugLog } from "@/lib/analyzer/debug";
-import { classifyError } from "@/lib/error-classification";
+import { probeLLMConnectivity } from "@/lib/connectivity-probe";
+import { classifyError, isNetworkConnectivityFailureText } from "@/lib/error-classification";
 import {
   recordProviderFailure,
   recordProviderSuccess,
@@ -84,17 +85,6 @@ function getMaxQueueWaitMs(): number {
   return 6 * 60 * 60 * 1000;
 }
 
-/** Network-connectivity error patterns (must match error-classification.ts NETWORK_CONNECTIVITY_PATTERNS). */
-const NETWORK_PAUSE_INDICATORS = [
-  /ENOTFOUND/i,
-  /ECONNREFUSED/i,
-  /getaddrinfo/i,
-  /fetch\s*failed/i,
-  /NetworkError/i,
-  /network\s*error/i,
-  /ERR_NETWORK/i,
-];
-
 /**
  * Check whether the current system pause was caused by a network-connectivity failure
  * (DNS, TCP refused, fetch layer) rather than a provider-side issue (auth, rate limit,
@@ -106,19 +96,18 @@ function isPausedDueToNetwork(): boolean {
   if (!health.systemPaused) return false;
   // Check pause reason
   const reason = health.pauseReason ?? "";
-  if (NETWORK_PAUSE_INDICATORS.some((p) => p.test(reason))) return true;
+  if (isNetworkConnectivityFailureText(reason)) return true;
   // Check last LLM failure message (covers cases where pause reason is generic)
   const llmLastMsg = health.providers.llm?.lastFailureMessage ?? "";
-  if (NETWORK_PAUSE_INDICATORS.some((p) => p.test(llmLastMsg))) return true;
+  if (isNetworkConnectivityFailureText(llmLastMsg)) return true;
   return false;
 }
 
 /**
  * Lightweight probe to check if LLM providers are reachable again.
  * Only runs when the pause was caused by a network-connectivity failure.
- * Sends a HEAD request to the Anthropic API with a 5-second timeout.
  * If reachable, auto-resumes the system and returns true.
- * Any failure (timeout, DNS, refused) returns false without side effects.
+ * Any transport failure returns false without side effects.
  */
 async function probeAndMaybeResume(): Promise<boolean> {
   // Guard: only auto-resume for network-caused pauses.
@@ -128,21 +117,16 @@ async function probeAndMaybeResume(): Promise<boolean> {
     return false;
   }
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5_000);
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "HEAD",
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
-    console.log(`[Runner] Auto-resume probe succeeded (HTTP ${res.status}). Network connectivity restored — resuming system.`);
-    resumeSystem();
-    return true;
-  } catch {
-    // DNS failure, timeout, connection refused — still down
+  const probe = await probeLLMConnectivity({ provider: "anthropic" });
+  if (!probe.reachable) {
     return false;
   }
+
+  console.log(
+    `[Runner] Auto-resume probe succeeded (HTTP ${probe.statusCode ?? "unknown"}). Network connectivity restored — resuming system.`,
+  );
+  resumeSystem();
+  return true;
 }
 
 function getRunnerWatchdogIntervalMs(): number {

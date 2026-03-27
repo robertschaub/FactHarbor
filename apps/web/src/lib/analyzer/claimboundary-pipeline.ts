@@ -57,7 +57,13 @@ import {
 } from "./llm";
 import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
-import { isSystemPaused } from "@/lib/provider-health";
+import { classifyError } from "@/lib/error-classification";
+import {
+  isSystemPaused,
+  pauseSystem,
+  recordProviderFailure,
+} from "@/lib/provider-health";
+import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import {
   checkAbortSignal,
   classifySourceFetchFailure,
@@ -129,7 +135,7 @@ import {
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig, loadPromptConfig } from "@/lib/config-loader";
-import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
+import type { PipelineConfig } from "@/lib/config-schemas";
 import type { LLMProviderType } from "@/lib/analyzer/types";
 import { getConfig } from "@/lib/config-storage";
 import { captureConfigSnapshotAsync, getSRConfigSummary } from "@/lib/config-snapshots";
@@ -579,69 +585,22 @@ export async function runClaimBoundaryAnalysis(
     }
 
     // Stage 4: Verdict
-    checkAbortSignal(input.jobId);
-    onEvent("Generating verdicts...", 70);
-    startPhase("verdict");
     const roleTraceRecorder = (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => {
       runtimeRoleTraces.push(trace);
     };
-
-    // D5 Control 1: Only send sufficient claims through verdict stage
-    const verdictInputClaims = activeClaims;
-    let sufficientVerdicts: CBClaimVerdict[] = [];
-    if (verdictInputClaims.length > 0) {
-      try {
-        sufficientVerdicts = await generateVerdicts(
-          verdictInputClaims,
-          state.evidenceItems,
-          boundaries,
-          coverageMatrix,
-          undefined, // llmCall — use production default
-          state.warnings,
-          recordRuntimeModelUsage,
-          roleTraceRecorder,
-          onEvent,
-          input.jobId,
-          state.sources, // Fix 1: SR-aware verdict reasoning — pass sources for portfolio
-        );
-      } catch (verdictError: unknown) {
-        const errorMessage = verdictError instanceof Error
-          ? verdictError.message
-          : String(verdictError);
-        if (errorMessage.includes("was cancelled")) {
-          throw verdictError;
-        }
-        // If the LLM circuit breaker tripped (e.g., internet outage), abort the job
-        // rather than producing useless UNVERIFIED 50/0 fallback verdicts.
-        // The job will be marked FAILED, and queued jobs are protected by the pause.
-        if (isSystemPaused()) {
-          console.error("[Pipeline] Stage 4 failed and system is PAUSED — aborting job instead of producing damaged results.");
-          throw verdictError;
-        }
-        const errorFingerprint = createErrorFingerprint(verdictError);
-        console.error("[Pipeline] Stage 4 verdict generation failed; returning fallback verdicts:", verdictError);
-        state.warnings.push({
-          type: "analysis_generation_failed",
-          severity: "error",
-          message:
-            `Verdict generation failed for ${verdictInputClaims.length} claim(s); fallback UNVERIFIED verdicts returned.`,
-          details: {
-            stage: "verdict",
-            claimCount: verdictInputClaims.length,
-            errorFingerprint,
-            errorName: verdictError instanceof Error ? verdictError.name : "UnknownError",
-            errorMessage: errorMessage.slice(0, 300),
-          },
-        });
-        sufficientVerdicts = verdictInputClaims.map((claim) =>
-          createUnverifiedFallbackVerdict(
-            claim,
-            "analysis_generation_failed",
-            "Verdict generation failed due to an internal runtime error. Claim marked UNVERIFIED as a fail-open fallback.",
-          )
-        );
-      }
-    }
+    const sufficientVerdicts = await runVerdictStageWithPreflight({
+      claims: activeClaims,
+      evidenceItems: state.evidenceItems,
+      boundaries,
+      coverageMatrix,
+      warnings: state.warnings,
+      pipelineConfig: initialPipelineConfig,
+      sources: state.sources,
+      onEvent,
+      jobId: input.jobId,
+      recordRuntimeModelUsage,
+      roleTraceRecorder,
+    });
 
     // D5 Control 1: Create UNVERIFIED verdicts for insufficient claims
     const insufficientVerdicts: CBClaimVerdict[] = insufficientClaims.map((claim) =>
@@ -654,7 +613,6 @@ export async function runClaimBoundaryAnalysis(
     );
 
     let claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
-    endPhase("verdict");
 
     // B-7: Strip misleadingness fields if annotation mode doesn't include them
     if (initialPipelineConfig.claimAnnotationMode !== "verifiability_and_misleadingness") {
@@ -920,6 +878,126 @@ export async function runClaimBoundaryAnalysis(
   }
 
   }); // end runWithMetrics
+}
+
+type RunVerdictStageWithPreflightArgs = {
+  claims: AtomicClaim[];
+  evidenceItems: EvidenceItem[];
+  boundaries: ClaimAssessmentBoundary[];
+  coverageMatrix: CoverageMatrix;
+  warnings: AnalysisWarning[];
+  pipelineConfig: PipelineConfig;
+  sources: FetchedSource[];
+  onEvent?: (message: string, progress: number) => void;
+  jobId?: string;
+  recordRuntimeModelUsage?: (provider?: string, modelName?: string) => void;
+  roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void;
+  probeFn?: typeof probeLLMConnectivity;
+  generateVerdictsFn?: typeof generateVerdicts;
+  isSystemPausedFn?: typeof isSystemPaused;
+};
+
+/**
+ * Run Stage 4 with a lightweight connectivity preflight.
+ *
+ * The preflight closes the first-outage-hit gap: if the configured primary LLM
+ * provider is clearly unreachable before verdict generation starts, the job
+ * fails fast instead of fabricating fallback UNVERIFIED verdicts.
+ */
+export async function runVerdictStageWithPreflight({
+  claims,
+  evidenceItems,
+  boundaries,
+  coverageMatrix,
+  warnings,
+  pipelineConfig,
+  sources,
+  onEvent,
+  jobId,
+  recordRuntimeModelUsage,
+  roleTraceRecorder,
+  probeFn = probeLLMConnectivity,
+  generateVerdictsFn = generateVerdicts,
+  isSystemPausedFn = isSystemPaused,
+}: RunVerdictStageWithPreflightArgs): Promise<CBClaimVerdict[]> {
+  if (claims.length === 0) {
+    return [];
+  }
+
+  checkAbortSignal(jobId);
+  const provider = pipelineConfig.llmProvider ?? "anthropic";
+  const probe = await probeFn({ provider });
+  if (!probe.reachable) {
+    const errorMessage = probe.error ?? "connectivity probe failed";
+    const classified = classifyError(new Error(errorMessage));
+    if (classified.shouldCountAsProviderFailure && classified.provider === "llm") {
+      const { circuitOpened } = recordProviderFailure("llm", classified.message);
+      if (circuitOpened) {
+        pauseSystem(
+          `LLM connectivity preflight failed before Stage 4 verdict: ${classified.category} — ${classified.message.substring(0, 200)}`,
+        );
+      }
+    }
+    console.error(
+      `[Pipeline] Pre-Stage-4 connectivity probe failed for ${provider} (${probe.durationMs}ms): ${errorMessage}`,
+    );
+    throw new Error(
+      `Stage 4 aborted before verdict generation: ${provider} connectivity probe failed (${errorMessage})`,
+    );
+  }
+
+  onEvent?.("Generating verdicts...", 70);
+  startPhase("verdict");
+  try {
+    return await generateVerdictsFn(
+      claims,
+      evidenceItems,
+      boundaries,
+      coverageMatrix,
+      undefined, // llmCall — use production default
+      warnings,
+      recordRuntimeModelUsage,
+      roleTraceRecorder,
+      onEvent,
+      jobId,
+      sources,
+    );
+  } catch (verdictError: unknown) {
+    const errorMessage = verdictError instanceof Error
+      ? verdictError.message
+      : String(verdictError);
+    if (errorMessage.includes("was cancelled")) {
+      throw verdictError;
+    }
+    if (isSystemPausedFn()) {
+      console.error("[Pipeline] Stage 4 failed and system is PAUSED — aborting job instead of producing damaged results.");
+      throw verdictError;
+    }
+    const errorFingerprint = createErrorFingerprint(verdictError);
+    console.error("[Pipeline] Stage 4 verdict generation failed; returning fallback verdicts:", verdictError);
+    warnings.push({
+      type: "analysis_generation_failed",
+      severity: "error",
+      message:
+        `Verdict generation failed for ${claims.length} claim(s); fallback UNVERIFIED verdicts returned.`,
+      details: {
+        stage: "verdict",
+        claimCount: claims.length,
+        errorFingerprint,
+        errorName: verdictError instanceof Error ? verdictError.name : "UnknownError",
+        errorMessage: errorMessage.slice(0, 300),
+      },
+    });
+    return claims.map((claim) =>
+      createUnverifiedFallbackVerdict(
+        claim,
+        "analysis_generation_failed",
+        "Verdict generation failed due to an internal runtime error. Claim marked UNVERIFIED as a fail-open fallback.",
+      )
+    );
+  } finally {
+    endPhase("verdict");
+  }
 }
 
 // Stage 1 (claim extraction) extracted to claim-extraction-stage.ts

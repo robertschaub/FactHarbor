@@ -54,6 +54,11 @@ const NETWORK_CONNECTIVITY_PATTERNS = [
   /ERR_NETWORK/i,
 ];
 
+export function isNetworkConnectivityFailureText(value: string | null | undefined): boolean {
+  if (typeof value !== "string" || !value.trim()) return false;
+  return NETWORK_CONNECTIVITY_PATTERNS.some((pattern) => pattern.test(value));
+}
+
 const TIMEOUT_PATTERNS = [
   /timeout/i,
   /timed?\s*out/i,
@@ -96,7 +101,7 @@ export function classifyError(error: unknown): ClassifiedError {
   // Network connectivity failures — provider unreachable (DNS, TCP refused, fetch layer).
   // Checked BEFORE timeouts because some network errors could also match broad timeout patterns.
   // These count as provider failures so the circuit breaker can auto-pause during internet outages.
-  if (NETWORK_CONNECTIVITY_PATTERNS.some((p) => p.test(msg)) || NETWORK_CONNECTIVITY_PATTERNS.some((p) => p.test(name))) {
+  if (isNetworkConnectivityFailureText(msg) || isNetworkConnectivityFailureText(name)) {
     return {
       category: "provider_outage",
       provider: "llm",
