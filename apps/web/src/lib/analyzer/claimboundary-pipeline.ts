@@ -57,6 +57,7 @@ import {
 } from "./llm";
 import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
+import { isSystemPaused } from "@/lib/provider-health";
 import {
   checkAbortSignal,
   classifySourceFetchFailure,
@@ -608,6 +609,13 @@ export async function runClaimBoundaryAnalysis(
           ? verdictError.message
           : String(verdictError);
         if (errorMessage.includes("was cancelled")) {
+          throw verdictError;
+        }
+        // If the LLM circuit breaker tripped (e.g., internet outage), abort the job
+        // rather than producing useless UNVERIFIED 50/0 fallback verdicts.
+        // The job will be marked FAILED, and queued jobs are protected by the pause.
+        if (isSystemPaused()) {
+          console.error("[Pipeline] Stage 4 failed and system is PAUSED — aborting job instead of producing damaged results.");
           throw verdictError;
         }
         const errorFingerprint = createErrorFingerprint(verdictError);

@@ -1121,7 +1121,23 @@ export async function validateVerdicts(
       const isPlausible = isVerdictDirectionPlausible(current, evidence, repairContext?.calculationConfig);
 
       if (isPlausible) {
-        console.info(`[VerdictStage] Overriding LLM direction failure for claim ${verdict.claimId} (truth ${current.truthPercentage}%) - determined plausible by evidence ratio.`);
+        const rescuedByConsistency = current.consistencyResult?.stable === true && current.consistencyResult?.assessed === true;
+        const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
+        const rescueDetail = rescuedByConsistency
+          ? `stable self-consistency (spread ${current.consistencyResult!.spread}pp)`
+          : "evidence ratio";
+        console.info(`[VerdictStage] Overriding LLM direction failure for claim ${verdict.claimId} (truth ${current.truthPercentage}%) - determined plausible by ${rescueDetail}.`);
+        warnings?.push({
+          type: "direction_rescue_plausible",
+          severity: "info",
+          message: `Claim ${verdict.claimId}: LLM direction issue overridden — ${rescueDetail} (truth ${current.truthPercentage}%).`,
+          details: {
+            claimId: verdict.claimId,
+            truthPercentage: current.truthPercentage,
+            rescueReason,
+            ...(rescuedByConsistency ? { consistencySpread: current.consistencyResult!.spread } : {}),
+          },
+        });
       } else {
         console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
         warnings?.push({
@@ -1152,7 +1168,28 @@ export async function validateVerdicts(
               validationProvider,
             );
             // Also apply plausibility check to the repaired verdict
-            if (retryDirection.valid !== false || isVerdictDirectionPlausible(repaired, evidence, repairContext?.calculationConfig)) {
+            const repairedPlausible = retryDirection.valid !== false || isVerdictDirectionPlausible(repaired, evidence, repairContext?.calculationConfig);
+            if (repairedPlausible) {
+              if (retryDirection.valid === false) {
+                // Repaired verdict passed via plausibility rescue, not LLM re-validation
+                const rescuedByConsistency = repaired.consistencyResult?.stable === true && repaired.consistencyResult?.assessed === true;
+                const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
+                const rescueDetail = rescuedByConsistency
+                  ? `stable self-consistency (spread ${repaired.consistencyResult!.spread}pp)`
+                  : "evidence ratio";
+                warnings?.push({
+                  type: "direction_rescue_plausible",
+                  severity: "info",
+                  message: `Claim ${verdict.claimId}: repaired verdict accepted via ${rescueDetail} (truth ${repaired.truthPercentage}%).`,
+                  details: {
+                    claimId: verdict.claimId,
+                    truthPercentage: repaired.truthPercentage,
+                    rescueReason,
+                    phase: "post_repair",
+                    ...(rescuedByConsistency ? { consistencySpread: repaired.consistencyResult!.spread } : {}),
+                  },
+                });
+              }
               current = repaired;
             } else {
               current = safeDowngradeVerdict(
@@ -1278,11 +1315,21 @@ function joinIssues(issues: string[]): string {
  * 
  * Uses probativeValue weights from CalcConfig if provided.
  */
-function isVerdictDirectionPlausible(
+export function isVerdictDirectionPlausible(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
+  // Self-consistency rescue boost: if the advocate produced a stable verdict
+  // (spread ≤ stableThreshold, typically 5pp) across temperature-varied reruns,
+  // the quality-over-quantity judgment is intentional and reproducible.
+  // This overrides the count-based direction check because the debate already
+  // weighed evidence quality — the label-count mismatch is a known limitation
+  // of the validator, not evidence of hallucination.
+  if (verdict.consistencyResult?.stable === true && verdict.consistencyResult?.assessed === true) {
+    return true;
+  }
+
   // Build a lookup for cited evidence by ID for weighted scoring.
   // Use the verdict's own supportingEvidenceIds / contradictingEvidenceIds as the
   // authoritative attribution from Stage 4, rather than re-reading each item's
@@ -1323,11 +1370,12 @@ function isVerdictDirectionPlausible(
   // If verdict is clear FALSE (<= 30), evidence ratio must be < 0.5.
   if (truthPercentage <= 30 && expectedRatio < 0.5) return true;
 
-  // Rule 2: Middle ground flexibility
-  // If the verdict is in the mixed range (31-69) AND evidence is also mixed (ratio 0.3-0.7),
+  // Rule 2: Middle ground flexibility (UCM: directionMixedEvidenceFloor, default 0.3)
+  // If the verdict is in the mixed range (31-69) AND evidence is also mixed (ratio within floor..1-floor),
   // defer to LLM nuance. But if evidence is unanimously one-sided (e.g., 0 supports with
   // 10 contradicts at truth=65%), this is a genuine direction issue — don't auto-pass.
-  if (truthPercentage > 30 && truthPercentage < 70 && expectedRatio >= 0.3 && expectedRatio <= 0.7) return true;
+  const mixedFloor = calcConfig?.directionMixedEvidenceFloor ?? DEFAULT_CALC_CONFIG.directionMixedEvidenceFloor ?? 0.3;
+  if (truthPercentage > 30 && truthPercentage < 70 && expectedRatio >= mixedFloor && expectedRatio <= (1 - mixedFloor)) return true;
 
   // Rule 3: Tolerance zone (Configurable in UCM - using 15pp system default)
   // Provides a safety net for edge cases near the 70/30 boundaries.

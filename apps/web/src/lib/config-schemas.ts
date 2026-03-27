@@ -1454,6 +1454,12 @@ export const CalcConfigSchema = z.object({
    * Default: 0.15 (15pp).
    */
   verdictIntegrityTolerance: z.number().min(0).max(0.5).optional(),
+  /**
+   * Lower bound for the "mixed evidence" range in direction plausibility Rule 2.
+   * Verdicts in the mixed truth range (31-69%) pass the direction check if the
+   * evidence ratio is within [floor, 1-floor]. Default: 0.3.
+   */
+  directionMixedEvidenceFloor: z.number().min(0.1).max(0.5).optional(),
 
   // ClaimBoundary Stage 5: probative value multipliers for claim influence weighting
   probativeValueWeights: z
@@ -1781,6 +1787,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   },
   mixedConfidenceThreshold: 45,
   verdictIntegrityTolerance: 0.15,
+  directionMixedEvidenceFloor: 0.3,
   probativeValueWeights: {
     high: 1.0,
     medium: 0.9,

@@ -37,6 +37,7 @@ import {
   stripPhantomEvidenceIds,
   buildSourcePortfolio,
   buildSourcePortfolioByClaim,
+  isVerdictDirectionPlausible,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
   type VerdictStageConfig,
@@ -1090,10 +1091,73 @@ describe("validateVerdicts (Step 5)", () => {
       },
     );
 
-    // Should remain 85% because weighted ratio (1.0 support / 1.0 contradict) is neutral (0.5), 
+    // Should remain 85% because weighted ratio (1.0 support / 1.0 contradict) is neutral (0.5),
     // which is considered plausible for any verdict direction in our Rules.
     expect(result[0].truthPercentage).toBe(85);
     expect(warnings.some(w => w.type === "verdict_integrity_failure")).toBe(false);
+  });
+
+  it("emits direction_rescue_plausible warning with rescueReason when ratio-based rescue fires", async () => {
+    // Truth 15% with 3 supports, 8 contradicts → ratio ~0.27 < 0.5, truth ≤ 30 → Rule 1 passes
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_03",
+      truthPercentage: 15,
+      confidence: 85,
+      supportingEvidenceIds: ["S1", "S2", "S3"],
+      contradictingEvidenceIds: ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"],
+      consistencyResult: { claimId: "AC_03", percentages: [15], average: 15, spread: 0, stable: false, assessed: false },
+    })];
+    const evidence = [
+      ...["S1", "S2", "S3"].map(id => createEvidenceItem({ id, claimDirection: "supports", relevantClaimIds: ["AC_03"] })),
+      ...["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"].map(id => createEvidenceItem({ id, claimDirection: "contradicts", relevantClaimIds: ["AC_03"] })),
+    ];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_03", groundingValid: true, issues: [] }];
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_03", directionValid: false, issues: ["LLM false positive"] }];
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const warnings: AnalysisWarning[] = [];
+    await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    const rescueWarning = warnings.find(w => w.type === "direction_rescue_plausible");
+    expect(rescueWarning).toBeDefined();
+    expect(rescueWarning!.severity).toBe("info");
+    expect(rescueWarning!.details?.rescueReason).toBe("evidence_ratio");
+  });
+
+  it("emits direction_rescue_plausible with stable_consistency rescueReason when self-consistency boost fires", async () => {
+    // Homeopathy-like: truth 65%, 1 high support, 4 medium contradicts, stable consistency
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_03",
+      truthPercentage: 65,
+      confidence: 70,
+      supportingEvidenceIds: ["S1"],
+      contradictingEvidenceIds: ["C1", "C2", "C3", "C4"],
+      consistencyResult: { claimId: "AC_03", percentages: [68, 65, 68], average: 67, spread: 3, stable: true, assessed: true },
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "S1", claimDirection: "supports", probativeValue: "high", relevantClaimIds: ["AC_03"] }),
+      ...["C1", "C2", "C3", "C4"].map(id => createEvidenceItem({ id, claimDirection: "contradicts", probativeValue: "medium", relevantClaimIds: ["AC_03"] })),
+    ];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") return [{ claimId: "AC_03", groundingValid: true, issues: [] }];
+      if (key === "VERDICT_DIRECTION_VALIDATION") return [{ claimId: "AC_03", directionValid: false, issues: ["80% contradicting at truth 65%"] }];
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const warnings: AnalysisWarning[] = [];
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    // Verdict preserved (not downgraded)
+    expect(result[0].truthPercentage).toBe(65);
+    // Warning emitted with correct rescue reason
+    const rescueWarning = warnings.find(w => w.type === "direction_rescue_plausible");
+    expect(rescueWarning).toBeDefined();
+    expect(rescueWarning!.details?.rescueReason).toBe("stable_consistency");
+    expect(rescueWarning!.details?.consistencySpread).toBe(3);
   });
 });
 
@@ -3409,5 +3473,127 @@ describe("buildSourcePortfolioByClaim", () => {
 
     const result = buildSourcePortfolioByClaim(evidence);
     expect(Object.keys(result)).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// isVerdictDirectionPlausible — self-consistency rescue boost + UCM threshold
+// ============================================================================
+
+describe("isVerdictDirectionPlausible", () => {
+  // Helper: homeopathy-like scenario (1 high-probative support, 4 medium contradicts)
+  const homeopathyEvidence = [
+    createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "high" }),
+    createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", probativeValue: "medium" }),
+    createEvidenceItem({ id: "EV_C2", claimDirection: "contradicts", probativeValue: "medium" }),
+    createEvidenceItem({ id: "EV_C3", claimDirection: "contradicts", probativeValue: "medium" }),
+    createEvidenceItem({ id: "EV_C4", claimDirection: "contradicts", probativeValue: "medium" }),
+  ];
+
+  const homeopathyVerdict = createCBVerdict({
+    truthPercentage: 65,
+    supportingEvidenceIds: ["EV_S1"],
+    contradictingEvidenceIds: ["EV_C1", "EV_C2", "EV_C3", "EV_C4"],
+    consistencyResult: {
+      claimId: "AC_01",
+      percentages: [68, 65, 68],
+      average: 67,
+      spread: 3,
+      stable: true,
+      assessed: true,
+    },
+  });
+
+  it("rescues verdict when self-consistency is stable and assessed", () => {
+    // Without the boost, this would fail: ratio=0.217, Rule 2 needs ≥0.3
+    expect(isVerdictDirectionPlausible(homeopathyVerdict, homeopathyEvidence)).toBe(true);
+  });
+
+  it("does NOT rescue when self-consistency is unstable", () => {
+    const unstableVerdict = createCBVerdict({
+      ...homeopathyVerdict,
+      consistencyResult: {
+        claimId: "AC_01",
+        percentages: [40, 65, 80],
+        average: 62,
+        spread: 40,
+        stable: false,
+        assessed: true,
+      },
+    });
+    // Unstable → falls through to ratio check → 0.217 < 0.3 → fails
+    expect(isVerdictDirectionPlausible(unstableVerdict, homeopathyEvidence)).toBe(false);
+  });
+
+  it("does NOT rescue when self-consistency was not assessed", () => {
+    const notAssessedVerdict = createCBVerdict({
+      ...homeopathyVerdict,
+      consistencyResult: {
+        claimId: "AC_01",
+        percentages: [65],
+        average: 65,
+        spread: 0,
+        stable: true,
+        assessed: false,
+      },
+    });
+    // Not assessed → falls through to ratio check → fails
+    expect(isVerdictDirectionPlausible(notAssessedVerdict, homeopathyEvidence)).toBe(false);
+  });
+
+  it("Rule 2: uses UCM directionMixedEvidenceFloor threshold", () => {
+    // Verdict in mixed range with a borderline evidence ratio
+    const mixedVerdict = createCBVerdict({
+      truthPercentage: 50,
+      supportingEvidenceIds: ["EV_S1"],
+      contradictingEvidenceIds: ["EV_C1", "EV_C2"],
+      consistencyResult: { claimId: "AC_01", percentages: [50], average: 50, spread: 0, stable: false, assessed: false },
+    });
+    const mixedEvidence = [
+      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C2", probativeValue: "high" }),
+    ];
+    // ratio = 1/3 = 0.333 — passes at floor=0.3 (default)
+    expect(isVerdictDirectionPlausible(mixedVerdict, mixedEvidence)).toBe(true);
+
+    // Lower the floor to 0.35 → 0.333 < 0.35 → fails Rule 2
+    expect(isVerdictDirectionPlausible(mixedVerdict, mixedEvidence, { directionMixedEvidenceFloor: 0.35 } as any)).toBe(false);
+  });
+
+  it("Rule 2: upper bound is symmetric (1 - floor)", () => {
+    // Evidence heavily supports but truth is in mixed range
+    const highSupportVerdict = createCBVerdict({
+      truthPercentage: 50,
+      supportingEvidenceIds: ["EV_S1", "EV_S2", "EV_S3"],
+      contradictingEvidenceIds: ["EV_C1"],
+      consistencyResult: { claimId: "AC_01", percentages: [50], average: 50, spread: 0, stable: false, assessed: false },
+    });
+    const evidenceSet = [
+      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_S2", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_S3", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", probativeValue: "high" }),
+    ];
+    // ratio = 3/4 = 0.75 — exceeds 1-0.3=0.7 → fails Rule 2 at default
+    // But passes Rule 3 tolerance (|0.75-0.50|=0.25 > 0.15) → also fails
+    // And fails Rule 1 (truth 50 < 70)
+    expect(isVerdictDirectionPlausible(highSupportVerdict, evidenceSet)).toBe(false);
+  });
+
+  it("backward compat: Rule 1 still works for decisive verdicts", () => {
+    const clearTrue = createCBVerdict({
+      truthPercentage: 85,
+      supportingEvidenceIds: ["EV_S1", "EV_S2"],
+      contradictingEvidenceIds: ["EV_C1"],
+      consistencyResult: { claimId: "AC_01", percentages: [85], average: 85, spread: 0, stable: false, assessed: false },
+    });
+    const ev = [
+      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_S2", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", probativeValue: "medium" }),
+    ];
+    // ratio = 2.0 / (2.0+0.9) = 0.69 > 0.5, truth ≥ 70 → Rule 1 passes
+    expect(isVerdictDirectionPlausible(clearTrue, ev)).toBe(true);
   });
 });
