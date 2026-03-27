@@ -2117,3 +2117,23 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The proposal still carries the inherent architectural caveat already acknowledged in the doc: advocate-side stability is not proof of full-pool correctness.
 **For next agent:** Treat the investigation doc as architecturally review-ready. If moving to implementation, preserve the distinction between current behavior and proposed observability changes.
 **Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator Fix Implementation Review
+**Task:** Review the implementation of the direction-validator false-positive fix in `apps/web`.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Found one remaining review issue. The new persisted warning for plausibility rescue is emitted only on the initial rescue path in `validateVerdicts()`, but not when a repaired verdict later passes via `isVerdictDirectionPlausible()` during re-validation. That means plausibility-based overrides are still not fully observable. Focused verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-stage.test.ts`.
+**Open items:** Add the same `direction_rescue_plausible` warning (or equivalent) on the repaired-verdict rescue branch, and add a focused test for that path.
+**Warnings:** As implemented, admins can still miss a subset of rescue events, specifically repaired verdicts accepted because the plausibility helper returns `true` at the second validation gate.
+**For next agent:** Inspect `apps/web/src/lib/analyzer/verdict-stage.ts` around lines 1123 and 1155. The first branch now emits the warning; the second still silently accepts the repaired verdict.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator Fix Final Re-Review
+**Task:** Re-review the direction-validator false-positive fix after the repaired-path warning and warning-contract tests were added.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** No review findings remain. `direction_rescue_plausible` is now emitted on both the initial plausibility-rescue path and the repaired-verdict rescue path, with `phase: "post_repair"` on the latter. The warning contract is also now directly tested for both `rescueReason: "evidence_ratio"` and `rescueReason: "stable_consistency"` plus `consistencySpread`. Focused verification passed again: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-stage.test.ts`.
+**Open items:** None from architecture review.
+**Warnings:** The existing design caveat still applies by construction: stable advocate-side consistency is not proof of full-pool correctness.
+**For next agent:** Treat this implementation as review-approved. If additional verification is desired, the next step is live validation on the Homeopathy-family scenario that originally triggered the investigation.
+**Learnings:** no
