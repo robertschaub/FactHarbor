@@ -2059,3 +2059,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Keep the rollback flag available. Also, the grounding-check warnings with missing evidence IDs observed in some runs are a separate integrity concern and should not be conflated with the remap promotion decision.
 **For next agent:** If asked to operationalize the decision, update canonical status/backlog docs to reflect the default flip and preserve the Homeopathy monitor note. Do not present the promotion as universally risk-free; present it as approved with targeted monitoring.
 **Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Close-Out Check
+**Task:** Verify the promoted default-on state for `preliminaryEvidenceLlmRemapEnabled` after commit `b5fad127` and identify any remaining close-out gaps.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the promotion commit exists at HEAD (`b5fad127 feat(config): promote preliminaryEvidenceLlmRemapEnabled to default-on`), the working tree is clean, and config defaults are updated in code/JSON. The remaining gap is documentation sync: `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` still describe remap as parked/default-off. Architecturally, the promotion is accepted; canonization is not fully closed until those status docs are updated. Remote deployment is also still pending manual execution because the automated path was blocked by SSH key issues.
+**Open items:** Update the status docs to reflect default-on + Homeopathy monitor note, then run the manual remote deploy command if deployment is still intended now.
+**Warnings:** Do not let the repository present two different truths at once: code/defaults now say ON, but status docs still say OFF. That will confuse the next agent and any Captain reviewing current state.
+**For next agent:** Update `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` before treating REMAP-1 as fully closed. Preserve the monitor note and deployment caveat.
+**Learnings:** no
