@@ -21,6 +21,7 @@ import type {
   ClaimAssessmentBoundary,
   CoverageMatrix,
   EvidenceItem,
+  FetchedSource,
   LLMProviderType,
 } from "./types";
 
@@ -86,6 +87,7 @@ export async function generateVerdicts(
   roleTraceRecorder?: (trace: { debateRole: string; promptKey: string; provider: string; model: string; strength: string; fallbackUsed: boolean }) => void,
   onEvent?: (message: string, progress: number) => void,
   jobId?: string,
+  sources?: FetchedSource[],
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -111,15 +113,16 @@ export async function generateVerdicts(
   const llmCallFn = llmCall ?? createProductionLLMCall(pipelineConfig, warnings, modelUsageRecorder, roleTraceRecorder, onEvent);
 
   return runVerdictStage(
-    claims, 
-    evidence, 
-    boundaries, 
-    coverageMatrix, 
-    llmCallFn, 
-    verdictConfig, 
-    warnings, 
+    claims,
+    evidence,
+    boundaries,
+    coverageMatrix,
+    llmCallFn,
+    verdictConfig,
+    warnings,
     onEvent,
-    calcConfig
+    calcConfig,
+    sources,
   );
 }
 

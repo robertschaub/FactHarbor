@@ -37,6 +37,7 @@ import {
   type ConsistencyResult,
   type CoverageMatrix,
   type EvidenceItem,
+  type FetchedSource,
   type LLMProviderType,
   type SourceType,
   type TriangulationScore,
@@ -126,6 +127,109 @@ function toVerdictPromptEvidenceItems(
     derivedFromSourceUrl: item.derivedFromSourceUrl,
     scopeQuality: item.scopeQuality,
   }));
+}
+
+// ============================================================================
+// SOURCE PORTFOLIO (Fix 1 — SR-aware verdict reasoning)
+// ============================================================================
+
+/**
+ * Compact per-source summary for verdict prompt context.
+ * Gives the LLM track-record metadata and evidence concentration
+ * without repeating SR fields on every evidence item.
+ */
+export interface SourcePortfolioEntry {
+  sourceId: string;
+  domain: string;
+  sourceUrl: string;
+  evidenceCount: number;
+  trackRecordScore: number | null;
+  trackRecordConfidence: number | null;
+}
+
+/**
+ * Build a compact source portfolio from evidence items and fetched sources.
+ *
+ * Groups evidence by sourceUrl, joins with FetchedSource SR data.
+ * Sources without SR data get null scores (LLM sees them as "unknown reliability").
+ */
+export function buildSourcePortfolio(
+  evidence: EvidenceItem[],
+  sources?: FetchedSource[],
+): SourcePortfolioEntry[] {
+  // Group evidence items by sourceUrl
+  const urlGroups = new Map<string, { count: number; sourceId: string }>();
+  for (const item of evidence) {
+    const url = item.sourceUrl ?? "";
+    const existing = urlGroups.get(url);
+    if (existing) {
+      existing.count++;
+    } else {
+      urlGroups.set(url, { count: 1, sourceId: item.sourceId ?? "" });
+    }
+  }
+
+  // Index sources by URL for O(1) lookup
+  const sourceByUrl = new Map<string, FetchedSource>();
+  if (sources) {
+    for (const s of sources) {
+      sourceByUrl.set(s.url, s);
+    }
+  }
+
+  const portfolio: SourcePortfolioEntry[] = [];
+  for (const [url, group] of urlGroups) {
+    const src = sourceByUrl.get(url);
+    let domain = "";
+    try {
+      domain = url ? new URL(url).hostname.replace(/^www\./, "") : "";
+    } catch { /* invalid URL — leave blank */ }
+
+    portfolio.push({
+      sourceId: src?.id ?? group.sourceId,
+      domain,
+      sourceUrl: url,
+      evidenceCount: group.count,
+      trackRecordScore: src?.trackRecordScore ?? null,
+      trackRecordConfidence: src?.trackRecordConfidence ?? null,
+    });
+  }
+
+  // Sort: most evidence first (helps LLM spot concentration)
+  portfolio.sort((a, b) => b.evidenceCount - a.evidenceCount);
+  return portfolio;
+}
+
+/**
+ * Build claim-local source portfolios.
+ *
+ * Groups evidence by claim (via `relevantClaimIds`), then builds a
+ * per-source portfolio within each claim's evidence subset. This prevents
+ * concentration metadata for one claim from bleeding into another.
+ *
+ * @param evidence - Evidence items (with relevantClaimIds assigned)
+ * @param sources - FetchedSources with SR data (optional)
+ * @returns Map of claimId → SourcePortfolioEntry[]
+ */
+export function buildSourcePortfolioByClaim(
+  evidence: EvidenceItem[],
+  sources?: FetchedSource[],
+): Record<string, SourcePortfolioEntry[]> {
+  // Group evidence by claim
+  const claimEvidence = new Map<string, EvidenceItem[]>();
+  for (const item of evidence) {
+    const claimIds = item.relevantClaimIds ?? [];
+    for (const claimId of claimIds) {
+      if (!claimEvidence.has(claimId)) claimEvidence.set(claimId, []);
+      claimEvidence.get(claimId)!.push(item);
+    }
+  }
+
+  const result: Record<string, SourcePortfolioEntry[]> = {};
+  for (const [claimId, items] of claimEvidence) {
+    result[claimId] = buildSourcePortfolio(items, sources);
+  }
+  return result;
 }
 
 // ============================================================================
@@ -307,6 +411,7 @@ export async function runVerdictStage(
   warnings?: AnalysisWarning[],
   onEvent?: (message: string, progress: number) => void,
   calculationConfig?: CalcConfig,
+  sources?: FetchedSource[],
 ): Promise<CBClaimVerdict[]> {
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
@@ -341,10 +446,16 @@ export async function runVerdictStage(
     });
   }
 
+  // Fix 1: Build partition-scoped, claim-local source portfolios.
+  // Each role sees concentration metadata only for the evidence it actually receives.
+  const advocatePortfolio = buildSourcePortfolioByClaim(advocateEvidence, sources);
+  const challengerPortfolio = buildSourcePortfolioByClaim(challengerEvidence, sources);
+  const fullPortfolio = buildSourcePortfolioByClaim(evidence, sources);
+
   // Step 1: Advocate Verdict
   onEvent?.(`Verdict debate: advocate — ${claims.length} claims`, -1);
   const advocateVerdicts = await advocateVerdict(
-    claims, advocateEvidence, boundaries, coverageMatrix, llmCall, config
+    claims, advocateEvidence, boundaries, coverageMatrix, llmCall, config, advocatePortfolio
   );
 
   // Steps 2 & 3: Run in parallel
@@ -354,8 +465,8 @@ export async function runVerdictStage(
   onEvent?.(`Verdict debate: self-consistency check`, -1);
   onEvent?.(`Verdict debate: adversarial challenge`, -1);
   const [consistencyResults, challengeDoc] = await Promise.all([
-    selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config, warnings),
-    adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config)
+    selfConsistencyCheck(claims, advocateEvidence, boundaries, coverageMatrix, advocateVerdicts, llmCall, config, warnings, advocatePortfolio),
+    adversarialChallenge(advocateVerdicts, challengerEvidence, boundaries, llmCall, config, challengerPortfolio)
       .catch((err): ChallengeDocument => {
         warnings?.push({
           type: "challenger_failure",
@@ -370,7 +481,7 @@ export async function runVerdictStage(
   // Step 4: Reconciliation — reconciler sees FULL evidence (needs complete picture)
   onEvent?.(`Verdict debate: reconciliation`, -1);
   const { verdicts: reconciledVerdicts, validatedChallengeDoc } = await reconcileVerdicts(
-    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings,
+    advocateVerdicts, challengeDoc, consistencyResults, evidence, llmCall, config, warnings, fullPortfolio,
   );
 
   // Step 4b: Baseless challenge enforcement (hybrid — revert baseless adjustments)
@@ -469,6 +580,7 @@ export async function advocateVerdict(
   coverageMatrix: CoverageMatrix,
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
 ): Promise<CBClaimVerdict[]> {
   const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
 
@@ -481,6 +593,7 @@ export async function advocateVerdict(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
+    ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
   }, { tier: config.debateRoles.advocate.strength, providerOverride: config.debateRoles.advocate.provider, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
@@ -558,6 +671,7 @@ export async function selfConsistencyCheck(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
 ): Promise<ConsistencyResult[]> {
   // Skip if disabled
   if (config.selfConsistencyMode === "disabled") {
@@ -585,6 +699,7 @@ export async function selfConsistencyCheck(
       boundaries: coverageMatrix.boundaries,
       counts: coverageMatrix.counts,
     },
+    ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
   };
 
   const [run2Verdicts, run3Verdicts] = await Promise.all([
@@ -724,6 +839,7 @@ export async function adversarialChallenge(
   boundaries: ClaimAssessmentBoundary[],
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
 ): Promise<ChallengeDocument> {
   // Temperature clamped to [0.1, 0.7] — same bounds as selfConsistencyTemperature
   const temperature = Math.max(0.1, Math.min(0.7, config.challengerTemperature));
@@ -741,6 +857,7 @@ export async function adversarialChallenge(
     })),
     evidenceItems: promptEvidenceItems,
     claimBoundaries: boundaries,
+    ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
   }, { tier: config.debateRoles.challenger.strength, temperature, providerOverride: config.debateRoles.challenger.provider, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
@@ -776,6 +893,7 @@ export async function reconcileVerdicts(
   llmCall: LLMCallFn,
   config: VerdictStageConfig = DEFAULT_VERDICT_STAGE_CONFIG,
   warnings?: AnalysisWarning[],
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
 ): Promise<ReconcileVerdictsResult> {
   // Validate challenge evidence IDs before reconciliation
   const validatedChallengeDoc = validateChallengeEvidence(challengeDoc, evidence);
@@ -792,6 +910,7 @@ export async function reconcileVerdicts(
     })),
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
+    ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
   }, { tier: config.debateRoles.reconciler.strength, providerOverride: config.debateRoles.reconciler.provider, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)

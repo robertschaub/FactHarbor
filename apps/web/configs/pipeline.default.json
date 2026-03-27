@@ -151,6 +151,7 @@
   "fetchSameDomainDelayMs": 500,
   "researchMaxQueriesPerIteration": 3,
   "sourceExtractionMaxLength": 15000,
+  "maxEvidenceItemsPerSource": 5,
   "iterationRetryDelayMs": 2000,
   "sufficiencyMinMainIterations": 1,
   "contradictionReservedIterations": 1,

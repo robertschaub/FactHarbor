@@ -35,6 +35,8 @@ import {
   enforceBaselessChallengePolicy,
   computeTruthPercentageRange,
   stripPhantomEvidenceIds,
+  buildSourcePortfolio,
+  buildSourcePortfolioByClaim,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
   type VerdictStageConfig,
@@ -48,6 +50,7 @@ import type {
   ConsistencyResult,
   CoverageMatrix,
   EvidenceItem,
+  FetchedSource,
 } from "@/lib/analyzer/types";
 import { buildCoverageMatrix } from "@/lib/analyzer/claimboundary-pipeline";
 
@@ -3227,5 +3230,184 @@ describe("stripPhantomEvidenceIds", () => {
     expect(result[0].supportingEvidenceIds).toEqual([]);
     expect(result[0].contradictingEvidenceIds).toEqual([]);
     expect(warnings).toHaveLength(0);
+  });
+});
+
+// ============================================================================
+// buildSourcePortfolio (Fix 1 — SR-aware verdict reasoning)
+// ============================================================================
+
+describe("buildSourcePortfolio", () => {
+  function createFetchedSource(overrides: Partial<FetchedSource> = {}): FetchedSource {
+    return {
+      id: "S1",
+      url: "https://example.com/article",
+      title: "Example Article",
+      trackRecordScore: 0.75,
+      trackRecordConfidence: 0.8,
+      trackRecordConsensus: true,
+      fullText: "Full text",
+      fetchedAt: "2026-03-27T00:00:00Z",
+      category: "evidence",
+      fetchSuccess: true,
+      ...overrides,
+    };
+  }
+
+  it("should group evidence by sourceUrl and count items per source", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://a.com/1", sourceId: "S_A" }),
+      createEvidenceItem({ id: "EV_02", sourceUrl: "https://a.com/1", sourceId: "S_A" }),
+      createEvidenceItem({ id: "EV_03", sourceUrl: "https://b.com/1", sourceId: "S_B" }),
+    ];
+
+    const portfolio = buildSourcePortfolio(evidence);
+    expect(portfolio).toHaveLength(2);
+    // Sorted by evidence count descending
+    expect(portfolio[0].evidenceCount).toBe(2);
+    expect(portfolio[0].domain).toBe("a.com");
+    expect(portfolio[1].evidenceCount).toBe(1);
+    expect(portfolio[1].domain).toBe("b.com");
+  });
+
+  it("should join SR data from FetchedSources when provided", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://reliable.org/study" }),
+      createEvidenceItem({ id: "EV_02", sourceUrl: "https://unreliable.net/article" }),
+    ];
+    const sources = [
+      createFetchedSource({ url: "https://reliable.org/study", trackRecordScore: 0.92, trackRecordConfidence: 0.85 }),
+      createFetchedSource({ url: "https://unreliable.net/article", trackRecordScore: 0.38, trackRecordConfidence: 0.55 }),
+    ];
+
+    const portfolio = buildSourcePortfolio(evidence, sources);
+    expect(portfolio).toHaveLength(2);
+
+    const reliable = portfolio.find(p => p.domain === "reliable.org");
+    expect(reliable?.trackRecordScore).toBe(0.92);
+    expect(reliable?.trackRecordConfidence).toBe(0.85);
+
+    const unreliable = portfolio.find(p => p.domain === "unreliable.net");
+    expect(unreliable?.trackRecordScore).toBe(0.38);
+    expect(unreliable?.trackRecordConfidence).toBe(0.55);
+  });
+
+  it("should return null scores when sources are not provided", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://example.com/page" }),
+    ];
+
+    const portfolio = buildSourcePortfolio(evidence);
+    expect(portfolio).toHaveLength(1);
+    expect(portfolio[0].trackRecordScore).toBeNull();
+    expect(portfolio[0].trackRecordConfidence).toBeNull();
+  });
+
+  it("should handle evidence with no sourceUrl gracefully", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "" }),
+      createEvidenceItem({ id: "EV_02", sourceUrl: "" }),
+    ];
+
+    const portfolio = buildSourcePortfolio(evidence);
+    expect(portfolio).toHaveLength(1);
+    expect(portfolio[0].evidenceCount).toBe(2);
+    expect(portfolio[0].domain).toBe("");
+  });
+
+  it("should include sourcePortfolioByClaim in advocate prompt input", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://a.com/1", sourceId: "S_A", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", sourceUrl: "https://a.com/1", sourceId: "S_A", relevantClaimIds: ["AC_01"] }),
+    ];
+    const boundaries = [{ id: "CB_01", name: "Boundary 1", evidenceScope: { name: "default" }, evidenceIds: ["EV_01", "EV_02"] }] as any[];
+    const coverageMatrix = { claims: ["AC_01"], boundaries: ["CB_01"], counts: [[2]] };
+
+    const portfolio = buildSourcePortfolioByClaim(evidence);
+
+    let capturedInput: Record<string, unknown> = {};
+    const mockLlm: LLMCallFn = async (key, input) => {
+      capturedInput = input;
+      return [{ claimId: "AC_01", truthPercentage: 65, confidence: 70, reasoning: "test", supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [] }];
+    };
+
+    await advocateVerdict(claims, evidence, boundaries, coverageMatrix, mockLlm, DEFAULT_VERDICT_STAGE_CONFIG, portfolio);
+
+    expect(capturedInput.sourcePortfolioByClaim).toBeDefined();
+    const spByClaim = capturedInput.sourcePortfolioByClaim as Record<string, any[]>;
+    expect(spByClaim["AC_01"]).toBeDefined();
+    expect(spByClaim["AC_01"]).toHaveLength(1);
+    expect(spByClaim["AC_01"][0].domain).toBe("a.com");
+    expect(spByClaim["AC_01"][0].evidenceCount).toBe(2);
+  });
+});
+
+// ============================================================================
+// buildSourcePortfolioByClaim (Fix 1 — claim-local portfolio)
+// ============================================================================
+
+describe("buildSourcePortfolioByClaim", () => {
+  it("should produce separate portfolios per claim", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://flooding.org/article", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", sourceUrl: "https://flooding.org/article", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_03", sourceUrl: "https://flooding.org/article", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_04", sourceUrl: "https://good.org/study", relevantClaimIds: ["AC_02"] }),
+      createEvidenceItem({ id: "EV_05", sourceUrl: "https://other.org/report", relevantClaimIds: ["AC_02"] }),
+    ];
+
+    const result = buildSourcePortfolioByClaim(evidence);
+
+    // AC_01: 3 items from flooding.org
+    expect(result["AC_01"]).toHaveLength(1);
+    expect(result["AC_01"][0].domain).toBe("flooding.org");
+    expect(result["AC_01"][0].evidenceCount).toBe(3);
+
+    // AC_02: 1 item each from 2 sources — no concentration
+    expect(result["AC_02"]).toHaveLength(2);
+    expect(result["AC_02"][0].evidenceCount).toBe(1);
+    expect(result["AC_02"][1].evidenceCount).toBe(1);
+  });
+
+  it("should not bleed concentration from one claim into another", () => {
+    // flooding.org has 5 items for AC_01 but only 1 for AC_02
+    const evidence = [
+      ...Array.from({ length: 5 }, (_, i) =>
+        createEvidenceItem({ id: `EV_A${i}`, sourceUrl: "https://flooding.org/article", relevantClaimIds: ["AC_01"] }),
+      ),
+      createEvidenceItem({ id: "EV_B0", sourceUrl: "https://flooding.org/article", relevantClaimIds: ["AC_02"] }),
+      createEvidenceItem({ id: "EV_B1", sourceUrl: "https://other.org/report", relevantClaimIds: ["AC_02"] }),
+    ];
+
+    const result = buildSourcePortfolioByClaim(evidence);
+
+    // AC_01 should show 5-item concentration
+    expect(result["AC_01"][0].evidenceCount).toBe(5);
+
+    // AC_02 should show only 1 from flooding.org — not 5
+    const floodingInAC02 = result["AC_02"].find(p => p.domain === "flooding.org");
+    expect(floodingInAC02?.evidenceCount).toBe(1);
+  });
+
+  it("should handle evidence mapped to multiple claims", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://shared.org/page", relevantClaimIds: ["AC_01", "AC_02"] }),
+    ];
+
+    const result = buildSourcePortfolioByClaim(evidence);
+    expect(result["AC_01"]).toHaveLength(1);
+    expect(result["AC_02"]).toHaveLength(1);
+    expect(result["AC_01"][0].evidenceCount).toBe(1);
+    expect(result["AC_02"][0].evidenceCount).toBe(1);
+  });
+
+  it("should return empty object for evidence with no relevantClaimIds", () => {
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceUrl: "https://orphan.org/page", relevantClaimIds: [] }),
+    ];
+
+    const result = buildSourcePortfolioByClaim(evidence);
+    expect(Object.keys(result)).toHaveLength(0);
   });
 });

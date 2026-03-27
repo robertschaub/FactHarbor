@@ -898,6 +898,11 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - **Distinguish factual findings from institutional positions:**
   - When weighing evidence, distinguish between a source's **factual outputs** (research data, statistical publications, investigations, compliance reports, legal analyses, field measurements) and its **positional outputs** (executive orders, diplomatic statements, sanctions, press releases, political declarations). Factual outputs derive probative value from their methodology and data quality. Positional outputs represent institutional stances — weigh them primarily as indicators of that institution's position, not as independent evidence for or against factual claims.
   - When a non-party entity's positional output (e.g., an external actor's official statement about another institution's internal processes) is the only evidence in a boundary contradicting the claim, assess whether it provides factual counter-evidence or merely expresses political disagreement. Political disagreement alone does not constitute factual contradiction.
+- **Source concentration and track-record awareness (MANDATORY when sourcePortfolioByClaim is provided):**
+  - Consult the per-claim Source Portfolio (keyed by claim ID) to identify evidence concentration FOR EACH CLAIM independently. When multiple evidence items originate from the same source, they represent ONE analytical perspective, not independent observations. Weight them collectively, not individually.
+  - Use `trackRecordScore` (0.0–1.0, where 1.0 = highest reliability) to calibrate how much weight a source's evidence carries. A low track-record score (below 0.5) means the source has lower established reliability — its evidence items should carry proportionally less weight than items from higher-reliability sources, even if individually rated as high probativeValue.
+  - `trackRecordConfidence` indicates how confident the reliability assessment itself is. When confidence is low (below 0.6), treat the track-record score as a weak signal rather than a firm basis for discounting.
+  - Do NOT exclude evidence based solely on track-record score. Low-reliability sources can still provide valid evidence — but their items should not dominate the verdict when higher-reliability sources point in a different direction.
 
 ### Input
 
@@ -919,6 +924,11 @@ ${claimBoundaries}
 **Coverage Matrix (claims x boundaries):**
 ```
 ${coverageMatrix}
+```
+
+**Source Portfolio by Claim (per-claim, per-source reliability and evidence concentration):**
+```
+${sourcePortfolioByClaim}
 ```
 
 ### Output Schema
@@ -982,6 +992,10 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 - Each challenge point must be specific enough that the reconciler can evaluate and respond to it directly.
 - Severity assessment: "high" = would shift truth% by ≥20 percentage points; "medium" = would shift by 5-19 points or significantly affect confidence; "low" = minor concern or affects nuance only.
 - Generate at least one challenge point per claim. Generate more when evidence quality or coverage warrants it. Do not generate challenges that merely restate limitations already acknowledged in the advocate's reasoning.
+- **Source concentration and track-record challenge (MANDATORY when sourcePortfolioByClaim is provided):**
+  - For each claim, consult its per-claim Source Portfolio entry. Check for evidence concentration: if a large share of directional evidence (supports or contradicts) comes from one or two sources, flag this as an `independence_concern`. Cite the specific evidence IDs from the concentrated source.
+  - Check track-record scores: if the verdict relies heavily on evidence from sources with `trackRecordScore` below 0.5, challenge whether the verdict direction would hold if those items were given less weight. Compare against what higher-reliability sources indicate.
+  - Do NOT challenge a source purely because its track-record score is low. Challenge the analytical impact: would the verdict change if the low-reliability source's evidence were down-weighted?
 
 ### Input
 
@@ -998,6 +1012,11 @@ ${evidenceItems}
 **ClaimBoundaries:**
 ```
 ${claimBoundaries}
+```
+
+**Source Portfolio by Claim (per-claim, per-source reliability and evidence concentration):**
+```
+${sourcePortfolioByClaim}
 ```
 
 ### Output Schema
@@ -1052,6 +1071,9 @@ Produce a final verdict that:
 - `challengeResponses`: for each challenge addressed, indicate the type, your response, whether the verdict was adjusted, and which challenge point IDs informed the adjustment (`adjustmentBasedOnChallengeIds`).
 - The reconciled verdict should represent your best assessment given ALL inputs — advocate evidence, challenges, and consistency data.
 - If misleadingness assessment is requested (via configuration), assess `misleadingness` INDEPENDENTLY of `truthPercentage`. A claim can be factually true (high truth%) yet highly misleading if it cherry-picks data, omits crucial context, implies false causation, or uses technically-correct framing to create a false impression. "90% true AND highly misleading" is a valid and expected output state. Do NOT let misleadingness influence your truthPercentage or vice versa.
+- **Source concentration and track-record reconciliation (MANDATORY when sourcePortfolioByClaim is provided):**
+  - When the challenger raises an `independence_concern` about evidence concentration from a single source, verify the concern against that claim's per-claim Source Portfolio entry. If a source with `trackRecordScore` below 0.5 contributes a disproportionate share of directional evidence, give that challenge serious weight and consider adjusting the verdict.
+  - When reconciling, ensure the final verdict does not rely primarily on volume from a single low-reliability source. The number of items from a source is not a proxy for the strength of the underlying argument.
 
 ### Input
 
@@ -1068,6 +1090,11 @@ ${challenges}
 **Self-Consistency Results:**
 ```
 ${consistencyResults}
+```
+
+**Source Portfolio by Claim (per-claim, per-source reliability and evidence concentration):**
+```
+${sourcePortfolioByClaim}
 ```
 
 ### Output Schema

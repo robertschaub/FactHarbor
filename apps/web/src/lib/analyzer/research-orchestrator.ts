@@ -45,12 +45,13 @@ import { loadAndRenderSection } from "./prompt-loader";
 // Import sibling stage modules
 import { generateResearchQueries } from "./research-query-stage";
 import { fetchSources, reconcileEvidenceSourceIds } from "./research-acquisition-stage";
-import { 
-  classifyRelevance, 
-  extractResearchEvidence, 
-  assessEvidenceApplicability, 
+import {
+  classifyRelevance,
+  extractResearchEvidence,
+  assessEvidenceApplicability,
   assessScopeQuality,
   assessEvidenceBalance,
+  applyPerSourceCap,
 } from "./research-extraction-stage";
 import { upsertSearchProviderWarning } from "./claim-extraction-stage";
 
@@ -834,7 +835,25 @@ export async function runResearchIteration(
           item.searchStrategy = "contradiction";
         }
       }
-      state.evidenceItems.push(...kept);
+
+      // 11. Per-source evidence cap (Fix 2 — single-source flooding mitigation)
+      // Reselects best-N across existing+new by probativeValue, evicting weaker
+      // existing items when a stronger new item arrives from the same source.
+      const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
+      const { kept: cappedItems, capped: cappedCount, evictedIds } = applyPerSourceCap(
+        kept, state.evidenceItems, maxPerSource,
+      );
+      if (cappedCount > 0 || evictedIds.length > 0) {
+        debugLog(
+          `[Stage2] Per-source cap: kept ${cappedItems.length}/${kept.length} new, ` +
+          `dropped ${cappedCount} new, evicted ${evictedIds.length} existing (max ${maxPerSource}/source).`,
+        );
+      }
+      if (evictedIds.length > 0) {
+        const evictedSet = new Set(evictedIds);
+        state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
+      }
+      state.evidenceItems.push(...cappedItems);
 
       // Track contradiction/contrarian sources
       if (iterationType === "contradiction" || iterationType === "contrarian") {

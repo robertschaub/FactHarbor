@@ -538,6 +538,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Maximum number of search queries generated per research iteration (default: 3)"),
   sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
     .describe("Maximum characters extracted from an individual source for evidence processing (default: 15000)"),
+  maxEvidenceItemsPerSource: z.number().int().min(1).max(50).optional()
+    .describe("Maximum evidence items retained per source URL after extraction. Prevents a single verbose source from flooding the evidence pool. Keeps highest probativeValue first. Default: 5. Set to 50 to effectively disable."),
   iterationRetryDelayMs: z.number().int().min(0).max(10000).optional()
     .describe("Delay in milliseconds between retries for transient fetch failures (default: 2000)"),
   sufficiencyMinMainIterations: z.number().int().min(0).max(10).optional()
@@ -1122,6 +1124,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   fetchSameDomainDelayMs: 500,
   researchMaxQueriesPerIteration: 3,
   sourceExtractionMaxLength: 15000,
+  maxEvidenceItemsPerSource: 5,
   iterationRetryDelayMs: 2000,
   sufficiencyMinMainIterations: 1,
   contradictionReservedIterations: 1,

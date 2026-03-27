@@ -5,6 +5,7 @@ import {
   assessEvidenceApplicability,
   assessScopeQuality,
   assessEvidenceBalance,
+  applyPerSourceCap,
 } from "@/lib/analyzer/research-extraction-stage";
 import {
   loadAndRenderSection,
@@ -757,6 +758,131 @@ describe("Research Extraction Stage", () => {
       // 2 directional items < default minDirectional (3)
       const metrics = assessEvidenceBalance(items);
       expect(metrics.isSkewed).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // applyPerSourceCap (Fix 2 — single-source flooding mitigation)
+  // ============================================================================
+
+  describe("applyPerSourceCap", () => {
+    it("should pass through items when all sources are within cap", () => {
+      const items = [
+        createEvidence({ id: "EV_01", sourceUrl: "https://a.com/1" }),
+        createEvidence({ id: "EV_02", sourceUrl: "https://b.com/1" }),
+        createEvidence({ id: "EV_03", sourceUrl: "https://c.com/1" }),
+      ];
+      const { kept, capped, evictedIds } = applyPerSourceCap(items, [], 5);
+      expect(kept).toHaveLength(3);
+      expect(capped).toBe(0);
+      expect(evictedIds).toHaveLength(0);
+    });
+
+    it("should cap items from a single source exceeding the limit", () => {
+      const items = Array.from({ length: 8 }, (_, i) =>
+        createEvidence({ id: `EV_${i}`, sourceUrl: "https://verbose.org/article", probativeValue: "high" }),
+      );
+      const { kept, capped, evictedIds } = applyPerSourceCap(items, [], 5);
+      expect(kept).toHaveLength(5);
+      expect(capped).toBe(3);
+      expect(evictedIds).toHaveLength(0);
+    });
+
+    it("should keep highest probativeValue items when capping", () => {
+      const items = [
+        createEvidence({ id: "EV_H1", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+        createEvidence({ id: "EV_L1", sourceUrl: "https://a.com/1", probativeValue: "low" }),
+        createEvidence({ id: "EV_M1", sourceUrl: "https://a.com/1", probativeValue: "medium" }),
+        createEvidence({ id: "EV_H2", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+        createEvidence({ id: "EV_L2", sourceUrl: "https://a.com/1", probativeValue: "low" }),
+      ];
+      const { kept, capped } = applyPerSourceCap(items, [], 3);
+      expect(kept).toHaveLength(3);
+      expect(capped).toBe(2);
+      // Should keep: 2 high, 1 medium (sorted by probativeValue desc)
+      const keptValues = kept.map((e: any) => e.probativeValue);
+      expect(keptValues).toEqual(["high", "high", "medium"]);
+    });
+
+    it("should account for existing evidence and keep best-N across combined pool", () => {
+      const existing = [
+        createEvidence({ id: "EV_EXIST_1", sourceUrl: "https://a.com/1", probativeValue: "low" }),
+        createEvidence({ id: "EV_EXIST_2", sourceUrl: "https://a.com/1", probativeValue: "low" }),
+        createEvidence({ id: "EV_EXIST_3", sourceUrl: "https://a.com/1", probativeValue: "medium" }),
+      ];
+      const newItems = [
+        createEvidence({ id: "EV_NEW_1", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+        createEvidence({ id: "EV_NEW_2", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+        createEvidence({ id: "EV_NEW_3", sourceUrl: "https://a.com/1", probativeValue: "low" }),
+      ];
+      // Cap=3: best-N should keep 2 high (new) + 1 medium (existing), evicting 2 existing low
+      const { kept, capped, evictedIds } = applyPerSourceCap(newItems, existing, 3);
+      expect(kept).toHaveLength(2); // 2 new high items retained
+      expect(capped).toBe(1); // 1 new low item dropped
+      expect(evictedIds).toHaveLength(2); // 2 existing low items evicted
+      expect(evictedIds).toContain("EV_EXIST_1");
+      expect(evictedIds).toContain("EV_EXIST_2");
+    });
+
+    it("should prefer existing items over new items at same probativeValue tier", () => {
+      const existing = [
+        createEvidence({ id: "EV_EXIST_1", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+        createEvidence({ id: "EV_EXIST_2", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+      ];
+      const newItems = [
+        createEvidence({ id: "EV_NEW_1", sourceUrl: "https://a.com/1", probativeValue: "high" }),
+      ];
+      // Cap=2: existing items should be preferred over new at same tier
+      const { kept, capped, evictedIds } = applyPerSourceCap(newItems, existing, 2);
+      expect(kept).toHaveLength(0); // new item dropped (existing preferred at same tier)
+      expect(capped).toBe(1);
+      expect(evictedIds).toHaveLength(0); // no evictions
+    });
+
+    it("should not cap items from different sources", () => {
+      const items = [
+        createEvidence({ id: "EV_A1", sourceUrl: "https://a.com/1" }),
+        createEvidence({ id: "EV_A2", sourceUrl: "https://a.com/1" }),
+        createEvidence({ id: "EV_B1", sourceUrl: "https://b.com/1" }),
+        createEvidence({ id: "EV_B2", sourceUrl: "https://b.com/1" }),
+        createEvidence({ id: "EV_C1", sourceUrl: "https://c.com/1" }),
+      ];
+      const { kept, capped, evictedIds } = applyPerSourceCap(items, [], 3);
+      expect(kept).toHaveLength(5);
+      expect(capped).toBe(0);
+      expect(evictedIds).toHaveLength(0);
+    });
+
+    it("should evict weaker existing items when new high-quality item arrives", () => {
+      const existing = Array.from({ length: 5 }, (_, i) =>
+        createEvidence({ id: `EV_E${i}`, sourceUrl: "https://full.org/page", probativeValue: "low" }),
+      );
+      const newItems = [
+        createEvidence({ id: "EV_NEW", sourceUrl: "https://full.org/page", probativeValue: "high" }),
+      ];
+      // Cap=5: new high should displace one existing low
+      const { kept, capped, evictedIds } = applyPerSourceCap(newItems, existing, 5);
+      expect(kept).toHaveLength(1);
+      expect(kept[0].id).toBe("EV_NEW");
+      expect(capped).toBe(0);
+      expect(evictedIds).toHaveLength(1); // one existing low evicted
+    });
+
+    it("should return all items when maxPerSource is 0 (disabled)", () => {
+      const items = Array.from({ length: 10 }, (_, i) =>
+        createEvidence({ id: `EV_${i}`, sourceUrl: "https://same.org/page" }),
+      );
+      const { kept, capped, evictedIds } = applyPerSourceCap(items, [], 0);
+      expect(kept).toHaveLength(10);
+      expect(capped).toBe(0);
+      expect(evictedIds).toHaveLength(0);
+    });
+
+    it("should handle empty new items gracefully", () => {
+      const { kept, capped, evictedIds } = applyPerSourceCap([], [], 5);
+      expect(kept).toHaveLength(0);
+      expect(capped).toBe(0);
+      expect(evictedIds).toHaveLength(0);
     });
   });
 

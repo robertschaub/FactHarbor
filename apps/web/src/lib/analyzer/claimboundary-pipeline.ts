@@ -601,6 +601,7 @@ export async function runClaimBoundaryAnalysis(
           roleTraceRecorder,
           onEvent,
           input.jobId,
+          state.sources, // Fix 1: SR-aware verdict reasoning — pass sources for portfolio
         );
       } catch (verdictError: unknown) {
         const errorMessage = verdictError instanceof Error

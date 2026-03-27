@@ -600,3 +600,104 @@ export function assessEvidenceBalance(
   };
 }
 
+// ============================================================================
+// PER-SOURCE EVIDENCE CAP (Fix 2 — single-source flooding mitigation)
+// ============================================================================
+
+/** Probative value sort order: high > medium > low. */
+const PROBATIVE_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+
+/**
+ * Enforce a per-source evidence item cap by retaining the best N items
+ * (by probativeValue) across both the existing pool and newly extracted items.
+ *
+ * Structural plumbing — not semantic filtering. Prevents any single source URL
+ * from contributing more than `maxPerSource` items to the evidence pool.
+ *
+ * Unlike a first-come approach, a higher-quality new item can displace a
+ * lower-quality existing item from the same source. Evicted existing item IDs
+ * are returned so the caller can remove them from the pool.
+ *
+ * Within the same probativeValue tier, existing items are preferred over new
+ * items (stable — no churn when quality is equal).
+ *
+ * @param newItems - Newly extracted items to be added this iteration
+ * @param existingEvidence - Items already in the evidence pool
+ * @param maxPerSource - Cap per source URL (UCM: maxEvidenceItemsPerSource)
+ * @returns `kept` new items to add, `capped` count, `evictedIds` to remove from pool
+ */
+export function applyPerSourceCap(
+  newItems: EvidenceItem[],
+  existingEvidence: EvidenceItem[],
+  maxPerSource: number,
+): { kept: EvidenceItem[]; capped: number; evictedIds: string[] } {
+  if (maxPerSource <= 0 || newItems.length === 0) {
+    return { kept: newItems, capped: 0, evictedIds: [] };
+  }
+
+  // Index existing items by source URL
+  const existingBySource = new Map<string, EvidenceItem[]>();
+  for (const item of existingEvidence) {
+    const url = item.sourceUrl ?? "";
+    if (!existingBySource.has(url)) existingBySource.set(url, []);
+    existingBySource.get(url)!.push(item);
+  }
+
+  // Group new items by source URL
+  const newBySource = new Map<string, EvidenceItem[]>();
+  for (const item of newItems) {
+    const url = item.sourceUrl ?? "";
+    if (!newBySource.has(url)) newBySource.set(url, []);
+    newBySource.get(url)!.push(item);
+  }
+
+  const kept: EvidenceItem[] = [];
+  const evictedIds: string[] = [];
+  let capped = 0;
+
+  for (const [url, newSourceItems] of newBySource) {
+    const existingSourceItems = existingBySource.get(url) ?? [];
+    const totalCount = existingSourceItems.length + newSourceItems.length;
+
+    if (totalCount <= maxPerSource) {
+      // Combined pool is within cap — keep all new items, no evictions
+      kept.push(...newSourceItems);
+      continue;
+    }
+
+    // Merge existing + new, sort by probativeValue descending.
+    // Tag each item so we can tell existing from new after sorting.
+    type Tagged = { item: EvidenceItem; isNew: boolean };
+    const merged: Tagged[] = [
+      ...existingSourceItems.map((item) => ({ item, isNew: false })),
+      ...newSourceItems.map((item) => ({ item, isNew: true })),
+    ];
+
+    // Sort: best probativeValue first. Within same tier, existing before new (stable preference).
+    merged.sort((a, b) => {
+      const aOrder = PROBATIVE_ORDER[a.item.probativeValue ?? "low"] ?? 2;
+      const bOrder = PROBATIVE_ORDER[b.item.probativeValue ?? "low"] ?? 2;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Same tier: prefer existing over new (no churn when equal quality)
+      if (a.isNew !== b.isNew) return a.isNew ? 1 : -1;
+      return 0;
+    });
+
+    const retained = merged.slice(0, maxPerSource);
+    const dropped = merged.slice(maxPerSource);
+
+    // Collect new items that survived into `kept`
+    for (const tagged of retained) {
+      if (tagged.isNew) kept.push(tagged.item);
+    }
+
+    // Collect existing items that were evicted
+    for (const tagged of dropped) {
+      if (!tagged.isNew) evictedIds.push(tagged.item.id);
+      else capped++;
+    }
+  }
+
+  return { kept, capped, evictedIds };
+}
+

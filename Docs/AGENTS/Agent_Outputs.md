@@ -1,6 +1,16 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | FLOOD-1: Single-Source Flooding Mitigation (Fix 1 + Fix 2)
+**Task:** Implement approved single-source flooding mitigation for the ClaimAssessmentBoundary pipeline per `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
+**Files touched:** `verdict-stage.ts` (source portfolio builder + claim-local threading), `verdict-generation-stage.ts` (sources parameter), `claimboundary-pipeline.ts` (pass state.sources), `research-extraction-stage.ts` (applyPerSourceCap with best-N reselection), `research-orchestrator.ts` (cap enforcement + eviction), `config-schemas.ts` + `pipeline.default.json` (maxEvidenceItemsPerSource: 5), `claimboundary.prompt.md` (3 verdict sections + reseed), `verdict-stage.test.ts` (9 new tests), `research-extraction-stage.test.ts` (9 new tests).
+**Key decisions:** (1) Source portfolio is **claim-local** (`sourcePortfolioByClaim: Record<string, SourcePortfolioEntry[]>`) — evidence concentration for AC_01 does not bleed into AC_02/AC_03. (2) Portfolio is **partition-scoped** — advocate sees portfolio from institutional evidence, challenger from general evidence, reconciler from full pool (respects D5 partitioning). (3) Per-source cap uses **best-N reselection** across existing+new items by probativeValue — a later high-quality item can displace an earlier weaker item from the same source (returns `evictedIds`). Within same tier, existing items preferred over new (no churn). (4) Prompt-contract changes instruct each role (advocate/challenger/reconciler) with role-appropriate SR-awareness rules.
+**Review corrections applied:** Lead Architect review identified (a) global portfolio bled concentration across claims and ignored D5 partitioning → fixed with claim-local + partition-scoped portfolios, (b) first-come cap semantics → fixed with best-N reselection + eviction.
+**Open items:** Live validation required — 4 runs per investigation §12: 2× Bolsonaro, 1× Plastik DE, 1× Hydrogen.
+**Verification:** 1411 tests pass (70 files), build clean, config-drift clean, prompts reseeded (`df2b04aa → 9ba9f521`).
+**For next agent:** Run the 4-run validation plan. Success criteria: AC_01 TP rises toward 55-65 range, no source contributes >5 items, no regression on Plastik DE or Hydrogen. Anti-success: cap discards critical evidence from sole-provider sources, verdict ignores SR data despite prompt change.
+
+---
 ### 2026-03-27 | Lead Architect | Claude Code (Opus 4.6) | Single-Source Evidence Flooding Investigation + Multi-Agent Debate
 **Task:** Investigate why job `efc5e66f` (Bolsonaro, MIXED 56/51) produced LEANING-FALSE on AC_01 instead of expected LEANING-TRUE.
 **Files touched:** `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -1966,6 +1976,36 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Implementation Review
+**Task:** Review the implementation of Fix 1 (SR-aware verdict reasoning) and Fix 2 (per-source evidence cap) against the approved design.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Implementation is close, but not yet architecturally clean. Found two substantive issues: (1) `sourcePortfolio` is built once from the full evidence pool and passed unchanged into multi-claim verdict calls, so its `evidenceCount` is global rather than claim-local and also leaks across D5 advocate/challenger partitions; this weakens the intended “for this claim / for this role” concentration signal. (2) `applyPerSourceCap()` is incremental only: once a source has reached the cap, later higher-probative items from that same source are discarded rather than replacing weaker earlier items. The cap therefore enforces volume limits but does not truly retain the best `maxPerSource` items across the cumulative pool.
+**Open items:** Rework Fix 1 to provide claim-local source concentration context, ideally `sourcePortfolioByClaim` (and preferably role-scoped when partitioning is active). Rework Fix 2 to reselect the best retained items per source across `existing + new`, or explicitly accept/document the weaker “first to fill wins” behavior.
+**Warnings:** Test coverage added for the helpers is good, but it does not currently cover claim-local portfolio correctness, partition interaction, or replacement behavior once a source is already at the cap.
+**For next agent:** Start in `apps/web/src/lib/analyzer/verdict-stage.ts` and `apps/web/src/lib/analyzer/research-extraction-stage.ts`. Preserve the structural-only nature of the cap and do not revert the prompt-contract work; the remaining work is about scoping and cumulative selection semantics.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Recommendation Update
+**Task:** Re-evaluate the same implementation after live-file changes and independent sub-agent review.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The earlier global-portfolio concern is superseded. `verdict-stage.ts` now builds claim-local, role-scoped portfolios (`buildSourcePortfolioByClaim`) for advocate/self-consistency/challenger and a full claim-local portfolio for reconciliation. That architectural direction is correct. The current blocker is prompt-contract mismatch: Stage 4 now passes `sourcePortfolioByClaim` into VERDICT_ADVOCATE and VERDICT_CHALLENGER inputs, but the prompt sections still interpolate `${sourcePortfolio}`. `prompt-loader.ts` leaves unknown placeholders unchanged, so the new claim-local portfolio likely never reaches the model in those roles. Cap semantics were also re-reviewed: the current “first retained items consume slots; later items do not replace them” behavior is acceptable for initial rollout as a blunt safety rail, but the comments/tests should describe that honestly.
+**Open items:** Align prompt variable names and tests with the current claim-local contract (`sourcePortfolioByClaim`) or change the code back to the original `sourcePortfolio` key consistently. Add focused tests that assert the rendered prompt input key matches the prompt contract.
+**Warnings:** Do not approve the current working tree as-is. Fix 1 is partially broken until the prompt variable mismatch is corrected. Fix 2 does not block rollout, but its contract wording should not overstate “best items overall” semantics.
+**For next agent:** Check `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/prompt-loader.ts`, and `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`. Preserve claim-local, role-scoped portfolio semantics; the needed fix is consistency, not rollback.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Final Re-Review
+**Task:** Re-review the latest source after the Senior Developer addressed the prompt-contract mismatch and updated tests.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** No review findings remain in the current source. The verdict path now consistently uses `sourcePortfolioByClaim` in code and prompts, including advocate, self-consistency, challenger, and reconciliation. The per-source cap semantics were also upgraded from incremental first-come retention to best-N re-selection across existing+new items with explicit eviction of weaker existing items. Focused verification passed: targeted vitest for verdict-stage + research-extraction-stage passed, and `npm -w apps/web run build` passed with prompt reseed unchanged.
+**Open items:** Live validation against the Bolsonaro / Plastik / Hydrogen families remains the main empirical follow-up.
+**Warnings:** Residual risk is behavioral, not structural: the LLM may still underuse the new portfolio signal in some edge cases, so live validation is still needed before calling the mitigation fully proven.
+**For next agent:** If Captain wants confidence beyond static review, run the planned live validation matrix from the investigation document. Otherwise this implementation is architecturally acceptable for merge.
+**Learnings:** no
+
+---
 ### 2026-03-27 | Lead Developer | Codex (GPT-5) | Seeded Evidence Remap Canonization and Commit Split
 **Task:** Sync the seeded-evidence remap work into canonical docs and commit the repo in meaningful chunks.
 **Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`, `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`, `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`, `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`
@@ -1973,4 +2013,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** The final promote-or-hold decision for `preliminaryEvidenceLlmRemapEnabled` is still parked. Remaining verification lives in `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`.
 **Warnings:** Do not treat the remap as canonical default-on behavior yet. The paused promotion gate still needs the OFF comparison runs and remapped-evidence spot-check before any default flip.
 **For next agent:** Resume the default-on decision from `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`. Treat the current canonical state as: feature exists, default remains off, selective validation/use is approved.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Gate Sequencing Recommendation
+**Task:** Advise whether live jobs should be run before resuming the parked seeded-evidence remap promotion gate.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recommended running a small current-stack live A/B batch before resuming the parked gate. Reason: the parked remap evidence was collected on commit `1ff092cdf8b442d12716ddb1b704d5247554d199+df1135bd`, while current HEAD is `5654841be8cc` and the analyzer stack has materially changed due to the single-source flooding mitigation. The old batch is therefore not decision-grade for a default-on remap promotion. Also verified that the parked note is stale: job `a71bc67082b64bf0945bb4ee650b3148` is no longer running and actually succeeded (`LEANING-FALSE`, 36/75) on the old commit.
+**Open items:** Run current-stack ON/OFF comparison jobs before making the promotion decision. Minimum recommended batch: Bolsonaro extended input ON/OFF plus Plastik DE ON/OFF with only `preliminaryEvidenceLlmRemapEnabled` toggled. Add second replicates only if the 4-run signal is ambiguous.
+**Warnings:** Do not continue the parked gate as if it were still a clean same-stack comparison. The historical ON runs remain useful background, but not a merge/promotion-grade basis for a default flip after the new mitigation landed.
+**For next agent:** Update `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` to mark `a71bc670` as completed, then use the current-stack A/B batch to decide whether remap still delivers net value under the new baseline. Spot-check remapped Bolsonaro items from the fresh ON run, not only the historical March 27 runs.
 **Learnings:** no
