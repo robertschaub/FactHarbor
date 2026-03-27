@@ -167,3 +167,36 @@ Inspected 15 of the 22 mapped seeded items from Bolsonaro ON (`e25cb33c`).
 **Rollback:** Set `preliminaryEvidenceLlmRemapEnabled: false` via Admin UI or reseed with reverted file defaults. The flag remains a standard UCM toggle.
 
 **Monitor item:** Homeopathy-family broad evaluative inputs — watch for confidence anomalies after promotion. If a pattern emerges, investigate whether seeded evidence concentration triggers self-consistency instability.
+
+---
+
+## 10. Post-Promotion Confirmation Runs
+
+Two runs executed after default flip to `true` (`b5fad127`) to confirm stability before remote deploy.
+
+| Input | Job | Verdict | Truth% | Conf% | Seeded | Mapped | Unmapped | Remap% |
+|-------|-----|---------|--------|-------|--------|--------|----------|--------|
+| **Homeopathy EN** | `de699b14` | MOSTLY-FALSE | 26.6 | **71.1** | 35 | 32 | 3 | 91% |
+| **Bolsonaro ext.** | `bf2c3b9a` | LEANING-TRUE | 70.4 | 69.0 | 28 | 22 | 6 | 79% |
+
+### Homeopathy EN — monitor signal resolved
+
+The prior A/B gate run showed a confidence collapse (74.2→24.0 under ON). This post-promotion run shows **71.1% confidence** — normal range, no collapse. Per-claim:
+
+| Claim | Verdict | Truth/Conf | Items | Source Types | Domains |
+|-------|---------|-----------|-------|-------------|---------|
+| AC_01 | MOSTLY-FALSE | 18/78 | 18 | 3 | 6 |
+| AC_02 | LEANING-FALSE | 38/65 | 25 | 3 | 8 |
+| AC_03 | MOSTLY-FALSE | 22/70 | 20 | 2 | 5 |
+
+The earlier confidence anomaly appears to have been a single-observation self-consistency variance, not a remap artifact. The monitor item remains active but is not currently firing.
+
+### Bolsonaro — stable in established band
+
+| Claim | Verdict | Truth/Conf | Items | Source Types | Domains |
+|-------|---------|-----------|-------|-------------|---------|
+| AC_01 | LEANING-TRUE | 65/68 | 22 | 6 | 7 |
+| AC_02 | MOSTLY-TRUE | 76/78 | 24 | 5 | 9 |
+| AC_03 | LEANING-TRUE | 68/56 | 25 | 5 | 10 |
+
+Consistent with all prior Bolsonaro remap runs (truth range 61.6-70.4%, confidence range 66.5-69.0%).

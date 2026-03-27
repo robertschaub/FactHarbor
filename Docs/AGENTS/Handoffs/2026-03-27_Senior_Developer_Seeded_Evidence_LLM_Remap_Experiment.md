@@ -96,6 +96,8 @@ The successful-path test (added 2026-03-27, tightening pass) mocks `extractStruc
 | 3 | Plastik DE (regression) | `f2d33239` | MOSTLY-FALSE | 28.4 | 60.9 | 43 | 43 | 0 | N/A (all numeric) |
 | 4 | Hydrogen (mixed) | `ef27f1b2` | MOSTLY-FALSE | 18.5 | 77.7 | 25 | 19 | 6 | **76%** |
 | 5 | Bolsonaro (extended input) | `efc5e66f` | MIXED | 56.3 | 51.5 | 27 | 23 | 4 | **85%** |
+| 6 | Homeopathy EN (post-promotion) | `de699b14` | MOSTLY-FALSE | 26.6 | 71.1 | 35 | 32 | 3 | **91%** |
+| 7 | Bolsonaro (post-promotion) | `bf2c3b9a` | LEANING-TRUE | 70.4 | 69.0 | 28 | 22 | 6 | **79%** |
 
 ### Per-claim evidence detail
 
