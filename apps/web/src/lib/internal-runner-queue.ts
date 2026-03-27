@@ -5,6 +5,7 @@ import {
   recordProviderFailure,
   recordProviderSuccess,
   pauseSystem,
+  resumeSystem,
   isSystemPaused,
   getHealthState,
 } from "@/lib/provider-health";
@@ -81,6 +82,33 @@ function getMaxQueueWaitMs(): number {
     return raw;
   }
   return 6 * 60 * 60 * 1000;
+}
+
+/**
+ * Lightweight probe to check if LLM providers are reachable again.
+ * Sends a HEAD request to the Anthropic API base URL with a 5-second timeout.
+ * If reachable, auto-resumes the system and returns true.
+ * Any failure (timeout, DNS, refused) returns false without side effects.
+ */
+async function probeAndMaybeResume(): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5_000);
+    // HEAD to Anthropic API — doesn't need auth, just TCP/TLS connectivity.
+    // A 404 or 401 is fine — it means the server is reachable.
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "HEAD",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    // Any HTTP response (even 4xx/5xx) means connectivity is back
+    console.log(`[Runner] Auto-resume probe succeeded (HTTP ${res.status}). Resuming system.`);
+    resumeSystem();
+    return true;
+  } catch {
+    // DNS failure, timeout, connection refused — still down
+    return false;
+  }
 }
 
 function getRunnerWatchdogIntervalMs(): number {
@@ -297,8 +325,19 @@ export async function drainRunnerQueue() {
 
   try {
     if (isSystemPaused()) {
-      console.warn("[Runner] System is PAUSED — skipping queue drain. Jobs remain QUEUED until admin resumes.");
-      return;
+      // Auto-resume probe: if the system was paused by the circuit breaker (e.g., internet outage),
+      // try a lightweight connectivity check. If the LLM provider is reachable again, auto-resume.
+      if (qs.queue.length > 0) {
+        const recovered = await probeAndMaybeResume();
+        if (!recovered) {
+          console.warn("[Runner] System is PAUSED — skipping queue drain. Jobs remain QUEUED until connectivity recovers or admin resumes.");
+          return;
+        }
+        // System resumed — fall through to normal drain logic
+      } else {
+        console.warn("[Runner] System is PAUSED — no queued jobs. Skipping drain.");
+        return;
+      }
     }
 
     const apiBase = getApiBaseOrThrow();

@@ -140,11 +140,16 @@ describe("drainRunnerQueue pause integration", () => {
       vi.restoreAllMocks();
     });
 
-    it("drainRunnerQueue returns early when system is paused", async () => {
-      // Mock fetch to track any API calls
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ ok: true }), { status: 200 }),
-      );
+    it("drainRunnerQueue returns early when system is paused and probe fails", async () => {
+      // Mock fetch: the auto-resume probe (HEAD to anthropic) should fail (still offline),
+      // so the system stays paused and no job-processing API calls are made.
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes("api.anthropic.com")) {
+          throw new Error("getaddrinfo ENOTFOUND api.anthropic.com");
+        }
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
 
       // Add items to the queue
       (globalThis as any).__fhRunnerQueueState = {
@@ -162,8 +167,12 @@ describe("drainRunnerQueue pause integration", () => {
 
       await drainRunnerQueue();
 
-      // Should NOT have made any API calls (no job processing)
-      expect(fetchSpy).not.toHaveBeenCalled();
+      // Probe fetch was called (once for the connectivity check), but no job-processing fetches
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledWith(
+        expect.stringContaining("api.anthropic.com"),
+        expect.objectContaining({ method: "HEAD" }),
+      );
 
       // Should have logged the pause warning
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -175,7 +184,43 @@ describe("drainRunnerQueue pause integration", () => {
       expect(qs.queue).toHaveLength(1);
       expect(qs.queue[0].jobId).toBe("job-1");
 
+      // System should still be paused
+      expect(isSystemPaused()).toBe(true);
+
       consoleSpy.mockRestore();
+    });
+
+    it("drainRunnerQueue auto-resumes when probe succeeds", async () => {
+      // Mock fetch: probe succeeds (connectivity restored), so system resumes
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes("api.anthropic.com")) {
+          return new Response("", { status: 401 }); // Auth error = reachable
+        }
+        return new Response(JSON.stringify({ status: "QUEUED" }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [{ jobId: "job-1", enqueuedAt: Date.now() }],
+        runningJobIds: new Set<string>(),
+      };
+
+      pauseSystem("Provider down");
+      expect(isSystemPaused()).toBe(true);
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      // System should have been auto-resumed by the probe
+      expect(isSystemPaused()).toBe(false);
+
+      // Should have proceeded to process jobs (more fetches after the probe)
+      expect(globalThis.fetch).toHaveBeenCalled();
     });
 
     it("drainRunnerQueue processes jobs when system is NOT paused", async () => {

@@ -1,12 +1,12 @@
 # Agent Outputs Log
 
 ---
-### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Internet Outage Minimum Fix (OUTAGE-A1/A2)
-**Task:** Make the LLM circuit breaker trip during internet outages so queued jobs are protected.
-**Root cause:** Two gaps — (1) network errors (`ENOTFOUND`, `ECONNREFUSED`, `fetch failed`) classified as `unknown` with `shouldCountAsProviderFailure: false`, (2) Stage 4 LLM failures swallowed by fallback verdicts so the runner-level circuit breaker path never runs.
-**Fix:** (1) Added `NETWORK_CONNECTIVITY_PATTERNS` in `error-classification.ts` — DNS/TCP/fetch failures now classify as `provider_outage` with `provider: "llm"`. (2) Added `maybeRecordProviderFailure()` in `verdict-generation-stage.ts` `createProductionLLMCall` catch blocks — records to circuit breaker, pauses system if threshold reached. `ECONNRESET`/`ETIMEDOUT` remain under `timeout` (transient, not connectivity).
-**Tests:** 8 new network classification tests. 1419 total pass, build clean.
-**For next agent:** Connectivity probe (Option A.3) is the natural follow-on for fast-fail. Plan doc updated at `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`. Handoff at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Outage_Minimum_Fix.md`.
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Internet Outage Resilience (OUTAGE-A1/A2/A4/A5)
+**Task:** Make jobs survive internet outages: classify network errors, trip the circuit breaker, abort damaged jobs, auto-resume.
+**Root cause:** (1) Network errors classified as `unknown` — breaker blind. (2) Stage 4 failures swallowed by fallback verdicts — runner breaker never fires. (3) Paused jobs produce useless UNVERIFIED 50/0 results. (4) No auto-recovery — requires manual admin resume.
+**Fixes:** (A1) `NETWORK_CONNECTIVITY_PATTERNS` in `error-classification.ts`. (A2) `maybeRecordProviderFailure()` in `verdict-generation-stage.ts`. (A4) `claimboundary-pipeline.ts` Stage 4 catch re-throws when `isSystemPaused()` — no damaged results. (A5) `probeAndMaybeResume()` in `internal-runner-queue.ts` — HEAD to Anthropic on each watchdog tick, auto-resumes if reachable.
+**Tests:** 10 new tests (8 classification + 2 auto-resume). 1428 total pass, build clean.
+**For next agent:** Pre-call fast-fail probe (A.3) is the remaining follow-on. Plan at `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`.
 
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Promote `preliminaryEvidenceLlmRemapEnabled` to Default-On

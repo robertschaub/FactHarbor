@@ -229,6 +229,16 @@ After A.1+A.2: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOT
 
 - [x] Option A.1 — classification fix (implemented)
 - [x] Option A.2 — Stage 4 failure recording (implemented)
-- [ ] Option A.3 — connectivity probe (follow-on)
+- [x] Option A.4 — abort current job when system paused (no damaged fallback results)
+- [x] Option A.5 — auto-resume probe in watchdog (HEAD to Anthropic API, resume if reachable)
+- [ ] Option A.3 — pre-call connectivity probe for fast-fail (follow-on)
 - [ ] Option B — pipeline hold/resume
 - [ ] Option C — job checkpointing
+
+### A.4: Abort job on system pause
+
+When Stage 4 fails and `isSystemPaused()` is true, the catch block in `claimboundary-pipeline.ts` re-throws instead of producing fallback UNVERIFIED 50/0 verdicts. The job fails cleanly rather than "succeeding" with useless results.
+
+### A.5: Auto-resume probe
+
+When `drainRunnerQueue` finds the system paused with queued jobs, it sends a HEAD request to `https://api.anthropic.com/v1/messages` with a 5-second timeout. Any HTTP response (even 4xx) means connectivity is back — `resumeSystem()` is called and the drain proceeds. If the probe fails (DNS, timeout, refused), the system stays paused and the drain exits.
