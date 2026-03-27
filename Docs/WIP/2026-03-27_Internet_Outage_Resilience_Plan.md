@@ -216,11 +216,11 @@ Persist intermediate pipeline state after each major stage. Failed or interrupte
 
 ### What is now protected
 
-After A.1+A.2: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOTFOUND, ECONNREFUSED, etc.), the LLM circuit breaker opens and `pauseSystem()` fires. Queued jobs stop being dequeued. The current job still completes with fallback verdicts (existing behavior), but subsequent jobs are held until admin resumes or auto-recovery kicks in.
+After A.1+A.2+A.4+A.5: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOTFOUND, ECONNREFUSED, etc.), the LLM circuit breaker opens and `pauseSystem()` fires. Queued jobs stop being dequeued. If the system is already paused when the Stage 4 catch block runs, the job aborts cleanly instead of producing fallback verdicts (A.4). The watchdog probes Anthropic periodically and auto-resumes when connectivity returns (A.5) — but only for network-caused pauses, not for auth/rate-limit pauses.
 
 ### What remains unprotected
 
-- The currently-running job still burns through all its Stage 4 calls before the breaker accumulates 3 failures. The probe (A.3) would short-circuit this.
+- **First outage-hit job can still produce fallback verdicts.** The breaker requires 3 consecutive failures to trip. If an outage starts mid-job, the first Stage 4 failure can produce fallback verdicts before the pause is active. A.4 only protects when `isSystemPaused()` is already true. A pre-call connectivity probe (A.3) or a within-job failure counter would close this gap.
 - Stage 2 LLM failures are not recorded to the breaker (Stage 2 errors are handled inline and the pipeline continues).
 
 ---
@@ -239,6 +239,8 @@ After A.1+A.2: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOT
 
 When Stage 4 fails and `isSystemPaused()` is true, the catch block in `claimboundary-pipeline.ts` re-throws instead of producing fallback UNVERIFIED 50/0 verdicts. The job fails cleanly rather than "succeeding" with useless results.
 
-### A.5: Auto-resume probe
+### A.5: Auto-resume probe (network-only)
 
-When `drainRunnerQueue` finds the system paused with queued jobs, it sends a HEAD request to `https://api.anthropic.com/v1/messages` with a 5-second timeout. Any HTTP response (even 4xx) means connectivity is back — `resumeSystem()` is called and the drain proceeds. If the probe fails (DNS, timeout, refused), the system stays paused and the drain exits.
+When `drainRunnerQueue` finds the system paused with queued jobs, it checks `isPausedDueToNetwork()` — only pauses whose reason or last LLM failure message matches network-connectivity patterns (ENOTFOUND, ECONNREFUSED, getaddrinfo, fetch failed, NetworkError) are eligible for auto-resume. Auth failures, rate limits, and provider-side outages are NOT auto-cleared.
+
+If eligible, a HEAD request to `https://api.anthropic.com/v1/messages` with a 5-second timeout is sent. Any HTTP response means connectivity is back — `resumeSystem()` is called and the drain proceeds. If the probe fails (DNS, timeout, refused), the system stays paused and the drain exits.

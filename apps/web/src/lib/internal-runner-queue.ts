@@ -84,25 +84,59 @@ function getMaxQueueWaitMs(): number {
   return 6 * 60 * 60 * 1000;
 }
 
+/** Network-connectivity error patterns (must match error-classification.ts NETWORK_CONNECTIVITY_PATTERNS). */
+const NETWORK_PAUSE_INDICATORS = [
+  /ENOTFOUND/i,
+  /ECONNREFUSED/i,
+  /getaddrinfo/i,
+  /fetch\s*failed/i,
+  /NetworkError/i,
+  /network\s*error/i,
+  /ERR_NETWORK/i,
+];
+
+/**
+ * Check whether the current system pause was caused by a network-connectivity failure
+ * (DNS, TCP refused, fetch layer) rather than a provider-side issue (auth, rate limit,
+ * capacity). Only network-caused pauses should auto-resume on connectivity recovery —
+ * auth/rate-limit pauses require the root cause to be resolved first.
+ */
+function isPausedDueToNetwork(): boolean {
+  const health = getHealthState();
+  if (!health.systemPaused) return false;
+  // Check pause reason
+  const reason = health.pauseReason ?? "";
+  if (NETWORK_PAUSE_INDICATORS.some((p) => p.test(reason))) return true;
+  // Check last LLM failure message (covers cases where pause reason is generic)
+  const llmLastMsg = health.providers.llm?.lastFailureMessage ?? "";
+  if (NETWORK_PAUSE_INDICATORS.some((p) => p.test(llmLastMsg))) return true;
+  return false;
+}
+
 /**
  * Lightweight probe to check if LLM providers are reachable again.
- * Sends a HEAD request to the Anthropic API base URL with a 5-second timeout.
+ * Only runs when the pause was caused by a network-connectivity failure.
+ * Sends a HEAD request to the Anthropic API with a 5-second timeout.
  * If reachable, auto-resumes the system and returns true.
  * Any failure (timeout, DNS, refused) returns false without side effects.
  */
 async function probeAndMaybeResume(): Promise<boolean> {
+  // Guard: only auto-resume for network-caused pauses.
+  // Auth failures, rate limits, and provider-side outages should not auto-clear
+  // just because the server is reachable — the root cause persists.
+  if (!isPausedDueToNetwork()) {
+    return false;
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5_000);
-    // HEAD to Anthropic API — doesn't need auth, just TCP/TLS connectivity.
-    // A 404 or 401 is fine — it means the server is reachable.
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "HEAD",
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    // Any HTTP response (even 4xx/5xx) means connectivity is back
-    console.log(`[Runner] Auto-resume probe succeeded (HTTP ${res.status}). Resuming system.`);
+    console.log(`[Runner] Auto-resume probe succeeded (HTTP ${res.status}). Network connectivity restored — resuming system.`);
     resumeSystem();
     return true;
   } catch {

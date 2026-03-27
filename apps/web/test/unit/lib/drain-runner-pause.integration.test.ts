@@ -140,7 +140,7 @@ describe("drainRunnerQueue pause integration", () => {
       vi.restoreAllMocks();
     });
 
-    it("drainRunnerQueue returns early when system is paused and probe fails", async () => {
+    it("drainRunnerQueue returns early when system is paused (network) and probe fails", async () => {
       // Mock fetch: the auto-resume probe (HEAD to anthropic) should fail (still offline),
       // so the system stays paused and no job-processing API calls are made.
       const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -158,8 +158,8 @@ describe("drainRunnerQueue pause integration", () => {
         runningJobIds: new Set<string>(),
       };
 
-      // Pause the system
-      pauseSystem("Provider down");
+      // Pause with a network-error reason (triggers auto-resume probe)
+      pauseSystem("LLM provider failed during Stage 4 verdict: provider_outage — getaddrinfo ENOTFOUND api.anthropic.com");
 
       // Import and call drainRunnerQueue
       const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
@@ -190,12 +190,12 @@ describe("drainRunnerQueue pause integration", () => {
       consoleSpy.mockRestore();
     });
 
-    it("drainRunnerQueue auto-resumes when probe succeeds", async () => {
+    it("drainRunnerQueue auto-resumes when network probe succeeds", async () => {
       // Mock fetch: probe succeeds (connectivity restored), so system resumes
       vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
         const url = String(input);
         if (url.includes("api.anthropic.com")) {
-          return new Response("", { status: 401 }); // Auth error = reachable
+          return new Response("", { status: 404 }); // Any HTTP response = reachable
         }
         return new Response(JSON.stringify({ status: "QUEUED" }), { status: 200 });
       });
@@ -209,7 +209,8 @@ describe("drainRunnerQueue pause integration", () => {
         runningJobIds: new Set<string>(),
       };
 
-      pauseSystem("Provider down");
+      // Pause with a network-error reason
+      pauseSystem("LLM provider failed during Stage 4 verdict: provider_outage — fetch failed");
       expect(isSystemPaused()).toBe(true);
 
       const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
@@ -221,6 +222,36 @@ describe("drainRunnerQueue pause integration", () => {
 
       // Should have proceeded to process jobs (more fetches after the probe)
       expect(globalThis.fetch).toHaveBeenCalled();
+    });
+
+    it("drainRunnerQueue does NOT auto-resume for non-network pauses (auth/rate-limit)", async () => {
+      // Even if Anthropic is reachable, an auth/rate-limit pause should NOT auto-clear
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("", { status: 200 }),
+      );
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [{ jobId: "job-1", enqueuedAt: Date.now() }],
+        runningJobIds: new Set<string>(),
+      };
+
+      // Pause with a rate-limit reason (NOT a network error)
+      pauseSystem("llm provider failed rate_limit: Too many requests");
+      expect(isSystemPaused()).toBe(true);
+
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+
+      // Probe should NOT have been called (non-network pause)
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      // System should still be paused
+      expect(isSystemPaused()).toBe(true);
+
+      consoleSpy.mockRestore();
     });
 
     it("drainRunnerQueue processes jobs when system is NOT paused", async () => {
