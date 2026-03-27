@@ -187,6 +187,8 @@ export {
   researchEvidence,
   runResearchIteration,
   seedEvidenceFromPreliminarySearch,
+  remapUnresolvedSeededEvidence,
+  wouldResolveExistingRemap,
   allClaimsSufficient,
   consumeClaimQueryBudget,
   findLeastContradictedClaim,

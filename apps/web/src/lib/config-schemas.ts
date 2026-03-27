@@ -556,6 +556,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Shared Stage 2 query budget per claim across all query sources (default: 8)"),
   diversityAwareSufficiency: z.boolean().optional()
     .describe("When true, Stage 2 sufficiency also requires source-type/domain diversity (matching D5 thresholds from CalcConfig). Claims with enough items but insufficient diversity will trigger additional research iterations. Default: false (experimental)."),
+  preliminaryEvidenceLlmRemapEnabled: z.boolean().optional()
+    .describe("When true, unresolved seeded preliminary evidence items (those with semantic slug claim IDs that failed numeric remap) are sent to a single batched Haiku call to determine correct AC_* claim mappings before Stage 2 seeding. Only fires when >1 final claims exist. Fail-open. Default: false."),
 
   // Stage 3: Clustering
   maxClaimBoundaries: z.number().int().min(2).max(10).optional()
@@ -1127,6 +1129,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
   diversityAwareSufficiency: true,
+  preliminaryEvidenceLlmRemapEnabled: false,
 
   // ClaimBoundary Stage 3 defaults
   maxClaimBoundaries: 6,

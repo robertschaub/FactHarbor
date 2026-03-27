@@ -158,6 +158,7 @@
   "researchTimeBudgetMs": 600000,
   "researchZeroYieldBreakThreshold": 2,
   "diversityAwareSufficiency": true,
+  "preliminaryEvidenceLlmRemapEnabled": false,
   "maxClaimBoundaries": 6,
   "boundaryCoherenceMinimum": 0.3,
   "scopeNormalizationEnabled": true,

@@ -31,8 +31,16 @@ import {
 import { 
   recordFailure as recordSearchFailure 
 } from "@/lib/search-circuit-breaker";
-import { getModelForTask } from "./llm";
+import {
+  getModelForTask,
+  extractStructuredOutput,
+  getStructuredOutputProviderOptions,
+  getPromptCachingOptions,
+} from "./llm";
 import { filterByProbativeValue } from "./evidence-filter";
+import { generateText, Output } from "ai";
+import { z } from "zod";
+import { loadAndRenderSection } from "./prompt-loader";
 
 // Import sibling stage modules
 import { generateResearchQueries } from "./research-query-stage";
@@ -85,6 +93,18 @@ export async function researchEvidence(
 
   const claims = state.understanding?.atomicClaims ?? [];
   if (claims.length === 0) return;
+
+  // ------------------------------------------------------------------
+  // Step 0: LLM remap for unresolved seeded preliminary evidence (Option C)
+  // Runs before seeding so that updated relevantClaimIds are picked up.
+  // ------------------------------------------------------------------
+  const remapResult = await remapUnresolvedSeededEvidence(state, pipelineConfig);
+  if (remapResult.remappedCount > 0) {
+    state.onEvent?.(
+      `Preliminary evidence remap: ${remapResult.remappedCount}/${remapResult.totalUnresolved} items resolved`,
+      -1,
+    );
+  }
 
   // ------------------------------------------------------------------
   // Step 1: Seed evidence pool from Stage 1 preliminary search
@@ -383,6 +403,185 @@ export async function researchEvidence(
         details: { uniqueSources: uniqueSourceUrls },
       });
     }
+  }
+}
+
+// --- LLM Remap Zod schema (compact output) ---
+
+const RemapOutputSchema = z.object({
+  mappings: z.array(z.object({
+    index: z.number(),
+    relevantClaimIds: z.array(z.string()),
+  })),
+});
+
+/**
+ * Check if a preliminary evidence item would be resolved by the existing
+ * deterministic remap heuristics in seedEvidenceFromPreliminarySearch.
+ *
+ * Replicates the logic of steps 1-4 without mutating state.
+ * Single-claim fallback (step 3) is handled by the caller — this function
+ * is only called when knownClaimIds.size > 1.
+ */
+export function wouldResolveExistingRemap(
+  pe: { claimId?: string; relevantClaimIds?: string[] },
+  knownClaimIds: Set<string>,
+): boolean {
+  // Step 1: relevantClaimIds contain a known AC_* ID
+  if (pe.relevantClaimIds && pe.relevantClaimIds.length > 0) {
+    if (pe.relevantClaimIds.some((id) => knownClaimIds.has(id))) return true;
+  }
+
+  // Step 2: legacy single claimId matches
+  if (pe.claimId && knownClaimIds.has(pe.claimId)) return true;
+
+  // Step 3: single-claim fallback — not applicable (>1 claims)
+
+  // Step 4: numeric heuristic  claim_01 → AC_01
+  const rawIds = pe.relevantClaimIds ?? (pe.claimId ? [pe.claimId] : []);
+  for (const rawId of rawIds) {
+    if (rawId.startsWith("claim_")) {
+      const num = rawId.replace("claim_", "");
+      const mappedId = `AC_${num.padStart(2, "0")}`;
+      if (knownClaimIds.has(mappedId)) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * LLM remap for unresolved seeded preliminary evidence (Option C).
+ *
+ * After Pass 2 has produced final AC_* claims, some preliminary evidence
+ * items have semantic slug IDs (e.g., "claim_bolsonaro_proceedings") that
+ * don't match any final claim. This function sends those unresolved items
+ * to a single batched Haiku call to determine their correct claim mappings.
+ *
+ * Only fires when:
+ * - preliminaryEvidenceLlmRemapEnabled is true in pipeline config
+ * - There are >1 final claims (single-claim inputs use the existing fallback)
+ * - There are unresolved items after the existing heuristic check
+ *
+ * Fail-open: if the LLM call fails or returns invalid output, items remain
+ * unmapped (same as current baseline behavior).
+ *
+ * Mutates: state.understanding.preliminaryEvidence[].relevantClaimIds
+ */
+export async function remapUnresolvedSeededEvidence(
+  state: CBResearchState,
+  pipelineConfig: PipelineConfig,
+): Promise<{ remappedCount: number; totalUnresolved: number }> {
+  const preliminary = state.understanding?.preliminaryEvidence ?? [];
+  const claims = state.understanding?.atomicClaims ?? [];
+  const knownClaimIds = new Set(claims.map((c) => c.id));
+
+  // Guard: disabled, single-claim, or no preliminary evidence
+  if (!pipelineConfig.preliminaryEvidenceLlmRemapEnabled) {
+    return { remappedCount: 0, totalUnresolved: 0 };
+  }
+  if (knownClaimIds.size <= 1 || preliminary.length === 0) {
+    return { remappedCount: 0, totalUnresolved: 0 };
+  }
+
+  // Identify items that would fail all existing remap heuristics
+  const unresolvedIndices: number[] = [];
+  for (let i = 0; i < preliminary.length; i++) {
+    if (!wouldResolveExistingRemap(preliminary[i], knownClaimIds)) {
+      unresolvedIndices.push(i);
+    }
+  }
+
+  if (unresolvedIndices.length === 0) {
+    return { remappedCount: 0, totalUnresolved: 0 };
+  }
+
+  debugLog(
+    `[Stage2] LLM remap: ${unresolvedIndices.length}/${preliminary.length} ` +
+    `preliminary items unresolved — sending to Haiku.`,
+  );
+
+  // Build compact LLM input
+  const claimsForPrompt = claims.map((c) => ({ id: c.id, statement: c.statement }));
+  const unmappedForPrompt = unresolvedIndices.map((idx, promptIdx) => ({
+    index: promptIdx,
+    statement: preliminary[idx].snippet,
+    sourceTitle: preliminary[idx].sourceTitle ?? "",
+  }));
+
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "REMAP_SEEDED_EVIDENCE", {
+      atomicClaimsJson: JSON.stringify(claimsForPrompt, null, 2),
+      unmappedEvidenceJson: JSON.stringify(unmappedForPrompt, null, 2),
+    });
+    if (!rendered) {
+      console.warn("[Stage2] Failed to load REMAP_SEEDED_EVIDENCE prompt — skipping remap.");
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+    }
+
+    const model = getModelForTask("understand", undefined, pipelineConfig);
+
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user",
+          content:
+            `Map ${unmappedForPrompt.length} evidence items to the ${claimsForPrompt.length} atomic claims listed in the system prompt.`,
+        },
+      ],
+      temperature: 0.1,
+      output: Output.object({ schema: RemapOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    state.llmCalls++;
+
+    const raw = extractStructuredOutput(result);
+    if (!raw) {
+      console.warn("[Stage2] LLM remap returned empty or unparseable result — skipping.");
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+    }
+    const parseResult = RemapOutputSchema.safeParse(raw);
+    if (!parseResult.success) {
+      console.warn("[Stage2] LLM remap output failed schema validation — skipping.", parseResult.error.message);
+      return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
+    }
+    const parsed = parseResult.data;
+
+    // Apply mappings — filter to known claim IDs only
+    let remappedCount = 0;
+    for (const mapping of parsed.mappings) {
+      if (mapping.index < 0 || mapping.index >= unresolvedIndices.length) continue;
+      const originalIdx = unresolvedIndices[mapping.index];
+      const validIds = mapping.relevantClaimIds.filter((id) => knownClaimIds.has(id));
+      if (validIds.length > 0) {
+        preliminary[originalIdx].relevantClaimIds = validIds;
+        remappedCount++;
+      }
+    }
+
+    if (remappedCount > 0) {
+      debugLog(
+        `[Stage2] LLM remap: resolved ${remappedCount}/${unresolvedIndices.length} unresolved seeded items.`,
+      );
+    } else {
+      debugLog(
+        `[Stage2] LLM remap: 0/${unresolvedIndices.length} items resolved (LLM returned no valid mappings).`,
+      );
+    }
+
+    return { remappedCount, totalUnresolved: unresolvedIndices.length };
+  } catch (err) {
+    console.warn("[Stage2] LLM remap failed (fail-open):", err);
+    return { remappedCount: 0, totalUnresolved: unresolvedIndices.length };
   }
 }
 

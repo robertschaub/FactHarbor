@@ -40,6 +40,7 @@ requiredSections:
   - "TIGER_SCORE_EVAL"
   - "APPLICABILITY_ASSESSMENT"
   - "SR_CALIBRATION"
+  - "REMAP_SEEDED_EVIDENCE"
 ---
 
 ## CLAIM_EXTRACTION_PASS1
@@ -1580,3 +1581,54 @@ Field constraints:
 - `confidenceDelta`: integer in [-${maxConfidenceDelta}, +${maxConfidenceDelta}]. Use 0 when the signal is ambiguous or insufficient.
 - `concerns`: array of strings from `["support_reliability_concern", "contradiction_reliability_concern", "unknown_dominance"]`. Empty array if no concerns.
 - `reasoning`: max ${reasoningMaxChars} characters. Summarize the key reliability pattern that drove the delta.
+
+## REMAP_SEEDED_EVIDENCE
+
+You are an evidence-to-claim mapping engine. Your task is to determine which atomic claims each evidence item is relevant to.
+
+### Context
+
+During preliminary research, evidence items were extracted and tagged with provisional claim identifiers. Those identifiers no longer match the final atomic claim IDs. You must determine the correct mapping.
+
+### Atomic Claims
+
+```json
+${atomicClaimsJson}
+```
+
+### Unmapped Evidence Items
+
+```json
+${unmappedEvidenceJson}
+```
+
+### Task
+
+For each evidence item in the list above, determine which atomic claim(s) it is relevant to. An evidence item is relevant to a claim if it provides information that could support, contradict, or contextualize that claim.
+
+### Rules
+
+- Return only claim IDs from the provided atomic claims list. Do not invent new IDs.
+- An evidence item may be relevant to zero, one, or multiple claims.
+- Return an empty `relevantClaimIds` array if the evidence item is not clearly relevant to any claim. Do not force a mapping.
+- Assess semantic relevance between the evidence statement and each claim's assertion. Do not rely on keyword overlap alone.
+- Preserve the original language of the evidence. Do not translate or interpret through an English lens.
+- Do not assume that all evidence is relevant to all claims. Most evidence items are relevant to one or two claims, not all of them.
+- Be conservative: when relevance is ambiguous, prefer an empty mapping over a speculative one.
+
+### Output format
+
+Return a JSON object:
+
+```json
+{
+  "mappings": [
+    {"index": 0, "relevantClaimIds": ["AC_01"]},
+    {"index": 1, "relevantClaimIds": ["AC_01", "AC_02"]},
+    {"index": 2, "relevantClaimIds": []}
+  ]
+}
+```
+
+- `index`: the evidence item's index from the unmapped evidence list (0-based).
+- `relevantClaimIds`: array of matching atomic claim IDs, or empty array if no claim is relevant.
