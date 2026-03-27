@@ -48,6 +48,10 @@ import {
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, CalcConfig } from "@/lib/config-schemas";
 import { classifyError } from "@/lib/error-classification";
+import {
+  recordProviderFailure,
+  pauseSystem,
+} from "@/lib/provider-health";
 
 import { recordLLMCall } from "./metrics-integration";
 
@@ -316,6 +320,18 @@ export function createProductionLLMCall(
       });
     };
 
+    /** Record a provider failure against the LLM circuit breaker.
+     *  If the circuit opens, pause the system so queued jobs are protected. */
+    const maybeRecordProviderFailure = (error: unknown): void => {
+      const classified = classifyError(error);
+      if (classified.shouldCountAsProviderFailure && classified.provider === "llm") {
+        const { circuitOpened } = recordProviderFailure("llm", classified.message);
+        if (circuitOpened) {
+          pauseSystem(`LLM provider failed during Stage 4 verdict: ${classified.category} — ${classified.message.substring(0, 200)}`);
+        }
+      }
+    };
+
     const isOpenAiTpmError = (error: unknown): boolean => {
       const msg = error instanceof Error ? error.message : String(error ?? "");
       const lower = msg.toLowerCase();
@@ -541,6 +557,7 @@ export function createProductionLLMCall(
             attemptModel.modelName,
             "tpm_guard_retry_failed",
           );
+          maybeRecordProviderFailure(retryError);
 
           throw toError(
             `Stage 4: LLM call failed for "${promptKey}"`,
@@ -562,6 +579,7 @@ export function createProductionLLMCall(
           attemptModel.modelName,
           "llm_call_failed",
         );
+        maybeRecordProviderFailure(error);
         throw toError(
           `Stage 4: LLM call failed for "${promptKey}"`,
           {

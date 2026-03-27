@@ -41,6 +41,19 @@ const LLM_AUTH_PATTERNS = [
   /status\s*(?:code\s*)?403/i,
 ];
 
+/** Network-level connectivity failures (DNS, TCP refused, fetch layer).
+ *  These indicate "no internet" or "provider unreachable" — distinct from
+ *  timeouts (ETIMEDOUT/ECONNRESET) which can occur with working internet. */
+const NETWORK_CONNECTIVITY_PATTERNS = [
+  /ENOTFOUND/i,
+  /ECONNREFUSED/i,
+  /getaddrinfo/i,
+  /fetch\s*failed/i,
+  /NetworkError/i,
+  /network\s*error/i,
+  /ERR_NETWORK/i,
+];
+
 const TIMEOUT_PATTERNS = [
   /timeout/i,
   /timed?\s*out/i,
@@ -79,6 +92,19 @@ export function classifyError(error: unknown): ClassifiedError {
 
   const msg = error instanceof Error ? error.message : String(error);
   const name = error instanceof Error ? error.name : "";
+
+  // Network connectivity failures — provider unreachable (DNS, TCP refused, fetch layer).
+  // Checked BEFORE timeouts because some network errors could also match broad timeout patterns.
+  // These count as provider failures so the circuit breaker can auto-pause during internet outages.
+  if (NETWORK_CONNECTIVITY_PATTERNS.some((p) => p.test(msg)) || NETWORK_CONNECTIVITY_PATTERNS.some((p) => p.test(name))) {
+    return {
+      category: "provider_outage",
+      provider: "llm",
+      message: msg,
+      retriable: true,
+      shouldCountAsProviderFailure: true,
+    };
+  }
 
   // Timeout errors — not a provider failure
   if (name === "TimeoutError" || name === "AbortError" || TIMEOUT_PATTERNS.some((p) => p.test(msg))) {

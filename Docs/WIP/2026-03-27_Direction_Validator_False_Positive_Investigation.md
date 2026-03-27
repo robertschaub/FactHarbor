@@ -132,10 +132,9 @@ The debate reads evidence content and applies analytical judgment (quality, cons
 - A verdict can be stably wrong if the advocate has a systematic bias
 
 **Mitigations:**
-- The LLM direction validator warning still fires (info-level) — the issue is logged even when rescued
 - Grounding check runs independently and is not affected
-- Only the enforcement (safe downgrade) is prevented, not the diagnostic signal
-- The rescue only applies to `verdictDirectionPolicy: "retry_once_then_safe_downgrade"` — if set to `"disabled"`, none of this code path runs
+- The LLM direction validator still runs and its result is available — but when `isVerdictDirectionPlausible()` returns `true`, the current code skips the entire `else` branch (`verdict-stage.ts:1125`): no `verdict_direction_issue` warning is pushed and no policy enforcement runs. This means a rescued verdict produces **no persisted diagnostic signal** — only a `console.info` log. If the rescue boost is implemented, a new info-level warning should be emitted on the rescue path so admin diagnostics are preserved.
+- The rescue runs before the `verdictDirectionPolicy` guard (`verdict-stage.ts:1121` vs `1133`). This means the rescue suppresses not just the safe-downgrade enforcement path but also the diagnostic warning on ALL policy modes, including `"disabled"`. The behavioral scope is wider than just the retry/downgrade path — it affects observability for any policy setting.
 
 ### Part 2 (optional): Rule 2 Threshold Adjustment
 
@@ -191,4 +190,4 @@ This confirms the LLM validator is doing count-based direction checking as its p
 
 ---
 
-*Rev 2: Corrected per architect review findings. Reframed from "deterministic heuristic override" to "two-layer validation failure with rescue boost proposal." Implementation details corrected.*
+*Rev 3: Fixed two mitigation inaccuracies per follow-up review — rescue path produces no persisted warning (only console.info), and rescue runs before the policy guard so scope extends to all policy modes, not just retry/downgrade. Rev 2 corrections (framing, self-consistency characterization, implementation details) remain in place.*

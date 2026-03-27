@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Internet Outage Minimum Fix (OUTAGE-A1/A2)
+**Task:** Make the LLM circuit breaker trip during internet outages so queued jobs are protected.
+**Root cause:** Two gaps — (1) network errors (`ENOTFOUND`, `ECONNREFUSED`, `fetch failed`) classified as `unknown` with `shouldCountAsProviderFailure: false`, (2) Stage 4 LLM failures swallowed by fallback verdicts so the runner-level circuit breaker path never runs.
+**Fix:** (1) Added `NETWORK_CONNECTIVITY_PATTERNS` in `error-classification.ts` — DNS/TCP/fetch failures now classify as `provider_outage` with `provider: "llm"`. (2) Added `maybeRecordProviderFailure()` in `verdict-generation-stage.ts` `createProductionLLMCall` catch blocks — records to circuit breaker, pauses system if threshold reached. `ECONNRESET`/`ETIMEDOUT` remain under `timeout` (transient, not connectivity).
+**Tests:** 8 new network classification tests. 1419 total pass, build clean.
+**For next agent:** Connectivity probe (Option A.3) is the natural follow-on for fast-fail. Plan doc updated at `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`. Handoff at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Outage_Minimum_Fix.md`.
+
+---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Promote `preliminaryEvidenceLlmRemapEnabled` to Default-On
 **Task:** Flip default to `true` after Captain approval.
 **Files touched:** `config-schemas.ts` (DEFAULT_PIPELINE_CONFIG), `pipeline.default.json`, local UCM reseeded (hash `6900c4e4`).
@@ -2068,4 +2076,44 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Update the status docs to reflect default-on + Homeopathy monitor note, then run the manual remote deploy command if deployment is still intended now.
 **Warnings:** Do not let the repository present two different truths at once: code/defaults now say ON, but status docs still say OFF. That will confuse the next agent and any Captain reviewing current state.
 **For next agent:** Update `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` before treating REMAP-1 as fully closed. Preserve the monitor note and deployment caveat.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Deploy-Clear Check
+**Task:** Verify the post-promotion confirmation runs and documentation sync after the follow-up docs commits.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The state is now deploy-clear. `65800acb` added the post-promotion confirmation runs, and current HEAD is `d5b13580` with follow-up doc refinements. Canonical docs now reflect the promoted default-on state (`Current_Status.md`, `Backlog.md`), and the post-promotion Homeopathy canary no longer reproduces the earlier confidence collapse (`de699b14` = 71.1 confidence). Bolsonaro confirmation also remains healthy (`bf2c3b9a` = LEANING-TRUE 70.4/69.0). The original monitor concern is therefore reduced from an open deploy risk to routine watchlist status.
+**Open items:** Remote deployment still needs the manual `deploy-remote.ps1 -ForceConfigs` step if not already executed.
+**Warnings:** The WIP filename `2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` is now historically stale in name only; not a blocker, but it should eventually be renamed or archived during consolidation to avoid confusion.
+**For next agent:** Treat REMAP-1 as canonically promoted and validated. If asked for next steps, focus on deployment execution and routine post-deploy monitoring rather than reopening the promotion gate.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Gate WIP Record Update
+**Task:** Update `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` so it reads as a completed record instead of a parked stub.
+**Files touched:** `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Rewrote the WIP file into a final completed-record document. It now captures the promotion decision, distinguishes old-stack background runs from the current-stack gate batch, records the post-promotion confirmation runs, and explicitly explains that the `_Parked` filename is historical only. Kept the file in place rather than renaming it because the request was to update the existing document and the repo already references this path.
+**Open items:** During future WIP consolidation, either archive or rename this file so the filename matches its completed state.
+**Warnings:** The content is now correct, but the path still carries the legacy `_Parked` suffix by design.
+**For next agent:** Use the updated WIP file as the compact historical summary. Use the handoff docs for full operational detail.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator False Positive Rev 2 Review
+**Task:** Re-review `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` after the stated Rev 2 corrections.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The three previously raised concerns were addressed: the doc now frames the incident as a two-layer failure with the LLM validator as primary, correctly characterizes self-consistency as advocate-partition stability rather than full-pool correctness, and corrects the implementation details around Rule 2 and `ConsistencyResult.stable`. One substantive review finding remains: the proposed mitigation section still overstates observability and understates scope. In the live code, when `isVerdictDirectionPlausible()` returns `true`, the path does not emit an info-level `AnalysisWarning`; it only logs `console.info`. Because the proposed change is an early exit inside `isVerdictDirectionPlausible()`, it would also affect the `verdictDirectionPolicy: "disabled"` path by suppressing diagnostics earlier, not just the `retry_once_then_safe_downgrade` enforcement path.
+**Open items:** Revise Section 7 mitigations to match actual runtime behavior. If the intended design is to preserve an info-level warning even when rescued, that needs an explicit caller-side change in `validateVerdicts()`, not just a helper tweak.
+**Warnings:** Do not approve the proposal text as-is; its current mitigation bullets misdescribe the behavior change and the diagnostic impact.
+**For next agent:** Re-check `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` against `apps/web/src/lib/analyzer/verdict-stage.ts` lines 1118-1176 before approving any implementation prompt.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator False Positive Rev 3 Re-Review
+**Task:** Re-review `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` after the observability and scope corrections.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** No review findings remain. Section 7 now correctly states that the current rescue path produces no persisted diagnostic signal, only `console.info`, and it properly frames the proposed info-level warning as a new implementation requirement rather than existing behavior. It also now correctly states that the rescue runs before the policy guard and therefore affects observability across all policy modes, not just `retry_once_then_safe_downgrade`.
+**Open items:** If implementation is approved, the coding prompt should explicitly require caller-side warning emission on rescue so the behavior matches the document.
+**Warnings:** The proposal still carries the inherent architectural caveat already acknowledged in the doc: advocate-side stability is not proof of full-pool correctness.
+**For next agent:** Treat the investigation doc as architecturally review-ready. If moving to implementation, preserve the distinction between current behavior and proposed observability changes.
 **Learnings:** no

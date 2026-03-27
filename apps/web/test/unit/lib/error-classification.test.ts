@@ -146,6 +146,72 @@ describe("error-classification", () => {
     });
   });
 
+  describe("Network connectivity errors", () => {
+    it("classifies ENOTFOUND as provider_outage with provider counting", () => {
+      const err = new Error("getaddrinfo ENOTFOUND api.anthropic.com");
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+      expect(result.retriable).toBe(true);
+    });
+
+    it("classifies ECONNREFUSED as provider_outage with provider counting", () => {
+      const err = new Error("connect ECONNREFUSED 104.18.7.46:443");
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+    });
+
+    it("classifies getaddrinfo failure as provider_outage", () => {
+      const err = new Error("getaddrinfo EAI_AGAIN api.openai.com");
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+    });
+
+    it("classifies fetch failed as provider_outage", () => {
+      const err = new Error("fetch failed");
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+    });
+
+    it("classifies NetworkError by name as provider_outage", () => {
+      const err = new Error("Failed to fetch");
+      err.name = "NetworkError";
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+    });
+
+    it("classifies ERR_NETWORK as provider_outage", () => {
+      const err = new Error("ERR_NETWORK: request failed");
+      const result = classifyError(err);
+      expect(result.category).toBe("provider_outage");
+      expect(result.provider).toBe("llm");
+      expect(result.shouldCountAsProviderFailure).toBe(true);
+    });
+
+    it("keeps ECONNRESET under timeout (transient, not connectivity)", () => {
+      const err = new Error("read ECONNRESET");
+      const result = classifyError(err);
+      expect(result.category).toBe("timeout");
+      expect(result.shouldCountAsProviderFailure).toBe(false);
+    });
+
+    it("keeps ETIMEDOUT under timeout (transient, not connectivity)", () => {
+      const err = new Error("connect ETIMEDOUT 1.2.3.4:443");
+      const result = classifyError(err);
+      expect(result.category).toBe("timeout");
+      expect(result.shouldCountAsProviderFailure).toBe(false);
+    });
+  });
+
   describe("Unknown errors", () => {
     it("classifies generic Error as unknown", () => {
       const err = new Error("Something went wrong");

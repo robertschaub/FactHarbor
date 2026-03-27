@@ -66,25 +66,40 @@ There is no probe before starting expensive multi-call Stage 4 debate sequences 
 
 ---
 
-## 4. Option A: Error Classification Fix + Connectivity Probe
+## 4. Option A: Error Classification Fix + Stage 4 Failure Recording + Connectivity Probe
 
-### 4.1 Critical fix: make network errors count
+### 4.1 Critical fix: make network errors count — IMPLEMENTED
 
 **File:** `apps/web/src/lib/error-classification.ts`
 
-Add patterns for network-level failures to classify them with `shouldCountAsProviderFailure: true`:
+Added `NETWORK_CONNECTIVITY_PATTERNS` for DNS/TCP/fetch failures, checked before `TIMEOUT_PATTERNS`:
 - `ENOTFOUND` — DNS resolution failed
 - `ECONNREFUSED` — connection refused
-- `ECONNRESET` — connection reset (already partially handled as `timeout`)
 - `getaddrinfo` — DNS lookup failed
 - `fetch failed` — generic fetch failure
-- `network` / `NetworkError` — browser-style network error
+- `NetworkError` / `network error` — browser-style network error
+- `ERR_NETWORK` — Axios/Node network error
 
-This is the single highest-impact change. With this fix alone, the existing circuit breaker auto-pauses after 3 consecutive network failures, protecting all queued jobs.
+These classify as `{ category: "provider_outage", provider: "llm", shouldCountAsProviderFailure: true }`.
 
-**Estimated size:** ~20 lines.
+`ECONNRESET` and `ETIMEDOUT` remain under `timeout` — these are transient (can occur with working internet) and should not trip the circuit breaker.
 
-### 4.2 Connectivity probe
+**Corrected diagnosis:** The classification fix alone is necessary but NOT sufficient. Stage 4 errors are caught inside `claimboundary-pipeline.ts` and converted to fallback verdicts — the pipeline "succeeds" and the runner-level `classifyError()` → `recordProviderFailure()` → `pauseSystem()` path never runs. So we also need Part 4.2.
+
+### 4.2 Stage 4 provider-failure recording — IMPLEMENTED
+
+**File:** `apps/web/src/lib/analyzer/verdict-generation-stage.ts`
+
+Added `maybeRecordProviderFailure()` inside `createProductionLLMCall()`. On each Stage 4 LLM call failure:
+1. `classifyError(error)` determines if it's a provider-counting failure
+2. If so, `recordProviderFailure("llm", msg)` increments the circuit breaker counter
+3. If the circuit opens (3 consecutive failures), `pauseSystem(...)` pauses the system
+
+This is called in both catch paths (primary failure + TPM retry failure). The runner-level recording only fires for errors that escape the pipeline entirely — Stage 4 errors are swallowed by the fallback, so this is the only path that can trip the breaker for verdict-generation failures.
+
+No double-counting risk: the two paths are mutually exclusive (Stage 4 catch vs. runner catch).
+
+### 4.3 Connectivity probe (follow-on, not yet implemented)
 
 **New file:** `apps/web/src/lib/connectivity-probe.ts`
 
@@ -194,19 +209,26 @@ Persist intermediate pipeline state after each major stage. Failed or interrupte
 
 ## 7. Recommended Sequence
 
-1. **Option A first** — the error classification fix is the single most impactful change and can be done in an hour. The probe is a small follow-on.
-2. **Option B second** — once the probe exists, adding hold/resume is a natural extension.
-3. **Option C third** — long-term investment, best done as part of a broader reliability initiative.
+1. **Option A.1+A.2 done** — classification fix + Stage 4 failure recording. The circuit breaker can now trip during internet outages.
+2. **Option A.3 (probe)** — fast-fail connectivity check before Stage 4. Reduces wasted time from minutes to seconds per job. Small follow-on.
+3. **Option B** — pipeline hold/resume for short outages. Medium.
+4. **Option C** — job checkpointing. Long-term.
 
-### Critical path
+### What is now protected
 
-The ~20-line fix in `error-classification.ts` is the minimum viable improvement. Without it, Options B and C cannot protect queued jobs because the circuit breaker remains blind to network outages.
+After A.1+A.2: if 3 consecutive Stage 4 LLM calls fail with network errors (ENOTFOUND, ECONNREFUSED, etc.), the LLM circuit breaker opens and `pauseSystem()` fires. Queued jobs stop being dequeued. The current job still completes with fallback verdicts (existing behavior), but subsequent jobs are held until admin resumes or auto-recovery kicks in.
+
+### What remains unprotected
+
+- The currently-running job still burns through all its Stage 4 calls before the breaker accumulates 3 failures. The probe (A.3) would short-circuit this.
+- Stage 2 LLM failures are not recorded to the breaker (Stage 2 errors are handled inline and the pipeline continues).
 
 ---
 
-## 8. Decision Requested
+## 8. Implementation Status
 
-- [ ] Approve Option A for implementation (small, high-impact)
-- [ ] Approve Option B as follow-on (medium, nice-to-have)
-- [ ] Park Option C for future planning
-- [ ] Or: different prioritization
+- [x] Option A.1 — classification fix (implemented)
+- [x] Option A.2 — Stage 4 failure recording (implemented)
+- [ ] Option A.3 — connectivity probe (follow-on)
+- [ ] Option B — pipeline hold/resume
+- [ ] Option C — job checkpointing
