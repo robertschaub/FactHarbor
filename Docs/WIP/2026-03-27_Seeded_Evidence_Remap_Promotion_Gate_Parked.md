@@ -1,43 +1,28 @@
-# Seeded Evidence Remap — Promotion Gate (PARKED)
+# Seeded Evidence Remap — Promotion Gate
 
 **Date:** 2026-03-27
-**Status:** PARKED — interrupted, resume later
+**Status:** COMPLETED — decision delivered
 **Flag:** `preliminaryEvidenceLlmRemapEnabled`
 
 ---
 
-## What was completed
+## Historical runs (old stack, pre-FLOOD-1)
 
-### Runs with flag ON (completed)
+These ran before `maxEvidenceItemsPerSource` was added. Not used for the promotion decision.
 
-| Job | Input | Verdict | Truth% | Conf% | Seeded | Mapped | Unmapped | Remap% |
-|-----|-------|---------|--------|-------|--------|--------|----------|--------|
-| `927031ef` | Bolsonaro-A | LEANING-TRUE | 59.2 | 64.3 | 24 | 21 | 3 | **85%** |
-| `bbfd24e7` | Bolsonaro-B | LEANING-TRUE | 71.8 | 66.6 | 24 | 21 | 3 | **54%** |
-| `23721cd9` | Plastik-A ON | LEANING-FALSE | 37.0 | 71.5 | 47 | 44 | 3 | N/A (numeric) |
-| `a71bc670` | Plastik-B ON | **STILL RUNNING** | — | — | — | — | — | — |
+| Job | Input | Flag | Verdict | Truth% | Conf% | Seeded | Mapped | Unmapped |
+|-----|-------|------|---------|--------|-------|--------|--------|----------|
+| `927031ef` | Bolsonaro-A | ON | LEANING-TRUE | 59.2 | 64.3 | 24 | 21 | 3 |
+| `bbfd24e7` | Bolsonaro-B | ON | LEANING-TRUE | 71.8 | 66.6 | 24 | 21 | 3 |
+| `23721cd9` | Plastik-A | ON | LEANING-FALSE | 37.0 | 71.5 | 47 | 44 | 3 |
+| `a71bc670` | Plastik-B | ON | LEANING-FALSE | 36.0 | 75.0 | — | — | — |
 
-### Runs with flag OFF (not yet submitted)
-
-Need 2× Plastik DE with `preliminaryEvidenceLlmRemapEnabled=false` for the controlled 2×2 comparison.
+**Correction:** `a71bc670` completed successfully as LEANING-FALSE 36/75 (was incorrectly listed as "still running" in the parked version).
 
 ---
 
-## What remains
+## Current-stack A/B comparison
 
-1. Wait for `a71bc67082b64bf0945bb4ee650b3148` (Plastik-B ON) to finish or replace it
-2. Disable flag → submit 2× Plastik DE OFF → collect results
-3. Spot-check 10-15 remapped seeded items across Bolsonaro-A and Bolsonaro-B for mapping quality
-4. Write promotion gate handoff with full 2×2 Plastik comparison
-5. Deliver promote-or-hold recommendation
+See: `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md`
 
-## UCM state
-
-**Flag is currently ON** in the active pipeline config. Must be reset to OFF before submitting the OFF-pair runs and before parking.
-
-## Resume instructions
-
-1. Check if `a71bc670` finished or needs replacement
-2. Disable flag, submit 2× Plastik DE OFF, collect
-3. Do the spot-check on Bolsonaro remapped items
-4. Write the final gate report
+**Recommendation: Promote to default-on.**

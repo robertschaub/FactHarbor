@@ -1132,7 +1132,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
   diversityAwareSufficiency: true,
-  preliminaryEvidenceLlmRemapEnabled: false,
+  preliminaryEvidenceLlmRemapEnabled: true,
 
   // ClaimBoundary Stage 3 defaults
   maxClaimBoundaries: 6,

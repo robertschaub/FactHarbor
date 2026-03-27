@@ -1,6 +1,21 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Promote `preliminaryEvidenceLlmRemapEnabled` to Default-On
+**Task:** Flip default to `true` after Captain approval.
+**Files touched:** `config-schemas.ts` (DEFAULT_PIPELINE_CONFIG), `pipeline.default.json`, local UCM reseeded (hash `6900c4e4`).
+**Monitor:** Homeopathy-family confidence anomaly (74→24 in single ON run) — watch post-promotion, rollback flag available.
+**For next agent:** Flag is now default-on. Deployed systems get `true` on next deploy/reseed. Rollback via UCM Admin UI or file revert.
+
+---
+### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence Remap — Current-Stack Promotion Gate
+**Task:** Run controlled A/B comparison of `preliminaryEvidenceLlmRemapEnabled` on post-FLOOD-1 stack to determine promote-or-hold.
+**Method:** 4 input families × ON/OFF pairs (8 runs) + 3 user-submitted OFF-only runs + 15-item spot-check.
+**Key finding:** Bolsonaro A/B is decisive — same verdict (LEANING-TRUE), same truth% (64.3 vs 64.4), but seeded mapping 0%→92%. Mapping quality: 14/15 clearly correct, 1 borderline, 0 fabricated. Plastik DE neutral. Hydrogen stable. Homeopathy EN shows a confidence anomaly worth monitoring.
+**Recommendation:** **Promote to default-on.** The remap recovers claim-local attribution for semantic-slug families without verdict distortion, at ~$0.002/run cost.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md`. Gate doc at `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` (updated, no longer parked). UCM flag currently OFF — Captain flip to default-on pending approval.
+
+---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | FLOOD-1: Single-Source Flooding Mitigation (Fix 1 + Fix 2)
 **Task:** Implement approved single-source flooding mitigation for the ClaimAssessmentBoundary pipeline per `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
 **Files touched:** `verdict-stage.ts` (source portfolio builder + claim-local threading), `verdict-generation-stage.ts` (sources parameter), `claimboundary-pipeline.ts` (pass state.sources), `research-extraction-stage.ts` (applyPerSourceCap with best-N reselection), `research-orchestrator.ts` (cap enforcement + eviction), `config-schemas.ts` + `pipeline.default.json` (maxEvidenceItemsPerSource: 5), `claimboundary.prompt.md` (3 verdict sections + reseed), `verdict-stage.test.ts` (9 new tests), `research-extraction-stage.test.ts` (9 new tests).
@@ -2023,4 +2038,24 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Run current-stack ON/OFF comparison jobs before making the promotion decision. Minimum recommended batch: Bolsonaro extended input ON/OFF plus Plastik DE ON/OFF with only `preliminaryEvidenceLlmRemapEnabled` toggled. Add second replicates only if the 4-run signal is ambiguous.
 **Warnings:** Do not continue the parked gate as if it were still a clean same-stack comparison. The historical ON runs remain useful background, but not a merge/promotion-grade basis for a default flip after the new mitigation landed.
 **For next agent:** Update `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` to mark `a71bc670` as completed, then use the current-stack A/B batch to decide whether remap still delivers net value under the new baseline. Spot-check remapped Bolsonaro items from the fresh ON run, not only the historical March 27 runs.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Homeopathy Run `b5f29c58` Review
+**Task:** Review live job `b5f29c5807aa4747903113c0c2b9b1d8` and state the architect-level conclusion.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Classified `b5f29c58` as a mixed/hold signal, not a positive promotion signal for seeded-evidence remap. The run is current-stack (`5654841be8cc...+d5ae0999`) and job events confirm remap was active (`Preliminary evidence remap: 26/30 items resolved`). Compared against same-input sibling `efe1102fda0f40cfa99e42096d45de1c` on the same commit, remap materially changed seeded claim attribution and pushed the top-line verdict upward (`LEANING-TRUE 60.8/74.2` → `MOSTLY-TRUE 75.8/24`), but overall report quality worsened because AC_03 collapsed to `UNVERIFIED 50/24` after a direction-integrity safe downgrade. This is evidence that remap is impactful on this family, but not evidence that it should be promoted to default-on.
+**Open items:** If this input family matters, do manual claim-level comparison of seeded items on AC_02/AC_03 between `b5f29c58` and `efe1102f`, because the claim flips are too large to treat as benign noise.
+**Warnings:** Both runs still contain grounding-check warnings for cited evidence IDs not present in the final evidence pool; `b5f29c58` shows the worse set. Treat the run as informative but not clean. Also, this broad thesis decomposes into a mechanistic subclaim, making it a weaker promotion-gate canary than Bolsonaro/Plastik.
+**For next agent:** Use this run as a cautionary data point in the remap gate: remap ON can materially change claim-local attribution, but net value must be judged on confidence/integrity, not truth% alone.
+**Learnings:** no
+
+---
+### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Gate Final Architect Call
+**Task:** Review the completed current-stack A/B promotion gate for `preliminaryEvidenceLlmRemapEnabled` and state the final architect recommendation.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Approved promotion to default-on, with an explicit monitor caveat for the Homeopathy family. The decisive evidence is the Bolsonaro pair (`e8d50baa` OFF vs `e25cb33c` ON): same verdict direction and essentially same truth/confidence, but seeded mapping improves from `0/27` to `22/24`, which is the ideal repair signature for this feature. Hydrogen corroborates the same pattern (large mapping recovery, stable FALSE-leaning outcome). Plastik DE shows additional seeded recovery with no directional regression outside its already-documented variance band. The Homeopathy pair remains a real caution signal, not something to hand-wave away, but it is not strong enough to outweigh the cleaner Bolsonaro/Hydrogen evidence for the default decision.
+**Open items:** After the Captain flips the default, monitor Homeopathy-family runs and any broad evaluative multi-claim inputs where remap may concentrate seeded evidence unevenly across decomposed claims.
+**Warnings:** Keep the rollback flag available. Also, the grounding-check warnings with missing evidence IDs observed in some runs are a separate integrity concern and should not be conflated with the remap promotion decision.
+**For next agent:** If asked to operationalize the decision, update canonical status/backlog docs to reflect the default flip and preserve the Homeopathy monitor note. Do not present the promotion as universally risk-free; present it as approved with targeted monitoring.
 **Learnings:** no
