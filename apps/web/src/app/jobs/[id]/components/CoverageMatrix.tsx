@@ -181,7 +181,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
         <table className={styles.matrix}>
           <thead>
             <tr>
-              <th className={styles.cornerCell}>
+              <th className={styles.cornerCell} style={overallVerdict ? verdictStyle(overallVerdict) : undefined}>
                 <div className={styles.cornerDiagonal}></div>
                 <span className={styles.cornerLabelTop}>Atomic Claim</span>
                 <span className={styles.cornerLabelBottom}>Assessment Boundary</span>
