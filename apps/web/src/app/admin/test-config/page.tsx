@@ -215,8 +215,9 @@ export default function TestConfigPage() {
                   .env.local file and restart the development server.
                 </li>
                 <li>
-                  <strong>Service skipped:</strong> This service is not currently selected. Update your
-                  pipeline llmProvider or the active UCM search config if you want to use it.
+                  <strong>Service skipped:</strong> This service is not currently used by the active
+                  pipeline/search config and no credentials are set. Configured LLM providers are tested
+                  even when they are only used for debate roles or fallbacks.
                 </li>
                 <li>
                   <strong>Connection errors:</strong> Check your internet connection and verify the API key
@@ -231,6 +232,7 @@ export default function TestConfigPage() {
                   <code className={styles.code}>OPENAI_API_KEY</code>,
                   <code className={styles.code}>ANTHROPIC_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_GENERATIVE_AI_API_KEY</code>,
+                  <code className={styles.code}>GOOGLE_API_KEY</code>,
                   <code className={styles.code}>MISTRAL_API_KEY</code>
                 </div>
                 <div className={styles.envVarCategory}>

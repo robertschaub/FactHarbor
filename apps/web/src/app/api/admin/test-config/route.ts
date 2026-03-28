@@ -10,10 +10,12 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
 import { getConfig } from "@/lib/config-storage";
+import { loadPipelineConfig } from "@/lib/config-loader";
 import { getCacheStats } from "@/lib/search-cache";
 import { getAllProviderStats, getProviderStats } from "@/lib/search-circuit-breaker";
 import { checkAdminKey } from "@/lib/auth";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
+import type { PipelineConfig } from "@/lib/config-schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +27,113 @@ type TestResult = {
   configUrl?: string;
   details?: string;
 };
+
+type LlmProvider = "openai" | "anthropic" | "google" | "mistral";
+
+type LlmProviderTestPlan = {
+  shouldTest: boolean;
+  usageContexts: string[];
+  configuredEnvVars: string[];
+};
+
+const LLM_PROVIDER_ENV_VARS: Record<LlmProvider, readonly string[]> = {
+  openai: ["OPENAI_API_KEY"],
+  anthropic: ["ANTHROPIC_API_KEY"],
+  google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
+  mistral: ["MISTRAL_API_KEY"],
+};
+
+function hasConfiguredEnvVar(name: string): boolean {
+  const value = process.env[name];
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function getConfiguredEnvVars(provider: LlmProvider): string[] {
+  return [...LLM_PROVIDER_ENV_VARS[provider]].filter(hasConfiguredEnvVar);
+}
+
+function getUsedLlmProviderContexts(pipelineConfig: Pick<PipelineConfig, "llmProvider" | "debateRoles">): Record<LlmProvider, string[]> {
+  const contexts: Record<LlmProvider, string[]> = {
+    openai: [],
+    anthropic: [],
+    google: [],
+    mistral: [],
+  };
+
+  const primaryProvider = pipelineConfig.llmProvider;
+  if (primaryProvider && primaryProvider in contexts) {
+    contexts[primaryProvider].push("pipeline.llmProvider");
+  }
+
+  const roleEntries = Object.entries(pipelineConfig.debateRoles ?? {});
+  for (const [roleName, roleConfig] of roleEntries) {
+    const provider = roleConfig?.provider;
+    if (!provider || !(provider in contexts)) continue;
+    contexts[provider].push(`debateRoles.${roleName}`);
+  }
+
+  return contexts;
+}
+
+function buildLlmProviderTestPlan(
+  pipelineConfig: Pick<PipelineConfig, "llmProvider" | "debateRoles">,
+): Record<LlmProvider, LlmProviderTestPlan> {
+  const usedContexts = getUsedLlmProviderContexts(pipelineConfig);
+
+  return {
+    openai: {
+      shouldTest: usedContexts.openai.length > 0 || getConfiguredEnvVars("openai").length > 0,
+      usageContexts: usedContexts.openai,
+      configuredEnvVars: getConfiguredEnvVars("openai"),
+    },
+    anthropic: {
+      shouldTest: usedContexts.anthropic.length > 0 || getConfiguredEnvVars("anthropic").length > 0,
+      usageContexts: usedContexts.anthropic,
+      configuredEnvVars: getConfiguredEnvVars("anthropic"),
+    },
+    google: {
+      shouldTest: usedContexts.google.length > 0 || getConfiguredEnvVars("google").length > 0,
+      usageContexts: usedContexts.google,
+      configuredEnvVars: getConfiguredEnvVars("google"),
+    },
+    mistral: {
+      shouldTest: usedContexts.mistral.length > 0 || getConfiguredEnvVars("mistral").length > 0,
+      usageContexts: usedContexts.mistral,
+      configuredEnvVars: getConfiguredEnvVars("mistral"),
+    },
+  };
+}
+
+function formatPlanDetails(plan: LlmProviderTestPlan): string | undefined {
+  const parts: string[] = [];
+
+  if (plan.usageContexts.length > 0) {
+    parts.push(`Used by: ${plan.usageContexts.join(", ")}`);
+  }
+
+  if (plan.configuredEnvVars.length > 0) {
+    parts.push(`Credentials found in: ${plan.configuredEnvVars.join(", ")}`);
+  }
+
+  return parts.length > 0 ? parts.join(" | ") : undefined;
+}
+
+function combineDetails(primary: string | undefined, plan: LlmProviderTestPlan): string | undefined {
+  const secondary = formatPlanDetails(plan);
+  return [primary, secondary].filter(Boolean).join(" | ") || undefined;
+}
+
+function getGoogleApiKey(): { value?: string; sourceEnvVar?: string } {
+  if (hasConfiguredEnvVar("GOOGLE_GENERATIVE_AI_API_KEY")) {
+    return { value: process.env.GOOGLE_GENERATIVE_AI_API_KEY, sourceEnvVar: "GOOGLE_GENERATIVE_AI_API_KEY" };
+  }
+
+  if (hasConfiguredEnvVar("GOOGLE_API_KEY")) {
+    return { value: process.env.GOOGLE_API_KEY, sourceEnvVar: "GOOGLE_API_KEY" };
+  }
+
+  return {};
+}
 
 export async function GET(request: NextRequest) {
   if (!checkAdminKey(request)) {
@@ -43,19 +152,13 @@ export async function GET(request: NextRequest) {
   results.push(testFhInternalRunnerKey());
 
   // Test LLM Providers
-  let llmProvider = "anthropic";
-  try {
-    const pipelineConfigResult = await getConfig("pipeline", "default");
-    llmProvider = pipelineConfigResult.config.llmProvider ?? llmProvider;
-  } catch {
-    // Fall back to default if config load fails.
-  }
-  const llmProviderLower = llmProvider.toLowerCase();
+  const pipelineConfigResult = await loadPipelineConfig("default");
+  const llmTestPlan = buildLlmProviderTestPlan(pipelineConfigResult.config);
 
-  results.push(await testOpenAI(llmProviderLower === "openai"));
-  results.push(await testAnthropic(llmProviderLower === "anthropic"));
-  results.push(await testGoogle(llmProviderLower === "google"));
-  results.push(await testMistral(llmProviderLower === "mistral"));
+  results.push(await testOpenAI(llmTestPlan.openai));
+  results.push(await testAnthropic(llmTestPlan.anthropic));
+  results.push(await testGoogle(llmTestPlan.google));
+  results.push(await testMistral(llmTestPlan.mistral));
 
   // Test Search Providers
   const searchConfigResult = await getConfig("search", "default");
@@ -198,14 +301,14 @@ function testFhInternalRunnerKey(): TestResult {
   };
 }
 
-async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
+async function testOpenAI(plan: LlmProviderTestPlan): Promise<TestResult> {
   const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!shouldTest) {
+  if (!plan.shouldTest) {
     return {
       service: "OpenAI",
       status: "skipped",
-      message: "Not selected as pipeline.llmProvider",
+      message: "Not used by the active pipeline config and no credentials are set",
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -215,6 +318,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
       service: "OpenAI",
       status: "not_configured",
       message: "OPENAI_API_KEY is not set",
+      details: combineDetails(undefined, plan),
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -224,6 +328,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
       service: "OpenAI",
       status: "error",
       message: "OPENAI_API_KEY contains placeholder text",
+      details: combineDetails(undefined, plan),
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -239,7 +344,7 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
       service: "OpenAI",
       status: "success",
       message: "OpenAI API key is valid",
-      details: `Test response: ${result.text}`,
+      details: combineDetails(`Test response: ${result.text}`, plan),
       configUrl: "https://platform.openai.com/api-keys",
     };
   } catch (error: any) {
@@ -247,20 +352,20 @@ async function testOpenAI(shouldTest: boolean): Promise<TestResult> {
       service: "OpenAI",
       status: "error",
       message: `OpenAI API error: ${error.message}`,
-      details: error.stack,
+      details: combineDetails(error.stack, plan),
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
 }
 
-async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
+async function testAnthropic(plan: LlmProviderTestPlan): Promise<TestResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  if (!shouldTest) {
+  if (!plan.shouldTest) {
     return {
       service: "Anthropic",
       status: "skipped",
-      message: "Not selected as pipeline.llmProvider",
+      message: "Not used by the active pipeline config and no credentials are set",
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
@@ -270,6 +375,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
       service: "Anthropic",
       status: "not_configured",
       message: "ANTHROPIC_API_KEY is not set",
+      details: combineDetails(undefined, plan),
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
@@ -279,6 +385,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
       service: "Anthropic",
       status: "error",
       message: "ANTHROPIC_API_KEY contains placeholder text",
+      details: combineDetails(undefined, plan),
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
@@ -294,7 +401,7 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
       service: "Anthropic",
       status: "success",
       message: "Anthropic API key is valid",
-      details: `Test response: ${result.text}`,
+      details: combineDetails(`Test response: ${result.text}`, plan),
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   } catch (error: any) {
@@ -302,20 +409,20 @@ async function testAnthropic(shouldTest: boolean): Promise<TestResult> {
       service: "Anthropic",
       status: "error",
       message: `Anthropic API error: ${error.message}`,
-      details: error.stack,
+      details: combineDetails(error.stack, plan),
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
 }
 
-async function testGoogle(shouldTest: boolean): Promise<TestResult> {
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+async function testGoogle(plan: LlmProviderTestPlan): Promise<TestResult> {
+  const { value: apiKey, sourceEnvVar } = getGoogleApiKey();
 
-  if (!shouldTest) {
+  if (!plan.shouldTest) {
     return {
       service: "Google Generative AI",
       status: "skipped",
-      message: "Not selected as pipeline.llmProvider",
+      message: "Not used by the active pipeline config and no credentials are set",
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -324,7 +431,8 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "Google Generative AI",
       status: "not_configured",
-      message: "GOOGLE_GENERATIVE_AI_API_KEY is not set",
+      message: "GOOGLE_GENERATIVE_AI_API_KEY or GOOGLE_API_KEY is not set",
+      details: combineDetails(undefined, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -333,7 +441,8 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
     return {
       service: "Google Generative AI",
       status: "error",
-      message: "GOOGLE_GENERATIVE_AI_API_KEY contains placeholder text",
+      message: `${sourceEnvVar ?? "Google API key"} contains placeholder text`,
+      details: combineDetails(undefined, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -349,7 +458,7 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
       service: "Google Generative AI",
       status: "success",
       message: "Google API key is valid",
-      details: `Test response: ${result.text}`,
+      details: combineDetails(`Test response: ${result.text}`, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   } catch (error: any) {
@@ -357,20 +466,20 @@ async function testGoogle(shouldTest: boolean): Promise<TestResult> {
       service: "Google Generative AI",
       status: "error",
       message: `Google API error: ${error.message}`,
-      details: error.stack,
+      details: combineDetails(error.stack, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
 }
 
-async function testMistral(shouldTest: boolean): Promise<TestResult> {
+async function testMistral(plan: LlmProviderTestPlan): Promise<TestResult> {
   const apiKey = process.env.MISTRAL_API_KEY;
 
-  if (!shouldTest) {
+  if (!plan.shouldTest) {
     return {
       service: "Mistral AI",
       status: "skipped",
-      message: "Not selected as pipeline.llmProvider",
+      message: "Not used by the active pipeline config and no credentials are set",
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }
@@ -380,6 +489,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
       service: "Mistral AI",
       status: "not_configured",
       message: "MISTRAL_API_KEY is not set",
+      details: combineDetails(undefined, plan),
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }
@@ -389,6 +499,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
       service: "Mistral AI",
       status: "error",
       message: "MISTRAL_API_KEY contains placeholder text",
+      details: combineDetails(undefined, plan),
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }
@@ -404,7 +515,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
       service: "Mistral AI",
       status: "success",
       message: "Mistral API key is valid",
-      details: `Test response: ${result.text}`,
+      details: combineDetails(`Test response: ${result.text}`, plan),
       configUrl: "https://console.mistral.ai/api-keys",
     };
   } catch (error: any) {
@@ -412,7 +523,7 @@ async function testMistral(shouldTest: boolean): Promise<TestResult> {
       service: "Mistral AI",
       status: "error",
       message: `Mistral API error: ${error.message}`,
-      details: error.stack,
+      details: combineDetails(error.stack, plan),
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }

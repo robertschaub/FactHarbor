@@ -2227,3 +2227,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This patch modifies the local SQLite schema on startup by adding missing nullable text columns. Historical jobs still have `ExecutedWebGitCommitHash = NULL` until they are rerun.
 **For next agent:** Live recovery verified after `scripts/restart-clean.ps1`: `http://localhost:5000/v1/jobs?page=1&pageSize=1` returned 200, `http://localhost:3000/api/fh/jobs?page=1&pageSize=1` returned 200, and `PRAGMA table_info(Jobs)` now includes `ExecutedWebGitCommitHash`.
 **Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Test Dashboard LLM Coverage
+**Task:** Make Admin → Configuration Test Dashboard cover LLM providers that are actually used by debate roles or already configured in env, not only the global `pipeline.llmProvider`.
+**Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/src/app/admin/test-config/page.tsx`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Switched the LLM test route to load effective pipeline config via `loadPipelineConfig("default")`, derive provider usage from both `pipeline.llmProvider` and `debateRoles.*.provider`, and run checks for any provider that is either used by config or has credentials present in env. Kept unused-and-unconfigured providers as `skipped`, updated the UI help text to reflect that behavior, and added Google alias support so `GOOGLE_API_KEY` is treated as configured alongside `GOOGLE_GENERATIVE_AI_API_KEY`.
+**Open items:** Search-provider coverage logic is unchanged; this patch only broadens LLM coverage in the dashboard.
+**Warnings:** “Run All Tests” now performs live checks against any configured LLM provider, even if that provider is only a fallback/debate-role provider. That is intentional and may increase dashboard test cost slightly when multiple LLM keys are present.
+**For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. If you need to validate the live dashboard behavior manually, use the admin test page; no additional code changes should be required.
+**Learnings:** no
