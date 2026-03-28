@@ -226,8 +226,8 @@ export function getVerdictColor(verdict: string): {
     case "LEANING-TRUE":
       return { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b" };
     case "MIXED":
-      // Blue-ish color to indicate confident mix (distinct from UNVERIFIED)
-      return { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" };
+      // Warm neutral gray to indicate confident mix (distinct from UNVERIFIED)
+      return { bg: "#f5f0eb", text: "#5d534a", border: "#d6cdc4" };
     case "UNVERIFIED":
       return { bg: "#fff3e0", text: "#e65100", border: "#ff9800" };
     case "LEANING-FALSE":

@@ -73,7 +73,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
     "TRUE": { bg: "#d4edda", text: "#155724", border: "#28a745" },
     "MOSTLY-TRUE": { bg: "#e8f5e9", text: "#2e7d32", border: "#66bb6a" },
     "LEANING-TRUE": { bg: "#fff9c4", text: "#f57f17", border: "#ffeb3b" },
-    "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3" },
+    "MIXED": { bg: "#f5f0eb", text: "#5d534a", border: "#d6cdc4" },
     "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800" },
     "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722" },
     "MOSTLY-FALSE": { bg: "#ffcdd2", text: "#c62828", border: "#f44336" },

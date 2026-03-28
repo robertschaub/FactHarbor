@@ -390,15 +390,16 @@ export default function JobsPage() {
                     const confidenceMeta = job.analysisIssueCode === "analysis_generation_failed"
                       ? null
                       : (job.confidence !== undefined ? getConfidenceTierLabel(job.confidence) : null);
-                    const tooltip = job.analysisIssueCode === "analysis_generation_failed"
-                      ? (job.analysisIssueMessage || `Verdict: ${vBadge.text}`)
-                      : `Verdict: ${vBadge.text}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`;
+                    const tooltip = adminKey
+                      ? (job.analysisIssueCode === "analysis_generation_failed"
+                        ? (job.analysisIssueMessage || `Verdict: ${vBadge.text}`)
+                        : `Verdict: ${vBadge.text}${verdictMeta ? ` · ${verdictMeta}` : ""}${job.confidence != null ? ` · Confidence: ${job.confidence}%` : ""}`)
+                      : undefined;
                     return (
                       <div style={{ margin: "0 0 4px" }}>
                         <span className={`${styles.verdictBadge} ${vBadge.className}`} title={tooltip}>
                           {vBadge.icon} {vBadge.text}
                           <span style={{ fontWeight: 400 }}>
-                            {verdictMeta && <> · {verdictMeta}</>}
                             {confidenceMeta && <> · {confidenceMeta}</>}
                           </span>
                         </span>

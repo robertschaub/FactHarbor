@@ -103,7 +103,7 @@ const CLAIM_VERDICT_COLORS: Record<string, { bg: string; text: string; border: s
   "MOSTLY-TRUE":  { bg: "#a1d99b", text: "#1a5c2a", border: "#82c47a", icon: "✓" },
   "LEANING-TRUE": { bg: "#e5f5e0", text: "#1a5c2a", border: "#c0e0b8", icon: "◐" },
   // Neutral
-  "MIXED":        { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },
+  "MIXED":        { bg: "#f5f0eb", text: "#5d534a", border: "#d6cdc4", icon: "⚖" },
   "UNVERIFIED":   { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
   // Negative (False side) — ColorBrewer Reds: #fee0d2 / #fc9272 / #de2d26
   "LEANING-FALSE": { bg: "#fee0d2", text: "#7f1d1d", border: "#f0c0b0", icon: "◔" },
@@ -120,7 +120,7 @@ const QUESTION_ANSWER_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-YES":  { bg: "#a1d99b", text: "#1a5c2a", border: "#82c47a", icon: "✓" },
   "LEANING-YES": { bg: "#e5f5e0", text: "#1a5c2a", border: "#c0e0b8", icon: "↗" },
   // Neutral
-  "MIXED":       { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },
+  "MIXED":       { bg: "#f5f0eb", text: "#5d534a", border: "#d6cdc4", icon: "⚖" },
   "UNVERIFIED":  { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },
   // Negative (No side) — ColorBrewer Reds: #fee0d2 / #fc9272 / #de2d26
   "LEANING-NO":  { bg: "#fee0d2", text: "#7f1d1d", border: "#f0c0b0", icon: "↘" },
@@ -137,7 +137,7 @@ const ARTICLE_VERDICT_COLORS: Record<string, { bg: string; text: string; border:
   "MOSTLY-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "✓" },
   "LEANING-TRUE": { bg: "#dcfce7", text: "#166534", border: "#86efac", icon: "◐" },
   // Neutral
-  "MIXED": { bg: "#e3f2fd", text: "#1565c0", border: "#2196f3", icon: "⚖" },  // Blue: confident mix
+  "MIXED": { bg: "#f5f0eb", text: "#5d534a", border: "#d6cdc4", icon: "⚖" },  // Warm neutral gray: confident mix
   "UNVERIFIED": { bg: "#fff3e0", text: "#e65100", border: "#ff9800", icon: "?" },  // Orange: insufficient evidence
   // Negative
   "LEANING-FALSE": { bg: "#ffccbc", text: "#bf360c", border: "#ff5722", icon: "◔" },
@@ -375,31 +375,6 @@ function VerdictMeter({
           ({range.min}% - {range.max}%)
         </span>
       )}
-    </div>
-  );
-}
-
-function VerdictMetricBlock({
-  label,
-  value,
-  percentage,
-  fillColor,
-  range,
-  helperText,
-}: {
-  label: string;
-  value: string;
-  percentage: number;
-  fillColor: string;
-  range?: { min: number; max: number } | null;
-  helperText?: string;
-}) {
-  return (
-    <div className={styles.verdictMetricBlock}>
-      <div className={styles.verdictMetricTitle}>{label}</div>
-      <div className={styles.verdictMetricValue}>{value}</div>
-      <div className={styles.verdictMetricHelper}>{helperText || "\u00A0"}</div>
-      <VerdictMeter percentage={percentage} range={range} fillColor={fillColor} showValue={false} />
     </div>
   );
 }
@@ -1747,15 +1722,20 @@ export default function JobPage() {
                     <div className={styles.articleBanner} style={{ borderColor: cbAccent }}>
                       <div className={styles.articleBannerContent}>
                         <div className={styles.articleBannerPrimary}>
-                        <div
-                          className={styles.articleVerdictHero}
-                          style={{
-                            color: cbUiPalette.text,
-                            backgroundColor: cbUiPalette.bg,
-                            borderColor: cbUiPalette.border,
-                          }}
-                        >
-                          {getVerdictLabel(cbVerdictLabel).toUpperCase().replace(/\s+/g, "-")}
+                        <div className={styles.verdictHeroRow}>
+                          <div
+                            className={styles.articleVerdictHero}
+                            style={{
+                              color: cbUiPalette.text,
+                              backgroundColor: cbUiPalette.bg,
+                              borderColor: cbUiPalette.border,
+                            }}
+                          >
+                            {getVerdictLabel(cbVerdictLabel).toUpperCase().replace(/\s+/g, "-")}
+                          </div>
+                          <div className={styles.verdictConfidenceInline}>
+                            {getConfidenceDisplayLabel(result.confidence ?? 0, showAnalysisFailureLabel)}
+                          </div>
                         </div>
                           {showAnalysisFailureLabel && (
                             <div className={styles.qualityStatusBanner}>
@@ -1777,23 +1757,6 @@ export default function JobPage() {
                               onNavigate={navigateTo}
                             />
                           )}
-                        <div className={styles.articleBannerMetrics}>
-                          <VerdictMetricBlock
-                            label="Truth Assessment"
-                            value={cbTruthAssessmentValue}
-                            percentage={displayCbPct}
-                            range={cbDisplayRange}
-                            fillColor={cbAccent}
-                            helperText={cbTruthAssessmentHelperText}
-                          />
-                          <VerdictMetricBlock
-                            label="Confidence"
-                            value={getConfidenceDisplayLabel(result.confidence ?? 0, showAnalysisFailureLabel)}
-                            percentage={confidencePct}
-                            fillColor="var(--link)"
-                            helperText={showAnalysisFailureLabel ? "Confidence unavailable due to analysis failure" : `${confidencePct}% confidence`}
-                          />
-                        </div>
                         </div>
                         {verdictKeyFinding && (
                           <div className={styles.articleBannerAside}>

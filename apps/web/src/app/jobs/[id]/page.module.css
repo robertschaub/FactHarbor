@@ -2137,7 +2137,7 @@ details[open] > .devWarningSummary::before {
   font-weight: 800;
   line-height: 1.05;
   letter-spacing: 0.02em;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   display: inline-flex;
   align-items: center;
   padding: 8px 12px;
@@ -2157,6 +2157,19 @@ details[open] > .devWarningSummary::before {
   gap: 28px;
   align-items: flex-start;
   flex-wrap: wrap;
+}
+
+.verdictHeroRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.verdictConfidenceInline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .verdictMetricBlock {
