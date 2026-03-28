@@ -1880,6 +1880,7 @@ export default function JobPage() {
                       onNavigate={navigateTo}
                       cellVerdicts={cellVerdicts}
                       claimVerdicts={claimLevelVerdicts}
+                      overallVerdict={result.truthPercentage != null ? { pct: result.truthPercentage, conf: result.confidence ?? 0 } : null}
                       verdictColorMap={CLAIM_VERDICT_COLORS}
                     />
                   )}

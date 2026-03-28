@@ -32,6 +32,7 @@ interface Props {
   onNavigate?: (refId: string) => void; // Cross-navigation callback
   cellVerdicts?: (CellVerdict | null)[][]; // Same shape as counts: [claimIdx][boundaryIdx]
   claimVerdicts?: (CellVerdict | null)[];  // One per claim — claim-level verdict for Total row
+  overallVerdict?: CellVerdict | null;     // Overall verdict — colors "Total" header + grand total cell
   verdictColorMap?: Record<string, VerdictColorEntry>; // Same palette as claim cards
 }
 
@@ -60,7 +61,7 @@ export function BoundaryLegend({ shortLabels, fullLabels, boundaryIds, onNavigat
   );
 }
 
-export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, boundaryShortLabels, hideLegend = false, onNavigate, cellVerdicts, claimVerdicts: claimLevelVerdicts, verdictColorMap }: Props) {
+export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, boundaryShortLabels, hideLegend = false, onNavigate, cellVerdicts, claimVerdicts: claimLevelVerdicts, overallVerdict, verdictColorMap }: Props) {
   const { claims, boundaries, counts } = matrix;
   const hasVerdictData = !!cellVerdicts && cellVerdicts.length > 0;
 
@@ -185,26 +186,38 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
                 <span className={styles.cornerLabelTop}>Atomic Claim</span>
                 <span className={styles.cornerLabelBottom}>Assessment Boundary</span>
               </th>
-              {claimDisplayLabels.map((label, i) => (
-                <th
-                  key={claims[i]}
-                  className={`${styles.headerCell} ${onNavigate ? styles.clickableHeader : ""}`}
-                  title={label}
-                  onClick={onNavigate ? () => onNavigate(claims[i]) : undefined}
-                >
-                  <div className={styles.headerCellContent}>{label}</div>
-                </th>
-              ))}
-              <th className={styles.totalHeader}>Total</th>
+              {claimDisplayLabels.map((label, i) => {
+                const claimVerdict = claimLevelVerdicts?.[i];
+                return (
+                  <th
+                    key={claims[i]}
+                    className={`${styles.headerCell} ${onNavigate ? styles.clickableHeader : ""}`}
+                    style={claimVerdict ? verdictStyle(claimVerdict) : undefined}
+                    title={label}
+                    onClick={onNavigate ? () => onNavigate(claims[i]) : undefined}
+                  >
+                    <div className={styles.headerCellContent}>{label}</div>
+                  </th>
+                );
+              })}
+              <th className={styles.totalHeader} style={overallVerdict ? verdictStyle(overallVerdict) : undefined}>Total</th>
             </tr>
           </thead>
           <tbody>
             {boundaries.map((_, boundaryIdx) => {
               const colTotal = counts.reduce((sum, row) => sum + row[boundaryIdx], 0);
+              const rowDv = hasVerdictData
+                ? dominantVerdict(
+                    claims.map((_, ci) => cellVerdicts?.[ci]?.[boundaryIdx]),
+                    claims.map((_, ci) => counts[ci][boundaryIdx]),
+                    claimDisplayLabels,
+                  )
+                : null;
               return (
                 <tr key={boundaries[boundaryIdx]}>
                   <th
                     className={`${styles.rowHeader} ${onNavigate ? styles.clickableHeader : ""}`}
+                    style={rowDv?.style}
                     title={fullLabels[boundaryIdx]}
                     onClick={onNavigate ? () => onNavigate(boundaries[boundaryIdx]) : undefined}
                   >
@@ -224,25 +237,14 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
                       </td>
                     );
                   })}
-                  {(() => {
-                    const dv = hasVerdictData
-                      ? dominantVerdict(
-                          claims.map((_, ci) => cellVerdicts?.[ci]?.[boundaryIdx]),
-                          claims.map((_, ci) => counts[ci][boundaryIdx]),
-                          claimDisplayLabels,
-                        )
-                      : null;
-                    return (
-                      <td className={styles.totalCell} style={dv?.style} title={dv?.tooltip}>
-                        {colTotal}
-                      </td>
-                    );
-                  })()}
+                  <td className={styles.totalCell} style={rowDv?.style} title={rowDv?.tooltip}>
+                    {colTotal}
+                  </td>
                 </tr>
               );
             })}
             <tr className={styles.totalRow}>
-              <th className={styles.rowHeader}>Total</th>
+              <th className={styles.rowHeader} style={overallVerdict ? verdictStyle(overallVerdict) : undefined}>Total</th>
               {counts.map((row, claimIdx) => {
                 const rowTotal = row.reduce((sum, count) => sum + count, 0);
                 const cv = claimLevelVerdicts?.[claimIdx];
@@ -267,7 +269,7 @@ export function CoverageMatrixDisplay({ matrix, claimLabels, boundaryLabels, bou
                   </td>
                 );
               })}
-              <td className={styles.grandTotal}>
+              <td className={styles.grandTotal} style={overallVerdict ? verdictStyle(overallVerdict) : undefined}>
                 {counts.reduce((sum, row) => sum + row.reduce((s, c) => s + c, 0), 0)}
               </td>
             </tr>
