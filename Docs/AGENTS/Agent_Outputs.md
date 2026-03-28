@@ -2237,3 +2237,43 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** “Run All Tests” now performs live checks against any configured LLM provider, even if that provider is only a fallback/debate-role provider. That is intentional and may increase dashboard test cost slightly when multiple LLM keys are present.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. If you need to validate the live dashboard behavior manually, use the admin test page; no additional code changes should be required.
 **Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Google LLM Env Var Correction
+**Task:** Correct the Google LLM credential handling after confirming the installed `@ai-sdk/google` package only defaults to `GOOGLE_GENERATIVE_AI_API_KEY`, not `GOOGLE_API_KEY`.
+**Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/src/app/admin/test-config/page.tsx`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/src/app/api/health/route.ts`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Removed the dashboard-only `GOOGLE_API_KEY` alias, updated the Stage 4 provider-credential precheck to require `GOOGLE_GENERATIVE_AI_API_KEY` for Google, and renamed the health-route diagnostic field so it no longer implies the wrong env var. Kept the broader LLM dashboard change itself: configured or actually-used providers are still tested even when they are not the global `pipeline.llmProvider`.
+**Open items:** `claimboundary-pipeline.test.ts` still saves/restores `GOOGLE_API_KEY` in one cleanup block, but it no longer influences Google credential detection and did not need behavior changes.
+**Warnings:** The immediately previous agent-output entry mentions `GOOGLE_API_KEY` support for the dashboard; this follow-up supersedes that part.
+**For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts`, `npx vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts --testNamePattern "missing credentials from explicitly configured providers"`, and `npm run build` from `apps/web`.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dashboard Tests Follow Active Default UCM
+**Task:** Tighten Admin → Configuration Test Dashboard so LLM checks are driven only by the effective active default UCM config, not by arbitrary keys present in `.env.local`.
+**Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/src/app/admin/test-config/page.tsx`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept `loadPipelineConfig("default")` for LLM selection and changed the test plan so a provider is tested only when the effective active pipeline config actually uses it (`pipeline.llmProvider` or `debateRoles.*.provider`). Also switched search-provider selection to `loadSearchConfig("default")` for the same “runtime-effective default profile” behavior. Configured-but-inactive providers are now skipped again, with UI copy updated to say checks follow the effective default UCM config.
+**Open items:** Earlier entries in this file that say “configured providers are also tested” are now superseded by this stricter rule.
+**Warnings:** This reduces surprise and cost, but it also means a valid provider key can remain untested until the active default config actually routes work to that provider.
+**For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route tests now cover both cases: inactive configured Google is skipped, and active Google via a debate role is tested.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dashboard Timeout And Error Cleanup
+**Task:** Stop Admin → Configuration Test Dashboard from appearing stuck during live provider checks and replace verbose `AI_RetryError` stack dumps with concise provider messages.
+**Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/src/app/admin/test-config/page.tsx`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added real abort timeouts to the LLM test calls, parallelized independent checks inside the admin test route, and added a client-side fetch timeout so the UI exits “Running Tests...” with a clear error if the route still stalls. Also reused `classifyError()` to collapse quota/rate-limit failures into concise dashboard messages and removed stack-trace details from the visible result cards.
+**Open items:** The dashboard still performs real live provider checks by design, so slow external providers can still delay completion up to the configured timeout window.
+**Warnings:** Route execution order is now partially parallelized. Result order in the UI is preserved because `Promise.all()` result arrays are pushed in a fixed order, but provider calls now run concurrently.
+**For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route tests now include the OpenAI quota error shape and assert that the user-facing message is concise.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Single-Attempt Provider Probes
+**Task:** Make the Configuration Test Dashboard provider probes surface the real first provider error instead of timing out behind AI SDK retries.
+**Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Set `maxRetries: 0` on the OpenAI/Anthropic/Google/Mistral `generateText()` probes. This keeps the dashboard as a fast health check rather than a retry-heavy workflow and allows quota/auth failures to return immediately instead of being masked as a 15s timeout.
+**Open items:** If a provider still times out after this change, the underlying single request is genuinely stalling and would need deeper provider-specific diagnostics.
+**Warnings:** This intentionally reduces resilience during the dashboard probe itself. That is correct for a diagnostic surface; the goal is fast truth, not best-effort recovery.
+**For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route test now also asserts that the dashboard probes use `maxRetries: 0`.
+**Learnings:** no

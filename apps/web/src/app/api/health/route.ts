@@ -69,7 +69,7 @@ export async function GET() {
     llmProvider: providerLower,
     OPENAI_API_KEY_present: isNonEmpty(process.env.OPENAI_API_KEY),
     ANTHROPIC_API_KEY_present: isNonEmpty(process.env.ANTHROPIC_API_KEY),
-    GOOGLE_API_KEY_present: isNonEmpty(process.env.GOOGLE_GENERATIVE_AI_API_KEY),
+    GOOGLE_GENERATIVE_AI_API_KEY_present: isNonEmpty(process.env.GOOGLE_GENERATIVE_AI_API_KEY),
     MISTRAL_API_KEY_present: isNonEmpty(process.env.MISTRAL_API_KEY),
   };
 
@@ -79,7 +79,7 @@ export async function GET() {
       : providerLower === "anthropic" || providerLower === "claude"
         ? checks.ANTHROPIC_API_KEY_present
         : providerLower === "google" || providerLower === "gemini"
-          ? checks.GOOGLE_API_KEY_present
+          ? checks.GOOGLE_GENERATIVE_AI_API_KEY_present
           : providerLower === "mistral"
             ? checks.MISTRAL_API_KEY_present
             : false;

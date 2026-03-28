@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockGenerateText = vi.fn();
-const mockGetConfig = vi.fn();
 const mockLoadPipelineConfig = vi.fn();
+const mockLoadSearchConfig = vi.fn();
 const mockGetCacheStats = vi.fn();
 const mockGetAllProviderStats = vi.fn();
 const mockGetProviderStats = vi.fn();
@@ -28,12 +28,9 @@ vi.mock("@ai-sdk/mistral", () => ({
   mistral: vi.fn((model: string) => ({ provider: "mistral", model })),
 }));
 
-vi.mock("@/lib/config-storage", () => ({
-  getConfig: (...args: unknown[]) => mockGetConfig(...args),
-}));
-
 vi.mock("@/lib/config-loader", () => ({
   loadPipelineConfig: (...args: unknown[]) => mockLoadPipelineConfig(...args),
+  loadSearchConfig: (...args: unknown[]) => mockLoadSearchConfig(...args),
 }));
 
 vi.mock("@/lib/search-cache", () => ({
@@ -84,11 +81,12 @@ describe("Admin test-config route", () => {
 
     mockCheckAdminKey.mockReturnValue(true);
     mockGenerateText.mockResolvedValue({ text: "OK" });
-    mockGetConfig.mockImplementation(async (type: string) => {
-      if (type === "search") {
-        return { config: { enabled: false, provider: "auto" } };
-      }
-      throw new Error(`Unexpected config request: ${type}`);
+    mockLoadSearchConfig.mockResolvedValue({
+      config: { enabled: false, provider: "auto" },
+      contentHash: "search-hash",
+      overrides: [],
+      fromCache: false,
+      fromDefault: false,
     });
     mockLoadPipelineConfig.mockResolvedValue({
       config: createPipelineConfig(),
@@ -126,6 +124,7 @@ describe("Admin test-config route", () => {
     expect(openAiResult.details).toContain("debateRoles.challenger");
     expect(anthropicResult.status).toBe("success");
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockGenerateText).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0 }));
   });
 
   it("skips providers that are neither used nor configured", async () => {
@@ -154,14 +153,13 @@ describe("Admin test-config route", () => {
 
     expect(response.status).toBe(200);
     expect(openAiResult.status).toBe("skipped");
-    expect(openAiResult.message).toBe("Not used by the active pipeline config and no credentials are set");
+    expect(openAiResult.message).toBe("Not used by the active default pipeline config");
     expect(mockGenerateText).toHaveBeenCalledTimes(1);
   });
 
-  it("tests configured Google credentials even when Google is not the active provider", async () => {
+  it("skips configured Google credentials when Google is not used by the active config", async () => {
     process.env.ANTHROPIC_API_KEY = "anthropic-test-key";
-    process.env.GOOGLE_API_KEY = "google-test-key";
-    delete process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = "google-test-key";
 
     mockLoadPipelineConfig.mockResolvedValue({
       config: createPipelineConfig({
@@ -185,8 +183,61 @@ describe("Admin test-config route", () => {
     const googleResult = data.results.find((result: any) => result.service === "Google Generative AI");
 
     expect(response.status).toBe(200);
+    expect(googleResult.status).toBe("skipped");
+    expect(googleResult.message).toBe("Not used by the active default pipeline config");
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+  });
+
+  it("tests Google when the active debate configuration uses it", async () => {
+    process.env.ANTHROPIC_API_KEY = "anthropic-test-key";
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY = "google-test-key";
+
+    mockLoadPipelineConfig.mockResolvedValue({
+      config: createPipelineConfig({
+        debateRoles: {
+          advocate: { provider: "anthropic", strength: "standard" },
+          selfConsistency: { provider: "google", strength: "standard" },
+          challenger: { provider: "openai", strength: "standard" },
+          reconciler: { provider: "anthropic", strength: "standard" },
+          validation: { provider: "anthropic", strength: "budget" },
+        },
+      }),
+      contentHash: "pipeline-hash",
+      overrides: [],
+      fromCache: false,
+      fromDefault: false,
+    });
+
+    process.env.OPENAI_API_KEY = "openai-test-key";
+
+    const response = await runRouteGet();
+    const data = await response.json();
+
+    const googleResult = data.results.find((result: any) => result.service === "Google Generative AI");
+
+    expect(response.status).toBe(200);
     expect(googleResult.status).toBe("success");
-    expect(googleResult.details).toContain("GOOGLE_API_KEY");
-    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(googleResult.details).toContain("debateRoles.selfConsistency");
+    expect(mockGenerateText).toHaveBeenCalledTimes(3);
+  });
+
+  it("shows a concise quota message instead of an AI_RetryError stack", async () => {
+    process.env.ANTHROPIC_API_KEY = "anthropic-test-key";
+    process.env.OPENAI_API_KEY = "openai-test-key";
+
+    mockGenerateText.mockRejectedValueOnce(new Error(
+      "AI_RetryError: Failed after 3 attempts. Last error: You exceeded your current quota, please check your plan and billing details."
+    ));
+
+    const response = await runRouteGet();
+    const data = await response.json();
+
+    const openAiResult = data.results.find((result: any) => result.service === "OpenAI");
+
+    expect(response.status).toBe(200);
+    expect(openAiResult.status).toBe("error");
+    expect(openAiResult.message).toBe("OpenAI quota or rate limit reached");
+    expect(openAiResult.details).toContain("You exceeded your current quota");
+    expect(openAiResult.details).not.toContain("AI_RetryError");
   });
 });

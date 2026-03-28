@@ -213,7 +213,7 @@ export function buildVerdictStageConfig(
 const PROVIDER_API_KEY_ENV: Record<LLMProviderType, string[]> = {
   anthropic: ["ANTHROPIC_API_KEY"],
   openai: ["OPENAI_API_KEY"],
-  google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
+  google: ["GOOGLE_GENERATIVE_AI_API_KEY"],
   mistral: ["MISTRAL_API_KEY"],
 };
 

@@ -41,12 +41,18 @@ export default function TestConfigPage() {
     setError(null);
     setTestResults(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const headers: Record<string, string> = {};
       if (adminKey) {
         headers["x-admin-key"] = adminKey;
       }
-      const response = await fetch("/api/admin/test-config", { headers });
+      const response = await fetch("/api/admin/test-config", {
+        headers,
+        signal: controller.signal,
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -55,8 +61,12 @@ export default function TestConfigPage() {
       const data = await response.json();
       setTestResults(data);
     } catch (err: any) {
-      setError(err.message || "Failed to run tests");
+      const isAbort = err?.name === "AbortError";
+      setError(isAbort
+        ? "Configuration tests timed out. One or more providers did not respond in time."
+        : err.message || "Failed to run tests");
     } finally {
+      clearTimeout(timeoutId);
       setTesting(false);
     }
   };
@@ -215,9 +225,9 @@ export default function TestConfigPage() {
                   .env.local file and restart the development server.
                 </li>
                 <li>
-                  <strong>Service skipped:</strong> This service is not currently used by the active
-                  pipeline/search config and no credentials are set. Configured LLM providers are tested
-                  even when they are only used for debate roles or fallbacks.
+                  <strong>Service skipped:</strong> This service is not used by the active default
+                  pipeline or search configuration. LLM checks follow the effective default UCM config,
+                  including debate-role providers.
                 </li>
                 <li>
                   <strong>Connection errors:</strong> Check your internet connection and verify the API key
@@ -232,7 +242,6 @@ export default function TestConfigPage() {
                   <code className={styles.code}>OPENAI_API_KEY</code>,
                   <code className={styles.code}>ANTHROPIC_API_KEY</code>,
                   <code className={styles.code}>GOOGLE_GENERATIVE_AI_API_KEY</code>,
-                  <code className={styles.code}>GOOGLE_API_KEY</code>,
                   <code className={styles.code}>MISTRAL_API_KEY</code>
                 </div>
                 <div className={styles.envVarCategory}>

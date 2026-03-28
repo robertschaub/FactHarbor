@@ -9,12 +9,12 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateText } from "ai";
-import { getConfig } from "@/lib/config-storage";
-import { loadPipelineConfig } from "@/lib/config-loader";
+import { loadPipelineConfig, loadSearchConfig } from "@/lib/config-loader";
 import { getCacheStats } from "@/lib/search-cache";
 import { getAllProviderStats, getProviderStats } from "@/lib/search-circuit-breaker";
 import { checkAdminKey } from "@/lib/auth";
 import { ANTHROPIC_MODELS } from "@/lib/analyzer/model-tiering";
+import { classifyError } from "@/lib/error-classification";
 import type { PipelineConfig } from "@/lib/config-schemas";
 
 export const runtime = "nodejs";
@@ -33,24 +33,9 @@ type LlmProvider = "openai" | "anthropic" | "google" | "mistral";
 type LlmProviderTestPlan = {
   shouldTest: boolean;
   usageContexts: string[];
-  configuredEnvVars: string[];
 };
 
-const LLM_PROVIDER_ENV_VARS: Record<LlmProvider, readonly string[]> = {
-  openai: ["OPENAI_API_KEY"],
-  anthropic: ["ANTHROPIC_API_KEY"],
-  google: ["GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"],
-  mistral: ["MISTRAL_API_KEY"],
-};
-
-function hasConfiguredEnvVar(name: string): boolean {
-  const value = process.env[name];
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function getConfiguredEnvVars(provider: LlmProvider): string[] {
-  return [...LLM_PROVIDER_ENV_VARS[provider]].filter(hasConfiguredEnvVar);
-}
+const LLM_TEST_TIMEOUT_MS = 15000;
 
 function getUsedLlmProviderContexts(pipelineConfig: Pick<PipelineConfig, "llmProvider" | "debateRoles">): Record<LlmProvider, string[]> {
   const contexts: Record<LlmProvider, string[]> = {
@@ -82,40 +67,30 @@ function buildLlmProviderTestPlan(
 
   return {
     openai: {
-      shouldTest: usedContexts.openai.length > 0 || getConfiguredEnvVars("openai").length > 0,
+      shouldTest: usedContexts.openai.length > 0,
       usageContexts: usedContexts.openai,
-      configuredEnvVars: getConfiguredEnvVars("openai"),
     },
     anthropic: {
-      shouldTest: usedContexts.anthropic.length > 0 || getConfiguredEnvVars("anthropic").length > 0,
+      shouldTest: usedContexts.anthropic.length > 0,
       usageContexts: usedContexts.anthropic,
-      configuredEnvVars: getConfiguredEnvVars("anthropic"),
     },
     google: {
-      shouldTest: usedContexts.google.length > 0 || getConfiguredEnvVars("google").length > 0,
+      shouldTest: usedContexts.google.length > 0,
       usageContexts: usedContexts.google,
-      configuredEnvVars: getConfiguredEnvVars("google"),
     },
     mistral: {
-      shouldTest: usedContexts.mistral.length > 0 || getConfiguredEnvVars("mistral").length > 0,
+      shouldTest: usedContexts.mistral.length > 0,
       usageContexts: usedContexts.mistral,
-      configuredEnvVars: getConfiguredEnvVars("mistral"),
     },
   };
 }
 
 function formatPlanDetails(plan: LlmProviderTestPlan): string | undefined {
-  const parts: string[] = [];
-
   if (plan.usageContexts.length > 0) {
-    parts.push(`Used by: ${plan.usageContexts.join(", ")}`);
+    return `Used by: ${plan.usageContexts.join(", ")}`;
   }
 
-  if (plan.configuredEnvVars.length > 0) {
-    parts.push(`Credentials found in: ${plan.configuredEnvVars.join(", ")}`);
-  }
-
-  return parts.length > 0 ? parts.join(" | ") : undefined;
+  return undefined;
 }
 
 function combineDetails(primary: string | undefined, plan: LlmProviderTestPlan): string | undefined {
@@ -123,16 +98,51 @@ function combineDetails(primary: string | undefined, plan: LlmProviderTestPlan):
   return [primary, secondary].filter(Boolean).join(" | ") || undefined;
 }
 
-function getGoogleApiKey(): { value?: string; sourceEnvVar?: string } {
-  if (hasConfiguredEnvVar("GOOGLE_GENERATIVE_AI_API_KEY")) {
-    return { value: process.env.GOOGLE_GENERATIVE_AI_API_KEY, sourceEnvVar: "GOOGLE_GENERATIVE_AI_API_KEY" };
+function stripRetryWrapper(message: string): string {
+  return message
+    .replace(/^AI_RetryError:\s*/i, "")
+    .replace(/^Failed after \d+ attempts\.\s*Last error:\s*/i, "")
+    .trim();
+}
+
+function formatLlmTestFailure(providerLabel: string, error: unknown, plan: LlmProviderTestPlan): TestResult {
+  const classified = classifyError(error);
+  const rawMessage = error instanceof Error ? error.message : String(error ?? "Unknown error");
+  const cleanedMessage = stripRetryWrapper(rawMessage);
+
+  let message = `${providerLabel} API error: ${cleanedMessage}`;
+  if (classified.category === "rate_limit") {
+    message = `${providerLabel} quota or rate limit reached`;
+  } else if (classified.category === "timeout") {
+    message = `${providerLabel} test timed out`;
   }
 
-  if (hasConfiguredEnvVar("GOOGLE_API_KEY")) {
-    return { value: process.env.GOOGLE_API_KEY, sourceEnvVar: "GOOGLE_API_KEY" };
-  }
+  return {
+    service: providerLabel,
+    status: "error",
+    message,
+    details: combineDetails(cleanedMessage, plan),
+  };
+}
 
-  return {};
+async function runWithAbortTimeout<T>(
+  operation: (abortSignal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  label: string,
+): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await operation(controller.signal);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -142,37 +152,38 @@ export async function GET(request: NextRequest) {
 
   const results: TestResult[] = [];
 
-  // Test FH API Base URL
-  results.push(await testFhApiBaseUrl());
+  const [basicResults, pipelineConfigResult, searchConfigResult] = await Promise.all([
+    Promise.all([
+      testFhApiBaseUrl(),
+      Promise.resolve(testFhAdminKey()),
+      Promise.resolve(testFhInternalRunnerKey()),
+    ]),
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+  ]);
 
-  // Test FH Admin Key
-  results.push(testFhAdminKey());
+  results.push(...basicResults);
 
-  // Test FH Internal Runner Key
-  results.push(testFhInternalRunnerKey());
-
-  // Test LLM Providers
-  const pipelineConfigResult = await loadPipelineConfig("default");
   const llmTestPlan = buildLlmProviderTestPlan(pipelineConfigResult.config);
+  results.push(...await Promise.all([
+    testOpenAI(llmTestPlan.openai),
+    testAnthropic(llmTestPlan.anthropic),
+    testGoogle(llmTestPlan.google),
+    testMistral(llmTestPlan.mistral),
+  ]));
 
-  results.push(await testOpenAI(llmTestPlan.openai));
-  results.push(await testAnthropic(llmTestPlan.anthropic));
-  results.push(await testGoogle(llmTestPlan.google));
-  results.push(await testMistral(llmTestPlan.mistral));
-
-  // Test Search Providers
-  const searchConfigResult = await getConfig("search", "default");
   const searchEnabled = searchConfigResult.config.enabled;
   const searchProvider = searchConfigResult.config.provider;
-
-  results.push(await testSerpApi(searchEnabled && (searchProvider === "serpapi" || searchProvider === "auto")));
-  results.push(await testGoogleCse(searchEnabled && (searchProvider === "google-cse" || searchProvider === "auto")));
-  results.push(await testBrave(searchEnabled && (searchProvider === "brave" || searchProvider === "auto")));
-  results.push(await testSerper(searchEnabled && (searchProvider === "serper" || searchProvider === "auto")));
-
-  // Test Search Cache & Circuit Breaker
-  results.push(await testSearchCache(searchEnabled));
-  results.push(await testSearchCircuitBreaker(searchEnabled));
+  results.push(...await Promise.all([
+    testSerpApi(searchEnabled && (searchProvider === "serpapi" || searchProvider === "auto")),
+    testGoogleCse(searchEnabled && (searchProvider === "google-cse" || searchProvider === "auto")),
+    testBrave(searchEnabled && (searchProvider === "brave" || searchProvider === "auto")),
+    testSerper(searchEnabled && (searchProvider === "serper" || searchProvider === "auto")),
+  ]));
+  results.push(...await Promise.all([
+    testSearchCache(searchEnabled),
+    testSearchCircuitBreaker(searchEnabled),
+  ]));
 
   // Summary
   const summary = {
@@ -308,7 +319,7 @@ async function testOpenAI(plan: LlmProviderTestPlan): Promise<TestResult> {
     return {
       service: "OpenAI",
       status: "skipped",
-      message: "Not used by the active pipeline config and no credentials are set",
+      message: "Not used by the active default pipeline config",
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -334,11 +345,17 @@ async function testOpenAI(plan: LlmProviderTestPlan): Promise<TestResult> {
   }
 
   try {
-    const result = await generateText({
-      model: openai("gpt-4o-mini"),
-      prompt: "Reply with just the word 'OK'",
-      maxOutputTokens: 20,  // OpenAI minimum is 16
-    });
+    const result = await runWithAbortTimeout(
+      (abortSignal) => generateText({
+        model: openai("gpt-4o-mini"),
+        prompt: "Reply with just the word 'OK'",
+        maxOutputTokens: 20,  // OpenAI minimum is 16
+        maxRetries: 0,
+        abortSignal,
+      }),
+      LLM_TEST_TIMEOUT_MS,
+      "OpenAI test",
+    );
 
     return {
       service: "OpenAI",
@@ -349,10 +366,7 @@ async function testOpenAI(plan: LlmProviderTestPlan): Promise<TestResult> {
     };
   } catch (error: any) {
     return {
-      service: "OpenAI",
-      status: "error",
-      message: `OpenAI API error: ${error.message}`,
-      details: combineDetails(error.stack, plan),
+      ...formatLlmTestFailure("OpenAI", error, plan),
       configUrl: "https://platform.openai.com/api-keys",
     };
   }
@@ -365,7 +379,7 @@ async function testAnthropic(plan: LlmProviderTestPlan): Promise<TestResult> {
     return {
       service: "Anthropic",
       status: "skipped",
-      message: "Not used by the active pipeline config and no credentials are set",
+      message: "Not used by the active default pipeline config",
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
@@ -391,11 +405,17 @@ async function testAnthropic(plan: LlmProviderTestPlan): Promise<TestResult> {
   }
 
   try {
-    const result = await generateText({
-      model: anthropic(ANTHROPIC_MODELS.budget.modelId),
-      prompt: "Reply with just the word 'OK'",
-      maxOutputTokens: 10,
-    });
+    const result = await runWithAbortTimeout(
+      (abortSignal) => generateText({
+        model: anthropic(ANTHROPIC_MODELS.budget.modelId),
+        prompt: "Reply with just the word 'OK'",
+        maxOutputTokens: 10,
+        maxRetries: 0,
+        abortSignal,
+      }),
+      LLM_TEST_TIMEOUT_MS,
+      "Anthropic test",
+    );
 
     return {
       service: "Anthropic",
@@ -406,23 +426,20 @@ async function testAnthropic(plan: LlmProviderTestPlan): Promise<TestResult> {
     };
   } catch (error: any) {
     return {
-      service: "Anthropic",
-      status: "error",
-      message: `Anthropic API error: ${error.message}`,
-      details: combineDetails(error.stack, plan),
+      ...formatLlmTestFailure("Anthropic", error, plan),
       configUrl: "https://console.anthropic.com/settings/keys",
     };
   }
 }
 
 async function testGoogle(plan: LlmProviderTestPlan): Promise<TestResult> {
-  const { value: apiKey, sourceEnvVar } = getGoogleApiKey();
+  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
   if (!plan.shouldTest) {
     return {
       service: "Google Generative AI",
       status: "skipped",
-      message: "Not used by the active pipeline config and no credentials are set",
+      message: "Not used by the active default pipeline config",
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -431,7 +448,7 @@ async function testGoogle(plan: LlmProviderTestPlan): Promise<TestResult> {
     return {
       service: "Google Generative AI",
       status: "not_configured",
-      message: "GOOGLE_GENERATIVE_AI_API_KEY or GOOGLE_API_KEY is not set",
+      message: "GOOGLE_GENERATIVE_AI_API_KEY is not set",
       details: combineDetails(undefined, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
@@ -441,18 +458,24 @@ async function testGoogle(plan: LlmProviderTestPlan): Promise<TestResult> {
     return {
       service: "Google Generative AI",
       status: "error",
-      message: `${sourceEnvVar ?? "Google API key"} contains placeholder text`,
+      message: "GOOGLE_GENERATIVE_AI_API_KEY contains placeholder text",
       details: combineDetails(undefined, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
 
   try {
-    const result = await generateText({
-      model: google("gemini-1.5-flash"),
-      prompt: "Reply with just the word 'OK'",
-      maxOutputTokens: 10,
-    });
+    const result = await runWithAbortTimeout(
+      (abortSignal) => generateText({
+        model: google("gemini-1.5-flash"),
+        prompt: "Reply with just the word 'OK'",
+        maxOutputTokens: 10,
+        maxRetries: 0,
+        abortSignal,
+      }),
+      LLM_TEST_TIMEOUT_MS,
+      "Google Generative AI test",
+    );
 
     return {
       service: "Google Generative AI",
@@ -463,10 +486,7 @@ async function testGoogle(plan: LlmProviderTestPlan): Promise<TestResult> {
     };
   } catch (error: any) {
     return {
-      service: "Google Generative AI",
-      status: "error",
-      message: `Google API error: ${error.message}`,
-      details: combineDetails(error.stack, plan),
+      ...formatLlmTestFailure("Google Generative AI", error, plan),
       configUrl: "https://aistudio.google.com/app/apikey",
     };
   }
@@ -479,7 +499,7 @@ async function testMistral(plan: LlmProviderTestPlan): Promise<TestResult> {
     return {
       service: "Mistral AI",
       status: "skipped",
-      message: "Not used by the active pipeline config and no credentials are set",
+      message: "Not used by the active default pipeline config",
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }
@@ -505,11 +525,17 @@ async function testMistral(plan: LlmProviderTestPlan): Promise<TestResult> {
   }
 
   try {
-    const result = await generateText({
-      model: mistral("mistral-small-latest"),
-      prompt: "Reply with just the word 'OK'",
-      maxOutputTokens: 10,
-    });
+    const result = await runWithAbortTimeout(
+      (abortSignal) => generateText({
+        model: mistral("mistral-small-latest"),
+        prompt: "Reply with just the word 'OK'",
+        maxOutputTokens: 10,
+        maxRetries: 0,
+        abortSignal,
+      }),
+      LLM_TEST_TIMEOUT_MS,
+      "Mistral test",
+    );
 
     return {
       service: "Mistral AI",
@@ -520,10 +546,7 @@ async function testMistral(plan: LlmProviderTestPlan): Promise<TestResult> {
     };
   } catch (error: any) {
     return {
-      service: "Mistral AI",
-      status: "error",
-      message: `Mistral API error: ${error.message}`,
-      details: combineDetails(error.stack, plan),
+      ...formatLlmTestFailure("Mistral AI", error, plan),
       configUrl: "https://console.mistral.ai/api-keys",
     };
   }
