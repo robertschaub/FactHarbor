@@ -35,12 +35,9 @@ public sealed class JobsController : ControllerBase
         var actualPage = page ?? 1;
         var actualPageSize = pageSize ?? 50;
 
-        // gitHash filter is admin-only; validate to hex chars and enforce a 7-char minimum
-        // (matching AppBuildInfo.IsValidHash) to prevent accidentally broad prefix matches.
-        var gitHashFilter = isAdmin && !string.IsNullOrWhiteSpace(gitHash)
-            ? new string(gitHash.Trim().ToLowerInvariant().Where(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')).ToArray())
-            : null;
-        if (gitHashFilter is { Length: < 7 }) gitHashFilter = null;
+        // gitHash filter is admin-only. Accept clean commit prefixes and local dirty build ids
+        // like "{hash}+{wthash}" or "{hash}+dirty", while still rejecting obviously malformed input.
+        var gitHashFilter = isAdmin ? NormalizeGitHashFilter(gitHash) : null;
 
         int totalCount;
         List<JobEntity> items;
@@ -60,6 +57,7 @@ public sealed class JobsController : ControllerBase
             jobs = items.Select(j =>
             {
                 var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
+                var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
                 return new
                 {
                 jobId = j.JobId,
@@ -76,8 +74,8 @@ public sealed class JobsController : ControllerBase
                 isHidden = j.IsHidden,
                 analysisIssueCode = analysisIssue.code,
                 analysisIssueMessage = analysisIssue.message,
-                // Admin-only: enables cross-job queries like "which jobs ran on hash X?"
-                gitCommitHash = isAdmin ? j.GitCommitHash : null
+                // Admin-only: execution-time commit hash when available, with legacy fallback.
+                gitCommitHash = isAdmin ? visibleGitCommitHash : null
                 };
             }),
             pagination = new
@@ -105,6 +103,7 @@ public sealed class JobsController : ControllerBase
 
         var isAdmin = AuthHelper.IsAdminKeyValid(Request);
         var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
+        var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
 
         return Ok(new
         {
@@ -123,8 +122,8 @@ public sealed class JobsController : ControllerBase
             isHidden = j.IsHidden,
             analysisIssueCode = analysisIssue.code,
             analysisIssueMessage = analysisIssue.message,
-            // Admin-only diagnostic fields
-            gitCommitHash = isAdmin ? j.GitCommitHash : null,
+            // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
+            gitCommitHash = isAdmin ? visibleGitCommitHash : null,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });
@@ -344,5 +343,29 @@ public sealed class JobsController : ControllerBase
         }
 
         return (null, null);
+    }
+
+    private static string? NormalizeGitHashFilter(string? gitHash)
+    {
+        if (string.IsNullOrWhiteSpace(gitHash))
+            return null;
+
+        var trimmed = gitHash.Trim().ToLowerInvariant();
+        var plusIndex = trimmed.IndexOf('+');
+        if (plusIndex >= 0)
+        {
+            var baseHash = trimmed[..plusIndex];
+            var suffix = trimmed[(plusIndex + 1)..];
+            if (baseHash.Length < 7 || !baseHash.All(Uri.IsHexDigit))
+                return null;
+            if (suffix != "dirty" && (suffix.Length != 8 || !suffix.All(Uri.IsHexDigit)))
+                return null;
+            return trimmed;
+        }
+
+        if (trimmed.Length < 7 || trimmed.Length > 40 || !trimmed.All(Uri.IsHexDigit))
+            return null;
+
+        return trimmed;
     }
 }

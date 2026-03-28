@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FactHarbor.Api.Controllers;
 
-public sealed record StatusUpdateRequest(string status, int? progress, string level, string message);
+public sealed record StatusUpdateRequest(string status, int? progress, string level, string message, string? executedWebGitCommitHash = null);
 public sealed record ResultStoreRequest(object resultJson, string? reportMarkdown);
 
 [ApiController]
@@ -25,7 +25,13 @@ public sealed class InternalJobsController : ControllerBase
         if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
         var status = (req.status ?? "RUNNING").Trim().ToUpperInvariant();
-        await _jobs.UpdateStatusAsync(jobId, status, req.progress, req.level ?? "info", req.message ?? "");
+        await _jobs.UpdateStatusAsync(
+            jobId,
+            status,
+            req.progress,
+            req.level ?? "info",
+            req.message ?? "",
+            req.executedWebGitCommitHash);
         return Ok(new { ok = true });
     }
 

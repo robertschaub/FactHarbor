@@ -12,6 +12,7 @@ import {
 } from "@/lib/provider-health";
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
+import { getWebGitCommitHash } from "@/lib/build-info";
 
 type PipelineVariant = "claimboundary";
 
@@ -185,6 +186,7 @@ async function runJobBackground(jobId: string) {
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
   const qs = getRunnerQueueState();
+  const executedWebGitCommitHash = getWebGitCommitHash();
   let acquiredSlot = false;
 
   const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
@@ -204,6 +206,7 @@ async function runJobBackground(jobId: string) {
       progress: 1,
       level: "info",
       message: "Runner started",
+      executedWebGitCommitHash,
     });
 
     const job = await apiGet(apiBase, `/v1/jobs/${jobId}`);
@@ -224,6 +227,7 @@ async function runJobBackground(jobId: string) {
 
     if (result?.resultJson?.meta) {
       result.resultJson.meta.pipelineVariant = "claimboundary";
+      result.resultJson.meta.executedWebGitCommitHash = executedWebGitCommitHash;
       if (requestedVariant !== "claimboundary") {
         result.resultJson.meta.pipelineVariantRequested = requestedVariant;
       }
@@ -244,6 +248,7 @@ async function runJobBackground(jobId: string) {
           progress: 100,
           level: "info",
           message: "Done",
+          executedWebGitCommitHash,
         });
 
         // Only record provider success if the pipeline didn't report provider errors.
@@ -300,6 +305,7 @@ async function runJobBackground(jobId: string) {
         progress: 100,
         level: "error",
         message: msg,
+        executedWebGitCommitHash,
       });
 
       if (stack) {
@@ -308,6 +314,7 @@ async function runJobBackground(jobId: string) {
           progress: 100,
           level: "error",
           message: `Stack (truncated):\n${stack.split("\n").slice(0, 30).join("\n")}`,
+          executedWebGitCommitHash,
         });
       }
     } catch {}

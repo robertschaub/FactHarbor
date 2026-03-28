@@ -62,6 +62,12 @@ public sealed class JobEntity
     /// </summary>
     public string? GitCommitHash { get; set; }
 
+    /// <summary>
+    /// Git commit hash of the web runner that actually executed the latest analysis attempt.
+    /// This is updated when the job enters RUNNING, including automatic re-queues after restart.
+    /// </summary>
+    public string? ExecutedWebGitCommitHash { get; set; }
+
     // Stored outputs
     public string? ResultJson { get; set; }
     public string? ReportMarkdown { get; set; }

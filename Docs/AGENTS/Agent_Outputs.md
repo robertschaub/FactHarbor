@@ -2177,3 +2177,43 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This is a maintenance-only follow-up; behavior should remain unchanged.
 **For next agent:** Focused verification passed: `npm -w apps/web exec vitest run test/unit/lib/error-classification.test.ts test/unit/lib/auto-pause-flow.integration.test.ts test/unit/lib/drain-runner-pause.integration.test.ts`.
 **Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Execution-Time Commit Provenance
+**Task:** Make job provenance reflect the commit that actually executed a job attempt, including automatic system re-queues after restart.
+**Files touched:** `apps/web/src/lib/build-info.ts`, `apps/web/src/app/api/version/route.ts`, `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/src/app/jobs/[id]/page.tsx`, `apps/web/test/unit/lib/build-info.test.ts`, `apps/api/Data/Entities.cs`, `apps/api/Controllers/InternalJobsController.cs`, `apps/api/Controllers/JobsController.cs`, `apps/api/Services/JobService.cs`, `apps/api/migrations/20260328000000_AddExecutedWebGitCommitHash.cs`, `apps/api/migrations/FhDbContextModelSnapshot.cs`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added `ExecutedWebGitCommitHash` as execution-time provenance on the API job entity instead of overloading the existing creation-time `GitCommitHash`. The web runner now resolves the active web commit once per run, includes it in internal status updates, and also writes it into `resultJson.meta.executedWebGitCommitHash`. Admin job APIs expose both hashes, the admin job detail UI shows execution commit first with creation commit as secondary context when they differ, and the existing `gitHash` filter now matches either creation or execution hashes.
+**Open items:** The new DB column exists in code and migration, but the migration still needs to be applied on existing databases. Historical jobs will naturally have `ExecutedWebGitCommitHash = null` until they are re-run. The admin jobs list still labels/filter state generically; only the detail page was updated in this pass.
+**Warnings:** API verification required a separate output path because the local dev API process was holding `apps/api/bin/Debug/net8.0/FactHarbor.Api.dll` open. Web verification passed normally. This change adds provenance only; it does not alter analysis behavior.
+**For next agent:** Verification passed with `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix /p:UseAppHost=false`. Before relying on the new field locally or on a persistent environment, run the API migration so `ExecutedWebGitCommitHash` exists in `Jobs`.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Simplify Commit Provenance UI
+**Task:** Reduce the surfaced provenance back to one visible commit hash while keeping execution-time provenance correct.
+**Files touched:** `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept both hashes in storage, but changed the API/UI contract so `gitCommitHash` now resolves to `ExecutedWebGitCommitHash ?? GitCommitHash`. That preserves the existing “nice” single-hash UI while making the visible hash execution-time authoritative for new jobs and legacy-compatible for old ones.
+**Open items:** Existing databases still need the migration for `ExecutedWebGitCommitHash`. Historical jobs continue to show the old creation-time hash until they are rerun because no execution-time value exists for them.
+**Warnings:** The admin list/detail `gitHash` filter still matches both creation-time and execution-time hashes in the backend, which is intentional for mixed historical data during transition.
+**For next agent:** Verification passed again after the simplification: `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix-ui /p:UseAppHost=false`.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dirty Local Build ID Support
+**Task:** Make the visible execution-time provenance include dirty local working-tree state and ensure admin hash tracing accepts `+` build ids.
+**Files touched:** `apps/web/src/lib/build-info.ts`, `apps/web/test/unit/lib/build-info.test.ts`, `apps/api/Controllers/JobsController.cs`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Upgraded the web-side build-id resolver to mirror the API’s local behavior: clean local runs return the current commit hash, dirty local runs return `{hash}+{wthash}` or `{hash}+dirty`. Updated admin `gitHash` normalization so links and manual tracing accept dirty build ids instead of stripping `+` away.
+**Open items:** The UI label still says `Commit`, even though a dirty local value is semantically a build fingerprint. That was kept intentionally to preserve the existing UI surface.
+**Warnings:** Production remains clean-commit only because `GIT_COMMIT` still wins. Dirty suffixes only appear on local/dev-style execution paths where git is available and the web runner has uncommitted changes.
+**For next agent:** Focused follow-up verification passed with `npm -w apps/web exec vitest run test/unit/lib/build-info.test.ts` and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\dirty-build-id /p:UseAppHost=false`.
+**Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | Provenance Review Hardening Follow-Up
+**Task:** Apply the low-risk review fixes to execution-time commit provenance and stop where added scope outweighed benefit.
+**Files touched:** `apps/web/src/lib/build-info.ts`, `apps/web/src/app/api/version/route.ts`, `apps/web/src/lib/internal-runner-queue.ts`, `apps/api/Controllers/JobsController.cs`, `apps/web/test/unit/lib/build-info.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added cached build-id lookup for `/api/version`, normalized fallback env-hash paths, stopped sending `executedWebGitCommitHash` on every progress update, tightened dirty-suffix filter validation to `+dirty` or 8 hex chars, documented the untracked-file limitation in the working-tree hash, and added both clean-working-tree and dirty-`GIT_COMMIT` unit coverage. Deliberately did **not** create a brand-new API test harness just to unit-test `NormalizeGitHashFilter`, because the repo currently has no API test project and that would have been higher scope than the review value justified.
+**Open items:** `NormalizeGitHashFilter` still has no dedicated C# unit test. That is the only review item intentionally left unfixed due to setup cost vs. payoff.
+**Warnings:** `build-info.ts` now caches only when explicitly requested. The runner still resolves uncached execution provenance once per job, which is intentional to keep per-run provenance accurate during local dev.
+**For next agent:** Full safe verification passed after this follow-up: `npm -w apps/web exec vitest run test/unit/lib/build-info.test.ts`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix-final /p:UseAppHost=false`.
+**Learnings:** no

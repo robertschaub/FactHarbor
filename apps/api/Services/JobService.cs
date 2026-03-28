@@ -51,7 +51,9 @@ public sealed class JobService
         var q = _db.Jobs.AsQueryable();
         if (!includeHidden) q = q.Where(x => !x.IsHidden);
         if (!string.IsNullOrWhiteSpace(gitHash))
-            q = q.Where(x => x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash));
+            q = q.Where(x =>
+                (x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash)) ||
+                (x.ExecutedWebGitCommitHash != null && x.ExecutedWebGitCommitHash.StartsWith(gitHash)));
         return await q.OrderByDescending(x => x.CreatedUtc).Skip(skip).Take(take).ToListAsync();
     }
 
@@ -60,7 +62,9 @@ public sealed class JobService
         var q = _db.Jobs.AsQueryable();
         if (!includeHidden) q = q.Where(x => !x.IsHidden);
         if (!string.IsNullOrWhiteSpace(gitHash))
-            q = q.Where(x => x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash));
+            q = q.Where(x =>
+                (x.GitCommitHash != null && x.GitCommitHash.StartsWith(gitHash)) ||
+                (x.ExecutedWebGitCommitHash != null && x.ExecutedWebGitCommitHash.StartsWith(gitHash)));
         return await q.CountAsync();
     }
 
@@ -87,7 +91,13 @@ public sealed class JobService
         await _db.SaveChangesAsync();
     }
 
-    public async Task UpdateStatusAsync(string jobId, string status, int? progress, string level, string message)
+    public async Task UpdateStatusAsync(
+        string jobId,
+        string status,
+        int? progress,
+        string level,
+        string message,
+        string? executedWebGitCommitHash = null)
     {
         var job = await GetJobAsync(jobId);
         if (job is null) return;
@@ -104,6 +114,8 @@ public sealed class JobService
             if (!isMonotonicViolation)
                 job.Progress = progress.Value;
         }
+        if (!string.IsNullOrWhiteSpace(executedWebGitCommitHash))
+            job.ExecutedWebGitCommitHash = executedWebGitCommitHash.Trim().ToLowerInvariant();
         job.UpdatedUtc = DateTime.UtcNow;
 
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });

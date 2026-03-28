@@ -84,7 +84,7 @@ type Job = {
   isHidden?: boolean;
   analysisIssueCode?: string | null;
   analysisIssueMessage?: string | null;
-  /** Admin-only: git commit hash of the deployed code that ran this job */
+  /** Admin-only: execution-time git commit hash, with legacy fallback for old jobs */
   gitCommitHash?: string | null;
 };
 
@@ -966,6 +966,7 @@ export default function JobPage() {
   const result = job?.resultJson;
   const schemaVersion = result?.meta?.schemaVersion || "";
   const hasV22Data = schemaVersion.startsWith("2.") || schemaVersion.startsWith("3.");
+  const displayCommitHash = job?.gitCommitHash || null;
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
   const claimVerdicts = result?.claimVerdicts || [];
@@ -1242,12 +1243,12 @@ export default function JobPage() {
       <div className={styles.metaInlineRow}>
         <span className={styles.metaInlineItem}><b>ID:</b> <code title={job.jobId}>{job.jobId.length > 10 ? `${job.jobId.slice(0, 10)}...` : job.jobId}</code><CopyButton text={job.jobId} title="Copy Job ID" className={styles.metaCopyButton} /></span>
         <span className={styles.metaInlineItem}><b>Generated:</b> <code>{new Date(job.updatedUtc).toLocaleString('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</code></span>
-        {hasAdminKey && job.gitCommitHash && (
+        {hasAdminKey && displayCommitHash && (
           <span className={styles.metaInlineItem}>
             <b>Commit:</b>{" "}
-            <code title={job.gitCommitHash}>{job.gitCommitHash.slice(0, 8)}</code>
-            <CopyButton text={job.gitCommitHash} title="Copy full commit hash" className={styles.metaCopyButton} />
-            <a href={`/admin?gitHash=${encodeURIComponent(job.gitCommitHash)}`} style={{ marginLeft: 6, fontSize: 11, color: "var(--text-link, #2563eb)", textDecoration: "none" }} title="Find all jobs on this commit">↗</a>
+            <code title={displayCommitHash}>{displayCommitHash.slice(0, 8)}</code>
+            <CopyButton text={displayCommitHash} title="Copy full commit hash" className={styles.metaCopyButton} />
+            <a href={`/admin?gitHash=${encodeURIComponent(displayCommitHash)}`} style={{ marginLeft: 6, fontSize: 11, color: "var(--text-link, #2563eb)", textDecoration: "none" }} title="Find all jobs on this commit">↗</a>
           </span>
         )}
         {hasV22Data && (
@@ -1857,12 +1858,12 @@ export default function JobPage() {
                         {warningDiagnosticsPanel}
                         {hasAdminKey && job && (
                           <div className={styles.adminPanelStack}>
-                            {job.gitCommitHash && (
+                            {displayCommitHash && (
                               <div style={{ padding: "10px 14px", background: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 13 }}>
                                 <span style={{ fontWeight: 600, color: "var(--text-secondary)", marginRight: 8 }}>Git commit:</span>
-                                <code style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>{job.gitCommitHash}</code>
+                                <code style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>{displayCommitHash}</code>
                                 <a
-                                  href={`/admin?gitHash=${encodeURIComponent(job.gitCommitHash)}`}
+                                  href={`/admin?gitHash=${encodeURIComponent(displayCommitHash)}`}
                                   style={{ marginLeft: 12, fontSize: 12, color: "var(--text-link, #2563eb)", textDecoration: "none" }}
                                   title="Find all jobs that ran on this commit"
                                 >

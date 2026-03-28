@@ -81,6 +81,9 @@ namespace FactHarbor.Api.Migrations
                     b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExecutedWebGitCommitHash")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("GitCommitHash")
                         .HasColumnType("TEXT");
 
