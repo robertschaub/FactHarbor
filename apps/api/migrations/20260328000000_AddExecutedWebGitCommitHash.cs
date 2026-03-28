@@ -10,8 +10,11 @@ namespace FactHarbor.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(
-                "ALTER TABLE Jobs ADD COLUMN IF NOT EXISTS ExecutedWebGitCommitHash TEXT");
+            migrationBuilder.AddColumn<string>(
+                name: "ExecutedWebGitCommitHash",
+                table: "Jobs",
+                type: "TEXT",
+                nullable: true);
         }
 
         /// <inheritdoc />

@@ -2217,3 +2217,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `build-info.ts` now caches only when explicitly requested. The runner still resolves uncached execution provenance once per job, which is intentional to keep per-run provenance accurate during local dev.
 **For next agent:** Full safe verification passed after this follow-up: `npm -w apps/web exec vitest run test/unit/lib/build-info.test.ts`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix-final /p:UseAppHost=false`.
 **Learnings:** no
+
+---
+### 2026-03-28 | Senior Developer | Codex (GPT-5) | API Startup Fix For Provenance Schema Drift
+**Task:** Repair the local `/jobs` 500 after the execution-time commit provenance change broke API startup on an existing SQLite database.
+**Files touched:** `apps/api/Program.cs`, `apps/api/migrations/20260321000000_AddGitCommitHash.cs`, `apps/api/migrations/20260328000000_AddExecutedWebGitCommitHash.cs`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Root cause was twofold: the new `ExecutedWebGitCommitHash` column did not exist in the local `Jobs` table, and both manual provenance migrations used `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, which SQLite rejected. Worse, these hand-authored migration files are not present in `__EFMigrationsHistory`, so relying on `Database.Migrate()` alone was not sufficient. Fixed this by changing both provenance migrations to plain `AddColumn(...)` and adding a narrow startup schema-compatibility shim in `Program.cs` that ensures `GitCommitHash` and `ExecutedWebGitCommitHash` exist before the first `Jobs` query runs.
+**Open items:** The new startup compatibility shim means mixed historical SQLite DBs will self-heal on restart, but the manual provenance migrations still are not tracked in `__EFMigrationsHistory`. That is consistent with earlier manual schema additions in this repo, but worth remembering if API migration strategy is cleaned up later.
+**Warnings:** This patch modifies the local SQLite schema on startup by adding missing nullable text columns. Historical jobs still have `ExecutedWebGitCommitHash = NULL` until they are rerun.
+**For next agent:** Live recovery verified after `scripts/restart-clean.ps1`: `http://localhost:5000/v1/jobs?page=1&pageSize=1` returned 200, `http://localhost:3000/api/fh/jobs?page=1&pageSize=1` returned 200, and `PRAGMA table_info(Jobs)` now includes `ExecutedWebGitCommitHash`.
+**Learnings:** no

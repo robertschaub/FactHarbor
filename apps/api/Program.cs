@@ -2,6 +2,7 @@ using FactHarbor.Api.Data;
 using FactHarbor.Api.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Net;
 using System.Text.Json;
 using System.Threading.RateLimiting;
@@ -143,6 +144,8 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FhDbContext>();
     db.Database.Migrate();
+    EnsureJobsColumn(db, "GitCommitHash", "TEXT");
+    EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
     // QUEUED jobs are left as-is — they were never started and the runner will pick
@@ -218,3 +221,34 @@ app.MapGet("/", () =>
 app.MapControllers();
 
 app.Run();
+
+static void EnsureJobsColumn(FhDbContext db, string columnName, string sqlType)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    if (shouldClose)
+        connection.Open();
+
+    try
+    {
+        using var check = connection.CreateCommand();
+        check.CommandText = "SELECT 1 FROM pragma_table_info('Jobs') WHERE name = $name LIMIT 1;";
+        var parameter = check.CreateParameter();
+        parameter.ParameterName = "$name";
+        parameter.Value = columnName;
+        check.Parameters.Add(parameter);
+
+        var exists = check.ExecuteScalar() is not null;
+        if (exists)
+            return;
+
+        using var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE Jobs ADD COLUMN \"{columnName}\" {sqlType}";
+        alter.ExecuteNonQuery();
+    }
+    finally
+    {
+        if (shouldClose)
+            connection.Close();
+    }
+}

@@ -10,12 +10,11 @@ namespace FactHarbor.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // Use 'IF NOT EXISTS' so this migration is safe to apply on databases that
-            // already have this column via the startup schema-patch that predated this
-            // migration (Program.cs raw ALTER TABLE, removed in this commit).
-            // Requires SQLite 3.37.0+ (2021-11-27) — safe for all supported environments.
-            migrationBuilder.Sql(
-                "ALTER TABLE Jobs ADD COLUMN IF NOT EXISTS GitCommitHash TEXT");
+            migrationBuilder.AddColumn<string>(
+                name: "GitCommitHash",
+                table: "Jobs",
+                type: "TEXT",
+                nullable: true);
         }
 
         /// <inheritdoc />
