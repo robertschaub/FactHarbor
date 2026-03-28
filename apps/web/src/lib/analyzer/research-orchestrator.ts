@@ -848,6 +848,13 @@ export async function runResearchIteration(
           `[Stage2] Per-source cap: kept ${cappedItems.length}/${kept.length} new, ` +
           `dropped ${cappedCount} new, evicted ${evictedIds.length} existing (max ${maxPerSource}/source).`,
         );
+        state.warnings?.push({
+          type: "per_source_evidence_cap",
+          severity: "info",
+          message: `Per-source cap (max ${maxPerSource}): kept ${cappedItems.length}/${kept.length} new, ` +
+            `dropped ${cappedCount}, evicted ${evictedIds.length} existing.`,
+          details: { maxPerSource, keptNew: cappedItems.length, totalNew: kept.length, droppedNew: cappedCount, evictedExisting: evictedIds.length },
+        });
       }
       if (evictedIds.length > 0) {
         const evictedSet = new Set(evictedIds);

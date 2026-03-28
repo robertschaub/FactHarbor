@@ -707,7 +707,8 @@ export type AnalysisWarningType =
   | "source_reliability_contradiction_concern" // Stage 4.5: Contradicting-source portfolio shows a reliability concern
   | "source_reliability_unknown_dominance"    // Stage 4.5: Too much of a source portfolio is unknown/unrated
   | "source_reliability_calibration_skipped" // Stage 4.5: Calibration enabled but skipped or returned no adjustment
-  | "gate1_thesis_direct_rescue";            // Gate 1: thesis-direct claim rescued from opinion+specificity filter
+  | "gate1_thesis_direct_rescue"             // Gate 1: thesis-direct claim rescued from opinion+specificity filter
+  | "per_source_evidence_cap";              // Stage 2: Per-source evidence cap applied (FLOOD-1 Fix 2)
 
 /**
  * Analysis warning structure for surfacing quality issues to UI.
