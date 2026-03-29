@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-27
+**Last Updated**: 2026-03-29
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Immediate Priorities (2026-03-27)
+## Immediate Priorities (2026-03-29)
 
-Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). EVD-1 variance policy is approved and operative. **Current posture: approved-policy monitor mode.** No active analyzer implementation work. New work is policy-triggered only (red threshold breach) or Captain-approved.
+Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done). EVD-1 variance policy is approved and operative. **Current posture:** limited, review-backed follow-up work is active where March 29 investigations found concrete integrity or quality defects. This is still not a broad analyzer-change wave; each open item below is explicitly review-approved or in validation.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
@@ -30,6 +30,9 @@ Report-quality stabilization wave is complete (QLT-1/2/3, VAL-2, OBS-1 all done)
 | **OBS-2** | **Persist Stage-1 diagnostic fields**: `inputClassification` and `contractValidationSummary` now stored in result JSON. | Analyzer / Observability | — | — | DONE | `d6090f76` |
 | **DIV-1** | **Diversity-aware Stage-2 sufficiency**: promoted to default-on after 8-run validation. Stage 2 now aligns with D5 item-count + diversity thresholds. Bolsonaro confidence spread 23pp→5pp, zero UNVERIFIED. Flag `diversityAwareSufficiency` available for rollback. | Analyzer / Quality | — | high | DONE | `83a47aad`, `23d8576c`, `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md` |
 | **FLOOD-1** | **Single-source flooding mitigation (Fix 1 + Fix 2)**: Fix 1 adds claim-local, partition-scoped source portfolios (`sourcePortfolioByClaim`) to all verdict debate prompts with mandatory SR-awareness instructions. Fix 2 adds `maxEvidenceItemsPerSource: 5` UCM cap enforced in Stage 2 with best-N reselection by `probativeValue`. **Awaiting live validation** (4 runs per investigation §12). Fix 3 (same-source LLM consolidation) deferred. | Analyzer / Quality / SR | med | high | VALIDATION | `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` |
+| **PIPE-INT-1** | **All-insufficient D5→Stage-4 integrity fix (`2705/e407`)**: review-approved root-fix path. Replace overloaded `activeClaims` fallback with explicit D5 assessable-claims path, enforce one final verdict per `claimId` before aggregation, and align Coverage Matrix labels with `coverageMatrix.claims`. Residual Stage-1 recurrence explicitly deferred. | Analyzer / Integrity / UI | high | high | REVIEW-READY | `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`, `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Reviewer_Notes.md` |
+| **DIR-1** | **Direction-integrity citation-carriage remeasurement**: code fix shipped in `e1f2c551`, but the `1bfb` failure class still needs targeted live validation to confirm that grounding/citation mismatch and downstream direction downgrades materially decrease on real runs. | Analyzer / Verdict | med | high | VALIDATION | `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` |
+| **STG1-STEP4** | **Residual factual conjunct-split refinement**: post-`fff7a508` residual for SRG-style disclosure claims (`Werkzeuge/Methoden`) remains. Needs a separate Stage-1 follow-on after PIPE-INT-1; do not conflate this with the D5→Stage-4 integrity fix. | Analyzer / Quality | med | high | DEFERRED | `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`, `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md` |
 | **REMAP-1** | **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). Captain approved after current-stack A/B validation. Rollback flag `preliminaryEvidenceLlmRemapEnabled` available. **Monitor:** Homeopathy-family confidence anomaly. | Analyzer / Quality | — | high | DONE | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` |
 | **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 

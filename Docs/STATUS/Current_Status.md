@@ -1,13 +1,13 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-27
+**Last Updated**: 2026-03-29
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. No further Stage-1 prompt work is currently justified. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. The report-quality stabilization wave has **no remaining active engineering blockers**. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Awaiting live validation. Optimization tracks (P1-A, P1-B) remain secondary and require explicit approval. Stage 4.5 SR calibration remains feature-flagged/off.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Stage 4.5 SR calibration remains feature-flagged/off. Since 2026-03-29, three new March 29 tracks are canonical: (1) the **Stage-1 claim decomposition fix** is shipped (`fff7a508`) and materially fixes the `8640/cd4501` family while leaving a residual factual conjunct split blind spot; (2) the **citation-carriage verdict fix** is shipped (`e1f2c551`) and awaits targeted remeasurement; and (3) the **2705/e407 all-insufficient root-fix path** is now review-approved at the architecture level and awaits implementation. The project is no longer in a pure “no active engineering blocker” posture; these review-backed quality/integrity tracks are now the active open items.
 
 ---
 
-## Current Focus (2026-03-27)
+## Current Focus (2026-03-29)
 
 - **Stage-1 quality stabilization is materially complete**: QLT-1 (predicate strength), QLT-2 (characterization), and QLT-3 (facet consistency) are all done. Remaining variance for both Plastik and Muslims families is now primarily evidence/verdict-driven. No further Stage-1 prompt work is currently justified.
 - **No active engineering blocker remains** in the stabilization wave. All planned items (QLT-1/2/3, VAL-2, OBS-1) are complete.
@@ -20,9 +20,28 @@
 - **Post-spread verdict-label staleness fixed** (`289afa1c`). Claims whose confidence drops below the UNVERIFIED threshold after spread adjustment now get correctly relabeled.
 - **B1 claim-contract validation implemented and validated**. Predicate preservation + no-proxy-rephrasing rules enforced via LLM-backed contract validator with single retry. Plastik DE/EN/FR all produce correct predicate-preserving claims.
 - **FLOOD-1 single-source flooding mitigation implemented** (Fix 1 + Fix 2). Root cause: a single low-reliability source (`civilizationworks.org`, trackRecordScore=0.38) generated 11 evidence items flipping AC_01 verdict. Fix 1 adds claim-local, partition-scoped source portfolios to all verdict debate prompts — the LLM now sees per-source evidence count, `trackRecordScore`, and `trackRecordConfidence` for each claim independently. Fix 2 adds a `maxEvidenceItemsPerSource` UCM cap (default 5) enforced in Stage 2 with best-N reselection across existing+new items by `probativeValue`. **Awaiting live validation** per §12 of the investigation doc (4 runs: 2× Bolsonaro, 1× Plastik DE, 1× Hydrogen). See `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
-- **Current posture: approved-policy monitor mode.** No active analyzer implementation work beyond FLOOD-1 validation. New work is only triggered if a validation round produces a red result under EVD-1.
+- **Stage-1 claim decomposition fix shipped** (`fff7a508`). The 3-step package materially fixes the `8640/cd4501` evaluative over-fragmentation family (4→2 claims; `UNVERIFIED` starvation eliminated). The stress test confirmed Step 2 (contract evidence-separability) is the primary fix. Residual factual conjunct splitting (`Werkzeuge/Methoden`, `b8e6/e407`) remains a separate Stage-1 Step 4 follow-on rather than evidence that the shipped package failed.
+- **Direction-integrity / citation-carriage fix shipped** (`e1f2c551`). `VERDICT_RECONCILIATION` now carries citation arrays and the safe-downgrade warning state bug is fixed. Code review is clean; the remaining gate is targeted live remeasurement before the direction-validator thread is reopened.
+- **`2705/e407` root-fix path is review-approved and awaiting implementation.** The March 29 architect review now frames this as a D5→Stage-4 integrity defect, not a UI-only issue. Required fix sequence: explicit assessable-claims path after D5, verdict-uniqueness invariant before aggregation, and Coverage Matrix label alignment. Residual Stage-1 recurrence is explicitly deferred as a separate follow-on.
+- **Current posture: targeted review-backed follow-up work, not broad analyzer churn.** FLOOD-1 validation remains open. New March 29 work is now focused on the review-approved `2705/e407` integrity fix, citation-carriage remeasurement, and the documented residual Stage-1 factual conjunct split.
 - **QLT-4 (per-claim contrarian retrieval) is CLOSED and removed.** Experimental code, UCM config fields, and tests reverted. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`.
 - **Optimization tracks** (P1-A, P1-B) remain separate, Captain-gated decisions — not automatically triggered by EVD-1 monitor mode.
+
+## Recent Changes (2026-03-29)
+
+**Stage-1 claim decomposition fix shipped (`fff7a508`):**
+- ✅ **3-step package implemented**: fallback narrowing, contract evidence-separability, and retry re-validation/hardening.
+- ✅ **Materially fixed the `8640/cd4501` family**: evaluative over-fragmentation collapsed to 2 claims; `UNVERIFIED` starvation removed.
+- ⚠️ **Residual factual conjunct blind spot remains**: the `Werkzeuge/Methoden` SRG disclosure family is still a separate Stage-1 Step 4 follow-on.
+
+**Direction-integrity citation-carriage fix shipped (`e1f2c551`):**
+- ✅ **VERDICT_RECONCILIATION now carries citation arrays**; parser accepts authoritative reconciled arrays and the safe-downgrade warning-state bug is fixed.
+- ✅ **Code review is clean**: remaining work is targeted live remeasurement before any direction-validator tuning is reconsidered.
+
+**`2705/e407` root-fix path review-approved:**
+- ✅ **Architectural root cause confirmed**: D5 already marked all claims insufficient in `e407`, but the pipeline still sent them into Stage 4 via the all-insufficient fallback, producing duplicate final verdicts and a corrupted article verdict.
+- ✅ **Canonical fix sequence now review-backed**: explicit D5 assessable-claims path, verdict-uniqueness invariant before aggregation, and Coverage Matrix label alignment.
+- ⚠️ **Implementation still pending**: this is now a concrete open integrity item, not a UI-only concern.
 
 ## Recent Changes (2026-03-27)
 
