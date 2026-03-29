@@ -1,6 +1,55 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-29 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 Claim Decomposition Fix (3-Step)
+**Task:** Implement approved 3-step fix for b8e6/8640/cd4501 claim decomposition failures.
+**Files touched:** `claim-extraction-stage.ts` (Step 1 fallback removal + Step 3 retry re-validation), `claimboundary.prompt.md` (Step 2 evidence-separability rule + schema), `types.ts` + `warning-display.ts` (new warning type), `claim-contract-validation.test.ts` (3 new tests).
+**Step 2 is the primary fix.** Evidence-separability check caught 8640/cd4501 4-claim over-fragmentation and triggered merge to 2 claims. UNVERIFIED starvation eliminated. Step 1 near-zero practical impact (classification changed). Step 3 provides re-validation safety net.
+**Validation:** 5 jobs. 8640 family fixed (4→2 claims, MOSTLY-TRUE 72/73). Bolsonaro preserved (2 claims, no regression). Controls clean. b8e6 still over-fragments (needs Pass 2 refinement, documented).
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Stage1_Claim_Decomposition_Fix.md`. b8e6 residual is a separate Pass 2 issue.
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | Claim Decomposition Plan — Stress Test
+**Task:** Adversarial quality-bar review of the approved 3-step decomposition fix plan before implementation.
+**Files touched:** `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** (1) Step 1 (fallback removal) is practically inert on current data — all 7 affected jobs had claims that passed Gate 1 fidelity independently; the dimension-tag exemption was never exercised. (2) Step 3 (retry hardening) has no trigger without Step 2 for 8640-class failures. (3) Step 2 (contract evidence-separability) is the critical path and primary fix. (4) Sequence is pragmatically correct but analytically inverted — Steps 1+3 are preparatory infrastructure, not the primary defense.
+**Decision:** `Plan approved with sequencing changes` — ship Steps 1+3 now as code-only preparatory work, but reframe: the decomposition problem is not resolved until Step 2 (prompt, needs approval) is live.
+**For next agent:** The code-only changes (Steps 1+3) are safe to implement. Step 2 approval is the critical path. Full stress-test report at `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md`.
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | b8e6 + 8640 + cd4501 Claim Decomposition — Architect Review (Rev 2)
+**Task:** Adjudicate shared Stage-1 claim-decomposition problem behind three SRG SSR jobs. Supersedes 2-job version.
+**Files touched:** `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Four failure layers identified: fallback heuristic (b8e6), contract-validation blind spot (8640), Pass 2 over-fragmentation (contributing), retry-path failure (cd4501). (2) cd4501 is decisive — contract validation caught the problem but retry reproduced the same split because guidance addresses proxy drift, not over-fragmentation. (3) No re-validation after retry. (4) Recommended: Option D — fallback removal + contract evidence-separability + retry hardening. Steps 1+3 are code-only and can ship together. Step 2 requires prompt approval.
+**Open items:** Step 2 (contract-validation evidence-separability prompt) requires explicit human approval. Coverage-matrix communication gap noted as separate UI follow-up.
+**For next agent:** Full review at `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`. Steps 1+3 (fallback removal + retry hardening) are code-only and can ship in one commit. Step 2 needs prompt approval.
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | b8e6 + 8640 Claim Decomposition — Architect Review
+**Task:** Adjudicate shared Stage-1 claim-decomposition problem behind two SRG SSR jobs.
+**Files touched:** `Docs/WIP/2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Both jobs share a family-level root cause: Stage 1 decomposition control too permissive + contract validation lacks evidence-separability check. (2) b8e6 is primarily a fallback dimension-tagging heuristic bug (`single_atomic_claim` auto-promoted to dimension decomposition). (3) 8640 is contract-validation blind spot (evaluative sub-claims not checked for evidence separability). (4) 7/200 recent jobs affected (3.5%). (5) Not a recent regression — fallback introduced 2026-03-23.
+**Implementation order:** (1) Remove `single_atomic_claim` fallback from dimension-tagging heuristic (code-only, 3 locations). (2) Add evidence-separability check to CLAIM_CONTRACT_VALIDATION prompt (requires human approval). (3) Remeasure.
+**Open items:** Step 2 prompt change requires explicit human approval.
+**For next agent:** Full review at `Docs/WIP/2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md`. Step 1 is code-only, ~3 lines × 3 locations in `claim-extraction-stage.ts`.
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 1bfb Direction Integrity — Architect Review
+**Task:** Adjudicate competing explanations for AC_02 `verdict_integrity_failure` in job `1bfb` and decide canonical fix strategy.
+**Files touched:** `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Primary failure is citation-carriage defect: VERDICT_RECONCILIATION schema omits `supportingEvidenceIds`/`contradictingEvidenceIds`, parser inherits stale advocate arrays. (2) Direction-validator false positive is REJECTED as primary — it's a downstream victim of stale input. (3) Threshold tuning is premature while arrays are stale. (4) 25/400 recent jobs (6.25%) hit `verdict_integrity_failure` — systemic. (5) Warning-state bug confirmed: `safeDowngradeVerdict` receives pre-repair verdict but post-repair issues.
+**Implementation order:** (1) Warning-state bug fix (code-only, ~2 lines). (2) Reconciliation citation-carriage fix (prompt schema + parser, requires human approval). (3) Remeasure direction-validator false-positive rate on clean data. (4) Only then consider direction-validator prompt/threshold changes.
+**Open items:** Prompt schema change requires explicit human approval. Post-fix measurement round needed (10 jobs, $5-10).
+**For next agent:** Full review at `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md`. Step 1 (warning bug) is trivially shippable. Step 2 (citation-carriage) needs human approval for prompt change. The `Direction_Validator_False_Positive_Investigation.md` proposal is deferred until Step 3 measurement.
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | Seeded Evidence Mapping Fix — Revised Proposal (Rev 2)
+**Task:** Revise the seeded-evidence mapping proposal to reject Option B (all-claims fallback) and recommend Option C (post-Pass-2 LLM remap).
+**Files touched:** `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Option B explicitly rejected — fabricates attribution. (2) Option C recommended — one batched Haiku remap call after Pass 2. (3) Options A/D rejected. (4) Option E deferred.
+**For next agent:** Full proposal at `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`.
+
+---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Internet Outage Resilience (OUTAGE-A1/A2/A4/A5)
 **Task:** Make jobs survive internet outages: classify network errors, trip the circuit breaker, abort damaged jobs, auto-resume.
 **Root cause:** (1) Network errors classified as `unknown` — breaker blind. (2) Stage 4 failures swallowed by fallback verdicts — runner breaker never fires. (3) Paused jobs produce useless UNVERIFIED 50/0 results. (4) No auto-recovery — requires manual admin resume.
@@ -2276,4 +2325,34 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** If a provider still times out after this change, the underlying single request is genuinely stalling and would need deeper provider-specific diagnostics.
 **Warnings:** This intentionally reduces resilience during the dashboard probe itself. That is correct for a diagnostic surface; the goal is fast truth, not best-effort recovery.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route test now also asserts that the dashboard probes use `maxRetries: 0`.
+**Learnings:** no
+
+---
+### 2026-03-29 | Senior Developer | Codex (GPT-5) | b8e6 Duplicate Atomic Claims Investigation
+**Task:** Investigate why job `b8e616ef9a5e4678b074f2bb8614b2d1` produced extremely similar atomic claims and check whether a recent change caused it.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_Duplicate_Atomic_Claims_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Root cause is Stage 1 over-splitting plus fallback dimension tagging, not a last-3-day committed regression. The run was classified `single_atomic_claim`, yet two near-duplicate claims were emitted and then auto-tagged `isDimensionDecomposition=true` by the fallback heuristic in `claim-extraction-stage.ts`, which exempted them from Gate 1 fidelity filtering. Recent committed changes do not implicate Stage 1: executed base commit `f1e5cc96...` is UI-only, the only extraction-area commit in the last 3 days was observability-only, and the heuristic itself dates to 2026-03-23.
+**Open items:** Dirty-worktree suffix `+cbdf73b6` means uncommitted local changes were present at execution time, but the exact delta cannot be reconstructed from stored job data alone.
+**Warnings:** Same Stage-1 pattern appears in several recent jobs; this is broader than a single SRG SSR input.
+**For next agent:** Read [2026-03-29_Senior_Developer_b8e6_Duplicate_Atomic_Claims_Investigation.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_Duplicate_Atomic_Claims_Investigation.md) before proposing fixes. The most likely targets are the `single_atomic_claim` dimension-tagging fallback and/or contract-validation false negatives.
+**Learnings:** no
+
+---
+### 2026-03-29 | Senior Developer | Codex (GPT-5) | b8e6 + 8640 Claim Decomposition Debate
+**Task:** Compare local job `b8e616ef9a5e4678b074f2bb8614b2d1` with deployed job `8640e06255c4455cb97c9c699700b5ed` and consolidate a root-cause/fix plan.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_8640_Claim_Decomposition_Debate.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The jobs are related, but not because of a fresh last-3-days committed regression. Shared issue: Stage 1 decomposition is too permissive and contract validation is too weak at rejecting non-independent claim splits. `b8e6` shows conjunct over-splitting (`Werkzeuge` vs `Methoden`) on a `single_atomic_claim`; `8640` shows aggressive evaluative decomposition (`effizient` vs `wirksam`) on an `ambiguous_single_claim`, with both downstream claims starving evidence and going `UNVERIFIED`. Secondary issue: the fallback `single_atomic_claim` → dimension-decomposition tagging in `claim-extraction-stage.ts` is too broad and muddies auditability.
+**Open items:** Prompt-level strengthening for contract validation needs explicit approval. Dirty-worktree suffix on `b8e6` means an unknown uncommitted local delta existed at execution time.
+**Warnings:** Do not over-attribute this to the fallback tag alone. The main problem is earlier: Pass 2 + contract validation accepted claim sets that were too close together to justify separate downstream research.
+**For next agent:** Read [2026-03-29_Senior_Developer_b8e6_8640_Claim_Decomposition_Debate.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_8640_Claim_Decomposition_Debate.md). Recommended fix order: (1) narrow the fallback tag so explicit `single_atomic_claim` does not auto-become dimension decomposition; (2) strengthen `CLAIM_CONTRACT_VALIDATION` whole-set coherence / independence checks; (3) validate on `b8e6`, `8640`, Bolsonaro compound claim, and a clean control.
+**Learnings:** no
+
+---
+### 2026-03-29 | Senior Developer | Codex (GPT-5) | Claim-Splitting Debate: b8e6 and 8640
+**Task:** Compare local job `b8e6...` and remote job `8640...`, determine whether they share a root cause, and propose a consolidated fix strategy.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The jobs are related but not identical. `b8e6...` is primarily a `single_atomic_claim` fallback mis-tagging problem: near-duplicate conjunct splits were auto-tagged as dimension decompositions and escaped Gate 1 fidelity filtering. `8640...` is a broader over-decomposition / independence-validation problem: three claims were accepted, but two close evaluative claims (`effizient`, `wirksam`) both starved at D5. No evidence points to a last-3-day committed regression; the key Stage-1 fallback behavior predates that window.
+**Open items:** Exact dirty-worktree deltas at execution time remain unknowable from stored job data alone.
+**Warnings:** A narrow duplicate-detector fix would likely address `b8e6...` better than `8640...`; the broader need is an LLM-based post-Pass-2 independence/overlap validator plus a narrower `single_atomic_claim` fallback.
+**For next agent:** Read [2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md). Best next step is a design review, not immediate coding.
 **Learnings:** no

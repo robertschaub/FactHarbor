@@ -67,6 +67,7 @@ const WARNING_CLASSIFICATION = {
   source_reliability_calibration_skipped: { bucket: "analysis", impact: "informational" },
   gate1_thesis_direct_rescue: { bucket: "analysis", impact: "informational" },
   per_source_evidence_cap: { bucket: "analysis", impact: "informational" },
+  claim_contract_retry_still_failing: { bucket: "analysis", impact: "informational" },
 } as const satisfies Record<AnalysisWarningType, WarningClassification>;
 
 export const PROVIDER_ISSUE_TYPES = new Set<AnalysisWarningType>(

@@ -278,7 +278,7 @@ export async function extractClaims(
     if (contractResult && contractResult.inputAssessment.rePromptRequired && contractMaxRetries > 0) {
       // Build corrective guidance from failing claims
       const failingClaims = contractResult.claims
-        .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
+        .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material" || c.evidenceSeparable === false);
       const failingReasons = failingClaims
         .map((c) => `${c.claimId}: ${c.reasoning}`)
         .join("; ");
@@ -288,7 +288,10 @@ export async function extractClaims(
         `${contractResult.inputAssessment.summary}. ` +
         `Specific issues: ${failingReasons}. ` +
         `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-        `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate.`;
+        `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
+        `If the previous extraction produced claims that would be answered by the same evidence, ` +
+        `merge them into fewer independently researchable claims. ` +
+        `Fewer stronger claims are better than many fragile sub-claims.`;
 
       console.info(
         `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). ` +
@@ -308,11 +311,60 @@ export async function extractClaims(
           pass1.detectedLanguage,
         );
         state.llmCalls++;
-        activePass2 = retryPass2;
 
         console.info(
           `[Stage1] Claim contract retry produced ${retryPass2.atomicClaims.length} claim(s).`
         );
+
+        // Re-validate the retry output — do not accept blindly
+        let retryContractResult: ClaimContractValidationResult | undefined;
+        try {
+          retryContractResult = await validateClaimContract(
+            retryPass2.atomicClaims as unknown as AtomicClaim[],
+            state.originalInput,
+            retryPass2.impliedClaim ?? "",
+            retryPass2.articleThesis ?? "",
+            retryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+          );
+          state.llmCalls++;
+        } catch {
+          // Re-validation failure is non-fatal — treat as pass (fail-open)
+        }
+
+        if (retryContractResult && retryContractResult.inputAssessment.rePromptRequired) {
+          // Retry still fails contract validation — choose best candidate
+          const originalMaterialFailures = contractResult.claims
+            .filter((c) => c.proxyDriftSeverity === "material" || c.evidenceSeparable === false).length;
+          const retryMaterialFailures = retryContractResult.claims
+            .filter((c) => c.proxyDriftSeverity === "material" || c.evidenceSeparable === false).length;
+
+          if (retryMaterialFailures < originalMaterialFailures) {
+            // Retry is better even if not perfect
+            activePass2 = retryPass2;
+            console.info(`[Stage1] Contract retry still has issues but improved (${originalMaterialFailures} → ${retryMaterialFailures} material failures). Using retry.`);
+          } else if (contractResult.inputAssessment.preservesOriginalClaimContract && !retryContractResult.inputAssessment.preservesOriginalClaimContract) {
+            // Original preserved contract better — keep it
+            console.info(`[Stage1] Contract retry did not improve; keeping original Pass 2.`);
+          } else {
+            // Default: prefer fewer claims (lower fragmentation risk)
+            if (retryPass2.atomicClaims.length < pass2.atomicClaims.length) {
+              activePass2 = retryPass2;
+              console.info(`[Stage1] Contract retry still fails but has fewer claims (${retryPass2.atomicClaims.length} vs ${pass2.atomicClaims.length}). Using retry.`);
+            } else {
+              console.info(`[Stage1] Contract retry did not improve; keeping original Pass 2.`);
+            }
+          }
+
+          state.warnings.push({
+            type: "claim_contract_retry_still_failing" as any,
+            severity: "info",
+            message: `Claim contract re-validation after retry still flagged issues: ${retryContractResult.inputAssessment.summary}`,
+          });
+        } else {
+          // Retry passed or re-validation was unavailable — accept retry
+          activePass2 = retryPass2;
+        }
       } catch (retryErr) {
         // Retry failure is non-fatal — keep original Pass 2 output
         console.warn("[Stage1] Claim contract retry failed (non-fatal):", retryErr);
@@ -352,12 +404,11 @@ export async function extractClaims(
   // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
   // inherent interpretations of the input's semantic range, not evidence imports.
   // ------------------------------------------------------------------
-  // Use LLM's explicit inputClassification when available (Phase 2.2);
-  // fall back to structural heuristic for backward compat with pre-2.2 prompts.
-  const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim"
-    || (activePass2.inputClassification === "single_atomic_claim"  // pre-2.2 fallback
-        && filteredClaims.length > 1
-        && filteredClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+  // Trust the LLM's explicit inputClassification. Only ambiguous_single_claim
+  // outputs are dimension decompositions. The pre-2.2 fallback that auto-promoted
+  // single_atomic_claim multi-claim outputs was removed because it incorrectly
+  // tagged near-duplicate conjunct splits as dimension decompositions.
+  const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim";
   if (isDimensionInput) {
     for (const c of filteredClaims) {
       (c as AtomicClaim).isDimensionDecomposition = true;
@@ -427,11 +478,8 @@ export async function extractClaims(
           effectiveMax,
         );
 
-        // Dimension decomposition tagging (same logic as initial pass)
-        const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
-          || (retryPass2.inputClassification === "single_atomic_claim"
-              && retryClaims.length > 1
-              && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+        // Dimension decomposition tagging — trust explicit classification only
+        const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim";
         if (retryIsDimension) {
           for (const c of retryClaims) {
             (c as AtomicClaim).isDimensionDecomposition = true;
@@ -536,10 +584,7 @@ export async function extractClaims(
       );
 
       // Dimension decomposition tagging (same logic as initial pass)
-      const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
-        || (retryPass2.inputClassification === "single_atomic_claim"
-            && retryClaims.length > 1
-            && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+      const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim";
       if (retryIsDimension) {
         for (const c of retryClaims) {
           (c as AtomicClaim).isDimensionDecomposition = true;
@@ -1640,6 +1685,7 @@ export const ClaimContractOutputSchema = z.object({
     preservesEvaluativeMeaning: z.boolean(),
     usesNeutralDimensionQualifier: z.boolean(),
     proxyDriftSeverity: z.enum(["none", "mild", "material"]).catch("none"),
+    evidenceSeparable: z.boolean().catch(true),
     recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
     reasoning: z.string().catch(""),
   })),

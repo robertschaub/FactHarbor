@@ -422,3 +422,47 @@ describe("CBClaimUnderstanding observability fields", () => {
     expect(understanding.contractValidationSummary).toBeUndefined();
   });
 });
+
+// ============================================================================
+// EVIDENCE SEPARABILITY (Step 2)
+// ============================================================================
+
+describe("evidenceSeparable field", () => {
+  it("should default to true when field is missing", () => {
+    const input = {
+      inputAssessment: { preservesOriginalClaimContract: true, rePromptRequired: false, summary: "ok" },
+      claims: [{ claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "fine" }],
+    };
+    const result = ClaimContractOutputSchema.parse(input);
+    expect(result.claims[0].evidenceSeparable).toBe(true);
+  });
+
+  it("should parse evidenceSeparable=false as a retry trigger", () => {
+    const input = {
+      inputAssessment: { preservesOriginalClaimContract: false, rePromptRequired: true, summary: "claims overlap" },
+      claims: [
+        { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", evidenceSeparable: false, recommendedAction: "retry", reasoning: "tools and methods overlap" },
+        { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", evidenceSeparable: false, recommendedAction: "retry", reasoning: "same evidence pool as AC_01" },
+      ],
+    };
+    const result = ClaimContractOutputSchema.parse(input);
+    expect(result.inputAssessment.rePromptRequired).toBe(true);
+    expect(result.claims[0].evidenceSeparable).toBe(false);
+    expect(result.claims[1].evidenceSeparable).toBe(false);
+    expect(result.claims.every(c => c.recommendedAction === "retry")).toBe(true);
+  });
+
+  it("should allow mixed separability in a multi-claim output", () => {
+    const input = {
+      inputAssessment: { preservesOriginalClaimContract: false, rePromptRequired: true, summary: "partial overlap" },
+      claims: [
+        { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", evidenceSeparable: true, recommendedAction: "keep", reasoning: "distinct evidence pool" },
+        { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", evidenceSeparable: false, recommendedAction: "retry", reasoning: "same evidence as AC_03" },
+        { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", evidenceSeparable: false, recommendedAction: "retry", reasoning: "same evidence as AC_02" },
+      ],
+    };
+    const result = ClaimContractOutputSchema.parse(input);
+    const inseparable = result.claims.filter(c => !c.evidenceSeparable);
+    expect(inseparable).toHaveLength(2);
+  });
+});

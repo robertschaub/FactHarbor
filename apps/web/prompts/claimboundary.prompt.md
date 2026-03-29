@@ -329,6 +329,9 @@ Then decide whether the extraction should be accepted as-is or whether Pass 2 sh
 8. **Be conservative about retries.**
    Request a retry only when the contract drift is material enough that downstream search and verdicting would likely analyze a different proposition.
 
+9. **Evidence separability (multi-claim outputs only).**
+   When the extraction produces multiple claims, assess whether each claim would plausibly require different evidence sources, search queries, or methodologies to verify. If two or more claims would be answered by substantially the same body of evidence (e.g., "efficient" and "effective" for the same organization and activity, or "tools" and "methods" for the same practice), they are not independently research-worthy — flag `rePromptRequired: true` with reasoning explaining which claims overlap and should be merged. This rule applies regardless of whether the claims are linguistically distinct. Semantic distinctness alone does not justify splitting if the same evidence pool would verify both claims.
+
 ### Input
 
 Original input:
@@ -362,6 +365,7 @@ Return a JSON object:
       "preservesEvaluativeMeaning": true,
       "usesNeutralDimensionQualifier": true,
       "proxyDriftSeverity": "none",
+      "evidenceSeparable": true,
       "recommendedAction": "keep",
       "reasoning": "short explanation"
     }
@@ -374,7 +378,8 @@ Field constraints:
 - `preservesEvaluativeMeaning`: does this claim preserve the original evaluative meaning?
 - `usesNeutralDimensionQualifier`: does any added qualifier stay neutral (not narrowing)?
 - `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
-- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` only for material drift.
+- `evidenceSeparable`: would verifying this claim require a meaningfully different evidence body than the other claims? `false` means this claim overlaps with another claim's evidence needs and should be merged.
+- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift OR for evidence-inseparable claim sets.
 - `reasoning`: max 120 characters. Why this assessment.
 
 ---
