@@ -958,6 +958,9 @@ export async function reconcileVerdicts(
     });
   }
 
+  // Build a set of valid evidence IDs for phantom filtering
+  const validEvidenceIds = new Set(evidence.map((e) => e.id));
+
   const verdicts = advocateVerdicts.map((original) => {
     const reconciled = rawReconciled.find((r) => String(r.claimId) === original.claimId);
     if (!reconciled) return original;
@@ -972,6 +975,15 @@ export async function reconcileVerdicts(
       ? String(reconciled.misleadingnessReason ?? "")
       : undefined;
 
+    // Citation carriage: use reconciliation's arrays if valid, else fall back to advocate arrays.
+    // The reconciliation LLM may shift which evidence supports/contradicts the claim as it
+    // incorporates challenger arguments. Without this, stale advocate arrays corrupt downstream
+    // grounding and direction validation.
+    const reconciledSupporting = parseEvidenceIdArray(reconciled.supportingEvidenceIds, validEvidenceIds);
+    const reconciledContradicting = parseEvidenceIdArray(reconciled.contradictingEvidenceIds, validEvidenceIds);
+    const supportingEvidenceIds = reconciledSupporting ?? original.supportingEvidenceIds;
+    const contradictingEvidenceIds = reconciledContradicting ?? original.contradictingEvidenceIds;
+
     return {
       ...original,
       truthPercentage,
@@ -982,6 +994,8 @@ export async function reconcileVerdicts(
       isContested: Boolean(reconciled.isContested ?? original.isContested),
       consistencyResult: consistency ?? original.consistencyResult,
       challengeResponses: parseChallengeResponses(reconciled.challengeResponses),
+      supportingEvidenceIds,
+      contradictingEvidenceIds,
       ...(misleadingness ? { misleadingness } : {}),
       ...(misleadingnessReason ? { misleadingnessReason } : {}),
     };
@@ -1192,8 +1206,10 @@ export async function validateVerdicts(
               }
               current = repaired;
             } else {
+              // Pass `repaired` (not `current`) so the warning records the last-attempted
+              // truth value, not the stale pre-repair value.
               current = safeDowngradeVerdict(
-                current,
+                repaired,
                 "direction",
                 retryDirection.issues,
                 warnings,
@@ -1944,6 +1960,28 @@ function parseChallengeResponses(raw: unknown): ChallengeResponse[] {
 function parseChallengeType(raw: unknown): ChallengeResponse["challengeType"] {
   const valid = ["assumption", "missing_evidence", "methodology_weakness", "independence_concern"];
   return valid.includes(String(raw)) ? String(raw) as ChallengeResponse["challengeType"] : "assumption";
+}
+
+/**
+ * Parse an evidence ID array from reconciliation output.
+ * Three-state return:
+ *   - undefined: field absent or not an array → caller falls back to advocate arrays
+ *   - []: field present as empty array → intentionally no citations on this side (accept)
+ *   - string[]: field present with valid IDs → use filtered (phantoms removed)
+ *             if all IDs were phantom → undefined (fall back to advocate)
+ */
+function parseEvidenceIdArray(raw: unknown, validIds: Set<string>): string[] | undefined {
+  // Field absent or not an array → fall back
+  if (raw === undefined || raw === null || !Array.isArray(raw)) return undefined;
+  // Intentionally empty array → the reconciler is clearing this side
+  if (raw.length === 0) return [];
+  // Non-empty array: filter to valid string IDs, then filter phantoms
+  const ids = raw.filter((id): id is string => typeof id === "string" && id.length > 0);
+  if (ids.length === 0) return undefined; // contained only non-string junk
+  const filtered = ids.filter((id) => validIds.has(id));
+  // If ALL IDs were phantom, fall back to advocate arrays (LLM hallucinated all IDs)
+  if (filtered.length === 0) return undefined;
+  return filtered;
 }
 
 /** B-7: Parse misleadingness enum from reconciliation output. Returns undefined if not present/invalid. */

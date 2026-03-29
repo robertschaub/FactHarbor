@@ -760,6 +760,125 @@ describe("reconcileVerdicts (Step 4)", () => {
 });
 
 // ============================================================================
+// CITATION CARRIAGE (reconciliation → verdict arrays)
+// ============================================================================
+
+describe("reconciliation citation carriage", () => {
+  const makeAdvocate = (supportIds: string[] = ["EV_01"], contradictIds: string[] = []): CBClaimVerdict => ({
+    id: "CV_AC_01", claimId: "AC_01", truthPercentage: 65, verdict: "LEANING-TRUE",
+    confidence: 70, reasoning: "Original", harmPotential: "medium", isContested: false,
+    supportingEvidenceIds: supportIds, contradictingEvidenceIds: contradictIds,
+    boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [65], average: 65, spread: 0, stable: true, assessed: false },
+    challengeResponses: [],
+    triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+  });
+
+  const evidence = [
+    createEvidenceItem({ id: "EV_01" }),
+    createEvidenceItem({ id: "EV_02" }),
+    createEvidenceItem({ id: "EV_03" }),
+    createEvidenceItem({ id: "EV_04" }),
+  ];
+
+  it("should apply reconciliation citation arrays when valid", async () => {
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 48, confidence: 60,
+        reasoning: "Reconciled with new evidence",
+        isContested: true,
+        supportingEvidenceIds: ["EV_01"],
+        contradictingEvidenceIds: ["EV_02", "EV_03"],
+        challengeResponses: [],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      [makeAdvocate(["EV_01"], [])], { challenges: [] }, [], evidence, mockLLM,
+    );
+
+    expect(verdicts[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(verdicts[0].contradictingEvidenceIds).toEqual(["EV_02", "EV_03"]);
+  });
+
+  it("should fall back to advocate arrays when reconciliation omits citation arrays", async () => {
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 48, confidence: 60,
+        reasoning: "Reconciled without arrays",
+        isContested: false, challengeResponses: [],
+        // no supportingEvidenceIds or contradictingEvidenceIds
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      [makeAdvocate(["EV_01"], ["EV_04"])], { challenges: [] }, [], evidence, mockLLM,
+    );
+
+    expect(verdicts[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(verdicts[0].contradictingEvidenceIds).toEqual(["EV_04"]);
+  });
+
+  it("should filter phantom evidence IDs from reconciliation arrays", async () => {
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 48, confidence: 60,
+        reasoning: "Reconciled with phantom",
+        isContested: false, challengeResponses: [],
+        supportingEvidenceIds: ["EV_01", "EV_PHANTOM"],
+        contradictingEvidenceIds: ["EV_02", "EV_GHOST"],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      [makeAdvocate()], { challenges: [] }, [], evidence, mockLLM,
+    );
+
+    expect(verdicts[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(verdicts[0].contradictingEvidenceIds).toEqual(["EV_02"]);
+  });
+
+  it("should fall back to advocate arrays when ALL reconciliation IDs are phantom", async () => {
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 48, confidence: 60,
+        reasoning: "All phantoms",
+        isContested: false, challengeResponses: [],
+        supportingEvidenceIds: ["EV_PHANTOM_1"],
+        contradictingEvidenceIds: ["EV_PHANTOM_2"],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      [makeAdvocate(["EV_01"], ["EV_04"])], { challenges: [] }, [], evidence, mockLLM,
+    );
+
+    // Falls back to advocate arrays since all reconciliation IDs were phantom
+    expect(verdicts[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(verdicts[0].contradictingEvidenceIds).toEqual(["EV_04"]);
+  });
+
+  it("should accept intentionally empty arrays from reconciliation (clearing stale citations)", async () => {
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: [{
+        claimId: "AC_01", truthPercentage: 48, confidence: 60,
+        reasoning: "Reconciler cleared supporting side",
+        isContested: false, challengeResponses: [],
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: ["EV_02"],
+      }],
+    });
+
+    const { verdicts } = await reconcileVerdicts(
+      [makeAdvocate(["EV_01"], ["EV_04"])], { challenges: [] }, [], evidence, mockLLM,
+    );
+
+    // Empty array = intentionally cleared, NOT a fallback to advocate
+    expect(verdicts[0].supportingEvidenceIds).toEqual([]);
+    expect(verdicts[0].contradictingEvidenceIds).toEqual(["EV_02"]);
+  });
+});
+
+// ============================================================================
 // STEP 5: VERDICT VALIDATION
 // ============================================================================
 
@@ -1002,6 +1121,55 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].confidenceTier).toBe("INSUFFICIENT");
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
+  });
+
+  it("should record repaired truth% (not pre-repair) in safe-downgrade warning", async () => {
+    // Evidence: 1 support + 4 contradicts → ratio 0.2 (one-sided contradicting).
+    // Initial truth=88% fails plausibility (Rule 1: 88>=70 but ratio 0.2<0.5).
+    // Repair to truth=45% also fails (Rule 2: ratio 0.2<0.3; Rule 3: |0.2-0.45|=0.25>0.15).
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 88,
+      confidence: 81,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02", "EV_03", "EV_04", "EV_05"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_04", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_05", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: false, issues: ["Direction mismatch"] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_01", truthPercentage: 45, reasoning: "Repaired to 45%" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    await validateVerdicts(verdicts, evidence, mockLLM, config, warnings, { claims, boundaries, coverageMatrix });
+
+    const integrityWarning = warnings.find((w) => w.type === "verdict_integrity_failure");
+    expect(integrityWarning).toBeDefined();
+    // The warning should record the REPAIRED truth% (45), not the pre-repair value (88)
+    expect(integrityWarning!.details?.originalTruthPercentage).toBe(45);
   });
 
   it("overrides false-positive LLM direction failure via deterministic plausibility check (AC_03 case)", async () => {

@@ -1108,6 +1108,8 @@ Return a JSON array:
     "confidence": 72,
     "reasoning": "string — final reasoning incorporating challenge responses and consistency notes",
     "isContested": true,
+    "supportingEvidenceIds": ["EV_001", "EV_003"],
+    "contradictingEvidenceIds": ["EV_002", "EV_005"],
     "challengeResponses": [
       {
         "challengeType": "assumption | missing_evidence | methodology_weakness | independence_concern",
@@ -1121,6 +1123,8 @@ Return a JSON array:
   }
 ]
 ```
+
+**Citation arrays (CRITICAL):** `supportingEvidenceIds` and `contradictingEvidenceIds` must reflect your FINAL reconciled reasoning — not the advocate's original arrays. If your reconciliation shifts which evidence supports or contradicts the claim (e.g., because a challenge revealed that cited evidence actually opposes the claim, or because you now cite contradicting evidence the advocate did not include), update these arrays accordingly. Only use evidence IDs that appear in the advocate verdicts or challenger citations above — do not invent new IDs. If the reconciled verdict has no supporting evidence, return an empty array `[]` rather than omitting the field.
 
 ---
 
