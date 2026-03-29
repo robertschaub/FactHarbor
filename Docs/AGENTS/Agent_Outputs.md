@@ -1,6 +1,33 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 2705 + e407 Root Fix — Reviewer Notes
+**Task:** Code/Architecture review of the revised 2705/e407 root-fix proposal.
+**Files touched:** `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Reviewer_Notes.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** (1) Proposal correctly targets the root bug at line 561, not downstream. (2) `runVerdictStageWithPreflight` already guards `claims.length === 0` — no redundant guard needed. (3) `buildCoverageMatrix` handles empty claims correctly. (4) Aggregation self-corrects for all-zero-confidence but NOT for Stage-4's spurious confidence=30 — confirming the short-circuit is a correctness fix. (5) Verdict uniqueness should assert-not-dedup. (6) gate4Stats needs no separate fix.
+**Decision:** `Approved as root-fix path`. No revision needed. Two implementation cautions noted for the implementing agent.
+**For next agent:** The plan is approved. Implement by changing `activeClaims` to `assessableClaims = sufficientClaims` (removing the fallback), fixing matrix labels in `page.tsx`, and adding a uniqueness assertion (not dedup) after verdict assembly. No prompt change needed.
+
+---
+### 2026-03-29 | Senior Developer | Codex (GPT-5) | 2705 + e407 Root Fix Review Tightening
+**Task:** Re-tighten the `2705 / e407` architect review so it is ready for another review round after concerns that the previous package still mixed root fixes with symptom cleanup.
+**Files touched:** `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reframed the review around a stronger architecture: explicit `assessableClaims` after D5, Stage 4 only on that subset, verdict-uniqueness invariant before aggregation, and matrix label alignment as a separate presentation fix. Removed aggregation deduplication from the primary-fix story and repositioned the residual `Werkzeuge/Methoden` split as a separate Stage-1 follow-on rather than pretending the integrity patch solves recurrence.
+**Open items:** No code change yet. The next implementation prompt should use the tightened framing and avoid presenting aggregation dedup as the main repair.
+**Warnings:** The review now cleanly separates the `e407` integrity bug from the residual Stage-1 recurrence family. Do not collapse those back together in execution planning.
+**For next agent:** The updated review is at [2026-03-29_2705_e407_Root_Fix_Architect_Review.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md). If implementation is requested next, the package should be: assessable-claims short-circuit, verdict-uniqueness invariant, and matrix label alignment, with Stage-1 Step 4 explicitly deferred.
+**Learnings:** no
+
+---
+### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 2705 + e407 Root Fix — Architect Review
+**Task:** Re-open the 2705/e407 issue family and find the best root-cause solution.
+**Files touched:** `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Primary bug is all-insufficient fallback at `claimboundary-pipeline.ts:561` — sends D5-rejected claims to Stage 4, producing duplicate verdicts and corrupted article verdict. (2) Secondary bug: UI matrix label/body mismatch in `page.tsx:1871`. (3) Aggregation has no dedup guard. (4) Salvage step (Option C) is premature — Stage-1 fix already shipped, measure first. (5) Root fix is enforcing two invariants: no Stage 4 for D5-rejected claims, one verdict per claim ID. Three code-only changes, ~30 lines total.
+**Implementation order:** (1) All-insufficient short-circuit in pipeline. (2) Matrix label alignment in page.tsx. (3) Aggregation dedup guard. All code-only, single commit.
+**Open items:** None — all code-only.
+**For next agent:** Full review at `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`. All three fixes are in `claimboundary-pipeline.ts`, `page.tsx`, and `aggregation-stage.ts` respectively. No prompt change needed.
+
+---
 ### 2026-03-29 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 Claim Decomposition Fix (3-Step)
 **Task:** Implement approved 3-step fix for b8e6/8640/cd4501 claim decomposition failures.
 **Files touched:** `claim-extraction-stage.ts` (Step 1 fallback removal + Step 3 retry re-validation), `claimboundary.prompt.md` (Step 2 evidence-separability rule + schema), `types.ts` + `warning-display.ts` (new warning type), `claim-contract-validation.test.ts` (3 new tests).
@@ -2318,6 +2345,16 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-29 | Senior Developer | Codex (GPT-5) | 2705 + e407 Matrix and All-Insufficient Investigation
+**Task:** Determine whether local job `2705c6bf1c904306bd81a2040025024f` was only a Coverage Matrix UI issue, then analyze worse repeat run `e407cba4ac354248b21d26a4fb0ceaf7` and consolidate a prevention strategy.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_2705_e407_Matrix_and_All_Insufficient_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** `2705...` is partly a real UI bug (matrix headers built from all claim verdicts while the matrix body follows `coverageMatrix.claims`), but `e407...` proves a deeper pipeline bug: when all claims are D5-insufficient, `claimboundary-pipeline.ts` falls back to sending all claims into Stage 4, then appends insufficient-evidence fallbacks for those same claim IDs. That produces duplicate verdict entries and an article verdict driven by claims that should have short-circuited to `UNVERIFIED`. Separate residual issue: Stage-1 still over-splits this factual conjunct input (`Werkzeuge` vs `Methoden`) and contract validation still falsely reports perfect preservation.
+**Open items:** Fix order should be: (1) stop Stage 4 from running on all-insufficient claim sets, (2) fix the matrix header/body mismatch and add a small transparency cue, (3) reopen the residual Stage-1 factual conjunct-splitting family as a separate refinement.
+**Warnings:** `2705...` predates clean commit `fff7a508`; `e407...` ran on `fff7a508` plus a dirty suffix. The Stage-4 orchestration bug is still decisive because it is visible in stored result data, not just UI behavior.
+**For next agent:** Read [2026-03-29_Senior_Developer_2705_e407_Matrix_and_All_Insufficient_Investigation.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_2705_e407_Matrix_and_All_Insufficient_Investigation.md) before proposing fixes. Do not paper over the issue with a verdict dedupe patch; the first real fix belongs in [claimboundary-pipeline.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claimboundary-pipeline.ts).
+**Learnings:** no
+
+---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Single-Attempt Provider Probes
 **Task:** Make the Configuration Test Dashboard provider probes surface the real first provider error instead of timing out behind AI SDK retries.
 **Files touched:** `apps/web/src/app/api/admin/test-config/route.ts`, `apps/web/test/unit/app/api/admin/test-config/route.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -2355,4 +2392,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Exact dirty-worktree deltas at execution time remain unknowable from stored job data alone.
 **Warnings:** A narrow duplicate-detector fix would likely address `b8e6...` better than `8640...`; the broader need is an LLM-based post-Pass-2 independence/overlap validator plus a narrower `single_atomic_claim` fallback.
 **For next agent:** Read [2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md). Best next step is a design review, not immediate coding.
+**Learnings:** no
+
+---
+### 2026-03-29 | Lead Architect | Codex (GPT-5) | Re-review of 2705/e407 Root Fix Package
+**Task:** Re-assess whether the proposed `all-insufficient short-circuit + matrix label fix + aggregation dedup guard` package is a true root fix or mostly symptom handling.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The all-insufficient short-circuit is a true root fix for `e407`: Stage 4 must not run on claims D5 already marked insufficient. The matrix label fix is also legitimate, but it is a separate presentation/data-contract repair, not part of the e407 root cause. The aggregation dedup guard is not a root fix; it is optional defense-in-depth and should not be the primary mechanism relied on. No salvage step is warranted now because the architecture should first enforce the invariant that Stage 4 only receives assessable claims; salvage would be a separate, higher-order recovery feature if the all-insufficient rate remains problematic after the upstream Stage-1 work settles.
+**Open items:** If the team wants stronger architecture later, the right direction is a typed assessed-claim subset passed from D5 into Stage 4/UI/aggregation rather than ad hoc filtering plus fallback behavior.
+**Warnings:** Do not let an aggregation dedup layer become the thing that hides invalid pipeline states. Duplicate claim IDs in `claimVerdicts` should be treated as a bug signal, not normalized away by default.
+**For next agent:** The immediate implementation order should be: (1) short-circuit all-insufficient before Stage 4, (2) align matrix labels with `coverageMatrix.claims`, (3) only add a minimal assertive duplicate guard if you want defense-in-depth. Do not add salvage or broader architecture changes in the same patch.
 **Learnings:** no
