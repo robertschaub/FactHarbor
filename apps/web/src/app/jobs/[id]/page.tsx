@@ -1865,13 +1865,13 @@ export default function JobPage() {
                   </div>
                 }
               >
-                  {result?.coverageMatrix && claimVerdicts.length > 0 && (
+                  {result?.coverageMatrix && result.coverageMatrix.claims?.length > 0 && (
                     <CoverageMatrixDisplay
                       matrix={result.coverageMatrix}
-                      claimLabels={claimVerdicts.map((v: any) => {
+                      claimLabels={(result.coverageMatrix.claims as string[]).map((claimId: string) => {
                         const atomicClaims: any[] = result?.understanding?.atomicClaims || [];
-                        const matched = atomicClaims.find((ac: any) => ac.id === v.claimId);
-                        const text = matched?.statement || v.claim?.statement || v.claimText || v.claim?.text || "Unknown claim";
+                        const matched = atomicClaims.find((ac: any) => ac.id === claimId);
+                        const text = matched?.statement || claimId;
                         return text;
                       })}
                       boundaryShortLabels={claimBoundaries.map((b: any) => b.shortName || b.name || `Boundary ${b.id}`)}

@@ -556,15 +556,16 @@ export async function runClaimBoundaryAnalysis(
     const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));
     const insufficientClaims = understanding.atomicClaims.filter(c => insufficientClaimIds.has(c.id));
 
-    // Shared active-claims reference: sufficient claims if any exist, otherwise all claims (fallback).
-    // Used by both the coverage matrix and verdict stage to stay consistent.
-    const activeClaims = sufficientClaims.length > 0 ? sufficientClaims : understanding.atomicClaims;
+    // Explicit assessable-claims path: only D5-sufficient claims proceed to Stage 4.
+    // Insufficient claims receive D5 fallback verdicts (UNVERIFIED) without entering
+    // the debate. No "better something than nothing" fallback that re-sends D5-rejected
+    // claims into Stage 4 — that caused duplicate verdicts in the 2705/e407 failure class.
+    const assessableClaims = sufficientClaims;
 
-    // Build coverage matrix (between Stage 3 and 4, per §8.5.1)
-    // Uses only active claims — insufficient claims are excluded from the matrix
+    // Build coverage matrix from assessable claims only — insufficient claims are excluded
     // to avoid ghost columns with sparse evidence that distort the display.
     const coverageMatrix = buildCoverageMatrix(
-      activeClaims,
+      assessableClaims,
       boundaries,
       state.evidenceItems
     );
@@ -589,7 +590,7 @@ export async function runClaimBoundaryAnalysis(
       runtimeRoleTraces.push(trace);
     };
     const sufficientVerdicts = await runVerdictStageWithPreflight({
-      claims: activeClaims,
+      claims: assessableClaims,
       evidenceItems: state.evidenceItems,
       boundaries,
       coverageMatrix,
@@ -613,6 +614,27 @@ export async function runClaimBoundaryAnalysis(
     );
 
     let claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
+
+    // Verdict uniqueness invariant: each claimId must appear at most once.
+    // Duplicates indicate a pipeline state corruption (e.g., D5 fallback + Stage 4
+    // both producing verdicts for the same claim). Fail the job immediately rather
+    // than allowing corrupted data to propagate to aggregation and the report.
+    const claimIdCounts = new Map<string, number>();
+    for (const v of claimVerdicts) {
+      claimIdCounts.set(v.claimId, (claimIdCounts.get(v.claimId) ?? 0) + 1);
+    }
+    const duplicateIds = [...claimIdCounts.entries()].filter(([, count]) => count > 1).map(([id]) => id);
+    if (duplicateIds.length > 0) {
+      const msg = `PIPELINE INVARIANT VIOLATION: Duplicate claim verdicts detected for claimId(s): ${duplicateIds.join(", ")}. ` +
+        `This indicates a pipeline state corruption — D5 fallback and Stage 4 both produced verdicts for the same claim(s).`;
+      state.warnings.push({
+        type: "verdict_integrity_failure" as any,
+        severity: "error",
+        message: msg,
+        details: { duplicateClaimIds: duplicateIds, totalVerdicts: claimVerdicts.length },
+      });
+      throw new Error(msg);
+    }
 
     // B-7: Strip misleadingness fields if annotation mode doesn't include them
     if (initialPipelineConfig.claimAnnotationMode !== "verifiability_and_misleadingness") {

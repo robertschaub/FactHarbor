@@ -28,6 +28,14 @@
 **For next agent:** Full review at `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`. All three fixes are in `claimboundary-pipeline.ts`, `page.tsx`, and `aggregation-stage.ts` respectively. No prompt change needed.
 
 ---
+### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | 2705/e407 Root Fix — Assessable-Claims + Verdict Uniqueness + Matrix
+**Task:** Fix all-insufficient fallback integrity failure and Coverage Matrix mismatch.
+**Files touched:** `claimboundary-pipeline.ts` (assessable-claims path + verdict uniqueness invariant), `page.tsx` (matrix label source).
+**What changed:** (1) `activeClaims` fallback removed — Stage 4 only gets D5-sufficient claims. (2) Duplicate `claimId`s in verdicts throw hard failure. (3) Matrix labels from `coverageMatrix.claims`.
+**Validation:** 5 jobs, zero dup IDs, matrix aligned. 2705: AC_01 in matrix only, AC_02 UNVERIFIED (correct).
+**For next agent:** Report at `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_2705_e407_Root_Fix_Implementation.md`.
+
+---
 ### 2026-03-29 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 Claim Decomposition Fix (3-Step)
 **Task:** Implement approved 3-step fix for b8e6/8640/cd4501 claim decomposition failures.
 **Files touched:** `claim-extraction-stage.ts` (Step 1 fallback removal + Step 3 retry re-validation), `claimboundary.prompt.md` (Step 2 evidence-separability rule + schema), `types.ts` + `warning-display.ts` (new warning type), `claim-contract-validation.test.ts` (3 new tests).
