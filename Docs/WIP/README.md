@@ -26,7 +26,10 @@ Anything that was purely historical, implemented, or superseded has been archive
 - [2026-03-25_Senior_Developer_QLT2_Characterization.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md) — split root-cause finding that guided QLT-3
 - [2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md](../AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md) — final QLT validation result
 - [2026-03-25_EVD1_Acceptable_Variance_Policy.md](2026-03-25_EVD1_Acceptable_Variance_Policy.md) — **APPROVED** Alpha-phase variance governance policy
-- **Post-stabilization posture**: The report-quality stabilization wave (QLT-1/2/3, VAL-2, OBS-1) is complete. EVD-1 is approved and operative. The project is in **approved-policy monitor mode** — analyzer work is policy-triggered only (red threshold breach); future workstreams require Captain approval. Governed by `Current_Status.md`, `Backlog.md`, and EVD-1.
+- [2026-03-30_Report_Quality_Evolution_Deep_Analysis.md](2026-03-30_Report_Quality_Evolution_Deep_Analysis.md) — comprehensive 100-job quality evolution across 12 families and 8 change waves
+- [2026-03-30_Unverified_Claims_Report_Matrix_And_Article_Adjudication_Review.md](2026-03-30_Unverified_Claims_Report_Matrix_And_Article_Adjudication_Review.md) — architect review of LLM article adjudication
+- [2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md](2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md) — review-approved prompt-only fix for false ambiguity
+- **Post-integrity-fixes posture**: All structural integrity work shipped (citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication). **Cross-linguistic neutrality (NEUTRALITY-1)** is the next identified quality gap. EVD-1 is operative but needs a cross-linguistic threshold. Governed by `Current_Status.md`, `Backlog.md`.
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)
