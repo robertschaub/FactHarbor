@@ -1082,17 +1082,20 @@ export async function validateVerdicts(
       "direction",
       "VERDICT_DIRECTION_VALIDATION",
       {
-        verdicts: verdicts.map((v) => ({
-          claimId: v.claimId,
-          truthPercentage: v.truthPercentage,
-          supportingEvidenceIds: v.supportingEvidenceIds,
-          contradictingEvidenceIds: v.contradictingEvidenceIds,
-        })),
-        evidencePool: evidence.map((e) => ({
-          id: e.id,
-          statement: e.statement,
-          claimDirection: e.claimDirection,
-        })),
+        verdicts: verdicts.map((v) => {
+          const localEvidence = getClaimLocalEvidence(v.claimId, v, evidence);
+          return {
+            claimId: v.claimId,
+            truthPercentage: v.truthPercentage,
+            supportingEvidenceIds: v.supportingEvidenceIds,
+            contradictingEvidenceIds: v.contradictingEvidenceIds,
+            evidencePool: localEvidence.map((e) => ({
+              id: e.id,
+              statement: e.statement,
+              claimDirection: e.claimDirection,
+            })),
+          };
+        }),
       },
       "directionValid",
       validationTier,
@@ -1432,6 +1435,53 @@ function safeDowngradeVerdict(
   };
 }
 
+// ============================================================================
+// CLAIM-LOCAL EVIDENCE SCOPING (prevents cross-claim contamination)
+// ============================================================================
+
+/**
+ * Build a claim-local evidence subset for direction validation and repair.
+ *
+ * Priority order:
+ * 1. Evidence where `relevantClaimIds` includes the target claim
+ * 2. Plus any evidence cited by the verdict (supportingEvidenceIds + contradictingEvidenceIds)
+ *    even if `relevantClaimIds` mapping is incomplete
+ * 3. Falls back to the full pool ONLY when the claim-local + cited subset is empty
+ *
+ * This prevents sibling-claim evidence from contaminating direction checks
+ * while maintaining fail-open safety when evidence mapping is incomplete.
+ */
+export function getClaimLocalEvidence(
+  claimId: string,
+  verdict: CBClaimVerdict,
+  allEvidence: EvidenceItem[],
+): EvidenceItem[] {
+  const citedIds = new Set([
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+  ]);
+
+  // Collect evidence mapped to this claim via relevantClaimIds
+  const claimLocal = allEvidence.filter(
+    (e) => e.relevantClaimIds?.includes(claimId),
+  );
+
+  // Merge in any cited IDs that weren't already captured (handles incomplete mapping)
+  const claimLocalIds = new Set(claimLocal.map((e) => e.id));
+  const citedButMissing = allEvidence.filter(
+    (e) => citedIds.has(e.id) && !claimLocalIds.has(e.id),
+  );
+
+  const localSubset = [...claimLocal, ...citedButMissing];
+
+  // Fallback: if claim-local + cited is completely empty, use full pool
+  if (localSubset.length === 0) {
+    return allEvidence;
+  }
+
+  return localSubset;
+}
+
 function buildBoundaryContext(
   claimId: string,
   boundaries: ClaimAssessmentBoundary[],
@@ -1523,7 +1573,10 @@ async function attemptDirectionRepair(
     repairContext.coverageMatrix,
   );
 
-  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  // Claim-local evidence scoping: use only evidence relevant to this claim
+  const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence);
+
+  const evidenceById = new Map(localEvidence.map((item) => [item.id, item]));
   const citedIds = new Set([
     ...verdict.supportingEvidenceIds,
     ...verdict.contradictingEvidenceIds,
@@ -1544,7 +1597,7 @@ async function attemptDirectionRepair(
     claim,
     boundaryContext,
     evidenceDirectionSummary: summary,
-    evidencePool: evidence.map((item) => ({
+    evidencePool: localEvidence.map((item) => ({
       id: item.id,
       statement: item.statement,
       claimDirection: item.claimDirection,
@@ -1562,6 +1615,9 @@ async function validateDirectionOnly(
   validationTier: string,
   validationProvider?: LLMProviderType,
 ): Promise<NormalizedValidationEntry> {
+  // Claim-local evidence scoping: use only evidence relevant to this claim
+  const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence);
+
   const directionResult = await llmCall(
     "VERDICT_DIRECTION_VALIDATION",
     {
@@ -1570,12 +1626,12 @@ async function validateDirectionOnly(
         truthPercentage: verdict.truthPercentage,
         supportingEvidenceIds: verdict.supportingEvidenceIds,
         contradictingEvidenceIds: verdict.contradictingEvidenceIds,
+        evidencePool: localEvidence.map((e) => ({
+          id: e.id,
+          statement: e.statement,
+          claimDirection: e.claimDirection,
+        })),
       }],
-      evidencePool: evidence.map((e) => ({
-        id: e.id,
-        statement: e.statement,
-        claimDirection: e.claimDirection,
-      })),
     },
     {
       tier: validationTier,

@@ -1,4 +1,40 @@
 # Agent Outputs Log
+---
+### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Unify VERDICT_DIRECTION_VALIDATION Contract
+**Task:** Fix review blocker — `validateDirectionOnly()` passed top-level `evidencePool` while batch path embedded it per-verdict. Unified on per-verdict shape.
+**Files touched:** `verdict-stage.ts` (1 call site), `claimboundary.prompt.md` (prompt wording), `verdict-stage.test.ts` (1 test capture updated)
+**What changed:** (1) `validateDirectionOnly()` now embeds `evidencePool` inside the verdict object, matching the batch path. (2) Prompt `VERDICT_DIRECTION_VALIDATION` input section updated to describe per-verdict claim-local evidence pool, removed separate `${evidencePool}` variable. (3) Test for re-validation capture updated to read from `verdicts[0].evidencePool` instead of top-level `input.evidencePool`.
+**Not changed:** `VERDICT_DIRECTION_REPAIR` (single-claim top-level `evidencePool` is correct). Grounding validation (correctly global).
+**Verification:** 157 verdict-stage tests pass. 1481 total tests pass. Build clean.
+**For next agent:** The `VERDICT_DIRECTION_VALIDATION` prompt now has one consistent contract: `${verdicts}` contains an array where each verdict includes its own `evidencePool`. No separate top-level `${evidencePool}` is used. `VERDICT_DIRECTION_REPAIR` is unchanged.
+
+---
+### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Claim-Local Verdict Scope Fix
+**Task:** Fix structural bug where direction validation/repair uses full boundary evidence pool instead of claim-local evidence, causing false `verdict_integrity_failure` downgrades (9e4d anchor case).
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
+**Key decisions:** Added `getClaimLocalEvidence()` helper with 3-tier priority (relevantClaimIds -> cited IDs -> full pool fallback). Applied to batch direction validation, `attemptDirectionRepair`, and `validateDirectionOnly`. Grounding validation intentionally left global (ID existence checks). No prompt, Stage 1, aggregation, or article adjudication changes.
+**Open items:** Stage 1 proxy decomposition hardening is a separate follow-up (not blocking). The batch direction validation prompt input shape changed from top-level `evidencePool` to per-verdict embedded pools -- monitor for any LLM parsing issues on next real run.
+**Warnings:** The prompt contract for `VERDICT_DIRECTION_VALIDATION` now receives `evidencePool` inside each verdict object rather than as a sibling field. This is a structural improvement but changes the input shape.
+**For next agent:** Full handoff at `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_Claim_Local_Verdict_Scope_Fix.md`. Verification: 1481 tests pass, build succeeds. Ready for human review and commit.
+**Learnings:** no
+
+---
+### 2026-03-30 | Lead Architect | Gemini 3.1 Pro | 9e4d SRF Factchecking Investigation Review
+**Task:** Adjudicate the root cause of the AC_02 failure in job 9e4d3712e12d49bc8cadd601766e5f4b.
+**Files touched:** Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md
+**Key decisions:** The downstream explanation is the true root cause. Stage 4's verdict integrity validation processes the entire global boundary evidence pool rather than strictly claim-local evidence. This causes hallucinatory cross-contamination where a claim with poor/neutral evidence falsely fails integrity because a sibling claim's strong evidence leaked into the validation context. Stage-1 proxy drift is real but secondary.
+**Open items:** Need a developer to implement the claim-local scoping fix for unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
+**Warnings:** Do not implement Stage 1 drift heuristics yet; do not restore the ±10pp clamp as it played no part in this failure.
+**For next agent:** Read Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md. Implement Option B local scoping for verdict stage validation.
+**Learnings:** no
+
+---
+### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | 9e4d SRF Factchecking — Architect Review
+**Task:** Adjudicate competing explanations for AC_02 `verdict_integrity_failure` in job `9e4d`.
+**Files touched:** `Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key findings:** (1) Direction validation at `verdict-stage.ts:1091-1094` passes full evidence pool, not claim-local. AC_02's integrity downgrade cites 6 supports (EV_001-006) that belong to AC_01. (2) AC_02's actual claim-local pool is 4 neutral items — the cross-claim contamination is the scoping bug, not just thin evidence. (3) Stage 1 proxy decomposition is a contributing cause but not the primary bug. (4) ±10pp clamp removal had zero effect (LLM kept truth at 58). (5) Grounding validation correctly uses full pool (checking ID existence is global). (6) `isVerdictDirectionPlausible()` correctly uses cited arrays.
+**Decision:** `Claim-local verdict-scope fix justified`. Code-only fix: filter `evidence` to claim-local items before passing to direction validation and repair LLM calls. ~5 lines per call site. Stage 1 prompt hardening is a separate follow-up.
+**For next agent:** Full review at `Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md`. Two call sites to fix: direction validation (line 1091) and repair (line 1547). Grounding validation (line 1072) stays full-pool. Fallback: if claim-local is empty, use cited evidence, then full pool with warning.
 
 ---
 ### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | Article Adjudication: Hybrid Clamp vs LLM-Led Review
@@ -2587,6 +2623,16 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review Claim-Local Verdict Scope Fix
+**Task:** Review the uncommitted Stage-4 claim-local evidence scoping implementation for the `9e4d` SRF fact-checking failure before commit.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The core scoping change is correct: `getClaimLocalEvidence()` in `verdict-stage.ts` now builds a claim-local subset from `relevantClaimIds` plus cited IDs, and the repair path uses that subset. Focused `verdict-stage.test.ts` passes locally. However, the patch is **not ready to commit as-is** because the prompt/input contract for `VERDICT_DIRECTION_VALIDATION` is now inconsistent across call sites. The batch validator changed to embed `evidencePool` inside each verdict object, and the prompt was changed to only render `${verdicts}`. But `validateDirectionOnly()` still calls the same prompt with a top-level `${evidencePool}` shape only. That means post-repair re-validation no longer shows its evidence pool to the model.
+**Open items:** Unify the `VERDICT_DIRECTION_VALIDATION` contract before commit. Either: (1) make every call site pass claim-local `evidencePool` inside each verdict object and update the prompt text accordingly, or (2) keep a top-level `evidencePool` contract everywhere and change the batch path to match. Then rerun the focused verdict-stage tests plus one real job.
+**Warnings:** `apps/web/prompts/claimboundary.prompt.md` now describes “Verdicts (with cited evidence pool)” but `validateDirectionOnly()` in `apps/web/src/lib/analyzer/verdict-stage.ts` still passes the evidence pool only at top level. Tests currently mock LLM inputs and do not catch prompt-rendering mismatches. Do not commit until this contract is reconciled.
+**For next agent:** Review [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L1081), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L1611), and [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md#L1217) together. The likely lowest-risk fix is to standardize `VERDICT_DIRECTION_VALIDATION` on per-verdict claim-local `evidencePool` and update `validateDirectionOnly()` to match.
+**Learnings:** no
+
+---
 ### 2026-03-30 | Senior Developer | Codex (GPT-5) | Remove Deterministic Article-Truth Clamp
 **Task:** Implement the approved Stage-5 policy change: remove the deterministic `±10pp` truth clamp while keeping only structural safeguards around article-level LLM adjudication.
 **Files touched:** `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -2594,4 +2640,24 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** `npm test` still shows the same intermittent failures in `test/unit/app/api/admin/test-config/route.test.ts` and `test/unit/lib/drain-runner-pause.integration.test.ts`, but both files passed cleanly when rerun in isolation immediately after the suite failure. This change did not introduce a stable new failing test surface.
 **Warnings:** The confidence ceiling remains a deliberate structural safeguard. If product later decides even that is too restrictive, revisit `aggregation-stage.ts` and the Stage-5 prompt together. The build also reseeded the updated `claimboundary` prompt hash in `config.db`.
 **For next agent:** Verification status: targeted `claimboundary-pipeline.test.ts` passed; isolated reruns of the two flaky failure files passed; `npm -w apps/web run build` passed. If you need a clean full-suite run before commit, rerun `npm test` once more in a quiet environment and compare against the isolated-file results before treating any admin/drain-runner failures as regression.
+**Learnings:** no
+
+---
+### 2026-03-30 | Code Reviewer | Codex (GPT-5) | 9e4d SRF “Hervorragende Arbeit” Investigation
+**Task:** Investigate job `9e4d3712e12d49bc8cadd601766e5f4b`, isolate the root cause, and propose the lowest-risk high-quality fix. Cross-check with an independent downstream-focused sidecar investigation and reconcile the findings.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The user-visible failure is primarily a **downstream claim-scope bug in verdict direction validation/repair**, with a secondary upstream Stage-1 decomposition miss. Stage 1 classified the input as `ambiguous_single_claim` and decomposed “hervorragende Arbeit” into method quality, scope/reach, and transparency. Contract validation ran but incorrectly passed the split as “identical to the original input,” so Gate 1 kept all three dimension claims. The decisive downstream defect is in `verdict-stage.ts`: `validateVerdicts()` sends the **full evidence pool** to `VERDICT_DIRECTION_VALIDATION`, `attemptDirectionRepair()`, and `validateDirectionOnly()` instead of filtering to claim-relevant evidence. In this job, `AC_02`’s real claim-local evidence pool contains only 4 neutral items, but the direction-integrity warning and repair reasoning cite 6 supports + 3 contradicts from other claims. This cross-claim contamination produced a false direction-integrity failure, a misleading repair rationale, and an avoidable confidence collapse.
+**Open items:** Upstream quality is still imperfect: the claim decomposition/contract-validation layer probably should not accept `Umfang und Reichweite der Faktencheck-Aktivitäten` as a clean dimension of “hervorragende Arbeit.” But that is a broader prompt-quality follow-up, not the first low-risk fix.
+**Warnings:** Do not “fix” this by adding deterministic semantic heuristics. The lowest-risk repair is structural: scope direction validation/repair to claim-local evidence (`relevantClaimIds`), with a fallback to cited IDs/full pool only when claim-local evidence is empty. If claim-local scoping is changed, remeasure recent jobs where `verdict_integrity_failure` or `direction_rescue_plausible` appeared on decomposed multi-claim evaluative inputs.
+**For next agent:** Review these anchors first: `apps/web/src/lib/analyzer/verdict-stage.ts` lines around the Stage-5 validation input (`VERDICT_DIRECTION_VALIDATION` currently gets full `evidencePool`), the repair path (`attemptDirectionRepair()` and `validateDirectionOnly()`), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` lines `256-294` for contract-validation retry guidance, and `apps/web/prompts/claimboundary.prompt.md` lines `332-336` for evidence-separability / proxy-drift rules. Best immediate fix proposal: make the direction validator + repair path claim-local; then remeasure this job family before deciding whether a prompt-only Stage-1 tightening is still needed.
+**Learnings:** no
+
+---
+### 2026-03-30 | Senior Developer | Codex (GPT-5) | 9e4d SRF Faktenpruefung Investigation
+**Task:** Investigate job `9e4d3712e12d49bc8cadd601766e5f4b`, identify the root cause, and propose the best low-risk/high-quality fix.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_9e4d_SRF_Factchecking_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Root cause is Stage 1 claim shaping plus a contract-validation miss, not Stage 4/5. The broad evaluative input was decomposed into proxy dimensions (`scope/reach`, `transparency/error communication`) that do not cleanly preserve the original thesis. Contract validation ran but incorrectly approved the set, and Gate 1 then preserved the claims because dimension-decomposition outputs are fidelity-exempt. Downstream verdict integrity correctly downgraded `AC_02` and article adjudication correctly lowered overall confidence.
+**Open items:** Prompt-only hardening is the recommended next step: strengthen `CLAIM_CONTRACT_VALIDATION` so broad evaluative activity-quality claims retry when they decompose into quantity/reach/publicity/policy/communications proxies unless the input explicitly asks for those. A narrow Pass 2 clarification is a secondary backup only.
+**Warnings:** Do not treat the `verdict_integrity_failure` on `AC_02` as the root cause. That downgrade is protective. Do not add deterministic proxy/overlap heuristics.
+**For next agent:** Full investigation and code anchors are in `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_9e4d_SRF_Factchecking_Investigation.md`.
 **Learnings:** no

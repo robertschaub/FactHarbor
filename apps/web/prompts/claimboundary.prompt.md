@@ -1216,14 +1216,11 @@ This is a lightweight directional sanity check. Flag only clear mismatches (e.g.
 
 ### Input
 
-**Verdicts:**
+Each verdict includes its own **claim-local evidence pool** — only evidence items relevant to that specific claim. Do NOT assume evidence from one claim applies to another.
+
+**Verdicts (each with claim-local evidence pool):**
 ```
 ${verdicts}
-```
-
-**Evidence Pool (with directions):**
-```
-${evidencePool}
 ```
 
 ### Output Schema

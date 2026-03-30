@@ -38,6 +38,7 @@ import {
   buildSourcePortfolio,
   buildSourcePortfolioByClaim,
   isVerdictDirectionPlausible,
+  getClaimLocalEvidence,
   DEFAULT_VERDICT_STAGE_CONFIG,
   type LLMCallFn,
   type VerdictStageConfig,
@@ -3763,5 +3764,369 @@ describe("isVerdictDirectionPlausible", () => {
     ];
     // ratio = 2.0 / (2.0+0.9) = 0.69 > 0.5, truth ≥ 70 → Rule 1 passes
     expect(isVerdictDirectionPlausible(clearTrue, ev)).toBe(true);
+  });
+});
+
+// ============================================================================
+// CLAIM-LOCAL EVIDENCE SCOPING
+// ============================================================================
+
+describe("getClaimLocalEvidence", () => {
+  it("returns only evidence mapped to the target claim via relevantClaimIds", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_02"] }),
+      createEvidenceItem({ id: "EV_03", relevantClaimIds: ["AC_01", "AC_02"] }),
+      createEvidenceItem({ id: "EV_04", relevantClaimIds: ["AC_03"] }),
+    ];
+    const result = getClaimLocalEvidence("AC_02", verdict, evidence);
+    expect(result.map((e) => e.id).sort()).toEqual(["EV_02", "EV_03"]);
+  });
+
+  it("includes cited evidence IDs even when relevantClaimIds mapping is missing", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: ["EV_05"],
+      contradictingEvidenceIds: ["EV_06"],
+    });
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_02"] }),
+      createEvidenceItem({ id: "EV_05", relevantClaimIds: ["AC_01"] }), // cited but mapped to sibling
+      createEvidenceItem({ id: "EV_06", relevantClaimIds: undefined }),  // cited but no mapping at all
+    ];
+    const result = getClaimLocalEvidence("AC_02", verdict, evidence);
+    expect(result.map((e) => e.id).sort()).toEqual(["EV_01", "EV_05", "EV_06"]);
+  });
+
+  it("does not duplicate evidence that is both claim-local and cited", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    });
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const result = getClaimLocalEvidence("AC_01", verdict, evidence);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("EV_01");
+  });
+
+  it("falls back to full pool when claim-local + cited is completely empty", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_03"] }),
+    ];
+    const result = getClaimLocalEvidence("AC_02", verdict, evidence);
+    // No claim-local or cited evidence — falls back to full pool
+    expect(result).toHaveLength(2);
+    expect(result.map((e) => e.id).sort()).toEqual(["EV_01", "EV_02"]);
+  });
+
+  it("does not fall back to full pool when cited evidence exists but relevantClaimIds is missing", () => {
+    const verdict = createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: ["EV_03"],
+      contradictingEvidenceIds: [],
+    });
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_03", relevantClaimIds: ["AC_01"] }),
+    ];
+    const result = getClaimLocalEvidence("AC_02", verdict, evidence);
+    // Only EV_03 (cited) — does NOT fall back to full pool
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("EV_03");
+  });
+});
+
+describe("claim-local direction validation (cross-claim contamination prevention)", () => {
+  it("direction validation uses claim-local evidence, not sibling-claim evidence (9e4d anchor case)", async () => {
+    // Scenario: AC_01 has 6 supports, AC_02 has 4 neutral items.
+    // Without claim-local scoping, AC_02's direction validation would see all 10 items
+    // and could falsely conclude a direction mismatch from sibling evidence.
+    const ac01Verdict = createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 72,
+      confidence: 65,
+      supportingEvidenceIds: ["EV_S1", "EV_S2", "EV_S3", "EV_S4", "EV_S5", "EV_S6"],
+      contradictingEvidenceIds: [],
+    });
+    const ac02Verdict = createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 50,
+      confidence: 24,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+
+    const evidence = [
+      // AC_01's evidence: 6 strong supports
+      createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_S2", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_S3", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_S4", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_S5", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_S6", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      // AC_02's evidence: 4 neutral/contextual
+      createEvidenceItem({ id: "EV_N1", relevantClaimIds: ["AC_02"], claimDirection: "contextual" }),
+      createEvidenceItem({ id: "EV_N2", relevantClaimIds: ["AC_02"], claimDirection: "contextual" }),
+      createEvidenceItem({ id: "EV_N3", relevantClaimIds: ["AC_02"], claimDirection: "contextual" }),
+      createEvidenceItem({ id: "EV_N4", relevantClaimIds: ["AC_02"], claimDirection: "contextual" }),
+    ];
+
+    // Track what evidence pool the direction validation LLM sees for each claim
+    const directionInputsByClaimId = new Map<string, unknown>();
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [
+          { claimId: "AC_01", groundingValid: true, issues: [] },
+          { claimId: "AC_02", groundingValid: true, issues: [] },
+        ];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        // Record the per-verdict evidence pools from the input
+        const verdicts = input.verdicts as Array<Record<string, unknown>>;
+        for (const v of verdicts) {
+          directionInputsByClaimId.set(v.claimId as string, v.evidencePool);
+        }
+        return [
+          { claimId: "AC_01", directionValid: true, issues: [] },
+          { claimId: "AC_02", directionValid: true, issues: [] },
+        ];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(
+      [ac01Verdict, ac02Verdict],
+      evidence,
+      mockLLM,
+    );
+
+    // Verify AC_02's direction validation evidence pool contains only its 4 items
+    const ac02Pool = directionInputsByClaimId.get("AC_02") as Array<{ id: string }>;
+    expect(ac02Pool).toBeDefined();
+    const ac02PoolIds = ac02Pool.map((e) => e.id).sort();
+    expect(ac02PoolIds).toEqual(["EV_N1", "EV_N2", "EV_N3", "EV_N4"]);
+    // Crucially, AC_01's supporting evidence must NOT appear in AC_02's pool
+    expect(ac02PoolIds).not.toContain("EV_S1");
+    expect(ac02PoolIds).not.toContain("EV_S6");
+
+    // AC_01's pool should contain its own 6 items
+    const ac01Pool = directionInputsByClaimId.get("AC_01") as Array<{ id: string }>;
+    expect(ac01Pool).toBeDefined();
+    expect(ac01Pool).toHaveLength(6);
+  });
+
+  it("direction repair uses claim-local evidence, not sibling evidence", async () => {
+    // AC_01 has strong evidence, AC_02 has contradicting evidence but high truth
+    // This forces a genuine direction failure that plausibility cannot rescue
+    // (truth 85% with 3 contradicts, 0 supports → ratio 0.0, fails Rule 1: 85>=70 but 0.0<0.5)
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 85,
+      confidence: 70,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: ["EV_C1", "EV_C2", "EV_C3"],
+      consistencyResult: { claimId: "AC_02", percentages: [85], average: 85, spread: 0, stable: false, assessed: false },
+    })];
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Scope claim" }),
+    ];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      // AC_01's evidence (sibling)
+      createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_S2", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      // AC_02's evidence — contradicting
+      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C2", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C3", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let repairEvidencePool: Array<{ id: string }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_02", directionValid: false, issues: ["Direction mismatch"] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        repairEvidencePool = input.evidencePool as Array<{ id: string }>;
+        return { claimId: "AC_02", truthPercentage: 25, reasoning: "Adjusted to match contradicting evidence" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    // Repair evidence pool must contain only AC_02's evidence (claim-local)
+    expect(repairEvidencePool).toBeDefined();
+    const repairPoolIds = repairEvidencePool!.map((e) => e.id).sort();
+    expect(repairPoolIds).toEqual(["EV_C1", "EV_C2", "EV_C3"]);
+    // Must NOT contain AC_01's evidence
+    expect(repairPoolIds).not.toContain("EV_S1");
+    expect(repairPoolIds).not.toContain("EV_S2");
+  });
+
+  it("validateDirectionOnly uses claim-local evidence after repair", async () => {
+    // After repair, re-validation must also scope to claim-local evidence.
+    // Setup: truth 85% with 4 contradicts, 0 supports → ratio 0.0, fails plausibility
+    // (Rule 1: 85>=70 but 0.0<0.5 → fails; Rule 2: not mixed range; Rule 3: |0.0-0.85|=0.85>0.15 → fails)
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 85,
+      confidence: 80,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: ["EV_C1", "EV_C2", "EV_C3", "EV_C4"],
+      consistencyResult: { claimId: "AC_02", percentages: [85], average: 85, spread: 0, stable: false, assessed: false },
+    })];
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_S2", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C2", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C3", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C4", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let revalidationEvidencePool: Array<{ id: string }> | undefined;
+    let directionCallCount = 0;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionCallCount += 1;
+        if (directionCallCount === 1) {
+          // Initial batch direction validation fails
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Mismatch"] }];
+        }
+        // Re-validation after repair — capture the evidence pool (now embedded per-verdict)
+        const verdictArr = input.verdicts as Array<{ evidencePool?: Array<{ id: string }> }>;
+        revalidationEvidencePool = verdictArr?.[0]?.evidencePool;
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        // Repair to 20% (aligns with all-contradicting evidence)
+        return { claimId: "AC_02", truthPercentage: 20, reasoning: "Adjusted to match contradicting evidence" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    // Re-validation evidence pool must be claim-local (AC_02's 4 contradicts only)
+    expect(revalidationEvidencePool).toBeDefined();
+    const revalidationIds = revalidationEvidencePool!.map((e) => e.id).sort();
+    expect(revalidationIds).toEqual(["EV_C1", "EV_C2", "EV_C3", "EV_C4"]);
+    expect(revalidationIds).not.toContain("EV_S1");
+    expect(revalidationIds).not.toContain("EV_S2");
+  });
+
+  it("grounding validation still uses full evidence pool (global scope for ID existence checks)", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: ["EV_S1"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"] }), // belongs to sibling but cited
+      createEvidenceItem({ id: "EV_N1", relevantClaimIds: ["AC_02"] }),
+    ];
+
+    let groundingEvidencePool: Array<{ id: string }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingEvidencePool = input.evidencePool as Array<{ id: string }>;
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM);
+
+    // Grounding must see the FULL pool (ID existence is a global check)
+    expect(groundingEvidencePool).toBeDefined();
+    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_N1", "EV_S1"]);
+  });
+
+  it("standard single-claim validation still works (no regression)", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 75,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM);
+    expect(result).toHaveLength(1);
+    expect(result[0].truthPercentage).toBe(75);
+    expect(result[0].claimId).toBe("AC_01");
   });
 });
