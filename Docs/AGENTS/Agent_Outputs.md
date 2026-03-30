@@ -2411,3 +2411,33 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not let an aggregation dedup layer become the thing that hides invalid pipeline states. Duplicate claim IDs in `claimVerdicts` should be treated as a bug signal, not normalized away by default.
 **For next agent:** The immediate implementation order should be: (1) short-circuit all-insufficient before Stage 4, (2) align matrix labels with `coverageMatrix.claims`, (3) only add a minimal assertive duplicate guard if you want defense-in-depth. Do not add salvage or broader architecture changes in the same patch.
 **Learnings:** no
+
+---
+### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review of cc362d64 + Recent Job Effects
+**Task:** Review implementation commit `cc362d64` (`assessableClaims` path + verdict uniqueness + matrix alignment) and compare its intended effects against recent local job runs.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** No blocking code defect found in the patch itself. `claimboundary-pipeline.ts` now correctly routes only D5-sufficient claims into Stage 4 and throws on duplicate final verdict IDs; `page.tsx` now derives matrix labels from `coverageMatrix.claims`. Main review gaps are validation-related: the implementation handoff explicitly states no new targeted tests were added, and the live validation set did not directly exercise the all-insufficient branch the patch is meant to repair. Recent local jobs on dirty build `94593477...+bfb6811c` show the expected effect direction: `55299...` and `11c529...` have no duplicate claim IDs and matrix claims align to the assessable subset; `5f1f96...` removes the earlier `e407` duplicate-verdict symptom but does so on a run where both claims were assessable.
+**Open items:** Add focused tests for (1) all-insufficient -> no Stage 4 verdicts, (2) duplicate verdict invariant throw, and (3) matrix labels keyed strictly to `coverageMatrix.claims`. Re-run at least one clean post-commit all-insufficient scenario on exact build `cc362d64` or later.
+**Warnings:** Recent validation jobs were not executed on the committed hash `cc362d64`; they were run on a dirty lineage based on `94593477`. Also, the broader SRG Stage-1 instability remains: identical input family still produced both a 2-claim (`55299...`) and 3-claim (`11c529...`) decomposition under the same dirty build.
+**For next agent:** Read the implementation handoff and inspect job IDs `55299b20161141869e01071b12dc3a65`, `5f1f96f650d24036bce358c3f3053b69`, and `11c5295a9a7345ad841b832f2970bfa4`. Treat `cc362d64` as code-review approved with validation caveats, not as a fully closed operational proof.
+**Learnings:** no
+
+---
+### 2026-03-30 | Senior Developer | Codex (GPT-5) | Flat-Earth False Ambiguity Investigation
+**Task:** Investigate why job `c7c3528ce21b46abb1b4965466ad0c3d` extracted `Flacherde-Überzeugungen sind in der modernen Gesellschaft weit verbreitet` from input `Ist die Erde flach?`, and propose a generic fix.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The issue is upstream in Stage 1 and predates the recent integrity work. Both `c7c3528...` and the older `c492414d...` classified `Ist die Erde flach?` as `ambiguous_single_claim`, then decomposed it into a direct physical-property claim plus a representational/prevalence claim. That second claim is not part of the user's thesis. Root cause is not the matrix or verdicting; it is that the ambiguous-claim pathway is still too permissive for direct factual-property questions. The fix should be generic and LLM-based: tighten Pass 2 prompt rules so direct factual predicates/properties remain `single_atomic_claim` unless the wording itself asks about multiple interpretations, and strengthen contract validation so public-perception / prevalence / discourse claims fail when the input asks about a direct real-world property.
+**Open items:** Current observability is misleading here: `understanding.contractValidationSummary` reflects the original failed extraction (including a transient spherical-shape inversion), not the final accepted retry output. If this family is implemented, persist the retry validation outcome or selected-candidate summary too.
+**Warnings:** Do not fix this with hardcoded Flat-Earth or belief/prevalence keywords. The solution must stay generic, multilingual, and prompt-driven.
+**For next agent:** Use `c7c3528ce21b46abb1b4965466ad0c3d` and `c492414da7fa422c8ef51156488b9e04` as characterization cases. Proposed implementation order: (1) prompt-level narrowing of `ambiguous_single_claim` for direct factual-property questions, (2) stronger contract-validation whole-set rejection of representational/prevalence claims unless the input explicitly asks about them, (3) better persistence of retry contract-validation diagnostics.
+**Learnings:** no
+
+---
+### 2026-03-30 | Lead Architect | Codex (GPT-5) | Matrix and Aggregation Handling of UNVERIFIED Claims
+**Task:** Investigate whether D5-insufficient `UNVERIFIED` claims should be shown in the matrix and influence article-level aggregation in jobs like `11c5295a...`.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Current behavior excludes unresolved claims at two layers: `claimboundary-pipeline.ts` builds `coverageMatrix` from `assessableClaims` only, and `aggregation-stage.ts` gives `UNVERIFIED` claims zero effective weight because the claim weight multiplies by `confidence / 100`. A proper solution should separate these concerns. Matrix display should visualize evidence coverage for all final/atomic claims, while Stage 4 should still operate only on assessable claims. Article aggregation should not rely on old buggy UI effects or duplicate verdicts; if product wants unresolved claims to matter, that must be implemented explicitly as an unresolved-claim penalty or neutral blend in aggregation, not as accidental LLM side effects.
+**Open items:** Any unresolved-claim aggregation penalty would change analysis output and should likely be UCM-tunable.
+**Warnings:** Do not “fix” this by reverting the old broken label behavior. The correct path is to keep matrix labels driven by `coverageMatrix.claims`, while reconsidering what `coverageMatrix.claims` should contain and how zero-confidence claims should influence article-level confidence/truth.
+**For next agent:** Anchor on job `11c5295a9a7345ad841b832f2970bfa4`. Treat matrix visibility and article aggregation as separate design decisions. Keep the `assessableClaims` Stage 4 integrity fix intact.
+**Learnings:** no
