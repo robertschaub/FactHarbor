@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-29
+**Last Updated**: 2026-03-30
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -32,7 +32,7 @@ All structural integrity fixes are shipped (citation carriage, claim decompositi
 | **FLOOD-1** | **Single-source flooding mitigation (Fix 1 + Fix 2)**: Fix 1 adds claim-local, partition-scoped source portfolios (`sourcePortfolioByClaim`) to all verdict debate prompts with mandatory SR-awareness instructions. Fix 2 adds `maxEvidenceItemsPerSource: 5` UCM cap enforced in Stage 2 with best-N reselection by `probativeValue`. **Awaiting live validation** (4 runs per investigation §12). Fix 3 (same-source LLM consolidation) deferred. | Analyzer / Quality / SR | med | high | VALIDATION | `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` |
 | **NEUTRALITY-1** | **Cross-linguistic neutrality gap**: Plastik recycling shows 58pp max spread across languages (DE 33% / EN 72% / FR 13%). Same semantic claim, directionally opposite verdicts. Likely Stage 2 evidence language bias. EVD-1 needs cross-linguistic threshold extension. Captain-level policy + investigation decision. | Quality / Policy | high | high | IDENTIFIED | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` |
 | **FLAT-EARTH-1** | **Flat-Earth false-ambiguity fix**: review-approved prompt-only narrowing for direct factual-property questions. "Is X flat?" should default to `single_atomic_claim`. Contract validation backup against representational drift. | Analyzer / Quality | med | med | REVIEW-READY | `Docs/WIP/2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md` |
-| **PIPE-INT-1** | **All-insufficient D5→Stage-4 integrity fix (`2705/e407`)**: IMPLEMENTED. Assessable-claims path, verdict uniqueness invariant, report matrix over all claims, LLM article adjudication via VERDICT_NARRATIVE. | Analyzer / Integrity / UI | — | — | DONE | `03387283` |
+| **PIPE-INT-1** | **All-insufficient D5→Stage-4 integrity fix (`2705/e407`)**: IMPLEMENTED. Assessable-claims path, verdict uniqueness invariant, report matrix over all claims, LLM article adjudication via VERDICT_NARRATIVE with pure LLM truth adjustment, confidence ceiling, and deterministic fallback only. | Analyzer / Integrity / UI | — | — | DONE | `03387283` + follow-up policy patch |
 | **DIR-1** | **Direction-integrity citation-carriage**: code fix shipped in `e1f2c551`. Citation arrays now carried through reconciliation. Remeasurement on post-fix stack pending. | Analyzer / Verdict | low | high | MONITOR | `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` |
 | **STG1-STEP4** | **Residual factual conjunct-split refinement**: post-`fff7a508` residual for SRG-style disclosure claims (`Werkzeuge/Methoden`) remains. Needs a separate Stage-1 follow-on after PIPE-INT-1; do not conflate this with the D5→Stage-4 integrity fix. | Analyzer / Quality | med | high | DEFERRED | `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`, `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md` |
 | **REMAP-1** | **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). Captain approved after current-stack A/B validation. Rollback flag `preliminaryEvidenceLlmRemapEnabled` available. **Monitor:** Homeopathy-family confidence anomaly. | Analyzer / Quality | — | high | DONE | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` |
@@ -71,7 +71,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
-| ✅ **PIPE-INT-1 all-insufficient root fix + report matrix + LLM article adjudication**: assessable-claims path, verdict uniqueness invariant, report matrix over all claims, VERDICT_NARRATIVE adjudication extension. | Analyzer / Integrity / UI | 2026-03-30 | `03387283` |
+| ✅ **PIPE-INT-1 all-insufficient root fix + report matrix + LLM article adjudication**: assessable-claims path, verdict uniqueness invariant, report matrix over all claims, VERDICT_NARRATIVE adjudication extension, deterministic truth clamp removed (confidence ceiling retained). | Analyzer / Integrity / UI | 2026-03-30 | `03387283` + follow-up policy patch |
 | ✅ **Quality evolution deep analysis**: 100 jobs across 12 families, 8 change waves. Cross-linguistic neutrality gap identified (Plastik 58pp). | Quality / Analysis | 2026-03-30 | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` |
 | ✅ **W15 domain-aware fetch batching**: same-domain requests staggered within fetch batches. UCM `fetchSameDomainDelayMs` (default 500). | Analyzer / Reliability | 2026-03-26 | `5942eba5` |
 | ✅ **P1-B preliminary search parallelism**: 3-level parallelization across claims, queries, and source fetches. | Analyzer / Performance | 2026-03-26 | `756dded0` |

@@ -15,7 +15,7 @@ The system has two gaps when direct claims are UNVERIFIED: (1) the matrix hides 
 The correct architecture is:
 
 - **Report matrix**: build from ALL final claim verdicts, not just assessable claims. UNVERIFIED claims get columns with zero evidence counts. This is a data-contract alignment, not a semantic change.
-- **Article verdict**: extend `VERDICT_NARRATIVE` to also output `adjustedTruthPercentage` and `adjustedConfidence`. The narrative LLM already sees all claim verdicts including UNVERIFIED. It already reasons about coverage gaps in the narrative text. The only change is giving it output authority over the final numbers — bounded by the deterministic pre-computation as a ceiling.
+- **Article verdict**: extend `VERDICT_NARRATIVE` to also output `adjustedTruthPercentage` and `adjustedConfidence`. The narrative LLM already sees all claim verdicts including UNVERIFIED. It already reasons about coverage gaps in the narrative text. The only change is giving it output authority over the final numbers — with a deterministic confidence ceiling as a structural safeguard and deterministic fallback on malformed output.
 
 This is **Option B** (report matrix + extend VERDICT_NARRATIVE). It reuses existing infrastructure, adds no new LLM calls, and is safe because it falls back to the deterministic result on any parsing failure.
 
@@ -149,7 +149,7 @@ In `claimboundary.prompt.md` (VERDICT_NARRATIVE section): extend the output sche
 }
 ```
 
-Add a prompt rule: "If any direct claims are UNVERIFIED due to insufficient evidence, the overall confidence should reflect the incomplete coverage. The `adjustedConfidence` must not exceed the deterministic `confidence` from the aggregation input — unresolved claims add uncertainty, never remove it. `adjustedTruthPercentage` should reflect only assessed claims and may remain the same as the deterministic value when no directional adjustment is warranted."
+Add a prompt rule: "If any direct claims are UNVERIFIED due to insufficient evidence, the overall confidence should reflect the incomplete coverage. The `adjustedConfidence` must not exceed the deterministic `confidence` from the aggregation input — unresolved claims add uncertainty, never remove it. `adjustedTruthPercentage` should reflect your overall assessment of the input's truth, grounded in both the assessed evidence basis and the unresolved-claim limitations you identify."
 
 In `aggregation-stage.ts`: after the narrative LLM returns, parse `adjustedTruthPercentage` and `adjustedConfidence`. If present and valid (numbers in range, confidence <= deterministic ceiling), use them as the final article values. If absent or malformed, fall back to the deterministic pre-computation.
 
