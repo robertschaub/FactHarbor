@@ -1,4 +1,6 @@
-name: CI
+name: Main Guardrail CI
+
+run-name: Main Guardrail - ${{ github.event_name }} on ${{ github.ref_name }}
 
 on:
   push:
@@ -7,6 +9,7 @@ on:
 
 jobs:
   build:
+    name: Test and Build (CI-safe)
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
