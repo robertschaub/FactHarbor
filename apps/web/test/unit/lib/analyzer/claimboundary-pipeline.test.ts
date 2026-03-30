@@ -78,6 +78,7 @@ import type {
   EvidenceItem,
   EvidenceScope,
 } from "@/lib/analyzer/types";
+import { createUnverifiedFallbackVerdict } from "@/lib/analyzer/pipeline-utils";
 
 // ============================================================================
 // TEST DATA FACTORIES — CB types only (§22.3.2)
@@ -7057,5 +7058,120 @@ describe("URL pre-fetch in runClaimBoundaryAnalysis", () => {
         inputType: "text",
       })
     ).rejects.toThrow("Failed to fetch URL content");
+  });
+});
+
+// ============================================================================
+// D5 ASSESSABLE-CLAIMS PATH + VERDICT UNIQUENESS INVARIANT
+// ============================================================================
+
+describe("D5 assessable-claims path and verdict uniqueness", () => {
+  it("all-insufficient claims should produce only D5 fallback verdicts, not Stage 4 verdicts", () => {
+    // Simulate: 2 claims, both insufficient
+    const claims = [
+      createAtomicClaim({ id: "AC_01", statement: "Claim 1" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const insufficientClaimIds = new Set(["AC_01", "AC_02"]);
+    const sufficientClaims = claims.filter(c => !insufficientClaimIds.has(c.id));
+    const insufficientClaims = claims.filter(c => insufficientClaimIds.has(c.id));
+
+    // Assessable claims = sufficientClaims only (never fallback to all claims)
+    const assessableClaims = sufficientClaims;
+    expect(assessableClaims).toHaveLength(0);
+
+    // D5 fallback verdicts for insufficient claims
+    const insufficientVerdicts = insufficientClaims.map(c =>
+      createUnverifiedFallbackVerdict(c, "insufficient_evidence", "Not enough evidence")
+    );
+
+    // Final verdicts = only D5 fallbacks (no Stage 4 verdicts since assessableClaims is empty)
+    const sufficientVerdicts: CBClaimVerdict[] = []; // Stage 4 returns [] for empty claims
+    const claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
+
+    expect(claimVerdicts).toHaveLength(2);
+    expect(claimVerdicts.every(v => v.verdict === "UNVERIFIED")).toBe(true);
+    expect(claimVerdicts.every(v => v.confidence === 0)).toBe(true);
+  });
+
+  it("partial-insufficient should produce mixed verdicts without duplicates", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01", statement: "Sufficient claim" }),
+      createAtomicClaim({ id: "AC_02", statement: "Insufficient claim" }),
+    ];
+    const insufficientClaimIds = new Set(["AC_02"]);
+    const sufficientClaims = claims.filter(c => !insufficientClaimIds.has(c.id));
+    const insufficientClaims = claims.filter(c => insufficientClaimIds.has(c.id));
+
+    const assessableClaims = sufficientClaims;
+    expect(assessableClaims).toHaveLength(1);
+    expect(assessableClaims[0].id).toBe("AC_01");
+
+    // Simulate Stage 4 producing a verdict for AC_01 only
+    const stage4Verdict: CBClaimVerdict = {
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 65, verdict: "LEANING-TRUE",
+      confidence: 70, reasoning: "Stage 4 result", harmPotential: "low", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], challengeResponses: [],
+      consistencyResult: { claimId: "AC_01", percentages: [65], average: 65, spread: 0, stable: true, assessed: false },
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+    const sufficientVerdicts = [stage4Verdict];
+
+    const insufficientVerdicts = insufficientClaims.map(c =>
+      createUnverifiedFallbackVerdict(c, "insufficient_evidence", "Not enough evidence")
+    );
+
+    const claimVerdicts = [...sufficientVerdicts, ...insufficientVerdicts];
+
+    // No duplicates
+    const ids = claimVerdicts.map(v => v.claimId);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    // AC_01 has a real verdict, AC_02 is UNVERIFIED
+    expect(claimVerdicts.find(v => v.claimId === "AC_01")?.verdict).toBe("LEANING-TRUE");
+    expect(claimVerdicts.find(v => v.claimId === "AC_02")?.verdict).toBe("UNVERIFIED");
+  });
+
+  it("duplicate verdict claimIds should be detectable as an invariant violation", () => {
+    // Simulate the OLD bug: both Stage 4 and D5 produce verdicts for the same claim
+    const stage4Verdict: CBClaimVerdict = {
+      id: "CV_AC_01_stage4", claimId: "AC_01", truthPercentage: 65, verdict: "LEANING-TRUE",
+      confidence: 70, reasoning: "From Stage 4", harmPotential: "low", isContested: false,
+      supportingEvidenceIds: [], contradictingEvidenceIds: [],
+      boundaryFindings: [], challengeResponses: [],
+      consistencyResult: { claimId: "AC_01", percentages: [65], average: 65, spread: 0, stable: true, assessed: false },
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    };
+    const d5Fallback = createUnverifiedFallbackVerdict(
+      createAtomicClaim({ id: "AC_01" }), "insufficient_evidence", "Fallback"
+    );
+
+    const claimVerdicts = [stage4Verdict, d5Fallback];
+
+    // Detect duplicates
+    const claimIdCounts = new Map<string, number>();
+    for (const v of claimVerdicts) {
+      claimIdCounts.set(v.claimId, (claimIdCounts.get(v.claimId) ?? 0) + 1);
+    }
+    const duplicateIds = [...claimIdCounts.entries()].filter(([, count]) => count > 1).map(([id]) => id);
+
+    expect(duplicateIds).toEqual(["AC_01"]);
+  });
+
+  it("coverage matrix should use assessable claims only, not all claims", () => {
+    const allClaims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const assessableClaims = [allClaims[0]]; // Only AC_01 is sufficient
+    const boundaries = [{ id: "CB_01", name: "Test", shortName: "Test", evidenceItems: [] } as any];
+    const evidence = [createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] })];
+
+    const matrix = buildCoverageMatrix(assessableClaims, boundaries, evidence);
+
+    // Matrix should contain only AC_01, not AC_02
+    expect(matrix.claims).toEqual(["AC_01"]);
+    expect(matrix.claims).not.toContain("AC_02");
   });
 });
