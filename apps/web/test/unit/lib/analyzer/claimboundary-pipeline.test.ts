@@ -4980,6 +4980,28 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     vi.clearAllMocks();
   });
 
+  async function mockStage5Configs() {
+    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {} as any,
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        aggregation: {
+          centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
+          derivativeMultiplier: 0.5,
+        },
+        harmPotentialMultipliers: { critical: 1.5, high: 1.2, medium: 1.0, low: 1.0 },
+        triangulation: {
+          strongAgreementBoost: 0.15,
+          moderateAgreementBoost: 0.05,
+          singleBoundaryPenalty: -0.10,
+        },
+        mixedConfidenceThreshold: 40,
+      } as any,
+    } as any);
+  }
+
   it("should produce an OverallAssessment with all required fields", async () => {
     // Mock config loading
     const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
@@ -5058,6 +5080,170 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     expect(result.coverageMatrix).toBeDefined();
     expect(result.qualityGates).toBeDefined();
     expect(result.qualityGates.passed).toBe(true);
+  });
+
+  it("caps article-level adjusted confidence at the deterministic baseline", async () => {
+    await mockStage5Configs();
+
+    const narrativeOutput = {
+      headline: "Adjusted article verdict",
+      evidenceBaseSummary: "1 item",
+      keyFinding: "One direct claim was assessed while another remained unresolved.",
+      limitations: "One claim remains unverified.",
+      adjustedTruthPercentage: 80,
+      adjustedConfidence: 95,
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 68,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createUnverifiedFallbackVerdict(
+        claims[1],
+        "insufficient_evidence",
+        "Not enough evidence",
+      ),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.confidence).toBe(68);
+    expect(result.truthPercentage).toBe(80);
+  });
+
+  it("clamps article-level adjusted truth within the configured conservative bound", async () => {
+    await mockStage5Configs();
+
+    const narrativeOutput = {
+      headline: "Adjusted article verdict",
+      evidenceBaseSummary: "1 item",
+      keyFinding: "The unresolved claim should not let truth drift too far.",
+      limitations: "One claim remains unverified.",
+      adjustedTruthPercentage: 5,
+      adjustedConfidence: 40,
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 68,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createUnverifiedFallbackVerdict(
+        claims[1],
+        "insufficient_evidence",
+        "Not enough evidence",
+      ),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.truthPercentage).toBe(65);
+    expect(result.confidence).toBe(40);
+  });
+
+  it("falls back to deterministic aggregation when narrative adjustments are absent", async () => {
+    await mockStage5Configs();
+
+    const narrativeOutput = {
+      headline: "Deterministic article verdict retained",
+      evidenceBaseSummary: "1 item",
+      keyFinding: "The narrative omits adjusted article numbers.",
+      limitations: "One claim remains unverified.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 68,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createUnverifiedFallbackVerdict(
+        claims[1],
+        "insufficient_evidence",
+        "Not enough evidence",
+      ),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.truthPercentage).toBe(75);
+    expect(result.confidence).toBe(68);
+    expect(result.verdict).toBe("MOSTLY-TRUE");
   });
 
   it("should use fallback narrative when LLM fails", async () => {
@@ -7173,5 +7359,38 @@ describe("D5 assessable-claims path and verdict uniqueness", () => {
     // Matrix should contain only AC_01, not AC_02
     expect(matrix.claims).toEqual(["AC_01"]);
     expect(matrix.claims).not.toContain("AC_02");
+  });
+
+  it("report matrix can include UNVERIFIED final claims without affecting assessable routing", () => {
+    const allClaims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const claimVerdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createUnverifiedFallbackVerdict(
+        allClaims[1],
+        "insufficient_evidence",
+        "Not enough evidence",
+      ),
+    ];
+
+    const allFinalClaimIds = claimVerdicts.map((v) => v.claimId);
+    const reportMatrix = buildCoverageMatrix(
+      allClaims.filter((c) => allFinalClaimIds.includes(c.id)),
+      boundaries,
+      evidence,
+    );
+
+    expect(reportMatrix.claims).toEqual(["AC_01", "AC_02"]);
+    expect(reportMatrix.counts).toEqual([[1], [0]]);
   });
 });
