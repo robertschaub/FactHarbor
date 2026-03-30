@@ -1363,7 +1363,7 @@ When some direct claims are `UNVERIFIED` (insufficient evidence to produce a ver
 **Rules for adjudication:**
 - If ALL direct claims were fully assessed, return `adjustedTruthPercentage` and `adjustedConfidence` equal to the deterministic aggregation values — do not override a complete assessment.
 - If any direct claims are `UNVERIFIED`, adjust the overall confidence DOWNWARD to reflect the incomplete coverage. The adjusted confidence must NOT exceed the deterministic confidence. Unresolved claims add uncertainty, never remove it.
-- `adjustedTruthPercentage` should reflect the assessed claims. It may stay the same as the deterministic value or adjust conservatively — but it must not drift far from the assessed evidence basis. Keep it within ±10pp of the deterministic value unless you can justify a larger shift from the evidence.
+- `adjustedTruthPercentage` should reflect the assessed claims. It may stay the same as the deterministic value or adjust conservatively, but it must remain grounded in the assessed evidence basis and the unresolved-claim limitations you identify.
 - The narrative (`headline`, `keyFinding`, `limitations`) must explicitly acknowledge any unresolved claims. Do not narrate as if the assessment is complete when it is not.
 
 ### Output Schema

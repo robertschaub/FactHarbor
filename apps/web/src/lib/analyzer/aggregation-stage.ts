@@ -218,8 +218,9 @@ export async function aggregateAssessment(
   }
 
   // Article-level LLM adjudication: if the narrative returned adjusted numbers,
-  // apply them with ceiling constraints. Unresolved claims add uncertainty (lower
-  // confidence), never remove it. Truth stays within ±10pp of deterministic baseline.
+  // apply them with structural safeguards only. Unresolved claims add uncertainty
+  // (lower confidence), never remove it. Truth remains LLM-led, bounded only to
+  // the valid 0..100 range.
   let finalTruthPercentage = weightedTruthPercentage;
   let finalConfidence = effectiveWeightedConfidence;
   const adjTruth = verdictNarrative.adjustedTruthPercentage;
@@ -230,10 +231,7 @@ export async function aggregateAssessment(
     finalConfidence = Math.max(0, Math.min(100, finalConfidence));
   }
   if (typeof adjTruth === "number" && Number.isFinite(adjTruth)) {
-    // Truth bounded: within ±10pp of deterministic baseline
-    const truthFloor = Math.max(0, weightedTruthPercentage - 10);
-    const truthCeiling = Math.min(100, weightedTruthPercentage + 10);
-    finalTruthPercentage = Math.max(truthFloor, Math.min(truthCeiling, adjTruth));
+    finalTruthPercentage = Math.max(0, Math.min(100, adjTruth));
   }
   const finalVerdictLabel = percentageToArticleVerdict(
     finalTruthPercentage,

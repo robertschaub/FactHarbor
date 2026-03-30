@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | Article Adjudication: Hybrid Clamp vs LLM-Led Review
+**Task:** Evaluate whether the ±10pp truth clamp and confidence ceiling in Stage 5 article adjudication violate the LLM Intelligence mandate.
+**Files touched:** `Docs/WIP/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Confidence ceiling (adjusted ≤ deterministic) is a valid structural invariant — "unresolved claims add uncertainty, never remove it." Keep. (2) ±10pp truth clamp is a semantic analytical constraint — it limits how the LLM interprets the impact of unresolved claims. Violates AGENTS.md LLM Intelligence mandate. Remove. (3) Schema validation (0-100), `Number.isFinite` guard, and deterministic fallback are structural plumbing. Keep. (4) Prompt should soften "±10pp" to "adjust conservatively" — soft guidance, not hard bound.
+**Decision:** `Pure LLM article adjudication justified` — Option B (remove truth clamp, keep confidence ceiling). ~4 lines code, ~2 lines prompt. 2 tests rewrite, 2 new tests.
+**For next agent:** Full review at `Docs/WIP/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`. Code change in `aggregation-stage.ts:232-236`. Prompt change in `claimboundary.prompt.md:1366`. Prompt change requires human approval.
+
+---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Quality Evolution Deep Analysis + Doc Sync
 **Task:** 100-job quality evolution analysis across 12 input families. Comprehensive doc sync.
 **Files touched:** `Current_Status.md`, `Backlog.md`, `WIP/README.md`, `Agent_Outputs.md`, `WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`
@@ -2576,4 +2584,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** No implementation work was started. If the Captain wants to revisit this later, the next concrete step is to define a minimal external contract and decide whether the trigger is (a) real multi-tool developer pain or (b) a specific partner/assistant integration request.
 **Warnings:** Adding MCP now would create another compatibility/auth/provenance surface while the project is still alpha and focused on analysis quality and cross-linguistic neutrality. The major architectural risk is letting MCP bypass the existing job lifecycle, warning handling, rate limits, and provenance boundaries.
 **For next agent:** Use these anchors when revisiting: `AGENTS.md`, `Docs/ARCHIVE/Agent_Knowledge_Restructuring_2026-02-24.md`, `Docs/Knowledge/Factiverse_Lessons_for_FactHarbor.md`, `Docs/STATUS/Current_Status.md`, `apps/api/Controllers/AnalyzeController.cs`, `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/api/fh/analyze/route.ts`, `apps/web/src/app/api/fh/jobs/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/route.ts`, and `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
+**Learnings:** no
+
+---
+### 2026-03-30 | Senior Developer | Codex (GPT-5) | Remove Deterministic Article-Truth Clamp
+**Task:** Implement the approved Stage-5 policy change: remove the deterministic `±10pp` truth clamp while keeping only structural safeguards around article-level LLM adjudication.
+**Files touched:** `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Removed the deterministic article-truth clamp so `adjustedTruthPercentage` is now LLM-led and bounded only to valid `0..100` range. Kept the confidence ceiling (`adjustedConfidence <= deterministicConfidence`) as a structural invariant. Softened the `VERDICT_NARRATIVE` prompt from an explicit `±10pp` rule to a qualitative “adjust conservatively / stay grounded” instruction. Rewrote the Stage-5 clamp test to assert pure LLM truth adjustment and added an explicit malformed-adjustment fallback test.
+**Open items:** `npm test` still shows the same intermittent failures in `test/unit/app/api/admin/test-config/route.test.ts` and `test/unit/lib/drain-runner-pause.integration.test.ts`, but both files passed cleanly when rerun in isolation immediately after the suite failure. This change did not introduce a stable new failing test surface.
+**Warnings:** The confidence ceiling remains a deliberate structural safeguard. If product later decides even that is too restrictive, revisit `aggregation-stage.ts` and the Stage-5 prompt together. The build also reseeded the updated `claimboundary` prompt hash in `config.db`.
+**For next agent:** Verification status: targeted `claimboundary-pipeline.test.ts` passed; isolated reruns of the two flaky failure files passed; `npm -w apps/web run build` passed. If you need a clean full-suite run before commit, rerun `npm test` once more in a quiet environment and compare against the isolated-file results before treating any admin/drain-runner failures as regression.
 **Learnings:** no

@@ -5137,13 +5137,13 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     expect(result.truthPercentage).toBe(80);
   });
 
-  it("clamps article-level adjusted truth within the configured conservative bound", async () => {
+  it("uses the LLM-provided article truth adjustment without a deterministic ±10pp clamp", async () => {
     await mockStage5Configs();
 
     const narrativeOutput = {
       headline: "Adjusted article verdict",
       evidenceBaseSummary: "1 item",
-      keyFinding: "The unresolved claim should not let truth drift too far.",
+      keyFinding: "The unresolved claim materially weakens the overall article-level truth judgment.",
       limitations: "One claim remains unverified.",
       adjustedTruthPercentage: 5,
       adjustedConfidence: 40,
@@ -5188,8 +5188,9 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
 
     const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
 
-    expect(result.truthPercentage).toBe(65);
+    expect(result.truthPercentage).toBe(5);
     expect(result.confidence).toBe(40);
+    expect(result.verdict).toBe("FALSE");
   });
 
   it("falls back to deterministic aggregation when narrative adjustments are absent", async () => {
@@ -5204,6 +5205,62 @@ describe("Stage 5: aggregateAssessment (integration)", () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
     mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
     mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const verdicts = [
+      createCBClaimVerdict({
+        claimId: "AC_01",
+        truthPercentage: 75,
+        confidence: 68,
+        supportingEvidenceIds: ["EV_01"],
+        boundaryFindings: [createBoundaryFinding({ boundaryId: "CB_01", evidenceDirection: "supports" })],
+      }),
+      createUnverifiedFallbackVerdict(
+        claims[1],
+        "insufficient_evidence",
+        "Not enough evidence",
+      ),
+    ];
+    const state: CBResearchState = {
+      understanding: {
+        atomicClaims: claims,
+        gate1Stats: { totalClaims: 2, passedOpinion: 2, passedSpecificity: 2, passedFidelity: 2, filteredCount: 0, overallPass: true },
+      } as any,
+      sources: [{ url: "https://example.com" }] as any,
+      searchQueries: ["q1"],
+      contradictionIterationsUsed: 0,
+      llmCalls: 2,
+    } as any;
+
+    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+
+    expect(result.truthPercentage).toBe(75);
+    expect(result.confidence).toBe(68);
+    expect(result.verdict).toBe("MOSTLY-TRUE");
+  });
+
+  it("falls back to deterministic aggregation when adjusted article values fail schema validation", async () => {
+    await mockStage5Configs();
+
+    const invalidNarrativeOutput = {
+      headline: "Invalid article adjustments",
+      evidenceBaseSummary: "1 item",
+      keyFinding: "The model attempted to return an invalid adjusted truth value.",
+      limitations: "One claim remains unverified.",
+      adjustedTruthPercentage: 150,
+      adjustedConfidence: 40,
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(invalidNarrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(invalidNarrativeOutput as any);
 
     const claims = [
       createAtomicClaim({ id: "AC_01" }),
