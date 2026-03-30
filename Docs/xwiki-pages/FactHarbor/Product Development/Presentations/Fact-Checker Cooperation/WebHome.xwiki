@@ -1,0 +1,203 @@
+= FactHarbor — Automated Fact-Checking for Newsrooms =
+
+{{info}}
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 30 March 2026
+{{/info}}
+
+== What is FactHarbor? ==
+
+FactHarbor is an **open-source tool for automated fact-checking**. It verifies any claim — topic-independent and multilingual — using publicly accessible sources, and delivers a transparent verdict with full source citations.
+
+(% class="box warningmessage" %)
+(((
+**Open Source and Public-Interest Oriented**
+No hidden algorithms, no proprietary scoring. Every step is traceable and inspectable.
+)))
+
+=== What it is NOT ===
+
+FactHarbor does **not** replace editorial judgment, insider sources, or image/video verification (that's what InVID, TinEye etc. are for). It complements the existing toolbox by automating the time-consuming evidence research for **text-based claims**.
+
+----
+
+== How does it work? ==
+
+Submit a claim → system researches automatically → transparent verdict with sources.
+
+{{mermaid}}
+flowchart TD
+    subgraph MAIN [" "]
+        direction LR
+        INPUT(["Claim\nor Article"])
+        A["Extract verifiable\nstatements"]:::ai
+
+        B["Search supporting\nand opposing evidence"]:::web
+
+        Q["Filter quality\nand score sources"]:::ai
+        C["Organize and\ncluster evidence"]:::ai
+
+        subgraph DEBATE ["Structured AI Debate"]
+            direction TB
+            D["Advocate"]:::ai
+            SC["Self-Consistency"]:::ai
+            E["Challenger"]:::ai
+            F["Reconciler"]:::ai
+            V["Validator"]:::ai
+            D --> SC & E
+            SC & E --> F --> V
+        end
+
+        OUTPUT(["Verdict and\nStructured Report"])
+
+        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
+    end
+
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
+    end
+
+    MAIN ~~~ LEGEND
+
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style MAIN fill:none,stroke:none
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+{{/mermaid}}
+
+**Core principle:** Not a single AI call, but a **structured debate** — different AI models argue for and against a claim. Only evidence-backed objections count.
+
+----
+
+== What sets FactHarbor apart from existing tools? ==
+
+|=Dimension|=OSINT Tools (InVID, Reverse Image Search etc.)|=FactHarbor
+|**Scope**|Image and video verification|Text-based claims
+|**Evidence research**|Manual — your own search|Automatic — iterative web research
+|**Source quality**|Manual assessment|Automatic per-domain scoring
+|**Contradiction detection**|Manual|Automatic — debate surfaces both sides
+|**Time per claim**|2-4 hours (experienced journalist)|~15 minutes (target: < 5 min)
+|**Traceability**|Your own notes|System documents every step + sources
+
+----
+
+== FactHarbor UI ==
+
+[[app.FactHarbor.ch>>https://app.factharbor.ch]]
+
+[[image:FH_UI.png||width="100%"]]
+
+=== Verdict and Report ===
+[[image:Verdict_Plastic.png||width="100%"]]
+[[image:CA_matrix.png||width="100%"]]
+
+Each verdict includes: truth percentage, confidence, supporting and opposing evidence citations, and a full reasoning narrative.
+
+----
+
+== FAQ ==
+
+=== How are claims selected? ===
+
+Users can freely submit any claim or full article. The system extracts so-called "Atomic Claims" — individual verifiable statements — and analyzes each one automatically.
+
+=== How does it avoid AI hallucination? ===
+
+Unlike a ChatGPT-style conversation, the AI agents here are constrained — they must follow a tightly prescribed multi-step workflow and produce structured data at each stage.
+
+In the second stage, the agents are fed with evidence gathered via web search (Google, Semantic Scholar, Wikipedia etc.) — a technique known as RAG (Retrieval Augmented Generation).
+
+=== What is the rough workflow? ===
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Input** → Atomic Claims → Web Search → Filter & Organize → 5 AI Roles Debate → **Verdict & Report**
+)))
+
+=== How accurate is the analysis? ===
+
+The simple verdicts (from True to False) should be read with the awareness that language is rarely unambiguous.
+
+However, when you navigate deeper and review the findings down to the evidence documentation, you will often find surprisingly rich information.
+
+(% class="box warningmessage" %)
+(((
+The system is still in **Alpha** and under active development.
+)))
+
+----
+
+== How could FactHarbor be used in newsrooms? ==
+
+=== Pre-publication research ===
+Journalist drafts a story → submits key claims to FactHarbor → uses the report to identify evidence gaps or counter-arguments.
+
+=== Rapid fact-check response ===
+Breaking claim appears → FactHarbor delivers an evidence overview → editorial team refines the verdict.
+
+=== Training and education ===
+Junior journalists see **how** evidence is systematically evaluated — not just the result, but the entire research process.
+
+=== Audit trail ===
+Every claim, every source, every reasoning step is logged — defensible against complaints or bias accusations.
+
+----
+
+== What works today ==
+
+|=Area|=Status
+|**Full pipeline**|5 stages operational: extract claims → research evidence → cluster → AI debate → aggregation
+|**Multi-provider AI debate**|Different AI providers argue against each other (Anthropic vs. OpenAI)
+|**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin
+|**Source evaluation**|Automatic per-domain scoring (peer-reviewed study vs. social media post)
+|**Multilingual**|German, English, French, Portuguese tested
+|**7 search sources**|Google, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check
+
+== Known limitations ==
+
+|=Limitation|=Explanation
+|**Web sources only**|Paywalls, non-indexed databases, and offline sources are not reached
+|**No image/video analysis**|Continue using InVID, Bellingcat Toolkit etc. for visual verification
+|**No claim detection**|The system checks submitted claims — it does not automatically monitor media streams
+|**Alpha phase**|Functional, but not yet designed for 24/7 newsroom operation
+|**~15 minutes per analysis**|Target: under 5 minutes
+
+----
+
+== Roadmap ==
+
+|=Phase|=Status
+|**Alpha**|Current — invite codes, full pipeline, pre-release
+|**Beta**|Planned — user authentication, performance optimization, monitoring
+|**V1.0**|Planned — public REST API, browser extensions, ClaimReview schema
+|**V1.5+**|Vision — image/video verification, CMS plugins, team workspaces
+
+----
+
+== Try it ==
+
+(% class="box successmessage" %)
+(((
+**Live Demo:**
+**[[app.FactHarbor.ch>>https://app.factharbor.ch]]**
+
+Submit any claim — the system researches and delivers a transparent verdict.
+)))
+
+----
+
+== Contact ==
+
+Robert Schaub — Founder and Lead Developer
+* info@factharbor.ch
+* [[factharbor.ch>>https://factharbor.ch]]
+* [[LinkedIn>>https://www.linkedin.com/in/robertschaub]]
+* Phone: +41 76 449 14 39
+
+----
+
+**Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]]
