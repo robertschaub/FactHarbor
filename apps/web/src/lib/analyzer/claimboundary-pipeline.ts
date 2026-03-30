@@ -562,9 +562,8 @@ export async function runClaimBoundaryAnalysis(
     // claims into Stage 4 — that caused duplicate verdicts in the 2705/e407 failure class.
     const assessableClaims = sufficientClaims;
 
-    // Build coverage matrix from assessable claims only — insufficient claims are excluded
-    // to avoid ghost columns with sparse evidence that distort the display.
-    const coverageMatrix = buildCoverageMatrix(
+    // Build Stage-4 coverage matrix from assessable claims only (used during debate).
+    const stage4CoverageMatrix = buildCoverageMatrix(
       assessableClaims,
       boundaries,
       state.evidenceItems
@@ -593,7 +592,7 @@ export async function runClaimBoundaryAnalysis(
       claims: assessableClaims,
       evidenceItems: state.evidenceItems,
       boundaries,
-      coverageMatrix,
+      coverageMatrix: stage4CoverageMatrix,
       warnings: state.warnings,
       pipelineConfig: initialPipelineConfig,
       sources: state.sources,
@@ -698,6 +697,16 @@ export async function runClaimBoundaryAnalysis(
       );
     }
 
+    // Build the report coverage matrix from ALL final claim verdicts (assessable + UNVERIFIED).
+    // This is what the user sees — UNVERIFIED claims get columns with zero evidence counts,
+    // honestly representing the assessment coverage gap.
+    const allFinalClaimIds = claimVerdicts.map((v) => v.claimId);
+    const reportCoverageMatrix = buildCoverageMatrix(
+      understanding.atomicClaims.filter((c) => allFinalClaimIds.includes(c.id)),
+      boundaries,
+      state.evidenceItems,
+    );
+
     // Stage 5: Aggregate
     checkAbortSignal(input.jobId);
     onEvent("Aggregating final assessment...", 90);
@@ -706,7 +715,7 @@ export async function runClaimBoundaryAnalysis(
       claimVerdicts,
       boundaries,
       state.evidenceItems,
-      coverageMatrix,
+      reportCoverageMatrix,
       state
     );
     endPhase("aggregate");

@@ -1051,6 +1051,10 @@ export interface VerdictNarrative {
   keyFinding: string;            // Main synthesis (2–3 sentences) — the "so what"
   boundaryDisagreements?: string[]; // Where and why boundaries diverge (only when relevant)
   limitations: string;           // What the analysis couldn't determine
+  /** LLM-adjudicated overall truth% accounting for unresolved direct claims. */
+  adjustedTruthPercentage?: number;
+  /** LLM-adjudicated overall confidence% — must not exceed deterministic pre-computation. */
+  adjustedConfidence?: number;
 }
 
 /**

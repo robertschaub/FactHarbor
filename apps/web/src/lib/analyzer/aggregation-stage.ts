@@ -217,6 +217,31 @@ export async function aggregateAssessment(
     };
   }
 
+  // Article-level LLM adjudication: if the narrative returned adjusted numbers,
+  // apply them with ceiling constraints. Unresolved claims add uncertainty (lower
+  // confidence), never remove it. Truth stays within ±10pp of deterministic baseline.
+  let finalTruthPercentage = weightedTruthPercentage;
+  let finalConfidence = effectiveWeightedConfidence;
+  const adjTruth = verdictNarrative.adjustedTruthPercentage;
+  const adjConf = verdictNarrative.adjustedConfidence;
+  if (typeof adjConf === "number" && Number.isFinite(adjConf)) {
+    // Confidence ceiling: adjusted must not exceed deterministic
+    finalConfidence = Math.min(adjConf, effectiveWeightedConfidence);
+    finalConfidence = Math.max(0, Math.min(100, finalConfidence));
+  }
+  if (typeof adjTruth === "number" && Number.isFinite(adjTruth)) {
+    // Truth bounded: within ±10pp of deterministic baseline
+    const truthFloor = Math.max(0, weightedTruthPercentage - 10);
+    const truthCeiling = Math.min(100, weightedTruthPercentage + 10);
+    finalTruthPercentage = Math.max(truthFloor, Math.min(truthCeiling, adjTruth));
+  }
+  const finalVerdictLabel = percentageToArticleVerdict(
+    finalTruthPercentage,
+    finalConfidence,
+    undefined,
+    mixedConfidenceThreshold,
+  );
+
   const qualityGates = buildQualityGates(
     state.understanding?.gate1Stats,
     claimVerdicts,
@@ -250,9 +275,9 @@ export async function aggregateAssessment(
   }
 
   return {
-    truthPercentage: Math.round(weightedTruthPercentage * 10) / 10,
-    verdict: verdictLabel,
-    confidence: Math.round(effectiveWeightedConfidence * 10) / 10,
+    truthPercentage: Math.round(finalTruthPercentage * 10) / 10,
+    verdict: finalVerdictLabel,
+    confidence: Math.round(finalConfidence * 10) / 10,
     verdictNarrative,
     hasMultipleBoundaries: boundaries.length > 1,
     claimBoundaries: boundaries,
@@ -342,6 +367,10 @@ const VerdictNarrativeOutputSchema = z.object({
   keyFinding: z.string(),
   boundaryDisagreements: z.array(z.string()).optional(),
   limitations: z.string(),
+  // Article-level adjudication: LLM's final judgment on overall truth/confidence,
+  // accounting for unresolved direct claims that deterministic aggregation ignores.
+  adjustedTruthPercentage: z.number().min(0).max(100).optional(),
+  adjustedConfidence: z.number().min(0).max(100).optional(),
 });
 
 export async function generateVerdictNarrative(

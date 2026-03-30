@@ -1,6 +1,14 @@
 # Agent Outputs Log
 
 ---
+### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Report Matrix + LLM Article Adjudication
+**Task:** Fix UNVERIFIED claims missing from matrix and ignored in article verdict.
+**Files touched:** `claimboundary-pipeline.ts` (report matrix from all claims), `aggregation-stage.ts` (adjudication parsing with ceiling/fallback), `claimboundary.prompt.md` (VERDICT_NARRATIVE schema extension), `types.ts` (VerdictNarrative interface), `page.tsx` (matrix labels from coverageMatrix.claims).
+**What changed:** (1) Report matrix now built from ALL final claim verdicts, not just assessable claims — UNVERIFIED claims get visible columns. (2) VERDICT_NARRATIVE LLM now returns `adjustedTruthPercentage` and `adjustedConfidence` — pipeline uses these as final article values with ceiling constraint (confidence can only decrease) and ±10pp truth bound. Falls back to deterministic on any parsing failure.
+**Validation:** Partial-insufficient run (`f80b6b41`): confidence dropped from ~65 to 40, matrix shows all 3 claims, article honestly reflects incomplete coverage. Fully-assessed controls (Bolsonaro, Hydrogen): adjudicated numbers match deterministic output. No regressions.
+**For next agent:** No new LLM call added. Existing VERDICT_NARRATIVE call extended. Ship together — matrix without adjudication creates a visible inconsistency.
+
+---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 2705 + e407 Root Fix — Reviewer Notes
 **Task:** Code/Architecture review of the revised 2705/e407 root-fix proposal.
 **Files touched:** `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Reviewer_Notes.md`, `Docs/AGENTS/Agent_Outputs.md`
