@@ -4,15 +4,45 @@
 **Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 30 March 2026
 {{/info}}
 
+== Document Purpose ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**For inspection and discussion:**
+* What FactHarbor does, challenges, goals
+* Cooperation opportunities and funding paths
+
+**Goal:**
+* Shared view on collaboration fit
+)))
+
+== FactHarbor Organisation ==
+
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Mission:**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
+
+(% class="box warningmessage" %)
+(((
+**Public-Interest and Transparent**
+FactHarbor is a strictly **Open-Source** project with a clear public-interest orientation.
+The goal is full transparency — no hidden algorithms, inspectable evidence trails, and a governance model that is being formalized.
+)))
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
+)))
+
 == What is FactHarbor? ==
 
 FactHarbor is an **open-source tool for automated fact-checking**. It verifies any claim — topic-independent and multilingual — using publicly accessible sources, and delivers a transparent verdict with full source citations.
 
-(% class="box warningmessage" %)
-(((
-**Open Source and Public-Interest Oriented**
-No hidden algorithms, no proprietary scoring. Every step is traceable and inspectable.
-)))
 
 === What it is NOT ===
 
