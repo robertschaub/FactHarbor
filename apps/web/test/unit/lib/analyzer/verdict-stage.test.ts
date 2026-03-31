@@ -3637,7 +3637,7 @@ describe("buildSourcePortfolio", () => {
       createEvidenceItem({ id: "EV_02", sourceUrl: "https://a.com/1", sourceId: "S_A", relevantClaimIds: ["AC_01"] }),
     ];
     const boundaries = [{ id: "CB_01", name: "Boundary 1", evidenceScope: { name: "default" }, evidenceIds: ["EV_01", "EV_02"] }] as any[];
-    const coverageMatrix = { claims: ["AC_01"], boundaries: ["CB_01"], counts: [[2]] };
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries as any, evidence);
 
     const portfolio = buildSourcePortfolioByClaim(evidence);
 
@@ -4181,6 +4181,52 @@ describe("claim-local direction validation (cross-claim contamination prevention
     // Grounding must see the FULL pool (ID existence is a global check)
     expect(groundingEvidencePool).toBeDefined();
     expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_N1", "EV_S1"]);
+  });
+
+  it("grounding validation receives source portfolio when available in repair context", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let groundingSourcePortfolio: Array<{ sourceId: string; domain: string }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingSourcePortfolio = input.sourcePortfolio as Array<{ sourceId: string; domain: string }>;
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM, undefined, undefined, {
+      claims,
+      boundaries,
+      coverageMatrix,
+      sourcePortfolioByClaim: {
+        AC_01: [{ sourceId: "S_025", domain: "example.com", sourceUrl: "https://example.com", evidenceCount: 3, trackRecordScore: 0.78, trackRecordConfidence: 0.65 }],
+      },
+    });
+
+    // Source portfolio should be flattened and passed to grounding validation with score metadata
+    expect(groundingSourcePortfolio).toBeDefined();
+    expect(groundingSourcePortfolio).toHaveLength(1);
+    expect(groundingSourcePortfolio![0]).toEqual({
+      sourceId: "S_025",
+      domain: "example.com",
+      trackRecordScore: 0.78,
+      trackRecordConfidence: 0.65,
+      evidenceCount: 3,
+    });
   });
 
   it("standard single-claim validation still works (no regression)", async () => {

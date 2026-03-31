@@ -513,7 +513,7 @@ export async function runVerdictStage(
     llmCall,
     config,
     warnings,
-    { claims, boundaries, coverageMatrix, calculationConfig },
+    { claims, boundaries, coverageMatrix, calculationConfig, sourcePortfolioByClaim: fullPortfolio },
   );
 
   // Structural Consistency Check (deterministic)
@@ -1053,6 +1053,7 @@ export interface VerdictValidationRepairContext {
   boundaries: ClaimAssessmentBoundary[];
   coverageMatrix: CoverageMatrix;
   calculationConfig?: CalcConfig;
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>;
   repairExecutor?: (
     request: VerdictRepairRequest,
     llmCall: LLMCallFn,
@@ -1091,6 +1092,19 @@ export async function validateVerdicts(
           contradictingEvidenceIds: v.contradictingEvidenceIds,
         })),
         evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
+        // Include source portfolio so the validator can recognize source-level references
+        // (source IDs, trackRecordScore) as valid contextual data, not hallucinated evidence.
+        ...(repairContext?.sourcePortfolioByClaim ? {
+          sourcePortfolio: Object.values(repairContext.sourcePortfolioByClaim)
+            .flat()
+            .map((s) => ({
+              sourceId: s.sourceId,
+              domain: s.domain,
+              trackRecordScore: s.trackRecordScore,
+              trackRecordConfidence: s.trackRecordConfidence,
+              evidenceCount: s.evidenceCount,
+            })),
+        } : {}),
       },
       "groundingValid",
       validationTier,

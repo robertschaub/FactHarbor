@@ -1,5 +1,14 @@
 # Agent Outputs Log
 ---
+### 2026-03-31 | Senior Developer | Claude Code (Opus 4.6) | Ghost Boundary Sanitization + Grounding Validation Fix
+**Task:** Fix two defects from job `696d8140`: ghost boundary IDs passing through advocate parsing, and grounding validation false positives from FLOOD-1 source portfolio expansion.
+**Files touched:** `verdict-stage.ts` (boundary sanitization in `advocateVerdict()`, source portfolio in grounding validation input, `VerdictValidationRepairContext` extended), `claimboundary.prompt.md` (`VERDICT_GROUNDING_VALIDATION` source portfolio rule + input variable), `verdict-stage.test.ts` (3 new tests + 1 existing test fixed).
+**Fix 1 (boundary sanitization):** After `parseAdvocateVerdict()`, filter each verdict's `boundaryFindings` to only include boundary IDs valid for that specific claim via `coverageMatrix.getBoundariesForClaim()`. Ghost IDs silently dropped with debug log. Per-claim (not global) filtering prevents cross-claim boundary contamination in range widening.
+**Fix 2 (grounding validation):** Added `sourcePortfolioByClaim` to `VerdictValidationRepairContext`. Threaded `fullPortfolio` through. Flattened source portfolio (sourceId + domain) passed to grounding validation input. Prompt updated with rule: source portfolio references are valid context, not hallucinated evidence.
+**Tests:** Ghost boundary stripped (1), cross-claim boundary stripped (1), grounding receives source portfolio (1), existing portfolio test fixed to use real `buildCoverageMatrix`. 1484 total pass. Build clean.
+**For next agent:** Fix 3 (optional prompt hardening for VERDICT_ADVOCATE boundary IDs) is deferred — can be picked up later.
+
+---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Unify VERDICT_DIRECTION_VALIDATION Contract
 **Task:** Fix review blocker — `validateDirectionOnly()` passed top-level `evidencePool` while batch path embedded it per-verdict. Unified on per-verdict shape.
 **Files touched:** `verdict-stage.ts` (1 call site), `claimboundary.prompt.md` (prompt wording), `verdict-stage.test.ts` (1 test capture updated)
@@ -2623,6 +2632,26 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-03-31 | Lead Architect | Codex (GPT-5) | Investigate 696d8140 Bolsonaro Process/Fairness Job
+**Task:** Investigate job `696d81406d5a4fbfaa4c23ec49fe4e85`, identify the root cause of the visible result issues, and propose the best low-risk/high-quality fix.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The job shows two distinct defects with different priority. Primary defect: the advocate verdict emitted an invalid `boundaryFindings` entry (`CB_37`) that is not present in the actual boundaries or the claim's coverage matrix. This is a structural output bug, likely caused by the model inventing a pseudo-boundary for the OAB-PR sub-perspective inside merged boundary `CB_03`. Secondary defect: the grounding validator now produces false-positive `verdict_grounding_issue` warnings because verdict reasoning legitimately references source IDs / `trackRecordScore` from `sourcePortfolioByClaim`, but `VERDICT_GROUNDING_VALIDATION` still only sees `evidencePool`, so it treats those source-metadata references as hallucinations. The March 29-31 article-adjudication and claim-local direction-scope fixes are not the cause here.
+**Open items:** Best fix sequence: (1) code-only structural sanitization of `boundaryFindings` against the claim-local valid boundary ID set from `coverageMatrix`, plus optional prompt hardening in `VERDICT_ADVOCATE`; (2) separate prompt+plumbing refresh for `VERDICT_GROUNDING_VALIDATION` so source-portfolio references are treated as valid structural grounding context when `sourcePortfolioByClaim` is present.
+**Warnings:** Do not solve the ghost boundary issue with semantic name matching or heuristic remapping. The safe structural behavior is to drop invalid or claim-inapplicable boundary IDs rather than guessing what the model meant. Also do not treat the current grounding warning as a claim-quality failure — it is an outdated validator-context problem.
+**For next agent:** Anchor files: `apps/web/src/lib/analyzer/verdict-stage.ts` (`parseAdvocateVerdict`, `runStructuralConsistencyCheck`, `validateVerdicts`), `apps/web/src/lib/analyzer/aggregation-stage.ts` (`computeTriangulationScore`), and `apps/web/prompts/claimboundary.prompt.md` (`VERDICT_ADVOCATE`, `VERDICT_GROUNDING_VALIDATION`). The cleanest immediate fix is structural filtering of `boundaryFindings` using `coverageMatrix.getBoundariesForClaim(claimId)` before downstream use.
+**Learnings:** no
+
+---
+### 2026-03-31 | Lead Architect | Codex (GPT-5) | Refresh Pipeline Speed and Cost Optimization Plan
+**Task:** Re-read the March 19 pipeline speed/cost plan, reconcile it with what has shipped since late March, and update the plan plus tracking docs with the correct current state and next-step sequence.
+**Files touched:** `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Reframed the March 19 plan as a residual source plan for the still-open optimization ideas, not a live execution plan. Marked `P1-B/C/D/E` complete, `P1-A2` retired as stale, and `P1-A` as the only remaining Phase 1 candidate pending a fresh post-March-30 baseline and explicit approval. Captured `W15` as shipped adjacent runtime/reliability work that must now be considered part of the baseline. Synced `Current_Status.md` and `Backlog.md` so they no longer describe `P1-B` as a deferred future decision.
+**Open items:** No optimization work was approved here. If optimization is reopened, the next architectural step is a fresh runtime/cost baseline on the post-March-30 validated stack, then an isolated `P1-A` decision, then measurement-only review of `P2-*` if still warranted.
+**Warnings:** Do not treat archived March 17-19 timing data as current truth. The stack now includes shipped `P1-B`, W15, and the March 29-30 integrity fixes, so any optimization decision based on the old baseline would be architecturally unsound.
+**For next agent:** Read the refreshed [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](C:/DEV/FactHarbor/Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) first. The canonical policy is now: optimization stays secondary; if reopened, start with a fresh benchmark rather than continuing the old Phase 1 sequence blindly.
+**Learnings:** no
+
+---
 ### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review Claim-Local Verdict Scope Fix
 **Task:** Review the uncommitted Stage-4 claim-local evidence scoping implementation for the `9e4d` SRF fact-checking failure before commit.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
@@ -2660,4 +2689,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Prompt-only hardening is the recommended next step: strengthen `CLAIM_CONTRACT_VALIDATION` so broad evaluative activity-quality claims retry when they decompose into quantity/reach/publicity/policy/communications proxies unless the input explicitly asks for those. A narrow Pass 2 clarification is a secondary backup only.
 **Warnings:** Do not treat the `verdict_integrity_failure` on `AC_02` as the root cause. That downgrade is protective. Do not add deterministic proxy/overlap heuristics.
 **For next agent:** Full investigation and code anchors are in `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_9e4d_SRF_Factchecking_Investigation.md`.
+**Learnings:** no
+
+---
+### 2026-03-31 | Lead Architect | Codex (GPT-5) | Regression Check for 696d8140 Boundary/Grounding Issues
+**Task:** Determine whether the defects observed in job `696d81406d5a4fbfaa4c23ec49fe4e85` were introduced by a recent fix or are older latent issues.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The job contains two separate defects with different timelines. The **primary ghost-boundary defect** (`boundaryFindings` containing invalid `CB_37`) was **not introduced by a recent fix**. `parseAdvocateVerdict()` has accepted raw `boundaryFindings` without sanitization since the original verdict-stage introduction in commit `db563471` (2026-02-16), and the advocate prompt has pushed per-boundary findings since the original prompt rollout in commit `6e2c2c5b` (2026-02-16). This is an older latent structural flaw now exposed by a concrete job. The **secondary grounding-warning defect** *was* introduced by a recent fix: commit `20f11239` (2026-03-27, `feat(analyzer): add single-source flooding mitigation (FLOOD-1)`) added `sourcePortfolioByClaim` / `trackRecordScore` reasoning to advocate/challenger/reconciler prompts and code, but left `VERDICT_GROUNDING_VALIDATION` unchanged. As a result, grounding validation still sees only `evidencePool`, so it now falsely flags legitimate source-portfolio references (e.g. `S_025`, `S_031`, `S_037`, `trackRecordScore`) as unverifiable.
+**Open items:** Implement the low-risk fix sequence already identified: (1) sanitize verdict `boundaryFindings` against valid boundary IDs before downstream use, (2) refresh `VERDICT_GROUNDING_VALIDATION` context/prompt so it understands source-portfolio references, (3) optionally harden `VERDICT_ADVOCATE` prompt text to forbid inventing boundary IDs.
+**Warnings:** Do not attribute the main bug to recent article-adjudication or matrix work. Commits `03387283`, `7fdf2b44`, and `17da5b84` are not causally involved. The March 27 regression explains the noisy grounding warning, not the ghost boundary itself.
+**For next agent:** If you need proof points, inspect `git blame` on `apps/web/src/lib/analyzer/verdict-stage.ts` line around `boundaryFindings: parseBoundaryFindings(raw.boundaryFindings)` (shows `db563471`) and `apps/web/prompts/claimboundary.prompt.md` lines around the advocate “per-boundary findings” rules (shows `6e2c2c5b`). Then inspect `git show 20f11239` to see the addition of source-portfolio-aware reasoning to verdict prompts without any corresponding grounding-validation update.
 **Learnings:** no

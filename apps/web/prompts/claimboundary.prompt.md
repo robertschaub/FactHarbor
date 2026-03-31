@@ -1156,6 +1156,7 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 - Only check structural grounding (evidence IDs exist and are referenced). Do NOT re-evaluate the verdict's analytical correctness.
 - If an evidence ID is cited but does not exist in the pool, flag it.
 - If a verdict references evidence claims not traceable to any cited ID, flag it.
+- **Source portfolio references are valid context.** Verdict reasoning may reference source IDs (e.g., `S_025`), domains, or `trackRecordScore` values from the source portfolio. These are legitimate contextual references, NOT hallucinated evidence. Confirm they exist in the source portfolio if provided, but do NOT flag them as grounding issues.
 
 ### Input
 
@@ -1167,6 +1168,11 @@ ${verdicts}
 **Evidence Pool:**
 ```
 ${evidencePool}
+```
+
+**Source Portfolio (source-level metadata available to verdict reasoning):**
+```
+${sourcePortfolio}
 ```
 
 ### Output Schema
