@@ -4,16 +4,39 @@
 **Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026
 {{/info}}
 
-== What is FactHarbor? ==
+== FactHarbor Organisation ==
 
-FactHarbor is an **open-source, non-profit tool for automated fact-checking**. It verifies any claim — topic-independent and multilingual — using publicly accessible sources, and delivers a transparent verdict with full source citations.
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Mission:**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
 
 (% class="box warningmessage" %)
 (((
-**Open Source. Non-profit. No hidden algorithms.**
-Every step is traceable and inspectable.
+**Non-profit and Transparent**
+FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
 )))
 
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
+)))
+
+== The FactHarbor Application ==
+
+(% class="box infomessage" %)
+(((
+**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
+
+It evaluates evidence quality and source reliability, then compares, challenges, and reconciles findings through a structured multi-agent AI debate.
+
+**The result: a transparent verdict where every conclusion links to cited evidence — so you can judge for yourself.**
+)))
 
 === What it is NOT ===
 
@@ -101,7 +124,7 @@ Each verdict includes: truth percentage, confidence, supporting and opposing evi
 ----
 
 == FAQ ==
-Ja
+
 === How are claims selected? ===
 
 Users can freely submit any claim or full article. The system extracts so-called "Atomic Claims" — individual verifiable statements — and analyzes each one automatically.
