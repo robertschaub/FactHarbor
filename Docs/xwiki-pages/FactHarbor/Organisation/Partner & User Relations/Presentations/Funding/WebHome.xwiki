@@ -43,7 +43,11 @@ The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/
 
 (% class="box infomessage" %)
 (((
-**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces, collecting supporting and opposing evidence from web sources and databases, and evaluating evidence quality and source reliability across evidence-defined analysis boundaries. It compares, challenges, and reconciles findings through a structured multi-agent AI debate process. **It delivers a transparent verdict where every conclusion links to cited evidence, so you can judge for yourself.**
+**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
+
+It evaluates evidence quality and source reliability, then compares, challenges, and reconciles findings through a structured multi-agent AI debate.
+
+**The result: a transparent verdict where every conclusion links to cited evidence — so you can judge for yourself.**
 )))
 
 == The Problem ==
