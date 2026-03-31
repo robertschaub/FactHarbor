@@ -115,6 +115,20 @@ flowchart TD
 
 ----
 
+== FactHarbor UI ==
+
+[[app.FactHarbor.ch>>https://app.factharbor.ch]]
+
+[[image:FH_UI.png||width="100%"]]
+
+=== Verdict and Report ===
+[[image:Verdict_Plastic.png||width="100%"]]
+[[image:CA_matrix.png||width="100%"]]
+
+Each verdict includes: truth percentage, confidence, supporting and opposing evidence citations, and a full reasoning narrative.
+
+----
+
 == Why This Matters Now ==
 
 * **Meta** exited the US Third-Party Fact-Checking Program (January 2025).
