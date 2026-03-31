@@ -1,7 +1,7 @@
 = FactHarbor — Academic Cooperation for Automated Fact-Checking =
 
 {{info}}
-**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 18 March 2026 (Updated: 24 March 2026)
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 18 March 2026 (Updated: 31 March 2026)
 {{/info}}
 
 == Document Purpose ==
@@ -180,7 +180,7 @@ The technical pipeline, architecture, debate-flow, and data-model are in the tec
 
 **Working in Alpha:** Full 5-stage pipeline operational end-to-end — multi-provider debate, quality gates, UCM configuration, 7 search providers, multilingual analysis (DE/EN/FR/PT), input neutrality (±4%), and structured HTML reports.
 
-**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.15-0.25 per analysis, target < $0.05).
+**Main gaps:** Performance (~15 min, target < 5 min), report stability (LLM stochasticity + live evidence), user authentication, horizontal scaling, and cost reduction ($0.20-0.55 per analysis depending on depth, target < $0.10).
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
@@ -340,8 +340,8 @@ FactHarbor is currently in **Alpha**.
 === V1.0 Engineering Goals ===
 
 |=Goal|=Current|=Target
-|**Performance**|~5 min per analysis|< 90 seconds via caching and parallel execution
-|**Cost**|~$0.15-0.25 per analysis|< $0.05 via caching, smaller models, evidence reuse
+|**Performance**|~15 min per analysis|< 5 min via caching and parallel execution
+|**Cost**|~$0.20-0.55 per analysis (depending on depth)|< $0.10 via caching, smaller models, evidence reuse
 |**Scalability**|Single host, 3 concurrent jobs|Horizontal scaling, queue-based dispatch
 |**Repeatability**|Verdicts vary across runs|Tolerance bands, evidence caching
 |**Stability**|Manual recovery|Auto-recovery, health monitoring
@@ -451,7 +451,7 @@ FactHarbor is currently in **Alpha**.
 |=Problem|=Details
 |**Over-decomposition**|Rhetorical claims sometimes decomposed too aggressively
 |**SR evaluation quality**|Not yet benchmarked against human expert assessments
-|**Cost per analysis**|$0.15-0.25 — acceptable for Alpha, too high for public scale
+|**Cost per analysis**|$0.20-0.55 depending on depth — acceptable for Alpha, too high for public scale
 
 ----
 
@@ -1179,4 +1179,4 @@ flowchart TB
 
 
 
-**Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]
+**Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Support FactHarbor>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]] | [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]

@@ -1,0 +1,273 @@
+= Support FactHarbor - Why and How? =
+
+{{info}}
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026
+{{/info}}
+
+
+== Document Purpose ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Inspect:**
+* What FactHarbor is and what it does
+* Costs and funding needs
+**Discuss:**
+* Funding options and strategies
+)))
+
+== FactHarbor Organisation ==
+
+Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
+(((
+(% class="box infomessage" style="background-color: #fde0e4; color: #b71c1c;" %)
+(((
+**Mission:**
+FactHarbor brings clarity and transparency to a world full of unclear, contested, and misleading information by shedding light on the context, assumptions, and evidence behind claims.
+)))
+)))
+
+(% class="box warningmessage" %)
+(((
+**Non-profit and Transparent**
+FactHarbor is a **Non-Profit Organisation** and a strictly **Open-Source** project.
+We serve the public interest with full transparency — no hidden algorithms, and no profit motive.
+)))
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. The legal structure is therefore best understood as planned rather than already established.
+)))
+
+== What is FactHarbor? ==
+
+(% class="box infomessage" %)
+(((
+**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces, collecting supporting and opposing evidence from web sources and databases, and evaluating evidence quality and source reliability across evidence-defined analysis boundaries. It compares, challenges, and reconciles findings through a structured multi-agent AI debate process. **It delivers a transparent verdict where every conclusion links to cited evidence, so you can judge for yourself.**
+)))
+
+== The Problem ==
+
+People are losing trust — not just in specific claims, but in the ability to know what is true at all.
+
+* Misinformation spreads faster than corrections can follow.
+* Binary fact-checks ("True" / "False") hide the complexity that matters.
+* Existing tools are manual, slow, and opaque — evidence research takes 2-4 hours per claim.
+* No one can see **why** experts disagree: different methodologies, timeframes, and scopes lead to different conclusions, but that structure stays hidden.
+
+----
+
+== Where FactHarbor stands out ==
+
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — different AI providers argue for and against a claim, and only evidence-backed objections can change the verdict.
+
+Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
+{{mermaid}}
+flowchart TD
+    subgraph MAIN [" "]
+        direction LR
+        INPUT(["Claim\nor Article"])
+        A["Extract verifiable\nstatements"]:::ai
+
+        B["Search supporting\nand opposing evidence"]:::web
+
+        Q["Filter quality\nand score sources"]:::ai
+        C["Organize and\ncluster evidence"]:::ai
+
+        subgraph DEBATE ["Structured AI Debate"]
+            direction TB
+            D["Advocate"]:::ai
+            SC["Self-Consistency"]:::ai
+            E["Challenger"]:::ai
+            F["Reconciler"]:::ai
+            V["Validator"]:::ai
+            D --> SC & E
+            SC & E --> F --> V
+        end
+
+        OUTPUT(["Verdict and\nStructured Report"])
+
+        INPUT --> A --> B --> Q --> C --> DEBATE --> OUTPUT
+    end
+
+    subgraph LEGEND ["Legend"]
+        direction LR
+        L1["AI-powered"]:::ai ~~~ L2["Web and External Sources"]:::web
+    end
+
+    MAIN ~~~ LEGEND
+
+    style INPUT fill:#2196F3,stroke:#1565C0,color:#fff,stroke-width:2px
+    style OUTPUT fill:#4CAF50,stroke:#2E7D32,color:#fff,stroke-width:2px
+    style DEBATE fill:#FCE4EC,stroke:#C62828,color:#B71C1C
+    style MAIN fill:none,stroke:none
+    style LEGEND fill:#f9f9f9,stroke:#ccc,color:#666
+
+    classDef ai fill:#E3F2FD,stroke:#1565C0,color:#0D47A1
+    classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
+{{/mermaid}}
+
+**Not a single AI call** — multiple AI models argue for and against a claim. Only evidence-backed objections can change the verdict.
+
+----
+
+== Why This Matters Now ==
+
+* **Meta** exited the US Third-Party Fact-Checking Program (January 2025).
+* **Google** reduced ClaimReview visibility in Search results (2025).
+* Fact-checking organisations lost over GBP 1M/year in platform funding.
+* The sector is at a turning point — it needs sustainable, independent infrastructure that no single platform controls.
+
+FactHarbor is that infrastructure: open-source, non-profit, and designed so that no corporation, government, or algorithm becomes the single arbiter of truth.
+
+== Questions & Answers ==
+
+=== How are claims selected? ===
+
+Users can freely submit any claim or full article. The system extracts so-called "Atomic Claims" — individual verifiable statements — and analyzes each one automatically.
+
+=== How does it avoid AI hallucination? ===
+
+Unlike a ChatGPT-style conversation, the AI agents here are constrained — they must follow a tightly prescribed multi-step workflow and produce structured data at each stage.
+
+In the second stage, the agents are fed with evidence gathered via web search (Google, Semantic Scholar, Wikipedia etc.) — a technique known as RAG (Retrieval Augmented Generation).
+
+=== What is the rough workflow? ===
+
+**Input** → Atomic Claims → Web Search → Filter & Organize → 5 AI Roles Debate → **Verdict & Report**
+
+=== How accurate is the analysis? ===
+
+The headline verdicts (True through False on a 7-point scale) are a starting point, not the final word — language and evidence are rarely black and white.
+
+The real value is in the report behind the verdict: every claim is backed by cited sources, counter-arguments, confidence scores, and quality warnings. When evidence is thin or conflicting, the system says so openly rather than producing a confident-sounding answer.
+
+The value is not just a verdict — it's the structured reasoning, cited evidence, and counter-arguments that enable you to form your own informed judgment and share it with others.
+
+----
+
+== What Works Today ==
+
+|=Area|=Status
+|**Full pipeline**|5 stages operational: extract claims, research evidence, cluster, AI debate, aggregation
+|**Multi-provider debate**|Different AI providers argue against each other (Anthropic vs. OpenAI)
+|**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin
+|**Source evaluation**|Automatic per-domain credibility scoring
+|**Multilingual**|German, English, French, Portuguese tested — multilingual by design
+|**7 search sources**|Google, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check
+|**Analysis time**|~15 minutes per claim (target: under 5 minutes)
+
+(% class="box warningmessage" %)
+(((
+The system is in **Alpha** and under active development.
+)))
+
+----
+
+== Roadmap ==
+
+|=Phase|=Status|=What It Unlocks
+|**Alpha**|Current|Invite-based access, full pipeline, quality validation
+|**Beta**|Planned|User authentication, performance optimization, monitoring
+|**V1.0**|Planned|Public REST API, browser extensions, ClaimReview schema
+|**V1.5+**|Vision|Live audio/video fact-checking, CMS plugins, team workspaces
+
+----
+
+== Funding Options ==
+
+Financial support can be directed at specific areas:
+
+|=Area|=What It Covers|=Why It Matters
+|**AI infrastructure**|LLM API costs (~$0.20–0.55 per analysis, target < $0.10)|Every analysis requires ~30 AI calls across multiple providers — the largest running cost
+|**Search and hosting**|Web search APIs, server hosting, databases|Evidence retrieval depends on paid search APIs; hosting keeps the service available
+|**Research partnerships**|Joint R&D with university partners (ZHAW cooperation open)|Academic collaboration improves quality and unlocks grant funding
+|**Development**|Performance, new features (browser extensions, API, live fact-checking)|Moves FactHarbor from Alpha toward a production-ready public service
+|**Operations**|Open-source maintenance, documentation, community|Keeps the project sustainable and accessible long-term
+
+=== Funding Instruments ===
+
+|=Instrument|=Typical Amount|=Who
+|**Foundation grants**|CHF 20K–300K|Mercator, Ernst Göhner, Migros Kulturprozent, Hasler Foundation — fund specific development or research tracks
+|**Innosuisse Innovation Cheque**|CHF 15,000 (100% funded)|Feasibility study with academic partner — no co-funding required
+|**Innosuisse Innovation Project**|CHF 100K–500K|Joint R&D with university partner (40–60% cost split, in-kind eligible)
+|**BRIDGE Proof of Concept**|Up to CHF 130K/year|Academic-led commercialization — researcher-initiated
+|**International grants**|EUR 25K–300K|IFCN Global Fact Check Fund, Google News Initiative, European Media and Information Fund
+|**Infrastructure sponsorship**|Varies|Cover AI or hosting costs — directly extends the number of analyses we can run
+|**Individual donations**|Any amount|Direct financial contribution to development and operations
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Every franc goes to the mission.** No profit distribution — surplus is reinvested. All funders above CHF 5,000 will be disclosed.
+)))
+
+----
+
+== Contribution Options ==
+
+Non-financial support is equally valuable — especially at this stage:
+
+|=Contribution|=What It Means|=Who Could Help
+|**Beta testing & feedback**|Early access to new features; feedback on verdict quality and usability|Journalists, fact-checkers, researchers
+|**Domain expertise**|Fact-checking methodology advice, legal review, LLM evaluation|Practicing fact-checkers, media lawyers, AI researchers
+|**Code contributions**|Bug fixes, features, performance optimization on the open-source codebase|Developers, university students (thesis projects)
+|**Translation & localization**|Documentation, UI, and prompt translation (DE/FR/IT/EN)|Multilingual contributors
+|**Data contributions**|Multilingual test claims, curated evidence sources, evaluation datasets|Researchers, journalism schools
+|**Advocacy & outreach**|Share FactHarbor with journalists, educators, and researchers|Anyone who sees the value
+|**Advisory circle**|Lightweight guidance (2–4 hours/month) on strategy, methodology, or partnerships|Domain experts, media professionals
+
+----
+
+== How We Protect Your Trust ==
+
+FactHarbor's governance ensures that funding never compromises editorial independence.
+
+|=Safeguard|=Detail
+|**20% rule**|No single donor may finance more than 20% of the annual budget (exception: competitive public grants)
+|**Rejection criteria**|Political parties, media companies, pharma, and any donor demanding editorial control are refused
+|**Full transparency**|All funders above CHF 5,000 published by name and amount. Annual financial report.
+|**Mission lock**|Swiss Verein statutes prohibit profit distribution — surplus is irrevocably reinvested
+|**Editorial firewall**|Donors have zero influence on claims analyzed, verdicts produced, or methodology used
+|**IFCN alignment**|Governance aligns with the International Fact-Checking Network Code of Principles
+
+----
+
+== Swiss Non-Profit Structure ==
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+The FactHarbor **[[Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]** is currently in preparation. Tax-exempt status will be applied for upon registration.
+)))
+
+|=Aspect|=Detail
+|**Legal form**|Swiss Verein (Association) under Art. 60 ff. ZGB
+|**Purpose**|Promote informed opinion-forming through evidence-based tools — non-profit, public-benefit
+|**Neutrality**|Politically and religiously neutral, no substantial political activities
+|**Prohibited funding**|Advertising revenue, user data sales, outcome-conditional payments
+|**Dissolution**|Assets transfer to an organisation with comparable public-benefit purpose
+
+----
+
+== Try It ==
+
+(% class="box successmessage" %)
+(((
+**Live Demo:**
+**[[app.FactHarbor.ch>>https://app.factharbor.ch]]**
+
+Submit any claim — the system researches and delivers a transparent verdict with full source citations.
+)))
+
+----
+
+== Contact ==
+
+Robert Schaub — Founder and Lead Developer
+* info@factharbor.ch
+* [[factharbor.ch>>https://factharbor.ch]]
+* [[LinkedIn>>https://www.linkedin.com/in/robertschaub]]
+* Phone: +41 76 449 14 39
+
+----
+
+**Navigation:** [[Presentations>>FactHarbor.Organisation.Partner & User Relations.Presentations.WebHome]] | [[Organisation>>FactHarbor.Organisation.WebHome]]

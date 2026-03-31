@@ -33,11 +33,17 @@ We serve the public interest with full transparency — no hidden algorithms, an
 
 (% class="box infomessage" %)
 (((
-**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces, collecting supporting and opposing evidence from web sources and databases, and evaluating evidence quality and source reliability across evidence-defined analysis boundaries. It compares, challenges, and reconciles findings through a structured multi-agent AI debate process. **It delivers a transparent verdict where every conclusion links to cited evidence, so you can judge for yourself.**
+**FactHarbor analyzes claims and articles** by breaking them into verifiable pieces and collecting supporting and opposing evidence from web sources and databases.
+
+It evaluates evidence quality and source reliability, then compares, challenges, and reconciles findings through a structured multi-agent AI debate.
+
+**The result: a transparent verdict where every conclusion links to cited evidence — so you can judge for yourself.**
 )))
 == Where FactHarbor stands out ==
 
-FactHarbor runs an end-to-end automated verdict pipeline on real claims and is the only end-to-end **multi-agent debate** system for fact-checking with live evidence retrieval. While research implementations exist (ED2D, MADR), FactHarbor is unique as a user-facing service. It uses evidence-defined analysis boundaries, structured advocate/challenger/reconciler roles, cross-provider model routing (Anthropic, OpenAI, Google, Mistral), and evidence-weighted contestation rules so unsupported objections do not change verdicts. Each verdict is auditable: you can see the cited evidence, source-quality weighting, and which evidence-backed challenges changed the outcome.
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — different AI providers argue for and against a claim, and only evidence-backed objections can change the verdict.
+
+Each verdict is fully auditable: cited evidence, source-quality scores, and which challenges changed the outcome — all inspectable.
 
 
 {{mermaid}}
@@ -93,6 +99,8 @@ flowchart TD
 * **[[Product Development>>FactHarbor.Product Development.WebHome]]** — Requirements, architecture, and developer guides.
 * **[[Analysis Test Reports>>FactHarbor.Product Development.TestReports.WebHome]]** — Claim analysis reports from test runs.
 * **[[Media Source Database>>FactHarbor.Product Development.Media Source Database.WebHome]]** — Our transparent credibility database for 1000+ sources.
+* **[[FactHarbor for Newsrooms>>FactHarbor.Product Development.Presentations.Fact-Checker Cooperation.WebHome]]** — How FactHarbor supports fact-checking in newsrooms.
+* **[[Support FactHarbor>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]** — Funding and contribution options.
 * **[[FactHarbor on GitHub>>https://github.com/robertschaub/FactHarbor]]** — Project Repository
 * **[[License & Disclaimer>>FactHarbor.License and Disclaimer.WebHome]]** — Usage terms and open-source licenses.
 
