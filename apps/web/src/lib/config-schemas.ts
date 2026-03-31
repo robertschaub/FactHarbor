@@ -534,6 +534,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum character length for fetched source text to be considered usable (default: 100)"),
   fetchSameDomainDelayMs: z.number().int().min(0).max(5000).optional()
     .describe("Stagger delay in milliseconds between same-domain requests within a fetch batch. Reduces fetch-collapse risk when multiple sources share a domain. 0 disables staggering. Default: 500."),
+  fetchDomainSkipThreshold: z.number().int().min(0).max(10).optional()
+    .describe("After this many consecutive 401/403 failures from the same domain within a fetchSources() call, best-effort skip later same-domain URLs. 0 disables. Default: 2."),
   researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
     .describe("Maximum number of search queries generated per research iteration (default: 3)"),
   sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
@@ -1122,6 +1124,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   sourceFetchTimeoutMs: 20000,
   minEvidenceContentLength: 100,
   fetchSameDomainDelayMs: 500,
+  fetchDomainSkipThreshold: 2,
   researchMaxQueriesPerIteration: 3,
   sourceExtractionMaxLength: 15000,
   maxEvidenceItemsPerSource: 5,

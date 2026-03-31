@@ -12,6 +12,33 @@ import { PipelineConfig } from "@/lib/config-schemas";
 // STAGE 2: ACQUISITION (SEARCH & FETCH)
 // ============================================================================
 
+/** Map error classification types to human-readable labels for admin/operator diagnostics. */
+export function humanizeErrorType(type: string): string {
+  switch (type) {
+    case "http_403": return "paywall/blocked";
+    case "http_401": return "paywall";
+    case "http_404": return "dead link";
+    case "timeout": return "timeout";
+    case "network": return "network error";
+    case "pdf_parse_failure": return "PDF parse error";
+    case "http_429": return "rate limited";
+    case "http_5xx": return "server error";
+    default: return type;
+  }
+}
+
+function updateDomainBlockingStreak(
+  domainFailureCounts: Map<string, number>,
+  domain: string,
+  outcomeType: string,
+): void {
+  if (outcomeType === "http_401" || outcomeType === "http_403") {
+    domainFailureCounts.set(domain, (domainFailureCounts.get(domain) ?? 0) + 1);
+    return;
+  }
+  domainFailureCounts.set(domain, 0);
+}
+
 /** Extract normalized hostname from a URL for same-domain grouping. */
 export function extractDomain(url: string): string {
   try {
@@ -48,7 +75,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs">,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -56,6 +83,7 @@ export async function fetchSources(
   const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
   let fetchAttempted = 0;
   let fetchFailed = 0;
+  let fetchSkippedByDomainShortCircuit = 0;
 
   // Configurable timeout — default 20 s (was 12 s). Legal/government sources load slowly.
   const fetchTimeoutMs = pipelineConfig?.sourceFetchTimeoutMs ?? 20000;
@@ -63,6 +91,12 @@ export async function fetchSources(
   const retryDelayMs = pipelineConfig?.iterationRetryDelayMs ?? 2000;
   const minContentLength = pipelineConfig?.minEvidenceContentLength ?? 100;
   const sameDomainDelayMs = pipelineConfig?.fetchSameDomainDelayMs ?? 500;
+
+  // Domain-level short-circuit: after N consecutive 401/403 failures from the same
+  // domain, best-effort skip later same-domain URLs within this fetchSources() call.
+  // 0 = disabled. Only triggers on 401/403 (domain-level blocking), NOT on 404/timeout/etc.
+  const domainSkipThreshold = pipelineConfig?.fetchDomainSkipThreshold ?? 2;
+  const domainFailureCounts = new Map<string, number>();
 
   // Filter out already-fetched URLs
   const toFetch = relevantSources.filter(
@@ -73,18 +107,33 @@ export async function fetchSources(
   const fetchConcurrency = pipelineConfig?.parallelExtractionLimit ?? 3;
   for (let i = 0; i < toFetch.length; i += fetchConcurrency) {
     const batch = toFetch.slice(i, i + fetchConcurrency);
-    fetchAttempted += batch.length;
     // Stagger same-domain requests to avoid burst-loading the same server.
     const delays = computeBatchDelays(batch.map((s) => s.url), sameDomainDelayMs);
     const results = await Promise.all(
       batch.map(async (source, idx) => {
         if (delays[idx] > 0) await new Promise<void>((r) => setTimeout(r, delays[idx]));
+        // Domain short-circuit: check if this domain has already been blocked enough times.
+        // Best-effort — concurrent in-flight requests may not be skipped, but delayed
+        // siblings and later batches within this call will be.
+        if (domainSkipThreshold > 0) {
+          const domain = extractDomain(source.url);
+          const failures = domainFailureCounts.get(domain) ?? 0;
+          if (failures >= domainSkipThreshold) {
+            debugLog(`[Acquisition] Skipping ${source.url} — domain ${domain} blocked (${failures} consecutive 401/403)`);
+            fetchSkippedByDomainShortCircuit++;
+            return { source, content: null, ok: false as const, error: new Error(`domain_short_circuited: ${domain}`), skipped: true as const };
+          }
+        }
+
+        fetchAttempted++;
+        const domain = extractDomain(source.url);
         // First attempt
         try {
           const content = await extractTextFromUrl(source.url, {
             timeoutMs: fetchTimeoutMs,
             maxLength: extractionMaxLength,
           });
+          updateDomainBlockingStreak(domainFailureCounts, domain, "success");
           return { source, content, ok: true as const };
         } catch (firstError: unknown) {
           // Retry once on transient errors (timeout / network / server-side 5xx).
@@ -100,11 +149,15 @@ export async function fetchSources(
                 timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
                 maxLength: extractionMaxLength,
               });
+              updateDomainBlockingStreak(domainFailureCounts, domain, "success");
               return { source, content, ok: true as const };
             } catch (retryError: unknown) {
+              const retryClassified = classifySourceFetchFailure(retryError);
+              updateDomainBlockingStreak(domainFailureCounts, domain, retryClassified.type);
               return { source, content: null, ok: false as const, error: retryError };
             }
           }
+          updateDomainBlockingStreak(domainFailureCounts, domain, classified.type);
           return { source, content: null, ok: false as const, error: firstError };
         }
       }),
@@ -112,6 +165,8 @@ export async function fetchSources(
 
     for (const result of results) {
       if (!result.ok || !result.content) {
+        // Skipped items (domain short-circuit) don't count as fetch attempts or failures
+        if ("skipped" in result && result.skipped) continue;
         fetchFailed++;
         const classified = classifySourceFetchFailure(result.error);
         fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
@@ -155,11 +210,15 @@ export async function fetchSources(
     const failureRatio = fetchFailed / fetchAttempted;
     // Per-query fetch failures are routine (paywalls, 403s, 401s). Info-level only.
     // Aggregate degradation is assessed below (source_fetch_degradation).
+    const errorTypeSummary = Object.entries(fetchErrorByType)
+      .map(([type, count]) => `${count}\u00D7 ${humanizeErrorType(type)}`)
+      .join(", ");
     state.warnings.push({
       type: "source_fetch_failure",
       severity: "info",
       message:
-        `Source fetch failed for ${fetchFailed}/${fetchAttempted} source(s) while researching query "${searchQuery.slice(0, 120)}"`,
+        `Source fetch failed for ${fetchFailed}/${fetchAttempted} source(s) while researching query "${searchQuery.slice(0, 120)}"` +
+        (errorTypeSummary ? ` (${errorTypeSummary})` : ""),
       details: {
         stage: "research_fetch",
         query: searchQuery,
@@ -170,6 +229,7 @@ export async function fetchSources(
         failedUrls: failedUrls.slice(0, 20),
         errorSamples: fetchErrorSamples,
         occurrences: fetchFailed,
+        ...(fetchSkippedByDomainShortCircuit > 0 ? { skippedByDomainShortCircuit: fetchSkippedByDomainShortCircuit } : {}),
       },
     });
 

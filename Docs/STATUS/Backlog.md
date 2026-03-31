@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-30
+**Last Updated**: 2026-03-31
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -36,7 +36,7 @@ All structural integrity fixes are shipped (citation carriage, claim decompositi
 | **DIR-1** | **Direction-integrity citation-carriage**: code fix shipped in `e1f2c551`. Citation arrays now carried through reconciliation. Remeasurement on post-fix stack pending. | Analyzer / Verdict | low | high | MONITOR | `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` |
 | **STG1-STEP4** | **Residual factual conjunct-split refinement**: post-`fff7a508` residual for SRG-style disclosure claims (`Werkzeuge/Methoden`) remains. Needs a separate Stage-1 follow-on after PIPE-INT-1; do not conflate this with the D5→Stage-4 integrity fix. | Analyzer / Quality | med | high | DEFERRED | `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`, `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md` |
 | **REMAP-1** | **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). Captain approved after current-stack A/B validation. Rollback flag `preliminaryEvidenceLlmRemapEnabled` available. **Monitor:** Homeopathy-family confidence anomaly. | Analyzer / Quality | — | high | DONE | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` |
-| **OPT-GATE** | **Keep optimization secondary**: P1-A and P1-B require explicit Captain approval. Not blocked by a validation gate, but secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
+| **OPT-GATE** | **Keep optimization secondary**: `P1-B` is already shipped; Stage-2 fetch runtime hardening (`W15` + per-domain 401/403 short-circuit) is also part of the current baseline. Any reopening of the remaining optimization track (`P1-A`, `P2-*`, `P3-*`) requires explicit Captain approval plus a fresh post-March-31 runtime/cost baseline. Secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
 
 ## Deferred / Long-Horizon CB Items
 
@@ -73,6 +73,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 |---|---|---|---|
 | ✅ **PIPE-INT-1 all-insufficient root fix + report matrix + LLM article adjudication**: assessable-claims path, verdict uniqueness invariant, report matrix over all claims, VERDICT_NARRATIVE adjudication extension, deterministic truth clamp removed (confidence ceiling retained). | Analyzer / Integrity / UI | 2026-03-30 | `03387283` + follow-up policy patch |
 | ✅ **Quality evolution deep analysis**: 100 jobs across 12 families, 8 change waves. Cross-linguistic neutrality gap identified (Plastik 58pp). | Quality / Analysis | 2026-03-30 | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` |
+| ✅ **Source-fetch failure reduction**: Stage-2 acquisition now applies per-domain 401/403 blocking-streak short-circuiting within each `fetchSources()` call (`fetchDomainSkipThreshold`, default `2`) and enriches `source_fetch_failure` warnings with human-readable error summaries. Skipped URLs excluded from `attempted` metrics; no warning-policy change. | Analyzer / Reliability | 2026-03-31 | `Docs/WIP/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md` |
 | ✅ **W15 domain-aware fetch batching**: same-domain requests staggered within fetch batches. UCM `fetchSameDomainDelayMs` (default 500). | Analyzer / Reliability | 2026-03-26 | `5942eba5` |
 | ✅ **P1-B preliminary search parallelism**: 3-level parallelization across claims, queries, and source fetches. | Analyzer / Performance | 2026-03-26 | `756dded0` |
 | ✅ **REMAP-1 seeded-evidence LLM remap promoted to default-on** (`b5fad127`): post-Pass-2 Haiku remap recovers claim-local attribution for semantic-slug seeded items. Current-stack A/B validated: Bolsonaro 0%→88% seeded mapping, same verdict direction, controls stable. Captain approved. Rollback flag available. Monitor: Homeopathy-family confidence anomaly. | Analyzer / Quality | 2026-03-27 | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` |
@@ -406,7 +407,7 @@ All 5 UCM gaps identified in the 2026-03-13 audit are now implemented (`fb5395b0
 
 | Description | Domain | Urgency | Importance | Reference |
 |---|---|---|---|---|
-| **Community platform selection & setup**: Choose and deploy a community platform for pre-release user feedback, bug discussion with contributors, and sponsor community access. **Recommendation (pending approval):** Strategy B — GitHub Discussions (structured async) + Zulip (real-time async chat, free for OSS). Discord rejected due to 2025-2026 privacy crisis (data breach, mandatory age verification), zero data portability, and sovereignty mismatch with Swiss-hosted project. **Open decisions:** (1) Zulip Cloud acceptable short-term or Swiss self-hosting required from day one? (2) Sponsor tier wording — "Discord/community access" → platform-agnostic "Private community access"? (3) Moderation ownership before Community Lead hired. **Triggers for Discourse migration:** ≥150 MAU for 2 months, ≥25 weekly posts for 4 weeks, moderation >4 hrs/week for 3 weeks, Community Lead onboarded (2 of 4 required). | Community / Ops | low | med | Research conducted 2026-03-03 (Claude Code session). Placeholder links exist in `Docs/xwiki-pages/.../Contributor Processes/WebHome.xwiki` and sponsorship tiers in `Docs/ARCHIVE/WORKSHOP_REPORT_2026-01-21.md`. |
+| **Community platform selection & setup**: Choose and deploy a community platform for pre-release user feedback, bug discussion with contributors, and sponsor community access. **Recommendation (pending approval):** Strategy B — GitHub Discussions (structured async) + Zulip (real-time async chat, free for OSS). Discord rejected due to 2025-2026 privacy crisis (data breach, mandatory age verification), zero data portability, and sovereignty mismatch with Swiss-hosted project. **Open decisions:** (1) Zulip Cloud acceptable short-term or Swiss self-hosting required from day one? (2) Sponsor tier wording — "Discord/community access" → platform-agnostic "Private community access"? (3) Moderation ownership before Relations Lead hired. **Triggers for Discourse migration:** ≥150 MAU for 2 months, ≥25 weekly posts for 4 weeks, moderation >4 hrs/week for 3 weeks, Relations Lead onboarded (2 of 4 required). | Partner & User Relations / Ops | low | med | Research conducted 2026-03-03 (Claude Code session). Placeholder links exist in `Docs/xwiki-pages/.../Contributor Processes/WebHome.xwiki` and sponsorship tiers in `Docs/ARCHIVE/WORKSHOP_REPORT_2026-01-21.md`. |
 
 ---
 
