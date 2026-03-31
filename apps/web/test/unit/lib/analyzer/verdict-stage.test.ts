@@ -393,6 +393,88 @@ describe("advocateVerdict (Step 1)", () => {
       name: "Stage4MalformedShapeError",
     });
   });
+
+  it("should strip ghost boundary IDs not in coverage matrix for the claim", async () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    // LLM returns a finding for CB_01 (valid) and CB_99 (ghost)
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: [{
+        claimId: "AC_01",
+        truthPercentage: 70,
+        confidence: 65,
+        reasoning: "Test",
+        supportingEvidenceIds: ["EV_01"],
+        contradictingEvidenceIds: [],
+        boundaryFindings: [
+          { boundaryId: "CB_01", boundaryName: "Valid", truthPercentage: 70, confidence: 65, evidenceDirection: "supports", evidenceCount: 1 },
+          { boundaryId: "CB_99", boundaryName: "Ghost", truthPercentage: 30, confidence: 50, evidenceDirection: "contradicts", evidenceCount: 0 },
+        ],
+      }],
+    });
+
+    const result = await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    expect(result[0].boundaryFindings).toHaveLength(1);
+    expect(result[0].boundaryFindings[0].boundaryId).toBe("CB_01");
+  });
+
+  it("should strip boundary ID valid globally but not for this specific claim", async () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02" }),
+    ];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_02", relevantClaimIds: ["AC_02"] }),
+    ];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_01" }),
+      createClaimBoundary({ id: "CB_02" }),
+    ];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    // AC_01's verdict references CB_02 (valid globally but not for AC_01)
+    const mockLLM = createMockLLM({
+      VERDICT_ADVOCATE: [
+        {
+          claimId: "AC_01",
+          truthPercentage: 70,
+          confidence: 65,
+          reasoning: "Test",
+          supportingEvidenceIds: ["EV_01"],
+          contradictingEvidenceIds: [],
+          boundaryFindings: [
+            { boundaryId: "CB_01", boundaryName: "Valid for AC_01", truthPercentage: 70, confidence: 65, evidenceDirection: "supports", evidenceCount: 1 },
+            { boundaryId: "CB_02", boundaryName: "Valid for AC_02 only", truthPercentage: 40, confidence: 50, evidenceDirection: "contradicts", evidenceCount: 1 },
+          ],
+        },
+        {
+          claimId: "AC_02",
+          truthPercentage: 60,
+          confidence: 55,
+          reasoning: "Test",
+          supportingEvidenceIds: ["EV_02"],
+          contradictingEvidenceIds: [],
+          boundaryFindings: [
+            { boundaryId: "CB_02", boundaryName: "Valid for AC_02", truthPercentage: 60, confidence: 55, evidenceDirection: "supports", evidenceCount: 1 },
+          ],
+        },
+      ],
+    });
+
+    const result = await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    // AC_01 should only keep CB_01
+    expect(result[0].boundaryFindings).toHaveLength(1);
+    expect(result[0].boundaryFindings[0].boundaryId).toBe("CB_01");
+    // AC_02 keeps CB_02
+    expect(result[1].boundaryFindings).toHaveLength(1);
+    expect(result[1].boundaryFindings[0].boundaryId).toBe("CB_02");
+  });
 });
 
 // ============================================================================

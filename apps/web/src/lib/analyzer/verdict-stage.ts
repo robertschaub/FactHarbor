@@ -611,7 +611,28 @@ export async function advocateVerdict(
     err.name = "Stage4MalformedShapeError";
     throw err;
   }
-  return rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims, config));
+  const parsed = rawVerdicts.map((raw) => parseAdvocateVerdict(raw, claims, config));
+
+  // Sanitize boundaryFindings: drop entries with boundary IDs that are not valid
+  // for this specific claim according to the coverage matrix. This prevents
+  // hallucinated ("ghost") boundary IDs from flowing through debate Steps 2-4
+  // and into computeTruthPercentageRange() range widening.
+  for (const verdict of parsed) {
+    const validBoundaryIds = new Set(coverageMatrix.getBoundariesForClaim(verdict.claimId));
+    const before = verdict.boundaryFindings.length;
+    verdict.boundaryFindings = verdict.boundaryFindings.filter(
+      (f) => validBoundaryIds.has(f.boundaryId),
+    );
+    const dropped = before - verdict.boundaryFindings.length;
+    if (dropped > 0) {
+      console.debug(
+        `[VerdictStage] Sanitized ${dropped} ghost boundary finding(s) from ${verdict.claimId} ` +
+        `(valid for claim: [${[...validBoundaryIds].join(", ")}])`,
+      );
+    }
+  }
+
+  return parsed;
 }
 
 /**
