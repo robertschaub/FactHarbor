@@ -246,6 +246,10 @@ export async function extractClaims(
   let activePass2 = pass2;
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
+  const singleClaimDirective =
+    (pass2.inputClassification ?? "single_atomic_claim") === "single_atomic_claim"
+      ? " The original input is a single_atomic_claim. Unless the input itself contains multiple independent assertions, return exactly 1 atomic claim."
+      : "";
   // Observability: capture contract validation outcome for stored result
   let contractValidationSummary: { ran: boolean; preservesContract: boolean; rePromptRequired: boolean; summary: string } | undefined;
 
@@ -291,7 +295,8 @@ export async function extractClaims(
         `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
         `If the previous extraction produced claims that would be answered by the same evidence, ` +
         `merge them into fewer independently researchable claims. ` +
-        `Fewer stronger claims are better than many fragile sub-claims.`;
+        `Fewer stronger claims are better than many fragile sub-claims.` +
+        singleClaimDirective;
 
       console.info(
         `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). ` +
@@ -347,13 +352,8 @@ export async function extractClaims(
             // Original preserved contract better — keep it
             console.info(`[Stage1] Contract retry did not improve; keeping original Pass 2.`);
           } else {
-            // Default: prefer fewer claims (lower fragmentation risk)
-            if (retryPass2.atomicClaims.length < pass2.atomicClaims.length) {
-              activePass2 = retryPass2;
-              console.info(`[Stage1] Contract retry still fails but has fewer claims (${retryPass2.atomicClaims.length} vs ${pass2.atomicClaims.length}). Using retry.`);
-            } else {
-              console.info(`[Stage1] Contract retry did not improve; keeping original Pass 2.`);
-            }
+            // If retry still fails contract validation and is not clearly better, keep original.
+            console.info(`[Stage1] Contract retry did not improve; keeping original Pass 2.`);
           }
 
           state.warnings.push({
@@ -368,6 +368,57 @@ export async function extractClaims(
       } catch (retryErr) {
         // Retry failure is non-fatal — keep original Pass 2 output
         console.warn("[Stage1] Claim contract retry failed (non-fatal):", retryErr);
+      }
+    } else if (!contractResult && pass2.atomicClaims.length > 1 && contractMaxRetries > 0) {
+      const safetyGuidance =
+        `CLAIM CONTRACT SAFETY CORRECTION: The previous contract validation did not return a usable result. ` +
+        `Preserve the original input's meaning and prefer the smallest set of independently researchable claims. ` +
+        `If multiple claims would be answered by overlapping evidence, merge them. ` +
+        `Fewer stronger claims are better than several fragile overlapping claims.` +
+        singleClaimDirective;
+
+      try {
+        state.onEvent?.("Retrying Pass 2 after contract validation fail-open...", 24);
+        const retryPass2 = await runPass2(
+          state.originalInput,
+          preliminaryEvidence,
+          pipelineConfig,
+          currentDate,
+          state,
+          safetyGuidance,
+          pass1.inferredGeography,
+          pass1.detectedLanguage,
+        );
+        state.llmCalls++;
+
+        let retryContractResult: ClaimContractValidationResult | undefined;
+        try {
+          retryContractResult = await validateClaimContract(
+            retryPass2.atomicClaims as unknown as AtomicClaim[],
+            state.originalInput,
+            retryPass2.impliedClaim ?? "",
+            retryPass2.articleThesis ?? "",
+            retryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+          );
+          state.llmCalls++;
+        } catch {
+          // Re-validation failure is non-fatal — fall back to count-based selection below
+        }
+
+        const retryValidatedCleanly =
+          !!retryContractResult && !retryContractResult.inputAssessment.rePromptRequired;
+
+        if (retryValidatedCleanly) {
+          activePass2 = retryPass2;
+          console.info(
+            `[Stage1] Contract safety retry selected (${pass2.atomicClaims.length} → ${retryPass2.atomicClaims.length} claims).`
+          );
+        } else {
+          console.info("[Stage1] Contract safety retry did not improve; keeping original Pass 2.");
+        }
+      } catch (retryErr) {
+        console.warn("[Stage1] Contract safety retry failed (non-fatal):", retryErr);
       }
     } else if (contractResult) {
       console.info(
