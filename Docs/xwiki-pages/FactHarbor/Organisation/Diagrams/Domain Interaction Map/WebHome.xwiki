@@ -8,7 +8,7 @@ flowchart LR
  classDef pr fill:#fff3e0,stroke:#ef6c00,stroke-width:2px;
  RD[R&D Domain]:::tech
  Org[Organisation Domain]:::org
- PR[PR, Care & Marketing]:::pr
+ PR[Partner & User Relations]:::pr
  Ops[Operations Domain]:::ops
  RD <-->|Specs & Quality| Org
  Org <-->|Governance & Rules| PR

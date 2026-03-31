@@ -57,9 +57,9 @@ We divide operations into four primary **Domains** (based on Sociocracy 3.0). Ea
 * **Authority**: Approve changes to organisational documentation and internal tools.
 * **Constraint**: Must align with Governance policies set by the Governing Team.
 
-#### **C. Community Domain**
-* **Purpose**: Enable effective community contribution and maintain public trust.
-* **Responsibilities**: Documentation, feedback loop optimization, public relations, community guidelines, moderator coordination.
+#### **C. Partner & User Relations Domain**
+* **Purpose**: Maintain productive relationships with partners (contributors, sponsors, cooperations) and users (news providers, individuals).
+* **Responsibilities**: Public relations, user support, contributor engagement, sponsor relations, cooperation coordination, community guidelines, moderator coordination.
 * **Authority**: Approve community process changes and external communication materials.
 * **Constraint**: Cannot change technical systems or legal policies autonomously.
 
@@ -81,7 +81,7 @@ We divide operations into four primary **Domains** (based on Sociocracy 3.0). Ea
 == 3. Decision-Making ==
 
 === 3.1 Routine Operations ===
-**Handled by**: Domain Leads (R&D, Operations, Community, Finance)
+**Handled by**: Domain Leads (R&D, Operations, Partner & User Relations, Finance)
 **Scope**:
 * Day-to-day operations
 * Technical maintenance
