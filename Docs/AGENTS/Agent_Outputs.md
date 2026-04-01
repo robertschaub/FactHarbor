@@ -1,12 +1,13 @@
 # Agent Outputs Log
 ---
-### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Post-Rollback Live Validation (16 runs)
+### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Post-Rollback Live Validation (17 runs)
 **Task:** Validate the post-rollback baseline across all families that motivated the rollback plus broader coverage.
 **Files touched:** `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Runs:** 16 total — 5 agent-submitted (Plastik, SRG, Bolsonaro ×3) + 11 user-submitted (DPA DE, Keystone-SDA DE, Homeopathy ×2, Bolsonaro PT, BBC EN, Bali plastic, Electricity vs hydrogen, Sexual orientation, Hydrogen vs electricity, Global warming).
-**Key findings:** (1) Zero `verdict_integrity_failure` across all 16 runs. (2) Zero contract validation fail-open in this batch. (3) Zero duplicate verdict IDs. (4) Plastik EN restored: LEANING-TRUE 63/58 (was UNVERIFIED 43/40 during fff7a508 era). (5) SRG improved from UNVERIFIED to LEANING-TRUE 62/45, but 2/3 claims still UNVERIFIED from pre-existing effizient/wirksam over-fragmentation. (6) Bolsonaro "various" clean at LEANING-TRUE 64/66 (historical range). (7) All broader families clean — BBC, DPA, Keystone-SDA, Bali, Homeopathy, Hydrogen, Global warming all produce expected results.
-**UNVERIFIED claims:** 6/16 runs have at least one UNVERIFIED claim, all from evidence-driven variance or the known SRG decomposition issue. None from integrity failures or Stage-1 regression.
-**Conclusion:** Rollback baseline is confirmed stable. Pre-existing SRG over-fragmentation remains open but is not a regression.
+**Runs:** 17 total — 5 agent-submitted (Plastik, SRG, Bolsonaro ×3) + 12 user-submitted (DPA DE ×2, Keystone-SDA DE, Homeopathy ×2, Bolsonaro PT, BBC EN, Bali plastic, Electricity vs hydrogen, Sexual orientation, Hydrogen vs electricity, Global warming).
+**Key findings:** (1) Zero `verdict_integrity_failure` across all 17 runs. (2) Zero contract validation fail-open in this batch. (3) Zero duplicate verdict IDs. (4) Plastik EN restored: LEANING-TRUE 63/58 (was UNVERIFIED 43/40 during fff7a508 era). (5) SRG improved from UNVERIFIED to LEANING-TRUE 62/45, but 2/3 claims still UNVERIFIED from pre-existing effizient/wirksam over-fragmentation. (6) Bolsonaro "various" clean at LEANING-TRUE 64/66 (historical range). (7) All broader families clean — BBC, DPA, Keystone-SDA, Bali, Homeopathy, Hydrogen, Global warming, Sexual orientation all produce expected results.
+**UNVERIFIED claims:** 7/17 runs have at least one UNVERIFIED claim, all from evidence-driven variance or fine-grained sub-claim evidence scarcity. None from integrity failures or Stage-1 regression.
+**Quality evolution analysis (extended):** Added full family trend tables (109 runs, 14+ families), structural defect trends (integrity failures eliminated, contract fail-open intermittent), cross-linguistic neutrality gap (Plastik FR 35-40pp below EN), SRG instability analysis (61pp spread, 11% contract fail-open). All new Apr 1 families (BBC, Bali, Sexual orientation, Global warming, Iran) produce clean directionally-correct results.
+**Conclusion:** Rollback baseline is confirmed stable. Two dominant open problems: SRG decomposition instability (61pp spread) and Plastik cross-linguistic neutrality gap (FR 35-40pp below EN). Both predate the reverted experiment.
 **For next agent:** Full report at `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`. The reverted features (evidence-separability, distinctEvents granularity) were directionally right but had two sub-problems: contract validation fail-open (SRG) and candidate selection preferring bad merges (Plastik). A revised approach needs to solve both before re-shipping.
 
 ---
