@@ -1,5 +1,15 @@
 # Agent Outputs Log
 ---
+### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Post-Rollback Live Validation (16 runs)
+**Task:** Validate the post-rollback baseline across all families that motivated the rollback plus broader coverage.
+**Files touched:** `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Runs:** 16 total — 5 agent-submitted (Plastik, SRG, Bolsonaro ×3) + 11 user-submitted (DPA DE, Keystone-SDA DE, Homeopathy ×2, Bolsonaro PT, BBC EN, Bali plastic, Electricity vs hydrogen, Sexual orientation, Hydrogen vs electricity, Global warming).
+**Key findings:** (1) Zero `verdict_integrity_failure` across all 16 runs. (2) Zero contract validation fail-open in this batch. (3) Zero duplicate verdict IDs. (4) Plastik EN restored: LEANING-TRUE 63/58 (was UNVERIFIED 43/40 during fff7a508 era). (5) SRG improved from UNVERIFIED to LEANING-TRUE 62/45, but 2/3 claims still UNVERIFIED from pre-existing effizient/wirksam over-fragmentation. (6) Bolsonaro "various" clean at LEANING-TRUE 64/66 (historical range). (7) All broader families clean — BBC, DPA, Keystone-SDA, Bali, Homeopathy, Hydrogen, Global warming all produce expected results.
+**UNVERIFIED claims:** 6/16 runs have at least one UNVERIFIED claim, all from evidence-driven variance or the known SRG decomposition issue. None from integrity failures or Stage-1 regression.
+**Conclusion:** Rollback baseline is confirmed stable. Pre-existing SRG over-fragmentation remains open but is not a regression.
+**For next agent:** Full report at `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`. The reverted features (evidence-separability, distinctEvents granularity) were directionally right but had two sub-problems: contract validation fail-open (SRG) and candidate selection preferring bad merges (Plastik). A revised approach needs to solve both before re-shipping.
+
+---
 ### 2026-04-01 | Lead Architect | Codex (GPT-5) | Clean Replay of `fff7a508` Rollback
 **Task:** Recreate the rollback cleanly after the branch had drifted into a mixed Stage-1 state, then verify the post-rollback baseline.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`, `apps/web/prompts/claimboundary.prompt.md`

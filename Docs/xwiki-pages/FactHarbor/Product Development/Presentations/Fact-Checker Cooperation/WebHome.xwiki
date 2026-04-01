@@ -53,9 +53,20 @@ FactHarbor does **not** replace editorial judgment, insider sources, or image/vi
 
 ----
 
-== How does it work? ==
+== Why This Matters ==
 
-Submit a claim → system researches automatically → transparent verdict with sources.
+Misinformation spreads faster than corrections can follow — and the infrastructure is shrinking:
+* **Meta** exited the US Third-Party Fact-Checking Program (January 2025).
+* **Google** reduced ClaimReview visibility in Search results (2025).
+* AI-generated deepfakes and misinformation are accelerating — manual tools are falling behind.
+
+The sector needs independent, sustainable infrastructure. FactHarbor is built for that: open-source, non-profit, and transparent.
+
+----
+
+== How It Works ==
+
+Unlike single-model AI tools, FactHarbor uses a **structured multi-agent debate** — different AI providers argue for and against a claim. Only evidence-backed objections count.
 
 {{mermaid}}
 flowchart TD
@@ -102,10 +113,6 @@ flowchart TD
     classDef web fill:#FFF3E0,stroke:#E65100,color:#BF360C
 {{/mermaid}}
 
-**Core principle:** Not a single AI call, but a **structured debate** — different AI models argue for and against a claim. Only evidence-backed objections count.
-
-----
-
 == What sets FactHarbor apart? ==
 
 |=Dimension|=Manual fact-checking|=FactHarbor
@@ -144,31 +151,11 @@ Unlike a ChatGPT-style conversation, the AI agents here are constrained — they
 
 In the second stage, the agents are fed with evidence gathered via web search (Google, Semantic Scholar, Wikipedia etc.) — a technique known as RAG (Retrieval Augmented Generation).
 
-=== What is the rough workflow? ===
-
-**Input** → Atomic Claims → Web Search → Filter & Organize → 5 AI Roles Debate → **Verdict & Report**
-
 === How accurate is the analysis? ===
 
 The headline verdicts (True through False on a 7-point scale) are a starting point, not the final word — language and evidence are rarely black and white.
 
 The real value is not just a verdict — it's the report behind it: every claim backed by cited sources, counter-arguments, confidence scores, and quality warnings. When evidence is thin or conflicting, the system says so openly rather than producing a confident-sounding answer.
-
-(% class="box warningmessage" %)
-(((
-The system is still in **Alpha** and under active development.
-)))
-
-----
-
-== Why this matters now ==
-
-* **Meta** exited the US Third-Party Fact-Checking Program (January 2025).
-* **Google** reduced ClaimReview visibility in Search results (2025).
-* Fact-checking organisations lost significant platform funding.
-* AI-generated deepfakes and misinformation are accelerating — manual tools are falling behind.
-
-The sector needs independent, sustainable infrastructure that no single platform controls. FactHarbor is built for that: open-source, non-profit, and transparent.
 
 ----
 
@@ -188,7 +175,7 @@ Every claim, every source, every reasoning step is logged — defensible against
 
 ----
 
-== What works today ==
+== Current Status and Roadmap ==
 
 |=Area|=Status
 |**Full pipeline**|5 stages operational: extract claims → research evidence → cluster → AI debate → aggregation
@@ -196,27 +183,17 @@ Every claim, every source, every reasoning step is logged — defensible against
 |**Quality control**|6-layer quality checks, confidence tiers, warnings when evidence is thin
 |**Source evaluation**|Automatic per-domain scoring (peer-reviewed study vs. social media post)
 |**Multilingual**|German, English, French, Portuguese tested
-|**7 search sources**|Google, Serper, SerpAPI, Brave, Wikipedia, Semantic Scholar, Google Fact Check
+|**Analysis time**|~15 minutes per claim (target: under 5 minutes)
 
-----
+(% class="box warningmessage" %)
+(((
+The system is in **Alpha** and under active development.
+)))
 
-== Known limitations ==
-
-|=Limitation|=Explanation
-|**Web sources only**|Paywalls, non-indexed databases, and offline sources are not reached
-|**No claim detection**|The system checks submitted claims — it does not automatically monitor media streams
-|**Alpha phase**|Functional, but not yet designed for 24/7 newsroom operation
-|**~15 minutes per analysis**|Target: under 5 minutes
-
-----
-
-== Roadmap ==
-
-|=Phase|=Status
-|**Alpha**|Current — invite codes, full pipeline, pre-release
-|**Beta**|Planned — user authentication, performance optimization, monitoring
-|**V1.0**|Planned — public REST API, browser extensions, ClaimReview schema
-|**V1.5+**|Vision — image/video verification, CMS plugins, team workspaces
+|=Phase|=What It Unlocks
+|**Beta** (planned)|User authentication, performance optimization, monitoring
+|**V1.0** (planned)|Public REST API, browser extensions, ClaimReview schema
+|**V1.5+** (vision)|Image/video verification, CMS plugins, team workspaces
 
 ----
 
