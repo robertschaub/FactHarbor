@@ -18,7 +18,9 @@
     "promptfoo:verdict": "node scripts/promptfoo-sr.js verdict",
     "promptfoo:all": "node scripts/promptfoo-sr.js all",
     "promptfoo:list": "node scripts/promptfoo-sr.js --list",
-    "promptfoo:view": "node scripts/promptfoo-sr.js --view"
+    "promptfoo:view": "node scripts/promptfoo-sr.js --view",
+    "validate:run": "node scripts/validation/extract-validation-summary.js",
+    "validate:compare": "node scripts/validation/compare-batches.js"
   },
   "dependencies": {
     "next": "16.1.6",

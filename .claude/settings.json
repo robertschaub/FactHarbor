@@ -3,5 +3,18 @@
     "allow": [
       "Bash(git log:*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const c=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).tool_input?.command||''; const blocked=[/git\\s+reset\\s+--hard/,/git\\s+push\\s+.*--force(?!-with-lease)/,/git\\s+clean\\s+-[a-zA-Z]*f/,/git\\s+checkout\\s+--\\s+\\./,/rm\\s+.*factharbor\\.db/,/sqlite3\\s+.*factharbor\\.db/,/npm\\s+run\\s+test:(llm|neutrality|cb-integration|expensive|calibration)/,/npx\\s+vitest.*\\b(llm-integration|input-neutrality|claimboundary-integration)\\b/]; const hit=blocked.find(r=>r.test(c)); if(hit){console.error('BLOCKED by safety hook: '+c.slice(0,100));process.exit(2)}\""
+          }
+        ]
+      }
+    ]
   }
 }

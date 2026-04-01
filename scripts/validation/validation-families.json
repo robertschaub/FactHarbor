@@ -1,0 +1,82 @@
+[
+  {
+    "familyName": "plastik_en",
+    "inputType": "text",
+    "inputValue": "Plastic recycling is pointless"
+  },
+  {
+    "familyName": "srg_compound",
+    "inputType": "text",
+    "inputValue": "Das SRG SSR Medienangebot ist effizient und wirksam"
+  },
+  {
+    "familyName": "bolsonaro_various",
+    "inputType": "text",
+    "inputValue": "Were the various Bolsonaro trials and convictions fair and based on the rule of law?"
+  },
+  {
+    "familyName": "bolsonaro_all",
+    "inputType": "text",
+    "inputValue": "Were all Bolsonaro trials and proceedings conducted fairly?"
+  },
+  {
+    "familyName": "bolsonaro_pt",
+    "inputType": "text",
+    "inputValue": "O julgamento de Bolsonaro pelo TSE sobre o golpe de Estado foi justo?"
+  },
+  {
+    "familyName": "dpa_de",
+    "inputType": "text",
+    "inputValue": "Die DPA Faktenprüfung ist zuverlässig und unparteiisch"
+  },
+  {
+    "familyName": "dpa_de_ambiguous",
+    "inputType": "text",
+    "inputValue": "Die DPA prüft Behauptungen korrekt"
+  },
+  {
+    "familyName": "keystone_sda_de",
+    "inputType": "text",
+    "inputValue": "Die Analysemethoden von Keystone-SDA sind transparent und zuverlässig"
+  },
+  {
+    "familyName": "homeopathy_single",
+    "inputType": "text",
+    "inputValue": "Homeopathy is effective"
+  },
+  {
+    "familyName": "homeopathy_ambiguous",
+    "inputType": "text",
+    "inputValue": "Homeopathy is an effective treatment for various conditions"
+  },
+  {
+    "familyName": "bbc_en",
+    "inputType": "text",
+    "inputValue": "BBC fact-checking is reliable and unbiased"
+  },
+  {
+    "familyName": "bali_plastic",
+    "inputType": "text",
+    "inputValue": "Bali has effectively prevented plastic pollution"
+  },
+  {
+    "familyName": "electricity_vs_hydrogen",
+    "inputType": "text",
+    "inputValue": "Electric cars are more efficient than hydrogen cars"
+  },
+  {
+    "familyName": "hydrogen_vs_electricity",
+    "inputType": "text",
+    "inputValue": "Hydrogen is more efficient than electricity for powering vehicles"
+  },
+  {
+    "familyName": "sexual_orientation",
+    "inputType": "text",
+    "inputValue": "Sexual orientation is determined after birth by environmental factors"
+  },
+  {
+    "familyName": "global_warming",
+    "inputType": "text",
+    "inputValue": "Global warming is primarily caused by human activities"
+  }
+]
