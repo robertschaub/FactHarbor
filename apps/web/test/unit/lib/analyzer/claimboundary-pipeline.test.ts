@@ -1405,6 +1405,42 @@ describe("Stage 1: runGate1Validation", () => {
   });
 });
 
+// ============================================================================
+// LANGUAGE INTENT (Proposal 2)
+// ============================================================================
+
+describe("LanguageIntent initialization", () => {
+  it("should include language and languageLane fields on SearchQuery type", () => {
+    // Type-level test: SearchQuery should accept language lane fields
+    const query: import("@/lib/analyzer/types").SearchQuery = {
+      query: "test query",
+      iteration: 0,
+      focus: "main",
+      resultsCount: 5,
+      timestamp: new Date().toISOString(),
+      language: "de",
+      languageLane: "primary",
+      laneReason: "input language",
+    };
+    expect(query.language).toBe("de");
+    expect(query.languageLane).toBe("primary");
+    expect(query.laneReason).toBe("input language");
+  });
+
+  it("should define LanguageIntent with required fields", () => {
+    const intent: import("@/lib/analyzer/types").LanguageIntent = {
+      inputLanguage: "de",
+      reportLanguage: "de",
+      retrievalLanguages: [{ language: "de", lane: "primary" }],
+      sourceLanguagePolicy: "preserve_original",
+    };
+    expect(intent.reportLanguage).toBe("de");
+    expect(intent.sourceLanguagePolicy).toBe("preserve_original");
+    expect(intent.retrievalLanguages).toHaveLength(1);
+    expect(intent.retrievalLanguages[0].lane).toBe("primary");
+  });
+});
+
 describe("Stage 1: runPreliminarySearch", () => {
   beforeEach(() => {
     vi.clearAllMocks();

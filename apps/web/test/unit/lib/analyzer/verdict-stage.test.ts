@@ -481,6 +481,92 @@ describe("advocateVerdict (Step 1)", () => {
 // STEP 2: SELF-CONSISTENCY CHECK
 // ============================================================================
 
+// ============================================================================
+// REPORT LANGUAGE (Proposal 2 — multilingual output policy)
+// ============================================================================
+
+describe("reportLanguage propagation (Proposal 2)", () => {
+  it("should pass reportLanguage to VERDICT_ADVOCATE payload when set on config", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let capturedPayload: any = null;
+    const mockLLM = vi.fn(async (key: string, payload: any) => {
+      if (key === "VERDICT_ADVOCATE") {
+        capturedPayload = payload;
+        return [advocateResponse()];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      reportLanguage: "de",
+    };
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM, config);
+
+    expect(capturedPayload).toBeDefined();
+    expect(capturedPayload.reportLanguage).toBe("de");
+  });
+
+  it("should NOT include reportLanguage in payload when not set on config", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let capturedPayload: any = null;
+    const mockLLM = vi.fn(async (key: string, payload: any) => {
+      if (key === "VERDICT_ADVOCATE") {
+        capturedPayload = payload;
+        return [advocateResponse()];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    expect(capturedPayload).toBeDefined();
+    expect(capturedPayload.reportLanguage).toBeUndefined();
+  });
+
+  it("should pass reportLanguage to VERDICT_RECONCILIATION payload via config", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
+      confidence: 80, reasoning: "test", harmPotential: "medium", isContested: false,
+      supportingEvidenceIds: ["EV_01"], contradictingEvidenceIds: [],
+      boundaryFindings: [], consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 0, supporting: 0, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+
+    let capturedPayload: any = null;
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: reconciliationResponse(),
+    });
+    const wrappedLLM = vi.fn(async (key: string, payload: any, options: any) => {
+      if (key === "VERDICT_RECONCILIATION") capturedPayload = payload;
+      return mockLLM(key, payload, options);
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      reportLanguage: "fr",
+    };
+
+    await reconcileVerdicts(
+      advocateVerdictsList, { challenges: [] }, [], evidence, wrappedLLM, config,
+    );
+
+    expect(capturedPayload).toBeDefined();
+    expect(capturedPayload.reportLanguage).toBe("fr");
+  });
+});
+
 describe("selfConsistencyCheck (Step 2)", () => {
   it("should skip when mode is disabled", async () => {
     const claims = [createAtomicClaim()];

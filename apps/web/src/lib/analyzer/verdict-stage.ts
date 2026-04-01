@@ -937,6 +937,7 @@ export async function reconcileVerdicts(
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
+    ...(config.reportLanguage ? { reportLanguage: config.reportLanguage } : {}),
   }, { tier: config.debateRoles.reconciler.strength, providerOverride: config.debateRoles.reconciler.provider, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)
