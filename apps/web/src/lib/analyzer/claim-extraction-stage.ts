@@ -308,11 +308,32 @@ export async function extractClaims(
           pass1.detectedLanguage,
         );
         state.llmCalls++;
-        activePass2 = retryPass2;
 
         console.info(
           `[Stage1] Claim contract retry produced ${retryPass2.atomicClaims.length} claim(s).`
         );
+
+        let retryContractResult: ClaimContractValidationResult | undefined;
+        try {
+          retryContractResult = await validateClaimContract(
+            retryPass2.atomicClaims as unknown as AtomicClaim[],
+            state.originalInput,
+            retryPass2.impliedClaim ?? "",
+            retryPass2.articleThesis ?? "",
+            retryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+          );
+          state.llmCalls++;
+        } catch {
+          // Re-validation failure is non-fatal — keep original Pass 2 output.
+        }
+
+        if (retryContractResult && !retryContractResult.inputAssessment.rePromptRequired) {
+          activePass2 = retryPass2;
+          console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
+        } else {
+          console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
+        }
       } catch (retryErr) {
         // Retry failure is non-fatal — keep original Pass 2 output
         console.warn("[Stage1] Claim contract retry failed (non-fatal):", retryErr);
@@ -352,12 +373,9 @@ export async function extractClaims(
   // Tagged claims are exempt from Gate 1 fidelity filtering — they represent
   // inherent interpretations of the input's semantic range, not evidence imports.
   // ------------------------------------------------------------------
-  // Use LLM's explicit inputClassification when available (Phase 2.2);
-  // fall back to structural heuristic for backward compat with pre-2.2 prompts.
-  const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim"
-    || (activePass2.inputClassification === "single_atomic_claim"  // pre-2.2 fallback
-        && filteredClaims.length > 1
-        && filteredClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+  // Trust the LLM's explicit inputClassification. Only ambiguous_single_claim
+  // outputs are dimension decompositions.
+  const isDimensionInput = activePass2.inputClassification === "ambiguous_single_claim";
   if (isDimensionInput) {
     for (const c of filteredClaims) {
       (c as AtomicClaim).isDimensionDecomposition = true;
@@ -428,10 +446,7 @@ export async function extractClaims(
         );
 
         // Dimension decomposition tagging (same logic as initial pass)
-        const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
-          || (retryPass2.inputClassification === "single_atomic_claim"
-              && retryClaims.length > 1
-              && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+        const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim";
         if (retryIsDimension) {
           for (const c of retryClaims) {
             (c as AtomicClaim).isDimensionDecomposition = true;
@@ -536,10 +551,7 @@ export async function extractClaims(
       );
 
       // Dimension decomposition tagging (same logic as initial pass)
-      const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim"
-        || (retryPass2.inputClassification === "single_atomic_claim"
-            && retryClaims.length > 1
-            && retryClaims.every(c => c.centrality === "high" && c.claimDirection === "supports_thesis"));
+      const retryIsDimension = retryPass2.inputClassification === "ambiguous_single_claim";
       if (retryIsDimension) {
         for (const c of retryClaims) {
           (c as AtomicClaim).isDimensionDecomposition = true;

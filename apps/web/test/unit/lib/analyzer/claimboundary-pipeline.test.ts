@@ -6552,14 +6552,21 @@ describe("Stage 1: extractClaims reprompt loop", () => {
   };
 
   // Helper: build a Pass 2 output fixture with N claims
-  function makePass2(count: number) {
+  function makePass2(
+    count: number,
+    options?: {
+      inputClassification?: string;
+      statementPrefix?: string;
+    },
+  ) {
     return {
       impliedClaim: "Entity A achieved metric X",
       backgroundDetails: "Background",
       articleThesis: "Thesis",
+      inputClassification: options?.inputClassification ?? "single_atomic_claim",
       atomicClaims: Array.from({ length: count }, (_, i) => ({
         id: `AC_${String(i + 1).padStart(2, "0")}`,
-        statement: `Claim ${i + 1}`,
+        statement: `${options?.statementPrefix ?? "Claim"} ${i + 1}`,
         category: "factual",
         centrality: "high",
         harmPotential: "medium",
@@ -6800,6 +6807,329 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(lowClaimWarnings[0].message).toContain("minimum: 3");
     expect(lowClaimWarnings[0].details.attemptsUsed).toBe(2);
   });
+
+  it("should not auto-tag single_atomic_claim multi-claim outputs as dimension decompositions", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(2, { inputClassification: "single_atomic_claim", statementPrefix: "Single" });
+        case 3:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "drift" },
+            ],
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Single broad input should not bypass fidelity via fallback",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims[0].id).toBe("AC_01");
+  });
+
+  it("should still tag explicit ambiguous_single_claim outputs as dimension decompositions", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(2, { inputClassification: "ambiguous_single_claim", statementPrefix: "Ambiguous" });
+        case 3:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "dimension drift allowed" },
+            ],
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Ambiguous broad input should preserve explicit dimension decomposition",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(2);
+    expect(result.atomicClaims.every((claim: any) => claim.isDimensionDecomposition === true)).toBe(true);
+  });
+
+  it("should keep the original pass2 when contract retry still requires re-prompting", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(2, { inputClassification: "single_atomic_claim", statementPrefix: "Original" });
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "proxy drift detected",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "drift",
+              },
+            ],
+          };
+        case 4:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Retry" });
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "retry still drifts",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "still drift",
+              },
+            ],
+          };
+        case 6:
+          return makeGate1Pass(2);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Contract retry should keep original when retry still fails",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(2);
+    expect(result.atomicClaims[0].statement).toContain("Original");
+  });
+
+  it("should keep the original pass2 when contract retry re-validation returns undefined", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(2, { inputClassification: "single_atomic_claim", statementPrefix: "Original" });
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "proxy drift detected",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "drift",
+              },
+            ],
+          };
+        case 4:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Retry" });
+        case 5:
+          return undefined;
+        case 6:
+          return makeGate1Pass(2);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Contract retry should keep original when re-validation is undefined",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(2);
+    expect(result.atomicClaims[0].statement).toContain("Original");
+  });
+
 
   // --------------------------------------------------------------------------
   // MT-5(C): Multi-event collapse guard
