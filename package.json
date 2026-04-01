@@ -23,7 +23,7 @@
     "validate:compare": "node scripts/validation/compare-batches.js"
   },
   "dependencies": {
-    "next": "16.1.6",
+    "next": "16.1.7",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.0"
   },
