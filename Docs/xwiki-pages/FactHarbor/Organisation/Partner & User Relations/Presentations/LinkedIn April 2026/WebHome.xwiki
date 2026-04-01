@@ -1,0 +1,50 @@
+= Facts are the foundation of democracy and journalism. Who maintains them when Big Tech pulls back? =
+
+{{info}}
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 1 April 2026
+**Published on:** [[LinkedIn>>https://www.linkedin.com/feed/update/urn:li:activity:7445085142844456960/]]
+{{/info}}
+
+Some people believe bold claims with little evidence. Others step back entirely: //"I don't read the news anymore. I can't trust anything."//
+
+Both reactions are understandable. When reasoning is hidden, and sources lack transparency, trust erodes. And the infrastructure that was supposed to help is shrinking — **Meta exited** the Third-Party Fact-Checking Program, **Google reduced** ClaimReview visibility, and fact-checking organizations **lost significant platform funding**.
+
+The problem isn't that people don't care about truth — it's that the **structure behind information is invisible**.
+
+That's why I've been building **FactHarbor** — full-time, since November 2025.
+
+----
+
+FactHarbor is an **open-source tool for automated fact-checking**. Submit any claim or article — the system extracts verifiable statements, searches supporting and opposing evidence across the web and academic databases, scores every source for credibility, and runs a **structured AI debate** where different providers argue for and against each claim.
+
+**This is not just asking ChatGPT a question.**
+AI follows tightly prescribed workflows and structured data contracts. **Only evidence-backed objections can change a verdict.** Every conclusion links to cited evidence — so you can **inspect the reasoning and judge for yourself**.
+
+The result is not a single label, but a **multi-perspective evidence landscape** showing where a claim is well-supported, where it's contradicted, and where reasonable people may still disagree.
+
+----
+
+== Where it stands ==
+
+The system is in Alpha — **fully operational end-to-end**, not yet production-ready. Everything is **open source, non-profit, and transparent**.
+
+== What I'm looking for ==
+
+* **Fact-checkers and newsrooms** willing to test the tool and share feedback
+* **Research partners** for joint projects
+* **Foundations and sponsors** who believe independent fact-checking infrastructure matters
+
+----
+
+== Links ==
+
+* **Try it:** [[app.FactHarbor.ch>>https://app.factharbor.ch]]
+* **For newsrooms and agencies:** [[FactHarbor for Newsrooms>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
+* **Support options:** [[Support FactHarbor>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
+* **Documentation:** [[factharbor.ch>>https://factharbor.ch]]
+
+If you know someone in media, fact-checking, or research who should see this — I'd appreciate a **tag or share** to help get this in front of the right people.
+
+----
+
+**Navigation:** [[Presentations>>FactHarbor.Organisation.Partner & User Relations.Presentations.WebHome]] | [[Organisation>>FactHarbor.Organisation.WebHome]]
