@@ -697,6 +697,7 @@ export async function runResearchIteration(
     return;
   }
   const evidenceCountBeforeIteration = state.evidenceItems.length;
+  const searchQueryCountBeforeIteration = state.searchQueries.length;
 
   // 1. Generate search queries via LLM (Haiku)
   const queries = await generateResearchQueries(
@@ -902,8 +903,9 @@ export async function runResearchIteration(
     );
   }
 
-  // Supplementary English lane: check if primary-language yield is below scarcity thresholds
-  const totalResultsThisIteration = state.searchQueries
+  // Supplementary English lane: check if THIS iteration's primary-language yield is below scarcity thresholds
+  const thisIterationQueries = state.searchQueries.slice(searchQueryCountBeforeIteration);
+  const totalResultsThisIteration = thisIterationQueries
     .filter((q) => q.languageLane === "primary" || !q.languageLane)
     .reduce((sum, q) => sum + q.resultsCount, 0);
   const newEvidenceThisIteration = state.evidenceItems.length - evidenceCountBeforeIteration;
@@ -1018,10 +1020,8 @@ export async function maybeRunSupplementaryEnglishLane(
     );
     state.llmCalls++;
 
-    // Tag evidence from EN lane
-    for (const item of rawEvidence) {
-      item.searchStrategy = "supplementary_en" as any;
-    }
+    // EN lane evidence is traceable via searchQuery.languageLane="supplementary_en"
+    // and the source's searchQuery field — no separate tag needed on evidence items.
 
     const { kept } = filterByProbativeValue(rawEvidence);
     const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
