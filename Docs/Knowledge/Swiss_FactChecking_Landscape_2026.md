@@ -138,7 +138,7 @@ Die Schweiz hat **kein Aquivalent zu CORRECTIV (DE), Full Fact (UK) oder AFP Fac
 
 | Person | Rolle | Organisation | Kontakt |
 |--------|-------|-------------|---------|
-| **Catherine Gilbert** | Verification Officer | Keystone-SDA | [LinkedIn](https://ch.linkedin.com/in/catherine-gilbert-087684156), factchecking@keystone-sda.ch |
+| **Catherine Gilbert** | OSINT Research (Freelance, since Feb 2026; ex-Verification Officer Keystone-SDA) | dpa Deutsche Presse-Agentur | [LinkedIn](https://ch.linkedin.com/in/catherine-gilbert-087684156) |
 | **Jan Ludwig** | Team Lead OSINT | NZZ | [LinkedIn](https://www.linkedin.com/in/jan-ludwig-8bb304221/) |
 | **Thomas Benko** | AI Innovation Lead Newsroom | Ringier/Blick | Via Ringier |
 

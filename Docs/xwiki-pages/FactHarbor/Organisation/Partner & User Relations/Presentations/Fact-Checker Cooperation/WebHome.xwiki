@@ -8,9 +8,10 @@
 
 (% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
 (((
-**For inspection and discussion:**
+**Inspect:**
 * What FactHarbor does, challenges, goals
-* Cooperation opportunities
+**Discuss:**
+* Cooperation opportunities with fact-checkers and newsrooms
 )))
 
 == FactHarbor Organisation ==
@@ -219,4 +220,4 @@ Robert Schaub — Founder and Lead Developer
 
 ----
 
-**Navigation:** [[Presentations>>FactHarbor.Product Development.Presentations.WebHome]] | [[Support FactHarbor>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
+**Navigation:** [[Presentations>>FactHarbor.Organisation.Partner & User Relations.Presentations.WebHome]] | [[Support FactHarbor>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]

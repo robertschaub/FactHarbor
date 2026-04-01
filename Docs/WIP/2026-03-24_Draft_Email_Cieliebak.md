@@ -1,4 +1,4 @@
-# Draft Outreach Email — Prof. Dr. Mark Cieliebak (ZHAW)
+# Draft Outreach Email — Prof. Dr. Mark Cieliebak (ZHAW) — SENT 2026-03-25
 
 **To:** ciel@zhaw.ch
 **Subject:** Kooperationsanfrage: Automatisiertes Fact-Checking
