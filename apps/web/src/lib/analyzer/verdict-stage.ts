@@ -322,6 +322,9 @@ export interface VerdictStageConfig {
     /** Boundary variance widening weight (0-1). 0.0 = disabled (method A). */
     boundaryVarianceWeight: number;
   };
+
+  /** BCP-47 code for report-authored analytical text (Proposal 2). */
+  reportLanguage?: string;
 }
 
 /**
@@ -412,6 +415,7 @@ export async function runVerdictStage(
   onEvent?: (message: string, progress: number) => void,
   calculationConfig?: CalcConfig,
   sources?: FetchedSource[],
+  reportLanguage?: string,
 ): Promise<CBClaimVerdict[]> {
   // D5 Control 2: Evidence partitioning for structural advocate independence
   let advocateEvidence = evidence;
@@ -594,6 +598,7 @@ export async function advocateVerdict(
       counts: coverageMatrix.counts,
     },
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
+    ...(config.reportLanguage ? { reportLanguage: config.reportLanguage } : {}),
   }, { tier: config.debateRoles.advocate.strength, providerOverride: config.debateRoles.advocate.provider, callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" } });
 
   // Guard against silent null returns from masked LLM errors (W14: three-layer masking chain)

@@ -308,6 +308,21 @@ export interface FactorAnalysis {
 // SEARCH & RESEARCH TYPES
 // ============================================================================
 
+/** Describes a single retrieval language lane. */
+export interface RetrievalLanguageLane {
+  language: string;
+  lane: "primary" | "supplementary_en";
+  reason?: string;
+}
+
+/** Cross-stage language contract (Proposal 2). */
+export interface LanguageIntent {
+  inputLanguage: string;
+  reportLanguage: string;
+  retrievalLanguages: RetrievalLanguageLane[];
+  sourceLanguagePolicy: "preserve_original";
+}
+
 export interface SearchQuery {
   query: string;
   iteration: number;
@@ -317,6 +332,9 @@ export interface SearchQuery {
   searchProvider?: string;
   /** Error message if the search provider returned a fatal error (429, quota exhaustion) */
   error?: string;
+  language?: string;
+  languageLane?: "primary" | "supplementary_en";
+  laneReason?: string;
 }
 
 export interface ResearchState {
@@ -1133,6 +1151,8 @@ export interface CBResearchState {
   inputType: "text" | "url";
   // Pipeline-start timestamp for runtime budget checks (e.g., D5 contrarian ceiling)
   pipelineStartMs?: number;
+  /** Cross-stage language contract (Proposal 2) */
+  languageIntent: LanguageIntent | null;
   understanding: CBClaimUnderstanding | null;
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];

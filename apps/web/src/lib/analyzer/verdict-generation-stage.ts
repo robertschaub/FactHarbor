@@ -92,6 +92,7 @@ export async function generateVerdicts(
   onEvent?: (message: string, progress: number) => void,
   jobId?: string,
   sources?: FetchedSource[],
+  reportLanguage?: string,
 ): Promise<CBClaimVerdict[]> {
   // Load UCM configs for verdict stage
   const [pipelineResult, calcResult] = await Promise.all([
@@ -111,6 +112,7 @@ export async function generateVerdicts(
 
   // Build VerdictStageConfig from UCM parameters
   const verdictConfig = buildVerdictStageConfig(pipelineConfig, calcConfig);
+  if (reportLanguage) verdictConfig.reportLanguage = reportLanguage;
 
   // Production LLM call wiring — use injected or create from UCM.
   // Pass warnings collector so runtime fallbacks surface in resultJson.analysisWarnings.
@@ -127,6 +129,7 @@ export async function generateVerdicts(
     onEvent,
     calcConfig,
     sources,
+    reportLanguage,
   );
 }
 

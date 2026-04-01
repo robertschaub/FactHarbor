@@ -250,11 +250,13 @@ export async function runClaimBoundaryAnalysis(
 
   // Record prompt + SR usage once at startup and persist a full resolved snapshot
   // for the job. This restores per-job provenance without changing analysis logic.
+  let promptContentHash: string | null = null;
   if (input.jobId) {
     await Promise.all([
       loadPromptConfig("claimboundary", input.jobId),
       getConfig("sr", "default", { jobId: input.jobId }),
-    ]).then(([, srConfigResult]) => {
+    ]).then(([promptResult, srConfigResult]) => {
+      promptContentHash = promptResult?.contentHash ?? null;
       void captureConfigSnapshotAsync(
         input.jobId!,
         initialPipelineConfig,
@@ -337,6 +339,7 @@ export async function runClaimBoundaryAnalysis(
       originalInput: analysisText,
       inputType: input.inputType,
       pipelineStartMs: Date.now(),
+      languageIntent: null,
       understanding: null,
       evidenceItems: [],
       sources: [],
@@ -382,7 +385,14 @@ export async function runClaimBoundaryAnalysis(
     startPhase("understand");
     const understanding = await extractClaims(state);
     state.understanding = understanding;
-    
+    const inputLanguage = understanding.detectedLanguage ?? "en";
+    state.languageIntent = {
+      inputLanguage,
+      reportLanguage: inputLanguage,
+      retrievalLanguages: [{ language: inputLanguage, lane: "primary" as const }],
+      sourceLanguagePolicy: "preserve_original" as const,
+    };
+
     endPhase("understand");
 
     // Record Gate 1 stats after claim extraction
@@ -600,6 +610,7 @@ export async function runClaimBoundaryAnalysis(
       jobId: input.jobId,
       recordRuntimeModelUsage,
       roleTraceRecorder,
+      reportLanguage: state.languageIntent?.reportLanguage,
     });
 
     // D5 Control 1: Create UNVERIFIED verdicts for insufficient claims
@@ -856,7 +867,10 @@ export async function runClaimBoundaryAnalysis(
           balanceRatio: isNaN(evidenceBalance.balanceRatio) ? null : Math.round(evidenceBalance.balanceRatio * 100) / 100,
           isSkewed: evidenceBalance.isSkewed,
         },
+        promptContentHash,
       },
+      // Language contract (Proposal 2)
+      languageIntent: state.languageIntent,
       // Core assessment data
       truthPercentage: assessment.truthPercentage,
       verdict: assessment.verdict,
@@ -926,6 +940,7 @@ type RunVerdictStageWithPreflightArgs = {
   probeFn?: typeof probeLLMConnectivity;
   generateVerdictsFn?: typeof generateVerdicts;
   isSystemPausedFn?: typeof isSystemPaused;
+  reportLanguage?: string;
 };
 
 /**
@@ -950,6 +965,7 @@ export async function runVerdictStageWithPreflight({
   probeFn = probeLLMConnectivity,
   generateVerdictsFn = generateVerdicts,
   isSystemPausedFn = isSystemPaused,
+  reportLanguage,
 }: RunVerdictStageWithPreflightArgs): Promise<CBClaimVerdict[]> {
   if (claims.length === 0) {
     return [];
@@ -992,6 +1008,7 @@ export async function runVerdictStageWithPreflight({
       onEvent,
       jobId,
       sources,
+      reportLanguage,
     );
   } catch (verdictError: unknown) {
     const errorMessage = verdictError instanceof Error

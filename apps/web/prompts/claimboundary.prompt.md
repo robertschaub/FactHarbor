@@ -888,7 +888,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 
 ### Rules
 
-- Do not assume any particular language. Analyze evidence in its original language.
+- **Report language:** Write all report-authored analytical text (reasoning, explanations, verdicts) in `${reportLanguage}`. Preserve source-authored evidence text (quotes, excerpts, titles) in their original language — do not translate them.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - For each claim, consider evidence from ALL boundaries, not just one.
 - `truthPercentage`: 0 = completely false, 100 = completely true. Base this on the weight and quality of evidence, not on the number of evidence items.
@@ -1064,7 +1064,7 @@ Produce a final verdict that:
 
 ### Rules
 
-- Do not assume any particular language. Reason in the language of the evidence.
+- **Report language:** Write all report-authored analytical text (reasoning, challenge responses, reconciliation notes) in `${reportLanguage}`. Preserve source-authored evidence text in original language.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Consider challenges seriously. If a challenge point is valid, adjust the verdict. If unfounded, explain why with evidence citations.
 - Each challenge point includes a `challengeValidation` object. If `evidenceIdsValid` is false, the challenge cites non-existent evidence — treat those citations as hallucinated, do NOT give them analytical weight.
@@ -1323,7 +1323,7 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 
 ### Rules
 
-- Do not assume any particular language. Write the narrative in the same language as the input claims and evidence.
+- **Report language:** Write the entire narrative in `${reportLanguage}`. This includes headline, key finding, limitations, and all analytical text. Preserve source-authored evidence text (titles, excerpts, quotes) in original language — do not translate them.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - `headline`: One sentence capturing the overall finding.
 - `evidenceBaseSummary`: Quantitative summary — e.g., "14 evidence items from 9 sources across 3 analytical perspectives."

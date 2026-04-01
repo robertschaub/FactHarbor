@@ -205,6 +205,7 @@ export async function aggregateAssessment(
       coverageMatrix,
       evidence,
       pipelineConfig,
+      state.languageIntent?.reportLanguage,
     );
     state.llmCalls++;
   } catch (err) {
@@ -380,10 +381,12 @@ export async function generateVerdictNarrative(
   coverageMatrix: CoverageMatrix,
   evidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,
+  reportLanguage?: string,
 ): Promise<VerdictNarrative> {
   const currentDate = new Date().toISOString().split("T")[0];
 
   const rendered = await loadAndRenderSection("claimboundary", "VERDICT_NARRATIVE", {
+    reportLanguage: reportLanguage ?? "en",
     currentDate,
     overallVerdict: JSON.stringify({
       truthPercentage: Math.round(truthPercentage),

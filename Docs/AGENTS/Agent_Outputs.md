@@ -1,5 +1,14 @@
 # Agent Outputs Log
 ---
+### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Multilingual Output/Search Policy (Proposal 2)
+**Task:** Implement approved Proposal 2: LanguageIntent as explicit pipeline state with reportLanguage threading through Stage 4/5.
+**Files touched:** `types.ts` (LanguageIntent + RetrievalLanguageLane + SearchQuery lane fields + CBResearchState.languageIntent), `claimboundary-pipeline.ts` (init LanguageIntent after Stage 1, thread to Stage 4/5, persist in resultJson), `verdict-stage.ts` (reportLanguage on VerdictStageConfig + advocate/reconciliation payloads + runVerdictStage parameter), `verdict-generation-stage.ts` (reportLanguage parameter + config threading), `aggregation-stage.ts` (reportLanguage on generateVerdictNarrative + forwarded from state), `research-orchestrator.ts` (language/languageLane on search queries), `claimboundary.prompt.md` (reportLanguage directives on VERDICT_ADVOCATE, VERDICT_RECONCILIATION, VERDICT_NARRATIVE).
+**What's implemented:** (1) LanguageIntent type with inputLanguage, reportLanguage, retrievalLanguages[], sourceLanguagePolicy. (2) Initialized from Stage 1 detectedLanguage. (3) Threaded to Stage 4 prompts via config.reportLanguage and payload spread. (4) Threaded to Stage 5 via generateVerdictNarrative parameter. (5) Prompt instructions: "Write report-authored text in ${reportLanguage}. Preserve source-authored evidence text in original language." (6) SearchQuery observability: language + languageLane fields. (7) LanguageIntent persisted in resultJson for auditability.
+**What's NOT implemented (deferred per design):** English supplementary retrieval lane logic in Stage 2 (only lane metadata). UI/chrome localization. Full search-cache language partitioning. Stage 5 deterministic fallback localization (documented as English-only).
+**Verification:** 1492 tests pass, build clean.
+**For next agent:** reportLanguage is now a first-class cross-stage contract. Non-English inputs should produce German/French/etc report text on the next live run. English supplementary retrieval is metadata-ready but the decision logic (when to add EN lane) is not yet implemented.
+
+---
 ### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Post-Rollback Live Validation (17 runs)
 **Task:** Validate the post-rollback baseline across all families that motivated the rollback plus broader coverage.
 **Files touched:** `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`, `Docs/AGENTS/Agent_Outputs.md`

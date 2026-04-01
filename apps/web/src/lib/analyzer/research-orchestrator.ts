@@ -737,6 +737,8 @@ export async function runResearchIteration(
         resultsCount: response.results.length,
         timestamp: new Date().toISOString(),
         searchProvider: response.providersUsed.join(", "),
+        language: state.languageIntent?.inputLanguage ?? state.understanding?.detectedLanguage,
+        languageLane: "primary",
       });
       if (response.results.length > 0) {
         state.onEvent?.(`Search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
