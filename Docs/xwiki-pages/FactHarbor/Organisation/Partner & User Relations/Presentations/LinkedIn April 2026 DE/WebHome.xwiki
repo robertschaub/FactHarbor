@@ -1,7 +1,7 @@
-= Fakten sind das Fundament von Demokratie und Journalismus. Wer staerkt dieses Fundament, wenn Big Tech aussteigt? =
+= Fakten sind das Fundament von Demokratie und Journalismus. Wer stärkt dieses Fundament, wenn Big Tech aussteigt? =
 
 {{info}}
-**Autor:** Robert Schaub (Gruender und Lead Developer, FactHarbor.ch) **Datum:** 1. April 2026
+**Autor:** Robert Schaub (Gründer und Lead Developer, FactHarbor.ch) **Datum:** 1. April 2026
 **Publiziert auf:** [[LinkedIn>>https://www.linkedin.com/feed/update/urn:li:activity:7445085142844456960/]]
 **English version:** [[LinkedIn April 2026>>FactHarbor.Organisation.Partner & User Relations.Presentations.LinkedIn April 2026.WebHome]]
 {{/info}}
@@ -16,12 +16,12 @@ Deshalb baue ich **FactHarbor** — Vollzeit, seit November 2025.
 
 ----
 
-FactHarbor ist ein **Open-Source-Tool fuer automatisiertes Fact-Checking**. Behauptung oder Artikel eingeben — das System zerlegt den Text in pruefbare Aussagen, recherchiert stuetzende und widersprechende Evidenz im Web und in akademischen Datenbanken, bewertet jede Quelle auf Glaubwuerdigkeit und fuehrt eine **strukturierte KI-Debatte**, in der verschiedene Anbieter fuer und gegen jede Behauptung argumentieren.
+FactHarbor ist ein **Open-Source-Tool für automatisiertes Fact-Checking**. Behauptung oder Artikel eingeben — das System zerlegt den Text in prüfbare Aussagen, recherchiert stützende und widersprechende Evidenz im Web und in akademischen Datenbanken, bewertet jede Quelle auf Glaubwürdigkeit und führt eine **strukturierte KI-Debatte**, in der verschiedene Anbieter für und gegen jede Behauptung argumentieren.
 
 **Das ist nicht einfach eine Frage an ChatGPT.**
-Die KI folgt streng vorgegebenen Ablaeufen und strukturierten Datenvertraegen. **Nur evidenzbasierte Einwaende koennen ein Verdikt aendern.** Jede Schlussfolgerung verweist auf zitierte Evidenz — so laesst sich die **Argumentation nachvollziehen und ein eigenes Urteil bilden**.
+Die KI folgt streng vorgegebenen Abläufen und strukturierten Datenverträgen. **Nur evidenzbasierte Einwände können ein Verdikt ändern.** Jede Schlussfolgerung verweist auf zitierte Evidenz — so lässt sich die **Argumentation nachvollziehen und ein eigenes Urteil bilden**.
 
-Das Ergebnis ist kein einzelnes Label, sondern eine **Evidenzlandschaft aus mehreren Perspektiven** — sie zeigt, wo eine Behauptung gut gestuetzt ist, wo sie widerlegt wird, und wo berechtigte Meinungsunterschiede bestehen.
+Das Ergebnis ist kein einzelnes Label, sondern eine **Evidenzlandschaft aus mehreren Perspektiven** — sie zeigt, wo eine Behauptung gut gestützt ist, wo sie widerlegt wird, und wo berechtigte Meinungsunterschiede bestehen.
 
 ----
 
@@ -39,24 +39,24 @@ Das Ergebnis ist kein einzelnes Label, sondern eine **Evidenzlandschaft aus mehr
 
 == Aktueller Stand ==
 
-Das System ist im Alpha-Stadium — **durchgehend funktionsfaehig**, aber noch nicht produktionsreif. Alles ist **Open Source, gemeinnuetzig und transparent**.
+Das System ist im Alpha-Stadium — **durchgehend funktionsfähig**, aber noch nicht produktionsreif. Alles ist **Open Source, gemeinnützig und transparent**.
 
 == Was ich suche ==
 
 * **Faktenchecker und Redaktionen**, die das Tool testen und Feedback geben
-* **Forschungspartner** fuer gemeinsame Projekte
-* **Stiftungen und Sponsoren**, denen unabhaengige Faktencheck-Infrastruktur wichtig ist
+* **Forschungspartner** für gemeinsame Projekte
+* **Stiftungen und Sponsoren**, denen unabhängige Faktencheck-Infrastruktur wichtig ist
 
 ----
 
 == Links ==
 
 * **Ausprobieren:** [[app.FactHarbor.ch>>https://app.factharbor.ch]]
-* **Fuer Redaktionen und Agenturen:** [[FactHarbor fuer Newsrooms>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
-* **Unterstuetzung:** [[FactHarbor unterstuetzen>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
+* **Für Redaktionen und Agenturen:** [[FactHarbor für Newsrooms>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
+* **Unterstützung:** [[FactHarbor unterstützen>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
 * **Dokumentation:** [[factharbor.ch>>https://factharbor.ch]]
 
-Kennen Sie jemanden in Medien, Faktencheck oder Forschung, fuer den das relevant sein koennte? Ich freue mich ueber ein **Teilen oder Taggen**.
+Kennen Sie jemanden in Medien, Faktencheck oder Forschung, für den das relevant sein könnte? Ich freue mich über ein **Teilen oder Taggen**.
 
 ----
 
