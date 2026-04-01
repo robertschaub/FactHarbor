@@ -78,5 +78,13 @@
     "enabled": true,
     "failureThreshold": 3,
     "resetTimeoutSec": 300
+  },
+  "supplementaryEnglishLane": {
+    "enabled": false,
+    "triggerMode": "native_scarcity_only",
+    "maxAdditionalQueriesPerClaim": 1,
+    "minPrimaryRelevantResults": 3,
+    "minPrimaryEvidenceItems": 2,
+    "applyInIterationTypes": ["main"]
   }
 }

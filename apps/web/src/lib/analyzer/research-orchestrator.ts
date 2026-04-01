@@ -901,6 +901,135 @@ export async function runResearchIteration(
       `[Pipeline] D5 contrarian: claim ${targetClaim.id} -> ${generatedQueryCount} queries generated, ${newItems} new items`,
     );
   }
+
+  // Supplementary English lane: check if primary-language yield is below scarcity thresholds
+  const totalResultsThisIteration = state.searchQueries
+    .filter((q) => q.languageLane === "primary" || !q.languageLane)
+    .reduce((sum, q) => sum + q.resultsCount, 0);
+  const newEvidenceThisIteration = state.evidenceItems.length - evidenceCountBeforeIteration;
+  await maybeRunSupplementaryEnglishLane(
+    targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
+    totalResultsThisIteration, newEvidenceThisIteration,
+  );
+}
+
+// ============================================================================
+// SUPPLEMENTARY ENGLISH LANE (Proposal 2)
+// ============================================================================
+
+/**
+ * Check if the supplementary English lane should fire after a primary-language
+ * research iteration, and if so, run one English query for coverage expansion.
+ *
+ * Triggers only when: enabled + non-English input + iteration type allowed +
+ * primary yield below scarcity thresholds.
+ *
+ * NEVER used as a contrarian-balancing proxy. Language lane is independent
+ * from evidential direction.
+ */
+export async function maybeRunSupplementaryEnglishLane(
+  targetClaim: AtomicClaim,
+  iterationType: string,
+  searchConfig: SearchConfig,
+  pipelineConfig: PipelineConfig,
+  currentDate: string,
+  state: CBResearchState,
+  primaryResultsCount: number,
+  primaryNewEvidenceCount: number,
+): Promise<void> {
+  const enLane = searchConfig.supplementaryEnglishLane;
+  if (!enLane?.enabled) return;
+
+  const inputLang = state.languageIntent?.inputLanguage ?? state.understanding?.detectedLanguage;
+  if (!inputLang || inputLang === "en") return; // Already English — no supplementary needed
+
+  const allowedTypes = enLane.applyInIterationTypes ?? ["main"];
+  if (!allowedTypes.includes(iterationType as any)) return;
+
+  const minResults = enLane.minPrimaryRelevantResults ?? 3;
+  const minEvidence = enLane.minPrimaryEvidenceItems ?? 2;
+  if (primaryResultsCount >= minResults && primaryNewEvidenceCount >= minEvidence) return;
+
+  const maxQueries = enLane.maxAdditionalQueriesPerClaim ?? 1;
+  if (maxQueries <= 0) return;
+
+  // Budget check
+  if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) return;
+
+  console.info(
+    `[Stage2] EN supplementary lane: claim ${targetClaim.id} (primary: ${primaryResultsCount} results, ${primaryNewEvidenceCount} evidence < min ${minResults}/${minEvidence}). Generating 1 English query.`,
+  );
+
+  // Generate one English query via the standard query generation path
+  const enQueries = await generateResearchQueries(
+    targetClaim,
+    iterationType as "main" | "contradiction" | "contrarian",
+    state.evidenceItems,
+    pipelineConfig,
+    currentDate,
+    state.understanding?.distinctEvents ?? [],
+    1, // max 1 query
+    { language: "en", geography: null }, // Force English
+  );
+  state.llmCalls++;
+
+  if (enQueries.length === 0) return;
+
+  const enQuery = enQueries[0];
+  try {
+    const response = await searchWebWithProvider({
+      query: enQuery.query,
+      maxResults: searchConfig.maxSourcesPerIteration ?? 5,
+      config: searchConfig,
+    });
+
+    state.searchQueries.push({
+      query: enQuery.query,
+      iteration: state.mainIterationsUsed + state.contradictionIterationsUsed,
+      focus: iterationType,
+      resultsCount: response.results.length,
+      timestamp: new Date().toISOString(),
+      searchProvider: response.providersUsed.join(", "),
+      language: "en",
+      languageLane: "supplementary_en",
+      laneReason: `native_scarcity: ${primaryResultsCount} results / ${primaryNewEvidenceCount} evidence below thresholds`,
+    });
+
+    if (response.results.length > 0) {
+      state.onEvent?.(`EN supplementary: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+    }
+
+    // Update retrieval languages if not already present
+    if (state.languageIntent && !state.languageIntent.retrievalLanguages.some((l) => l.lane === "supplementary_en")) {
+      state.languageIntent.retrievalLanguages.push({
+        language: "en",
+        lane: "supplementary_en",
+        reason: `native_scarcity for claim ${targetClaim.id}`,
+      });
+    }
+
+    // Fetch and extract evidence from EN results using existing infrastructure
+    const relevantSources = response.results.slice(0, 3).map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+    const fetchedSources = await fetchSources(relevantSources, enQuery.query, state, pipelineConfig);
+    if (fetchedSources.length === 0) return;
+
+    const rawEvidence = await extractResearchEvidence(
+      targetClaim, fetchedSources, pipelineConfig, currentDate,
+    );
+    state.llmCalls++;
+
+    // Tag evidence from EN lane
+    for (const item of rawEvidence) {
+      item.searchStrategy = "supplementary_en" as any;
+    }
+
+    const { kept } = filterByProbativeValue(rawEvidence);
+    const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
+    const { kept: cappedItems } = applyPerSourceCap(kept, state.evidenceItems, maxPerSource);
+    state.evidenceItems.push(...cappedItems);
+  } catch (err) {
+    console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
+  }
 }
 
 // ============================================================================

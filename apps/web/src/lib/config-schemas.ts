@@ -139,6 +139,16 @@ export const SearchConfigSchema = z.object({
     .describe("BCP-47 language code override for search (e.g., 'de', 'en'). When set, overrides auto-detected language from claim input."),
   searchGeographyOverride: z.string().min(2).max(2).optional()
     .describe("ISO 3166-1 alpha-2 country code override for search (e.g., 'CH', 'US'). When set, overrides auto-inferred geography from claim input."),
+
+  // Supplementary English retrieval lane (Proposal 2 — multilingual output/search policy)
+  supplementaryEnglishLane: z.object({
+    enabled: z.boolean().describe("Enable English supplementary retrieval lane for non-English inputs. Coverage expansion only — never contrarian/balancing."),
+    triggerMode: z.enum(["native_scarcity_only"]).describe("When to trigger: 'native_scarcity_only' = only when native-language results are below thresholds."),
+    maxAdditionalQueriesPerClaim: z.number().int().min(0).max(3).describe("Max English queries to add per claim when triggered (default 1)."),
+    minPrimaryRelevantResults: z.number().int().min(0).max(20).describe("Minimum relevant results from primary lane before EN lane activates (default 3)."),
+    minPrimaryEvidenceItems: z.number().int().min(0).max(20).describe("Minimum evidence items from primary lane before EN lane activates (default 2)."),
+    applyInIterationTypes: z.array(z.enum(["main", "contradiction", "contrarian"])).describe("Iteration types where EN lane is allowed (default: ['main'])."),
+  }).optional().describe("Experimental English supplementary retrieval for non-English inputs. Default off."),
 });
 
 export type SearchConfig = z.infer<typeof SearchConfigSchema>;
@@ -222,6 +232,14 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     enabled: true,
     failureThreshold: 3,
     resetTimeoutSec: 300, // 5 minutes
+  },
+  supplementaryEnglishLane: {
+    enabled: false, // Default off — experimental
+    triggerMode: "native_scarcity_only",
+    maxAdditionalQueriesPerClaim: 1,
+    minPrimaryRelevantResults: 3,
+    minPrimaryEvidenceItems: 2,
+    applyInIterationTypes: ["main"],
   },
 };
 

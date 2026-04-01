@@ -1441,6 +1441,85 @@ describe("LanguageIntent initialization", () => {
   });
 });
 
+describe("Supplementary English Lane (Proposal 2)", () => {
+  it("should not fire when disabled", async () => {
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const state = {
+      languageIntent: { inputLanguage: "de", reportLanguage: "de", retrievalLanguages: [{ language: "de", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+      understanding: { detectedLanguage: "de", distinctEvents: [] },
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      sources: [],
+      llmCalls: 0,
+      queryBudgetUsageByClaim: {},
+    } as any;
+    const searchConfig = { supplementaryEnglishLane: { enabled: false } } as any;
+    await maybeRunSupplementaryEnglishLane(
+      { id: "AC_01", statement: "test" } as any, "main", searchConfig, {} as any, "2026-04-01", state, 1, 0,
+    );
+    // Should not add any EN queries
+    expect(state.searchQueries.filter((q: any) => q.languageLane === "supplementary_en")).toHaveLength(0);
+  });
+
+  it("should not fire when input is already English", async () => {
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const state = {
+      languageIntent: { inputLanguage: "en", reportLanguage: "en", retrievalLanguages: [{ language: "en", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+      understanding: { detectedLanguage: "en", distinctEvents: [] },
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      sources: [],
+      llmCalls: 0,
+      queryBudgetUsageByClaim: {},
+    } as any;
+    const searchConfig = { supplementaryEnglishLane: { enabled: true, triggerMode: "native_scarcity_only", minPrimaryRelevantResults: 3, minPrimaryEvidenceItems: 2, applyInIterationTypes: ["main"], maxAdditionalQueriesPerClaim: 1 } } as any;
+    await maybeRunSupplementaryEnglishLane(
+      { id: "AC_01", statement: "test" } as any, "main", searchConfig, {} as any, "2026-04-01", state, 0, 0,
+    );
+    expect(state.searchQueries.filter((q: any) => q.languageLane === "supplementary_en")).toHaveLength(0);
+  });
+
+  it("should not fire when primary yield is sufficient", async () => {
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const state = {
+      languageIntent: { inputLanguage: "de", reportLanguage: "de", retrievalLanguages: [{ language: "de", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+      understanding: { detectedLanguage: "de", distinctEvents: [] },
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      sources: [],
+      llmCalls: 0,
+      queryBudgetUsageByClaim: {},
+    } as any;
+    const searchConfig = { supplementaryEnglishLane: { enabled: true, triggerMode: "native_scarcity_only", minPrimaryRelevantResults: 3, minPrimaryEvidenceItems: 2, applyInIterationTypes: ["main"], maxAdditionalQueriesPerClaim: 1 } } as any;
+    await maybeRunSupplementaryEnglishLane(
+      { id: "AC_01", statement: "test" } as any, "main", searchConfig, {} as any, "2026-04-01", state, 5, 3,
+    );
+    expect(state.searchQueries.filter((q: any) => q.languageLane === "supplementary_en")).toHaveLength(0);
+  });
+
+  it("should not fire for disallowed iteration types", async () => {
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const state = {
+      languageIntent: { inputLanguage: "de", reportLanguage: "de", retrievalLanguages: [{ language: "de", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+      understanding: { detectedLanguage: "de", distinctEvents: [] },
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      sources: [],
+      llmCalls: 0,
+      queryBudgetUsageByClaim: {},
+    } as any;
+    const searchConfig = { supplementaryEnglishLane: { enabled: true, triggerMode: "native_scarcity_only", minPrimaryRelevantResults: 3, minPrimaryEvidenceItems: 2, applyInIterationTypes: ["main"], maxAdditionalQueriesPerClaim: 1 } } as any;
+    await maybeRunSupplementaryEnglishLane(
+      { id: "AC_01", statement: "test" } as any, "contradiction", searchConfig, {} as any, "2026-04-01", state, 0, 0,
+    );
+    expect(state.searchQueries.filter((q: any) => q.languageLane === "supplementary_en")).toHaveLength(0);
+  });
+});
+
 describe("Stage 1: runPreliminarySearch", () => {
   beforeEach(() => {
     vi.clearAllMocks();
