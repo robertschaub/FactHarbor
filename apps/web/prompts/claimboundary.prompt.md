@@ -331,10 +331,7 @@ Then decide whether the extraction should be accepted as-is or whether Pass 2 sh
 8. **Be conservative about retries.**
    Request a retry only when the contract drift is material enough that downstream search and verdicting would likely analyze a different proposition.
 
-9. **Evidence separability (multi-claim outputs only).**
-   When the extraction produces multiple claims, assess whether each claim would plausibly require different evidence sources, search queries, or methodologies to verify. If two or more claims would be answered by substantially the same body of evidence (e.g., "efficient" and "effective" for the same organization and activity, or "tools" and "methods" for the same practice), they are not independently research-worthy — flag `rePromptRequired: true` with reasoning explaining which claims overlap and should be merged. This rule applies regardless of whether the claims are linguistically distinct. Semantic distinctness alone does not justify splitting if the same evidence pool would verify both claims.
-
-10. **Representational drift prohibition.**
+9. **Representational drift prohibition.**
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
 ### Input
