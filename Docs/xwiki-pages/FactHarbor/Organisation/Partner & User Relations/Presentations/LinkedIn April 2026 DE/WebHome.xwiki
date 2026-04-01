@@ -1,0 +1,63 @@
+= Fakten sind das Fundament von Demokratie und Journalismus. Wer pflegt es, wenn Big Tech sich zurueckzieht? =
+
+{{info}}
+**Autor:** Robert Schaub (Gruender und Lead Developer, FactHarbor.ch) **Datum:** 1. April 2026
+**Publiziert auf:** [[LinkedIn>>https://www.linkedin.com/feed/update/urn:li:activity:7445085142844456960/]]
+**English version:** [[LinkedIn April 2026>>FactHarbor.Organisation.Partner & User Relations.Presentations.LinkedIn April 2026.WebHome]]
+{{/info}}
+
+Manche Menschen glauben kuehne Behauptungen ohne viel Belege. Andere ziehen sich komplett zurueck: //"Ich lese keine Nachrichten mehr. Ich kann nichts mehr glauben."//
+
+Beide Reaktionen sind verstaendlich. Wenn Argumentation verborgen bleibt und Quellen intransparent sind, erodiert Vertrauen. Und die Infrastruktur, die helfen sollte, schrumpft — **Meta** ist aus dem Third-Party Fact-Checking Program ausgestiegen, **Google** hat die ClaimReview-Sichtbarkeit reduziert, und Faktencheck-Organisationen haben **erhebliche Plattform-Finanzierung verloren**.
+
+Das Problem ist nicht, dass Menschen sich nicht fuer Wahrheit interessieren — sondern dass die **Struktur hinter Informationen unsichtbar** ist.
+
+Deshalb baue ich **FactHarbor** — Vollzeit, seit November 2025.
+
+----
+
+FactHarbor ist ein **Open-Source-Tool fuer automatisiertes Fact-Checking**. Beliebige Behauptungen oder Artikel eingeben — das System extrahiert pruefbare Aussagen, recherchiert stuetzende und widersprechende Evidenz im Web und in akademischen Datenbanken, bewertet jede Quelle auf Glaubwuerdigkeit, und fuehrt eine **strukturierte KI-Debatte** durch, in der verschiedene Anbieter fuer und gegen jede Behauptung argumentieren.
+
+**Das ist nicht einfach eine Frage an ChatGPT.**
+Die KI folgt streng vorgegebenen Ablaeufen und strukturierten Datenvertraegen. **Nur evidenzbasierte Einwaende koennen ein Verdikt aendern.** Jede Schlussfolgerung verweist auf zitierte Evidenz — so kann man die **Argumentation pruefen und sich selbst ein Urteil bilden**.
+
+Das Ergebnis ist nicht ein einzelnes Label, sondern eine **Evidenzlandschaft aus mehreren Perspektiven** — die zeigt, wo eine Behauptung gut gestuetzt ist, wo sie widersprochen wird, und wo vernuenftige Menschen noch unterschiedlicher Meinung sein koennen.
+
+----
+
+== FactHarbor UI ==
+
+[[app.FactHarbor.ch>>https://app.factharbor.ch]]
+
+[[image:FH_UI.png||width="100%"]]
+
+=== Verdikt und Report ===
+[[image:Verdict_Plastic.png||width="100%"]]
+[[image:CA_matrix.png||width="100%"]]
+
+----
+
+== Wo wir stehen ==
+
+Das System ist im Alpha-Stadium — **vollstaendig funktionsfaehig end-to-end**, aber noch nicht produktionsreif. Alles ist **Open Source, gemeinnuetzig und transparent**.
+
+== Was ich suche ==
+
+* **Faktenchecker und Redaktionen**, die das Tool testen und Feedback geben moechten
+* **Forschungspartner** fuer gemeinsame Projekte
+* **Stiftungen und Sponsoren**, die glauben, dass unabhaengige Faktencheck-Infrastruktur wichtig ist
+
+----
+
+== Links ==
+
+* **Ausprobieren:** [[app.FactHarbor.ch>>https://app.factharbor.ch]]
+* **Fuer Redaktionen und Agenturen:** [[FactHarbor fuer Newsrooms>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
+* **Unterstuetzungsmoeglichkeiten:** [[FactHarbor unterstuetzen>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
+* **Dokumentation:** [[factharbor.ch>>https://factharbor.ch]]
+
+Wenn Sie jemanden in Medien, Faktencheck oder Forschung kennen, der das sehen sollte — ich wuerde mich ueber ein **Teilen oder Taggen** freuen.
+
+----
+
+**Navigation:** [[Presentations>>FactHarbor.Organisation.Partner & User Relations.Presentations.WebHome]] | [[Organisation>>FactHarbor.Organisation.WebHome]] | [[English Version>>FactHarbor.Organisation.Partner & User Relations.Presentations.LinkedIn April 2026.WebHome]]
