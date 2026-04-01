@@ -3,7 +3,7 @@ import {
   classifyWarningForDisplay,
   splitWarningsForDisplay,
 } from "@/lib/analyzer/warning-display";
-import type { AnalysisWarning } from "@/lib/analyzer/types";
+import type { AnalysisWarning, AnalysisWarningType } from "@/lib/analyzer/types";
 
 function warning(overrides: Partial<AnalysisWarning>): AnalysisWarning {
   return {
@@ -220,5 +220,20 @@ describe("warning-display classification", () => {
     expect(buckets.providerInformational[0].severity).toBe("info");
     expect(buckets.analysisDegrading[0].severity).toBe("warning");
     expect(buckets.analysisInformational[0].severity).toBe("info");
+  });
+
+  it("should not crash on unregistered warning types (runtime safety)", () => {
+    // Simulate a warning from an old job or `as any` cast with a type not in the registry
+    const unknownWarning = {
+      type: "some_future_or_legacy_type" as AnalysisWarningType,
+      severity: "warning" as const,
+      message: "Unknown type from old job data",
+    };
+
+    // Should not throw — should fall back to informational/analysis
+    const result = classifyWarningForDisplay(unknownWarning);
+    expect(result.isProviderIssue).toBe(false);
+    expect(result.isReportDegrading).toBe(false);
+    expect(result.displaySeverity).toBe("info");
   });
 });
