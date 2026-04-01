@@ -367,7 +367,6 @@ Return a JSON object:
       "preservesEvaluativeMeaning": true,
       "usesNeutralDimensionQualifier": true,
       "proxyDriftSeverity": "none",
-      "evidenceSeparable": true,
       "recommendedAction": "keep",
       "reasoning": "short explanation"
     }
@@ -380,8 +379,7 @@ Field constraints:
 - `preservesEvaluativeMeaning`: does this claim preserve the original evaluative meaning?
 - `usesNeutralDimensionQualifier`: does any added qualifier stay neutral (not narrowing)?
 - `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
-- `evidenceSeparable`: would verifying this claim require a meaningfully different evidence body than the other claims? `false` means this claim overlaps with another claim's evidence needs and should be merged.
-- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift OR for evidence-inseparable claim sets.
+- `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift that requires a new extraction attempt.
 - `reasoning`: max 120 characters. Why this assessment.
 
 ---
