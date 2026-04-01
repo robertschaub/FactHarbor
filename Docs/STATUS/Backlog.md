@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-03-31
+**Last Updated**: 2026-04-01
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Immediate Priorities (2026-03-30)
+## Immediate Priorities (2026-04-01)
 
-All structural integrity fixes are shipped (citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication). The next quality gap is **cross-linguistic neutrality** (58pp Plastik spread across DE/EN/FR). EVD-1 is operative but needs a cross-linguistic threshold extension.
+All structural integrity fixes are shipped (citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication). Proposal 2 multilingual output/report-language coherency is shipped, and an **experimental default-off EN supplementary lane** now exists behind UCM. The implementation review is clean; the next gate is **cross-linguistic validation + promotion gating**, not fresh architecture design.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
@@ -30,7 +30,7 @@ All structural integrity fixes are shipped (citation carriage, claim decompositi
 | **OBS-2** | **Persist Stage-1 diagnostic fields**: `inputClassification` and `contractValidationSummary` now stored in result JSON. | Analyzer / Observability | — | — | DONE | `d6090f76` |
 | **DIV-1** | **Diversity-aware Stage-2 sufficiency**: promoted to default-on after 8-run validation. Stage 2 now aligns with D5 item-count + diversity thresholds. Bolsonaro confidence spread 23pp→5pp, zero UNVERIFIED. Flag `diversityAwareSufficiency` available for rollback. | Analyzer / Quality | — | high | DONE | `83a47aad`, `23d8576c`, `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md` |
 | **FLOOD-1** | **Single-source flooding mitigation (Fix 1 + Fix 2)**: Fix 1 adds claim-local, partition-scoped source portfolios (`sourcePortfolioByClaim`) to all verdict debate prompts with mandatory SR-awareness instructions. Fix 2 adds `maxEvidenceItemsPerSource: 5` UCM cap enforced in Stage 2 with best-N reselection by `probativeValue`. **Awaiting live validation** (4 runs per investigation §12). Fix 3 (same-source LLM consolidation) deferred. | Analyzer / Quality / SR | med | high | VALIDATION | `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` |
-| **NEUTRALITY-1** | **Cross-linguistic neutrality gap**: Plastik recycling shows 58pp max spread across languages (DE 33% / EN 72% / FR 13%). Same semantic claim, directionally opposite verdicts. Likely Stage 2 evidence language bias. EVD-1 needs cross-linguistic threshold extension. Captain-level policy + investigation decision. | Quality / Policy | high | high | IDENTIFIED | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` |
+| **NEUTRALITY-1** | **Cross-linguistic neutrality gap**: Plastik recycling shows 58pp max spread across languages (DE 33% / EN 72% / FR 13%). Proposal 2 implementation is now shipped and review-clean: `LanguageIntent`, report-language threading, and an experimental default-off EN supplementary lane. Next gate is live A/B validation and a promotion decision. | Quality / Policy / Analyzer | high | high | VALIDATION | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`, `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md` |
 | **FLAT-EARTH-1** | **Flat-Earth false-ambiguity fix**: review-approved prompt-only narrowing for direct factual-property questions. "Is X flat?" should default to `single_atomic_claim`. Contract validation backup against representational drift. | Analyzer / Quality | med | med | REVIEW-READY | `Docs/WIP/2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md` |
 | **PIPE-INT-1** | **All-insufficient D5→Stage-4 integrity fix (`2705/e407`)**: IMPLEMENTED. Assessable-claims path, verdict uniqueness invariant, report matrix over all claims, LLM article adjudication via VERDICT_NARRATIVE with pure LLM truth adjustment, confidence ceiling, and deterministic fallback only. | Analyzer / Integrity / UI | — | — | DONE | `03387283` + follow-up policy patch |
 | **DIR-1** | **Direction-integrity citation-carriage**: code fix shipped in `e1f2c551`. Citation arrays now carried through reconciliation. Remeasurement on post-fix stack pending. | Analyzer / Verdict | low | high | MONITOR | `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` |
@@ -71,6 +71,8 @@ These are still-open future-facing tracks that remain relevant, but they are not
 
 | Description | Domain | Completed | Reference |
 |---|---|---|---|
+| ✅ **Proposal 2 multilingual output/search groundwork shipped**: `LanguageIntent`, explicit `reportLanguage` threading through Stage 4/5, prompt-language contracts, and result JSON auditability. | Analyzer / Multilingual | 2026-04-01 | `8641f56c`, `1281f7d4` |
+| ✅ **Experimental EN supplementary retrieval lane shipped default-off and hardened**: UCM-controlled coverage-expansion lane for non-English inputs under native-language scarcity. Follow-up review findings are fixed; the remaining gate is live validation before any promotion. | Analyzer / Search / Multilingual | 2026-04-01 | `e9002e9c`, `06fab2e5`, `8f9d4fae`, `ac51975c`, `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md` |
 | ✅ **PIPE-INT-1 all-insufficient root fix + report matrix + LLM article adjudication**: assessable-claims path, verdict uniqueness invariant, report matrix over all claims, VERDICT_NARRATIVE adjudication extension, deterministic truth clamp removed (confidence ceiling retained). | Analyzer / Integrity / UI | 2026-03-30 | `03387283` + follow-up policy patch |
 | ✅ **Quality evolution deep analysis**: 100 jobs across 12 families, 8 change waves. Cross-linguistic neutrality gap identified (Plastik 58pp). | Quality / Analysis | 2026-03-30 | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` |
 | ✅ **Source-fetch failure reduction**: Stage-2 acquisition now applies per-domain 401/403 blocking-streak short-circuiting within each `fetchSources()` call (`fetchDomainSkipThreshold`, default `2`) and enriches `source_fetch_failure` warnings with human-readable error summaries. Skipped URLs excluded from `attempted` metrics; no warning-policy change. | Analyzer / Reliability | 2026-03-31 | `Docs/WIP/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md` |

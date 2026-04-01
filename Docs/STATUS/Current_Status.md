@@ -1,16 +1,19 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-03-31
+**Last Updated**: 2026-04-01
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Stage 4.5 SR calibration remains feature-flagged/off. Since 2026-03-29, three new March 29 tracks are canonical: (1) the **Stage-1 claim decomposition fix** is shipped (`fff7a508`) and materially fixes the `8640/cd4501` family while leaving a residual factual conjunct split blind spot; (2) the **citation-carriage verdict fix** is shipped (`e1f2c551`) and awaits targeted remeasurement; and (3) the **2705/e407 all-insufficient root fix** is shipped, including report-matrix alignment and LLM-led article adjudication with only structural confidence ceiling + deterministic fallback remaining. The project is no longer in a pure “no active engineering blocker” posture; cross-linguistic neutrality and the review-backed prompt-only Flat-Earth false-ambiguity fix are now the highest-visibility open quality items.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Stage 4.5 SR calibration remains feature-flagged/off. Since 2026-04-01, **Proposal 2 multilingual output/search work is shipped in experimental form**: `LanguageIntent` and `reportLanguage` are explicit cross-stage state, Stage 4/5 report-language threading is implemented, and an **experimental default-off English supplementary retrieval lane** exists behind UCM. Cross-linguistic neutrality remains the main open quality gap, but it is no longer only a policy/investigation topic — it now has a review-clean experimental implementation whose remaining gate is live multilingual A/B validation before any broader promotion decision.
 
 ---
 
-## Current Focus (2026-03-30)
+## Current Focus (2026-04-01)
 
 - **Structural integrity work is complete.** All planned fixes shipped: citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication.
-- **Cross-linguistic neutrality is the next identified quality gap.** Plastik recycling 58pp cross-language spread (DE/EN/FR) is the largest quality gap in the system. Likely driven by Stage 2 evidence language bias. EVD-1 needs a cross-linguistic threshold. This is a Captain-level policy + investigation decision.
+- **Proposal 2 multilingual output/report-language coherency is shipped.** `LanguageIntent` and `reportLanguage` are now explicit pipeline state, and Stage 4/5 prompt paths are threaded. Source-authored evidence remains original-language.
+- **Experimental EN supplementary retrieval lane is shipped default-off.** The lane is UCM-controlled and intended only for coverage expansion on non-English inputs under native-language scarcity. It is not yet promoted and requires live A/B validation before any broader use.
+- **Cross-linguistic neutrality remains the next quality gap.** Plastik recycling 58pp cross-language spread (DE/EN/FR) is still the largest visible gap. The new EN supplementary lane is an experiment toward mitigation, not a validated fix.
+- **Multilingual follow-up work is now validation + promotion gating, not policy-only design.** The earlier Stage-2 review findings are fixed; the remaining gate is live multilingual A/B validation with the EN lane `OFF` vs `ON`.
 - **Flat-Earth false-ambiguity fix is review-approved.** Prompt-only narrowing for direct factual-property questions. Not yet implemented.
 - **Stage-1 quality stabilization is materially complete**: QLT-1/2/3 all done. Remaining variance is evidence/verdict-driven.
 - **Gate 1 thesis-direct rescue refinement: DECLINED** (2026-03-26). A two-agent debate investigated whether narrowing the rescue for evaluative claims would reduce Bolsonaro UNVERIFIED incidence. The debate found: (1) the UNVERIFIED was driven by evidence balance variation (0.38 vs 0.76), not by Gate 1 behavior; (2) the fairness claim (AC_03) was the most stable claim in the UNVERIFIED run; (3) a subsequent 3-claim run produced LEANING-TRUE, proving the rescue is not the cause. Over-filtering risk for legitimate evaluative questions was judged too high. See `Docs/WIP/2026-03-26_Gate1_Rescue_Refinement_Debate.md`.
@@ -27,9 +30,20 @@
 - **Direction-integrity / citation-carriage fix shipped** (`e1f2c551`). `VERDICT_RECONCILIATION` now carries citation arrays and the safe-downgrade warning state bug is fixed. Code review is clean; the remaining gate is targeted live remeasurement before the direction-validator thread is reopened.
 - **`2705/e407` root fix IMPLEMENTED** (`03387283` + follow-up policy update). Assessable-claims path replaces the all-insufficient fallback. Verdict-uniqueness invariant enforced. Coverage Matrix built from ALL final claim verdicts. LLM article adjudication via extended `VERDICT_NARRATIVE` now uses pure LLM-led article truth adjustment, with only a structural confidence ceiling and deterministic fallback remaining. Validated: partial-insufficient run shows confidence 65→40, matrix 3 claims. Controls near-identical to deterministic baseline.
 - **CRITICAL: Cross-linguistic neutrality gap identified.** 100-job quality evolution analysis (Mar 30) found Plastik recycling produces 58pp max spread across languages: DE 33% / EN 72% / FR 13%. Same semantic claim, directionally opposite verdicts. Driven by Stage 2 evidence language bias. Not covered by current EVD-1 thresholds. See `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`.
-- **Current posture: structural integrity fixes complete, cross-linguistic neutrality is the next quality gap.** All planned integrity work (citation carriage, claim decomposition, all-insufficient path, matrix alignment, article adjudication) is shipped. Optimization/runtime hardening (`W15`, fetch short-circuit, `P1-B`) is shipped. The cross-linguistic neutrality finding is a policy/investigation question, not an immediate engineering blocker.
+- **Current posture: structural integrity fixes complete, cross-linguistic neutrality is the next quality gap.** All planned integrity work (citation carriage, claim decomposition, all-insufficient path, matrix alignment, article adjudication) is shipped. Optimization/runtime hardening (`W15`, fetch short-circuit, `P1-B`) is shipped. The cross-linguistic neutrality finding now has an experimental implementation path; the remaining gate is live validation and a promotion decision, not architecture approval or Stage-2 cleanup.
 - **QLT-4 (per-claim contrarian retrieval) is CLOSED and removed.** Experimental code, UCM config fields, and tests reverted. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`.
 - **Remaining optimization work** (`P1-A`, `P2-*`, `P3-*`) remains separate and Captain-gated — not automatically triggered by EVD-1 monitor mode.
+
+## Recent Changes (2026-04-01)
+
+**Proposal 2 multilingual output/search work shipped in experimental form (`8641f56c`, `1281f7d4`, `e9002e9c`, `06fab2e5`, `8f9d4fae`, `ac51975c`):**
+- ✅ **`LanguageIntent` + `reportLanguage` contract shipped**: explicit cross-stage language state in pipeline types and result JSON.
+- ✅ **Stage 4 and Stage 5 report-language threading shipped**: report-authored analytical text is now explicitly instructed to follow `reportLanguage`; source-authored evidence remains original-language.
+- ✅ **Experimental EN supplementary lane shipped default-off**: UCM-controlled coverage-expansion lane for non-English inputs under native-language scarcity.
+- ✅ **EN-lane hardening follow-ups completed**: scarcity now keys off evidence yield, EN-lane results go through the standard relevance and warning path, positive firing-path coverage exists, dead config was removed, and provider-failure circuit-breaker parity is in place.
+- ⚠️ **Not yet promoted**: live A/B validation pending.
+
+---
 
 ## Recent Changes (2026-03-30)
 
@@ -1036,6 +1050,6 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 
 ---
 
-**Last Updated**: 2026-03-24
+**Last Updated**: 2026-04-01
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
 **Document Status**: Current Alpha snapshot. Historical sections below remain for context; current prioritization lives in the top status block and in [Backlog](Backlog.md).
