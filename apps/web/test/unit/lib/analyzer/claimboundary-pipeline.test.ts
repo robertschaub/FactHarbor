@@ -1518,6 +1518,50 @@ describe("Supplementary English Lane (Proposal 2)", () => {
     );
     expect(state.searchQueries.filter((q: any) => q.languageLane === "supplementary_en")).toHaveLength(0);
   });
+
+  it("should pass all guard conditions when scarce + enabled + non-English + allowed iteration", async () => {
+    // This test verifies the guard logic allows firing — it will fail at the LLM call
+    // (generateResearchQueries) since we don't mock the full chain, but it proves the
+    // guards don't block. We catch the expected error.
+    const { maybeRunSupplementaryEnglishLane } = await import("@/lib/analyzer/research-orchestrator");
+    const state = {
+      languageIntent: { inputLanguage: "de", reportLanguage: "de", retrievalLanguages: [{ language: "de", lane: "primary" }], sourceLanguagePolicy: "preserve_original" },
+      understanding: { detectedLanguage: "de", distinctEvents: [] },
+      evidenceItems: [],
+      searchQueries: [],
+      warnings: [],
+      sources: [],
+      llmCalls: 0,
+      queryBudgetUsageByClaim: {},
+    } as any;
+    const searchConfig = {
+      supplementaryEnglishLane: {
+        enabled: true,
+        triggerMode: "native_scarcity_only",
+        minPrimaryRelevantResults: 3,
+        minPrimaryEvidenceItems: 2,
+        applyInIterationTypes: ["main"],
+        maxAdditionalQueriesPerClaim: 1,
+      },
+    } as any;
+
+    // The function will try to call generateResearchQueries (mocked) — if it gets past
+    // all guards, the LLM call count will increase, proving the lane was triggered.
+    const llmCallsBefore = state.llmCalls;
+    // Mock will return empty queries (no crash, just no results)
+    mockLoadSection.mockResolvedValue({ content: "test", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({ queries: [] });
+
+    await maybeRunSupplementaryEnglishLane(
+      { id: "AC_01", statement: "Test claim" } as any,
+      "main", searchConfig, {} as any, "2026-04-01", state,
+      0, 0, // scarce: 0 results, 0 evidence
+    );
+
+    // If guards passed, llmCalls should have incremented (query generation call)
+    expect(state.llmCalls).toBeGreaterThan(llmCallsBefore);
+  });
 });
 
 describe("Stage 1: runPreliminarySearch", () => {

@@ -948,9 +948,10 @@ export async function maybeRunSupplementaryEnglishLane(
   const allowedTypes = enLane.applyInIterationTypes ?? ["main"];
   if (!allowedTypes.includes(iterationType as any)) return;
 
-  const minResults = enLane.minPrimaryRelevantResults ?? 3;
+  // Gate on evidence items (the meaningful yield that drives D5 downstream), not raw result counts.
+  // Raw results include paywalled/empty pages that produce zero evidence — they are not "relevant".
   const minEvidence = enLane.minPrimaryEvidenceItems ?? 2;
-  if (primaryResultsCount >= minResults && primaryNewEvidenceCount >= minEvidence) return;
+  if (primaryNewEvidenceCount >= minEvidence) return;
 
   const maxQueries = enLane.maxAdditionalQueriesPerClaim ?? 1;
   if (maxQueries <= 0) return;
@@ -959,7 +960,7 @@ export async function maybeRunSupplementaryEnglishLane(
   if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) return;
 
   console.info(
-    `[Stage2] EN supplementary lane: claim ${targetClaim.id} (primary: ${primaryResultsCount} results, ${primaryNewEvidenceCount} evidence < min ${minResults}/${minEvidence}). Generating 1 English query.`,
+    `[Stage2] EN supplementary lane: claim ${targetClaim.id} (primary: ${primaryNewEvidenceCount} evidence < min ${minEvidence}). Generating 1 English query.`,
   );
 
   // Generate one English query via the standard query generation path
@@ -1010,8 +1011,22 @@ export async function maybeRunSupplementaryEnglishLane(
       });
     }
 
-    // Fetch and extract evidence from EN results using existing infrastructure
-    const relevantSources = response.results.slice(0, 3).map((r) => ({ url: r.url, relevanceScore: 0.5 }));
+    // Report EN-lane provider errors through the same warning path as primary lane
+    if (response.errors && response.errors.length > 0) {
+      for (const provErr of response.errors) {
+        upsertSearchProviderWarning(state, {
+          provider: provErr.provider, status: provErr.status, message: provErr.message,
+          query: enQuery.query, stage: "research_search",
+        });
+      }
+    }
+
+    // Classify relevance through the same LLM path as primary lane (no fixed relevanceScore bypass)
+    const relevantSources = await classifyRelevance(
+      targetClaim, response.results, pipelineConfig, currentDate, state.understanding?.inferredGeography ?? null,
+    );
+    state.llmCalls++;
+
     const fetchedSources = await fetchSources(relevantSources, enQuery.query, state, pipelineConfig);
     if (fetchedSources.length === 0) return;
 
