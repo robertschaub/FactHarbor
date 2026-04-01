@@ -1,4 +1,4 @@
-= Fakten sind das Fundament von Demokratie und Journalismus. Wer pflegt es, wenn Big Tech sich zurueckzieht? =
+= Fakten sind das Fundament von Demokratie und Journalismus. Wer schuetzt es, wenn Big Tech aussteigt? =
 
 {{info}}
 **Autor:** Robert Schaub (Gruender und Lead Developer, FactHarbor.ch) **Datum:** 1. April 2026
@@ -6,22 +6,22 @@
 **English version:** [[LinkedIn April 2026>>FactHarbor.Organisation.Partner & User Relations.Presentations.LinkedIn April 2026.WebHome]]
 {{/info}}
 
-Manche Menschen glauben kuehne Behauptungen ohne viel Belege. Andere ziehen sich komplett zurueck: //"Ich lese keine Nachrichten mehr. Ich kann nichts mehr glauben."//
+Manche glauben Behauptungen ohne Belege. Andere wenden sich ab: //"Ich lese keine Nachrichten mehr. Man kann nichts mehr glauben."//
 
-Beide Reaktionen sind verstaendlich. Wenn Argumentation verborgen bleibt und Quellen intransparent sind, erodiert Vertrauen. Und die Infrastruktur, die helfen sollte, schrumpft — **Meta** ist aus dem Third-Party Fact-Checking Program ausgestiegen, **Google** hat die ClaimReview-Sichtbarkeit reduziert, und Faktencheck-Organisationen haben **erhebliche Plattform-Finanzierung verloren**.
+Beides ist nachvollziehbar. Wo Argumentation verborgen bleibt und Quellen intransparent sind, schwindet Vertrauen. Und die Infrastruktur, die helfen sollte, bricht weg — **Meta** hat das Third-Party Fact-Checking Program beendet, **Google** die ClaimReview-Sichtbarkeit reduziert, und Faktencheck-Organisationen haben **erhebliche Plattform-Finanzierung verloren**.
 
-Das Problem ist nicht, dass Menschen sich nicht fuer Wahrheit interessieren — sondern dass die **Struktur hinter Informationen unsichtbar** ist.
+Das Problem ist nicht fehlendes Interesse an Wahrheit — sondern dass die **Struktur hinter Informationen unsichtbar bleibt**.
 
 Deshalb baue ich **FactHarbor** — Vollzeit, seit November 2025.
 
 ----
 
-FactHarbor ist ein **Open-Source-Tool fuer automatisiertes Fact-Checking**. Beliebige Behauptungen oder Artikel eingeben — das System extrahiert pruefbare Aussagen, recherchiert stuetzende und widersprechende Evidenz im Web und in akademischen Datenbanken, bewertet jede Quelle auf Glaubwuerdigkeit, und fuehrt eine **strukturierte KI-Debatte** durch, in der verschiedene Anbieter fuer und gegen jede Behauptung argumentieren.
+FactHarbor ist ein **Open-Source-Tool fuer automatisiertes Fact-Checking**. Behauptung oder Artikel eingeben — das System zerlegt den Text in pruefbare Aussagen, recherchiert stuetzende und widersprechende Evidenz im Web und in akademischen Datenbanken, bewertet jede Quelle auf Glaubwuerdigkeit und fuehrt eine **strukturierte KI-Debatte**, in der verschiedene Anbieter fuer und gegen jede Behauptung argumentieren.
 
 **Das ist nicht einfach eine Frage an ChatGPT.**
-Die KI folgt streng vorgegebenen Ablaeufen und strukturierten Datenvertraegen. **Nur evidenzbasierte Einwaende koennen ein Verdikt aendern.** Jede Schlussfolgerung verweist auf zitierte Evidenz — so kann man die **Argumentation pruefen und sich selbst ein Urteil bilden**.
+Die KI folgt streng vorgegebenen Ablaeufen und strukturierten Datenvertraegen. **Nur evidenzbasierte Einwaende koennen ein Verdikt aendern.** Jede Schlussfolgerung verweist auf zitierte Evidenz — so laesst sich die **Argumentation nachvollziehen und ein eigenes Urteil bilden**.
 
-Das Ergebnis ist nicht ein einzelnes Label, sondern eine **Evidenzlandschaft aus mehreren Perspektiven** — die zeigt, wo eine Behauptung gut gestuetzt ist, wo sie widersprochen wird, und wo vernuenftige Menschen noch unterschiedlicher Meinung sein koennen.
+Das Ergebnis ist kein einzelnes Label, sondern eine **Evidenzlandschaft aus mehreren Perspektiven** — sie zeigt, wo eine Behauptung gut gestuetzt ist, wo sie widerlegt wird, und wo berechtigte Meinungsunterschiede bestehen.
 
 ----
 
@@ -37,15 +37,15 @@ Das Ergebnis ist nicht ein einzelnes Label, sondern eine **Evidenzlandschaft aus
 
 ----
 
-== Wo wir stehen ==
+== Aktueller Stand ==
 
-Das System ist im Alpha-Stadium — **vollstaendig funktionsfaehig end-to-end**, aber noch nicht produktionsreif. Alles ist **Open Source, gemeinnuetzig und transparent**.
+Das System ist im Alpha-Stadium — **durchgehend funktionsfaehig**, aber noch nicht produktionsreif. Alles ist **Open Source, gemeinnuetzig und transparent**.
 
 == Was ich suche ==
 
-* **Faktenchecker und Redaktionen**, die das Tool testen und Feedback geben moechten
+* **Faktenchecker und Redaktionen**, die das Tool testen und Feedback geben
 * **Forschungspartner** fuer gemeinsame Projekte
-* **Stiftungen und Sponsoren**, die glauben, dass unabhaengige Faktencheck-Infrastruktur wichtig ist
+* **Stiftungen und Sponsoren**, denen unabhaengige Faktencheck-Infrastruktur wichtig ist
 
 ----
 
@@ -53,10 +53,10 @@ Das System ist im Alpha-Stadium — **vollstaendig funktionsfaehig end-to-end**,
 
 * **Ausprobieren:** [[app.FactHarbor.ch>>https://app.factharbor.ch]]
 * **Fuer Redaktionen und Agenturen:** [[FactHarbor fuer Newsrooms>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
-* **Unterstuetzungsmoeglichkeiten:** [[FactHarbor unterstuetzen>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
+* **Unterstuetzung:** [[FactHarbor unterstuetzen>>FactHarbor.Organisation.Partner & User Relations.Presentations.Funding.WebHome]]
 * **Dokumentation:** [[factharbor.ch>>https://factharbor.ch]]
 
-Wenn Sie jemanden in Medien, Faktencheck oder Forschung kennen, der das sehen sollte — ich wuerde mich ueber ein **Teilen oder Taggen** freuen.
+Kennen Sie jemanden in Medien, Faktencheck oder Forschung, fuer den das relevant sein koennte? Ich freue mich ueber ein **Teilen oder Taggen**.
 
 ----
 
