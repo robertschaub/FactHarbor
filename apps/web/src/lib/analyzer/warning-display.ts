@@ -102,8 +102,10 @@ function withDisplaySeverity(
   return { ...warning, severity };
 }
 
+const FALLBACK_CLASSIFICATION: WarningClassification = { bucket: "analysis", impact: "informational" };
+
 function getClassification(type: AnalysisWarningType): WarningClassification {
-  return WARNING_CLASSIFICATION[type];
+  return WARNING_CLASSIFICATION[type] ?? FALLBACK_CLASSIFICATION;
 }
 
 export function isProviderIssueType(type: AnalysisWarningType): boolean {
