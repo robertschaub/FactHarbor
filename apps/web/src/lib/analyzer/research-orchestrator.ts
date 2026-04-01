@@ -1011,9 +1011,12 @@ export async function maybeRunSupplementaryEnglishLane(
       });
     }
 
-    // Report EN-lane provider errors through the same warning path as primary lane
+    // Report EN-lane provider errors through the same warning + circuit-breaker path as primary lane
     if (response.errors && response.errors.length > 0) {
       for (const provErr of response.errors) {
+        if (provErr.provider) {
+          recordSearchFailure(provErr.provider, provErr.message);
+        }
         upsertSearchProviderWarning(state, {
           provider: provErr.provider, status: provErr.status, message: provErr.message,
           query: enQuery.query, stage: "research_search",
