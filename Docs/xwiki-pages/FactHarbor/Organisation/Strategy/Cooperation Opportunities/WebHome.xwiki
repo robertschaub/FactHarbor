@@ -262,64 +262,87 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 ----
 
-== 3. FUNDING OPPORTUNITIES (Updated April 2026) ==
+== 3. FUNDING OPPORTUNITIES (Reviewed April 2, 2026) ==
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Context:** FactHarbor is an open-source, non-profit (Swiss Verein in preparation) automated fact-checking tool in Alpha stage, built by a solo developer. Funding priorities: infrastructure costs, research partnerships, and path to Beta/V1.0.
+**Applicant profile:** Open-source, non-profit (Swiss Verein in preparation), automated fact-checking tool in Alpha, solo developer. No revenue, no newsroom partnership, no EU consortium. Funding priorities: infrastructure costs, research partnerships, path to Beta.
 )))
 
-=== Priority 1 — Immediately Actionable, High Fit ===
+(% class="box warningmessage" %)
+(((
+**Reading this table:** Rows are grouped by //who can apply// (solo developer vs. research-partner-led vs. newsroom-led vs. consortium), not just by grant size. Every row ends with a concrete action and gating condition. Instruments in the Watchlist had their last known call close before April 2026 or have unverified eligibility.
+)))
 
-|=Funder|=Amount|=Why Priority 1|=Next Step
-|**[[NLNet Foundation>>https:~/~/nlnet.nl/]]**|EUR 5,000-50,000|Rolling calls, open source required, solo developer eligible|Apply now
-|**[[Sovereign Tech Fund>>https:~/~/www.sovereign.tech/]]** (DE)|EUR 50K-1M|Open-source infrastructure, global scope, no consortium needed|Apply now
-|**[[Prototype Fund Switzerland>>https:~/~/prototypefund.opendata.ch/]]**|CHF up to 100K|Open source + public interest + Swiss = perfect match|Monitor next round
-|**[[Innosuisse Innovation Cheque>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 15,000 (100% funded)|No co-funding, 4-6 week decision, feasibility study|Awaiting ZHAW response (Prof. Cieliebak)
-|**[[Mozilla Democracy x AI>>https:~/~/foundation.mozilla.org/]]**|$50-300K|AI + democracy + open source = direct fit|Monitor next cohort call
+=== Tier A -- Solo-Actionable Now ===
 
-=== Priority 2 — Strongly Relevant, More Preparation Needed ===
+These accept applications from a solo open-source developer or small Swiss nonprofit without a research partner, newsroom lead, or consortium.
 
-|=Funder|=Amount|=Why Priority 2|=Prerequisite
-|**[[Media Forward Fund>>https:~/~/www.mediaforwardfund.org/]]**|up to EUR 400K|CH/DE/AT pool, media innovation, 3 rounds/year|Business model focus required
-|**[[Hasler-Mercator Digitalisierung & Demokratie>>https:~/~/haslerstiftung.ch/]]**|CHF 4M pool|Directly addresses AI + democracy + disinformation|Research partner needed
-|**[[European Media and Information Fund (EMIF)>>https:~/~/gulbenkian.pt/emifund/]]**|up to EUR 150K|Directly funds fact-checking, Switzerland eligible|Project proposal
-|**[[Knight Foundation>>https:~/~/knightfoundation.org/]]**|$50-800K|Largest dedicated funder of fact-checking infrastructure|Rolling applications
-|**[[Prototype Fund Germany>>https:~/~/www.prototypefund.de/]]**|EUR 95-158K|Open source social innovation, now EU collaboration eligible|Next round Oct 2025/2026
-|**[[Open Technology Fund>>https:~/~/apply.opentech.fund/]]**|$50-200K|Internet freedom, rolling two-stage applications|Frame as information freedom tool
+|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
+|**[[NLNet Foundation>>https:~/~/nlnet.nl/]]**|EUR 5,000-50,000|Rolling open calls. Open source required. Solo developer eligible. No consortium. Proven track record funding digital commons tools.|Robert: apply to next NGI Zero Commons Fund call. No gating condition.
+|**[[Innosuisse Innovation Cheque>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 15,000 (100% funded)|Feasibility study with academic partner. No co-funding required. 4-6 week decision. Lowest barrier Swiss grant.|Robert: awaiting ZHAW response (Prof. Cieliebak, email sent 2026-03-25). Gated on partner confirmation.
+|**[[Prototype Fund Switzerland>>https:~/~/prototypefund.opendata.ch/]]**|CHF up to 100K|Open source + public interest + Swiss. Strong fit //if// the current theme aligns (recent themes: sustainable digitalization, digital sufficiency). Not an automatic match -- requires framing around resource-efficient fact-checking.|Robert: monitor next call. Gated on theme fit and call opening.
+|**[[Open Technology Fund>>https:~/~/apply.opentech.fund/]]**|$50,000-$200K|Internet freedom technologies. Rolling two-stage. Prioritizes first-time applicants. Requires framing as combating information control.|Robert: prepare application. No gating condition.
 
-=== Priority 3 — Larger Instruments, Consortium/Partner Required ===
+=== Tier B -- Swiss Research-Partner Path ===
 
-|=Funder|=Amount|=Why Priority 3|=Prerequisite
-|**Horizon Europe CL5-2026-07**|EUR 15M pool|Climate disinformation tools, CH fully associated since Jan 2025|Consortium, deadline Apr 2026
-|**[[EDMO Hubs>>https:~/~/hadea.ec.europa.eu/]]** (Digital Europe)|up to EUR 750K|Explicitly encourages AI fact-checking tool development|Hub structure, verify CH eligibility
-|**[[Innosuisse Innovation Project>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 100-500K|Joint R&D with university partner (40-60% cost split)|Innovation Cheque first
-|**[[Creative Europe Media Literacy>>https:~/~/digital-strategy.ec.europa.eu/]]**|up to EUR 500K|Media literacy consortium, 70% EU funding|3+ countries, deadline Mar 2026
-|**Horizon Europe Democracy & Governance**|EUR 94M cluster|Disinformation, AI impact on democracy, deepfakes|Consortium, 2026-2027 calls
+These require a Swiss university research partner. The Innosuisse Cheque (Tier A) is the natural first step.
 
-=== Priority 4 — Complementary / Specific ===
+|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
+|**[[Innosuisse Innovation Project>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 100K-500K|Joint R&D with university partner. 40-60% cost split, in-kind eligible. Rolling.|Gated on: Innovation Cheque completed + confirmed research partner.
+|**[[BRIDGE Proof of Concept>>https:~/~/www.bridge.ch/]]**|Up to CHF 130K/year|Researcher-initiated. Academic partner must lead. 12 months.|Gated on: academic partner willing to lead. Deadlines: quarterly.
+|**[[BRIDGE Discovery>>https:~/~/www.bridge.ch/]]**|Up to CHF 850K / 4 years|Scaling research. Researcher-initiated.|Gated on: established research track record with partner.
+|**[[Hasler Foundation (Responsible AI)>>https:~/~/haslerstiftung.ch/]]**|CHF 50K-200K|Trustworthy AI research. Has funded claim verification before.|Gated on: research partner + research proposal.
+|**[[Gebert Ruef InnoBooster>>https:~/~/www.grstiftung.ch/]]**|CHF 150K|Deep tech with market potential.|Gated on: Innosuisse or BRIDGE funding secured first.
 
-|=Funder|=Amount|=Fit
-|**[[Stiftung fuer Medienvielfalt>>https:~/~/www.stiftung-medienvielfalt.ch/]]**|variable|Swiss media diversity, co-founder Media Forward Fund
-|**[[Hasler Foundation (Responsible AI)>>https:~/~/haslerstiftung.ch/]]**|CHF 50-200K|Trustworthy AI research, funded claim verification before
-|**[[Gebert Ruef InnoBooster>>https:~/~/www.grstiftung.ch/]]**|CHF 150K|Deep tech with market potential — after Innosuisse/BRIDGE
-|**[[Stiftung Mercator Schweiz>>https:~/~/www.stiftung-mercator.ch/]]**|variable|Democracy and media focus, Media Forward Fund co-founder
-|**[[Ernst Goehner Stiftung>>https:~/~/www.ernst-goehner-stiftung.ch/]]** / JournaFONDS|CHF 30K+|Journalism projects, CHF 630K+ distributed since 2021
-|**[[Migros Kulturprozent>>https:~/~/www.migros-kulturprozent.ch/]]**|CHF 20-100K|Education/media literacy, low barrier, regional application
-|**[[Jacobs Foundation>>https:~/~/jacobsfoundation.org/]]**|variable|EdTech/media literacy angle (CHF 40M LEIF program)
-|**[[SNSF>>https:~/~/www.snf.ch/]]**|variable|National Research Programs, requires academic partner
-|**[[BRIDGE>>https:~/~/www.bridge.ch/]]** (SNSF/Innosuisse)|CHF 130K-850K|Proof of Concept or Discovery, researcher-initiated
-|**Global Fact Check Fund SUSTAIN**|$30,000|IFCN signatories only, operational support
-|**EMIF SAFE Initiative**|up to EUR 10K|Emergency support for verification professionals
-|**[[digitalswitzerland>>https:~/~/digitalswitzerland.com/]]**|variable|Digital innovation, 130+ member organizations
+=== Tier C -- Newsroom/Media-Org-Led ===
+
+These require a newsroom or media organization as lead applicant. FactHarbor could be a technology partner but cannot apply solo.
+
+|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
+|**[[Media Forward Fund>>https:~/~/www.mediaforwardfund.org/]]**|up to EUR 400K|CH/DE/AT pool, 3 rounds/year. Excludes service/technology providers, concept-stage, and sole proprietors. Requires original journalistic content + revenue.|Gated on: newsroom partner leads with FactHarbor as tech component.
+|**[[Knight Foundation>>https:~/~/knightfoundation.org/]]**|$50K-$800K|Largest fact-checking funder. Rolling. Primarily US-oriented. Journalism innovation focus.|Monitor Prototype Fund and Technology Grant calls.
+|**[[IFCN SUSTAIN Fund>>https:~/~/www.poynter.org/ifcn/]]**|$30,000|Requires verified IFCN signatory status. Operational support.|Gated on: IFCN signatory status (not yet achievable).
+|**Ernst Goehner / JournaFONDS**|CHF 30K+|Journalism projects via Volkart/Mercator/Goehner.|Gated on: journalism project framing or newsroom partner.
+
+=== Tier D -- EU Consortium Instruments ===
+
+Large-scale EU instruments requiring multi-country consortia. Strategic targets for post-V1.0 or if joining an existing consortium.
+
+|=Funder|=Call ID / Amount|=Status as of April 2026|=Action
+|**Horizon Europe Cluster 2**|HORIZON-CL2-2026-01-DEMOCRACY-08 (disinformation + freedom of expression), DEMOCRACY-10 (media literacy)|2026 calls expected mid-2026. CH fully associated since Jan 2025. Consortium required.|Watch [[Funding and Tenders Portal>>https:~/~/ec.europa.eu/info/funding-tenders/]]. Join via [[Euresearch>>https:~/~/www.euresearch.ch/]].
+|**Horizon Europe Cluster 2 (2027)**|HORIZON-CL2-2027-01-DEMOCRACY-04 (AI impact on democracy / deepfakes)|2027 work programme.|Long-term target for consortium participation.
+|**EDMO Hubs** (Digital Europe)|DIGITAL-2026-BESTUSE-TECH-EDMO-09-HUBS, up to EUR 750K per hub|**Call closed March 3, 2026.** Hub-consortium instrument.|Watch for next cycle. Could join existing hub as tool provider.
+
+=== Tier E -- Watchlist (Closed, Speculative, or Eligibility Unverified) ===
+
+|=Funder|=Issue|=Monitor for
+|**[[Mozilla Foundation>>https:~/~/foundation.mozilla.org/]]** Democracy x AI|No live public application page found as of April 2026. Roadmap mentions future cohorts but no confirmed call.|Watch [[State of Mozilla>>https:~/~/stateof.mozilla.org/roadmap/]] for announced calls.
+|**[[Sovereign Tech Fund>>https:~/~/www.sovereign.tech/]]** (DE)|Funds open digital //base technologies//. Does //not// finance prototypes or user-facing applications. Only fits if a reusable component (e.g., SR API) is spun out.|Revisit when SR or evidence retrieval becomes standalone.
+|**[[Hasler-Mercator D and D>>https:~/~/haslerstiftung.ch/]]**|Last known call: Jan 2025, deadline March 16, 2025. No 2026 call confirmed.|Watch Hasler website for new call.
+|**[[EMIF fact-checking>>https:~/~/gulbenkian.pt/emifund/]]**|Last cut-off June 30, 2025. Capped at EUR 55K. Required entity //employing fact-checkers//.|Watch for new calls. Stronger once FactHarbor has fact-checker users.
+|**[[Prototype Fund Germany>>https:~/~/www.prototypefund.de/]]**|Solo applicants must reside and pay taxes in Germany. Associations excluded.|Not applicable for Swiss Verein.
+|**Creative Europe Media Literacy**|2026 call closed March 11, 2026. Switzerland not listed as participating country.|Not a Swiss route.
+
+=== Swiss Foundation Landscape (Supplementary) ===
+
+Smaller Swiss foundations funding media, education, or democracy. Lower amounts, lower barriers.
+
+|=Funder|=Amount|=Angle|=Website
+|**[[Stiftung fuer Medienvielfalt>>https:~/~/www.stiftung-medienvielfalt.ch/]]**|variable|Media diversity, Media Forward Fund co-founder|stiftung-medienvielfalt.ch
+|**[[Stiftung Mercator Schweiz>>https:~/~/www.stiftung-mercator.ch/]]**|variable|Democracy, diversity, Media Forward Fund co-founder|stiftung-mercator.ch
+|**[[Migros Kulturprozent>>https:~/~/www.migros-kulturprozent.ch/]]**|CHF 20-100K|Education/media literacy, regional|migros-kulturprozent.ch
+|**[[Ernst Goehner Stiftung>>https:~/~/www.ernst-goehner-stiftung.ch/]]**|CHF 30K+|Culture, education, science|ernst-goehner-stiftung.ch
+|**[[Jacobs Foundation>>https:~/~/jacobsfoundation.org/]]**|variable|EdTech, media literacy|jacobsfoundation.org
+|**[[SNSF>>https:~/~/www.snf.ch/]]**|variable|National Research Programs, academic partner required|snf.ch
+|**[[digitalswitzerland>>https:~/~/digitalswitzerland.com/]]**|variable|Digital innovation, 130+ members|digitalswitzerland.com
 
 === Not Recommended (for current stage) ===
 
 |=Funder|=Reason
-|Ford Foundation, Rockefeller, Sigrid Rausing Trust, Luminate, Adessium|Invitation-only, no open application process
-|RSF, CPJ, IFPIM|Fund journalists and media outlets, not tool development
+|Ford Foundation, Rockefeller, Sigrid Rausing Trust, Luminate, Adessium|Invitation-only, no open application
+|RSF, CPJ, IFPIM|Fund journalists/outlets, not tool development
 |Oak Foundation|No media/tech focus
-|MacArthur Foundation|Press Forward is for news orgs, not tools
 |Craig Newmark Philanthropies|Primarily US 501(c)(3) focused
 
 ----
