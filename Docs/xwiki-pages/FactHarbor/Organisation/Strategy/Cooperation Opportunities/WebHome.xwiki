@@ -264,188 +264,63 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 == 3. FUNDING OPPORTUNITIES (Updated April 2026) ==
 
-=== 3.1 Major International Foundations (Priority: HIGH) ===
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Context:** FactHarbor is an open-source, non-profit (Swiss Verein in preparation) automated fact-checking tool in Alpha stage, built by a solo developer. Funding priorities: infrastructure costs, research partnerships, and path to Beta/V1.0.
+)))
 
-==== **Knight Foundation** ====
+=== Priority 1 — Immediately Actionable, High Fit ===
 
-* **Budget:** $50M+ for journalism/fact-checking; Press Forward: $150M over 5 years
-* **Programs:** Knight Prototype Fund ($50K), Technology Grants, Research Grants
-* **Previous Grants:** Duke Reporters' Lab ($800K), AP Fact-Checking ($245K), First Draft ($250K)
-* **Application:** Rolling, https:~/~/knightfoundation.org/apply/
-* **Relevance:** EXCELLENT - largest dedicated funder of fact-checking infrastructure
+|=Funder|=Amount|=Why Priority 1|=Next Step
+|**[[NLNet Foundation>>https:~/~/nlnet.nl/]]**|EUR 5,000-50,000|Rolling calls, open source required, solo developer eligible|Apply now
+|**[[Sovereign Tech Fund>>https:~/~/www.sovereign.tech/]]** (DE)|EUR 50K-1M|Open-source infrastructure, global scope, no consortium needed|Apply now
+|**[[Prototype Fund Switzerland>>https:~/~/prototypefund.opendata.ch/]]**|CHF up to 100K|Open source + public interest + Swiss = perfect match|Monitor next round
+|**[[Innosuisse Innovation Cheque>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 15,000 (100% funded)|No co-funding, 4-6 week decision, feasibility study|Awaiting ZHAW response (Prof. Cieliebak)
+|**[[Mozilla Democracy x AI>>https:~/~/foundation.mozilla.org/]]**|$50-300K|AI + democracy + open source = direct fit|Monitor next cohort call
 
-==== **Mozilla Foundation - Democracy x AI Cohort** ====
+=== Priority 2 — Strongly Relevant, More Preparation Needed ===
 
-* **Budget:** $50K per project; top 2 get additional $250K (total $300K)
-* **Focus:** AI tools for democracy, misinformation prevention
-* **Requirement:** Code must be open source
-* **Website:** https:~/~/foundation.mozilla.org/
-* **Relevance:** EXCELLENT - direct fit for FactHarbor
+|=Funder|=Amount|=Why Priority 2|=Prerequisite
+|**[[Media Forward Fund>>https:~/~/www.mediaforwardfund.org/]]**|up to EUR 400K|CH/DE/AT pool, media innovation, 3 rounds/year|Business model focus required
+|**[[Hasler-Mercator Digitalisierung & Demokratie>>https:~/~/haslerstiftung.ch/]]**|CHF 4M pool|Directly addresses AI + democracy + disinformation|Research partner needed
+|**[[European Media and Information Fund (EMIF)>>https:~/~/gulbenkian.pt/emifund/]]**|up to EUR 150K|Directly funds fact-checking, Switzerland eligible|Project proposal
+|**[[Knight Foundation>>https:~/~/knightfoundation.org/]]**|$50-800K|Largest dedicated funder of fact-checking infrastructure|Rolling applications
+|**[[Prototype Fund Germany>>https:~/~/www.prototypefund.de/]]**|EUR 95-158K|Open source social innovation, now EU collaboration eligible|Next round Oct 2025/2026
+|**[[Open Technology Fund>>https:~/~/apply.opentech.fund/]]**|$50-200K|Internet freedom, rolling two-stage applications|Frame as information freedom tool
 
-==== **NLNet Foundation** ====
+=== Priority 3 — Larger Instruments, Consortium/Partner Required ===
 
-* **Budget:** EUR 5,000-50,000 per project
-* **Focus:** Open internet, digital commons, free/open source software
-* **Programs:** NGI Zero Commons Fund, NGI Mobifree, NGI Fediversity
-* **Application:** Rolling open calls, https:~/~/nlnet.nl/
-* **Relevance:** EXCELLENT - perfect for open-source solo developer model
+|=Funder|=Amount|=Why Priority 3|=Prerequisite
+|**Horizon Europe CL5-2026-07**|EUR 15M pool|Climate disinformation tools, CH fully associated since Jan 2025|Consortium, deadline Apr 2026
+|**[[EDMO Hubs>>https:~/~/hadea.ec.europa.eu/]]** (Digital Europe)|up to EUR 750K|Explicitly encourages AI fact-checking tool development|Hub structure, verify CH eligibility
+|**[[Innosuisse Innovation Project>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 100-500K|Joint R&D with university partner (40-60% cost split)|Innovation Cheque first
+|**[[Creative Europe Media Literacy>>https:~/~/digital-strategy.ec.europa.eu/]]**|up to EUR 500K|Media literacy consortium, 70% EU funding|3+ countries, deadline Mar 2026
+|**Horizon Europe Democracy & Governance**|EUR 94M cluster|Disinformation, AI impact on democracy, deepfakes|Consortium, 2026-2027 calls
 
-==== **Open Technology Fund (OTF)** ====
+=== Priority 4 — Complementary / Specific ===
 
-* **Budget:** $10,000-$900,000; ideal range $50-200K for 6-12 months
-* **Focus:** Internet freedom technologies, information verification
-* **Application:** Two-stage, rolling, https:~/~/apply.opentech.fund/
-* **Relevance:** HIGH - fact-checking as combating information control
+|=Funder|=Amount|=Fit
+|**[[Stiftung fuer Medienvielfalt>>https:~/~/www.stiftung-medienvielfalt.ch/]]**|variable|Swiss media diversity, co-founder Media Forward Fund
+|**[[Hasler Foundation (Responsible AI)>>https:~/~/haslerstiftung.ch/]]**|CHF 50-200K|Trustworthy AI research, funded claim verification before
+|**[[Gebert Ruef InnoBooster>>https:~/~/www.grstiftung.ch/]]**|CHF 150K|Deep tech with market potential — after Innosuisse/BRIDGE
+|**[[Stiftung Mercator Schweiz>>https:~/~/www.stiftung-mercator.ch/]]**|variable|Democracy and media focus, Media Forward Fund co-founder
+|**[[Ernst Goehner Stiftung>>https:~/~/www.ernst-goehner-stiftung.ch/]]** / JournaFONDS|CHF 30K+|Journalism projects, CHF 630K+ distributed since 2021
+|**[[Migros Kulturprozent>>https:~/~/www.migros-kulturprozent.ch/]]**|CHF 20-100K|Education/media literacy, low barrier, regional application
+|**[[Jacobs Foundation>>https:~/~/jacobsfoundation.org/]]**|variable|EdTech/media literacy angle (CHF 40M LEIF program)
+|**[[SNSF>>https:~/~/www.snf.ch/]]**|variable|National Research Programs, requires academic partner
+|**[[BRIDGE>>https:~/~/www.bridge.ch/]]** (SNSF/Innosuisse)|CHF 130K-850K|Proof of Concept or Discovery, researcher-initiated
+|**Global Fact Check Fund SUSTAIN**|$30,000|IFCN signatories only, operational support
+|**EMIF SAFE Initiative**|up to EUR 10K|Emergency support for verification professionals
+|**[[digitalswitzerland>>https:~/~/digitalswitzerland.com/]]**|variable|Digital innovation, 130+ member organizations
 
-==== **Global Fact Check Fund: SUSTAIN** ====
+=== Not Recommended (for current stage) ===
 
-* **Grant Amount:** $30,000 USD
-* **Eligibility:** Verified signatories of IFCN Code of Principles
-* **Focus:** Core operational support post-Meta exit
-
-==== **EMIF SAFE Initiative** ====
-
-* **Grant Amount:** Up to EUR 10,000 (annual cycles)
-* **Focus:** Emergency support for verification professionals
-
-==== **MacArthur Foundation** ====
-
-* **Initiative:** Press Forward ($500M over 5 years for local news)
-* **Focus:** Democracy, trust in institutions
-
-==== **Open Society Foundations** ====
-
-* **Focus:** Democracy, human rights, information integrity
-
-=== 3.2 Swiss Funding Sources (Priority: HIGH) ===
-
-==== **Innosuisse - Swiss Innovation Agency** ====
-
-* **Programs:**
-** **Innovation Cheque:** CHF 15,000 (100% funded) - feasibility study with academic partner, 4-6 week decision
-** **Innovation Projects:** CHF 100K-500K - joint R&D with university partner (40-60% cost split, in-kind eligible)
-* **Requirements:** Swiss UID, research partner (university), min. 5% cash co-funding
-* **Status:** ZHAW cooperation in exploration (Prof. Mark Cieliebak, NLP/CAI group)
-* **Application:** Via Innolink platform https:~/~/www.innosuisse.admin.ch/
-
-==== **BRIDGE (SNSF/Innosuisse)** ====
-
-* **Programs:**
-** **Proof of Concept:** Up to CHF 130K/year, 12 months - researcher-initiated
-** **Discovery:** Up to CHF 850K over 4 years - for scaling research
-* **Website:** https:~/~/www.bridge.ch/
-
-==== **Hasler Foundation + Mercator - Digitalisierung & Demokratie** ====
-
-* **Budget:** CHF 4M total available (joint program)
-* **Focus:** AI/digitalization challenges for democracy, disinformation
-* **Website:** https:~/~/haslerstiftung.ch/
-* **Relevance:** HIGH - directly addresses AI and democracy
-
-==== **Hasler Foundation (standalone - Responsible AI)** ====
-
-* **Budget:** CHF 50K-200K
-* **Focus:** Trustworthy/responsible AI research
-* **Track Record:** Funded claim verification research (Sachan, Leippold, Ash)
-
-==== **Stiftung fuer Medienvielfalt** ====
-
-* **Focus:** Media diversity, local journalism, investigative journalism
-* **Co-founder of Media Forward Fund:** EUR 9M cross-border pool (CH/DE/AT)
-* **Website:** https:~/~/www.stiftung-medienvielfalt.ch/
-* **Relevance:** HIGH - directly supports journalism infrastructure
-
-==== **Stiftung Mercator Schweiz** ====
-
-* **Focus:** Democracy, diversity, climate
-* **Role:** Lead co-founder of Media Forward Fund
-* **Website:** https:~/~/www.stiftung-mercator.ch/
-
-==== **Ernst Goehner Stiftung** ====
-
-* **Budget:** CHF 30K-150K+
-* **Focus:** Culture, social affairs, education, science
-* **Website:** https:~/~/www.ernst-goehner-stiftung.ch/
-
-==== **Migros Kulturprozent** ====
-
-* **Budget:** CHF 20K-100K+
-* **Focus:** Cultural, educational, social projects
-* **Application:** Regional (e.g., Migros Zuerich)
-
-==== **Gebert Ruef Stiftung** ====
-
-* **Budget:** CHF 15M annually (CHF 220M endowment)
-* **Program:** InnoBooster - CHF 150K for deep tech with market potential
-* **Prerequisite:** Innosuisse or BRIDGE funding secured first
-* **Website:** https:~/~/www.grstiftung.ch/en.html
-
-==== **Prototype Fund Switzerland** ====
-
-* **Grant Size:** Up to CHF 100K
-* **Focus:** Public interest tech, open source, civic tech
-* **Application:** https:~/~/prototypefund.opendata.ch/
-* **Relevance:** HIGH - perfect alignment with FactHarbor
-
-==== **Swiss National Science Foundation (SNSF)** ====
-
-* **Programs:** National Research Programs (NRP), project funding
-* **Requirement:** Academic partnership
-* **Website:** https:~/~/www.snf.ch/
-
-==== **Jacobs Foundation** ====
-
-* **Focus:** Education, digital learning, EdTech innovation
-* **Programs:** LEIF (CHF 40M for EdTech), DEEP research consortium
-* **Angle:** Fact-checking as media literacy / education tool
-* **Website:** https:~/~/jacobsfoundation.org/
-
-=== 3.3 European Funding (Priority: MEDIUM-HIGH) ===
-
-==== **European Media and Information Fund (EMIF)** ====
-
-* **Budget:** EUR 25M (5-year Google contribution)
-* **Grant Amount:** Up to EUR 150,000 per project (up to 9 months)
-* **Focus:** Fact-checking, media literacy, disinformation research
-* **Eligibility:** EU, Iceland, Liechtenstein, Norway, Switzerland, UK
-* **Website:** https:~/~/gulbenkian.pt/emifund/
-* **Relevance:** EXCELLENT - directly funds fact-checking
-
-==== **Horizon Europe** ====
-
-* **Programs:** Media & Democracy calls, AI for Good, civic engagement
-* **Status:** **Switzerland regained full associated status January 1, 2025** - Swiss entities can lead and receive direct funding
-* **Website:** https:~/~/www.sbfi.admin.ch/en/horizon-package-2021-2027
-* **Relevance:** HIGH - large amounts, full Swiss access restored
-
-==== **European Network of Factcheckers (EU Grant)** ====
-
-* **Budget:** Multi-million EUR
-* **Focus:** Fact-checker protection, API repository, emergency response, training
-* **Eligibility:** EU + associated countries (Switzerland included)
-
-=== 3.4 Democracy & Civic Society Foundations (Priority: MEDIUM) ===
-
-==== **Stiftung fuer direkte Demokratie** ====
-
-* **Focus:** Civil society, political participation, democracy
-* **Website:** https:~/~/www.demokratie.ch/
-
-==== **Schweizer Demokratie Stiftung** ====
-
-* **Focus:** Citizen participation, minority tolerance
-* **Program:** Youth + Democracy Fund
-* **Website:** https:~/~/www.swissdemocracy.foundation/
-
-==== **Democracy Fund (US)** ====
-
-* **Focus:** Democratic governance, civic participation
-
-==== **digitalswitzerland** ====
-
-* **Focus:** Digital skills, innovation, digital public services
-* **Members:** 130+ organizations
-* **Website:** https:~/~/digitalswitzerland.com/
+|=Funder|=Reason
+|Ford Foundation, Rockefeller, Sigrid Rausing Trust, Luminate, Adessium|Invitation-only, no open application process
+|RSF, CPJ, IFPIM|Fund journalists and media outlets, not tool development
+|Oak Foundation|No media/tech focus
+|MacArthur Foundation|Press Forward is for news orgs, not tools
+|Craig Newmark Philanthropies|Primarily US 501(c)(3) focused
 
 ----
 
