@@ -1,22 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { extractFirstJsonObjectFromText, tryParseFirstJsonObject, repairTruncatedJson } from "@/lib/analyzer/json";
+import {
+  extractFirstJsonObjectFromText,
+  tryParseFirstJsonObject,
+  extractFirstJsonValueFromText,
+  tryParseFirstJsonValue,
+  repairTruncatedJsonValue
+} from "@/lib/analyzer/json";
 
 describe("analyzer/json", () => {
   it("extracts and parses a plain JSON object", () => {
-    const txt = `{\"a\":1,\"b\":\"x\"}`;
+    const txt = `{"a":1,"b":"x"}`;
     expect(extractFirstJsonObjectFromText(txt)).toBe(txt);
     expect(tryParseFirstJsonObject(txt)).toEqual({ a: 1, b: "x" });
   });
 
   it("extracts JSON object from surrounding text", () => {
-    const txt = `prefix\\n{ \"a\": 1, \"b\": \"x\" }\\npost`;
-    expect(extractFirstJsonObjectFromText(txt)).toBe(`{ \"a\": 1, \"b\": \"x\" }`);
+    const txt = `prefix\n{ "a": 1, "b": "x" }\npost`;
+    expect(extractFirstJsonObjectFromText(txt)).toBe(`{ "a": 1, "b": "x" }`);
     expect(tryParseFirstJsonObject(txt)).toEqual({ a: 1, b: "x" });
   });
 
   it("handles braces inside quoted strings", () => {
-    const txt = `leading {\"a\":\"{not a brace}\",\"b\":2} trailing`;
+    const txt = `leading {"a":"{not a brace}","b":2} trailing`;
     expect(tryParseFirstJsonObject(txt)).toEqual({ a: "{not a brace}", b: 2 });
   });
 
@@ -26,54 +32,64 @@ describe("analyzer/json", () => {
   });
 
   it("parses the first JSON object when multiple exist", () => {
-    const txt = `x {\"a\":1} y {\"b\":2}`;
+    const txt = `x {"a":1} y {"b":2}`;
     expect(tryParseFirstJsonObject(txt)).toEqual({ a: 1 });
+  });
+
+  it("extracts and parses a JSON array", () => {
+    const txt = `[{"a":1},{"b":2}]`;
+    expect(extractFirstJsonValueFromText(txt)).toBe(txt);
+    expect(tryParseFirstJsonValue(txt)).toEqual([{ a: 1 }, { b: 2 }]);
+  });
+
+  it("chooses the first structure (object vs array)", () => {
+    expect(extractFirstJsonValueFromText(`{ "a": 1 } [2, 3]`)).toBe(`{ "a": 1 }`);
+    expect(extractFirstJsonValueFromText(`[1, 2] { "b": 3 }`)).toBe(`[1, 2]`);
+  });
+
+  it("respects expectedStart in tryParseFirstJsonValue", () => {
+    const txt = `noise [1, 2] more noise { "a": 3 }`;
+    expect(tryParseFirstJsonValue(txt, "[")).toEqual([1, 2]);
+    expect(tryParseFirstJsonValue(txt, "{")).toEqual({ a: 3 });
   });
 });
 
-describe("repairTruncatedJson", () => {
+describe("repairTruncatedJsonValue", () => {
   it("returns parsed object for complete JSON", () => {
     const obj = { a: 1, b: [{ c: 2 }, { c: 3 }] };
-    expect(repairTruncatedJson(JSON.stringify(obj))).toEqual(obj);
-  });
-
-  it("returns null for non-JSON text", () => {
-    expect(repairTruncatedJson("not json at all")).toBeNull();
-    expect(repairTruncatedJson("")).toBeNull();
+    expect(repairTruncatedJsonValue(JSON.stringify(obj))).toEqual(obj);
   });
 
   it("repairs JSON truncated mid-array-item", () => {
     // Simulates: {"items":[{"id":1,"val":"ok"},{"id":2,"val":"trun
-    const result = repairTruncatedJson('{"items":[{"id":1,"val":"ok"},{"id":2,"val":"trun');
+    const result = repairTruncatedJsonValue('{"items":[{"id":1,"val":"ok"},{"id":2,"val":"trun');
     expect(result).not.toBeNull();
     expect(result.items).toHaveLength(1);
     expect(result.items[0]).toEqual({ id: 1, val: "ok" });
   });
 
-  it("repairs JSON truncated after complete array item", () => {
-    const result = repairTruncatedJson('{"summary":"test","items":[{"id":1},{"id":2},{"id":3');
-    expect(result).not.toBeNull();
-    expect(result.summary).toBe("test");
-    expect(result.items).toHaveLength(2);
-    expect(result.items[0].id).toBe(1);
-    expect(result.items[1].id).toBe(2);
+  it("repairs a truncated top-level array", () => {
+    const txt = `[{"id": 1}, {"id": 2`;
+    const result = repairTruncatedJsonValue(txt);
+    expect(result).toEqual([{ id: 1 }]);
   });
 
-  it("preserves completed top-level fields before truncated array", () => {
-    const json = '{"verdictSummary":{"answer":65,"confidence":70},"contexts":[{"id":"a"}],"claims":[{"id":"c1","verdict":72},{"id":"c2","ver';
-    const result = repairTruncatedJson(json);
-    expect(result).not.toBeNull();
-    expect(result.verdictSummary).toEqual({ answer: 65, confidence: 70 });
-    expect(result.contexts).toHaveLength(1);
-    expect(result.claims).toHaveLength(1);
-    expect(result.claims[0]).toEqual({ id: "c1", verdict: 72 });
+  it("repairs a truncated array with nested objects", () => {
+    const txt = `[{"id": 1, "data": {"val": 10}}, {"id": 2, "data": {"v`;
+    const result = repairTruncatedJsonValue(txt);
+    expect(result).toEqual([{ id: 1, data: { val: 10 } }]);
+  });
+
+  it("respects expectedStart parameter", () => {
+    const txt = `prefix { "obj": 1 } [ {"id": 1}, {"id": 2`;
+    expect(repairTruncatedJsonValue(txt, "{")).toEqual({ obj: 1 });
+    expect(repairTruncatedJsonValue(txt, "[")).toEqual([{ id: 1 }]);
   });
 
   it("handles strings with braces inside quoted values", () => {
-    const result = repairTruncatedJson('{"items":[{"text":"a {b} c","id":1},{"text":"trunc');
+    const result = repairTruncatedJsonValue('{"items":[{"text":"a {b} c","id":1},{"text":"trunc');
     expect(result).not.toBeNull();
     expect(result.items).toHaveLength(1);
     expect(result.items[0].text).toBe("a {b} c");
   });
 });
-

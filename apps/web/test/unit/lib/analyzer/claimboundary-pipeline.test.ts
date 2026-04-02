@@ -4463,6 +4463,17 @@ describe("Stage 4: createProductionLLMCall", () => {
     expect(result).toEqual({ verdicts: [1, 2, 3], notes: "ok" });
   });
 
+  it("should recover prose-wrapped single-object advocate output despite array-root preference", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({
+      text: 'Result follows: {"claimId":"AC_01","truthPercentage":72,"confidence":81} Thanks.',
+    } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {});
+    expect(result).toEqual({ claimId: "AC_01", truthPercentage: 72, confidence: 81 });
+  });
+
   it("should repair truncated JSON responses when possible", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
     mockGenerateText.mockResolvedValue({

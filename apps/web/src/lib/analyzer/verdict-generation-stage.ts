@@ -39,7 +39,7 @@ import {
   getPromptCachingOptions,
   type ModelTask,
 } from "./llm";
-import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
+import { tryParseFirstJsonValue, repairTruncatedJsonValue } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
 import {
   runWithLlmProviderGuard,
@@ -598,22 +598,6 @@ export function createProductionLLMCall(
       }
     }
 
-    // Record successful LLM call with actual resolved provider
-    recordLLMCall({
-      taskType: 'verdict',
-      provider: attemptModel.provider,
-      modelName: attemptModel.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: Date.now() - startTime,
-      success: true,
-      schemaCompliant: true,
-      retries: 0,
-      timestamp: new Date(),
-      debateRole: options?.callContext?.debateRole,
-    });
-
     // 5. Parse result as JSON
     const text = result.text?.trim();
     if (!text) {
@@ -629,42 +613,169 @@ export function createProductionLLMCall(
       );
     }
 
-    try {
-      return JSON.parse(text);
-    } catch (parseError) {
-      // Recover common LLM formatting issues before failing the whole verdict stage.
-      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (jsonMatch?.[1]) {
-        try {
-          return JSON.parse(jsonMatch[1].trim());
-        } catch {
-          // Continue to shared recovery helpers below.
+    const expectedRootToken = (
+      promptKey.includes("ADVOCATE") ||
+      promptKey.includes("RECONCILIATION") ||
+      promptKey.includes("VALIDATION")
+    ) ? "[" : "{";
+    const alternateRootToken = expectedRootToken === "[" ? "{" : "[";
+    const recoveryRoots: Array<"{" | "[" | undefined> = [undefined, expectedRootToken, alternateRootToken]
+      .filter((root, index, roots) => roots.indexOf(root) === index);
+
+    const tryParseWithRecovery = (jsonText: string) => {
+      const trimmedText = jsonText?.trim();
+      if (!trimmedText) return null;
+
+      const tryAcrossRoots = (
+        attempt: (root?: "{" | "[") => unknown | null,
+      ): unknown | null => {
+        for (const root of recoveryRoots) {
+          const recovered = attempt(root);
+          if (recovered !== null) return recovered;
         }
-      }
+        return null;
+      };
 
-      const embeddedObject = tryParseFirstJsonObject(text);
-      if (embeddedObject) {
-        return embeddedObject;
-      }
+      // a. Direct JSON.parse
+      try {
+        return JSON.parse(trimmedText);
+      } catch {
+        // b. Fenced JSON parse
+        const jsonMatch = trimmedText.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch?.[1]) {
+          try {
+            return JSON.parse(jsonMatch[1].trim());
+          } catch {
+            // continue
+          }
+        }
 
-      const repairedObject = repairTruncatedJson(text);
-      if (repairedObject) {
-        return repairedObject;
-      }
+        // c. Generic JSON value extraction
+        const embeddedValue = tryAcrossRoots((root) => tryParseFirstJsonValue(trimmedText, root));
+        if (embeddedValue !== null) return embeddedValue;
 
-      throw toError(
-        `Stage 4: Failed to parse LLM response as JSON for prompt "${promptKey}"`,
-        {
-          stage,
-          promptKey,
-          provider: attemptModel.provider,
-          model: attemptModel.modelName,
-          tier,
-          reason: "json_parse_failure",
-        },
-        parseError,
-      );
+        // d. Truncated JSON value repair
+        const repairedValue = tryAcrossRoots((root) => repairTruncatedJsonValue(trimmedText, root));
+        if (repairedValue !== null) return repairedValue;
+
+        return null;
+      }
+    };
+
+    let parsed = tryParseWithRecovery(text);
+    if (parsed) {
+      // Success on first attempt (or its recovery)
+      recordLLMCall({
+        taskType: 'verdict',
+        provider: attemptModel.provider,
+        modelName: attemptModel.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - startTime,
+        success: true,
+        schemaCompliant: true,
+        retries: 0,
+        timestamp: new Date(),
+        debateRole: options?.callContext?.debateRole,
+      });
+      return parsed;
     }
+
+    // FAILED PARSING - RECORD FIRST ATTEMPT AS SCHEMA NON-COMPLIANT
+    const parseFailureMetadata = {
+      length: text.length,
+      startsWith: text.substring(0, 50).replace(/\n/g, "\\n"),
+      startsWithBracket: text.startsWith("["),
+      startsWithBrace: text.startsWith("{"),
+      hasFence: text.includes("```"),
+      expectedRoot: expectedRootToken === "[" ? "array" : "object",
+    };
+
+    recordLLMCall({
+      taskType: 'verdict',
+      provider: attemptModel.provider,
+      modelName: attemptModel.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - startTime,
+      success: true,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `JSON parse failure: ${JSON.stringify(parseFailureMetadata)}`,
+      timestamp: new Date(),
+      debateRole: options?.callContext?.debateRole,
+    });
+
+    // RETRY ONCE ON PARSE FAILURE (SAME MODEL/PROVIDER)
+    if (onEvent) onEvent(`Parse failure, retrying ${attemptModel.modelName}...`, -1);
+
+    try {
+      const retryResult = await callModelWithGuard(attemptModel);
+      const retryText = retryResult.text?.trim();
+      parsed = tryParseWithRecovery(retryText);
+
+      if (parsed) {
+        // Success on retry
+        recordLLMCall({
+          taskType: 'verdict',
+          provider: attemptModel.provider,
+          modelName: attemptModel.modelName,
+          promptTokens: retryResult.usage?.inputTokens ?? 0,
+          completionTokens: retryResult.usage?.outputTokens ?? 0,
+          totalTokens: retryResult.usage?.totalTokens ?? 0,
+          durationMs: Date.now() - startTime,
+          success: true,
+          schemaCompliant: true,
+          retries: 1,
+          timestamp: new Date(),
+          debateRole: options?.callContext?.debateRole,
+        });
+        return parsed;
+      }
+
+      // Retry parsed failed too
+      const retryParseFailureMetadata = {
+        length: retryText?.length ?? 0,
+        startsWith: retryText?.substring(0, 50).replace(/\n/g, "\\n") ?? "",
+        startsWithBracket: retryText?.startsWith("["),
+        startsWithBrace: retryText?.startsWith("{"),
+      };
+
+      recordLLMCall({
+        taskType: 'verdict',
+        provider: attemptModel.provider,
+        modelName: attemptModel.modelName,
+        promptTokens: retryResult.usage?.inputTokens ?? 0,
+        completionTokens: retryResult.usage?.outputTokens ?? 0,
+        totalTokens: retryResult.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - startTime,
+        success: true,
+        schemaCompliant: false,
+        retries: 1,
+        errorMessage: `JSON parse failure on retry: ${JSON.stringify(retryParseFailureMetadata)}`,
+        timestamp: new Date(),
+        debateRole: options?.callContext?.debateRole,
+      });
+    } catch (retryError) {
+      // Retry call itself failed - already handled by recordLLMCall in callModelWithGuard catch block
+      // Rethrow to preserve real failure type (provider/network)
+      throw retryError;
+    }
+
+    throw toError(
+      `Stage 4: Failed to parse LLM response as JSON after retry for prompt "${promptKey}"`,
+      {
+        stage,
+        promptKey,
+        provider: attemptModel.provider,
+        model: attemptModel.modelName,
+        tier,
+        reason: "json_parse_failure_after_retry",
+        metadata: parseFailureMetadata,
+      },
+    );
   };
 }
 
