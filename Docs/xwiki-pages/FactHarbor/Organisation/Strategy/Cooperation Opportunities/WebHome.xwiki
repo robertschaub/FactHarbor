@@ -266,44 +266,46 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Applicant profile:** Open-source, non-profit (Swiss Verein in preparation), automated fact-checking tool in Alpha, solo developer. No revenue, no newsroom partnership, no EU consortium. Funding priorities: infrastructure costs, research partnerships, path to Beta.
+**Applicant profile:** Founder-led, open-source automated fact-checking tool in Alpha. A Swiss nonprofit association (//Verein//) is in formation, with legal setup targeted for April 23, 2026. No revenue yet, no newsroom partnership yet, no EU consortium yet. Funding priorities: infrastructure costs, institutional capacity, research partnerships, and path to Beta.
 )))
 
 (% class="box warningmessage" %)
 (((
-**Reading this table:** Rows are grouped by //who can apply// (solo developer vs. research-partner-led vs. newsroom-led vs. consortium), not just by grant size. Every row ends with a concrete action and gating condition. Instruments in the Watchlist had their last known call close before April 2026 or have unverified eligibility.
+**Reading this table:** Rows are grouped by //who can realistically apply next// (founder-led / small Swiss nonprofit vs. research-partner-led vs. newsroom-led vs. consortium), not just by grant size. Every row ends with a concrete action and, where relevant, a gating condition. Instruments in the Watchlist had their last known call close before April 2026 or have unverified eligibility.
 )))
 
-=== Tier A -- Solo-Actionable Now ===
+=== Tier A -- Founder-Led / Swiss Nonprofit Near-Term ===
 
-These accept applications from a solo open-source developer or small Swiss nonprofit without a research partner, newsroom lead, or consortium.
+These are the most realistic near-term options for a founder-led open-source project and, once the Swiss //Verein// is established, for a small Swiss nonprofit without a research partner, newsroom lead, or consortium.
 
-|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
-|**[[NLNet Foundation>>https:~/~/nlnet.nl/]]**|EUR 5,000-50,000|Rolling open calls. Open source required. Solo developer eligible. No consortium. Proven track record funding digital commons tools.|Robert: apply to next NGI Zero Commons Fund call. No gating condition.
-|**[[Innosuisse Innovation Cheque>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 15,000 (100% funded)|Feasibility study with academic partner. No co-funding required. 4-6 week decision. Lowest barrier Swiss grant.|Robert: awaiting ZHAW response (Prof. Cieliebak, email sent 2026-03-25). Gated on partner confirmation.
-|**[[Prototype Fund Switzerland>>https:~/~/prototypefund.opendata.ch/]]**|CHF up to 100K|Open source + public interest + Swiss. Strong fit //if// the current theme aligns (recent themes: sustainable digitalization, digital sufficiency). Not an automatic match -- requires framing around resource-efficient fact-checking.|Robert: monitor next call. Gated on theme fit and call opening.
-|**[[Open Technology Fund>>https:~/~/apply.opentech.fund/]]**|$50,000-$200K|Internet freedom technologies. Rolling two-stage. Prioritizes first-time applicants. Requires framing as combating information control.|Robert: prepare application. No gating condition.
+|=Funder|=Amount|=Fit for FactHarbor|=Action / gating condition
+|**[[NLNet Foundation>>https:~/~/nlnet.nl/]]**|EUR 5,000-50,000|Rolling open calls. Open source required. Compatible with founder-led applications and small nonprofits. No consortium. Proven track record funding digital commons tools.|Apply to the next NGI Zero Commons Fund call. Gating: none.
+|**[[Mozilla Foundation Incubator: Democracy x AI>>https:~/~/www.mozillafoundation.org/en/what-we-do/grantmaking/incubator/democracy-ai-cohort/]]**|USD 50,000 + 12-month cohort support|Active program specifically funding working AI tools that strengthen democracy. Strong thematic fit for multilingual verification and public-information tooling. Open to eligible nonprofits, including non-US nonprofit equivalents to 501(c)(3). The current 2026 intake is now closed.|If shortlisted, prepare the full proposal by April 30, 2026. Otherwise sign up for updates and keep a next-cohort application pack ready. Gating: working technology with traction + legal ability to receive Mozilla funds.
+|**[[Innosuisse Innovation Cheque>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 15,000 (100% funded)|Feasibility study with academic partner. No co-funding required. 4-6 week decision. Lowest barrier Swiss grant.|Follow up with ZHAW on the pending response. Gating: partner confirmation.
+|**[[Prototype Fund Switzerland>>https:~/~/prototypefund.opendata.ch/]]**|CHF up to 100K|Strong fit. Current criteria explicitly ask whether the project contributes to //(ecologically) sustainable digitalization// in Switzerland via efficiency, consistency, and/or sufficiency, and the current round focuses on sustainable digitalization + digital sufficiency. FactHarbor can be framed as public-interest verification infrastructure that reduces duplicated research and information-processing overhead.|Monitor the next call and prepare a sustainability-first framing. Gating: call opening.
+|**[[Open Technology Fund>>https:~/~/apply.opentech.fund/]]**|$50,000-$200K|Internet freedom technologies. Rolling two-stage. Prioritizes first-time applicants. Requires framing as combating information control.|Prepare application materials. Gating: none.
 
-=== Tier B -- Swiss Research-Partner Path ===
+=== Tier B -- Institutional Partner Paths (Research / Government) ===
 
-These require a Swiss university research partner. The Innosuisse Cheque (Tier A) is the natural first step.
+These require a Swiss university research partner or another strong institutional partner. The Innosuisse Cheque (Tier A) is the natural Swiss first step; Google.org is a separate government-partnered route.
 
-|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
-|**[[Innosuisse Innovation Project>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 100K-500K|Joint R&D with university partner. 40-60% cost split, in-kind eligible. Rolling.|Gated on: Innovation Cheque completed + confirmed research partner.
-|**[[BRIDGE Proof of Concept>>https:~/~/www.bridge.ch/]]**|Up to CHF 130K/year|Researcher-initiated. Academic partner must lead. 12 months.|Gated on: academic partner willing to lead. Deadlines: quarterly.
-|**[[BRIDGE Discovery>>https:~/~/www.bridge.ch/]]**|Up to CHF 850K / 4 years|Scaling research. Researcher-initiated.|Gated on: established research track record with partner.
-|**[[Hasler Foundation (Responsible AI)>>https:~/~/haslerstiftung.ch/]]**|CHF 50K-200K|Trustworthy AI research. Has funded claim verification before.|Gated on: research partner + research proposal.
-|**[[Gebert Ruef InnoBooster>>https:~/~/www.grstiftung.ch/]]**|CHF 150K|Deep tech with market potential.|Gated on: Innosuisse or BRIDGE funding secured first.
+|=Funder|=Amount|=Fit for FactHarbor|=Action / gating condition
+|**[[Google.org Impact Challenge: AI for Government Innovation>>https:~/~/www.google.org/impact-challenges/ai-government-innovation/]]**|USD 1M-3M|Current round closes on April 3, 2026. Open global initiative for nonprofits, social enterprises, and academic institutions partnering with governments. Major upside, but requires documented government buy-in and a concrete public-service use case.|Only apply by April 3, 2026 if a credible government pilot partner already exists. Otherwise archive as a template for future rounds. Gating: government partner + public-service framing.
+|**[[Innosuisse Innovation Project>>https:~/~/www.innosuisse.admin.ch/]]**|CHF 100K-500K|Joint R&D with university partner. 40-60% cost split, in-kind eligible. Rolling.|Prepare after the Innovation Cheque and partner confirmation. Gating: Innovation Cheque completed + confirmed research partner.
+|**[[BRIDGE Proof of Concept>>https:~/~/www.bridge.ch/]]**|Up to CHF 130K/year|Researcher-initiated. Academic partner must lead. 12 months.|Discuss a lead role with an academic partner before the next quarterly deadline. Gating: academic partner willing to lead.
+|**[[BRIDGE Discovery>>https:~/~/www.bridge.ch/]]**|Up to CHF 850K / 4 years|Scaling research. Researcher-initiated.|Treat as a second-step scale-up route. Gating: established research track record with partner.
+|**[[Hasler Foundation (Responsible AI)>>https:~/~/haslerstiftung.ch/]]**|CHF 50K-200K|Trustworthy AI research. Has funded claim verification before.|Develop a joint research proposal with a Swiss academic lead. Gating: research partner + research proposal.
+|**[[Gebert Ruef InnoBooster>>https:~/~/www.grstiftung.ch/]]**|CHF 150K|Deep tech with market potential.|Revisit after first institutional validation. Gating: Innosuisse or BRIDGE funding secured first.
 
 === Tier C -- Newsroom/Media-Org-Led ===
 
-These require a newsroom or media organization as lead applicant. FactHarbor could be a technology partner but cannot apply solo.
+These require a newsroom or media organization as lead applicant. FactHarbor could be a technology partner but cannot lead without a newsroom partner.
 
-|=Funder|=Amount|=Fit for FactHarbor|=Action (owner / gating condition)
-|**[[Media Forward Fund>>https:~/~/www.mediaforwardfund.org/]]**|up to EUR 400K|CH/DE/AT pool, 3 rounds/year. Excludes service/technology providers, concept-stage, and sole proprietors. Requires original journalistic content + revenue.|Gated on: newsroom partner leads with FactHarbor as tech component.
-|**[[Knight Foundation>>https:~/~/knightfoundation.org/]]**|$50K-$800K|Largest fact-checking funder. Rolling. Primarily US-oriented. Journalism innovation focus.|Monitor Prototype Fund and Technology Grant calls.
-|**[[IFCN SUSTAIN Fund>>https:~/~/www.poynter.org/ifcn/]]**|$30,000|Requires verified IFCN signatory status. Operational support.|Gated on: IFCN signatory status (not yet achievable).
-|**Ernst Goehner / JournaFONDS**|CHF 30K+|Journalism projects via Volkart/Mercator/Goehner.|Gated on: journalism project framing or newsroom partner.
+|=Funder|=Amount|=Fit for FactHarbor|=Action / gating condition
+|**[[Media Forward Fund>>https:~/~/www.mediaforwardfund.org/]]**|up to EUR 400K|CH/DE/AT pool, 3 rounds/year. Excludes service/technology providers, concept-stage, and sole proprietors. Requires original journalistic content + revenue.|Only pursue if a newsroom partner leads the application. Gating: newsroom lead + FactHarbor as tech component.
+|**[[Knight Foundation>>https:~/~/knightfoundation.org/]]**|$50K-$800K|Largest fact-checking funder. Rolling. Primarily US-oriented. Journalism innovation focus.|Monitor open journalism-tech or partner-led funding routes. Gating: strong journalism partner or U.S.-oriented route.
+|**[[IFCN SUSTAIN Fund>>https:~/~/www.poynter.org/ifcn/]]**|$30,000|Requires verified IFCN signatory status. Operational support.|Revisit after reaching signatory eligibility. Gating: IFCN signatory status.
+|**Ernst Goehner / JournaFONDS**|CHF 30K+|Journalism projects via Volkart/Mercator/Goehner.|Pursue only with a journalism-facing project or newsroom partner. Gating: journalism project framing or newsroom partner.
 
 === Tier D -- EU Consortium Instruments ===
 
@@ -314,15 +316,36 @@ Large-scale EU instruments requiring multi-country consortia. Strategic targets 
 |**Horizon Europe Cluster 2 (2027)**|HORIZON-CL2-2027-01-DEMOCRACY-04 (AI impact on democracy / deepfakes)|2027 work programme.|Long-term target for consortium participation.
 |**EDMO Hubs** (Digital Europe)|DIGITAL-2026-BESTUSE-TECH-EDMO-09-HUBS, up to EUR 750K per hub|**Call closed March 3, 2026.** Hub-consortium instrument.|Watch for next cycle. Could join existing hub as tool provider.
 
-=== Tier E -- Watchlist (Closed, Speculative, or Eligibility Unverified) ===
+=== Tier E -- Watchlist / Adjacent (Closed, Conditional, or Eligibility-Limited) ===
 
 |=Funder|=Issue|=Monitor for
-|**[[Mozilla Foundation>>https:~/~/foundation.mozilla.org/]]** Democracy x AI|No live public application page found as of April 2026. Roadmap mentions future cohorts but no confirmed call.|Watch [[State of Mozilla>>https:~/~/stateof.mozilla.org/roadmap/]] for announced calls.
 |**[[Sovereign Tech Fund>>https:~/~/www.sovereign.tech/]]** (DE)|Funds open digital //base technologies//. Does //not// finance prototypes or user-facing applications. Only fits if a reusable component (e.g., SR API) is spun out.|Revisit when SR or evidence retrieval becomes standalone.
-|**[[Hasler-Mercator D and D>>https:~/~/haslerstiftung.ch/]]**|Last known call: Jan 2025, deadline March 16, 2025. No 2026 call confirmed.|Watch Hasler website for new call.
+|**[[Hasler-Mercator D and D>>https:~/~/haslerstiftung.ch/die-fordertatigkeit-der-hasler-stiftung/foerderprogramme/hmdd-2025/]]**|Program is active, but the 2025 call is closed and the foundations state that no new project applications will be accepted.|Re-check Hasler and Mercator sites in mid-2026 for a reopened or follow-on call.
 |**[[EMIF fact-checking>>https:~/~/gulbenkian.pt/emifund/]]**|Last cut-off June 30, 2025. Capped at EUR 55K. Required entity //employing fact-checkers//.|Watch for new calls. Stronger once FactHarbor has fact-checker users.
 |**[[Prototype Fund Germany>>https:~/~/www.prototypefund.de/]]**|Solo applicants must reside and pay taxes in Germany. Associations excluded.|Not applicable for Swiss Verein.
+|**[[Wikimedia Research Fund>>https:~/~/meta.wikimedia.org/wiki/Grants:Programs/Wikimedia_Research_%26_Technology_Fund/Wikimedia_Research_Fund]]**|Supports individuals, groups, and organizations doing research //on or about Wikimedia projects//. Not a general product-development grant.|Relevant only if FactHarbor proposes a Wikimedia-centered research study, not a general fact-checking tool build.
 |**Creative Europe Media Literacy**|2026 call closed March 11, 2026. Switzerland not listed as participating country.|Not a Swiss route.
+
+=== Funding Precedents (Signals, Not Open Calls) ===
+
+These are not current open calls, but they prove that automated fact-checking infrastructure has already attracted serious philanthropic and corporate support.
+
+|=Example|=Signal|=Relevance for FactHarbor
+|**Full Fact + Omidyar Network / Open Society Foundations**|USD 500,000 in 2017 for automated factchecking tools (LIVE / TRENDS).|Shows that philanthropy has funded modular automated fact-checking infrastructure before.
+|**Full Fact + Google.org / Google AI for Good Impact Challenge**|Multi-year support and Google Fellowship capacity for automated fact checking.|Shows that AI-for-public-good tooling in the verification space can attract large-scale corporate philanthropy.
+|**Full Fact + Google News Initiative / Digital News Initiative**|Prototype funding for automated fact checking before broader scale-up.|Useful precedent when framing FactHarbor as newsroom-adjacent public-interest infrastructure.
+
+=== Community Funding & Recurring Support ===
+
+For an Alpha-stage open-source project, a realistic near-term target is **CHF 5K-15K** from one campaign plus **CHF 300-800 per month** in recurring support. This is not a substitute for grants, but it can validate demand, cover infrastructure, and strengthen future applications.
+
+|=Platform|=Model|=Fit for FactHarbor|=Action
+|**[[Open Collective>>https:~/~/opencollective.com/]]**|Recurring + campaigns + transparent budget|Built for open-source communities. Best once the Swiss //Verein// exists or a fiscal host is chosen. Fiscal-host fees vary; Open Collective docs cite typical host fees of 4-10%, and Open Collective Europe currently lists 6%.|Launch a public infrastructure budget once the Swiss //Verein// is established.
+|**[[GitHub Sponsors>>https:~/~/github.com/sponsors]]**|Recurring + one-time|Strongest OSS-native recurring channel. Personal-account sponsorships carry no GitHub fee; organization sponsorships can incur up to 6% sponsor-side fees.|Activate together with the public GitHub repo and clear sponsor tiers.
+|**[[wemakeit>>https:~/~/wemakeit.com/]]**|Swiss campaign crowdfunding|Good for a Swiss public launch. 10% total fees (6% service + 4% payment). Platform material cites a 65% success rate.|Use for a Swiss Verein launch campaign or Beta milestone campaign.
+|**[[Liberapay>>https:~/~/liberapay.com/]]**|Recurring donations|Lightweight, European, and friendly to open projects. Liberapay itself takes no cut; payment processing fees still apply.|Use as a parallel low-friction recurring option for supporters who do not want reward tiers.
+|**[[Goteo>>https:~/~/goteo.org/]]**|Campaigns + matchfunding|European commons-oriented crowdfunding with a strong civic / public-interest framing. Better fit if FactHarbor wants a multilingual European campaign rather than a Swiss-only one.|Explore if a commons / democracy campaign is prepared in multiple languages.
+|**[[Lokalhelden.ch>>https:~/~/www.lokalhelden.ch/]]**|Swiss nonprofit/community fundraising|Raiffeisen-backed Swiss platform with strong local/community fit. Also supports cofunding, time donations, and material donations.|Use for Swiss association launch, civic-tech events, or a public-facing democracy campaign with local support.
 
 === Swiss Foundation Landscape (Supplementary) ===
 
