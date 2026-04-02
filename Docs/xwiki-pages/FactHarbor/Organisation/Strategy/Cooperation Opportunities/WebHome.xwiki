@@ -262,177 +262,190 @@ FactHarbor's innovative Evidence Model approach and automation-first philosophy 
 
 ----
 
-== 3. FUNDING OPPORTUNITIES ==
+== 3. FUNDING OPPORTUNITIES (Updated April 2026) ==
 
-=== 3.1 Major Foundation Grants (Priority: HIGH) ===
+=== 3.1 Major International Foundations (Priority: HIGH) ===
 
-==== **Knight Foundation - Trust, Media & Democracy Initiative** ====
+==== **Knight Foundation** ====
 
-* **Budget:** $50M+ committed to journalism and fact-checking
-* **Focus Areas:**
-** Technology for newsrooms ($20K grants for publishing platforms)
-** Innovation in journalism
-** Combating misinformation
-** Local news sustainability
-* **Previous Fact-Checking Grants:**
-** Duke Reporters' Lab: $800K
-** AP Fact-Checking expansion: $245K
-** First Draft: $250K
-* **Cooperation Potential:**
-** **Technology Grants:** Apply for digital platform support
-** **Knight Prototype Fund:** $50K grants for innovative projects (20 awarded in recent round)
-** **Research Grants:** For studies on automated fact-checking effectiveness
-* **Application:** Rolling applications, check https:~/~/knightfoundation.org/apply/
-* **Next Steps:** Monitor Knight Prototype Fund announcements, prepare application highlighting FactHarbor's innovative Evidence Model
+* **Budget:** $50M+ for journalism/fact-checking; Press Forward: $150M over 5 years
+* **Programs:** Knight Prototype Fund ($50K), Technology Grants, Research Grants
+* **Previous Grants:** Duke Reporters' Lab ($800K), AP Fact-Checking ($245K), First Draft ($250K)
+* **Application:** Rolling, https:~/~/knightfoundation.org/apply/
+* **Relevance:** EXCELLENT - largest dedicated funder of fact-checking infrastructure
 
-==== **Global Fact Check Fund: SUSTAIN (Round 2, 2026)** ====
+==== **Mozilla Foundation - Democracy x AI Cohort** ====
 
-* **Grant Amount:** $30,000 USD
-* **Eligibility:** Verified signatories of IFCN Code of Principles.
-* **Focus:** Core operational support and building long-term business models post-Meta TPFC exit.
-* **Next Steps:** Monitor mid-February 2026 opening.
+* **Budget:** $50K per project; top 2 get additional $250K (total $300K)
+* **Focus:** AI tools for democracy, misinformation prevention
+* **Requirement:** Code must be open source
+* **Website:** https:~/~/foundation.mozilla.org/
+* **Relevance:** EXCELLENT - direct fit for FactHarbor
 
-==== **Journalism Science Alliance (2026 Call)** ====
+==== **NLNet Foundation** ====
 
-* **Deadline:** March 23, 2026
-* **Grant Amount:** €10,000 - €50,000
-* **Focus:** Cross-sector partnerships between media and research institutions (matches FactHarbor + ETH profile).
+* **Budget:** EUR 5,000-50,000 per project
+* **Focus:** Open internet, digital commons, free/open source software
+* **Programs:** NGI Zero Commons Fund, NGI Mobifree, NGI Fediversity
+* **Application:** Rolling open calls, https:~/~/nlnet.nl/
+* **Relevance:** EXCELLENT - perfect for open-source solo developer model
+
+==== **Open Technology Fund (OTF)** ====
+
+* **Budget:** $10,000-$900,000; ideal range $50-200K for 6-12 months
+* **Focus:** Internet freedom technologies, information verification
+* **Application:** Two-stage, rolling, https:~/~/apply.opentech.fund/
+* **Relevance:** HIGH - fact-checking as combating information control
+
+==== **Global Fact Check Fund: SUSTAIN** ====
+
+* **Grant Amount:** $30,000 USD
+* **Eligibility:** Verified signatories of IFCN Code of Principles
+* **Focus:** Core operational support post-Meta exit
 
 ==== **EMIF SAFE Initiative** ====
 
-* **Deadline:** February 27, 2026 (Annual cycles)
-* **Grant Amount:** Up to €10,000
-* **Focus:** Emergency support and protection for verification professionals.
+* **Grant Amount:** Up to EUR 10,000 (annual cycles)
+* **Focus:** Emergency support for verification professionals
 
-==== **Meta (Facebook) Fact-Checking Program** ====
+==== **MacArthur Foundation** ====
 
-* **Status:** **Officially ended US Third-Party Fact-Checking (Jan 2025)**.
-* **Transition:** Moving to user-driven "Community Notes" model.
-* **Cooperation Potential (BENEFICIAL):** Position FactHarbor as the "bridging algorithm" or verification backend for their community notes pilot.
+* **Initiative:** Press Forward ($500M over 5 years for local news)
+* **Focus:** Democracy, trust in institutions
+
+==== **Open Society Foundations** ====
+
+* **Focus:** Democracy, human rights, information integrity
 
 === 3.2 Swiss Funding Sources (Priority: HIGH) ===
 
 ==== **Innosuisse - Swiss Innovation Agency** ====
 
 * **Programs:**
-** **Innovation Projects:** Up to CHF 500K annually
-** **Start-up Funding:** For science-based startups
-** **BRIDGE Proof of Concept:** CHF 150K-850K (with SNSF)
-* **Requirements:**
-** Swiss UID number (company/nonprofit)
-** Research partner (university)
-** Market potential and innovation
-** 10% co-funding from applicant
-* **Cooperation Potential:**
-** **Perfect Fit:** FactHarbor's automated fact-checking = science-based innovation
-** **University Partnership:** Partner with ETH Zurich or University of Zurich
-** **Sustainable Development:** Fact-checking contributes to SDGs (info integrity, democracy)
-* **Application:** Via Innolink platform https:~/~/www.innosuisse.admin.ch/
-* **Timeline:** Rolling applications, 3-6 month review
-* **Next Steps:**
-*1. Identify research partner (ETH Zurich NLP group)
-*1. Develop project proposal highlighting innovation (Evidence Model)
-*1. Prepare budget and market analysis
+** **Innovation Cheque:** CHF 15,000 (100% funded) - feasibility study with academic partner, 4-6 week decision
+** **Innovation Projects:** CHF 100K-500K - joint R&D with university partner (40-60% cost split, in-kind eligible)
+* **Requirements:** Swiss UID, research partner (university), min. 5% cash co-funding
+* **Status:** ZHAW cooperation in exploration (Prof. Mark Cieliebak, NLP/CAI group)
+* **Application:** Via Innolink platform https:~/~/www.innosuisse.admin.ch/
 
-==== **Gebert Rüf Stiftung** ====
+==== **BRIDGE (SNSF/Innosuisse)** ====
 
-* **Focus:** Innovation for Swiss economy and society
-* **Budget:** CHF 15M annually
 * **Programs:**
-** **InnoBooster:** CHF 150K for deep tech with market potential
-** **Closed Pilot Projects:** (now BRIDGE handles this)
-* **Requirements:**
-** Scientific excellence
-** Innovation potential
-** Endorsement from funding program (Innosuisse, BRIDGE, etc.)
-* **Cooperation Potential:**
-** **InnoBooster Program:** After achieving Innosuisse or Venture Kick milestone
-** **Deep Tech Focus:** FactHarbor's AI-driven approach qualifies
-* **Next Steps:** First secure Innosuisse or BRIDGE funding, then apply for InnoBooster
+** **Proof of Concept:** Up to CHF 130K/year, 12 months - researcher-initiated
+** **Discovery:** Up to CHF 850K over 4 years - for scaling research
+* **Website:** https:~/~/www.bridge.ch/
+
+==== **Hasler Foundation + Mercator - Digitalisierung & Demokratie** ====
+
+* **Budget:** CHF 4M total available (joint program)
+* **Focus:** AI/digitalization challenges for democracy, disinformation
+* **Website:** https:~/~/haslerstiftung.ch/
+* **Relevance:** HIGH - directly addresses AI and democracy
+
+==== **Hasler Foundation (standalone - Responsible AI)** ====
+
+* **Budget:** CHF 50K-200K
+* **Focus:** Trustworthy/responsible AI research
+* **Track Record:** Funded claim verification research (Sachan, Leippold, Ash)
+
+==== **Stiftung fuer Medienvielfalt** ====
+
+* **Focus:** Media diversity, local journalism, investigative journalism
+* **Co-founder of Media Forward Fund:** EUR 9M cross-border pool (CH/DE/AT)
+* **Website:** https:~/~/www.stiftung-medienvielfalt.ch/
+* **Relevance:** HIGH - directly supports journalism infrastructure
+
+==== **Stiftung Mercator Schweiz** ====
+
+* **Focus:** Democracy, diversity, climate
+* **Role:** Lead co-founder of Media Forward Fund
+* **Website:** https:~/~/www.stiftung-mercator.ch/
+
+==== **Ernst Goehner Stiftung** ====
+
+* **Budget:** CHF 30K-150K+
+* **Focus:** Culture, social affairs, education, science
+* **Website:** https:~/~/www.ernst-goehner-stiftung.ch/
+
+==== **Migros Kulturprozent** ====
+
+* **Budget:** CHF 20K-100K+
+* **Focus:** Cultural, educational, social projects
+* **Application:** Regional (e.g., Migros Zuerich)
+
+==== **Gebert Ruef Stiftung** ====
+
+* **Budget:** CHF 15M annually (CHF 220M endowment)
+* **Program:** InnoBooster - CHF 150K for deep tech with market potential
+* **Prerequisite:** Innosuisse or BRIDGE funding secured first
+* **Website:** https:~/~/www.grstiftung.ch/en.html
 
 ==== **Prototype Fund Switzerland** ====
 
-* **Focus:** Public interest tech, open source
-* **Grant Size:** Up to CHF 100K
-* **Current Theme:** Sustainable digitalization, digital sufficiency
-* **Requirements:**
-** Work permit in Switzerland
-** Open source project
-** Public interest focus
-* **Cooperation Potential:**
-** **Perfect Alignment:** FactHarbor is open source, public interest, Swiss-based
-** **Sustainability Angle:** Fact-checking prevents information pollution
-** **Civic Tech:** Democracy and transparency focus
-* **Application:** https:~/~/prototypefund.opendata.ch/
-* **Next Steps:** Monitor next funding round (periodic), prepare application
+* **Grant Size:** Up to CHF 100K
+* **Focus:** Public interest tech, open source, civic tech
+* **Application:** https:~/~/prototypefund.opendata.ch/
+* **Relevance:** HIGH - perfect alignment with FactHarbor
 
 ==== **Swiss National Science Foundation (SNSF)** ====
 
-* **Programs:**
-** **BRIDGE Discovery:** Young researchers, proof of concept
-** **BRIDGE Proof of Concept:** CHF 150K-850K
-** **National Research Programs (NRP):** Thematic research
-* **Cooperation Potential:**
-** **Academic Partnership Required:** Must partner with Swiss university
-** **Research Focus:** Study effectiveness of Evidence Models in fact-checking
-* **Website:** http:~/~/www.snf.ch/
+* **Programs:** National Research Programs (NRP), project funding
+* **Requirement:** Academic partnership
+* **Website:** https:~/~/www.snf.ch/
 
-=== 3.3 European Union Funding (Priority: MEDIUM) ===
+==== **Jacobs Foundation** ====
 
-==== **European Network of Factcheckers (EU Grant)** ====
+* **Focus:** Education, digital learning, EdTech innovation
+* **Programs:** LEIF (CHF 40M for EdTech), DEEP research consortium
+* **Angle:** Fact-checking as media literacy / education tool
+* **Website:** https:~/~/jacobsfoundation.org/
 
-* **Budget:** Multi-million EUR (exact amount not specified)
-* **Focus:**
-** Fact-checker protection scheme
-** Repository of fact-checks with API
-** Emergency response capacity
-** Training and capacity building
-* **Eligibility:** EU Member States + associated countries (Switzerland potentially included)
-* **Cooperation Potential:**
-** **API Integration:** FactHarbor could power the central repository
-** **Protection Scheme:** Access to legal, cybersecurity support
-** **Emergency Response:** FactHarbor's automation fits rapid response needs
-* **Timeline:** Active call (check EuroAccess for updates)
-* **Next Steps:** Monitor call status, consider consortium partnership
+=== 3.3 European Funding (Priority: MEDIUM-HIGH) ===
+
+==== **European Media and Information Fund (EMIF)** ====
+
+* **Budget:** EUR 25M (5-year Google contribution)
+* **Grant Amount:** Up to EUR 150,000 per project (up to 9 months)
+* **Focus:** Fact-checking, media literacy, disinformation research
+* **Eligibility:** EU, Iceland, Liechtenstein, Norway, Switzerland, UK
+* **Website:** https:~/~/gulbenkian.pt/emifund/
+* **Relevance:** EXCELLENT - directly funds fact-checking
 
 ==== **Horizon Europe** ====
 
-* **Programs:**
-** Media & Democracy calls
-** AI for Good initiatives
-** Civic engagement projects
-* **Budget:** Billions EUR across all programs
-* **Cooperation Potential:**
-** **Consortium Member:** Join EU research consortia
-** **Swiss Participation:** Switzerland has partial association
-* **Note:** Requires consortium partnership, complex application
+* **Programs:** Media & Democracy calls, AI for Good, civic engagement
+* **Status:** **Switzerland regained full associated status January 1, 2025** - Swiss entities can lead and receive direct funding
+* **Website:** https:~/~/www.sbfi.admin.ch/en/horizon-package-2021-2027
+* **Relevance:** HIGH - large amounts, full Swiss access restored
 
-=== 3.4 Other Foundations (Priority: MEDIUM) ===
+==== **European Network of Factcheckers (EU Grant)** ====
 
-==== **MacArthur Foundation** ====
+* **Budget:** Multi-million EUR
+* **Focus:** Fact-checker protection, API repository, emergency response, training
+* **Eligibility:** EU + associated countries (Switzerland included)
 
-* **Initiative:** Press Forward ($500M over 5 years for local news)
-* **Focus:** Democracy, trust in institutions
-* **Cooperation Potential:** Chicago chapter active, potential expansion
+=== 3.4 Democracy & Civic Society Foundations (Priority: MEDIUM) ===
 
-==== **Democracy Fund** ====
+==== **Stiftung fuer direkte Demokratie** ====
 
-* **Focus:** Democratic governance, civic participation
-* **Partnership:** Previous NewsMatch partnership with Knight Foundation
-* **Cooperation Potential:** Aligned with democracy protection mission
+* **Focus:** Civil society, political participation, democracy
+* **Website:** https:~/~/www.demokratie.ch/
 
-==== **Mozilla Foundation** ====
+==== **Schweizer Demokratie Stiftung** ====
 
-* **Focus:** Internet health, AI transparency, trustworthy AI
-* **Cooperation Potential:**
-** FactHarbor's open-source approach aligns
-** Transparency in AI decision-making (Evidence Models)
-* **Website:** https:~/~/foundation.mozilla.org/
+* **Focus:** Citizen participation, minority tolerance
+* **Program:** Youth + Democracy Fund
+* **Website:** https:~/~/www.swissdemocracy.foundation/
 
-==== **Open Society Foundations** ====
+==== **Democracy Fund (US)** ====
 
-* **Focus:** Democracy, human rights, information integrity
-* **Cooperation Potential:** Global disinformation programs
+* **Focus:** Democratic governance, civic participation
+
+==== **digitalswitzerland** ====
+
+* **Focus:** Digital skills, innovation, digital public services
+* **Members:** 130+ organizations
+* **Website:** https:~/~/digitalswitzerland.com/
 
 ----
 
