@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FactHarbor.Api.Data;
+using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Models;
 using System.Text.Json;
 using System.Globalization;
@@ -21,11 +22,14 @@ public class MetricsController : ControllerBase
     }
 
     /// <summary>
-    /// Store metrics for an analysis job
+    /// Store metrics for an analysis job (admin-only)
     /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateMetrics([FromBody] JsonElement metricsPayload)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         try
         {
             // Extract jobId from payload
@@ -71,11 +75,14 @@ public class MetricsController : ControllerBase
     }
 
     /// <summary>
-    /// Get metrics for a specific job
+    /// Get metrics for a specific job (admin-only)
     /// </summary>
     [HttpGet("{jobId}")]
     public async Task<IActionResult> GetMetricsByJob(string jobId)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         try
         {
             var metrics = await _db.AnalysisMetrics
@@ -98,7 +105,7 @@ public class MetricsController : ControllerBase
     }
 
     /// <summary>
-    /// Get summary statistics for a date range
+    /// Get summary statistics for a date range (admin-only)
     /// </summary>
     [HttpGet("summary")]
     public async Task<IActionResult> GetSummaryStats(
@@ -106,6 +113,9 @@ public class MetricsController : ControllerBase
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int limit = 100)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         try
         {
             var query = _db.AnalysisMetrics.AsQueryable();
@@ -344,7 +354,7 @@ public class MetricsController : ControllerBase
     }
 
     /// <summary>
-    /// Get quality health time-series data for monitoring F4/F5/F6 findings
+    /// Get quality health time-series data for monitoring F4/F5/F6 findings (admin-only)
     /// </summary>
     [HttpGet("quality-health")]
     public async Task<IActionResult> GetQualityHealth(
@@ -352,6 +362,9 @@ public class MetricsController : ControllerBase
         [FromQuery] DateTime? endDate = null,
         [FromQuery] int limit = 100)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         try
         {
             var query = _db.AnalysisMetrics.AsQueryable();
@@ -450,11 +463,14 @@ public class MetricsController : ControllerBase
     }
 
     /// <summary>
-    /// Delete metrics older than specified days
+    /// Delete metrics older than specified days (admin-only)
     /// </summary>
     [HttpDelete("cleanup")]
     public async Task<IActionResult> CleanupOldMetrics([FromQuery] int daysOld = 90)
     {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
         try
         {
             var cutoffDate = DateTime.UtcNow.AddDays(-daysOld);

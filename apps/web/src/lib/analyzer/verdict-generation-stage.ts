@@ -39,7 +39,7 @@ import {
   getPromptCachingOptions,
   type ModelTask,
 } from "./llm";
-import { tryParseFirstJsonValue, repairTruncatedJsonValue } from "./json";
+import { tryParseFirstJsonValue, repairTruncatedJsonValue, tryParseJsonWithInnerQuoteRepair } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
 import {
   runWithLlmProviderGuard,
@@ -54,6 +54,57 @@ import {
 } from "@/lib/provider-health";
 
 import { recordLLMCall } from "./metrics-integration";
+import type { ParseFailureArtifact } from "./metrics";
+
+// ============================================================================
+// PARSE FAILURE ARTIFACT BUILDER
+// ============================================================================
+
+/** Maximum characters captured from the start of a failed response. */
+const ARTIFACT_PREFIX_LIMIT = 4096;
+/** Maximum characters captured from the end of a failed response. */
+const ARTIFACT_SUFFIX_LIMIT = 2048;
+
+/**
+ * Classify what a raw LLM response starts with for diagnostic bucketing.
+ */
+function classifyResponseStart(text: string | undefined): ParseFailureArtifact["startsWithKind"] {
+  if (!text || text.length === 0) return "empty";
+  const trimmed = text.trimStart();
+  if (trimmed.startsWith("```")) return "fence";
+  if (trimmed.startsWith("[")) return "bracket";
+  if (trimmed.startsWith("{")) return "brace";
+  return "prose";
+}
+
+/**
+ * Build a diagnostic artifact from a failed Stage-4 parse attempt.
+ * Captures truncated head/tail slices of the raw response plus metadata.
+ * Admin-only — persisted in metrics JSON, never user-facing.
+ */
+function buildParseFailureArtifact(
+  rawText: string | undefined,
+  promptKey: string,
+  debateRole: string,
+  attempt: "initial" | "retry",
+  expectedRoot: "array" | "object",
+  recoveriesAttempted: string[],
+): ParseFailureArtifact {
+  const text = rawText ?? "";
+  return {
+    promptKey,
+    debateRole,
+    attempt,
+    rawLength: text.length,
+    rawPrefix: text.substring(0, ARTIFACT_PREFIX_LIMIT),
+    rawSuffix: text.length > ARTIFACT_SUFFIX_LIMIT
+      ? text.substring(text.length - ARTIFACT_SUFFIX_LIMIT)
+      : text,
+    startsWithKind: classifyResponseStart(text),
+    expectedRoot,
+    recoveriesAttempted,
+  };
+}
 
 // ============================================================================
 // STAGE 4: VERDICT (§8.4)
@@ -260,7 +311,7 @@ export function createProductionLLMCall(
 
     const userContent = typeof input.userMessage === "string"
       ? input.userMessage
-      : JSON.stringify(input);
+      : "Analyze the provided data and return output matching the required JSON schema.";
 
     const approxTokenCount = (text: string): number => {
       if (!text) return 0;
@@ -344,11 +395,15 @@ export function createProductionLLMCall(
     };
 
     // 1. Load UCM prompt section
+    // Serialize all input values to strings for prompt variable substitution.
+    // Without this, objects/arrays passed to renderSection() coerce to "[object Object]"
+    // via .toString(), leaving the LLM with garbage data in the system prompt.
     const currentDate = new Date().toISOString().split("T")[0];
-    const rendered = await loadAndRenderSection("claimboundary", promptKey, {
-      ...input,
-      currentDate,
-    });
+    const stringifiedVars: Record<string, string> = {};
+    for (const [key, value] of Object.entries({ ...input, currentDate })) {
+      stringifiedVars[key] = typeof value === "string" ? value : JSON.stringify(value);
+    }
+    const rendered = await loadAndRenderSection("claimboundary", promptKey, stringifiedVars);
     if (!rendered) {
       throw toError(
         `Stage 4: Failed to load prompt section "${promptKey}"`,
@@ -613,19 +668,23 @@ export function createProductionLLMCall(
       );
     }
 
-    const expectedRootToken = (
+    const expectedRootToken: "{" | "[" = (
       promptKey.includes("ADVOCATE") ||
       promptKey.includes("RECONCILIATION") ||
       promptKey.includes("VALIDATION")
     ) ? "[" : "{";
-    const alternateRootToken = expectedRootToken === "[" ? "{" : "[";
+    const alternateRootToken: "{" | "[" = expectedRootToken === "[" ? "{" : "[";
     const recoveryRoots: Array<"{" | "[" | undefined> = [undefined, expectedRootToken, alternateRootToken]
       .filter((root, index, roots) => roots.indexOf(root) === index);
 
+    // Track which recovery strategies were attempted for diagnostic artifacts
+    let lastRecoveriesAttempted: string[] = [];
+
     const tryParseWithRecovery = (jsonText: string) => {
       const trimmedText = jsonText?.trim();
-      if (!trimmedText) return null;
+      if (!trimmedText) { lastRecoveriesAttempted = []; return null; }
 
+      const recoveriesAttempted: string[] = [];
       const tryAcrossRoots = (
         attempt: (root?: "{" | "[") => unknown | null,
       ): unknown | null => {
@@ -637,27 +696,54 @@ export function createProductionLLMCall(
       };
 
       // a. Direct JSON.parse
+      recoveriesAttempted.push("direct_parse");
       try {
-        return JSON.parse(trimmedText);
+        const result = JSON.parse(trimmedText);
+        lastRecoveriesAttempted = recoveriesAttempted;
+        return result;
       } catch {
         // b. Fenced JSON parse
+        recoveriesAttempted.push("fenced_parse");
         const jsonMatch = trimmedText.match(/```(?:json)?\s*([\s\S]*?)```/);
         if (jsonMatch?.[1]) {
           try {
-            return JSON.parse(jsonMatch[1].trim());
+            const result = JSON.parse(jsonMatch[1].trim());
+            lastRecoveriesAttempted = recoveriesAttempted;
+            return result;
           } catch {
             // continue
           }
         }
 
-        // c. Generic JSON value extraction
+        // c. Repair unescaped inner quotes inside JSON strings
+        recoveriesAttempted.push("inner_quote_repair");
+        const quoteRepairCandidates = [
+          jsonMatch?.[1]?.trim(),
+          trimmedText.startsWith("{") || trimmedText.startsWith("[") ? trimmedText : null,
+        ].filter((candidate, index, candidates): candidate is string => (
+          typeof candidate === "string"
+          && candidate.length > 0
+          && candidates.indexOf(candidate) === index
+        ));
+        for (const candidate of quoteRepairCandidates) {
+          const repaired = tryParseJsonWithInnerQuoteRepair(candidate);
+          if (repaired !== null) {
+            lastRecoveriesAttempted = recoveriesAttempted;
+            return repaired;
+          }
+        }
+
+        // d. Generic JSON value extraction
+        recoveriesAttempted.push("embedded_value_extraction");
         const embeddedValue = tryAcrossRoots((root) => tryParseFirstJsonValue(trimmedText, root));
-        if (embeddedValue !== null) return embeddedValue;
+        if (embeddedValue !== null) { lastRecoveriesAttempted = recoveriesAttempted; return embeddedValue; }
 
-        // d. Truncated JSON value repair
+        // e. Truncated JSON value repair
+        recoveriesAttempted.push("truncated_repair");
         const repairedValue = tryAcrossRoots((root) => repairTruncatedJsonValue(trimmedText, root));
-        if (repairedValue !== null) return repairedValue;
+        if (repairedValue !== null) { lastRecoveriesAttempted = recoveriesAttempted; return repairedValue; }
 
+        lastRecoveriesAttempted = recoveriesAttempted;
         return null;
       }
     };
@@ -683,13 +769,14 @@ export function createProductionLLMCall(
     }
 
     // FAILED PARSING - RECORD FIRST ATTEMPT AS SCHEMA NON-COMPLIANT
+    const expectedRootKind: "array" | "object" = expectedRootToken === "[" ? "array" : "object";
     const parseFailureMetadata = {
       length: text.length,
       startsWith: text.substring(0, 50).replace(/\n/g, "\\n"),
       startsWithBracket: text.startsWith("["),
       startsWithBrace: text.startsWith("{"),
       hasFence: text.includes("```"),
-      expectedRoot: expectedRootToken === "[" ? "array" : "object",
+      expectedRoot: expectedRootKind,
     };
 
     recordLLMCall({
@@ -706,6 +793,14 @@ export function createProductionLLMCall(
       errorMessage: `JSON parse failure: ${JSON.stringify(parseFailureMetadata)}`,
       timestamp: new Date(),
       debateRole: options?.callContext?.debateRole,
+      parseFailureArtifact: buildParseFailureArtifact(
+        text,
+        promptKey,
+        options?.callContext?.debateRole ?? "unknown",
+        "initial",
+        expectedRootKind,
+        lastRecoveriesAttempted,
+      ),
     });
 
     // RETRY ONCE ON PARSE FAILURE (SAME MODEL/PROVIDER)
@@ -757,6 +852,14 @@ export function createProductionLLMCall(
         errorMessage: `JSON parse failure on retry: ${JSON.stringify(retryParseFailureMetadata)}`,
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
+        parseFailureArtifact: buildParseFailureArtifact(
+          retryText,
+          promptKey,
+          options?.callContext?.debateRole ?? "unknown",
+          "retry",
+          expectedRootKind,
+          lastRecoveriesAttempted,
+        ),
       });
     } catch (retryError) {
       // Retry call itself failed - already handled by recordLLMCall in callModelWithGuard catch block

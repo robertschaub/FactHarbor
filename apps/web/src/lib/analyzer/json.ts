@@ -142,6 +142,78 @@ export function tryParseFirstJsonValue(text: string, expectedStart?: "{" | "["):
 }
 
 /**
+ * Repair a common LLM malformation where a string value contains unescaped
+ * ASCII double-quotes (for example: `„nichts"` inside a JSON string).
+ *
+ * This is structural recovery only: a quote inside an existing JSON string is
+ * treated as stray when the next non-whitespace character is not a valid JSON
+ * delimiter for ending that string (`:`, `,`, `}`, `]`).
+ */
+export function repairUnescapedInnerQuotes(text: string): string {
+  const raw = String(text ?? "");
+  let out = "";
+  let inString = false;
+  let escape = false;
+
+  const nextNonWhitespaceChar = (startIndex: number): string | null => {
+    for (let i = startIndex; i < raw.length; i++) {
+      const ch = raw[i];
+      if (!/\s/.test(ch)) return ch;
+    }
+    return null;
+  };
+
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+
+    if (inString) {
+      if (escape) {
+        out += ch;
+        escape = false;
+        continue;
+      }
+      if (ch === "\\") {
+        out += ch;
+        escape = true;
+        continue;
+      }
+      if (ch === "\"") {
+        const next = nextNonWhitespaceChar(i + 1);
+        const isClosingQuote = next === null || next === ":" || next === "," || next === "}" || next === "]";
+        if (isClosingQuote) {
+          out += ch;
+          inString = false;
+        } else {
+          out += "\\\"";
+        }
+        continue;
+      }
+
+      out += ch;
+      continue;
+    }
+
+    out += ch;
+    if (ch === "\"") {
+      inString = true;
+      escape = false;
+    }
+  }
+
+  return out;
+}
+
+export function tryParseJsonWithInnerQuoteRepair(text: string): any | null {
+  const raw = String(text ?? "").trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(repairUnescapedInnerQuotes(raw));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Attempt to repair truncated JSON by closing unclosed arrays/objects.
  *
  * When LLM output exceeds maxOutputTokens, the JSON gets cut mid-stream.
@@ -260,4 +332,3 @@ export function repairTruncatedJsonValue(text: string, expectedStart?: "{" | "["
     return null;
   }
 }
-

@@ -5,7 +5,9 @@ import {
   tryParseFirstJsonObject,
   extractFirstJsonValueFromText,
   tryParseFirstJsonValue,
-  repairTruncatedJsonValue
+  repairTruncatedJsonValue,
+  repairUnescapedInnerQuotes,
+  tryParseJsonWithInnerQuoteRepair,
 } from "@/lib/analyzer/json";
 
 describe("analyzer/json", () => {
@@ -51,6 +53,22 @@ describe("analyzer/json", () => {
     const txt = `noise [1, 2] more noise { "a": 3 }`;
     expect(tryParseFirstJsonValue(txt, "[")).toEqual([1, 2]);
     expect(tryParseFirstJsonValue(txt, "{")).toEqual({ a: 3 });
+  });
+
+  it("repairs unescaped inner quotes inside string values", () => {
+    const txt = '[{"reasoning":"Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen."}]';
+    const repaired = repairUnescapedInnerQuotes(txt);
+    expect(JSON.parse(repaired)).toEqual([
+      { reasoning: 'Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen.' },
+    ]);
+  });
+
+  it("parses JSON with inner-quote repair when a string contains an unescaped quote", () => {
+    const txt = '```json\n[{"reasoning":"Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen."}]\n```';
+    const fenced = txt.match(/```(?:json)?\s*([\s\S]*?)```/)?.[1]?.trim() ?? "";
+    expect(tryParseJsonWithInnerQuoteRepair(fenced)).toEqual([
+      { reasoning: 'Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen.' },
+    ]);
   });
 });
 

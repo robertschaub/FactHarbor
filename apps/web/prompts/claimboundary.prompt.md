@@ -916,7 +916,7 @@ ${atomicClaims}
 
 **Evidence Items (grouped by ClaimBoundary):**
 ```
-${evidenceByBoundary}
+${evidenceItems}
 ```
 
 **ClaimBoundaries:**

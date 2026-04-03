@@ -726,6 +726,7 @@ export async function selfConsistencyCheck(
       counts: coverageMatrix.counts,
     },
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
+    ...(config.reportLanguage ? { reportLanguage: config.reportLanguage } : {}),
   };
 
   const [run2Verdicts, run3Verdicts] = await Promise.all([

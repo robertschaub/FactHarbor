@@ -4402,12 +4402,48 @@ describe("Stage 4: createProductionLLMCall", () => {
     expect(mockLoadSection).toHaveBeenCalledWith(
       "claimboundary",
       "VERDICT_ADVOCATE",
-      expect.objectContaining({ claims: [], evidence: [], currentDate: expect.any(String) }),
+      expect.objectContaining({ claims: "[]", evidence: "[]", currentDate: expect.any(String) }),
     );
     expect(mockGenerateText).toHaveBeenCalledWith(
       expect.objectContaining({ temperature: 0.0 }),
     );
     expect(result).toEqual({ claimVerdicts: [] });
+  });
+
+  it("should use a short fixed user instruction when no explicit userMessage is provided", async () => {
+    mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await llmCall(
+      "VERDICT_ADVOCATE",
+      { claims: [{ id: "AC_01", statement: "Test" }], evidence: [{ id: "EV_01" }] },
+      { tier: "sonnet" },
+    );
+
+    const generateArgs = mockGenerateText.mock.calls[0]?.[0] as any;
+    const userMessage = generateArgs.messages?.find((m: any) => m.role === "user");
+    expect(userMessage?.content).toBe(
+      "Analyze the provided data and return output matching the required JSON schema.",
+    );
+    expect(userMessage?.content).not.toContain("AC_01");
+    expect(userMessage?.content).not.toContain("EV_01");
+  });
+
+  it("should preserve an explicit userMessage override", async () => {
+    mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    await llmCall(
+      "VERDICT_ADVOCATE",
+      { userMessage: "Custom Stage 4 instruction" },
+      { tier: "sonnet" },
+    );
+
+    const generateArgs = mockGenerateText.mock.calls[0]?.[0] as any;
+    const userMessage = generateArgs.messages?.find((m: any) => m.role === "user");
+    expect(userMessage?.content).toBe("Custom Stage 4 instruction");
   });
 
   it("should select haiku model when tier is haiku", async () => {
@@ -4450,6 +4486,22 @@ describe("Stage 4: createProductionLLMCall", () => {
     const llmCall = createProductionLLMCall({} as any);
     const result = await llmCall("VERDICT_ADVOCATE", {});
     expect(result).toEqual({ verdicts: [1, 2, 3] });
+  });
+
+  it("should repair fenced JSON when a string contains unescaped inner quotes", async () => {
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({
+      text: '```json\n[{"reasoning":"Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen.","confidence":72}]\n```',
+    } as any);
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {});
+    expect(result).toEqual([
+      {
+        reasoning: 'Die Behauptung bringe „nichts" in Bezug auf Umweltwirkungen.',
+        confidence: 72,
+      },
+    ]);
   });
 
   it("should extract embedded JSON from prose responses", async () => {
@@ -7518,6 +7570,20 @@ describe("M2: evaluateExplanationRubric error handling", () => {
     expect(scores.appropriateHedging).toBe(3);
     expect(scores.overallScore).toBeGreaterThan(0);
     expect(scores.flags).toContain("minor_hedging_gap");
+    expect(mockLLMCall).toHaveBeenCalledWith(
+      "EXPLANATION_QUALITY_RUBRIC",
+      {
+        narrative: [
+          "Headline: Assessment: MOSTLY-TRUE verdict",
+          "Evidence Base Summary: 8 items from 4 sources",
+          "Key Finding: Evidence supports the claim with moderate confidence.",
+          "Limitations: Limited temporal scope.",
+        ].join("\n\n"),
+        claimCount: 2,
+        evidenceCount: 8,
+      },
+      { tier: "haiku" },
+    );
   });
 });
 

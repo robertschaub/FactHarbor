@@ -42,6 +42,34 @@ export interface LLMCallMetric {
   timestamp: Date;
   /** Optional: role in the debate (advocate, challenger, reconciler, etc.) */
   debateRole?: string;
+  /** Admin-only diagnostic artifact captured on parse failures (schemaCompliant=false). */
+  parseFailureArtifact?: ParseFailureArtifact;
+}
+
+/**
+ * Diagnostic artifact captured when Stage-4 JSON parsing fails.
+ * Persisted in metrics JSON (admin-only, never user-facing).
+ * Contains truncated response slices for root-cause diagnosis.
+ */
+export interface ParseFailureArtifact {
+  /** Prompt section key (e.g., "VERDICT_ADVOCATE") */
+  promptKey: string;
+  /** Debate role (e.g., "advocate", "selfConsistency") */
+  debateRole: string;
+  /** Whether this is the first attempt or retry */
+  attempt: "initial" | "retry";
+  /** Total raw response length in characters */
+  rawLength: number;
+  /** First N characters of raw response (up to 4096) */
+  rawPrefix: string;
+  /** Last N characters of raw response (up to 2048) */
+  rawSuffix: string;
+  /** What the response starts with */
+  startsWithKind: "fence" | "bracket" | "brace" | "prose" | "empty";
+  /** Expected root token for this prompt */
+  expectedRoot: "array" | "object";
+  /** Which parse-recovery strategies were attempted */
+  recoveriesAttempted: string[];
 }
 
 export interface SearchQueryMetric {

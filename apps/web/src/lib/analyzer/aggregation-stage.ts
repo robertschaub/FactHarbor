@@ -642,6 +642,22 @@ export function checkExplanationStructure(
   };
 }
 
+function renderNarrativeForRubric(narrative: VerdictNarrative): string {
+  const boundaryDisagreements = narrative.boundaryDisagreements ?? [];
+  const sections = [
+    `Headline: ${narrative.headline}`,
+    `Evidence Base Summary: ${narrative.evidenceBaseSummary}`,
+    `Key Finding: ${narrative.keyFinding}`,
+    `Limitations: ${narrative.limitations}`,
+  ];
+
+  if (boundaryDisagreements.length > 0) {
+    sections.push(`Boundary Disagreements: ${boundaryDisagreements.join("; ")}`);
+  }
+
+  return sections.join("\n\n");
+}
+
 export async function evaluateExplanationRubric(
   narrative: VerdictNarrative,
   claimCount: number,
@@ -649,11 +665,7 @@ export async function evaluateExplanationRubric(
   llmCall: LLMCallFn,
 ): Promise<ExplanationRubricScores> {
   const result = await llmCall("EXPLANATION_QUALITY_RUBRIC", {
-    headline: narrative.headline,
-    evidenceBaseSummary: narrative.evidenceBaseSummary,
-    keyFinding: narrative.keyFinding,
-    limitations: narrative.limitations,
-    boundaryDisagreements: narrative.boundaryDisagreements ?? [],
+    narrative: renderNarrativeForRubric(narrative),
     claimCount,
     evidenceCount,
   }, { tier: "haiku" });
