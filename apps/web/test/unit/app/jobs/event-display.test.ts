@@ -88,6 +88,13 @@ describe("classifyEvent", () => {
     expect(d.phase).toBe("setup");
     expect(d.label).toBe("LLM model");
     expect(d.params).toContain("claude-haiku-4-5-20251001");
+    expect(d.mergeIntoPrevious).toBe(true);
+  });
+
+  it("classifies triggering runner as setup", () => {
+    const d = classifyEvent("info", "Triggering runner");
+    expect(d.phase).toBe("setup");
+    expect(d.label).toBe("Triggering runner");
   });
 
   // ── LLM call trace ───────────────────────────────────────────────────────
@@ -103,6 +110,18 @@ describe("classifyEvent", () => {
     expect(d.phase).toBe("understand");
     expect(d.label).toBe("Gate 1 validation");
     expect(d.params).toBe("claude-haiku-4-5-20251001");
+  });
+
+  it("classifies claim contract validation as understand phase", () => {
+    const d = classifyEvent("info", "Validating claim contract fidelity...");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Validating claim contract");
+  });
+
+  it("classifies claim contract reprompt as understand phase", () => {
+    const d = classifyEvent("info", "Retrying Pass 2 with claim contract guidance...");
+    expect(d.phase).toBe("understand");
+    expect(d.label).toBe("Retrying Pass 2 with contract guidance");
   });
 
   it("classifies LLM call: advocate as verdict phase, mergeIntoPrevious", () => {
@@ -280,6 +299,13 @@ describe("classifyEvent", () => {
     const d = classifyEvent("info", "Evaluating source reliability...");
     expect(d.phase).toBe("research");
     expect(d.label).toBe("Evaluating source reliability");
+  });
+
+  it("classifies preliminary evidence remap as research", () => {
+    const d = classifyEvent("info", "Preliminary evidence remap: 9/9 items resolved");
+    expect(d.phase).toBe("research");
+    expect(d.label).toBe("Preliminary evidence remap");
+    expect(d.params).toContain("9/9");
   });
 
   // ── Cluster ──────────────────────────────────────────────────────────────

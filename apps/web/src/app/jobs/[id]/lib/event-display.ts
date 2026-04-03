@@ -109,6 +109,7 @@ export function classifyEvent(level: string, message: string): EventDisplay {
 
   // ── Setup ─────────────────────────────────────────────────────────────────
   if (msg === "Job created")    return { phase: "setup", label: "Job created" };
+  if (msg === "Triggering runner") return { phase: "setup", label: "Triggering runner" };
   if (msg === "Runner started") return { phase: "setup", label: "Analysis started" };
   if (msg.startsWith("Preparing input")) {
     const detail = msg.replace(/^Preparing input\s*/i, "").replace(/[()]/g, "").trim();
@@ -120,7 +121,7 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   // LLM model selection event emitted at pipeline start
   if (msg.startsWith("LLM:")) {
     const detail = msg.replace(/^LLM:\s*/i, "").trim();
-    return { phase: "setup", label: "LLM model", params: detail || undefined };
+    return { phase: "setup", label: "LLM model", params: detail || undefined, mergeIntoPrevious: true };
   }
   // Per-call LLM trace: "LLM call: <role> — <model>"
   if (msg.startsWith("LLM call:")) {
@@ -151,6 +152,12 @@ export function classifyEvent(level: string, message: string): EventDisplay {
     return { phase: "understand", label: "Reprompt", params: m?.[1] };
   }
   if (msg.startsWith("Extracting claims: multi-event reprompt")) return { phase: "understand", label: "Multi-event reprompt" };
+  if (msg.startsWith("Validating claim contract fidelity")) {
+    return { phase: "understand", label: "Validating claim contract" };
+  }
+  if (msg.startsWith("Retrying Pass 2 with claim contract guidance")) {
+    return { phase: "understand", label: "Retrying Pass 2 with contract guidance" };
+  }
   if (msg.startsWith("Extracting claims")) {
     const detail = msg.replace(/^Extracting claims[:\s]*/i, "").trim();
     return { phase: "understand", label: "Extracting claims", params: detail || undefined };
@@ -170,6 +177,10 @@ export function classifyEvent(level: string, message: string): EventDisplay {
   }
   if (msg.startsWith("Assessing evidence applicability")) return { phase: "research", label: "Filtering evidence" };
   if (msg.startsWith("Evaluating source reliability"))    return { phase: "research", label: "Evaluating source reliability" };
+  if (msg.startsWith("Preliminary evidence remap:")) {
+    const detail = msg.replace(/^Preliminary evidence remap:\s*/i, "").trim();
+    return { phase: "research", label: "Preliminary evidence remap", params: detail || undefined };
+  }
   // Successful search event — info, not a warning
   if (msg.startsWith("Search:")) {
     const detail = msg.replace(/^Search:\s*/i, "").trim();
