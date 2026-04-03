@@ -1,5 +1,14 @@
 # Agent Outputs Log
 ---
+### 2026-04-02 | Lead Architect | Codex (GPT-5) | Stage-4 Payload Simplification
+**Task:** Implement the architect-approved Stage-4 payload simplification by removing the default duplicated `JSON.stringify(input)` user payload while preserving explicit `userMessage` overrides.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the repaired serialized system-prompt contract intact and changed only the fallback user message in `createProductionLLMCall()` to a short fixed instruction. Preserved the explicit `input.userMessage` branch. Added focused tests proving the default Stage-4 user message no longer contains the full serialized payload and that explicit overrides still work.
+**Open items:** Live validation is still required on German Plastik x3, English Plastik x1, and one German non-Plastik control to confirm advocate prompt-token reduction and disappearance of `analysis_generation_failed` on the heavy family.
+**Warnings:** The broader Plastik family still has an upstream research/boundary variability issue separate from the Stage-4 parse-failure track. This patch only targets the Stage-4 size/duplication problem.
+**For next agent:** Verify advocate `promptTokens`, `schemaCompliant`, retry firing, and final verdict/confidence on the live reruns. If parse failures persist after this simplification, the next investigation should focus on remaining Stage-4 output-shape failure artifacts rather than Stage 1.
+**Learnings:** No
+---
 ### 2026-04-01 | Lead Architect | Gemini 3.1 Pro | Stage 1 Narrow Hardening - Code Review
 **Task:** Review and commit the implemented narrow Stage-1 hardening changes.
 **Files touched:** pps/web/src/lib/analyzer/claim-extraction-stage.ts, pps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts, Docs/AGENTS/Agent_Outputs.md
@@ -2904,6 +2913,15 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Token size alone does not explain the failures; successful same-family runs can be larger. Concurrency is also not the main cause. The key missing artifact is the exact raw malformed advocate payload on failing runs.
 **For next agent:** Anchor evidence: failing jobs `d460554f6b9549008a1f6e00c542b508`, `f279d6d32ccf49fb9d4843cee487e9bb`, `b4678284c7e042f986211a5311aaa828`; successful comparators `a695d0bc0fb745a2a6ebeccc0f8ec206`, `0ee67d3d3285418a813ed0dcf8ab06a4`, `513e99539b3b4c8ca63daeca96b6e92b`. Relevant files: `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/prompt-loader.ts`, `tools/metrics-b467.json`.
 **Learnings:** No
+---
+### 2026-04-02 | Lead Architect | Codex (GPT-5) | German Plastik Variability Split Diagnosis
+**Task:** Compare post-patch sibling jobs for `Plastik recycling bringt nichts` to explain verdict spread beyond the Stage-4 parse failure.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The screenshot-level variation is not one bug. There are two separate issues: (1) Stage-4 parse failure still occurs on large advocate calls (`bc7f2cafc8fb4ea09267e18cf2a5f409`: advocate prompt ~79.8k tokens, parse failure twice), and (2) even successful runs show major upstream variance before Stage 4. Example: `c86a3e4bb02349e3b316ea8e7dff095c` succeeded with `boundaryCount=1`, `evidenceTotal=85`, support-heavy balance `49/17/19`, and English/US-heavy source set; `974a754643d747c78de620558f26dd32` succeeded with `boundaryCount=5`, `evidenceTotal=77`, contradict-heavy balance `10/44/23`, and German/EU source set; `bc7f...` failed with `boundaryCount=6`, `evidenceTotal=110`. Same prompt hash on patched runs means this verdict spread is coming from Stage-2/3 research/boundary variance plus the Stage-4 size failure, not from different prompt versions.
+**Open items:** Separate the next work into two tracks. Track A: Stage-4 payload simplification (remove duplicated user JSON now that system prompt is serialized). Track B: investigate why German Plastik runs can produce English preliminary queries / English-heavy source portfolios and radically different boundary clustering for the same input.
+**Warnings:** Do not treat the parse-failure fix as sufficient for the verdict spread. The family remains unstable even when Stage 4 succeeds.
+**For next agent:** Anchor jobs for comparison: `974a754643d747c78de620558f26dd32`, `c86a3e4bb02349e3b316ea8e7dff095c`, `bc7f2cafc8fb4ea09267e18cf2a5f409`, `22c950cba66c4f18bfc280466c8f57d2`. Inspect `resultJson.searchQueries`, `resultJson.sources`, `resultJson.claimBoundaries`, and `AnalysisMetrics.MetricsJson` verdict call sizes.
+**Learnings:** No
 
 ---
 ### 2026-04-02 | Investigator | Codex (GPT-5) | Funding Section Expansion and Reframe
@@ -2923,4 +2941,78 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** The next useful cleanup would be adding `Last verified` timestamps to the main tables and possibly shortening a few longer `Fit for FactHarbor` cells, especially Prototype Fund CH and Mozilla.
 **Warnings:** No factual re-ranking was done in this pass; this was language and structure cleanup only.
 **For next agent:** If you continue editing the same section, protect the current separation between `Funding Opportunities`, `Funding Precedents`, and `Community Funding`. The section is now easier to scan; additional expansion will quickly make it too dense unless something else is cut.
+**Learnings:** no
+
+---
+### 2026-04-02 | Senior Developer | Claude Code (Opus 4.6) | Stage-4 Parse Failure Diagnostic Artifact Capture
+**Task:** Implement durable admin-only raw parse-failure artifact capture for Stage-4 verdict debate prompts to enable root-cause diagnosis of remaining intermittent German Plastik `VERDICT_ADVOCATE` parse failures.
+**Files touched:** `apps/web/src/lib/analyzer/metrics.ts` (new `ParseFailureArtifact` interface + optional field on `LLMCallMetric`), `apps/web/src/lib/analyzer/verdict-generation-stage.ts` (artifact builder, recovery tracking, artifact attachment to both initial and retry parse-failure `recordLLMCall` calls), `apps/web/test/unit/lib/analyzer/verdict-parse-artifact.test.ts` (7 new focused tests).
+**Key decisions:**
+- Artifact is stored as an optional `parseFailureArtifact` field on `LLMCallMetric`, flowing through the existing metrics pipeline into `AnalysisMetrics.MetricsJson` in SQLite. No new tables, no new API endpoints, no new storage mechanisms.
+- Raw response is truncated to prefix (4096 chars) + suffix (2048 chars), enough to diagnose trailing prose, missing brackets, duplicated segments, localized key drift, and fence/commentary patterns.
+- Each parse attempt tracks which recovery strategies were attempted (`direct_parse`, `fenced_parse`, `embedded_value_extraction`, `truncated_repair`), persisted in the artifact.
+- Both initial and retry failures get separate artifacts with `attempt: "initial" | "retry"`.
+- Successful parses do NOT produce artifacts — verified by test.
+**Where the artifact is stored:** Inside `llmCalls[]` entries in the per-job `MetricsJson` blob, accessible via `GET /api/fh/metrics/{jobId}` (admin-key protected).
+**How admins inspect it:** Query the metrics API for a failing job, then look at `llmCalls` entries where `schemaCompliant=false` — each will have a `parseFailureArtifact` object with `rawPrefix`, `rawSuffix`, `rawLength`, `startsWithKind`, `expectedRoot`, `recoveriesAttempted`, and identity fields.
+**What is NOT exposed to normal users:** Raw LLM output is never shown in the job detail page (`/jobs/[id]`), the public API job response, or any user-facing warning. The artifact exists only in the admin metrics JSON blob.
+**Artifact content:** Truncated diagnostic slices (first 4096 + last 2048 chars), not full raw output. This is sufficient to distinguish all known malformation patterns while keeping metrics JSON size manageable.
+**Open items:** The next failing German Plastik run will produce inspectable artifacts. The actual root-cause diagnosis of the malformed output is the follow-on task — this change provides the evidence capture needed for that diagnosis.
+**Warnings:** Artifact size adds ~6KB per parse failure to metrics JSON. With at most 2 failures per run (initial + retry), this is negligible.
+**For next agent:** After the next failing Plastik run, inspect the artifacts via `GET /api/fh/metrics/{jobId}` and search for `parseFailureArtifact` in the `llmCalls` array. The `rawPrefix` and `rawSuffix` should reveal whether the failure is trailing commentary, incomplete brackets, duplicated JSON segments, or another pattern. Based on that, decide whether the fix belongs in parser recovery or prompt output instructions.
+**Learnings:** no
+
+---
+### 2026-04-02 | Senior Developer | Claude Code (Opus 4.6) | Metrics API Admin-Key Enforcement
+**Task:** Add `X-Admin-Key` auth guard to all `MetricsController` endpoints, closing the access-control gap identified in code review. The metrics API now stores raw LLM output slices via `parseFailureArtifact`, making admin-only enforcement mandatory.
+**Files touched:** `apps/api/Controllers/MetricsController.cs` (added `AuthHelper` import + `IsAdminKeyValid` guard to all 5 endpoints: `POST`, `GET {jobId}`, `GET summary`, `GET quality-health`, `DELETE cleanup`).
+**Key decisions:** Applied the same `AuthHelper.IsAdminKeyValid(Request)` pattern used by `SystemHealthController` (resume/pause). Returns 401 with `{ error: "Admin key required" }` on missing/invalid key. The runner's `persistMetrics()` already sends `X-Admin-Key` in its `POST` call, so no web-side changes needed.
+**Open items:** None — all 5 endpoints are now protected.
+**Warnings:** The running API process locks `FactHarbor.Api.exe`, so full `dotnet build` cannot copy the output binary. Compilation was verified via `dotnet msbuild -t:Compile` (clean, no errors). The API will pick up the auth guards on next restart.
+**For next agent:** The metrics API is now admin-only. If you add new metrics endpoints, follow the same pattern: `if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized(...)`.
+**Learnings:** no
+
+---
+### 2026-04-02 | Senior Developer | Codex (GPT-5) | German Plastik Reproduction Reset + Rubric Contract Fix
+**Task:** Recover from a bad reproduction setup, verify the new parse-failure artifact path on live runs, and fix the concrete follow-on contract bug the artifact exposed.
+**Files touched:** `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:**
+- Cancelled the five saturated German Plastik repro jobs I had launched (`19408e03...`, `81c5d9e0...`, `474ca5af...`, `8060757e...`, `9eb0ad75...`). They were not backend loops; they were legitimate long-running research iterations made worse by flooding the runner.
+- Verified the new admin-only `parseFailureArtifact` path is live on current code by inspecting a fresh successful German Plastik run (`97f46b06...`). The artifact persisted correctly on two non-fatal Stage-5 rubric parse failures.
+- The persisted artifact exposed a concrete contract bug: `EXPLANATION_QUALITY_RUBRIC` was being invoked with `${narrative}` unresolved. The caller in `aggregation-stage.ts` was passing split fields instead of the single `narrative` string the prompt expects.
+- Fixed that contract bug in code, not by changing the prompt: `evaluateExplanationRubric()` now renders a single narrative string from the structured `VerdictNarrative` and passes it as `narrative`.
+- Added a focused unit assertion proving the rubric LLM call now receives `narrative`, `claimCount`, and `evidenceCount` exactly as expected.
+**Open items:** I also ran two single controlled German Plastik reruns: `97f46b06...` and `92b7a861...`; both succeeded (`LEANING-FALSE`). Because `92b7a861...` started before the rubric caller fix, its metrics still show the old `${narrative}` failure shape. A fresh post-fix rerun is still needed to confirm the rubric parse failures disappear on live traffic and to continue waiting for the next true `VERDICT_ADVOCATE` failure artifact.
+**Warnings:** The current worktree still contains earlier uncommitted Stage-4 changes from prior investigation (`claimboundary.prompt.md`, `verdict-generation-stage.ts`, `verdict-stage.ts`, `metrics.ts`, `MetricsController.cs`, new tests, and helper files under `tools/`). I did not clean those up. Build now passes after the rubric fix, but no new `VERDICT_ADVOCATE` failure was reproduced in this turn.
+**For next agent:** Start with one fresh single German Plastik run on current code after the last build/reseed. Check `/api/fh/metrics/{jobId}` with `X-Admin-Key` for `taskType='verdict' AND schemaCompliant=false`. If `EXPLANATION_QUALITY_RUBRIC` still shows `${narrative}`, the running web service did not pick up the latest `aggregation-stage.ts` change and needs a restart. If a true `VERDICT_ADVOCATE` failure reproduces, the artifact path is now confirmed working and should be used for the next root-cause diagnosis.
+**Learnings:** no
+
+---
+### 2026-04-02 | Senior Developer | Codex (GPT-5) | Restore Local Runner Serial Mode For Debugging
+**Task:** Re-check the historical `FH_RUNNER_MAX_CONCURRENCY` decision after repeated restart/requeue observations and restore the local debugging stack to serial job execution.
+**Files touched:** `apps/web/.env.local`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Verified the March 23 handoff `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage4_Provider_Guard_Reliability_Alignment.md` explicitly justified moving the local runner back to `FH_RUNNER_MAX_CONCURRENCY=3` on the theory that Stage-4 lane throttling was the proper fix. Given the user's longer-running restart/requeue observations and today's reproduction work, I restored `apps/web/.env.local` to `FH_RUNNER_MAX_CONCURRENCY=1` as a local debugging isolation measure and restarted the stack via `scripts/restart-clean.ps1`.
+**Open items:** This is a local operational setting, not a new product decision. It still needs fresh validation runs to see whether restart/requeue symptoms drop under serial execution.
+**Warnings:** I did not change `apps/web/.env.example`; repo/default documentation still says `3`. The local machine is now intentionally divergent for debugging. Any later agent who wants concurrent validation again must change `.env.local` back explicitly and restart services.
+**For next agent:** Assume the currently running local web stack is serial (`FH_RUNNER_MAX_CONCURRENCY=1`). Do not interpret improvements from the next Plastik runs as proof that the underlying concurrency issue is fixed globally; they only remove one local confound. If you need to revisit the rationale for `3`, start with the March 23 Stage-4 provider-guard handoff and the recent restart/requeue evidence in `JobEvents`.
+**Learnings:** no
+
+---
+### 2026-04-03 | Senior Developer | Codex (GPT-5) | Fix False Orphan Requeue On Local Runner
+**Task:** Investigate the local "restart" symptom where completed jobs were being replayed with duplicated phase blocks, determine whether it was a real service restart or a runner recovery bug, and patch the local runner accordingly.
+**Files touched:** `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Pulled three parallel analyses plus local DB/log evidence. The decisive evidence was in `apps/api/factharbor.db`: multiple jobs showed `Done` followed 1-7 seconds later by `Re-queued after application restart (previous execution lost)`. That timing, plus the lack of repeated `next-development.log` startup markers, pointed away from true restarts and toward a stale-snapshot race in `drainRunnerQueue()`. The problematic branch came from `e14ae59e` (`fix(runner): immediately re-queue orphaned RUNNING jobs after restart`). I patched orphan recovery so it now performs a fresh `GET /v1/jobs/{jobId}` before requeueing and only treats a job as orphaned when the live job is still `RUNNING` **and** `updatedUtc` still matches the stale page snapshot. If the live status is terminal or the timestamp advanced, orphan recovery is skipped.
+**Open items:** This is the minimal safe fix. It closes the false-positive local replay path, but there is still a narrower API-side TOCTOU race if a job completes between the fresh recheck and the `PUT status=QUEUED`. If local replays somehow continue after this patch, the next hardening step is an API-side conditional status transition instead of another web-only heuristic.
+**Warnings:** The user-visible symptom ("restart") was partly misleading. Real API restart paths still exist and are distinct: they write `Job interrupted by server restart.` and use the `previous execution interrupted` recovery message. This patch only changes the web-side false-orphan path. I restarted the local stack with `scripts/restart-clean.ps1` after the code change so the fix is now active locally.
+**For next agent:** Start with one fresh local job, not a batch. If a new duplicate run appears, inspect `JobEvents` first. `Done -> Re-queued after application restart (previous execution lost)` should now be much harder to reproduce locally. If you ever see that sequence again, check whether the live per-job `updatedUtc` stayed unchanged across the requeue window; that would indicate the remaining API-side race rather than this old stale-snapshot bug. The focused protection lives in `drain-runner-pause.integration.test.ts` and covers: unchanged RUNNING snapshot => requeue, completed live job => no requeue, advanced live `updatedUtc` => no requeue.
+**Learnings:** no
+
+---
+### 2026-04-03 | Senior Developer | Codex (GPT-5) | Fix Misleading Repeated Phase Blocks In Job Timeline
+**Task:** Re-check the user's new screenshot after the runner fix and determine whether the displayed repeated `Setup` / `Understanding Input` / `Additional` blocks still indicated backend replay or a separate UI classification problem.
+**Files touched:** `apps/web/src/app/jobs/[id]/lib/event-display.ts`, `apps/web/test/unit/app/jobs/event-display.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Verified the specific job `e5528a5c3b174b28974e2113081a3ebb` in `apps/api/factharbor.db` had `Runner started = 1`, `Re-queued after application restart = 0`, and `Job interrupted by server restart = 0`. So the screenshot was not showing a replayed run. The remaining confusion came from timeline classification: fixed machine-generated messages like `Triggering runner`, `LLM: ...`, `Validating claim contract fidelity...`, and `Preliminary evidence remap: ...` were either falling through to `misc` (`Additional`) or splitting the phase stream into repeated `Setup` cards. I patched `event-display.ts` so those messages are now classified into the correct structural phases, and `LLM:` startup model announcements now merge into the preceding setup entry instead of creating extra standalone `Setup` groups.
+**Open items:** This change only affects timeline presentation. It does not change job execution. If a future job again shows repeated groups, inspect `JobEvents` first to distinguish a true backend replay from harmless UI grouping.
+**Warnings:** The earlier restart investigation and this timeline cleanup are two separate fixes. The screenshot looked like the first bug, but for this specific job the database proved it was the second.
+**For next agent:** If the user still reports "restart-like" visuals, query the specific job in `factharbor.db` before touching runner code. Count `Runner started`, `Re-queued after application restart%`, and `Job interrupted by server restart.%` for that job. If those are `1/0/0`, the issue is presentation, not execution.
 **Learnings:** no
