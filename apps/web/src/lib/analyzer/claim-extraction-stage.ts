@@ -801,6 +801,7 @@ export async function runPreliminarySearch(
               query,
               maxResults: maxSources,
               config: searchConfig,
+              detectedLanguage: searchConfig.searchLanguageOverride ?? searchGeo?.language,
             });
 
             local.searchQueries.push({

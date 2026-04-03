@@ -21,7 +21,10 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 export async function searchWikipedia(options: WebSearchOptions): Promise<WebSearchResult[]> {
   console.log(`[Search] Wikipedia: Starting search for query: "${options.query.substring(0, 50)}..."`);
 
-  const language = options.config?.providers?.wikipedia?.language || "en";
+  // Language priority: detected claim language > UCM configured language > "en"
+  const language = options.detectedLanguage
+    || options.config?.providers?.wikipedia?.language
+    || "en";
   const apiUrl = `https://${language}.wikipedia.org/w/api.php`;
 
   const params = new URLSearchParams({

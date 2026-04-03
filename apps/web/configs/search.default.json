@@ -52,7 +52,7 @@
       "dailyQuotaLimit": 0
     },
     "wikipedia": {
-      "enabled": false,
+      "enabled": true,
       "priority": 3,
       "dailyQuotaLimit": 0,
       "language": "en"
@@ -78,6 +78,10 @@
     "enabled": true,
     "failureThreshold": 3,
     "resetTimeoutSec": 300
+  },
+  "supplementaryProviders": {
+    "mode": "always_if_enabled",
+    "maxResultsPerProvider": 3
   },
   "supplementaryEnglishLane": {
     "enabled": false,

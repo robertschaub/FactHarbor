@@ -140,6 +140,14 @@ export const SearchConfigSchema = z.object({
   searchGeographyOverride: z.string().min(2).max(2).optional()
     .describe("ISO 3166-1 alpha-2 country code override for search (e.g., 'CH', 'US'). When set, overrides auto-inferred geography from claim input."),
 
+  // Generic supplementary-provider orchestration policy
+  supplementaryProviders: z.object({
+    mode: z.enum(["fallback_only", "always_if_enabled"])
+      .describe("When supplementary providers run: 'fallback_only' = only when primary providers return zero results (current behavior); 'always_if_enabled' = run bounded supplementary search even when primary search succeeded."),
+    maxResultsPerProvider: z.number().int().min(1).max(10)
+      .describe("Max results each supplementary provider may return per search call (default: 3). Keeps supplementary evidence bounded."),
+  }).optional().describe("Controls when and how supplementary providers (Wikipedia, Semantic Scholar, Google Fact Check) participate in search."),
+
   // Supplementary English retrieval lane (Proposal 2 — multilingual output/search policy)
   supplementaryEnglishLane: z.object({
     enabled: z.boolean().describe("Enable English supplementary retrieval lane for non-English inputs. Coverage expansion only — never contrarian/balancing."),
@@ -205,7 +213,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
       dailyQuotaLimit: 0, // Paid per search
     },
     wikipedia: {
-      enabled: false,
+      enabled: true,
       priority: 3,
       dailyQuotaLimit: 0, // No API key needed, unlimited
       language: "en",
@@ -231,6 +239,10 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
     enabled: true,
     failureThreshold: 3,
     resetTimeoutSec: 300, // 5 minutes
+  },
+  supplementaryProviders: {
+    mode: "always_if_enabled", // Wikipedia is the bounded default-on supplementary provider
+    maxResultsPerProvider: 3,
   },
   supplementaryEnglishLane: {
     enabled: false, // Default off — experimental

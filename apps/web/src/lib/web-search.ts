@@ -25,6 +25,8 @@ export type WebSearchOptions = {
   dateRestrict?: "y" | "m" | "w";
   timeoutMs?: number;
   config?: SearchConfig;
+  /** BCP-47 language code detected from claim input (e.g., "de", "fr"). Threaded to language-aware supplementary providers like Wikipedia. */
+  detectedLanguage?: string;
 };
 
 export type SearchProviderErrorInfo = {
@@ -309,10 +311,18 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
       }
     }
 
-    const shouldRunSupplementaryProviders = primaryProviderKey !== "auto" || results.length === 0;
-
     // 3. Execute Supplementary Providers.
-    // In AUTO mode, only use supplementary providers when no primary provider produced results.
+    // Controlled by UCM supplementaryProviders.mode:
+    //   "fallback_only"      → only when primary providers returned zero results (legacy behavior)
+    //   "always_if_enabled"  → run bounded supplementary providers even when primary search succeeded
+    const suppPolicy = config.supplementaryProviders;
+    const suppMode = suppPolicy?.mode ?? "always_if_enabled";
+    const suppMaxPerProvider = suppPolicy?.maxResultsPerProvider ?? 3;
+    const shouldRunSupplementaryProviders =
+      primaryProviderKey !== "auto"                       // explicit provider mode: always run supplementaries
+      || suppMode === "always_if_enabled"                 // UCM policy: always run
+      || (suppMode === "fallback_only" && results.length === 0); // fallback: only when primary returned nothing
+
     const supplementaryKeys: SearchProviderKey[] = ["wikipedia", "semantic-scholar", "google-factcheck"];
     for (const suppKey of supplementaryKeys) {
       const def = SEARCH_PROVIDER_DEFINITIONS[suppKey];
@@ -326,12 +336,15 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         continue;
       }
 
-      console.log(`[Search] Executing supplementary provider: ${def.explicitLabel}`);
+      console.log(`[Search] Executing supplementary provider: ${def.explicitLabel} (mode: ${suppMode}, max: ${suppMaxPerProvider})`);
       providersUsed.push(def.name);
       try {
-        // Supplementary providers get a smaller, fixed quota to avoid overwhelming the result set
-        // but ensure they can still act as a fallback when no primary results were found.
-        const suppResults = await def.execute({ ...options, maxResults: 3 });
+        // Thread detected language into supplementary options for language-aware providers (Wikipedia)
+        const suppOptions: WebSearchOptions = {
+          ...options,
+          maxResults: suppMaxPerProvider,
+        };
+        const suppResults = await def.execute(suppOptions);
         results.push(...suppResults);
         recordSuccess(def.name, cbConfig);
       } catch (err) {

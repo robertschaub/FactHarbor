@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-03-29  
+**Last Updated**: 2026-04-03  
 **Status**: WIP Consolidation #8 complete. The active WIP set is reduced to a curated live set. Mixed plan/report documents were split: the live current/future-facing parts remain in WIP, while historical detail moved to `_arch` companions in [Docs/ARCHIVE](../ARCHIVE/). LiveCheck / Innosuisse proposal material now lives in [Docs/Knowledge](../Knowledge/).
 
 ---
@@ -84,7 +84,8 @@ Anything that was purely historical, implemented, or superseded has been archive
 ## Future Proposals / Organizational Tracks
 
 ### Search / provider integration
-- [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md)
+- [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — provider layer already shipped; active value is narrow supplementary-provider completion scope
+- [2026-04-03_Wikipedia_Supplementary_Completion_Plan.md](2026-04-03_Wikipedia_Supplementary_Completion_Plan.md) — concrete narrow implementation plan for Wikipedia supplementary completion with existing UCM kill switch
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — debated long-run roadmap; retrieval-first if a future quality workstream is reopened
 
 ### Debate / model / cost proposals

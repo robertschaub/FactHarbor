@@ -240,4 +240,82 @@ describe("Wikipedia Search API", () => {
     const results = await searchWikipedia({ query: "test", maxResults: 5 });
     expect(results).toEqual([]);
   });
+
+  // ---------------------------------------------------------------------------
+  // Language fallback chain: detectedLanguage > config language > "en"
+  // ---------------------------------------------------------------------------
+
+  describe("language fallback chain", () => {
+    it("prefers detectedLanguage over config language", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ query: { search: [{ title: "Plastik", snippet: "s" }] } }),
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const { searchWikipedia } = await import("@/lib/search-wikipedia");
+
+      const results = await searchWikipedia({
+        query: "Plastik",
+        maxResults: 3,
+        detectedLanguage: "de",
+        config: {
+          providers: { wikipedia: { language: "fr", enabled: true, priority: 3, dailyQuotaLimit: 0 } },
+        } as any,
+      });
+
+      expect(results[0].url).toContain("de.wikipedia.org");
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("de.wikipedia.org"),
+        expect.anything(),
+      );
+    });
+
+    it("falls back to config language when detectedLanguage is absent", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ query: { search: [{ title: "Test", snippet: "s" }] } }),
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const { searchWikipedia } = await import("@/lib/search-wikipedia");
+
+      await searchWikipedia({
+        query: "test",
+        maxResults: 3,
+        config: {
+          providers: { wikipedia: { language: "fr", enabled: true, priority: 3, dailyQuotaLimit: 0 } },
+        } as any,
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("fr.wikipedia.org"),
+        expect.anything(),
+      );
+    });
+
+    it("falls back to 'en' when both detectedLanguage and config language are absent", async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ query: { search: [{ title: "Test", snippet: "s" }] } }),
+      });
+      vi.stubGlobal("fetch", mockFetch);
+
+      const { searchWikipedia } = await import("@/lib/search-wikipedia");
+
+      await searchWikipedia({
+        query: "test",
+        maxResults: 3,
+        // No detectedLanguage, no config
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("en.wikipedia.org"),
+        expect.anything(),
+      );
+    });
+  });
 });

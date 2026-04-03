@@ -115,6 +115,10 @@ interface SearchConfig {
   domainWhitelist: string[];
   domainBlacklist: string[];
   providers?: Record<string, any>;
+  supplementaryProviders?: {
+    mode: "fallback_only" | "always_if_enabled";
+    maxResultsPerProvider: number;
+  };
 }
 
 // Calculation config type (simplified for form)
@@ -484,7 +488,7 @@ function SearchConfigForm({
 
       <h3 className={styles.formSectionTitle} style={{ marginTop: 24 }}>Supplementary Sources (Additional)</h3>
       <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
-        These sources run <strong>alongside</strong> the primary provider if enabled. They help find academic papers, fact-check reviews, and encyclopedia entries.
+        These sources run alongside the primary provider if enabled. They help find academic papers, fact-check reviews, and encyclopedia entries. Wikipedia uses the detected claim language automatically (falls back to configured language, then English).
       </p>
       <div className={styles.providerGrid}>
         {supplementaryProviders.map((providerKey) => {
@@ -530,6 +534,52 @@ function SearchConfigForm({
             </div>
           );
         })}
+      </div>
+
+      <h3 className={styles.formSectionTitle} style={{ marginTop: 24 }}>Supplementary Provider Orchestration</h3>
+      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 16 }}>
+        Controls <em>when</em> enabled supplementary providers run relative to primary search results.
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Mode</label>
+          <select
+            className={styles.formInput}
+            value={config.supplementaryProviders?.mode ?? "always_if_enabled"}
+            onChange={(e) => onChange({
+              ...config,
+              supplementaryProviders: {
+                ...(config.supplementaryProviders ?? { mode: "always_if_enabled", maxResultsPerProvider: 3 }),
+                mode: e.target.value as "fallback_only" | "always_if_enabled",
+              },
+            })}
+          >
+            <option value="fallback_only">Fallback only (run when primary returns 0 results)</option>
+            <option value="always_if_enabled">Always if enabled (run alongside primary)</option>
+          </select>
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.formLabel}>Max Results per Provider</label>
+          <input
+            type="number"
+            className={styles.formInput}
+            value={config.supplementaryProviders?.maxResultsPerProvider ?? 3}
+            min={1}
+            max={10}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              onChange({
+                ...config,
+                supplementaryProviders: {
+                  ...(config.supplementaryProviders ?? { mode: "always_if_enabled", maxResultsPerProvider: 3 }),
+                  maxResultsPerProvider: isNaN(v) ? 3 : v,
+                },
+              });
+            }}
+          />
+          <div className={styles.formHelp}>Caps how many results each supplementary provider returns (default: 3).</div>
+        </div>
       </div>
     </div>
   );

@@ -725,10 +725,12 @@ export async function runResearchIteration(
     try {
       // 2. Web search — no geo/language params sent to search providers.
       // Query generation prompt handles language; search stays unfiltered.
+      // detectedLanguage is threaded for language-aware supplementary providers (Wikipedia).
       const response = await searchWebWithProvider({
         query: queryObj.query,
         maxResults: maxSourcesPerIteration,
         config: searchConfig,
+        detectedLanguage: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
       });
 
       state.searchQueries.push({
@@ -984,6 +986,7 @@ export async function maybeRunSupplementaryEnglishLane(
       query: enQuery.query,
       maxResults: searchConfig.maxSourcesPerIteration ?? 5,
       config: searchConfig,
+      detectedLanguage: "en", // EN lane forces English for language-aware supplementary providers
     });
 
     state.searchQueries.push({
