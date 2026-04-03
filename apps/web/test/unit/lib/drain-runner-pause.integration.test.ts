@@ -124,6 +124,7 @@ describe("drainRunnerQueue pause integration", () => {
       vi.useFakeTimers();
       // Set up required env vars for drainRunnerQueue
       process.env.FH_API_BASE_URL = "http://localhost:3001";
+      vi.mocked(runClaimBoundaryAnalysis).mockClear();
       vi.resetModules();
     });
 
@@ -322,6 +323,8 @@ describe("drainRunnerQueue pause integration", () => {
 
     it("re-queues orphaned RUNNING jobs after restart and picks them up in the same drain cycle", async () => {
       const orphanJobId = "job-orphan-1";
+      const snapshotUpdatedUtc = new Date(Date.now() - 60_000).toISOString();
+      let jobDetailReads = 0;
       vi.mocked(runClaimBoundaryAnalysis).mockImplementation(
         () => new Promise(() => {}),
       );
@@ -336,7 +339,7 @@ describe("drainRunnerQueue pause integration", () => {
             jobs: [{
               jobId: orphanJobId,
               status: "RUNNING",
-              updatedUtc: new Date(Date.now() - 60_000).toISOString(),
+              updatedUtc: snapshotUpdatedUtc,
               progress: 42,
               pipelineVariant: "claimboundary",
             }],
@@ -345,9 +348,19 @@ describe("drainRunnerQueue pause integration", () => {
         }
 
         if (method === "GET" && url.endsWith(`/v1/jobs/${orphanJobId}`)) {
+          jobDetailReads++;
+          if (jobDetailReads === 1) {
+            return new Response(JSON.stringify({
+              jobId: orphanJobId,
+              status: "RUNNING",
+              updatedUtc: snapshotUpdatedUtc,
+              pipelineVariant: "claimboundary",
+            }), { status: 200 });
+          }
           return new Response(JSON.stringify({
             jobId: orphanJobId,
             status: "QUEUED",
+            updatedUtc: snapshotUpdatedUtc,
             pipelineVariant: "claimboundary",
             inputType: "text",
             inputValue: "test input",
@@ -385,6 +398,143 @@ describe("drainRunnerQueue pause integration", () => {
       expect(putPayloads.some((p) => p.body.status === "QUEUED")).toBe(true);
       expect(putPayloads.some((p) => p.body.status === "FAILED")).toBe(false);
       expect(qs.runningJobIds.has(orphanJobId)).toBe(true);
+      expect(qs.runningCount).toBe(1);
+      expect(qs.queue).toHaveLength(0);
+    });
+
+    it("does not re-queue a RUNNING snapshot when the live job already completed", async () => {
+      const jobId = "job-finished-1";
+      const snapshotUpdatedUtc = new Date(Date.now() - 60_000).toISOString();
+      const putPayloads: Array<{ url: string; body: Record<string, unknown> }> = [];
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          return new Response(JSON.stringify({
+            jobs: [{
+              jobId,
+              status: "RUNNING",
+              updatedUtc: snapshotUpdatedUtc,
+              progress: 90,
+              pipelineVariant: "claimboundary",
+            }],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${jobId}`)) {
+          return new Response(JSON.stringify({
+            jobId,
+            status: "SUCCEEDED",
+            updatedUtc: new Date().toISOString(),
+            pipelineVariant: "claimboundary",
+          }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${jobId}/status`)) {
+          putPayloads.push({
+            url,
+            body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
+          });
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "info").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      const qs = (globalThis as any).__fhRunnerQueueState;
+      expect(putPayloads).toHaveLength(0);
+      expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+      expect(qs.runningJobIds.has(jobId)).toBe(false);
+      expect(qs.runningCount).toBe(0);
+      expect(qs.queue).toHaveLength(0);
+    });
+
+    it("does not re-queue a RUNNING snapshot when live updatedUtc has advanced", async () => {
+      const jobId = "job-progressed-1";
+      const snapshotUpdatedUtc = new Date(Date.now() - 60_000).toISOString();
+      const liveUpdatedUtc = new Date().toISOString();
+      const putPayloads: Array<{ url: string; body: Record<string, unknown> }> = [];
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          return new Response(JSON.stringify({
+            jobs: [{
+              jobId,
+              status: "RUNNING",
+              updatedUtc: snapshotUpdatedUtc,
+              progress: 45,
+              pipelineVariant: "claimboundary",
+            }],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${jobId}`)) {
+          return new Response(JSON.stringify({
+            jobId,
+            status: "RUNNING",
+            updatedUtc: liveUpdatedUtc,
+            pipelineVariant: "claimboundary",
+            inputType: "text",
+            inputValue: "still running elsewhere",
+          }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${jobId}/status`)) {
+          putPayloads.push({
+            url,
+            body: JSON.parse(String(init?.body ?? "{}")) as Record<string, unknown>,
+          });
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+      vi.spyOn(console, "info").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      const qs = (globalThis as any).__fhRunnerQueueState;
+      expect(putPayloads).toHaveLength(0);
+      expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+      expect(qs.runningJobIds.has(jobId)).toBe(false);
       expect(qs.runningCount).toBe(1);
       expect(qs.queue).toHaveLength(0);
     });

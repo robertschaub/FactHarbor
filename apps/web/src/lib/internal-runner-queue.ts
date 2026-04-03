@@ -435,9 +435,32 @@ export async function drainRunnerQueue() {
         const isStale = staleDurationMs > STALE_THRESHOLD_MS;
 
         if (!wasLocallyRunning) {
-          // Job is RUNNING in DB but not tracked by this process — orphaned by a restart.
-          // Re-queue immediately instead of waiting for the 15-minute stale threshold.
-          // The job will start from scratch (no intermediate state is persisted).
+          let liveJob: any;
+          try {
+            liveJob = await apiGet(apiBase, `/v1/jobs/${jobId}`);
+          } catch (err) {
+            console.warn(`[Runner] Skipping orphan recovery for ${jobId}: failed to refresh live status`, err);
+            nonStaleRunningCount++;
+            continue;
+          }
+
+          const liveStatus = String(liveJob?.status || "").toUpperCase();
+          const liveUpdatedUtc = String(liveJob?.updatedUtc || "");
+          const snapshotStillCurrent = liveUpdatedUtc === job.updatedUtc;
+          if (liveStatus !== "RUNNING" || !snapshotStillCurrent) {
+            console.info(
+              `[Runner] Skipping orphan recovery for ${jobId}: snapshot stale or job no longer RUNNING ` +
+              `(snapshot updatedUtc=${job.updatedUtc}, live status=${liveStatus || "unknown"}, live updatedUtc=${liveUpdatedUtc || "missing"})`,
+            );
+            if (liveStatus === "RUNNING") {
+              nonStaleRunningCount++;
+            }
+            continue;
+          }
+
+          // Job is still RUNNING in DB with the same updatedUtc but is not tracked by this
+          // process. Treat it as orphaned by a restart and re-queue it immediately instead
+          // of waiting for the 15-minute stale threshold.
           console.warn(`[Runner] Re-queuing orphaned job ${jobId} (was RUNNING but not tracked by this process)`);
           await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
             status: "QUEUED",
