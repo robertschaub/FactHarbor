@@ -3332,3 +3332,13 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This change affects provenance labeling only; it does not create an analysis-scoped fingerprint. Unrelated docs remain modified in the worktree and were intentionally excluded from the commit.
 **For next agent:** Verify production picks this up after the next deploy/restart by checking `/version` and one freshly created job. If future validation needs analyzer-only provenance, add a second scoped fingerprint rather than changing this whole-repo build id again.
 **Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Scope Grounding Validation to Claim-Local Context
+**Task:** Fix `verdict_grounding_issue` false positives by aligning grounding validation scope with the claim-local evidence/source context already used by direction validation.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Grounding validation no longer receives one global evidence pool plus flattened global source portfolio. It now receives per-verdict claim-local `evidencePool`, per-verdict `sourcePortfolio`, and a separate `citedEvidenceRegistry` so the validator can distinguish three cases: missing cited IDs (hallucination), uncited-but-claim-local reasoning context (valid), and references absent from claim-local context (cross-claim contamination/hallucination). Direction validation and repair were left unchanged on purpose; they still use the broader fail-open claim-local helper because their job is rescue/recalibration, not contamination detection.
+**Open items:** The fix is verified by unit tests and build only. A fresh live rerun on a report previously showing `verdict_grounding_issue` is still needed to confirm the warning disappears or drops to only genuine contamination cases.
+**Warnings:** The new grounding helper intentionally treats cited sibling-claim evidence as invalid for grounding when claim mappings exist. If future jobs reveal mapping gaps (valid cited IDs absent from `relevantClaimIds`), fix the mapping upstream rather than weakening the grounding validator back to global scope.
+**For next agent:** Re-run the Swiss-vs-Germany local success case (`c3a19e4ca612445a8e32cb330da604f8`) or a fresh equivalent and inspect whether the prior `S_015/S_016`-style warning is gone. If any grounding warning remains, compare it against the new three-tier rule before changing severity/policy.
+**Learnings:** no

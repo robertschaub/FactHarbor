@@ -4239,7 +4239,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     expect(revalidationIds).not.toContain("EV_S2");
   });
 
-  it("grounding validation still uses full evidence pool (global scope for ID existence checks)", async () => {
+  it("grounding validation uses strict claim-local evidence and separate cited registry", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_02",
       supportingEvidenceIds: ["EV_S1"],
@@ -4251,9 +4251,12 @@ describe("claim-local direction validation (cross-claim contamination prevention
     ];
 
     let groundingEvidencePool: Array<{ id: string }> | undefined;
+    let groundingCitedRegistry: Array<{ id: string }> | undefined;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
-        groundingEvidencePool = input.evidencePool as Array<{ id: string }>;
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingEvidencePool = verdictInput?.evidencePool as Array<{ id: string }>;
+        groundingCitedRegistry = verdictInput?.citedEvidenceRegistry as Array<{ id: string }>;
         return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
       }
       if (key === "VERDICT_DIRECTION_VALIDATION") {
@@ -4264,9 +4267,45 @@ describe("claim-local direction validation (cross-claim contamination prevention
 
     await validateVerdicts(verdicts, evidence, mockLLM);
 
-    // Grounding must see the FULL pool (ID existence is a global check)
+    // Grounding must see only strict claim-local evidence for reasoning validation
     expect(groundingEvidencePool).toBeDefined();
-    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_N1", "EV_S1"]);
+    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_N1"]);
+    // Cited registry preserves globally existing cited IDs so the validator can
+    // distinguish cross-claim contamination from hallucinated IDs.
+    expect(groundingCitedRegistry).toBeDefined();
+    expect(groundingCitedRegistry!.map((e) => e.id).sort()).toEqual(["EV_S1"]);
+  });
+
+  it("grounding validation sees uncited-but-claim-local evidence as valid context", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_03",
+      supportingEvidenceIds: ["EV_02", "EV_03"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", sourceId: "S_015", relevantClaimIds: ["AC_03"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", sourceId: "S_016", relevantClaimIds: ["AC_03"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_03", sourceId: "S_016", relevantClaimIds: ["AC_03"], claimDirection: "supports" }),
+    ];
+
+    let groundingEvidencePool: Array<{ id: string; sourceId?: string }> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingEvidencePool = verdictInput?.evidencePool as Array<{ id: string; sourceId?: string }>;
+        return [{ claimId: "AC_03", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_03", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM);
+
+    expect(groundingEvidencePool).toBeDefined();
+    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_01", "EV_02", "EV_03"]);
+    expect(groundingEvidencePool!.map((e) => e.sourceId)).toContain("S_015");
   });
 
   it("grounding validation receives source portfolio when available in repair context", async () => {
@@ -4285,7 +4324,8 @@ describe("claim-local direction validation (cross-claim contamination prevention
     let groundingSourcePortfolio: Array<{ sourceId: string; domain: string }> | undefined;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
-        groundingSourcePortfolio = input.sourcePortfolio as Array<{ sourceId: string; domain: string }>;
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingSourcePortfolio = verdictInput?.sourcePortfolio as Array<{ sourceId: string; domain: string }>;
         return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
       }
       if (key === "VERDICT_DIRECTION_VALIDATION") {
@@ -4303,16 +4343,16 @@ describe("claim-local direction validation (cross-claim contamination prevention
       },
     });
 
-    // Source portfolio should be flattened and passed to grounding validation with score metadata
+    // Source portfolio should be claim-local and passed alongside the matching verdict input
     expect(groundingSourcePortfolio).toBeDefined();
     expect(groundingSourcePortfolio).toHaveLength(1);
-    expect(groundingSourcePortfolio![0]).toEqual({
+    expect(groundingSourcePortfolio![0]).toEqual(expect.objectContaining({
       sourceId: "S_025",
       domain: "example.com",
       trackRecordScore: 0.78,
       trackRecordConfidence: 0.65,
       evidenceCount: 3,
-    });
+    }));
   });
 
   it("standard single-claim validation still works (no regression)", async () => {

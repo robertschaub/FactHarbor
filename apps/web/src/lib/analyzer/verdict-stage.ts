@@ -1070,7 +1070,7 @@ export interface VerdictValidationRepairContext {
 
 /**
  * Step 5: Validate verdicts with two lightweight Haiku checks.
- * Check A (grounding): Do evidence IDs exist?
+ * Check A (grounding): Are cited IDs and reasoning grounded in claim-local evidence context?
  * Check B (direction): Does truth% align with evidence direction?
  *
  * @returns Verdicts after applying integrity policies (or unchanged when policies are disabled)
@@ -1092,26 +1092,39 @@ export async function validateVerdicts(
       "grounding",
       "VERDICT_GROUNDING_VALIDATION",
       {
-        verdicts: verdicts.map((v) => ({
-          claimId: v.claimId,
-          reasoning: v.reasoning,
-          supportingEvidenceIds: v.supportingEvidenceIds,
-          contradictingEvidenceIds: v.contradictingEvidenceIds,
-        })),
-        evidencePool: evidence.map((e) => ({ id: e.id, statement: e.statement })),
-        // Include source portfolio so the validator can recognize source-level references
-        // (source IDs, trackRecordScore) as valid contextual data, not hallucinated evidence.
-        ...(repairContext?.sourcePortfolioByClaim ? {
-          sourcePortfolio: Object.values(repairContext.sourcePortfolioByClaim)
-            .flat()
-            .map((s) => ({
-              sourceId: s.sourceId,
-              domain: s.domain,
-              trackRecordScore: s.trackRecordScore,
-              trackRecordConfidence: s.trackRecordConfidence,
-              evidenceCount: s.evidenceCount,
+        verdicts: verdicts.map((v) => {
+          const localEvidence = getGroundingClaimLocalEvidence(v.claimId, evidence);
+          const localSourcePortfolio = getClaimLocalSourcePortfolio(
+            v.claimId,
+            localEvidence,
+            repairContext?.sourcePortfolioByClaim,
+          );
+
+          return {
+            claimId: v.claimId,
+            reasoning: v.reasoning,
+            supportingEvidenceIds: v.supportingEvidenceIds,
+            contradictingEvidenceIds: v.contradictingEvidenceIds,
+            evidencePool: localEvidence.map((e) => ({
+              id: e.id,
+              statement: e.statement,
+              sourceId: e.sourceId,
+              sourceUrl: e.sourceUrl,
+              claimDirection: e.claimDirection,
             })),
-        } : {}),
+            citedEvidenceRegistry: getCitedEvidenceRegistry(v, evidence),
+            ...(localSourcePortfolio.length > 0 ? {
+              sourcePortfolio: localSourcePortfolio.map((s) => ({
+                sourceId: s.sourceId,
+                domain: s.domain,
+                sourceUrl: s.sourceUrl,
+                trackRecordScore: s.trackRecordScore,
+                trackRecordConfidence: s.trackRecordConfidence,
+                evidenceCount: s.evidenceCount,
+              })),
+            } : {}),
+          };
+        }),
       },
       "groundingValid",
       validationTier,
@@ -1522,6 +1535,104 @@ export function getClaimLocalEvidence(
   }
 
   return localSubset;
+}
+
+/**
+ * Build a strict claim-local evidence subset for grounding validation.
+ *
+ * Unlike direction validation, grounding should preserve cross-claim
+ * contamination detection. So this helper does NOT auto-merge cited IDs from
+ * sibling claims into the local pool. The validator receives those cited IDs
+ * separately via `citedEvidenceRegistry`.
+ *
+ * Fail-open safety remains for legacy/unmapped pools: when the entire evidence
+ * set lacks claim mappings, fall back to the broader claim-local helper.
+ */
+function getGroundingClaimLocalEvidence(
+  claimId: string,
+  allEvidence: EvidenceItem[],
+): EvidenceItem[] {
+  const hasAnyClaimMapping = allEvidence.some(
+    (e) => Array.isArray(e.relevantClaimIds) && e.relevantClaimIds.length > 0,
+  );
+  if (!hasAnyClaimMapping) {
+    return getClaimLocalEvidence(
+      claimId,
+      {
+        id: `CV_${claimId}`,
+        claimId,
+        truthPercentage: 50,
+        verdict: "MIXED",
+        confidence: 50,
+        confidenceTier: "INSUFFICIENT",
+        reasoning: "",
+        harmPotential: "medium",
+        isContested: false,
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+        boundaryFindings: [],
+        consistencyResult: {
+          claimId,
+          percentages: [],
+          average: 0,
+          spread: 0,
+          stable: true,
+          assessed: false,
+        },
+        challengeResponses: [],
+        triangulationScore: {
+          boundaryCount: 0,
+          supporting: 0,
+          contradicting: 0,
+          level: "weak",
+          factor: 1,
+        },
+      },
+      allEvidence,
+    );
+  }
+
+  return allEvidence.filter((e) => e.relevantClaimIds?.includes(claimId));
+}
+
+function getCitedEvidenceRegistry(
+  verdict: CBClaimVerdict,
+  allEvidence: EvidenceItem[],
+): Array<{
+  id: string;
+  statement: string;
+  sourceId?: string;
+  sourceUrl?: string;
+  claimDirection?: EvidenceItem["claimDirection"];
+}> {
+  const citedIds = new Set([
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+  ]);
+  return allEvidence
+    .filter((e) => citedIds.has(e.id))
+    .map((e) => ({
+      id: e.id,
+      statement: e.statement,
+      sourceId: e.sourceId,
+      sourceUrl: e.sourceUrl,
+      claimDirection: e.claimDirection,
+    }));
+}
+
+function getClaimLocalSourcePortfolio(
+  claimId: string,
+  localEvidence: EvidenceItem[],
+  sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
+): SourcePortfolioEntry[] {
+  const scopedPortfolio = sourcePortfolioByClaim?.[claimId];
+  if (scopedPortfolio && scopedPortfolio.length > 0) {
+    return scopedPortfolio;
+  }
+  if (localEvidence.length === 0) {
+    return [];
+  }
+  return buildSourcePortfolio(localEvidence);
 }
 
 function buildBoundaryContext(

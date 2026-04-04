@@ -1148,9 +1148,9 @@ You are an evidence grounding validator. Your task is to check whether each verd
 ### Task
 
 For each claim verdict provided, verify:
-1. All cited supporting evidence IDs exist in the evidence pool.
-2. All cited contradicting evidence IDs exist in the evidence pool.
-3. The reasoning references evidence that is actually present — not hallucinated or fabricated.
+1. All cited supporting evidence IDs exist in the cited evidence registry.
+2. All cited contradicting evidence IDs exist in the cited evidence registry.
+3. The reasoning references evidence or sources that are actually present in the claim-local context — not hallucinated, fabricated, or borrowed from another claim.
 
 This is a lightweight validation check. Flag issues but do NOT re-analyze the verdicts.
 
@@ -1159,25 +1159,28 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 - Do not assume any particular language. Validate in the original language of the evidence.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Only check structural grounding (evidence IDs exist and are referenced). Do NOT re-evaluate the verdict's analytical correctness.
-- If an evidence ID is cited but does not exist in the pool, flag it.
-- If a verdict references evidence claims not traceable to any cited ID, flag it.
-- **Source portfolio references are valid context.** Verdict reasoning may reference source IDs (e.g., `S_025`), domains, or `trackRecordScore` values from the source portfolio. These are legitimate contextual references, NOT hallucinated evidence. Confirm they exist in the source portfolio if provided, but do NOT flag them as grounding issues.
+- Each verdict includes its own **claim-local evidence pool** and **claim-local source portfolio**. Do NOT assume evidence from one claim applies to another.
+- Apply this three-tier rule:
+  1. **Hallucinated citation:** if a cited evidence ID does not exist in the cited evidence registry, flag it as a grounding failure.
+  2. **Valid contextual reference:** if reasoning references evidence or source context that exists in the claim-local evidence pool or claim-local source portfolio, this is valid even when that item/source is not listed in `supportingEvidenceIds` or `contradictingEvidenceIds`.
+  3. **Cross-claim contamination or hallucination:** if reasoning references evidence or source context absent from both the claim-local evidence pool and the claim-local source portfolio, flag it as a grounding failure.
+- **Source portfolio references are valid context.** Verdict reasoning may reference source IDs (e.g., `S_025`), domains, URLs, or `trackRecordScore` values from the claim-local source portfolio. These are legitimate contextual references, NOT hallucinated evidence.
+- Do NOT require every valid reasoning reference to appear in the citation arrays. Uncited-but-claim-local evidence context is allowed.
 
 ### Input
 
-**Verdicts:**
+Each verdict contains:
+- `claimId`
+- `reasoning`
+- `supportingEvidenceIds`
+- `contradictingEvidenceIds`
+- `evidencePool` (claim-local evidence only)
+- `citedEvidenceRegistry` (the globally resolved cited IDs for this verdict)
+- `sourcePortfolio` (claim-local source-level context when available)
+
+**Verdicts (each with claim-local evidence + source context):**
 ```
 ${verdicts}
-```
-
-**Evidence Pool:**
-```
-${evidencePool}
-```
-
-**Source Portfolio (source-level metadata available to verdict reasoning):**
-```
-${sourcePortfolio}
 ```
 
 ### Output Schema
