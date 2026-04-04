@@ -31,7 +31,7 @@ public sealed class JobService
             InputPreview = MakePreview(inputType, inputValue),
             PipelineVariant = pipelineVariant,
             InviteCode = inviteCode,
-            GitCommitHash = _buildInfo.GitCommitHash,
+            GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };
@@ -516,7 +516,7 @@ public sealed class JobService
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
-            GitCommitHash = _buildInfo.GitCommitHash,  // Current deploy hash (may differ from original job's hash)
+            GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),  // Current build hash at retry creation time
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
         };

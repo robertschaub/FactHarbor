@@ -125,7 +125,7 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
-builder.Services.AddSingleton(FactHarbor.Api.Helpers.AppBuildInfo.Resolve());
+builder.Services.AddSingleton<FactHarbor.Api.Helpers.AppBuildInfo>();
 
 // Configure HttpClient for RunnerClient with resilient settings
 var runnerTimeoutMinutes = builder.Configuration.GetValue("Runner:TimeoutMinutes", 5);

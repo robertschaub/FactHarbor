@@ -1,69 +1,116 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace FactHarbor.Api.Helpers;
 
 /// <summary>
-/// Holds build-time metadata resolved once at startup and injected as a singleton.
-/// GitCommitHash is stored on every Job at creation so admins can trace any job
-/// back to the exact deployed code version that ran it.
+/// Resolves the current build/repo provenance for API responses and new job rows.
 ///
 /// Format:
 ///   Clean working tree : "{hash}"           e.g. "cdd78d0f"
 ///   Dirty working tree : "{hash}+{wthash}"  e.g. "cdd78d0f+a3f9b201"
 ///
 /// The working-tree hash is the first 8 hex chars of SHA256("git diff HEAD"),
-/// giving a unique, reproducible fingerprint for the exact local change set.
-/// Two restarts with identical uncommitted changes produce the same identifier.
+/// giving a reproducible fingerprint for the exact tracked-file change set.
+///
+/// Important behavior:
+/// - Production prefers the deployment-injected GIT_COMMIT env var.
+/// - Local development falls back to live git resolution.
+/// - Resolution is dynamic rather than startup-frozen, so new local commits are
+///   visible on newly created jobs without requiring an API restart.
 /// </summary>
-public sealed record AppBuildInfo(string? GitCommitHash)
+public sealed class AppBuildInfo
 {
-    // A valid full or abbreviated git commit hash is 7–40 lowercase hex chars.
+    private static readonly TimeSpan CacheTtl = TimeSpan.FromSeconds(30);
+    private readonly object _cacheLock = new();
+    private string? _cachedGitCommitHash;
+    private DateTime _cacheExpiresUtc = DateTime.MinValue;
+
+    public string? GitCommitHash => GetGitCommitHash();
+
+    public string? GetGitCommitHash(bool useCache = true)
+    {
+        if (!useCache)
+            return ResolveCurrentBuildId();
+
+        var now = DateTime.UtcNow;
+        lock (_cacheLock)
+        {
+            if (_cacheExpiresUtc > now)
+                return _cachedGitCommitHash;
+        }
+
+        var resolved = ResolveCurrentBuildId();
+        lock (_cacheLock)
+        {
+            _cachedGitCommitHash = resolved;
+            _cacheExpiresUtc = now + CacheTtl;
+        }
+        return resolved;
+    }
+
+    // A valid full or abbreviated git commit hash is 7-40 lowercase hex chars.
     private static bool IsValidHash(string s) =>
         s.Length >= 7 && s.Length <= 40 && s.All(char.IsAsciiHexDigit);
 
-    /// <summary>
-    /// Resolves the git commit hash by:
-    /// 1. Reading the GIT_COMMIT env var (set by CI/CD at deployment — always clean)
-    /// 2. Falling back to `git rev-parse HEAD` + dirty check (local dev, 3-second timeout)
-    /// 3. Returning null if neither is available
-    /// </summary>
-    public static AppBuildInfo Resolve()
-    {
-        // 1. Deployment-injected env var — always a clean commit on the VPS.
-        var envHash = Environment.GetEnvironmentVariable("GIT_COMMIT")?.Trim().ToLowerInvariant();
-        if (!string.IsNullOrEmpty(envHash) && IsValidHash(envHash))
-            return new AppBuildInfo(envHash);
+    private static bool IsValidDirtySuffix(string s) =>
+        s.Equals("dirty", StringComparison.OrdinalIgnoreCase) ||
+        (s.Length == 8 && s.All(char.IsAsciiHexDigit));
 
-        // 2. Local dev fallback: run git with a hard 3-second wall-clock timeout.
+    private static string? NormalizeBuildId(string? value)
+    {
+        var trimmed = value?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return null;
+
+        if (IsValidHash(trimmed))
+            return trimmed;
+
+        var plusIndex = trimmed.IndexOf('+');
+        if (plusIndex <= 0)
+            return null;
+
+        var baseHash = trimmed[..plusIndex];
+        var suffix = trimmed[(plusIndex + 1)..];
+        if (!IsValidHash(baseHash) || !IsValidDirtySuffix(suffix))
+            return null;
+
+        return $"{baseHash}+{suffix}";
+    }
+
+    private static string? ResolveCurrentBuildId()
+    {
+        // 1. Deployment-injected env var — canonical for deployed services.
+        var envHash = NormalizeBuildId(Environment.GetEnvironmentVariable("GIT_COMMIT"));
+        if (!string.IsNullOrWhiteSpace(envHash))
+            return envHash;
+
+        // 2. Local dev fallback: run git with a hard timeout.
         try
         {
             var hash = RunGit("rev-parse HEAD");
             if (hash is null || !IsValidHash(hash))
-                return new AppBuildInfo(GitCommitHash: null);
+                return null;
 
-            // Check for uncommitted changes. Any output from --porcelain means dirty.
+            // Any output from --porcelain means the worktree is dirty.
             var porcelain = RunGit("status --porcelain");
             if (!string.IsNullOrWhiteSpace(porcelain))
             {
-                // Compute SHA256 of the full diff to get a reproducible fingerprint
-                // for the exact working-tree change set. Two restarts with the same
-                // uncommitted changes produce the same identifier.
                 var wtHash = ComputeWorkingTreeHash();
-                return new AppBuildInfo(wtHash is not null ? $"{hash}+{wtHash}" : $"{hash}+dirty");
+                return wtHash is not null ? $"{hash}+{wtHash}" : $"{hash}+dirty";
             }
 
-            return new AppBuildInfo(hash);
+            return hash;
         }
-        catch { /* git not available or not in a repo */ }
-
-        return new AppBuildInfo(GitCommitHash: null);
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
     /// Returns the first 8 hex chars of SHA256("git diff HEAD"), or null on failure.
-    /// Uses a 5-second timeout — diffs can be large.
+    /// Uses a 5-second timeout since diffs can be large.
     /// </summary>
     private static string? ComputeWorkingTreeHash()
     {
@@ -79,7 +126,6 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             using var proc = Process.Start(psi);
             if (proc is null) return null;
 
-            // Stream stdout directly into SHA256 to avoid buffering the full diff in memory.
             using var sha = SHA256.Create();
             var hashTask = Task.Run(() =>
             {
@@ -97,7 +143,10 @@ public sealed record AppBuildInfo(string? GitCommitHash)
 
             return Convert.ToHexString(hashTask.Result)[..8].ToLowerInvariant();
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -126,6 +175,9 @@ public sealed record AppBuildInfo(string? GitCommitHash)
             readTask.Wait(500);
             return readTask.IsCompletedSuccessfully ? readTask.Result.Trim().ToLowerInvariant() : null;
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 }
