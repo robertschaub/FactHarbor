@@ -1,9 +1,14 @@
 # Agent Rules Cleanup Plan
 
-**Status:** DRAFT
+**Status:** IMPLEMENTED AND ARCHIVED
 **Created:** 2026-03-17
-**Last Updated:** 2026-03-17
+**Last Updated:** 2026-04-04
 **Author Role:** Agents Supervisor
+**Execution Commits:** `6214aa14`, `bc36c51f`, `03e96944`, `dc9729e5`
+
+> Archive note: This file preserves the original 2026-03-17 planning snapshot.
+> Cleanup execution later completed in full. For the final outcome summary, see
+> `Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md`.
 
 ---
 
@@ -511,4 +516,9 @@ Write your report to Docs/WIP/Role_Learnings_Curation_Report_2026-03-17.md
 
 ## Decision Record
 
-*(Awaiting Captain review)*
+- 2026-03-17: Cleanup plan approved for execution after review updates recorded in the Review Log.
+- 2026-03-17: Phases 1, 2, and 5 executed in commit `6214aa14`.
+- 2026-03-17: Phase 3 executed in commit `bc36c51f`.
+- 2026-03-17: Phase 4 executed in commit `03e96944`.
+- 2026-03-17: Phase 6 executed in commit `dc9729e5`.
+- 2026-04-04: Archived as a historical planning document after documentation-currency review. The canonical current state is the live governance files, not this plan snapshot.

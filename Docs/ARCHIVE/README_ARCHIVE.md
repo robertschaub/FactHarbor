@@ -2,7 +2,27 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-03-24 (WIP Consolidation #8 + LiveCheck/Innosuisse knowledge reclassification)
+**Last Updated**: 2026-04-04 (WIP Consolidation #9)
+
+---
+
+### WIP Consolidation #9 (2026-04-04)
+
+**Description**: Archived the clearly completed late-March/early-April WIP plan set so the live WIP index no longer carries finished remap, direction-fix, fetch-hardening, and Wikipedia-completion work as active proposals.
+
+**WIP files archived** (9):
+
+| File | Reason |
+|------|--------|
+| `2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md` | Historical diagnosis for the seeded-evidence mapping defect; superseded by the shipped remap and promotion records |
+| `2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md` | Superseded by the implemented seeded-evidence LLM remap |
+| `2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md` | Superseded by Rev 2 and later implementation/promotion |
+| `2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md` | Proposal superseded by shipped default-on remap |
+| `2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` | Completed promotion record; no longer active WIP |
+| `2026-03-27_Direction_Validator_False_Positive_Investigation.md` | Review/implementation track complete; fix shipped in code |
+| `2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md` | Explicitly superseded by the 3-job `b8e6/8640/cd4501` review |
+| `2026-03-31_Source_Fetch_Failure_Reduction_Plan.md` | Implemented and now part of the runtime baseline |
+| `2026-04-03_Wikipedia_Supplementary_Completion_Plan.md` | Implemented and validated; active follow-on is now broader supplementary-provider integration only |
 
 ---
 

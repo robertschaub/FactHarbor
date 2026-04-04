@@ -4,7 +4,14 @@
 **Role:** Agents Supervisor
 **Agent/Tool:** Claude Code (Opus 4.6)
 **Phase:** 6 of Agent Rules Cleanup Plan
-**Status:** AUDIT ONLY — awaiting Captain review before execution
+**Status:** EXECUTED AND ARCHIVED
+**Execution Commit:** `dc9729e5`
+
+> Archive note: This file preserves the original 2026-03-17 audit and recommendation set.
+> The cleanup was later executed with a small delta: 20 tips were promoted across
+> 7 role files, 8 entries were archived/removed, and 3 organizational fixes were
+> applied. One additional governance tip was promoted into `Agents_Supervisor.md`
+> beyond the original 19-promotion recommendation.
 
 ---
 
@@ -15,7 +22,7 @@ Cross-referenced against current codebase state, AGENTS.md rules, and role defin
 
 | Action | Count | Details |
 |--------|-------|---------|
-| **Promote** to role files | 19 | Universal best practices → new "Tips" sections |
+| **Promote** to role files | 19 recommended / 20 executed | The audit recommended 19 promotions; execution added 1 more governance tip in `Agents_Supervisor.md` |
 | **Archive/Remove** | 8 | Stale references, superseded, redundant, or too generic |
 | **Keep as-is** | 19 | Still relevant but situational |
 | **Organizational fix** | 3 | Misplaced under wrong role section |
@@ -281,7 +288,7 @@ Three entries under the **DevOps Expert** section header have role tags of **"Te
 
 ---
 
-## Execution Plan (if Captain approves)
+## Execution Plan (historical recommendation)
 
 1. **Add "Tips from Role Learnings" sections** to 6 role files: Lead_Architect, LLM_Expert, Senior_Developer, Code_Reviewer, Security_Expert, DevOps_Expert
 2. **Remove 8 archived entries** from Role_Learnings.md
@@ -289,6 +296,9 @@ Three entries under the **DevOps Expert** section header have role tags of **"Te
 4. **Update LLM-6** to note stale call sites (orchestrated.ts removed)
 5. **Update the Captain Review Log** at the bottom of Role_Learnings.md
 6. **Commit** with: `chore(agents): curate Role_Learnings — promote 19, archive 8, fix 3 misplaced`
+
+**Execution outcome:** Implemented later in `dc9729e5` as
+`chore(agents): curate Role_Learnings — promote 20 to role files, archive 8, fix 3 misplaced`.
 
 Estimated effort: ~45 minutes for a single agent.
 

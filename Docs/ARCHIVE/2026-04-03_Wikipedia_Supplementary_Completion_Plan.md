@@ -1,7 +1,7 @@
 # Wikipedia Supplementary Completion Plan
 
 **Date:** 2026-04-03  
-**Status:** Proposed narrow implementation plan  
+**Status:** Implemented and validated — all 5 scenarios passed (2026-04-04)  
 **Scope:** Complete the already-shipped Wikipedia provider so it can participate meaningfully in the live retrieval path, while remaining fully UCM-controlled and easy to disable.
 
 ---

@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-27
 **Role:** Senior Developer (investigation), Lead Architect (review pending)
-**Status:** REVIEW-READY
+**Status:** PARTIALLY DONE — Option A is shipped; Options B/C remain deferred
 **Triggered by:** Two internet outages (1-2 hours each) on 2026-03-27 that caused all running/queued analysis jobs to fail with `analysis_generation_failed`
 
 ---

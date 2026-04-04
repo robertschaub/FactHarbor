@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-27
 **Role:** Lead Architect
-**Status:** REVIEW-READY
+**Status:** PARTIALLY DONE — Fix 1 + Fix 2 shipped; Fix 3 remains deferred
 **Job:** `efc5e66fa1f4452298de8b00eeab6d29` (MIXED 56/51)
 **Input:** "The court proceedings against Jair Bolsonaro for attempted coup d'etat complied with Brazilian procedural law and constitutional requirements, and the resulting verdicts were fair."
 **Git commit:** `1ff092cd`

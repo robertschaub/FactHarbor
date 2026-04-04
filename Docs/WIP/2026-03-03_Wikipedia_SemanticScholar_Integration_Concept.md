@@ -39,27 +39,28 @@ Already implemented:
 - Wikipedia enable/disable switch in UCM: `search.providers.wikipedia.enabled`
 - Wikipedia configured language in UCM: `search.providers.wikipedia.language`
 
-Important current behavior:
+Important current behavior (updated 2026-04-04):
 
 - Wikipedia is treated as a supplementary provider, not a primary provider
-- in `auto` mode, supplementary providers currently run only when primary providers return **zero** results
-- therefore, enabling Wikipedia today does **not** mean it contributes to most normal successful runs
-- Wikipedia currently uses a configured language value rather than detected claim/input language
+- Wikipedia is **enabled by default** (`search.providers.wikipedia.enabled = true`)
+- supplementary providers are controlled by `supplementaryProviders.mode` (UCM):
+  - `fallback_only` — supplementary providers run only when primary providers return zero results
+  - `always_if_enabled` **(current default)** — supplementary providers run bounded alongside primary search
+- `supplementaryProviders.maxResultsPerProvider` (default: 3) caps each supplementary provider's contribution
+- Wikipedia now threads detected claim language (preferred) → configured language → `”en”` for subdomain selection
+- these orchestration changes were validated on 5 scenarios (2026-04-04): see `Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`
 
-So the open gap is not “Wikipedia support exists or not”. The open gap is:
+So the remaining open gap is no longer “when supplementary providers should run” or “language routing”. The remaining gap is:
 
-- when supplementary providers should run
-- how their queries should be shaped
-- how multilingual claims should choose Wikipedia language editions
-- how supplementary evidence should be blended into the normal research flow
+- how provider-specific queries should be shaped (Wikipedia vs web search query style)
+- how supplementary evidence should be weighted or blended differently from primary evidence
+- deeper Semantic Scholar and Google Fact Check pipeline integration
 
 Still future-facing:
 
 - provider-specific query variants
 - better use of source-type differences inside Stage 2
 - deeper evidence extraction from supplementary providers
-- a policy for running supplementary providers even when primary search already succeeded
-- multilingual Wikipedia routing beyond a static configured language
 
 ### 2.1 Provider-role classification
 

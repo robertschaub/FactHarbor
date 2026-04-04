@@ -183,7 +183,7 @@ Not in the first rollout. The repair prompt at [claimboundary.prompt.md:1237-129
 
 ### Step 3: Re-characterize direction-validator false positives (measurement)
 
-**What:** After Step 2 ships, run 10 jobs across Bolsonaro, Homeopathy, Plastik families. Count `verdict_integrity_failure` occurrences. If the rate drops materially (from 6.25% to <2%), the direction-validator false-positive proposal (`2026-03-27_Direction_Validator_False_Positive_Investigation.md`) can be deferred. If it remains above 3%, reopen that proposal with clean data.
+**What:** After Step 2 ships, run 10 jobs across Bolsonaro, Homeopathy, Plastik families. Count `verdict_integrity_failure` occurrences. If the rate drops materially (from 6.25% to <2%), the direction-validator false-positive proposal (`Docs/ARCHIVE/2026-03-27_Direction_Validator_False_Positive_Investigation.md`) can be deferred. If it remains above 3%, reopen that proposal with clean data.
 
 **Classification:** Measurement, no code change.
 **Scope:** $5-10 in LLM costs.
@@ -209,4 +209,4 @@ The fix is narrow (prompt schema + parser, with fallback to current behavior) an
 
 **Recommended next task:** Implement reconciliation citation-carriage fix (warning-state bug fix + VERDICT_RECONCILIATION schema + parser update)
 
-**Why this first:** The citation-carriage gap corrupts the input to every downstream validation step. Direction validation, direction repair, and safe-downgrade all operate on stale advocate arrays that no longer match the reconciled reasoning. Fixing the arrays at the source eliminates the corruption for all downstream consumers in a single change. The warning-state bug fix is trivial and should ship alongside. Once both are in, a 10-job measurement round will determine whether the direction-validator false-positive rate still justifies the proposals in `2026-03-27_Direction_Validator_False_Positive_Investigation.md`, or whether citation-carriage was the dominant cause all along.
+**Why this first:** The citation-carriage gap corrupts the input to every downstream validation step. Direction validation, direction repair, and safe-downgrade all operate on stale advocate arrays that no longer match the reconciled reasoning. Fixing the arrays at the source eliminates the corruption for all downstream consumers in a single change. The warning-state bug fix is trivial and should ship alongside. Once both are in, a 10-job measurement round will determine whether the direction-validator false-positive rate still justifies the proposals in `Docs/ARCHIVE/2026-03-27_Direction_Validator_False_Positive_Investigation.md`, or whether citation-carriage was the dominant cause all along.
