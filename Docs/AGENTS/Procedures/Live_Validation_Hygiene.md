@@ -78,8 +78,9 @@ Examples:
 - job list/detail responses
 
 Important:
-- `GitCommitHash` on jobs is resolved by the API once at startup
-- if the API was not restarted, new jobs can still carry the old startup hash
+- `GitCommitHash` on new jobs is now resolved when the job row is created
+- this means fresh local commits can appear on newly created jobs without an API restart
+- this does **not** mean API runtime code changes are live without restart; it only affects provenance stamping
 
 ---
 
