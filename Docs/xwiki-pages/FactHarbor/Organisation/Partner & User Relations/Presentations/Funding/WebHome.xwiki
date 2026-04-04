@@ -1,20 +1,8 @@
-= Support FactHarbor - Why and How? =
+= Support FactHarbor — Why and How? =
 
 {{info}}
-**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026
+**Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026 (Updated: 4 April 2026)
 {{/info}}
-
-
-== Document Purpose ==
-
-(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
-(((
-**Inspect:**
-* What FactHarbor is and what it does
-* Costs and resource needs
-**Discuss:**
-* How to support FactHarbor — funding, contributions, or partnerships
-)))
 
 == FactHarbor Organisation ==
 
@@ -174,39 +162,35 @@ The system is in **Alpha** and under active development.
 
 ----
 
-== Funding Options ==
+== How You Can Support FactHarbor ==
+
+=== Financial Support ===
 
 |=Instrument|=Typical Amount|=Who
-|**Foundation grants**|CHF 20K–300K|Mercator, Ernst Göhner, Migros Kulturprozent, Hasler Foundation — fund specific development or research tracks
+|**Foundation grants**|CHF 20K-300K|Mercator, Ernst Goehner, Migros Kulturprozent, Hasler Foundation — fund specific development or research tracks
 |**Innosuisse Innovation Cheque**|CHF 15,000 (100% funded)|Feasibility study with academic partner — no co-funding required
-|**Innosuisse Innovation Project**|CHF 100K–500K|Joint R&D with university partner (40–60% cost split, in-kind eligible)
-|**BRIDGE Proof of Concept**|Up to CHF 130K/year|Academic-led commercialization — researcher-initiated
-|**International grants**|EUR 25K–300K|IFCN Global Fact Check Fund, Google News Initiative, European Media and Information Fund
-|**Open-source infrastructure**|EUR 5K–1M|NLNet Foundation, Sovereign Tech Fund, Mozilla Democracy x AI, Prototype Fund
-|**Infrastructure sponsorship**|Varies|Cover AI or hosting costs (~$0.20–0.55 per analysis) — directly extends the number of analyses we can run
+|**Innosuisse Innovation Project**|CHF 100K-500K|Joint R&D with university partner (40-60% cost split, in-kind eligible)
+|**Open-source infrastructure grants**|EUR 5K-1M|NLNet Foundation, Mozilla Democracy x AI, Prototype Fund
+|**International grants**|EUR 25K-300K|IFCN Global Fact Check Fund, European Media and Information Fund
+|**Infrastructure sponsorship**|Varies|Cover AI or hosting costs (~$0.20-0.55 per analysis)
 |**Individual donations**|Any amount|Direct financial contribution to development and operations
 
-//Full prioritized list of 22+ funding sources: [[Cooperation Opportunities — Funding Section>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome||anchor="H3.FUNDINGOPPORTUNITIES28UpdatedApril202629"]]//
+=== Non-Financial Support ===
+
+|=Contribution|=What It Means|=Who Could Help
+|**Beta testing and feedback**|Early access to new features; feedback on verdict quality and usability|Journalists, fact-checkers, researchers
+|**Domain expertise**|Fact-checking methodology advice, legal review, LLM evaluation|Practicing fact-checkers, media lawyers, AI researchers
+|**Code contributions**|Bug fixes, features, performance optimization on the open-source codebase|Developers, university students (thesis projects)
+|**Academic introductions**|Connect FactHarbor to a Swiss NLP, information retrieval, or computational journalism lab|Academics, university contacts
+|**Practitioner introductions**|Arrange a short conversation with a fact-checker, verification lead, or newsroom innovation contact|Anyone in the DACH media ecosystem
+|**Advocacy and outreach**|Share FactHarbor with journalists, educators, and researchers|Anyone who sees the value
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
 **Every franc goes to the mission.** No profit distribution — surplus is reinvested. All funders above CHF 5,000 will be disclosed.
 )))
 
-----
-
-== Contribution Options ==
-
-Non-financial support is equally valuable — especially at this stage:
-
-|=Contribution|=What It Means|=Who Could Help
-|**Beta testing & feedback**|Early access to new features; feedback on verdict quality and usability|Journalists, fact-checkers, researchers
-|**Domain expertise**|Fact-checking methodology advice, legal review, LLM evaluation|Practicing fact-checkers, media lawyers, AI researchers
-|**Code contributions**|Bug fixes, features, performance optimization on the open-source codebase|Developers, university students (thesis projects)
-|**Translation & localization**|Documentation, UI, and prompt translation (DE/FR/IT/EN)|Multilingual contributors
-|**Data contributions**|Multilingual test claims, curated evidence sources, evaluation datasets|Researchers, journalism schools
-|**Advocacy & outreach**|Share FactHarbor with journalists, educators, and researchers|Anyone who sees the value
-|**Advisory circle**|Lightweight guidance (2–4 hours/month) on strategy, methodology, or partnerships|Domain experts, media professionals
+//Detailed funding routes and strategy: [[Cooperation Opportunities>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome]]//
 
 ----
 
