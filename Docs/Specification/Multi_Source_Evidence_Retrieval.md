@@ -1,7 +1,8 @@
 # Multi-Source Evidence Retrieval — Specification
 
 **Date:** 2026-02-23
-**Status:** Proposed (research complete, implementation not started)
+**Last Updated:** 2026-04-04
+**Status:** Partially implemented. Provider-layer support for Wikipedia, Semantic Scholar, and Google Fact Check already exists in the codebase; Wikipedia supplementary completion is implemented and validated. Remaining work is deeper pipeline-aware integration and any future promotion of additional supplementary providers.
 **Priority:** High — addresses the #1 quality bottleneck (evidence pool asymmetry, C13 = 8/10 pairs)
 **Cross-references:** [Executive Summary](../Knowledge/EXECUTIVE_SUMMARY.md) | [Factiverse Analysis](../Knowledge/Factiverse_Lessons_for_FactHarbor.md) | [Global Landscape](../Knowledge/Global_FactChecking_Landscape_2026.md) | [Research Ecosystem](../Knowledge/Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md)
 
@@ -13,13 +14,21 @@ FactHarbor currently relies on a single evidence channel: **web search** (Google
 
 Factiverse's published architecture demonstrates that multi-source retrieval is both achievable and effective: their LiveFC pipeline queries **6 sources in parallel** (Google, Bing, You.com, Wikipedia, Semantic Scholar, FactiSearch). This pattern directly addresses evidence asymmetry by diversifying the information supply.
 
-**Goal:** Add 3 supplementary evidence sources — Wikipedia, Semantic Scholar, Google Fact Check Tools API — to the existing search provider architecture, with zero cost increase and minimal implementation effort.
+**Original goal:** Add 3 supplementary evidence sources — Wikipedia, Semantic Scholar, Google Fact Check Tools API — to the existing search provider architecture, with zero cost increase and minimal implementation effort.
+
+**Current April 2026 posture:**
+
+- provider modules for Wikipedia, Semantic Scholar, and Google Fact Check are already implemented
+- Wikipedia is now enabled by default as a bounded supplementary provider
+- supplementary-provider execution is UCM-controlled via `supplementaryProviders.mode`
+- Semantic Scholar and Google Fact Check remain wired but disabled by default
+- the remaining open work is no longer basic provider plumbing; it is deeper pipeline-aware integration, provider-aware query shaping, and any future promotion decisions
 
 ---
 
 ## 2. Architecture Overview
 
-### 2.1 Current State (Single Channel)
+### 2.1 Historical Baseline (Single Channel)
 
 ```mermaid
 flowchart LR
@@ -30,7 +39,7 @@ flowchart LR
     FE --> EI["EvidenceItems"]
 ```
 
-### 2.2 Target State (Multi-Source)
+### 2.2 Expanded Multi-Source Target State
 
 ```mermaid
 flowchart TB
@@ -82,7 +91,7 @@ flowchart TB
     style NewSources fill:#e8f5e9,stroke:#4caf50
 ```
 
-All new sources feed into the **existing pipeline** at the same point as web search results. No changes needed downstream — relevance filtering, evidence extraction, probative value assessment, and source reliability scoring already handle diverse content.
+All new sources feed into the **existing pipeline** at the same point as web search results. The provider-layer and bounded supplementary orchestration already exist. Remaining work is deeper provider-aware retrieval and evidence-treatment logic, not basic dispatcher plumbing.
 
 ---
 
@@ -292,49 +301,53 @@ flowchart LR
 The current search architecture (`apps/web/src/lib/web-search.ts`) already supports multi-provider orchestration:
 
 - **Provider contract:** `Promise<WebSearchResult[]>` with type `{ url, title, snippet }`
-- **AUTO mode:** Priority-based provider selection with fallback (lines 192-310)
+- **AUTO mode:** Priority-based provider selection with fallback/accumulation plus bounded supplementary-provider execution
 - **Circuit breaker:** Per-provider health tracking (automatic disable on failures)
 - **Cache:** SQLite-based, provider-independent (cache key = query hash)
 - **Rate limiting:** Per-provider timeout configuration via UCM
 
-Adding new sources requires only:
-1. A new provider module (`search-wikipedia.ts`, `search-semantic-scholar.ts`, `search-factcheck.ts`)
-2. Registration in the dispatcher (`web-search.ts`)
-3. UCM config entries (`config-schemas.ts`)
+As of April 2026, the provider-layer additions are already shipped:
+1. provider modules exist: `search-wikipedia.ts`, `search-semanticscholar.ts`, `search-factcheck-api.ts`
+2. dispatcher registration exists in `web-search.ts`
+3. UCM config entries and defaults exist in `config-schemas.ts` / `search.default.json`
+4. bounded supplementary-provider orchestration exists via `supplementaryProviders.mode`
 
-No refactoring of existing code.
+The remaining work is higher-level integration work, not basic source registration.
 
 ### 5.2 Implementation Steps
 
-| Step | Source | Effort | Files |
-|------|--------|--------|-------|
-| **1** | Wikipedia provider | ~2 hrs | `search-wikipedia.ts` (new), `web-search.ts` (+10 lines), `config-schemas.ts` (+5 lines), `.env.example` |
-| **2** | Semantic Scholar provider | ~2 hrs | `search-semantic-scholar.ts` (new), `web-search.ts` (+10 lines), `config-schemas.ts` (+5 lines), `.env.example` |
-| **3** | Google Fact Check Tools provider | ~1 hr | `search-factcheck.ts` (new), `web-search.ts` (+10 lines), `config-schemas.ts` (+5 lines), `.env.example` |
-| **4** | Tests + circuit breaker tuning | ~2 hrs | `test/unit/lib/search-*.test.ts` (3 new) |
-| **5** | UCM defaults + documentation | ~1 hr | `configs/search.default.json`, docs update |
-| **Total** | | **~8 hours** | 6 new files, 3 modified files |
+| Phase | Status | Scope |
+|------|--------|-------|
+| **1** | DONE | Provider modules implemented for Wikipedia, Semantic Scholar, and Google Fact Check |
+| **2** | DONE | Dispatcher registration, UCM schema/default wiring, and provider tests |
+| **3** | DONE | Wikipedia supplementary completion: bounded `always_if_enabled` mode, detected-language threading, Admin/UCM control |
+| **4** | OPEN | Deeper Semantic Scholar pipeline integration (beyond index-page discovery) |
+| **5** | OPEN | Deeper Google Fact Check integration (beyond bounded discovery results) |
+| **6** | OPEN | Provider-aware query generation / blending / weighting decisions |
 
 ### 5.3 Provider Priority Configuration (UCM)
 
 ```json
 {
   "providers": {
-    "googleCse":       { "enabled": true,  "priority": 1, "category": "web" },
-    "serpapi":         { "enabled": false, "priority": 2, "category": "web" },
-    "brave":           { "enabled": false, "priority": 2, "category": "web" },
-    "wikipedia":       { "enabled": true,  "priority": 1, "category": "encyclopedia" },
-    "semanticScholar": { "enabled": true,  "priority": 2, "category": "academic" },
-    "factCheck":       { "enabled": true,  "priority": 3, "category": "factcheck" }
+    "googleCse":       { "enabled": true,  "priority": 1 },
+    "serper":          { "enabled": true,  "priority": 2 },
+    "wikipedia":       { "enabled": true,  "priority": 3, "language": "en" },
+    "semanticScholar": { "enabled": false, "priority": 3 },
+    "googleFactCheck": { "enabled": false, "priority": 4 }
+  },
+  "supplementaryProviders": {
+    "mode": "always_if_enabled",
+    "maxResultsPerProvider": 3
   }
 }
 ```
 
-**Category field (new):** Allows the pipeline to ensure source diversity — e.g., "require at least 2 categories in evidence pool" rather than just "require N results."
+This reflects the current bounded-default supplementary posture more accurately than the original proposed category-based example.
 
-### 5.4 Provider Module Template
+### 5.4 Provider Module Pattern
 
-Each new provider follows the same pattern (~100-130 lines):
+Each shipped provider follows the same general pattern:
 
 ```typescript
 // apps/web/src/lib/search-wikipedia.ts
@@ -352,11 +365,11 @@ export async function searchWikipedia(
 }
 ```
 
-### 5.5 Recommended Implementation Order
+### 5.5 Recommended Remaining Integration Order
 
-1. **Google Fact Check Tools** — smallest effort, immediate value (existing verdicts are high-quality evidence), validates the multi-source pipeline end-to-end
-2. **Wikipedia** — broadest coverage, no rate limit concerns, establishes factual baselines for claims
-3. **Semantic Scholar** — highest value for scientific/medical claims, but needs commercial use clarification first
+1. **Wikipedia supplementary completion** — DONE
+2. **Semantic Scholar deeper integration** — optional future work, especially for research-heavy claims
+3. **Google Fact Check deeper integration** — optional future work where prior public fact-check coverage is likely
 
 ---
 

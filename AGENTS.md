@@ -219,6 +219,8 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 | Test: input neutrality | `npm -w apps/web run test:neutrality` — full analysis x2 per pair |
 | Test: CB integration | `npm -w apps/web run test:cb-integration` — ClaimAssessmentBoundary end-to-end (3 scenarios) |
 | Lint | `npm run lint` — placeholder (not yet configured) |
+| Validation: run batch | `npm run validate:run -- <batchLabel>` — submits 16 families, writes JSON summaries to `test-output/validation/` |
+| Validation: compare | `npm run validate:compare -- <oldDir> <newDir>` — regression detection with markdown table |
 | **Publish docs (gh-pages)** | `git push` to `main` — CI deploys automatically |
 
 > **⚠ AGENTS: Never push to the `gh-pages` branch directly.** CI owns gh-pages and injects `DOCS_ANALYTICS_URL`. Manual pushes overwrite the CI build and break analytics. To publish: push to `main`. To re-trigger CI: `gh workflow run "Deploy Docs to GitHub Pages" --ref main`.
@@ -260,6 +262,7 @@ Preserve existing syntax when editing. Full rules: `Docs/AGENTS/GlobalMasterKnow
 - Avoid destructive git commands unless explicitly asked
 - Do not overwrite `apps/api/factharbor.db` unless asked
 - Platform is Windows. Use PowerShell-compatible commands.
+- **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, `git push --force`, `git clean -f`; no `factharbor.db` writes; no expensive test runs. Main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
 
 ---
 

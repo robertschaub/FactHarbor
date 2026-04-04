@@ -17,7 +17,7 @@ Two apps + one tool:
 2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
 3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
 
-> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 1079 tests passing (53 files). See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
+> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 1501 tests passing (74 files). See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
 
 ## Critical terminology (always follow — see AGENTS.md for full details)
 
@@ -40,6 +40,7 @@ Two apps + one tool:
 - Web: `cd apps/web && npm run dev` (port 3000)
 - API: `cd apps/api && dotnet run` (port 5000)
 - Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
+- Validation: `npm run validate:run -- <batchLabel>` (runs 16 families, writes JSON to `test-output/validation/`). Compare: `npm run validate:compare -- <oldDir> <newDir>`.
 - **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
 
 ## Safety
@@ -48,6 +49,7 @@ Two apps + one tool:
 - No destructive git commands unless explicitly asked.
 - Do not overwrite `apps/api/factharbor.db` unless asked.
 - Platform: Windows. Use PowerShell-compatible commands.
+- **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, no `git push --force`, no `factharbor.db` writes, no expensive test runs. These are main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
 
 ## Roles & Multi-Agent Workflow
 

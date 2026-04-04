@@ -502,6 +502,51 @@ Practical consequence for the active plan:
 - do **not** treat differing visible execution hashes alone as proof that analyzer code changed
 - for quality validation, the missing piece is an **analysis-scoped provenance key** (or a stricter validation environment where no unrelated repo commits/dirty edits occur during the batch)
 
+### 5.9 Same-commit serial local validation gate finally completed
+
+After the provenance/live-hash fix, a fresh serial local batch was rerun on one stable build:
+
+- live API/web build during batch: `a405c20fe605761e3166b8b75037aa909b235794+17524e1c`
+- all three jobs below were created **and executed** on that same build
+
+Results:
+
+- local **Earth DE** `e3d6f405d2c345d58814b15c996e5874`
+  - `LEANING-TRUE 70 / 80`
+  - boundary evidence counts: `4 / 3 / 3 / 4 / 20 / 8`
+  - warnings: fetch degradation only, **no** `verdict_grounding_issue`
+
+- local **Bolsonaro EN** `b417c29833794d738c3f3103d7eec32b`
+  - `LEANING-TRUE 69 / 64`
+  - boundary evidence counts: `8 / 3 / 11 / 4 / 41 / 16`
+  - warnings include:
+    - `verdict_grounding_issue`
+    - `llm_tpm_guard_fallback`
+    - fetch/applicability noise
+
+- local **Plastik DE** `3f97c7e2d6e741479c51135de279e766`
+  - `LEANING-FALSE 39 / 67`
+  - boundary evidence counts: `9 / 11 / 16 / 13 / 8 / 10`
+  - warnings include:
+    - `verdict_grounding_issue`
+    - fetch degradation noise
+
+What this changes:
+
+- the local validation gate is now **satisfied**
+- on this build, local runs do **not** reproduce the earlier catastrophic mega-boundary pattern
+  - Bolsonaro still has a dominant boundary (`41`) but it is no longer the prior `65+` single-boundary collapse
+  - Plastik is comparatively well distributed on this run
+- `verdict_grounding_issue` now stands out more clearly as an **independent surviving defect**
+  - it reproduces on Bolsonaro and Plastik
+  - it does **not** reproduce on the stable control
+
+Interpretation:
+
+- Stage 2/3 concentration is still a real problem in deployed evidence and in some historical local runs
+- but the latest same-commit local gate no longer justifies treating concentration as the first immediate coding target on local evidence alone
+- the cleanly reproduced local issue on the current build is now **verdict grounding integrity**
+
 ---
 
 ## 6. What Not To Do
@@ -517,17 +562,17 @@ Practical consequence for the active plan:
 
 ## 7. Final Recommendation
 
-**Recommendation:** keep the next plan centered on **controlled same-commit validation first, then two parallel tracks: Stage 2/3 retrieval-boundary stabilization as the primary root-cause track, and narrow verdict-grounding containment as the independent containment track**.
+**Updated recommendation:** the local same-commit validation gate is now complete, so the next work should shift to **narrow verdict-grounding containment first**, while keeping **Stage 2/3 retrieval-boundary stabilization** as the next comparative track driven mainly by deployed evidence and cross-environment reruns.
 
-The debate does **not** support a broad Stage-4-first program. It supports:
+The current evidence does **not** support a broad Stage-4-first program. It supports:
 
 - grounded validation discipline before implementation
-- Stage 2/3 as the main root-cause workstream
-- narrow grounding containment in parallel once the validation gate is satisfied
+- verdict grounding containment as the most clearly reproduced current defect
+- Stage 2/3 as the next analytical-quality workstream, but no longer as an unvalidated immediate local fix trigger
 
 Short version:
 
-- **Validation gate:** same-commit serial validation with cache/quota control
-- **Root-cause track:** Stage 2/3
-- **Containment track:** verdict grounding
-- **Evidence source for prioritization right now:** deployed jobs first, local jobs second until local execution stability is restored
+- **Validation gate:** satisfied on `a405c20f...+17524e1c`
+- **Immediate next fix:** verdict grounding containment
+- **Next comparative quality track:** Stage 2/3 retrieval-boundary stabilization
+- **Evidence source for prioritization right now:** deployed jobs plus the now-valid same-commit local batch

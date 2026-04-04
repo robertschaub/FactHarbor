@@ -9,7 +9,7 @@ The system has successfully transitioned to the **ClaimAssessmentBoundary (CB)**
 === Completed Milestones (Alpha Entry) ===
 * **CB Pipeline Implementation:** 5-stage sequential flow operational.
 * **Evidence-Emergent Boundaries:** Manual "AnalysisContext" framing removed.
-* **Multi-Provider Search:** Brave, Google, and Bing fallback logic implemented.
+* **Multi-Provider Search:** Google CSE / Serper primary search plus bounded supplementary providers implemented. Wikipedia is default-on supplementary; Semantic Scholar and Google Fact Check remain optional.
 * **Source Reliability v2:** LLM-powered reliability assessment instead of keyword-based.
 * **Quality Gates:** Gate 1 (Fidelity) and Gate 4 (Confidence) enforced.
 
@@ -29,6 +29,14 @@ The following features are prioritized for the next major milestone.
 === 3. Performance & Cost Optimization ===
 * **Haiku 4.5 Tiering:** Moving non-critical classification tasks to lighter models.
 * **Caching:** Aggressive search and LLM result caching.
+
+=== 4. Source Provenance Tracking (Planned) ===
+* **Goal:** Trace evidence back to its original creator (person/organization) to detect single-source amplification, propaganda patterns, and attribution washing.
+* **Phase 1:** Extract structured provenance fields (##originalCreator##, ##originalCreatorType##, ##attributionType##, ##citedSourceUrl##) during Stage 2 evidence extraction. Observational telemetry only — no verdict integration.
+* **Phase 1.5:** Surface high-confidence provenance data to the verdict challenger and reconciler through existing ##sourcePortfolioByClaim## and ##independence_concern## mechanisms.
+* **Phase 2:** LLM-based entity resolution and convergence analysis per ##ClaimAssessmentBoundary##.
+* **Status:** Design complete (v2, post-GPT review). Implementation parked — reopen after current Alpha validation gate closes.
+* **Design document:** ##Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md##
 
 == Success Criteria (v1.0 Release) ==
 
