@@ -1,5 +1,23 @@
 # Agent Outputs Log
 ---
+### 2026-04-04 | Lead Architect | Claude Code (Opus 4.6) | Source Provenance Tracking Design
+**Task:** Design a system to trace evidence back to original creators for misinformation/propaganda detection. Internal 4-perspective debate + GPT review + consolidation.
+**Files touched:** `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md`, `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md`, `Docs/STATUS/Backlog.md` (PROV-1), `Docs/xwiki-pages/.../Alpha Roadmap/WebHome.xwiki`, `Docs/xwiki-pages/.../Quality and Trust/WebHome.xwiki`
+**Key decisions:** (1) Structured `originalCreator` object (not single string) with `affiliatedOrganization` and `role`. (2) `press_release` restored as own `attributionType` (5 values). (3) Phase 2a (deterministic convergence) removed — violates LLM Intelligence mandate. (4) New Phase 1.5 inserted: integrate through existing `sourcePortfolioByClaim` + `independence_concern` mechanisms instead of building parallel system. (5) No separate `provenanceConfidence` — reuse existing `extractionConfidence`. (6) `declaredInterest` field removed (ungroundable). (7) Implementation parked.
+**Open items:** Implementation not started. Design is v2 (post-GPT review). PROV-1 in Backlog as low urgency / high importance deferred track.
+**Warnings:** (1) Existing `identifiedEntity` in SR calibration is always `null` at runtime — do not assume it provides org-level data. (2) `derivativeFactor` must not be extended with provenance — it's intentionally narrow. (3) Haiku accuracy for attribution distinction (firsthand vs. quoted) is unproven — Phase 1 must include evaluation set before proceeding.
+**For next agent:** Read `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` for the full design. Start with Phase 1 (section 4, "Phase 1 — Provenance Extraction + Telemetry"). Key integration points: `research-extraction-stage.ts` (extraction schema), `verdict-stage.ts:214` (`buildSourcePortfolioByClaim`), `types.ts:998` (`independence_concern` challenge type). Design evaluation set first (section "Evaluation Set"), then implement schema + prompt changes.
+**Learnings:** No
+---
+### 2026-04-03 | Senior Developer | Claude Code (Opus) | Wikipedia Supplementary Completion
+**Task:** Complete Wikipedia provider orchestration so it participates meaningfully in retrieval while remaining UCM-controlled and bounded.
+**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/search.default.json`, `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-wikipedia.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/app/admin/config/page.tsx`, `apps/web/test/unit/lib/web-search.test.ts`, `apps/web/test/unit/lib/search-wikipedia.test.ts`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`
+**Key decisions:** (1) Added generic `supplementaryProviders` UCM block (`mode` + `maxResultsPerProvider`) — applies to all supplementary providers, not Wikipedia-specific. (2) Production default is `always_if_enabled` with Wikipedia enabled — justified by free provider, bounded contribution (max 3), easy rollback. (3) Wikipedia language fallback chain: `detectedLanguage` > config `language` > `"en"` — structural plumbing, no heuristic inference. (4) `detectedLanguage` threaded from pipeline call sites into `WebSearchOptions`, not inferred inside the provider.
+**Open items:** None — all 5 validation scenarios passed (2026-04-04). V1 German: 4 EI from `de.wikipedia.org`. V2 English: 6 EI from `en.wikipedia.org`. V3 Apollo control: 25 Wiki EI, TRUE/96%/93. V4 kill switch: 0 Wiki calls confirmed. V5 fallback_only: 0 Wiki calls when primaries succeed. No `analysis_generation_failed`, no flooding, verdict direction stable across all German variants (MOSTLY-TRUE).
+**Warnings:** Existing production `config.db` retains old values — switching to `always_if_enabled` requires UCM Admin UI update or fresh DB seed. JSON/TS defaults only seed new databases.
+**For next agent:** Feature is complete. If deeper Wikipedia-specific behavior is desired (reference extraction, provider-specific query variants), see `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` §2-3.
+**Learnings:** No
+---
 ### 2026-04-02 | Lead Architect | Codex (GPT-5) | Stage-4 Payload Simplification
 **Task:** Implement the architect-approved Stage-4 payload simplification by removing the default duplicated `JSON.stringify(input)` user payload while preserving explicit `userMessage` overrides.
 **Files touched:** `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
@@ -7,6 +25,24 @@
 **Open items:** Live validation is still required on German Plastik x3, English Plastik x1, and one German non-Plastik control to confirm advocate prompt-token reduction and disappearance of `analysis_generation_failed` on the heavy family.
 **Warnings:** The broader Plastik family still has an upstream research/boundary variability issue separate from the Stage-4 parse-failure track. This patch only targets the Stage-4 size/duplication problem.
 **For next agent:** Verify advocate `promptTokens`, `schemaCompliant`, retry firing, and final verdict/confidence on the live reruns. If parse failures persist after this simplification, the next investigation should focus on remaining Stage-4 output-shape failure artifacts rather than Stage 1.
+**Learnings:** No
+---
+### 2026-04-03 | Product Strategist | Codex (GPT-5) | Cooperation Opportunities Strategy Rewrite
+**Task:** Review, shorten, and update the cooperation strategy page using adjacent xWiki docs, `Docs/Knowledge` research, web verification, and parallel sub-agent critique.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the 1,100+ line report-style page with a 91-line evergreen decision page focused on readiness, top 90-day priorities, and funding routes by stage. Elevated the most defensible lanes: ZHAW/Innosuisse, one scoped research thesis, dpa, EBU/SRF, Full Fact, and GlobalFact 2026. Moved weaker or stale items into later-stage/watchlist framing and removed the stale funding anchor dependency from the funding presentation.
+**Open items:** If desired, the next documentation pass could create a separate one-pager or outreach pack that mirrors the new priority order. Some linked external program statuses will need periodic refresh as 2026 calls change.
+**Warnings:** Funding/program timing in the rewritten page is date-sensitive as of 2026-04-03. Media Forward Fund, NLNet, Google.org, and similar routes should be rechecked before any live application or outreach decision.
+**For next agent:** Treat `Cooperation Opportunities` as the decision page and keep detailed partner/funder background in the funding presentation, academic cooperation presentation, and `Docs/Knowledge`. If new partner evidence arrives, update the short tables and sequence rather than re-expanding the page into a landscape report.
+**Learnings:** No
+---
+### 2026-04-04 | Product Strategist | Codex (GPT-5) | Funding Presentation Rewrite
+**Task:** Review, shorten, and update the outward-facing funding/support presentation using adjacent xWiki docs, `Docs/Knowledge`, current status, and current funding/program validation.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the long product explainer + generic grant catalog with a shorter support page centered on why support matters now, the current Alpha posture, the April-June 2026 priorities, and the specific support types that fit the project today. Kept one UI image, retained independence safeguards, aligned the page with the updated cooperation strategy, and made the Swiss research/Innosuisse lane the clearest near-term path instead of treating all funding routes as equally actionable.
+**Open items:** If desired, the next pass could create a matching external one-pager or donor/partner outreach email set that reuses the same priority framing. Current external program timing will need periodic refresh.
+**Warnings:** The page is intentionally outward-facing and therefore does not surface some internal partner-status details. Any live funding decision should still be cross-checked against the detailed `Cooperation Opportunities` page and current official funder pages.
+**For next agent:** Keep this page short and donor/partner-facing. Detailed partner sequencing, funder timing, and internal readiness notes belong in `Cooperation Opportunities`, `Academic Cooperation`, `Docs/Knowledge`, and `Docs/WIP`, not back in this presentation.
 **Learnings:** No
 ---
 ### 2026-04-01 | Lead Architect | Gemini 3.1 Pro | Stage 1 Narrow Hardening - Code Review
@@ -2755,6 +2791,16 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Learnings:** no
 
 ---
+### 2026-04-04 | Code Reviewer | Codex (GPT-5) | Documentation Currency Check For Solution And Plan Docs
+**Task:** Check whether the main “solution” and “plan” documentation artifacts are up to date against the current repo status and code.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Review result: the main optimization/runtime and recent implementation plan docs checked are current enough, but `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md` is materially stale as a living guide because its “do now / do next” recommendations have already been shipped or superseded by later status updates and follow-up docs. `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md`, and `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md` all align with the current status/backlog/code review pass.
+**Open items:** The stale Plastik solution proposal should either gain a top-of-file superseded/implemented banner with links to the follow-up runtime-path investigation and current status, or be moved/retitled as a historical proposal to avoid being mistaken for an active next-step doc.
+**Warnings:** The main risk is guidance drift, not implementation drift: `Docs/WIP/README.md` already summarizes the Plastik proposal as “bug fix shipped, runtime-path characterization complete,” but the proposal file itself still reads like an active recommendation to do those steps next.
+**For next agent:** If asked to update docs, start with `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`, `Docs/WIP/README.md`, `Docs/STATUS/Current_Status.md`, and `Docs/STATUS/Backlog.md`. Preserve the historical analysis, but add a clear outcome/superseded banner rather than rewriting the investigation content.
+**Learnings:** no
+
+---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Investigate 696d8140 Bolsonaro Process/Fairness Job
 **Task:** Investigate job `696d81406d5a4fbfaa4c23ec49fe4e85`, identify the root cause of the visible result issues, and propose the best low-risk/high-quality fix.
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md`
@@ -3055,4 +3101,204 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** This slice does not add Wikipedia reference extraction, Semantic Scholar deep integration, or Google Fact Check direct-seeding redesign. Runtime validation on live multilingual claims is still the next quality step after code merge.
 **Warnings:** Default behavior changed materially: Wikipedia now participates in normal search unless disabled in UCM. One legacy `web-search` test had to be updated because it implicitly assumed the old fallback-only default. This patch intentionally does not enable Semantic Scholar or Google Fact Check by default.
 **For next agent:** Validate serially on German Plastik, English Plastik, and one stable control. Check whether Wikipedia contributes bounded additional domains without flooding and whether disabling `search.providers.wikipedia.enabled` cleanly restores the pre-change posture.
+**Learnings:** no
+
+---
+### 2026-04-04 | Product Strategist | Codex (GPT-5) | Tighten Funding Presentation Around Immediate Support Routes
+**Task:** Review, shorten, and improve the funding presentation, using adjacent strategy/knowledge docs plus web validation and subagent input to sharpen next priorities and specific actions.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Rewrote the presentation into a short support brief centered on: what already works, what still blocks scale, what support unlocks in the next 90 days, and concrete next actions. Removed the long explainer/FAQ/grant-catalog structure and pushed route-by-route grant tracking back to `Cooperation Opportunities`. Web validation changed one important timing assumption: `NLnet Commons Fund` is live now as of April 4, 2026 (13th call opened April 1, 2026; deadline June 1, 2026), so the page now treats it as a conditional live option rather than next-call-only. Kept `Innosuisse Innovation Cheque` as the primary named route, downgraded generic media-growth funding, and kept practitioner/network asks explicit (`dpa`, `EBU Spotlight`, DACH feedback lanes).
+**Open items:** A follow-up donor/outreach pack would be useful: one short Swiss research brief for the Innovation Cheque lane, one practitioner outreach email set, and one compact benchmark/demo pack for partner conversations.
+**Warnings:** The funding landscape items referenced here are time-sensitive. If this page is revisited after June 1, 2026, re-check `NLnet`, `BRIDGE`, and other live-call statuses before reusing the timing language.
+**For next agent:** If you expand this work, keep this page donor-facing and concise. Put detailed opportunity tracking, eligibility nuance, and call calendars on `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`. If you need the evidence behind the wording, start with `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md`, `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md`, and the April 2026 call-prep docs.
+**Learnings:** no
+
+---
+### 2026-04-04 | Product Strategist | Codex (GPT-5) | Sync Internal Cooperation Plan And Knowledge Summary
+**Task:** Re-check whether the planning/solution documentation was up to date, then update only the stale internal plan and knowledge-summary docs while leaving the external funding presentation unchanged by request.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`, `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the external funding presentation as-is because the user explicitly confirmed the broader external/internal split was intentional. Updated the internal cooperation plan to correct the `NLnet Commons Fund` status: as of April 4, 2026 the 13th call is live from April 1 to June 1, 2026, so the plan now treats it as a conditional live option rather than next-call-only. Updated the knowledge summary so its cooperation framing matches the current next-step sequence: Swiss academic lead + Innovation Cheque first, then `dpa`, then `EBU Spotlight`, with `Full Fact` retained as the strongest later-stage international complement rather than the immediate first target.
+**Open items:** The public funding page still intentionally uses a different framing. If desired later, create a short note somewhere explaining the explicit separation between outward-facing support materials and internal prioritization docs.
+**Warnings:** These corrections are date-sensitive. Re-check `NLnet`, `Mozilla`, `BRIDGE`, and similar call statuses before reusing the wording after June 2026.
+**For next agent:** If another doc still says `Full Fact` is the immediate `#1` cooperation target or `NLnet` is already closed as of April 2026, treat that as stale unless it is clearly marked as historical background. The current internal source of truth is `Cooperation Opportunities/WebHome.xwiki`.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Boundary Concentration vs Grounding Priority Plan
+**Task:** Review the newest local and deployed jobs, run a short multi-agent debate on priority order, and convert the result into a concrete WIP plan plus a review prompt for a Sonnet agent.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The debate split between a narrow grounding-containment-first view and a retrieval/boundary-root-cause-first view. The resulting plan resolves that by putting a controlled same-commit validation gate first, then recommending Stage 2/3 retrieval-query/boundary stabilization as the primary next fix track, while keeping verdict-grounding integrity as a narrow follow-on containment slice if it still reproduces once commit/config/cache/quota confounders are controlled. The plan explicitly records the newest evidence: local Bolsonaro `411cb1ca...` and deployed Plastik `9a12f07...` show mega-boundary concentration; deployed and local jobs also still show `verdict_grounding_issue`.
+**Open items:** No implementation work was done in this slice. The next action is to have a reviewer validate the sequencing, then run same-commit serial validation before touching analysis code.
+**Warnings:** Do not infer local-vs-deployed regressions from mixed commits or mixed cache states. Do not reopen Stage-4 parse work or broad clustering redesign based only on these runs. The plan intentionally does not treat `boundary_evidence_concentration` alone as proof of causality.
+**For next agent:** Start with `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`. Review whether the ordering is right: validation gate first, Stage 2/3 root-cause track second, grounding containment third. If approved, the first concrete validation target should be same-commit serial Bolsonaro EN, then German Plastik, then one stable control.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Apply Sonnet Review To Boundary/Grounding Plan
+**Task:** Incorporate Sonnet review feedback into the new WIP plan after approval-with-adjustment.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the plan so verdict-grounding containment is no longer sequenced after full Stage 2/3 completion. The plan now treats grounding as a parallel narrow containment track that should begin after the same-commit validation gate, because deployed healthy-distribution run `cfd508bc...` already shows `verdict_grounding_issue`, proving an independent grounding failure mode. Stage 2/3 remains the primary root-cause track.
+**Open items:** No code changes. Next action is still same-commit serial validation; after that, Track A (Stage 2/3) and Track B (grounding containment) can proceed in parallel.
+**Warnings:** This adjustment does not justify a broad Stage-4 program. Keep the grounding slice narrow: citation/ID integrity containment only.
+**For next agent:** Use the revised ordering in the WIP plan: `validation gate -> Track A root-cause stabilization + Track B grounding containment in parallel`. Do not revert to a strictly sequential order unless new evidence disproves the independent grounding failure mode.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Execute First Local Same-Commit Validation Gate Pass
+**Task:** Turn the validation gate from a plan into an executable procedure, then run the first local serial canary batch on the current commit.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Expanded the WIP plan with an explicit step-by-step validation procedure and executed it locally after clearing search cache and resetting provider circuits. The usable cold-pass results were: Bolsonaro EN `6866375de4d44480b939cca7c5b8e83c` → `LEANING-TRUE 69/67` with boundary counts `3/3/2/1/9/50` and persistent `verdict_grounding_issue`; Plastik DE `e4ed5b5b386f4e20a96630f8cbc44772` → `UNVERIFIED 50/0` with `analysis_generation_failed` and `explanation_quality_rubric_failed`. The batch then became invalid because Anthropic credits were exhausted mid-run, causing all later jobs to fail operationally during Stage 1 claim extraction.
+**Open items:** The validation gate is only partially executed. Warm-pass comparison and stable-control comparison must be rerun once Anthropic access is restored.
+**Warnings:** Do not interpret the later failed jobs (`2960ceef...`, `8ce8b373...`, `5299ff49...`, `c0563ce5...`) as report-quality evidence. `JobEvents` show `Your credit balance is too low to access the Anthropic API.` This is an environment/provider block, not a clean analyzer signal.
+**For next agent:** Resume from the WIP plan’s new execution-status section. Restore Anthropic credits first, then rerun the exact same local canary matrix from a cleared-cache starting point: Bolsonaro EN, Plastik DE, `Ist die Erde rund?`, then the warm pass. Only after that should the gate be considered complete.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Resume Validation Batch After Credit Restoration
+**Task:** Observe the user-resubmitted verification jobs after Anthropic credits were restored and fold the results back into the active validation plan.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The rerun produced three usable results and one interruption: Plastik `045e240...` completed `LEANING-FALSE 34/71`, control `42476c7...` completed `TRUE 96/91`, Bolsonaro EN `b6a7bcc...` completed `LEANING-TRUE 68/67`, and DPA `0488e397...` was interrupted by server restart. The more important finding is that the rerun batch still failed the intended validation-gate requirement: the three completed jobs recorded different `executedWebGitCommitHash` values, so this was not a true same-commit batch even though the scenarios completed.
+**Open items:** The validation gate remains incomplete. A clean canary batch still needs a stable local execution environment with no mid-batch restart/reload drift.
+**Warnings:** Do not treat the rerun batch as a valid same-commit baseline. The completed jobs used different executed commits, and the DPA run confirms a real local restart (`Job interrupted by server restart.`). This is now a local execution-stability blocker, not a lack of canary scenarios.
+**For next agent:** Start from the WIP doc’s new rerun-status sections. The next step is not more analytical comparison; it is stabilizing the local run environment so a serial batch can execute on one fixed build/commit. Once that is achieved, rerun the same canary set again.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Priority Debate On Verdict Grounding Vs Retrieval/Clustering
+**Task:** Review the latest cross-environment job evidence plus the current analyzer/UI code and argue whether verdict-grounding integrity should now outrank retrieval/clustering work.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Concluded from repo inspection that grounding issues are currently a Stage-4 containment problem with direct user-trust impact: `verdict_grounding_issue` is emitted in `verdict-stage.ts` but, by default, remains informational, hidden from non-admin users via `warning-display.ts` and `FallbackReport.tsx`, and does not alter shipped verdicts because `verdictGroundingPolicy` stays `disabled`. Also confirmed the strongest competing objection: repo status/docs still treat cross-linguistic neutrality and Stage-2 retrieval bias as the largest measured visible gap, especially the 58pp Plastik DE/EN/FR spread documented in `Current_Status.md` and `2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`. Boundary concentration is currently only telemetry (`boundary_evidence_concentration`, info-level), which weakens clustering-first on user-visible-harm grounds.
+**Open items:** No code was changed. If this debate is acted on, the next step is a concrete Stage-4 integrity containment proposal tied to the current post-FLOOD grounding behavior, not another abstract investigation.
+**Warnings:** The repo already contains one prior grounding-refresh fix (source-portfolio-aware validator input/prompt). The new local/deployed evidence therefore suggests any remaining grounding issue is not the exact March 31 contract mismatch and should be diagnosed against current jobs before implementation.
+**For next agent:** Start with `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/components/FallbackReport.tsx`, `apps/web/src/lib/config-schemas.ts`, `Docs/STATUS/Current_Status.md`, and `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`. Frame the decision around three questions only: does the issue ship to users silently, is the containment fix narrower than Stage-2/3 work, and does the newest evidence show it across both local and deployed environments.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Source Provenance Tracking Design Review
+**Task:** Review the proposed source-provenance tracking design for the ClaimAssessmentBoundary pipeline, check fit against current pipeline/config/prompt hooks, and pressure-test it against misinformation research.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recommended treating provenance as an extension of the existing derivative/concentration/independence scaffolding instead of a separate weighting subsystem. Phase 1 extraction is viable if it stays optional, claim-local, and output-only at first. The proposed deterministic Phase 2a is too semantically strong for this repo unless it operates only on LLM-emitted canonical IDs or on exact identity fields; free-text creator grouping should not drive analytical conclusions without an LLM/entity-linking layer. Advised against using provenance directly in verdict weighting before an observation phase with quality telemetry and multilingual evaluation.
+**Open items:** If the feature proceeds, the next design pass should define a narrower schema (`originatingEntity`, `originatingEntityId?`, `attributionRole`, `transmissionMode`, `provenanceConfidence`, `provenanceNotes?`), a non-weighting convergence summary, and an evaluation plan covering multilingual variants, anonymous sourcing, press releases, wire copy, and multi-hop citation chains.
+**Warnings:** Current repo already has overlapping concepts: `isDerivative`, `derivedFromSourceUrl`, claim-local source portfolios, `independence_concern`, and a `provenanceValidationEnabled` config flag. Adding a second parallel provenance vocabulary without reconciling those concepts will fragment the pipeline and make verdict semantics harder to reason about.
+**For next agent:** Start with `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, and `apps/web/src/lib/config-schemas.ts`. Preserve the project rule that semantic text interpretation cannot move into deterministic post-processing.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Audit Provenance Documentation Currency
+**Task:** Check whether the current source-provenance solution/plan documentation is up to date against the latest review conclusions and the live analyzer codebase.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Determined that the current design document is mostly up to date and already incorporates the major review corrections: deterministic convergence removed, Phase 1.5 added, `press_release` restored, `provenanceConfidence` removed in favor of existing `extractionConfidence`, and Stage 4.5 / `derivativeFactor` integration explicitly deferred. Confirmed that `Backlog.md` already reflects the revised three-phase plan. Identified two documentation-currency gaps: `Docs/WIP/README.md` has not been refreshed since 2026-04-03 and does not list the new provenance WIP docs, and the standalone GPT review prompt remains intentionally pre-revision content and should not be treated as the active plan.
+**Open items:** Decide whether to update `Docs/WIP/README.md` to register the provenance design as an active future proposal and whether to relabel or relocate the standalone GPT review prompt so readers do not mistake it for the current design.
+**Warnings:** The revised design doc still contains at least one stale quantitative detail (`source-reliability.ts` cited as 842 lines; current file is shorter). This is minor, but it shows that snapshot metrics inside planning docs can drift even when the core design remains current.
+**For next agent:** If asked to make the docs current, update `Docs/WIP/README.md` under future proposals, add a short “historical review input, not the active plan” note for `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md`, and optionally clean minor drifting counts in the design doc without changing its technical direction.
+**Learnings:** no
+
+---
+### 2026-04-04 | LLM Expert | Codex (GPT-5) | Retrieval Documentation Currency Check
+**Task:** Check whether the retrieval-related solution/plan documentation is up to date against the current search implementation and active status docs.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Determined that the **active** retrieval docs are mostly current: `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md` all reflect the current posture that Wikipedia supplementary completion is implemented, bounded, UCM-controlled, and default-on while Semantic Scholar / Google Fact Check remain default-off. However, two older docs are now stale enough that they should not be treated as current planning sources: `Docs/Specification/Multi_Source_Evidence_Retrieval.md` still says implementation is only proposed and that provider modules remain to be created, and `Docs/WIP/2026-03-26_Next_Workstream_Decision.md` still says only 2 of 7 providers are enabled by default. Current code shows supplementary-provider orchestration with `supplementaryProviders.mode`, default `always_if_enabled`, and Wikipedia enabled by default in `search.default.json`.
+**Open items:** If the team wants a clean documentation state, the stale legacy/spec documents should either be updated, clearly marked historical, or linked away from active planning paths so readers do not mix them with the April 2026 docs.
+**Warnings:** The worktree already contains unrelated user changes in retrieval/status docs (`Backlog.md`, `Current_Status.md`, WIP search docs, xwiki pages). Do not overwrite or normalize those without first reviewing the user’s intended edits. Also, `Docs/WIP/2026-03-26_Next_Workstream_Decision.md` was accurate at the time it was written; it is stale now because defaults changed later.
+**For next agent:** If asked to refresh docs, focus first on `Docs/Specification/Multi_Source_Evidence_Retrieval.md` and `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. Preserve the current April docs as the canonical retrieval planning sources unless newer design decisions supersede them.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Make Commit Hash Live And Visible Across API/Web
+**Task:** Ensure commit/build provenance is updated after new commits and exposed consistently for local runs now, while remaining ready for deployed environments on next deploy.
+**Files touched:** `apps/api/Helpers/AppBuildInfo.cs`, `apps/api/Program.cs`, `apps/api/Services/JobService.cs`, `apps/api/Controllers/VersionController.cs`, `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the API’s startup-frozen `AppBuildInfo.Resolve()` singleton with a live `AppBuildInfo` service that resolves the current build id on demand, with a short cache for informational reads. New job rows and retry jobs now stamp `GitCommitHash` from `GetGitCommitHash(useCache: false)` at creation time, so fresh local commits are reflected without an API restart. Also exposed `git_sha` on the API `/version` endpoint so both local services now publish a visible build id (`/version` on API, `/api/version` on web). Kept deploy-time `GIT_COMMIT` precedence intact so production continues to prefer the clean deployment hash.
+**Open items:** Production will pick up the API `/version` change and the dynamic API-side job stamping on the next deploy/restart; I did not deploy from this machine. The current visible hash is still whole-repo provenance, not analyzer-scoped provenance.
+**Warnings:** `scripts/restart-clean.ps1` left a stale API process on port 5000, so the first local `/version` probe hit old code. After killing the actual port owner and restarting the API watcher, local verification succeeded. This is a restart-script hygiene issue, not a provenance-code issue.
+**For next agent:** Local verification succeeded with both endpoints reporting the same live build id: `http://localhost:5000/version` and `http://localhost:3000/api/version` now return `git_sha = 5f666979...+469a7968`. Use this patch as the current provenance baseline; if the team wants validation-grade analyzer provenance, that is a separate future enhancement.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Investigate Executed Web Commit Hash Confusion
+**Task:** Investigate why the local job `executedWebGitCommitHash` values looked wrong and unstable, and determine whether the hash mechanism itself is misleading.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed that the visible execution hash is not "wrong" in a literal sense; it is wrong for the purpose we were using it for. `apps/web/src/lib/build-info.ts` computes the execution hash from the whole-repo `git rev-parse HEAD` plus a dirty suffix based on `SHA256("git diff HEAD")`, also over the whole repo. `internal-runner-queue.ts` records that per executed job, and `JobsController.cs` exposes it as the visible `gitCommitHash`. The recent base hashes seen on local jobs (`3056ca55`, `4ae22067`, `98727592`, `01ca99f7`, `a015b707`) all resolve to documentation-only commits, which explains why the job hashes looked "incorrect" from an analyzer-quality perspective even though the resolver itself behaved as designed.
+**Open items:** The system still lacks an analysis-scoped provenance key. Until that exists, the current visible hash should be treated as full-repo provenance only, not as a reliable analyzer-validation gate.
+**Warnings:** This means the current same-commit validation gate is too strict in one way (it rejects batches separated only by docs commits) and too loose in another (it still cannot prove analyzer-path equivalence when the working tree stays dirty in unrelated files). The problem is in the provenance model, not just in local restarts.
+**For next agent:** If the team wants to repair this, the right fix is not "make the hash more stable" globally. It is to add a second, analysis-scoped execution fingerprint for validation use, while keeping the existing visible hash for whole-repo build provenance. In the meantime, avoid committing unrelated repo changes during local validation batches.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Assess Whether Latest Deployment Caused Observed Degradation
+**Task:** Determine whether the observed quality degradation in the newest jobs is actually caused by the most recent production deployment, and capture the conclusion in the active WIP plan.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The live deployed evidence does not support the latest deployment as the primary cause of the degradation impression. The only recent shipped analysis-affecting change was `ee885b37` (bounded default-on Wikipedia supplementary search), but the most degraded deployed Plastik run `9a12f07e...` contains no Wikipedia results at all, while healthier deployed runs such as Bolsonaro EN `cfd508bc...` and Homeopathy FR `7b052c9d...` contain at most one bounded Wikipedia source. Older deployed jobs also already showed the same underlying analytical defect family: oversized Stage 2/3 boundaries and high evidence concentration. Updated the WIP plan to state that the main problem is still the pre-existing Stage 2/3 retrieval-boundary concentration issue, with verdict grounding as a separate containment concern.
+**Open items:** This does not rule out bounded Wikipedia as a secondary amplifier on some future topics, but it rules it out as the main explanation for the current deployed degradation signal. Local same-commit validation is still blocked by local restart/reload instability.
+**Warnings:** The strongest evidence for this conclusion comes from production job payloads, not local jobs. Local runs are still not trustworthy as comparative baselines because they continue to execute on different `ExecutedWebGitCommitHash` values.
+**For next agent:** If asked whether to revert the Wikipedia supplementary deployment, the best current answer is no. The current priority should remain Stage 2/3 retrieval-boundary stabilization plus narrow verdict-grounding containment, while local execution stability is repaired separately.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Compare Newest Local And Deployed Quality Jobs
+**Task:** Review the newest local and deployed jobs, identify the current real problems, and update the active quality-stabilization plan with the latest cross-environment reading.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed that the most trustworthy current quality signals come from deployed jobs, not local dev, because the newest local jobs still executed on different `ExecutedWebGitCommitHash` values and therefore do not satisfy the same-commit validation gate. Production jobs still show the real analytical problem: severe evidence concentration persists on some claims (notably deployed Plastik DE `9a12f07e...` with `81/3/3/2/1`), while `verdict_grounding_issue` still appears even on healthier distributions (for example deployed Bolsonaro EN `cfd508bc...` with `19/13/12/11/5/4`). Updated the WIP plan to make this explicit and to state that Stage 2/3 stabilization remains the root-cause track while verdict grounding remains an independent containment track.
+**Open items:** Local execution stability is still unresolved; until a full serial batch runs on one stable local build, local-vs-deployed comparisons remain contaminated. The next engineering work should therefore start from production-backed quality signals, while still keeping the same-commit local validation gate as a prerequisite for trustworthy local experimentation.
+**Warnings:** Local `Jobs.ResultJson` persistence remains thinner than the richer report snapshots previously inspected, so the cross-environment synthesis still relies on the earlier detailed job readings gathered during this investigation. No code changes were made to the analyzer in this pass.
+**For next agent:** Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as updated. If asked what to fix next, the best answer is still: stabilize local execution enough to satisfy the validation gate, then pursue Stage 2/3 retrieval-boundary stabilization and verdict-grounding containment in parallel, using deployed jobs as the higher-confidence quality baseline in the meantime.
+**Learnings:** no
+
+---
+### 2026-04-04 | LLM Expert | Codex (GPT-5) | Refresh Stale Retrieval Docs
+**Task:** Update the clearly stale retrieval solution/plan documentation against the current search implementation.
+**Files touched:** `Docs/Specification/Multi_Source_Evidence_Retrieval.md`, `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the old multi-source spec from “proposed / implementation not started” to a partial-implementation state that matches the shipped provider layer, current Wikipedia supplementary completion, and the current UCM-controlled supplementary policy. Preserved the March 26 workstream decision as a historical decision record, but added an explicit 2026-04-04 update note so readers do not mistake its provider-default observations for current reality.
+**Open items:** Older retrieval docs may still contain historical assumptions beyond the two corrected files. If the team wants a fuller cleanup, the next pass should check xwiki planning pages and any archived-but-still-linked retrieval notes for current-vs-historical labeling.
+**Warnings:** The worktree contains unrelated user edits in `Backlog.md`, `Current_Status.md`, WIP search docs, and xwiki pages. Those were intentionally left untouched. The March 26 decision doc was not rewritten internally because that would blur historical record and current state.
+**For next agent:** Treat the current retrieval planning sources as `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md`. Only expand edits beyond these if asked for a broader documentation sweep.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Check Boundary/Grounding Documentation Currency
+**Task:** Verify whether the active boundary-concentration / grounding solution and plan documentation is current against the latest rerun results, then update any stale navigation or summary files.
+**Files touched:** `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed that the active plan doc `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` is already current: it includes the Sonnet sequencing adjustment, the credit-exhaustion interruption, the rerun results, and the latest blocker that the local validation batch is still not same-commit because completed jobs recorded different `executedWebGitCommitHash` values. The only stale piece was the WIP index: `Docs/WIP/README.md` still showed `Last Updated: 2026-04-03` and did not list the new plan. Updated the README date and added the new plan under active quality tracks.
+**Open items:** `Current_Status.md` and `Backlog.md` were not changed; for now the active WIP plan is the canonical live planning doc for this issue.
+**Warnings:** Historical entries in `Agent_Outputs.md` still describe earlier phases of the same plan and therefore naturally contain superseded sequencing. That is expected chronology, not a documentation bug.
+**For next agent:** Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as current. Use `Docs/WIP/README.md` as the discovery entry point; it now points to the plan. Do not infer from older `Agent_Outputs` entries that grounding is still sequentially deferred.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Refresh Provenance Doc Labels And Index
+**Task:** Update the provenance WIP documentation so the active design is indexed correctly and the standalone GPT review prompt is clearly marked as historical review input.
+**Files touched:** `Docs/WIP/README.md`, `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md`, `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added the provenance design to the WIP index under future analyzer proposals, labeled the GPT prompt file as historical review input rather than the active plan, and removed one drifting implementation-specific line-count detail from the revised design doc while preserving its technical direction.
+**Open items:** None beyond any future substantive design changes to the provenance proposal itself.
+**Warnings:** The standalone GPT review prompt still contains superseded proposal content by design; the new label reduces confusion but does not rewrite that historical prompt.
+**For next agent:** Treat `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` as the current plan and `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md` as review history only.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Refresh Status And xWiki Planning Docs
+**Task:** Patch stale live documentation after a doc-to-code consistency review, focusing on status summaries and xWiki planning/architecture pages.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/xwiki-pages/FactHarbor/Product Development/Planning/Alpha Roadmap/WebHome.xwiki`, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Quality and Trust/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated status headers to 2026-04-04, added the April 4 Wikipedia supplementary completion to `Current_Status.md`, and corrected the Alpha Roadmap search-provider summary to reflect the current provider mix. Rewrote the most stale parts of the Quality and Trust xWiki page so it no longer describes the removed AKEL pipeline, old deterministic Gate 1 thresholds, or legacy SR weighting as if they were the current live behavior. Preserved the already-added provenance-planning content in both xWiki pages.
+**Open items:** The active WIP provenance review prompt still contains historical pre-revision content by design and was not rewritten in this pass. Other older spec/WIP docs may still contain historical retrieval notes, but the live status and xWiki entry pages now point at the current posture.
+**Warnings:** These files already had uncommitted user changes. The patch was limited to the stale sections identified in the review and intentionally did not normalize unrelated wording or formatting.
+**For next agent:** Treat `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and the two updated xWiki pages as the refreshed top-level references. If further doc cleanup is requested, next targets should be older deep-dive/spec pages rather than these entry-point summaries.
+**Learnings:** no
+
+---
+### 2026-04-04 | Agents Supervisor | Codex (GPT-5) | Close Agent Rules Cleanup Documentation Gap
+**Task:** Update the archived Agent Rules Cleanup plan/report documentation so it reflects the completed execution state rather than only the original draft/audit wording.
+**Files touched:** `Docs/ARCHIVE/Agent_Rules_Cleanup_Plan_2026-03-17.md`, `Docs/ARCHIVE/Role_Learnings_Curation_Report_2026-03-17.md`, `Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the archived plan and audit bodies as historical snapshots, but changed their headers/status blocks to make completion explicit and added a dedicated closure summary with the final commit-by-phase record. This avoids rewriting historical analysis while removing the misleading "draft / awaiting review" impression.
+**Open items:** None for the cleanup documentation itself.
+**Warnings:** `Docs/AGENTS/Agent_Outputs.md` has continued to grow since the March cleanup, so any size-reduction numbers from the closure summary must be read as completion-time snapshots, not current line counts.
+**For next agent:** If governance-history docs are referenced in future reviews, use `Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md` first, then the archived plan/report for underlying rationale.
+**Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | WIP Consolidation #9
+**Task:** Run a consolidation pass over `Docs/WIP`, archiving clearly finished late-March/early-April plan docs and syncing the status/index pages to the shipped code state.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`, `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`, `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md`, `Docs/ARCHIVE/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`, `Docs/ARCHIVE/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`, `Docs/ARCHIVE/2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md`, `Docs/ARCHIVE/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/ARCHIVE/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`, `Docs/ARCHIVE/2026-03-27_Direction_Validator_False_Positive_Investigation.md`, `Docs/ARCHIVE/2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md`, `Docs/ARCHIVE/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md`, `Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Archived 9 clearly completed/superseded WIP docs (seeded-remap proposal cluster, direction-validator false-positive proposal, superseded 2-job claim-decomposition review, source-fetch failure plan, Wikipedia completion plan). Synced `Current_Status.md` and `Backlog.md` to the shipped direction-validator rescue fix and outage-resilience A-track, removed stale backlog items for already-shipped W15 and obsolete “parallel verdict generation,” and updated WIP/archive indexes plus live path references to the moved files. Kept `2026-03-27_Internet_Outage_Resilience_Plan.md` in WIP because only Option A is shipped; Options B/C remain legitimate future work. Kept same-day/new WIP artifacts untouched rather than archiving around active user edits.
+**Open items:** `Docs/WIP` still contains additional late-March/April review artifacts not enumerated in the curated README because several are still same-day or actively edited. A deeper consolidation pass can archive more of these once their current-use status is clearer.
+**Warnings:** `Docs/AGENTS/Agent_Outputs.md` contains historical references to the moved WIP paths. I did not rewrite historical entries; use `Docs/ARCHIVE/README_ARCHIVE.md` to locate archived replacements. The working tree also contains unrelated user edits in xWiki and other docs that were intentionally left untouched.
+**For next agent:** Treat the archived remap/direction/fetch/Wikipedia docs as historical records under `Docs/ARCHIVE/`. Treat `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md` and `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` as partially-done living records. If another consolidation is requested, the next likely candidates are the unindexed March 30–April 1 review artifacts still sitting in `Docs/WIP/`.
 **Learnings:** no
