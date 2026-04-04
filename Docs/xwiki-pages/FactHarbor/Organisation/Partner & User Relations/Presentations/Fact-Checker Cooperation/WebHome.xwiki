@@ -160,7 +160,15 @@ The real value is not just a verdict — it's the report behind it: every claim 
 
 ----
 
-== How could FactHarbor be used in newsrooms? ==
+== Working Together ==
+
+|=What you bring|=What you gain
+|Workflow knowledge — where verification takes the most time|A tool that automates evidence research, not editorial judgment
+|Real-world claims and feedback on verdict quality|Early access and influence on how the tool evolves for your use case
+|Network reach into the DACH fact-checking ecosystem|A technology partner building specifically for your needs — not a generic AI product
+|Willingness to test in a short pilot|Transparent, auditable reports you can inspect and build on
+
+== How could FactHarbor fit your workflow? ==
 
 === Pre-publication research ===
 Journalist drafts a story → submits key claims to FactHarbor → uses the report to identify evidence gaps or counter-arguments.
