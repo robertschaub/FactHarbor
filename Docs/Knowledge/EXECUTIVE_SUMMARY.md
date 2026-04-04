@@ -46,7 +46,7 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 | **Monitoring scale** | User-submitted claims only | Full Fact AI: 350K sentences/day | **FH lags** — no detection layer |
 | **Cross-provider debate** | Anthropic, OpenAI, Google, Mistral | No competitor compares providers | **FH unique** |
 
-The #1 gap to close: evidence retrieval (C13 = 8/10 pairs). **Specification ready:** [Multi-Source Evidence Retrieval](../Specification/Multi_Source_Evidence_Retrieval.md) — adds Wikipedia, Semantic Scholar, and Google Fact Check Tools API at zero cost, ~8 hours implementation. The #1 cooperation target: Full Fact — they have monitoring scale, we have verdict automation they deliberately don't build.
+The #1 gap to close: evidence retrieval (C13 = 8/10 pairs). **Specification ready:** [Multi-Source Evidence Retrieval](../Specification/Multi_Source_Evidence_Retrieval.md) — adds Wikipedia, Semantic Scholar, and Google Fact Check Tools API at zero cost, ~8 hours implementation. **Current cooperation sequence:** secure a Swiss research lead for the Innovation Cheque path first, use the `dpa` lane for workflow learning, then approach `EBU Spotlight`. **Full Fact** remains the strongest later-stage international complement once the proof pack exists.
 
 Full analysis: [Global Fact-Checking Landscape 2026](Global_FactChecking_Landscape_2026.md)
 
@@ -138,14 +138,14 @@ Items marked * are validated in Climinator code; items marked † are paper-only
 
 | Priority | Contact | Affiliation | Status | Focus |
 |----------|---------|------------|--------|-------|
-| **1** | **Full Fact AI team** | Full Fact, UK | Not yet contacted | Monitoring (350K/day) + FactHarbor as verdict engine |
-| **2** | **AVeriTeC organizers** | Multi-university | Not yet contacted | Benchmark evaluation (4,568 claims, 50 orgs) |
-| **3** | **ED2D / Tool-MAD authors** | Academic | Not yet contacted | Evidence retrieval during debate; working pipeline as testbed |
-| **4** | **Elliott Ash + Tobias Schimanski** | ETH Zurich / UZH | Meeting confirmed: 2026-03-18 16:00, UZH | Faithfulness metrics, source attribution, relevance scoring, Innosuisse/BRIDGE partnership. Code repos found for all papers (DIRAS, Faithful Specialists, ClimRetrieve). Primary implementer: Edison Ni. |
-| **5** | **Dominik Stammbach** | Princeton CITP | Email drafted, not sent | Data-centric fact-checking, KB selection theory |
-| — | **Markus Leippold** | UZH | Not yet contacted | Climate+Tech, evaluation benchmarks, agentic RAG |
+| **1** | **ZHAW CAI / NLP** | ZHAW | Preferred first outreach target | Swiss research lead for the Innovation Cheque path |
+| **2** | **Catherine Gilbert** | `dpa` | Video call scheduled: `2026-04-08 16:00` | Workflow pain points, DACH contacts, feedback path |
+| **3** | **EBU Spotlight** | EBU | Hold until after `dpa` signal | Broadcaster / fact-checking network lane independent of SRF |
+| **4** | **Full Fact AI team** | Full Fact, UK | Later-stage strategic target | Monitoring scale + complementarity once the proof pack exists |
+| **5** | **GlobalFact 2026** | Poynter / IFCN ecosystem | Networking route: `2026-06-17` to `2026-06-19` | Meetings, ecosystem entry, narrower cooperation asks |
+| — | **Ash / Schimanski / Stammbach / Leippold** | ETH / UZH / Princeton | Research-context contacts, not the immediate outreach sequence | Research framing, faithfulness metrics, evidence and relevance methods |
 
-Academic contacts: [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). Industry + new targets: [Global Landscape §5](Global_FactChecking_Landscape_2026.md#5-cooperation-strategy).
+Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). The current execution order now lives primarily in `../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki` and `../WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`.
 
 ---
 

@@ -4,27 +4,27 @@ FactHarbor employs multiple quality mechanisms to ensure analysis results are tr
 
 == Quality Gates ==
 
-Two quality gates are integrated into the AKEL pipeline: Gate 1 validates claims at input, Gate 4 assesses verdict confidence at output.
+Two quality gates are integrated into the ClaimAssessmentBoundary pipeline: Gate 1 validates extracted claims before research proceeds, and Gate 4 assesses verdict confidence and report trustworthiness after verdict generation.
 
 {{include reference="FactHarbor.Product Development.Diagrams.Quality Gates Flow.WebHome"/}}
 
-//Gate 1 filters non-factual claims (opinions, predictions) before research begins. Gate 4 evaluates verdict quality based on evidence count, source quality, and evidence agreement — only HIGH and MEDIUM confidence verdicts are published without flags.//
+//Gate 1 is an LLM-backed claim-validation pass that checks fidelity, opinion/specificity, and grounding-aware claim quality before research proceeds. Gate 4 is the final confidence/trust gate applied after verdict generation and calibration.//
 
 === Gate 1: Claim Validation ===
 
-|= Check |= Purpose |= Pass Criteria
-| Factuality test | Can the claim be proven true or false? | Must be verifiable
-| Opinion detection | Contains subjective language? | Opinion score <= 0.3
-| Specificity check | Contains concrete, testable details? | Specificity score >= 0.3
-| Future prediction | About future events? | Must be about past or present
+|= Check |= Purpose |= Current Pass Logic
+| Fidelity review | Prevent claim rewrites that import meaning not present in the user's input | Claims that fail fidelity are filtered unless explicitly exempted by decomposition rules
+| Opinion + specificity review | Remove claims that are both too subjective and too underspecified to analyze reliably | Claims failing both are filtered unless thesis-direct rescue applies
+| Grounding-aware specificity | Avoid over-filtering broad claims before evidence is gathered, while still rejecting grounded claims that remain too vague | Uses UCM `claimSpecificityMinimum` (default 0.6) only when preliminary grounding exists
+| Claim-count recovery | Recover a workable decomposition when Stage 1 produces too few assessable claims | Stage 1 reprompts and carries forward the best valid decomposition
 
 === Gate 4: Confidence Assessment ===
 
-|= Tier |= Evidence Sources |= Avg Quality |= Agreement |= Action
-| **HIGH** | 3+ | >= 0.7 | >= 80% | Publish
-| **MEDIUM** | 2+ | >= 0.6 | >= 60% | Publish
-| **LOW** | 2+ | >= 0.5 | >= 40% | Flag for review
-| **INSUFFICIENT** | < 2 | Any | Any | More research needed
+|= Tier |= Confidence Band |= Meaning |= Typical Effect
+| **HIGH** | 75-100 | Strongly supported, evidence-backed outcome | Publish normally
+| **MEDIUM** | 50-74 | Adequately supported outcome with some residual uncertainty | Publish
+| **LOW** | 25-49 | Fragile or evidence-limited outcome | Publish with visible caveats when applicable
+| **INSUFFICIENT** | 0-24 | No trustworthy high-level conclusion yet | Surfaces as insufficient / unverified outcome
 
 == Evidence Quality: Defence in Depth ==
 
@@ -32,21 +32,21 @@ Evidence and verdicts are protected by a **two-phase defence** system. Phase 1 o
 
 {{include reference="FactHarbor.Product Development.Diagrams.Evidence Defence in Depth.WebHome"/}}
 
-//Phase 1 (blue) filters evidence before verdict generation: LLM-guided extraction, deterministic quality filters, and provenance validation. Phase 2 (yellow) protects verdict quality: source reliability weighting, aggregation pruning of tangential/opinion-only claims, and verdict corrections.//
+//Phase 1 (blue) combines LLM extraction, LLM evidence-quality assessment, and structural filtering before verdict generation. Phase 2 (yellow) protects verdict quality through claim-local source portfolios, aggregation checks, confidence calibration, and optional/experimental SR calibration.//
 
 === Phase 1: Evidence Quality (Pre-Verdict) ===
 
 |= Step |= Type |= What It Filters
-| LLM Prompt Instructions | Soft (LLM) | Guides extraction: require excerpts, avoid vague statements, cite sources
-| Deterministic Filter | Hard (code) | Min 20 chars, 13 vague phrase patterns, Jaccard deduplication (0.85), category-specific rules (statistics need numbers, quotes need attribution), probative value scoring
-| Provenance Validation | Hard (code) | Rejects synthetic/LLM-generated content, requires URL and source excerpt
+| LLM Extraction + Evidence Quality | Soft (LLM) | Extracts evidence, assigns source/evidence metadata, and sets `probativeValue`
+| Structural Filter | Hard (code) | Enforces non-semantic checks such as minimum lengths, excerpt/URL presence, statistic-number presence, and low-`probativeValue` removal
+| Source-Linkage Validation | Hard (code) | Ensures evidence remains tied to a fetched source and structurally valid provenance fields
 
 === Phase 2: Verdict Quality (Post-Verdict) ===
 
 |= Step |= Type |= What It Filters
-| Source Reliability Weighting | Soft (scoring) | Domain credibility score (0.0-1.0) weights evidence strength in aggregation
-| Aggregation Pruning | Hard (code) | Removes tangential baseless claims, zero-weights tangential claims, validates boundary congruence, validates contestation factual basis
-| Verdict Corrections | Hard (code) | Detects and corrects verdicts that contradict their own evidence
+| Claim-Local Source Portfolios | Mixed | Exposes per-claim source concentration and track-record context to debate roles; works with per-source evidence caps to reduce single-source flooding
+| Aggregation Pruning | Hard (code) | Removes tangential / baseless claims, validates contestation factual basis, and keeps report structure aligned to final claim verdicts
+| Verdict Corrections + Calibration | Mixed | Applies reconciliation/correction logic, confidence calibration, and bounded article-level adjustments; optional Stage 4.5 SR calibration remains experimental/off
 
 == Source Reliability ==
 
@@ -57,9 +57,26 @@ Source reliability scoring evaluates the credibility of web domains using LLM-ba
 | **LLM evaluation** | Domain assessed for editorial standards, fact-checking history, transparency, bias indicators
 | **Multi-model consensus** | Multiple LLM evaluations averaged for stability (configurable via UCM)
 | **SQLite cache** | Evaluations cached for 90 days (configurable) to avoid redundant LLM calls
-| **Evidence weighting** | Source reliability score directly influences evidence weight in verdict calculations
+| **Use in live verdicts** | Domain reliability informs source portfolios and debate context; legacy direct evidence weighting is off by default and Stage 4.5 SR calibration remains experimental/off
 
 For implementation details, see [[Source Reliability Deep Dive>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]].
+
+== Source Provenance Tracking (Planned) ==
+
+Source reliability evaluates **where** evidence was published (domain credibility). Source provenance tracking will evaluate **who originally created** the claim — enabling detection of misinformation amplification patterns that domain-level scoring alone cannot catch.
+
+|= Pattern |= Description |= Current Detection
+| Single-source amplification | One press release repeated by 10 outlets | Not detected (appears as 10 independent sources)
+| Attribution washing | Advocacy org claim laundered through "news" site | Partially (sourceType helps, but not origin)
+| Wire-service syndication | AP dispatch published verbatim by 20 papers | Not detected (each paper appears independent)
+| State propaganda laundering | Government → state media → wire service | SR catches known state media domains, not the chain
+
+**Planned approach (3 phases):**
+1. **Phase 1 — Extraction:** Extract ##originalCreator## (structured: name + org + role), ##originalCreatorType##, ##attributionType## (firsthand/quoted/press_release/aggregated/anonymous), and ##citedSourceUrl## during Stage 2 evidence extraction. Observational only.
+1. **Phase 1.5 — Debate Integration:** Enrich ##sourcePortfolioByClaim## with provenance data. Challenger uses existing ##independence_concern## challenge type with provenance grounding. No aggregation changes.
+1. **Phase 2 — Entity Resolution:** LLM-based creator canonicalization across language variants (WHO = World Health Organization = OMS) and graduated independence assessment per ##ClaimAssessmentBoundary##.
+
+**Status:** Design complete, implementation parked. See ##Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md##.
 
 == Confidence Calibration ==
 
@@ -87,8 +104,8 @@ flowchart LR
 //Raw LLM confidence passes through 4 calibration layers: density anchor sets a minimum floor based on evidence quality, band snapping reduces jitter by aligning to a 7-band system, verdict coupling ensures strong verdicts have adequate confidence, and context consistency penalises divergent confidence across analysis contexts.//
 
 |= Layer |= Purpose |= Effect
-| **Evidence density anchor** | Sets minimum confidence floor based on evidence quality and quantity | Floor ranges from 15% (minimal evidence) to 60% (strong evidence)
-| **Band snapping** | Aligns confidence to a 7-band system with partial blending (strength 0.7) | Reduces run-to-run jitter by ~5-10pp
+| **Evidence density anchor** | Sets minimum confidence floor based on evidence quality and quantity | Floor ranges from 15% (minimal evidence) to 75% (strong evidence)
+| **Band snapping** | Aligns confidence to a 7-band system with partial blending (strength 0.5) | Reduces run-to-run jitter by ~5-10pp
 | **Verdict-confidence coupling** | Ensures strong verdicts (>=70% or <=30% truth) have confidence >= 50% | Prevents "TRUE with 20% confidence" anomalies
 | **Context consistency** | Penalises confidence divergence >25pp across analysis contexts | Ensures consistent confidence across perspectives
 
@@ -99,7 +116,7 @@ flowchart LR
 | **Low-source penalty** | 2 or fewer sources found | -15pp confidence (configurable)
 | **Confidence floor** | Always applied | Minimum 10% confidence (configurable)
 
-All calibration layers are configurable via UCM (##confidenceCalibration## section in Calculation Config) and can be individually toggled on/off.
+All calibration layers are configurable via UCM (##confidenceCalibration## in Pipeline Config) and can be individually toggled on/off.
 
 == Deep Dives ==
 
