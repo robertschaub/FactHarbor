@@ -167,6 +167,35 @@ describe("Research Extraction Stage", () => {
       expect(renderCall![2]).toMatchObject({ inferredGeography: "DE" });
     });
 
+    it("should pass multi-jurisdiction context to the prompt template", async () => {
+      const claim = createClaim({ statement: "Test" });
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        relevantSources: [
+          { url: "https://example.com/1", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+        ],
+      });
+
+      await classifyRelevance(
+        claim,
+        [{ url: "https://example.com/1", title: "T", snippet: "s" }],
+        mockConfig,
+        "2026-03-23",
+        "CH",
+        ["CH", "DE"],
+      );
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "RELEVANCE_CLASSIFICATION"
+      );
+      expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({
+        inferredGeography: "null",
+        relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+      });
+    });
+
     it("should use 'null' as inferredGeography when not provided (backwards compat)", async () => {
       const claim = createClaim({ statement: "Test" });
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
@@ -624,6 +653,31 @@ describe("Research Extraction Stage", () => {
       const claimsArg = renderCall![2].claims;
       expect(claimsArg).toContain("AC_01");
       expect(claimsArg).toContain("Country A courts");
+    });
+
+    it("should pass the union of relevant geographies to the applicability prompt", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Country A courts", relevantGeographies: ["CH"] }),
+        createClaim({ id: "AC_02", statement: "Country B institutions", relevantGeographies: ["DE"] }),
+      ];
+      const evidence = [createEvidence({ id: "EV_01", sourceUrl: "https://example.com/source" })];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [{ evidenceIndex: 0, applicability: "contextual", reasoning: "comparative evidence" }],
+      });
+
+      await assessEvidenceApplicability(claims, evidence, "CH", mockConfig, ["CH", "DE"]);
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "APPLICABILITY_ASSESSMENT"
+      );
+      expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({
+        inferredGeography: "null",
+        relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+      });
     });
 
     it("should handle empty evidence array", async () => {

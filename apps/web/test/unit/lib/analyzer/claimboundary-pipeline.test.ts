@@ -2723,6 +2723,40 @@ describe("Stage 2: generateResearchQueries", () => {
     );
   });
 
+  it("passes claim-level relevant geographies into the query-generation prompt", async () => {
+    const claim = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A in Country X has less infrastructure than Country Y",
+      relevantGeographies: ["CH", "DE"],
+    });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [{ query: "country x country y infrastructure", rationale: "coverage" }],
+    });
+
+    await generateResearchQueries(
+      claim,
+      "main",
+      [],
+      mockPipelineConfig,
+      "2026-02-17",
+      [],
+      undefined,
+      { language: "de", geography: "CH", geographies: ["CH", "DE"] },
+    );
+
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "GENERATE_QUERIES",
+      expect.objectContaining({
+        inferredGeography: "null",
+        relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+      }),
+    );
+  });
+
   it("MT-3: passes all distinct events including multi-event inputs with empty default", async () => {
     // Verifies the complete MT-3 wiring: when no distinctEvents are provided
     // (default []), the prompt still receives an empty JSON array, not undefined.
@@ -3227,6 +3261,91 @@ describe("Stage 2: runResearchIteration", () => {
     expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(1);
     expect(state.queryBudgetUsageByClaim["AC_02"]).toBe(1);
     expect(state.searchQueries).toHaveLength(2);
+  });
+
+  it("uses claim-level relevant geographies during research iterations", async () => {
+    const claim = createAtomicClaim({
+      id: "AC_01",
+      statement: "Country X has less infrastructure than Country Y",
+      relevantGeographies: ["CH", "DE"],
+    });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+      understanding: {
+        detectedLanguage: "de",
+        inferredGeography: "CH",
+        distinctEvents: [],
+      },
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    let callCount = 0;
+    mockExtractOutput.mockImplementation(() => {
+      callCount++;
+      switch (callCount) {
+        case 1:
+          return { queries: [{ query: "country x country y infrastructure", rationale: "test" }] };
+        case 2:
+          return {
+            relevantSources: [
+              { url: "https://example.com/1", relevanceScore: 0.9, jurisdictionMatch: "direct", reasoning: "relevant" },
+            ],
+          };
+        case 3:
+          return {
+            evidenceItems: [
+              {
+                statement: "Evidence statement with enough length for filtering",
+                category: "statistic",
+                claimDirection: "supports",
+                evidenceScope: { methodology: "Analysis", temporal: "2024" },
+                probativeValue: "high",
+                sourceType: "government_report",
+                isDerivative: false,
+                derivedFromSourceUrl: null,
+                relevantClaimIds: ["AC_01"],
+              },
+            ],
+          };
+        default:
+          return null;
+      }
+    });
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
+      providersUsed: ["google"],
+    } as any);
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(500),
+      title: "Test Source",
+      contentType: "text/html",
+    });
+
+    await runResearchIteration(claim, "main", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state);
+
+    const queryRenderCall = mockLoadSection.mock.calls.find(([, section]) => section === "GENERATE_QUERIES");
+    expect(queryRenderCall).toBeDefined();
+    expect(queryRenderCall![2]).toMatchObject({
+      inferredGeography: "null",
+      relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+    });
+
+    const relevanceRenderCall = mockLoadSection.mock.calls.find(([, section]) => section === "RELEVANCE_CLASSIFICATION");
+    expect(relevanceRenderCall).toBeDefined();
+    expect(relevanceRenderCall![2]).toMatchObject({
+      inferredGeography: "null",
+      relevantGeographies: JSON.stringify(["CH", "DE"], null, 2),
+    });
   });
 });
 

@@ -77,6 +77,7 @@ const Pass2AtomicClaimSchema = z.object({
   claimDirection: z.enum(["supports_thesis", "contradicts_thesis", "contextual"]).catch("contextual"),
   thesisRelevance: z.enum(["direct", "tangential", "irrelevant"]).optional().catch(undefined),
   keyEntities: z.array(z.string()).catch([]),
+  relevantGeographies: z.array(z.string()).optional().catch([]),
   checkWorthiness: z.enum(["high", "medium", "low"]).catch("medium"),
   specificityScore: z.number().catch(0.5),
   groundingQuality: z.enum(["strong", "moderate", "weak", "none"]).catch("moderate"),
@@ -1242,6 +1243,15 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
       // Ensure keyEntities is an array (might be null)
       if (!Array.isArray(normalized.keyEntities)) {
         normalized.keyEntities = [];
+      }
+
+      if (!Array.isArray(normalized.relevantGeographies)) {
+        normalized.relevantGeographies = [];
+      } else {
+        normalized.relevantGeographies = (normalized.relevantGeographies as unknown[])
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.trim().toUpperCase())
+          .filter((value) => /^[A-Z]{2}$/.test(value));
       }
 
       // Ensure expectedEvidenceProfile has required arrays

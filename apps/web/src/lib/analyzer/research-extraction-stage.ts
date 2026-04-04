@@ -7,6 +7,11 @@ import {
   getStructuredOutputProviderOptions, 
   extractStructuredOutput 
 } from "./llm";
+import {
+  formatPromptInferredGeography,
+  formatPromptRelevantGeographies,
+  normalizeRelevantGeographies,
+} from "./jurisdiction-context";
 import { recordLLMCall } from "./metrics-integration";
 import { debugLog } from "./debug";
 import { 
@@ -99,11 +104,17 @@ export async function classifyRelevance(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   inferredGeography?: string | null,
+  relevantGeographies?: string[] | null,
 ): Promise<Array<{ url: string; relevanceScore: number; originalRank: number }>> {
+  const normalizedRelevantGeographies = normalizeRelevantGeographies(
+    relevantGeographies,
+    inferredGeography,
+  );
   const rendered = await loadAndRenderSection("claimboundary", "RELEVANCE_CLASSIFICATION", {
     currentDate,
     claim: claim.statement,
-    inferredGeography: inferredGeography ?? "null",
+    inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
+    relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     searchResults: JSON.stringify(
       searchResults.map((r) => ({ url: r.url, title: r.title, snippet: r.snippet ?? "" })),
       null,
@@ -402,9 +413,14 @@ export async function assessEvidenceApplicability(
   evidenceItems: EvidenceItem[],
   inferredGeography: string | null,
   pipelineConfig: PipelineConfig,
+  relevantGeographies?: string[] | null,
 ): Promise<EvidenceItem[]> {
+  const normalizedRelevantGeographies = normalizeRelevantGeographies(
+    relevantGeographies,
+    inferredGeography,
+  );
   // Skip if no geography or disabled
-  if (!inferredGeography || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
+  if (normalizedRelevantGeographies.length === 0 || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
     return evidenceItems;
   }
 
@@ -424,7 +440,8 @@ export async function assessEvidenceApplicability(
 
   const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", {
     claims: JSON.stringify(claims.map(c => ({ id: c.id, statement: c.statement })), null, 2),
-    inferredGeography,
+    inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
+    relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     evidenceItems: JSON.stringify(evidenceSummaries, null, 2),
   });
 
@@ -501,7 +518,7 @@ export async function assessEvidenceApplicability(
     );
     console.info(
       `[Fix3] Applicability: ${counts.direct}D/${counts.contextual}C/${counts.foreign_reaction}F ` +
-      `(${evidenceItems.length} total, geography: ${inferredGeography})`
+      `(${evidenceItems.length} total, geography: ${normalizedRelevantGeographies.join(",")})`
     );
 
     return assessed;

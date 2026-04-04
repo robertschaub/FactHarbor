@@ -10,6 +10,7 @@ variables:
   - atomicityGuidance
   - scopes
   - inferredGeography
+  - relevantGeographies
   - claimsJson
   - maxConfidenceDelta
   - unknownDominanceThreshold
@@ -250,6 +251,7 @@ Return a JSON object:
       "claimDirection": "supports_thesis | contradicts_thesis | contextual — relationship to the user's thesis, NOT to reality/consensus",
       "thesisRelevance": "direct | tangential | irrelevant",
       "keyEntities": ["Entity A", "Entity B"],
+      "relevantGeographies": ["string — ISO 3166-1 alpha-2 code for each jurisdiction directly implicated by THIS claim; include multiple codes for comparisons such as ['CH','DE']"],
       "checkWorthiness": "high | medium | low",
       "specificityScore": 0.0,
       "groundingQuality": "strong | moderate | weak | none",
@@ -277,6 +279,7 @@ Notes:
 - `retainedEvidence`: IDs of high-quality preliminary evidence items that should be kept in the evidence pool (avoiding redundant re-extraction in Stage 2).
 - Only include claims where `centrality` is "high" or "medium" in the final output. Drop "low" centrality claims.
 - `specificityScore`: 0.0–1.0. Claims below 0.6 should be flagged for potential decomposition.
+- `relevantGeographies`: list the jurisdictions whose institutions, legal systems, or national conditions are directly being assessed by the specific claim. For comparative claims, include every directly implicated jurisdiction. Do not infer from input language alone.
 
 ---
 
@@ -446,7 +449,7 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 
 ### Rules
 
-- **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
+- **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}` and relevant geographies `${relevantGeographies}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
 - `queryStrategyMode = "legacy"`:
   - Keep legacy behavior: generate 2-3 general-purpose queries for the claim.
@@ -458,6 +461,7 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 - Avoid overly broad queries — target specific evidence types.
 - Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
 - Keep queries concise (3–8 words typical).
+- When `relevantGeographies` lists multiple jurisdictions, do NOT collapse coverage onto only one of them. Across the returned queries, ensure the directly implicated jurisdictions are explicitly represented where that is necessary to verify the claim.
 
 ### Input
 
@@ -552,7 +556,8 @@ A result is **not relevant** if:
     - Foreign news coverage whose substantive evidence is a foreign government action about the jurisdiction (sanctions, executive orders, diplomatic statements, foreign legislative resolutions, State Department positions) is "foreign_reaction." Example: Reuters article titled "US imposes sanctions on Country A over coup" → foreign_reaction (the substance is US government action).
     - State media, government press offices, and official government publications are not "neutral external observers" — classify by the issuing authority.
     - Infer category from the likely substantive evidence in the result's title/snippet, not merely the publisher's nationality or the page wrapper.
-  - When `${inferredGeography}` is provided and not "null", use it as a signal for the claim's jurisdiction. When it is "null", infer jurisdiction from the claim text if possible.
+  - When `${relevantGeographies}` lists multiple jurisdictions, treat all listed jurisdictions as valid anchors for the claim. Evidence from any listed jurisdiction is not "foreign" solely because it differs from `${inferredGeography}`.
+  - When `${inferredGeography}` is provided and not "null", use it as a signal for the claim's primary jurisdiction. When it is "null", infer jurisdiction from the claim text if possible.
   - For claims without clear jurisdiction (e.g., scientific claims, global phenomena), all sources are "direct" — do not apply jurisdiction filtering.
 
 ### Input
@@ -565,6 +570,11 @@ ${claim}
 **Inferred Geography:**
 ```
 ${inferredGeography}
+```
+
+**Relevant Geographies:**
+```
+${relevantGeographies}
 ```
 
 **Search Results:**
@@ -1546,6 +1556,7 @@ For each evidence item, determine whether it was produced by actors within the c
 
 - Do not assume any particular language. Assess based on the evidence's institutional origin, not its language.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
+- When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
 - International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards; otherwise "contextual."
 - Foreign media reporting (e.g., BBC reporting on Brazilian trials) is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's events using the jurisdiction's own sources.
 - Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
@@ -1560,6 +1571,11 @@ ${claims}
 **Inferred Geography:**
 ```
 ${inferredGeography}
+```
+
+**Relevant Geographies:**
+```
+${relevantGeographies}
 ```
 
 **Evidence Items:**

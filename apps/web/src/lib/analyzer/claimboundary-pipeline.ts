@@ -57,6 +57,7 @@ import {
 } from "./llm";
 import { tryParseFirstJsonObject, repairTruncatedJson } from "./json";
 import { loadAndRenderSection } from "./prompt-loader";
+import { getClaimsRelevantGeographies } from "./jurisdiction-context";
 import { classifyError } from "@/lib/error-classification";
 import {
   isSystemPaused,
@@ -503,6 +504,10 @@ export async function runClaimBoundaryAnalysis(
         state.evidenceItems,
         understanding.inferredGeography ?? null,
         initialPipelineConfig,
+        getClaimsRelevantGeographies(
+          understanding.atomicClaims,
+          understanding.inferredGeography ?? null,
+        ),
       );
       state.evidenceItems = assessed.filter(
         (item) => item.applicability !== "foreign_reaction"
@@ -1072,4 +1077,3 @@ export async function runVerdictStageWithPreflight({
 // assessScopeQuality and assessEvidenceBalance extracted to research-extraction-stage.ts
 
 // Stage 4 (verdict generation + debate config checks) extracted to verdict-generation-stage.ts
-

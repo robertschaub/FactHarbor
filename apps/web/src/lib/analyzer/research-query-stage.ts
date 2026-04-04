@@ -8,6 +8,11 @@ import {
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { recordLLMCall } from "./metrics-integration";
+import {
+  formatPromptInferredGeography,
+  formatPromptRelevantGeographies,
+  normalizeRelevantGeographies,
+} from "./jurisdiction-context";
 import { 
   AtomicClaim, 
   CBClaimUnderstanding, 
@@ -43,7 +48,7 @@ export async function generateResearchQueries(
   currentDate: string,
   distinctEvents: CBClaimUnderstanding["distinctEvents"] = [],
   remainingQueryBudget?: number,
-  searchGeo?: { language?: string; geography?: string | null },
+  searchGeo?: { language?: string; geography?: string | null; geographies?: string[] | null },
 ): Promise<Array<{ query: string; rationale: string }>> {
   const maxQueriesPerCall = pipelineConfig.researchMaxQueriesPerIteration ?? 3;
   const maxQueries = Math.max(0, Math.min(maxQueriesPerCall, remainingQueryBudget ?? maxQueriesPerCall));
@@ -52,6 +57,10 @@ export async function generateResearchQueries(
   }
 
   const queryStrategyMode = pipelineConfig.queryStrategyMode ?? "legacy";
+  const relevantGeographies = normalizeRelevantGeographies(
+    searchGeo?.geographies,
+    searchGeo?.geography,
+  );
   const rendered = await loadAndRenderSection("claimboundary", "GENERATE_QUERIES", {
     currentDate,
     claim: claim.statement,
@@ -60,7 +69,8 @@ export async function generateResearchQueries(
     iterationType,
     queryStrategyMode,
     detectedLanguage: searchGeo?.language ?? "en",
-    inferredGeography: searchGeo?.geography ?? "not geographically specific",
+    inferredGeography: formatPromptInferredGeography(relevantGeographies),
+    relevantGeographies: formatPromptRelevantGeographies(relevantGeographies),
   });
   if (!rendered) {
     // Fallback: use claim statement directly

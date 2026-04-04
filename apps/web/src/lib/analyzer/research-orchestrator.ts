@@ -41,6 +41,7 @@ import { filterByProbativeValue } from "./evidence-filter";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { loadAndRenderSection } from "./prompt-loader";
+import { getClaimRelevantGeographies } from "./jurisdiction-context";
 
 // Import sibling stage modules
 import { generateResearchQueries } from "./research-query-stage";
@@ -698,6 +699,10 @@ export async function runResearchIteration(
   }
   const evidenceCountBeforeIteration = state.evidenceItems.length;
   const searchQueryCountBeforeIteration = state.searchQueries.length;
+  const claimRelevantGeographies = getClaimRelevantGeographies(
+    targetClaim,
+    searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
+  );
 
   // 1. Generate search queries via LLM (Haiku)
   const queries = await generateResearchQueries(
@@ -711,6 +716,7 @@ export async function runResearchIteration(
     {
       language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
+      geographies: claimRelevantGeographies,
     },
   );
   state.llmCalls++;
@@ -776,6 +782,7 @@ export async function runResearchIteration(
         pipelineConfig,
         currentDate,
         state.understanding?.inferredGeography ?? null,
+        claimRelevantGeographies,
       );
       state.llmCalls++;
 

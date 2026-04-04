@@ -788,6 +788,10 @@ export interface AtomicClaim {
    *  in the report but should not contribute to aggregate truth. */
   thesisRelevance?: "direct" | "tangential" | "irrelevant";
   keyEntities: string[];         // Named entities referenced
+  /** ISO 3166-1 alpha-2 country codes directly implicated by this specific claim.
+   *  Comparative claims may require evidence from multiple jurisdictions even when the
+   *  overall input has a single dominant geography. */
+  relevantGeographies?: string[];
   checkWorthiness: "high" | "medium";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
