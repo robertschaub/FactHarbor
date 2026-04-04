@@ -4,6 +4,17 @@
 **Author:** Robert Schaub (Founder and Lead Developer, FactHarbor.ch) **Date:** 31 March 2026 (Updated: 4 April 2026)
 {{/info}}
 
+== Document Purpose ==
+
+(% class="box successmessage" style="background-color:#e5f4bf;border-color:#7fb36a;" %)
+(((
+**Inspect:**
+* What FactHarbor does and where it stands
+* Costs and resource needs
+**Discuss:**
+* How to support FactHarbor — funding, contributions, or partnerships
+)))
+
 == FactHarbor Organisation ==
 
 Open-source applications and web services for AI-powered fact-checking — every verdict backed by evidence you can inspect.
