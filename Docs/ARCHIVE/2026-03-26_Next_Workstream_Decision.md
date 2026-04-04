@@ -5,6 +5,8 @@
 **Method:** Four-reviewer panel (Quality, Optimization, Code Reality, Challenger), reconciled by architect
 **Status:** Decision-grade recommendation
 
+**Update note (2026-04-04):** This document remains the historical decision record for 2026-03-26, but parts of its retrieval-default observations are now stale. Current code/defaults now enable Wikipedia as a bounded supplementary provider and use `supplementaryProviders.mode = "always_if_enabled"` in the default search config. For current retrieval planning, prefer `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md`.
+
 ---
 
 ## 1. Executive Summary

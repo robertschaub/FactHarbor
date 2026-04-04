@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-04-01
+**Last Updated**: 2026-04-04
 **Phase**: **Alpha**
 **Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Stage 4.5 SR calibration remains feature-flagged/off. Since 2026-04-01, **Proposal 2 multilingual output/search work is shipped in experimental form**: `LanguageIntent` and `reportLanguage` are explicit cross-stage state, Stage 4/5 report-language threading is implemented, and an **experimental default-off English supplementary retrieval lane** exists behind UCM. Cross-linguistic neutrality remains the main open quality gap, but it is no longer only a policy/investigation topic — it now has a review-clean experimental implementation whose remaining gate is live multilingual A/B validation before any broader promotion decision.
 
@@ -12,6 +12,7 @@
 - **Structural integrity work is complete.** All planned fixes shipped: citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication.
 - **Proposal 2 multilingual output/report-language coherency is shipped.** `LanguageIntent` and `reportLanguage` are now explicit pipeline state, and Stage 4/5 prompt paths are threaded. Source-authored evidence remains original-language.
 - **Experimental EN supplementary retrieval lane is shipped default-off.** The lane is UCM-controlled and intended only for coverage expansion on non-English inputs under native-language scarcity. It is not yet promoted and requires live A/B validation before any broader use.
+- **Wikipedia supplementary completion is shipped and validated.** Supplementary-provider orchestration now supports bounded `always_if_enabled` mode, Wikipedia is enabled by default, and detected claim/input language is threaded into Wikipedia subdomain selection. This is a retrieval-diversity improvement, not a claimed full neutrality fix by itself.
 - **Cross-linguistic neutrality remains the next quality gap.** Plastik recycling 58pp cross-language spread (DE/EN/FR) is still the largest visible gap. The new EN supplementary lane is an experiment toward mitigation, not a validated fix.
 - **Multilingual follow-up work is now validation + promotion gating, not policy-only design.** The earlier Stage-2 review findings are fixed; the remaining gate is live multilingual A/B validation with the EN lane `OFF` vs `ON`.
 - **Flat-Earth false-ambiguity fix is review-approved.** Prompt-only narrowing for direct factual-property questions. Not yet implemented.
@@ -21,18 +22,41 @@
 - **Diversity-aware Stage-2 sufficiency promoted to default-on** (`23d8576c`). Validated on 8 runs (4 Bolsonaro, 2 Plastik DE, 2 Flat Earth): 0/8 UNVERIFIED, Bolsonaro confidence spread improved from 23pp (amber) to 5pp (green), no control regressions. Stage 2 now aligns sufficiency with D5 item-count + diversity thresholds, preventing claims from appearing "researched enough" by raw count and then being zeroed out by D5. Flag `diversityAwareSufficiency` remains available for rollback.
 - **UCM Configuration Completeness (UCM-1 to UCM-5) complete** (`fb5395b0`). All 5 backlog items implemented: research depth params, source extraction limit, 10 per-task LLM temperatures, recency penalty internals, and temporal guard ceiling are now admin-tunable via UCM.
 - **OBS-2 complete** (`d6090f76`). `inputClassification` and `contractValidationSummary` now persisted in result JSON for future forensics.
-- **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). `preliminaryEvidenceLlmRemapEnabled` adds one batched Haiku remap before Stage 2 seeding to recover claim-local attribution for seeded items that still carry semantic slug IDs. Validated on current stack (post-FLOOD-1) via controlled A/B: Bolsonaro seeded mapping 0%→88% with same verdict direction, Plastik DE and Hydrogen stable. Captain approved promotion. Flag remains available for rollback. **Monitor:** Homeopathy-family broad evaluative inputs showed a single-observation confidence anomaly under ON — watch post-promotion. See `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md`.
+- **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). `preliminaryEvidenceLlmRemapEnabled` adds one batched Haiku remap before Stage 2 seeding to recover claim-local attribution for seeded items that still carry semantic slug IDs. Validated on current stack (post-FLOOD-1) via controlled A/B: Bolsonaro seeded mapping 0%→88% with same verdict direction, Plastik DE and Hydrogen stable. Captain approved promotion. Flag remains available for rollback. The one-off Homeopathy confidence collapse was rechecked post-promotion and did not reproduce, so this is now routine watchlist context rather than an active promotion blocker. See `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md`.
 - **Source-fetch failure reduction shipped**. Stage 2 acquisition now keeps a per-domain 401/403 blocking streak within each `fetchSources()` call and best-effort skips later same-domain URLs once the streak hits `fetchDomainSkipThreshold` (default `2`). `source_fetch_failure` warnings now append human-readable error summaries for operator diagnostics, and skipped URLs are excluded from `attempted` metrics. This is runtime/reliability hardening only — no warning-policy or analytical-behavior change.
+- **Direction-validator false-positive fix shipped** (`db7cdcf8`). Stable self-consistency can now rescue legitimate quality-over-quantity verdicts after validator disagreement, `direction_rescue_plausible` warnings preserve observability on both initial and repaired rescue paths, and Rule 2's mixed-evidence floor is now UCM-backed via `directionMixedEvidenceFloor`.
+- **Outage-resilience A-track shipped** (`ba80a919`, `83a50d8c`, `4ac43609`, `bb40e441`). Clear network outages now count toward the LLM provider breaker, Stage 4 performs a preflight connectivity probe, damaged fallback verdicts are avoided once the system is paused, and watchdog auto-resume is restricted to network-caused pauses. Hold/resume and checkpointing remain deferred future work.
 - **Post-spread verdict-label staleness fixed** (`289afa1c`). Claims whose confidence drops below the UNVERIFIED threshold after spread adjustment now get correctly relabeled.
 - **B1 claim-contract validation implemented and validated**. Predicate preservation + no-proxy-rephrasing rules enforced via LLM-backed contract validator with single retry. Plastik DE/EN/FR all produce correct predicate-preserving claims.
-- **FLOOD-1 single-source flooding mitigation implemented** (Fix 1 + Fix 2). Root cause: a single low-reliability source (`civilizationworks.org`, trackRecordScore=0.38) generated 11 evidence items flipping AC_01 verdict. Fix 1 adds claim-local, partition-scoped source portfolios to all verdict debate prompts — the LLM now sees per-source evidence count, `trackRecordScore`, and `trackRecordConfidence` for each claim independently. Fix 2 adds a `maxEvidenceItemsPerSource` UCM cap (default 5) enforced in Stage 2 with best-N reselection across existing+new items by `probativeValue`. **Awaiting live validation** per §12 of the investigation doc (4 runs: 2× Bolsonaro, 1× Plastik DE, 1× Hydrogen). See `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
-- **Stage-1 claim decomposition fix shipped** (`fff7a508`). The 3-step package materially fixes the `8640/cd4501` evaluative over-fragmentation family (4→2 claims; `UNVERIFIED` starvation eliminated). The stress test confirmed Step 2 (contract evidence-separability) is the primary fix. Residual factual conjunct splitting (`Werkzeuge/Methoden`, `b8e6/e407`) remains a separate Stage-1 Step 4 follow-on rather than evidence that the shipped package failed.
+- **FLOOD-1 single-source flooding mitigation shipped** (Fix 1 + Fix 2). Fix 1 adds claim-local, partition-scoped source portfolios to all verdict debate prompts. Fix 2 adds `maxEvidenceItemsPerSource: 5` UCM cap. Live-validated and operational. See `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
+- **Stage-1 claim decomposition fix REVERTED** (`fff7a508` reverted by `a1c5caf5`; `d04fc750` reverted by `ad62334f`; `09ce7018` reverted by `11019788`). The 3-step evidence-separability package caused live regressions: (1) SRG compound — contract validation intermittent fail-open led to UNVERIFIED 50/0; (2) Plastik EN — candidate selection preferred bad merges, led to UNVERIFIED 43/40. The `distinctEvents` granularity prompt change was also reverted — it stabilized claim count but did not achieve the primary TSE peer-extraction target. Post-rollback validation (17 runs, Apr 1) confirmed all families restored to baseline ranges. The SRG over-fragmentation (effizient/wirksam split) remains a pre-existing open issue. See `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`.
 - **Direction-integrity / citation-carriage fix shipped** (`e1f2c551`). `VERDICT_RECONCILIATION` now carries citation arrays and the safe-downgrade warning state bug is fixed. Code review is clean; the remaining gate is targeted live remeasurement before the direction-validator thread is reopened.
 - **`2705/e407` root fix IMPLEMENTED** (`03387283` + follow-up policy update). Assessable-claims path replaces the all-insufficient fallback. Verdict-uniqueness invariant enforced. Coverage Matrix built from ALL final claim verdicts. LLM article adjudication via extended `VERDICT_NARRATIVE` now uses pure LLM-led article truth adjustment, with only a structural confidence ceiling and deterministic fallback remaining. Validated: partial-insufficient run shows confidence 65→40, matrix 3 claims. Controls near-identical to deterministic baseline.
 - **CRITICAL: Cross-linguistic neutrality gap identified.** 100-job quality evolution analysis (Mar 30) found Plastik recycling produces 58pp max spread across languages: DE 33% / EN 72% / FR 13%. Same semantic claim, directionally opposite verdicts. Driven by Stage 2 evidence language bias. Not covered by current EVD-1 thresholds. See `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`.
 - **Current posture: structural integrity fixes complete, cross-linguistic neutrality is the next quality gap.** All planned integrity work (citation carriage, claim decomposition, all-insufficient path, matrix alignment, article adjudication) is shipped. Optimization/runtime hardening (`W15`, fetch short-circuit, `P1-B`) is shipped. The cross-linguistic neutrality finding now has an experimental implementation path; the remaining gate is live validation and a promotion decision, not architecture approval or Stage-2 cleanup.
 - **QLT-4 (per-claim contrarian retrieval) is CLOSED and removed.** Experimental code, UCM config fields, and tests reverted. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`.
 - **Remaining optimization work** (`P1-A`, `P2-*`, `P3-*`) remains separate and Captain-gated — not automatically triggered by EVD-1 monitor mode.
+
+## Recent Changes (2026-04-04)
+
+**Wikipedia supplementary completion shipped and validated:**
+- ✅ **Bounded supplementary-provider orchestration**: generic `supplementaryProviders` UCM block now controls when supplementary providers run and how many results each may contribute.
+- ✅ **Wikipedia is default-on supplementary**: current default posture is `always_if_enabled` with a per-provider cap of 3 results.
+- ✅ **Detected-language routing shipped**: Wikipedia now prefers detected claim/input language, then configured language, then `en` for subdomain selection.
+- ⚠️ **Scope remains intentionally narrow**: Semantic Scholar and Google Fact Check remain optional/off by default, and this completion step is positioned as retrieval-diversity hardening rather than a full multilingual-neutrality fix.
+
+**Direction-validator rescue hardening shipped (`db7cdcf8`):**
+- ✅ **Stable self-consistency rescue boost**: verdicts with assessed, stable advocate-side reruns can now survive false-positive direction-validator disagreements.
+- ✅ **Rescue observability added**: `direction_rescue_plausible` warnings now record both ratio-based and stable-consistency rescues, including repaired-path rescue (`phase: "post_repair"`).
+- ✅ **Rule 2 floor extracted to UCM**: `directionMixedEvidenceFloor` now controls the mixed-evidence plausibility band instead of a hardcoded 0.3.
+
+**Outage-resilience A-track completed (`ba80a919`, `83a50d8c`, `4ac43609`, `bb40e441`):**
+- ✅ **Network outages now trip the breaker**: clear connectivity failures classify as provider-counting LLM outages and feed provider health from Stage 4.
+- ✅ **Pre-Stage-4 connectivity probe shipped**: clear transport-layer unreachability aborts the current job before debate starts instead of fabricating damaged fallback verdicts.
+- ✅ **Network-only watchdog auto-resume**: paused queues resume automatically only for genuine network-caused pauses, not for auth/rate-limit incidents.
+- ⚠️ **Future work remains deferred**: pipeline hold/resume and checkpointing were intentionally left as later tracks.
+
+---
 
 ## Recent Changes (2026-04-01)
 
@@ -87,7 +111,7 @@
 - ✅ **Option C implemented and promoted** (`b5fad127`): unresolved seeded preliminary evidence is remapped to final `AC_*` claims with one batched Haiku call before Stage 2 seeding. Existing exact/numeric remap behavior preserved.
 - ✅ **Validated via current-stack A/B**: Bolsonaro ON vs OFF — same verdict (LEANING-TRUE), same truth% (64.3 vs 64.4), seeded mapping 0%→92%. Spot-check: 14/15 mappings clearly correct. Controls stable.
 - ✅ **Captain approved, default flipped to `true`**. Rollback flag `preliminaryEvidenceLlmRemapEnabled` remains available via UCM.
-- ⚠️ **Monitor:** Homeopathy-family confidence anomaly (74→24 in one ON run) — watch post-promotion.
+- ✅ **Post-promotion confirmation cleared the initial monitor signal**: the Homeopathy-family confidence collapse did not reproduce on confirmation runs and is no longer a deployment blocker.
 
 ---
 
@@ -249,10 +273,11 @@
 - ✅ Aborted gate runs explicitly classified as non-decision-grade in run policy (debug-only use)
 
 **Multi-source retrieval provider layer (Plan v2.1 Phases 1-4):**
-- ✅ Added search providers: Wikipedia, Semantic Scholar, Google Fact Check (all disabled by default, UCM-configurable)
+- ✅ Added search providers: Wikipedia, Semantic Scholar, Google Fact Check (UCM-configurable)
 - ✅ Wired provider enum/schema/admin config/AUTO search dispatch + circuit-breaker integration
 - ✅ Added env support for `SEMANTIC_SCHOLAR_API_KEY` and `GOOGLE_FACTCHECK_API_KEY`
 - ✅ Added 36 tests for new providers; safe suite now at 1047 tests passing
+- ✅ **Wikipedia supplementary completion (2026-04-04):** Wikipedia enabled by default (`always_if_enabled` mode, bounded to 3 results). Detected claim language threaded into Wikipedia subdomain selection. Generic `supplementaryProviders` UCM block controls all supplementary providers. Semantic Scholar and Google Fact Check remain disabled by default.
 
 ---
 
