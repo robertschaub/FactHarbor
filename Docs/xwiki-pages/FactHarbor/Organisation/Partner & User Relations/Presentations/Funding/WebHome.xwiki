@@ -173,35 +173,42 @@ The system is in **Alpha** and under active development.
 
 ----
 
-== How You Can Support FactHarbor ==
+== Working Together ==
 
-=== Financial Support ===
+=== For Researchers and Universities ===
 
-|=Instrument|=Typical Amount|=Who
-|**Foundation grants**|CHF 20K-300K|Mercator, Ernst Goehner, Migros Kulturprozent, Hasler Foundation — fund specific development or research tracks
-|**Innosuisse Innovation Cheque**|CHF 15,000 (100% funded)|Feasibility study with academic partner — no co-funding required
-|**Innosuisse Innovation Project**|CHF 100K-500K|Joint R&D with university partner (40-60% cost split, in-kind eligible)
-|**Open-source infrastructure grants**|EUR 5K-1M|NLNet Foundation, Mozilla Democracy x AI, Prototype Fund
-|**International grants**|EUR 25K-300K|IFCN Global Fact Check Fund, European Media and Information Fund
-|**Infrastructure sponsorship**|Varies|Cover AI or hosting costs (~$0.20-0.55 per analysis)
-|**Individual donations**|Any amount|Direct financial contribution to development and operations
+|=What you bring|=What you gain
+|Research expertise in NLP, information retrieval, or computational journalism|A working Alpha testbed with real claims, structured artifacts, and configurable stages — not a paper prototype
+|Access to Swiss and EU grant instruments (Innosuisse, BRIDGE, Horizon Europe)|A concrete implementation partner and co-applicant for applied research proposals
+|Student supervision capacity|Focused thesis projects on open, measurable problems (multilingual robustness, evidence retrieval, model distillation)
+|Publication track record|Joint papers at ACL, EMNLP, CLEF — with real-world data and reproducible baselines
 
-=== Non-Financial Support ===
+=== For Fact-Checkers and Newsrooms ===
 
-|=Contribution|=What It Means|=Who Could Help
-|**Beta testing and feedback**|Early access to new features; feedback on verdict quality and usability|Journalists, fact-checkers, researchers
-|**Domain expertise**|Fact-checking methodology advice, legal review, LLM evaluation|Practicing fact-checkers, media lawyers, AI researchers
-|**Code contributions**|Bug fixes, features, performance optimization on the open-source codebase|Developers, university students (thesis projects)
-|**Academic introductions**|Connect FactHarbor to a Swiss NLP, information retrieval, or computational journalism lab|Academics, university contacts
-|**Practitioner introductions**|Arrange a short conversation with a fact-checker, verification lead, or newsroom innovation contact|Anyone in the DACH media ecosystem
-|**Advocacy and outreach**|Share FactHarbor with journalists, educators, and researchers|Anyone who sees the value
+|=What you bring|=What you gain
+|Workflow knowledge — where verification takes the most time|A tool that automates evidence research, not editorial judgment
+|Real-world claims and feedback on verdict quality|Early access and influence on how the tool evolves for your use case
+|Network reach into the DACH fact-checking ecosystem|A technology partner building specifically for your needs — not a generic AI product
+|Willingness to test in a short pilot|Transparent, auditable reports you can inspect and build on
+
+=== For Foundations and Sponsors ===
+
+|=What you bring|=What you gain
+|Financial support for development, infrastructure, or research partnerships|A measurable contribution to independent, transparent fact-checking infrastructure
+|Grant expertise or programme introductions|A project with clear public-interest alignment, open-source transparency, and non-profit governance
+|Infrastructure credits (AI, hosting, search APIs)|Direct impact — every franc extends the number of claims that can be verified
+
+=== For Developers and Contributors ===
+
+|=What you bring|=What you gain
+|Code contributions, bug fixes, performance optimization|Meaningful open-source contribution to a working system with real users
+|Translation and localization (DE/FR/IT/EN)|Visible impact on multilingual fact-checking capability
+|Testing and quality feedback|Early access and a say in how the project develops
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
 **Every franc goes to the mission.** No profit distribution — surplus is reinvested. All funders above CHF 5,000 will be disclosed.
 )))
-
-//Detailed funding routes and strategy: [[Cooperation Opportunities>>FactHarbor.Organisation.Strategy.Cooperation Opportunities.WebHome]]//
 
 ----
 
