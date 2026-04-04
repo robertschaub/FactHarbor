@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-02
 **Role:** Lead Architect / Code Reviewer
-**Status:** Review complete
+**Status:** RESOLVED — payload simplification shipped in `e0cf6752` (2026-04-03). Inner-quote repair shipped in same commit. Both validated by successful German Plastik reruns.
 
 ---
 
