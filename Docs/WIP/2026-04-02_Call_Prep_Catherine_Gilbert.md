@@ -57,6 +57,27 @@ Vorschläge (aktuell, deutschsprachig, Desinformation-relevant):
 
 **Empfehlung: Option 1 oder 3** — zeigt Relevanz für ihre Arbeit.
 
+## Catherines Netzwerk (Hintergrundwissen)
+
+Catherine ist eine der bestvernetzten Personen in der Schweizer Verifikationsszene. 5 Jahre bei Keystone-SDA + jährliche Faktencheck-Schulungen (Faktencheck22-25) = sie kennt Journalisten aus allen Schweizer Medienhäusern.
+
+**Engste Kontakte:**
+
+| Person | Organisation | Verbindung zu Catherine |
+|--------|-------------|------------------------|
+| **Jan Ludwig** | NZZ, Team Lead OSINT | Co-Trainer Faktencheck22-25 (4+ Jahre) — ihr engster Fachkontakt |
+| **Teresa Dapp** | dpa, Head of Fact-Checking | Aktuelle Auftraggeberin (Freelance OSINT seit Feb 2026) |
+| **Fiona Endres** | SRF Investigativ / investigativ.ch Vorstand | Gleiche OSINT/Verifikations-Kreise, MAZ Luzern |
+| **Melanie Kömle** | SRF Netzwerk Faktencheck | Beide in der CH-Verifikations-Infrastruktur |
+| **Jessica Eberhart** | NZZ OSINT-Reporterin | Im Team von Jan Ludwig |
+
+**Wertvollste Introductions die sie vermitteln könnte:**
+1. **Jan Ludwig** (NZZ) — ihr engster Co-Trainer, OSINT-Experte
+2. **Teresa Dapp** (dpa) — Zugang zum dpa Fact-Checking Team (DACH-weit)
+3. **Fiona Endres** (investigativ.ch) — Tor zum Recherche-Netzwerk aller grossen CH-Medienhäuser
+
+**Nicht direkt fragen** — das Netzwerk-Thema am Ende des Calls natürlich ansprechen: "Kennst du andere Leute die das interessieren könnte?" Nicht mit einer Wunschliste kommen.
+
 ## Known Limitations (Antworten parat haben)
 
 | Wenn sie fragt... | Ehrliche Antwort |
