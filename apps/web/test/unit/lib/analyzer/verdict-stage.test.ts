@@ -4267,13 +4267,18 @@ describe("claim-local direction validation (cross-claim contamination prevention
 
     await validateVerdicts(verdicts, evidence, mockLLM);
 
-    // Grounding must see only strict claim-local evidence for reasoning validation
+    // Grounding must see only strict claim-local evidence for reasoning validation.
+    // IDs are aliased (EVG_xxx) for validator LLM numeric-precision safety.
     expect(groundingEvidencePool).toBeDefined();
-    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_N1"]);
+    expect(groundingEvidencePool).toHaveLength(1);
+    expect(groundingEvidencePool![0].id).toMatch(/^EVG_\d{3}$/);
     // Cited registry preserves globally existing cited IDs so the validator can
     // distinguish cross-claim contamination from hallucinated IDs.
     expect(groundingCitedRegistry).toBeDefined();
-    expect(groundingCitedRegistry!.map((e) => e.id).sort()).toEqual(["EV_S1"]);
+    expect(groundingCitedRegistry).toHaveLength(1);
+    expect(groundingCitedRegistry![0].id).toMatch(/^EVG_\d{3}$/);
+    // The aliased IDs must be different (pool vs registry are different items)
+    expect(groundingEvidencePool![0].id).not.toEqual(groundingCitedRegistry![0].id);
   });
 
   it("grounding validation sees uncited-but-claim-local evidence as valid context", async () => {
@@ -4303,8 +4308,11 @@ describe("claim-local direction validation (cross-claim contamination prevention
 
     await validateVerdicts(verdicts, evidence, mockLLM);
 
+    // IDs are aliased (EVG_xxx) for validator LLM numeric-precision safety.
     expect(groundingEvidencePool).toBeDefined();
-    expect(groundingEvidencePool!.map((e) => e.id).sort()).toEqual(["EV_01", "EV_02", "EV_03"]);
+    expect(groundingEvidencePool).toHaveLength(3);
+    expect(groundingEvidencePool!.every((e) => /^EVG_\d{3}$/.test(e.id!))).toBe(true);
+    // Source IDs are NOT aliased — only evidence IDs are.
     expect(groundingEvidencePool!.map((e) => e.sourceId)).toContain("S_015");
   });
 
@@ -4424,16 +4432,18 @@ describe("claim-local direction validation (cross-claim contamination prevention
       validatedChallengeDoc,
     });
 
+    // Boundary IDs are NOT aliased — only evidence IDs are.
     expect(groundingBoundaryIds).toEqual(["CB_04", "CB_07"]);
+    // Evidence IDs in challenge context are aliased (EVG_xxx).
     expect(groundingChallengeContext).toEqual([
       expect.objectContaining({
         challengeId: "CP_AC_02_0",
         challengeType: "methodology_weakness",
-        citedEvidenceIds: ["EV_999"],
+        citedEvidenceIds: [expect.stringMatching(/^EVG_\d{3}$/)],
         challengeValidation: {
           evidenceIdsValid: false,
           validIds: [],
-          invalidIds: ["EV_999"],
+          invalidIds: [expect.stringMatching(/^EVG_\d{3}$/)],
         },
       }),
     ]);

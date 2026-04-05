@@ -1085,6 +1085,63 @@ interface GroundingChallengeContextEntry {
 }
 
 /**
+ * Validator-local evidence ID aliasing for grounding validation.
+ *
+ * Problem: Evidence IDs use two formats — short sequential (EV_001) from
+ * preliminary extraction and long timestamp-based (EV_1775405xxxxxx) from
+ * main research extraction. The grounding validator LLM cannot reliably
+ * cross-reference 13-digit numeric IDs, producing false-positive failures
+ * on IDs that actually exist in the registry.
+ *
+ * Solution: Build short stable aliases (EVG_001, EVG_002, ...) scoped to
+ * each grounding validation call. Canonical IDs remain untouched in the
+ * pipeline — only the validator prompt input/output uses aliases.
+ */
+interface GroundingAliasMap {
+  /** Canonical evidence ID → short validator alias */
+  toAlias: Map<string, string>;
+  /** Short validator alias → canonical evidence ID */
+  toCanonical: Map<string, string>;
+}
+
+function buildGroundingAliasMap(evidenceIds: string[]): GroundingAliasMap {
+  const toAlias = new Map<string, string>();
+  const toCanonical = new Map<string, string>();
+  const sorted = [...new Set(evidenceIds)].sort();
+  for (let i = 0; i < sorted.length; i++) {
+    const alias = `EVG_${String(i + 1).padStart(3, "0")}`;
+    toAlias.set(sorted[i], alias);
+    toCanonical.set(alias, sorted[i]);
+  }
+  return { toAlias, toCanonical };
+}
+
+function aliasId(id: string, map: GroundingAliasMap): string {
+  return map.toAlias.get(id) ?? id;
+}
+
+function aliasIds(ids: string[], map: GroundingAliasMap): string[] {
+  return ids.map((id) => aliasId(id, map));
+}
+
+/**
+ * Restore canonical evidence IDs in grounding validator issue strings.
+ * The validator returns issues referencing alias IDs (EVG_xxx); this
+ * replaces them with the original canonical IDs for diagnostic output.
+ */
+function dealiasGroundingIssues(issues: string[], map: GroundingAliasMap): string[] {
+  return issues.map((issue) => {
+    let result = issue;
+    for (const [alias, canonical] of map.toCanonical) {
+      if (result.includes(alias)) {
+        result = result.replaceAll(alias, canonical);
+      }
+    }
+    return result;
+  });
+}
+
+/**
  * Step 5: Validate verdicts with two lightweight Haiku checks.
  * Check A (grounding): Are cited IDs and reasoning grounded in claim-local evidence context?
  * Check B (direction): Does truth% align with evidence direction?
@@ -1101,6 +1158,28 @@ export async function validateVerdicts(
 ): Promise<CBClaimVerdict[]> {
   const validationTier = config.debateRoles.validation.strength;
   const validationProvider = config.debateRoles.validation.provider;
+
+  // Build validator-local alias map: collect all evidence IDs across all claims,
+  // then assign short sequential aliases (EVG_001, EVG_002, ...) so the grounding
+  // validator LLM doesn't need to compare long timestamp-based IDs.
+  const allEvidenceIdsForGrounding: string[] = [];
+  for (const v of verdicts) {
+    const localEv = getGroundingClaimLocalEvidence(v.claimId, evidence);
+    for (const e of localEv) allEvidenceIdsForGrounding.push(e.id);
+    for (const id of v.supportingEvidenceIds) allEvidenceIdsForGrounding.push(id);
+    for (const id of v.contradictingEvidenceIds) allEvidenceIdsForGrounding.push(id);
+    const registry = getCitedEvidenceRegistry(v, evidence);
+    for (const r of registry) allEvidenceIdsForGrounding.push(r.id);
+    const cc = buildClaimChallengeContext(v.claimId, repairContext?.validatedChallengeDoc);
+    for (const c of cc) {
+      for (const id of c.citedEvidenceIds) allEvidenceIdsForGrounding.push(id);
+      if (c.challengeValidation) {
+        for (const id of c.challengeValidation.validIds) allEvidenceIdsForGrounding.push(id);
+        for (const id of c.challengeValidation.invalidIds) allEvidenceIdsForGrounding.push(id);
+      }
+    }
+  }
+  const groundingAliasMap = buildGroundingAliasMap(allEvidenceIdsForGrounding);
 
   // Check A + B: Grounding and direction validation (parallel — independent checks)
   const [groundingResults, directionResults] = await Promise.all([
@@ -1128,18 +1207,31 @@ export async function validateVerdicts(
           return {
             claimId: v.claimId,
             reasoning: v.reasoning,
-            supportingEvidenceIds: v.supportingEvidenceIds,
-            contradictingEvidenceIds: v.contradictingEvidenceIds,
+            supportingEvidenceIds: aliasIds(v.supportingEvidenceIds, groundingAliasMap),
+            contradictingEvidenceIds: aliasIds(v.contradictingEvidenceIds, groundingAliasMap),
             boundaryIds,
-            challengeContext,
+            challengeContext: challengeContext.map((c) => ({
+              ...c,
+              citedEvidenceIds: aliasIds(c.citedEvidenceIds, groundingAliasMap),
+              ...(c.challengeValidation ? {
+                challengeValidation: {
+                  evidenceIdsValid: c.challengeValidation.evidenceIdsValid,
+                  validIds: aliasIds(c.challengeValidation.validIds, groundingAliasMap),
+                  invalidIds: aliasIds(c.challengeValidation.invalidIds, groundingAliasMap),
+                },
+              } : {}),
+            })),
             evidencePool: localEvidence.map((e) => ({
-              id: e.id,
+              id: aliasId(e.id, groundingAliasMap),
               statement: e.statement,
               sourceId: e.sourceId,
               sourceUrl: e.sourceUrl,
               claimDirection: e.claimDirection,
             })),
-            citedEvidenceRegistry: getCitedEvidenceRegistry(v, evidence),
+            citedEvidenceRegistry: getCitedEvidenceRegistry(v, evidence).map((r) => ({
+              ...r,
+              id: aliasId(r.id, groundingAliasMap),
+            })),
             ...(localSourcePortfolio.length > 0 ? {
               sourcePortfolio: localSourcePortfolio.map((s) => ({
                 sourceId: s.sourceId,
@@ -1187,7 +1279,15 @@ export async function validateVerdicts(
       "direction_validation_degraded",
     ),
   ]);
-  const groundingByClaim = new Map(groundingResults.map((r) => [r.claimId, r]));
+  // De-alias grounding results: restore canonical evidence IDs in issue strings
+  // so that warnings and safe-downgrade decisions reference real pipeline IDs.
+  const groundingByClaim = new Map(groundingResults.map((r) => [
+    r.claimId,
+    {
+      ...r,
+      issues: r.issues ? dealiasGroundingIssues(r.issues, groundingAliasMap) : r.issues,
+    },
+  ]));
   const directionByClaim = new Map(directionResults.map((r) => [r.claimId, r]));
 
   const validated: CBClaimVerdict[] = [];
