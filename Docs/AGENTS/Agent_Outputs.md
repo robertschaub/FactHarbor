@@ -1,5 +1,15 @@
 # Agent Outputs Log
 ---
+### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | sufficiencyMinMainIterations Experiment + AC_02 Check — Deploy
+**Task:** Test whether raising `sufficiencyMinMainIterations: 1 → 2` closes the Bolsonaro EN local-vs-deployed gap, then check AC_02 evidence thinness.
+**Files touched:** `Docs/WIP/2026-04-05_Bolsonaro_Sufficiency_Min_Main_Iterations_Experiment.md` (new)
+**Key decisions:** Experiment not run — pre-analysis found zero effect. MT-3 rule (`effectiveMinIterations = max(minMainIterations, distinctEventCount - 1)`) already forces the effective minimum to 4 on local (5 events) and 6 on deployed (7 events). Changing 1→2 yields `max(2,4)=4` — unchanged. The real gap is Stage 1 distinct-event detection variance (5 vs 7 events), which directly controls research depth via MT-3.
+**Open items:** MT-3 per-claim iteration floor is a valid future design workstream (queued, not blocking).
+**Warnings:** None.
+**For next agent:** AC_02 check confirms genuine source scarcity, not starvation. AC_02 gets zero seeded items in both local AND deployed. Its 14 vs 21 item gap is proportional to iteration count (4 vs 6), driven by Stage 1 event-count variance (5 vs 7 distinct events). AC_02's sources have zero overlap with siblings — no budget competition. **Recommendation: deploy.** The local build is clean; remaining gap is fully explained by non-actionable factors.
+**Learnings:** No
+
+---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Grounding Alias Fix — Validated
 **Task:** Implement and validate grounding-validator alias fix for timestamp-ID false positives on Bolsonaro EN and Plastik DE.
 **Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
