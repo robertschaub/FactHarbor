@@ -461,7 +461,7 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
 - Avoid overly broad queries — target specific evidence types.
 - Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
 - Keep queries concise (3–8 words typical).
-- When `relevantGeographies` lists multiple jurisdictions, do NOT collapse coverage onto only one of them. Across the returned queries, ensure the directly implicated jurisdictions are explicitly represented where that is necessary to verify the claim.
+- **Multi-jurisdiction balance**: When `relevantGeographies` lists multiple jurisdictions, do NOT collapse all queries onto a single jurisdiction. Distribute jurisdiction coverage across the returned queries where feasible within the query budget. Prefer queries that explicitly name or target different listed jurisdictions over generic queries that leave jurisdiction implicit.
 
 ### Input
 
