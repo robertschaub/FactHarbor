@@ -208,4 +208,33 @@ describe("Stage-4 prompt contract", () => {
       }
     });
   });
+
+  describe("verdict prose contract", () => {
+    it("advocate instructions keep machine IDs in structured arrays, not prose reasoning", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("Do NOT embed raw machine identifiers");
+      expect(section).toContain("supportingEvidenceIds");
+      expect(section).toContain("contradictingEvidenceIds");
+    });
+
+    it("challenger instructions keep machine IDs in structured arrays, not challenge prose", () => {
+      const section = extractSection(promptContent, "VERDICT_CHALLENGER");
+      expect(section).toContain("Use `evidenceIds` as the authoritative machine-readable citation channel");
+      expect(section).toContain("Do NOT embed raw machine identifiers");
+    });
+
+    it("reconciliation instructions keep machine IDs out of reasoning and challenge response prose", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Do not place machine IDs in prose");
+      expect(section).toContain("adjustmentBasedOnChallengeIds");
+    });
+
+    it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
+      const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
+      expect(section).toContain("Reasoning SHOULD avoid raw machine IDs");
+      expect(section).toContain("Defensive legacy rule for source references");
+      expect(section).toContain("Defensive legacy rule for boundary references");
+      expect(section).toContain("Defensive legacy rule for challenge references");
+    });
+  });
 });

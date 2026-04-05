@@ -922,6 +922,17 @@ export async function runResearchIteration(
     targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
     totalResultsThisIteration, newEvidenceThisIteration,
   );
+
+  // Late-stage additions (contrarian iterations and supplementary EN lane) can
+  // append evidence after the batch Stage-2 reconciliation pass. Reconcile
+  // source links at the end of every iteration so final evidence items retain
+  // canonical sourceId/sourceTitle before clustering and verdict validation.
+  const reconciledSourceIdsCount = reconcileEvidenceSourceIds(state.evidenceItems, state.sources);
+  if (reconciledSourceIdsCount > 0) {
+    debugLog(
+      `[Stage2] Iteration-level source reconciliation updated ${reconciledSourceIdsCount}/${state.evidenceItems.length} evidence items after late additions`,
+    );
+  }
 }
 
 // ============================================================================

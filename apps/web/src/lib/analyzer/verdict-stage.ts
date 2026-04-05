@@ -517,7 +517,14 @@ export async function runVerdictStage(
     llmCall,
     config,
     warnings,
-    { claims, boundaries, coverageMatrix, calculationConfig, sourcePortfolioByClaim: fullPortfolio },
+    {
+      claims,
+      boundaries,
+      coverageMatrix,
+      calculationConfig,
+      sourcePortfolioByClaim: fullPortfolio,
+      validatedChallengeDoc,
+    },
   );
 
   // Structural Consistency Check (deterministic)
@@ -1012,7 +1019,7 @@ export async function reconcileVerdicts(
     const supportingEvidenceIds = reconciledSupporting ?? original.supportingEvidenceIds;
     const contradictingEvidenceIds = reconciledContradicting ?? original.contradictingEvidenceIds;
 
-    return {
+    const mergedVerdict: CBClaimVerdict = {
       ...original,
       truthPercentage,
       verdict: percentageToClaimVerdict(truthPercentage, confidence, undefined, config.mixedConfidenceThreshold),
@@ -1027,6 +1034,7 @@ export async function reconcileVerdicts(
       ...(misleadingness ? { misleadingness } : {}),
       ...(misleadingnessReason ? { misleadingnessReason } : {}),
     };
+    return mergedVerdict;
   });
 
   return { verdicts, validatedChallengeDoc };
@@ -1061,11 +1069,19 @@ export interface VerdictValidationRepairContext {
   coverageMatrix: CoverageMatrix;
   calculationConfig?: CalcConfig;
   sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>;
+  validatedChallengeDoc?: ChallengeDocument;
   repairExecutor?: (
     request: VerdictRepairRequest,
     llmCall: LLMCallFn,
     config: VerdictStageConfig,
   ) => Promise<CBClaimVerdict | null>;
+}
+
+interface GroundingChallengeContextEntry {
+  challengeId: string;
+  challengeType: ChallengePoint["type"];
+  citedEvidenceIds: string[];
+  challengeValidation?: ChallengeValidation;
 }
 
 /**
@@ -1099,12 +1115,23 @@ export async function validateVerdicts(
             localEvidence,
             repairContext?.sourcePortfolioByClaim,
           );
+          const boundaryIds = getClaimBoundaryIdsForValidation(
+            v,
+            repairContext?.boundaries,
+            repairContext?.coverageMatrix,
+          );
+          const challengeContext = buildClaimChallengeContext(
+            v.claimId,
+            repairContext?.validatedChallengeDoc,
+          );
 
           return {
             claimId: v.claimId,
             reasoning: v.reasoning,
             supportingEvidenceIds: v.supportingEvidenceIds,
             contradictingEvidenceIds: v.contradictingEvidenceIds,
+            boundaryIds,
+            challengeContext,
             evidencePool: localEvidence.map((e) => ({
               id: e.id,
               statement: e.statement,
@@ -1633,6 +1660,41 @@ function getClaimLocalSourcePortfolio(
     return [];
   }
   return buildSourcePortfolio(localEvidence);
+}
+
+function getClaimBoundaryIdsForValidation(
+  verdict: CBClaimVerdict,
+  boundaries?: ClaimAssessmentBoundary[],
+  coverageMatrix?: CoverageMatrix,
+): string[] {
+  const fromCoverage = boundaries && coverageMatrix
+    ? coverageMatrix.getBoundariesForClaim(verdict.claimId)
+    : [];
+  const fromVerdict = verdict.boundaryFindings
+    .map((finding) => finding.boundaryId)
+    .filter((boundaryId) => typeof boundaryId === "string" && boundaryId.length > 0);
+  return Array.from(new Set([...(fromCoverage ?? []), ...fromVerdict]));
+}
+
+function buildClaimChallengeContext(
+  claimId: string,
+  challengeDoc?: ChallengeDocument,
+): GroundingChallengeContextEntry[] {
+  if (!challengeDoc) return [];
+  const claimChallenge = challengeDoc.challenges.find((challenge) => challenge.claimId === claimId);
+  if (!claimChallenge) return [];
+  return claimChallenge.challengePoints.map((challengePoint) => ({
+    challengeId: challengePoint.id,
+    challengeType: challengePoint.type,
+    citedEvidenceIds: challengePoint.evidenceIds,
+    ...(challengePoint.challengeValidation ? {
+      challengeValidation: {
+        evidenceIdsValid: challengePoint.challengeValidation.evidenceIdsValid,
+        validIds: challengePoint.challengeValidation.validIds,
+        invalidIds: challengePoint.challengeValidation.invalidIds,
+      },
+    } : {}),
+  }));
 }
 
 function buildBoundaryContext(

@@ -3140,6 +3140,78 @@ describe("Stage 2: runResearchIteration", () => {
     expect(state.evidenceItems.length).toBeGreaterThanOrEqual(0); // Filter may remove
   });
 
+  it("reconciles sourceId for evidence added during the iteration", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    let callCount = 0;
+    mockExtractOutput.mockImplementation(() => {
+      callCount++;
+      switch (callCount) {
+        case 1:
+          return {
+            queries: [{ query: "test query", rationale: "test" }],
+          };
+        case 2:
+          return {
+            relevantSources: [
+              { url: "https://example.com/1", relevanceScore: 0.9, reasoning: "relevant" },
+            ],
+          };
+        case 3:
+          return {
+            evidenceItems: [
+              {
+                statement: "Test evidence statement with enough length for filtering",
+                category: "statistic",
+                claimDirection: "supports",
+                sourceUrl: "https://example.com/1",
+                evidenceScope: {
+                  methodology: "Statistical survey analysis",
+                  temporal: "2024 fiscal year",
+                },
+                probativeValue: "high",
+                sourceType: "government_report",
+                isDerivative: false,
+                derivedFromSourceUrl: null,
+                relevantClaimIds: ["AC_01"],
+              },
+            ],
+          };
+        default:
+          return null;
+      }
+    });
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
+      providersUsed: ["google"],
+    } as any);
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(500),
+      title: "Test Source",
+      contentType: "text/html",
+    });
+
+    await runResearchIteration(claim, "contrarian", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].sourceId).toBe("S_001");
+    expect(state.evidenceItems[0].sourceTitle).toBe("Test Source");
+  });
+
   it("should track contradictionSourcesFound for contradiction iterations", async () => {
     const claim = createAtomicClaim({ id: "AC_01" });
     const state = {

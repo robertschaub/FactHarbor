@@ -4355,6 +4355,90 @@ describe("claim-local direction validation (cross-claim contamination prevention
     }));
   });
 
+  it("grounding validation receives boundary IDs and structured challenge context", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+      boundaryFindings: [
+        {
+          boundaryId: "CB_04",
+          boundaryName: "Boundary 4",
+          truthPercentage: 75,
+          confidence: 80,
+          evidenceDirection: "supports",
+          evidenceCount: 1,
+        },
+        {
+          boundaryId: "CB_07",
+          boundaryName: "Boundary 7",
+          truthPercentage: 70,
+          confidence: 75,
+          evidenceDirection: "supports",
+          evidenceCount: 1,
+        },
+      ],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_02"], claimDirection: "supports", claimBoundaryId: "CB_04" }),
+    ];
+    const boundaries = [
+      createClaimBoundary({ id: "CB_04", name: "Boundary 4" }),
+      createClaimBoundary({ id: "CB_07", name: "Boundary 7" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const validatedChallengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_02",
+        challengePoints: [{
+          id: "CP_AC_02_0",
+          type: "methodology_weakness",
+          description: "Challenge cites one invalid evidence ID",
+          evidenceIds: ["EV_999"],
+          severity: "medium",
+          challengeValidation: { evidenceIdsValid: false, validIds: [], invalidIds: ["EV_999"] },
+        }],
+      }],
+    };
+
+    let groundingBoundaryIds: string[] | undefined;
+    let groundingChallengeContext: Array<Record<string, unknown>> | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        const verdictInput = (input.verdicts as Array<Record<string, unknown>>)?.[0];
+        groundingBoundaryIds = verdictInput?.boundaryIds as string[];
+        groundingChallengeContext = verdictInput?.challengeContext as Array<Record<string, unknown>>;
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM, undefined, undefined, {
+      claims,
+      boundaries,
+      coverageMatrix,
+      validatedChallengeDoc,
+    });
+
+    expect(groundingBoundaryIds).toEqual(["CB_04", "CB_07"]);
+    expect(groundingChallengeContext).toEqual([
+      expect.objectContaining({
+        challengeId: "CP_AC_02_0",
+        challengeType: "methodology_weakness",
+        citedEvidenceIds: ["EV_999"],
+        challengeValidation: {
+          evidenceIdsValid: false,
+          validIds: [],
+          invalidIds: ["EV_999"],
+        },
+      }),
+    ]);
+  });
+
   it("standard single-claim validation still works (no regression)", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",

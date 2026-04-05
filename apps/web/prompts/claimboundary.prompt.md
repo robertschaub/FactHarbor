@@ -903,7 +903,8 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - For each claim, consider evidence from ALL boundaries, not just one.
 - `truthPercentage`: 0 = completely false, 100 = completely true. Base this on the weight and quality of evidence, not on the number of evidence items.
 - `confidence`: 0–100. How confident you are in the verdict given the available evidence. Lower if evidence is thin, contradictory, or low-quality.
-- Cite specific evidence item IDs in your reasoning.
+- Use `supportingEvidenceIds` and `contradictingEvidenceIds` as the authoritative evidence-citation channel.
+- Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning`. Keep reasoning natural-language only.
 - Per-boundary findings provide quantitative signals — assess each boundary's evidence independently before synthesizing.
 - **FIRST assess per-boundary, THEN synthesize across boundaries.** Do not skip the per-boundary analysis.
 - When boundaries provide conflicting evidence, the verdict should reflect the conflict rather than averaging it away. Explain the disagreement.
@@ -954,7 +955,7 @@ Return a JSON array:
     "claimId": "AC_01",
     "truthPercentage": 72,
     "confidence": 78,
-    "reasoning": "string — explanation citing evidence IDs, addressing boundary disagreements",
+    "reasoning": "string — natural-language explanation of the evidence and boundary disagreements, without raw machine IDs",
     "isContested": false,
     "supportingEvidenceIds": ["EV_003", "EV_007"],
     "contradictingEvidenceIds": ["EV_005"],
@@ -1000,6 +1001,8 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 - Do not assume any particular language. Analyze in the original language of the evidence.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Be genuinely adversarial — provide specific counter-arguments, not vague skepticism.
+- Use `evidenceIds` as the authoritative machine-readable citation channel for each challenge point.
+- Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `description`. Keep challenge prose natural-language only.
 - **Every challenge point MUST cite specific evidence IDs** that it references, disputes, or identifies as problematic. If your challenge is about absent evidence, cite the evidence items that SHOULD have a counterpart but don't. Challenges with zero evidence IDs are structurally weak and will be discounted.
 - "Maybe more research would help" is NOT a valid challenge. State what specific evidence is missing, what type of source would provide it, and why its absence matters for the verdict.
 - Each challenge point must be specific enough that the reconciler can evaluate and respond to it directly.
@@ -1077,6 +1080,8 @@ Produce a final verdict that:
 - **Report language:** Write all report-authored analytical text (reasoning, challenge responses, reconciliation notes) in `${reportLanguage}`. Preserve source-authored evidence text in original language.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Consider challenges seriously. If a challenge point is valid, adjust the verdict. If unfounded, explain why with evidence citations.
+- Use `supportingEvidenceIds`, `contradictingEvidenceIds`, and `adjustmentBasedOnChallengeIds` as the authoritative citation/traceability channel.
+- Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning` or `challengeResponses.response`. Keep report prose natural-language only.
 - Each challenge point includes a `challengeValidation` object. If `evidenceIdsValid` is false, the challenge cites non-existent evidence — treat those citations as hallucinated, do NOT give them analytical weight.
 - Challenges with ZERO valid evidence IDs are structurally baseless. You may acknowledge the concern but MUST NOT adjust truthPercentage or confidence based solely on them.
 - "missing_evidence" challenges that only say "more research could help" without specifying what's missing are NOT valid grounds for adjustment.
@@ -1119,7 +1124,7 @@ Return a JSON array:
     "claimId": "AC_01",
     "truthPercentage": 68,
     "confidence": 72,
-    "reasoning": "string — final reasoning incorporating challenge responses and consistency notes",
+    "reasoning": "string — final natural-language reasoning incorporating challenge responses and consistency notes, without raw machine IDs",
     "isContested": true,
     "supportingEvidenceIds": ["EV_001", "EV_003"],
     "contradictingEvidenceIds": ["EV_002", "EV_005"],
@@ -1137,7 +1142,8 @@ Return a JSON array:
 ]
 ```
 
-**Citation arrays (CRITICAL):** `supportingEvidenceIds` and `contradictingEvidenceIds` must reflect your FINAL reconciled reasoning — not the advocate's original arrays. If your reconciliation shifts which evidence supports or contradicts the claim (e.g., because a challenge revealed that cited evidence actually opposes the claim, or because you now cite contradicting evidence the advocate did not include), update these arrays accordingly. Only use evidence IDs that appear in the advocate verdicts or challenger citations above — do not invent new IDs. If the reconciled verdict has no supporting evidence, return an empty array `[]` rather than omitting the field.
+**Citation arrays (CRITICAL):** `supportingEvidenceIds` and `contradictingEvidenceIds` must reflect your FINAL reconciled reasoning — not the advocate's original arrays. If your reconciliation shifts which evidence supports or contradicts the claim (e.g., because a challenge revealed that cited evidence actually opposes the claim, or because you now rely on contradicting evidence the advocate did not include), update these arrays accordingly. Only use evidence IDs that appear in the advocate verdicts or challenger citations above — do not invent new IDs. If the reconciled verdict has no supporting evidence, return an empty array `[]` rather than omitting the field.
+**Do not place machine IDs in prose.** Keep all `EV_*`, `S_*`, `CB_*`, and `CP_*` identifiers out of `reasoning` and `challengeResponses.response`. Use the structured arrays and `adjustmentBasedOnChallengeIds` to carry citations and traceability.
 
 ---
 
@@ -1165,8 +1171,10 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
   1. **Hallucinated citation:** if a cited evidence ID does not exist in the cited evidence registry, flag it as a grounding failure.
   2. **Valid contextual reference:** if reasoning references evidence or source context that exists in the claim-local evidence pool or claim-local source portfolio, this is valid even when that item/source is not listed in `supportingEvidenceIds` or `contradictingEvidenceIds`.
   3. **Cross-claim contamination or hallucination:** if reasoning references evidence or source context absent from both the claim-local evidence pool and the claim-local source portfolio, flag it as a grounding failure.
-- **Source portfolio references are valid context.** Verdict reasoning may reference source IDs (e.g., `S_025`), domains, URLs, or `trackRecordScore` values from the claim-local source portfolio. These are legitimate contextual references, NOT hallucinated evidence.
+- **Defensive legacy rule for source references.** Reasoning SHOULD avoid raw machine IDs. If reasoning still references source IDs (e.g., `S_025`), domains, URLs, or `trackRecordScore` values from the claim-local source portfolio, treat them as legitimate contextual references, NOT hallucinated evidence.
 - Do NOT require every valid reasoning reference to appear in the citation arrays. Uncited-but-claim-local evidence context is allowed.
+- **Defensive legacy rule for boundary references.** Reasoning SHOULD avoid raw machine IDs. If the reasoning still references `CB_*` identifiers that appear in the provided `boundaryIds`, treat them as legitimate analytical context rather than hallucinated evidence.
+- **Defensive legacy rule for challenge references.** Reasoning SHOULD avoid raw machine IDs. If the reasoning still references `CP_*` challenge point IDs that appear in the provided `challengeContext`, or discusses `EV_*` IDs that appear in `challengeContext` as invalid or rejected challenge citations, this is valid context rather than a grounding failure unless the reasoning positively relies on those IDs as real evidence.
 - **Reasoning may discuss invalid challenge citations.** If the reasoning explicitly says that a challenge cited an invalid, hallucinated, missing, or rejected evidence ID, the mere mention of that ID is NOT a grounding failure. Flag only if the reasoning positively relies on that ID as real supporting or contradicting evidence.
 - **Do NOT enforce citation-array completeness.** If an evidence ID exists in the claim-local evidence pool or cited evidence registry, do not flag it solely because the reasoning mentions it while the directional citation arrays omit it.
 - **Do NOT treat source reliability sufficiency as grounding.** A source with `trackRecordScore: null`, weak reliability, or low confidence is still structurally grounded if that source appears in the claim-local source portfolio. Missing or weak reliability metadata is not itself a grounding failure.
@@ -1179,6 +1187,8 @@ Each verdict contains:
 - `reasoning`
 - `supportingEvidenceIds`
 - `contradictingEvidenceIds`
+- `boundaryIds`
+- `challengeContext`
 - `evidencePool` (claim-local evidence only)
 - `citedEvidenceRegistry` (the globally resolved cited IDs for this verdict)
 - `sourcePortfolio` (claim-local source-level context when available)
@@ -1279,6 +1289,7 @@ Given one verdict plus direction-validation issues, produce a repaired verdict u
 - Do not hardcode keywords, entities, political terms, regions, or test-case wording.
 - Do not output any new evidence IDs.
 - Do not change the claim identity.
+- Keep `reasoning` natural-language only. Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in prose.
 - Return exactly one JSON object.
 
 ### Input
