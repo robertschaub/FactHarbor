@@ -1125,6 +1125,29 @@ function aliasIds(ids: string[], map: GroundingAliasMap): string[] {
 }
 
 /**
+ * Alias evidence IDs appearing in free-text reasoning.
+ *
+ * The single-citation-channel contract says reasoning SHOULD NOT contain
+ * raw machine IDs, but enforcement isn't yet complete. When reasoning does
+ * mention canonical evidence IDs, the grounding validator must be able to
+ * match them against the aliased evidence pool and registry. Unknown IDs
+ * (hallucinated, not in the alias map) pass through unchanged so the
+ * validator can still flag them as genuine grounding failures.
+ */
+function aliasReasoningText(reasoning: string, map: GroundingAliasMap): string {
+  if (map.toAlias.size === 0) return reasoning;
+  // Replace longer IDs first to avoid partial matches (e.g., EV_17 matching before EV_1775...)
+  const sorted = [...map.toAlias.entries()].sort((a, b) => b[0].length - a[0].length);
+  let result = reasoning;
+  for (const [canonical, alias] of sorted) {
+    if (result.includes(canonical)) {
+      result = result.replaceAll(canonical, alias);
+    }
+  }
+  return result;
+}
+
+/**
  * Restore canonical evidence IDs in grounding validator issue strings.
  * The validator returns issues referencing alias IDs (EVG_xxx); this
  * replaces them with the original canonical IDs for diagnostic output.
@@ -1206,7 +1229,7 @@ export async function validateVerdicts(
 
           return {
             claimId: v.claimId,
-            reasoning: v.reasoning,
+            reasoning: aliasReasoningText(v.reasoning, groundingAliasMap),
             supportingEvidenceIds: aliasIds(v.supportingEvidenceIds, groundingAliasMap),
             contradictingEvidenceIds: aliasIds(v.contradictingEvidenceIds, groundingAliasMap),
             boundaryIds,
