@@ -1,6 +1,6 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-04
+**Last Updated**: 2026-04-05
 **Status**: Consolidation #10 complete. 28 purely historical files archived. 38 active files remain.
 
 ---
@@ -35,6 +35,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ### Currently active
 - [2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md](2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md) — active plan for boundary-concentration stabilization and verdict-grounding containment
+- [2026-04-05_Current_vs_Previous_Build_Report_Comparison.md](2026-04-05_Current_vs_Previous_Build_Report_Comparison.md) — strict 5-input build-over-build and current local-vs-deployed comparison for deploy gating
 - [2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md](2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md) — **REVIEW-READY** prompt-only fix for false ambiguity on direct factual-property questions
 - [2026-04-01_Stage1_Narrow_Hardening_Architect_Review.md](2026-04-01_Stage1_Narrow_Hardening_Architect_Review.md) — post-rollback Stage 1 narrow hardening assessment
 

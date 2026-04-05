@@ -1,5 +1,35 @@
 # Agent Outputs Log
 ---
+### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Grounding Alias Fix — Validated
+**Task:** Implement and validate grounding-validator alias fix for timestamp-ID false positives on Bolsonaro EN and Plastik DE.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
+**Key decisions:** Validator-local aliasing (`EVG_001`/`EVG_002`/...) in grounding validation payload only. Reasoning text also aliased (`ffaa4fdd`) after first canary showed reasoning-to-registry mismatch. Canonical pipeline IDs untouched.
+**Open items:** (1) Bolsonaro EN still trails deployed by ~9pp — retrieval-depth-driven, testable via `sufficiencyMinMainIterations: 1→2`. (2) One genuine cross-claim contamination warning on Plastik AC_02 — separate Stage-4 issue, not blocking.
+**Warnings:** None.
+**For next agent:** Full handoff: `Docs/AGENTS/Handoffs/2026-04-05_Senior_Developer_Grounding_Alias_Fix_Validation.md`. Clean canary jobs: Bolsonaro `703c261d05744fdf8ddc70ce3afa5145` (LEANING-TRUE 64/58, zero grounding/direction warnings), Plastik `da1180edfae445f8a93bbcbaa2e50144` (LEANING-FALSE 41/66, one genuine cross-claim warning only).
+**Learnings:** No
+
+---
+### 2026-04-05 | LLM Expert | Codex (GPT-5) | Review Keep-or-Revert Decision for 07cb2e0d
+**Task:** Review whether commit `07cb2e0d` (`fix(prompts): soften multi-jurisdiction query mandate to respect query budget`) should remain in the next deploy candidate, based on the actual prompt diff and the available local/deployed multi-jurisdiction job evidence.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The commit should be kept. The actual diff is a narrow feasibility-scoped wording change inside `GENERATE_QUERIES` and only plausibly affects multi-jurisdiction query distribution under a 2-3 query budget. Within that scope, the available evidence is mixed-to-positive: Swiss-vs-Germany improved versus the prior local build, while Bolsonaro EN does not show a query-collapse failure and repo-local investigation attributes its gap mainly to retrieval-depth variance rather than this prompt. The reported deficits on Earth, Meta, and Plastik are out of scope for this commit and therefore cannot justify reverting it.
+**Open items:** Strict commit isolation is still unproven for Bolsonaro EN because there is no exact same-input A/B run with only this prompt line changed and all else held constant.
+**Warnings:** Keeping the commit still carries a plausible risk that the softer wording under-covers one jurisdiction in some future multi-jurisdiction claims when the query budget is tight. That risk is plausible, not proven by the current evidence set.
+**For next agent:** If you need to resolve the remaining uncertainty efficiently, run one controlled same-input multi-jurisdiction A/B canary with this line toggled and compare only the generated queries plus first-iteration retrieval coverage per listed jurisdiction. Swiss-vs-Germany and Bolsonaro EN are the best current candidates.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Bolsonaro EN & Plastik DE Local Quality Investigation + Fix
+**Task:** Deep investigation of why local build `07cb2e0d` is not deployment-ready on Bolsonaro EN and Plastik DE, with artifact-level analysis of all 6 anchor jobs. Then implement the primary fix.
+**Files touched:** `Docs/WIP/2026-04-05_Bolsonaro_Plastik_Local_Quality_Investigation.md` (new), `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
+**Key decisions:** (1) Both families' grounding warnings are **validator false positives** caused by dual evidence ID format — short sequential `EV_001` from preliminary extraction vs long timestamp `EV_1775405xxxxxx` from main research extraction. All cited IDs exist in the evidence pool; the grounding validator LLM cannot reliably match 13-digit numeric IDs. (2) Bolsonaro EN's truth gap to deployed is primarily retrieval-depth-driven (3 vs 6 main iterations), not a code regression. (3) Plastik DE local is analytically superior to deployed on every structural dimension; the grounding noise is the only reason it looks worse. (4) Fix implemented as **validator-local aliasing** (`EVG_001`, `EVG_002`, ...) — canonical pipeline IDs untouched; only grounding validator prompt input/output uses short aliases.
+**Open items:** (1) Rerun local Bolsonaro EN + Plastik DE to confirm grounding false positives are eliminated. (2) If Bolsonaro still trails deployed after clean rerun, investigate `sufficiencyMinMainIterations: 1→2`.
+**Warnings:** None after fix. The alias map is scoped entirely to the grounding validation call — no impact on pipeline IDs, result JSON, or other stages.
+**For next agent:** Fix is committed (`cbb364ec`). Next step is rerunning local Bolsonaro EN and Plastik DE canaries to validate. If grounding warnings disappear and verdicts are stable, Plastik is deployment-ready; Bolsonaro needs the retrieval-depth check.
+**Learnings:** No
+
+---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Post-Review Fixes (3 items)
 **Task:** Implement three approved fixes from 2026-04-05 code review: EN supplementary lane geography omission, AppBuildInfo stdout deadlock, Stage-4 parse recovery root validation.
 **Files touched:** `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/api/Helpers/AppBuildInfo.cs`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/test/unit/lib/analyzer/en-supplementary-lane-geography.test.ts` (new), `apps/web/test/unit/lib/analyzer/verdict-parse-artifact.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
@@ -3411,4 +3441,64 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Docs are updated but not committed. Deployed validation of the grounding root fix and first-7-run monitoring still remain open operationally.
 **Warnings:** The docs now distinguish clearly between "implemented in code" and "validated in production." Do not collapse those two states in future updates unless a fresh deployed rerun on the new commit has been checked.
 **For next agent:** If these doc updates are committed, keep `GRND-1` in MONITOR status until the first 7+ runs and deployed validation are reviewed. The next substantive plan/doc changes should likely focus on the Stage 2/3 boundary-concentration track.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Run 5-Input Local-vs-Deployed Quality Gate
+**Task:** Execute the agreed 5-input comparison set on local and deployed to determine whether local report quality is strong enough to justify deployment.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Submitted the same five claimboundary inputs to local and deployed with admin-key API access. Final local job hashes were all `07cb2e0d...`; final deployed job hashes were all `b7783872...`. Local was clearly stronger on `Ist die Erde rund?` and `Meta exited the US Third-Party Fact-Checking Program (January 2025)`, but weaker on Bolsonaro EN and not clearly better on Swiss-vs-Germany or Plastik. On that basis, the batch does not support a deploy recommendation.
+**Open items:** If a stricter apples-to-apples gate is still desired, rerun local serially with effective concurrency 1 to remove queue asymmetry. Otherwise the main next work remains quality fixes, not deployment.
+**Warnings:** Local still emitted `verdict_grounding_issue` / `verdict_direction_issue` on hard cases (`Plastik`, Bolsonaro EN) while deployed remained cleaner on some of those families. Deployed also showed boundary concentration on Earth, Plastik, and Bolsonaro, so this batch does not imply production is healthy overall; it only shows local is not yet clearly better.
+**For next agent:** Batch job IDs were local `7849614707f941a4822120a8c32976a4`, `345d6487f2344923b0eeeb3b7ce1ca4d`, `52fcb6244a0145a999d9a5279b019912`, `e65b95916b594a90bfe72f31b04304cd`, `039b105677a54ccdbc7ef0e5da9c03d2`; deployed `3e1253cb79a44389b86d0c47ab734f13`, `80bbcc3dd89447d18bac16f1f5b84a96`, `eb02cd2e535a4556a2bc3c29868412a0`, `9042bb732a8149eb8de1133045214578`, `3f00ba806cfc4319be90e5cebc84ab14`. Key outcomes: local Earth `TRUE 95/90` vs deployed `TRUE 87/79`; local Plastik `MIXED 45/66` with grounding warnings vs deployed `LEANING-FALSE 41/48`; local Bolsonaro `LEANING-TRUE 58/55` with grounding/direction warnings vs deployed `MOSTLY-TRUE 73/70`; local Swiss/DE `MIXED 53/61` vs deployed `LEANING-TRUE 60/70`; local Meta `TRUE 98/93` vs deployed `TRUE 92/88`.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Reframe Batch as Build-over-Build Comparison
+**Task:** Compare the newest current-build reports against nearest same-family reports from older builds on the same environment, instead of making broad local-vs-deployed claims.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Treated local `07cb2e0d...` reports and deployed `b7783872...` reports as the current-build set. Compared each to the nearest older-build same-family report available on that environment. Conclusion: improvements and regressions are mixed; no environment-wide “better” claim is justified. Local current build improved on Meta and Swiss/DE, structurally improved on Earth, but regressed on Bolsonaro and did not clearly improve Plastik. Deployed current build improved grounding cleanliness on several families, but Earth regressed materially and Bolsonaro became structurally more concentrated.
+**Open items:** If exact immediate-prior-build comparisons are required, some families need new controlled reruns because the nearest older-build sample is not always from the immediately preceding hash.
+**Warnings:** For local Earth and deployed Earth, the nearest previous same-family reports were on older non-adjacent builds because no exact Earth sample existed on the immediately prior build. Interpret those two as nearest-available build-over-build comparisons, not exact adjacent-build A/B tests.
+**For next agent:** Local current-build batch: Earth `78496147`, Plastik `345d6487`, Bolsonaro `52fcb624`, Swiss/DE `e65b9591`, Meta `039b1056`. Deployed current-build batch: Earth `3e1253cb`, Plastik `80bbcc3d`, Bolsonaro `eb02cd2e`, Swiss/DE `9042bb73`, Meta `3f00ba80`. Main comparative takeaways: local Meta improved (`98/93` vs `92/85`); local Swiss/DE improved (`53/61` vs `48/51`), local Bolsonaro confidence improved but gained grounding/direction warnings; local Plastik gained evidence but also grounding noise. Deployed Swiss/DE lost some score but removed grounding warnings; deployed Plastik removed collapse/grounding warnings but also dropped to `LEANING-FALSE 41/48`; deployed Bolsonaro gained score but collapsed to an `80`-evidence mega-boundary.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Write WIP Build Comparison Note
+**Task:** Write a dedicated WIP markdown note that makes the 5-input comparison unambiguous by separating build-over-build analysis from current local-vs-deployed comparison.
+**Files touched:** `Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added a standalone WIP note with explicit comparator rules, separate tables for local build-over-build and deployed build-over-build, and a third table for current local vs current deployed. Added the new note to the WIP index and updated the WIP README date to `2026-04-05`.
+**Open items:** None for the document itself. If exact immediate-prior-build A/B evidence is needed for every family, some families still require controlled reruns because older history does not always contain a same-family sample on the immediately preceding hash.
+**Warnings:** The document explicitly distinguishes nearest older-build comparisons from exact immediate-prior-build comparisons. Do not collapse those categories in later summaries.
+**For next agent:** Use the WIP note as the canonical comparison reference for this batch instead of rephrasing from memory. It already contains the exact current job IDs and the comparator caveats.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Add Traffic-Light Status to WIP Comparison Note
+**Task:** Colorize the WIP comparison note with explicit traffic-light markers so improvements, declines, mixed results, and missing comparators are immediately visible.
+**Files touched:** `Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added a traffic-light legend (`🟢`, `🟡`, `🔴`, `⚪`), inserted a `Status` column into all three main comparison tables, and added two compact traffic-light matrices summarizing build-over-build and current local-vs-deployed results.
+**Open items:** None.
+**Warnings:** The color markers summarize the written judgment but do not replace the existing comparator caveats. Earth and deployed Meta still require the previously documented caution about comparator availability.
+**For next agent:** If this note is migrated into status docs, preserve both the legend and the separation between build-over-build and current local-vs-deployed sections.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Make WIP Comparison Colors Visible in Plain Markdown
+**Task:** Replace the subtle color markers with explicit plain-text status chips because the markdown viewer does not render actual table cell colors.
+**Files touched:** `Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the same judgments but changed the legend and status cells to explicit labels: `🟩 IMPROVED`, `🟨 MIXED`, `🟥 DECLINED`, `⬜ NO COMPARATOR`. Updated the matrices to use the same visible chips.
+**Open items:** None.
+**Warnings:** Markdown tables still do not support real background fills in this viewer. The visible status now depends on the emoji + text labels, not actual colored cells.
+**For next agent:** If you need real colored boxes later, this will need xWiki macros or HTML/CSS in a different rendering context rather than plain markdown tables.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Check Whether Older Ahead-of-Deploy Commits Caused Local Quality Decline
+**Task:** Investigate whether the older commits ahead of deployed (`ec7a8de8`, `d9194303`, `08661690`) plausibly caused the current local quality deficits.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** `08661690` is docs-only and cannot affect report quality. `ec7a8de8` only changed the grounding-validation prompt section in `claimboundary.prompt.md`, so it can affect warning behavior but not verdict generation/retrieval quality; any score movement around that point is therefore not credibly caused by the commit. `d9194303` is the only substantial code/prompt change in this subset, but the available local pre-commit validation runs that included its worktree changes (`c4a4c606`, `51751fbc`) show improvement, not decline, on the families they exercised (Plastik and Meta). Current local regressions on Bolsonaro/Plastik therefore do not have evidence pointing back to these older commits.
+**Open items:** There is still no direct Bolsonaro EN sample on the exact `d9194303` state, so that family remains unproven at a strict commit-isolation level. If exact attribution is needed, rerun Bolsonaro EN on a checkout of `d9194303`.
+**Warnings:** Some local quality movement between `b7783872`, `ec7a8de8`, and `07cb2e0d` is claim-family variance, not necessarily commit-driven regression. Do not infer causality from score changes alone when the commit only touched admin-only validation prompts.
+**For next agent:** The main conclusion is negative attribution: none of the older commits ahead of deployed currently has evidence of causing the local quality decline. If further causality work is needed, investigate later commits (`81e7ddc4`, `07cb2e0d`) only where they plausibly affect the family, and otherwise focus on deeper unresolved hard-case variance rather than rollback-by-suspicion.
 **Learnings:** no
