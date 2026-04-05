@@ -264,3 +264,80 @@ describe("Stage-4 parse failure artifact capture", () => {
     expect(artifacts.length).toBe(0);
   });
 });
+
+// ============================================================================
+// PARSE RECOVERY — EXPECTED ROOT VALIDATION (Fix 3)
+// ============================================================================
+
+describe("Stage-4 parse recovery expected-root validation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("rejects a valid JSON object when expected root is array (ADVOCATE)", async () => {
+    // ADVOCATE expects an array. Return a valid JSON object — should be rejected.
+    const validObject = JSON.stringify({ id: "CV_AC_01", claimId: "AC_01", truthPercentage: 72 });
+    mockGenerateText
+      .mockResolvedValueOnce(makeResponse(validObject))
+      .mockResolvedValueOnce(makeResponse(validObject));
+
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(
+      llmCall("VERDICT_ADVOCATE", {}, {
+        callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" },
+      }),
+    ).rejects.toThrow("Failed to parse LLM response as JSON");
+
+    const artifacts = getArtifactCalls();
+    expect(artifacts.length).toBeGreaterThanOrEqual(1);
+    expect(artifacts[0].artifact.expectedRoot).toBe("array");
+  });
+
+  it("accepts a valid JSON array when expected root is array (ADVOCATE)", async () => {
+    const validArray = JSON.stringify([{ id: "CV_AC_01", claimId: "AC_01", truthPercentage: 72 }]);
+    mockGenerateText.mockResolvedValue(makeResponse(validArray));
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {}, {
+      callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" },
+    });
+
+    expect(Array.isArray(result)).toBe(true);
+    const artifacts = getArtifactCalls();
+    expect(artifacts.length).toBe(0);
+  });
+
+  it("rejects a valid JSON array when expected root is object (CHALLENGER)", async () => {
+    // CHALLENGER expects an object. Return a valid JSON array — should be rejected.
+    const validArray = JSON.stringify([{ id: "CV_AC_01" }]);
+    mockGenerateText
+      .mockResolvedValueOnce(makeResponse(validArray))
+      .mockResolvedValueOnce(makeResponse(validArray));
+
+    const llmCall = createProductionLLMCall({} as any);
+    await expect(
+      llmCall("VERDICT_CHALLENGER", {}, {
+        callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" },
+      }),
+    ).rejects.toThrow("Failed to parse LLM response as JSON");
+
+    const artifacts = getArtifactCalls();
+    expect(artifacts.length).toBeGreaterThanOrEqual(1);
+    expect(artifacts[0].artifact.expectedRoot).toBe("object");
+  });
+
+  it("skips wrong-root direct parse and finds correct root via fenced recovery", async () => {
+    // ADVOCATE expects array. Direct parse yields an object, but fenced block has an array.
+    const mixedResponse = '{"wrong": true}\n\n```json\n[{"id": "CV_AC_01", "claimId": "AC_01"}]\n```';
+    mockGenerateText.mockResolvedValue(makeResponse(mixedResponse));
+
+    const llmCall = createProductionLLMCall({} as any);
+    const result = await llmCall("VERDICT_ADVOCATE", {}, {
+      callContext: { debateRole: "advocate", promptKey: "VERDICT_ADVOCATE" },
+    });
+
+    expect(Array.isArray(result)).toBe(true);
+    const artifacts = getArtifactCalls();
+    expect(artifacts.length).toBe(0);
+  });
+});

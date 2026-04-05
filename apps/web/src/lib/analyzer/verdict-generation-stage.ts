@@ -680,6 +680,13 @@ export function createProductionLLMCall(
     // Track which recovery strategies were attempted for diagnostic artifacts
     let lastRecoveriesAttempted: string[] = [];
 
+    /** Validate that a parsed value matches the expected root type (array vs object). */
+    const matchesExpectedRoot = (value: unknown): boolean => {
+      if (value === null || typeof value !== "object") return false;
+      if (expectedRootToken === "[") return Array.isArray(value);
+      return !Array.isArray(value);
+    };
+
     const tryParseWithRecovery = (jsonText: string) => {
       const trimmedText = jsonText?.trim();
       if (!trimmedText) { lastRecoveriesAttempted = []; return null; }
@@ -699,53 +706,60 @@ export function createProductionLLMCall(
       recoveriesAttempted.push("direct_parse");
       try {
         const result = JSON.parse(trimmedText);
-        lastRecoveriesAttempted = recoveriesAttempted;
-        return result;
+        if (matchesExpectedRoot(result)) {
+          lastRecoveriesAttempted = recoveriesAttempted;
+          return result;
+        }
+        // Wrong root type — fall through to other recoveries
       } catch {
-        // b. Fenced JSON parse
-        recoveriesAttempted.push("fenced_parse");
-        const jsonMatch = trimmedText.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch?.[1]) {
-          try {
-            const result = JSON.parse(jsonMatch[1].trim());
+        // parse failed — continue
+      }
+
+      // b. Fenced JSON parse
+      recoveriesAttempted.push("fenced_parse");
+      const jsonMatch = trimmedText.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch?.[1]) {
+        try {
+          const result = JSON.parse(jsonMatch[1].trim());
+          if (matchesExpectedRoot(result)) {
             lastRecoveriesAttempted = recoveriesAttempted;
             return result;
-          } catch {
-            // continue
           }
+        } catch {
+          // continue
         }
-
-        // c. Repair unescaped inner quotes inside JSON strings
-        recoveriesAttempted.push("inner_quote_repair");
-        const quoteRepairCandidates = [
-          jsonMatch?.[1]?.trim(),
-          trimmedText.startsWith("{") || trimmedText.startsWith("[") ? trimmedText : null,
-        ].filter((candidate, index, candidates): candidate is string => (
-          typeof candidate === "string"
-          && candidate.length > 0
-          && candidates.indexOf(candidate) === index
-        ));
-        for (const candidate of quoteRepairCandidates) {
-          const repaired = tryParseJsonWithInnerQuoteRepair(candidate);
-          if (repaired !== null) {
-            lastRecoveriesAttempted = recoveriesAttempted;
-            return repaired;
-          }
-        }
-
-        // d. Generic JSON value extraction
-        recoveriesAttempted.push("embedded_value_extraction");
-        const embeddedValue = tryAcrossRoots((root) => tryParseFirstJsonValue(trimmedText, root));
-        if (embeddedValue !== null) { lastRecoveriesAttempted = recoveriesAttempted; return embeddedValue; }
-
-        // e. Truncated JSON value repair
-        recoveriesAttempted.push("truncated_repair");
-        const repairedValue = tryAcrossRoots((root) => repairTruncatedJsonValue(trimmedText, root));
-        if (repairedValue !== null) { lastRecoveriesAttempted = recoveriesAttempted; return repairedValue; }
-
-        lastRecoveriesAttempted = recoveriesAttempted;
-        return null;
       }
+
+      // c. Repair unescaped inner quotes inside JSON strings
+      recoveriesAttempted.push("inner_quote_repair");
+      const quoteRepairCandidates = [
+        jsonMatch?.[1]?.trim(),
+        trimmedText.startsWith("{") || trimmedText.startsWith("[") ? trimmedText : null,
+      ].filter((candidate, index, candidates): candidate is string => (
+        typeof candidate === "string"
+        && candidate.length > 0
+        && candidates.indexOf(candidate) === index
+      ));
+      for (const candidate of quoteRepairCandidates) {
+        const repaired = tryParseJsonWithInnerQuoteRepair(candidate);
+        if (repaired !== null && matchesExpectedRoot(repaired)) {
+          lastRecoveriesAttempted = recoveriesAttempted;
+          return repaired;
+        }
+      }
+
+      // d. Generic JSON value extraction
+      recoveriesAttempted.push("embedded_value_extraction");
+      const embeddedValue = tryAcrossRoots((root) => tryParseFirstJsonValue(trimmedText, root));
+      if (embeddedValue !== null && matchesExpectedRoot(embeddedValue)) { lastRecoveriesAttempted = recoveriesAttempted; return embeddedValue; }
+
+      // e. Truncated JSON value repair
+      recoveriesAttempted.push("truncated_repair");
+      const repairedValue = tryAcrossRoots((root) => repairTruncatedJsonValue(trimmedText, root));
+      if (repairedValue !== null && matchesExpectedRoot(repairedValue)) { lastRecoveriesAttempted = recoveriesAttempted; return repairedValue; }
+
+      lastRecoveriesAttempted = recoveriesAttempted;
+      return null;
     };
 
     let parsed = tryParseWithRecovery(text);

@@ -111,6 +111,7 @@ public sealed class AppBuildInfo
     /// <summary>
     /// Returns the first 8 hex chars of SHA256("git diff HEAD"), or null on failure.
     /// Uses a 5-second timeout since diffs can be large.
+    /// Drains stdout before waiting for exit to avoid pipe-buffer deadlock.
     /// </summary>
     private static string? ComputeWorkingTreeHash()
     {
@@ -133,14 +134,18 @@ public sealed class AppBuildInfo
                 return sha.Hash;
             });
 
-            if (!proc.WaitForExit(5000))
+            // Wait for stdout to be fully consumed (with timeout).
+            // ReadToEnd/ComputeHash completes when the process closes stdout.
+            if (!hashTask.Wait(5000))
             {
                 try { proc.Kill(); } catch { }
                 return null;
             }
-            hashTask.Wait(500);
-            if (!hashTask.IsCompletedSuccessfully || hashTask.Result is null) return null;
 
+            // Stdout drained — WaitForExit cleans up the process handle.
+            proc.WaitForExit();
+
+            if (hashTask.Result is null) return null;
             return Convert.ToHexString(hashTask.Result)[..8].ToLowerInvariant();
         }
         catch
@@ -151,6 +156,7 @@ public sealed class AppBuildInfo
 
     /// <summary>
     /// Runs a git command and returns trimmed stdout, or null on timeout/error.
+    /// Drains stdout before waiting for exit to avoid pipe-buffer deadlock.
     /// </summary>
     private static string? RunGit(string arguments)
     {
@@ -166,14 +172,19 @@ public sealed class AppBuildInfo
             using var proc = Process.Start(psi);
             if (proc is null) return null;
 
+            // Wait for stdout to be fully consumed (with timeout).
+            // ReadToEnd completes when the process closes stdout.
             var readTask = Task.Run(() => proc.StandardOutput.ReadToEnd());
-            if (!proc.WaitForExit(3000))
+            if (!readTask.Wait(3000))
             {
                 try { proc.Kill(); } catch { }
                 return null;
             }
-            readTask.Wait(500);
-            return readTask.IsCompletedSuccessfully ? readTask.Result.Trim().ToLowerInvariant() : null;
+
+            // Stdout drained — WaitForExit cleans up the process handle.
+            proc.WaitForExit();
+
+            return readTask.Result.Trim().ToLowerInvariant();
         }
         catch
         {

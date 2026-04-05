@@ -1046,8 +1046,13 @@ export async function maybeRunSupplementaryEnglishLane(
     }
 
     // Classify relevance through the same LLM path as primary lane (no fixed relevanceScore bypass)
+    const enLaneRelevantGeographies = getClaimRelevantGeographies(
+      targetClaim,
+      searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
+    );
     const relevantSources = await classifyRelevance(
-      targetClaim, response.results, pipelineConfig, currentDate, state.understanding?.inferredGeography ?? null,
+      targetClaim, response.results, pipelineConfig, currentDate,
+      state.understanding?.inferredGeography ?? null, enLaneRelevantGeographies,
     );
     state.llmCalls++;
 

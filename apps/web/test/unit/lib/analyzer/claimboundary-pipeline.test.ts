@@ -4581,7 +4581,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
   it("should load prompt section and call AI SDK with correct parameters", async () => {
     mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
-    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+    mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     const result = await llmCall(
@@ -4598,12 +4598,12 @@ describe("Stage 4: createProductionLLMCall", () => {
     expect(mockGenerateText).toHaveBeenCalledWith(
       expect.objectContaining({ temperature: 0.0 }),
     );
-    expect(result).toEqual({ claimVerdicts: [] });
+    expect(result).toEqual([{ claimId: "AC_01" }]);
   });
 
   it("should use a short fixed user instruction when no explicit userMessage is provided", async () => {
     mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
-    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+    mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     await llmCall(
@@ -4623,7 +4623,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
   it("should preserve an explicit userMessage override", async () => {
     mockLoadSection.mockResolvedValue({ content: "verdict advocate prompt", variables: {} });
-    mockGenerateText.mockResolvedValue({ text: '{"claimVerdicts": []}' } as any);
+    mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     await llmCall(
@@ -4639,7 +4639,7 @@ describe("Stage 4: createProductionLLMCall", () => {
 
   it("should select haiku model when tier is haiku", async () => {
     mockLoadSection.mockResolvedValue({ content: "validation prompt", variables: {} });
-    mockGenerateText.mockResolvedValue({ text: '{"valid": true}' } as any);
+    mockGenerateText.mockResolvedValue({ text: '[{"valid": true}]' } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     await llmCall("VERDICT_GROUNDING_VALIDATION", {}, { tier: "haiku" });
@@ -4671,12 +4671,12 @@ describe("Stage 4: createProductionLLMCall", () => {
   it("should extract JSON from markdown code blocks", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
     mockGenerateText.mockResolvedValue({
-      text: 'Here is the result:\n```json\n{"verdicts": [1, 2, 3]}\n```',
+      text: 'Here is the result:\n```json\n[{"verdict": 1}, {"verdict": 2}]\n```',
     } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     const result = await llmCall("VERDICT_ADVOCATE", {});
-    expect(result).toEqual({ verdicts: [1, 2, 3] });
+    expect(result).toEqual([{ verdict: 1 }, { verdict: 2 }]);
   });
 
   it("should repair fenced JSON when a string contains unescaped inner quotes", async () => {
@@ -4698,33 +4698,36 @@ describe("Stage 4: createProductionLLMCall", () => {
   it("should extract embedded JSON from prose responses", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
     mockGenerateText.mockResolvedValue({
-      text: 'Result follows: {"verdicts":[1,2,3],"notes":"ok"} Thanks.',
+      text: 'Result follows: [{"claimId":"AC_01","truthPercentage":72}] Thanks.',
     } as any);
 
     const llmCall = createProductionLLMCall({} as any);
     const result = await llmCall("VERDICT_ADVOCATE", {});
-    expect(result).toEqual({ verdicts: [1, 2, 3], notes: "ok" });
+    expect(result).toEqual([{ claimId: "AC_01", truthPercentage: 72 }]);
   });
 
-  it("should recover prose-wrapped single-object advocate output despite array-root preference", async () => {
+  it("should reject prose-wrapped single-object when advocate expects array root", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    // ADVOCATE expects array. An embedded object should be rejected by root validation.
     mockGenerateText.mockResolvedValue({
       text: 'Result follows: {"claimId":"AC_01","truthPercentage":72,"confidence":81} Thanks.',
     } as any);
 
     const llmCall = createProductionLLMCall({} as any);
-    const result = await llmCall("VERDICT_ADVOCATE", {});
-    expect(result).toEqual({ claimId: "AC_01", truthPercentage: 72, confidence: 81 });
+    await expect(
+      llmCall("VERDICT_ADVOCATE", {}),
+    ).rejects.toThrow("Failed to parse LLM response as JSON");
   });
 
-  it("should repair truncated JSON responses when possible", async () => {
+  it("should repair truncated JSON object responses (object-root prompt)", async () => {
     mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
     mockGenerateText.mockResolvedValue({
       text: '{"verdictSummary":{"answer":65},"claimVerdicts":[{"claimId":"AC_01","truthPercentage":72},{"claimId":"AC_02","truthPer',
     } as any);
 
     const llmCall = createProductionLLMCall({} as any);
-    const result = await llmCall("VERDICT_ADVOCATE", {});
+    // VERDICT_CHALLENGER expects object root — truncated object repair succeeds
+    const result = await llmCall("VERDICT_CHALLENGER", {});
     expect(result).toEqual({
       verdictSummary: { answer: 65 },
       claimVerdicts: [{ claimId: "AC_01", truthPercentage: 72 }],
