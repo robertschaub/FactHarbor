@@ -3342,3 +3342,23 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The new grounding helper intentionally treats cited sibling-claim evidence as invalid for grounding when claim mappings exist. If future jobs reveal mapping gaps (valid cited IDs absent from `relevantClaimIds`), fix the mapping upstream rather than weakening the grounding validator back to global scope.
 **For next agent:** Re-run the Swiss-vs-Germany local success case (`c3a19e4ca612445a8e32cb330da604f8`) or a fresh equivalent and inspect whether the prior `S_015/S_016`-style warning is gone. If any grounding warning remains, compare it against the new three-tier rule before changing severity/policy.
 **Learnings:** no
+
+---
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Document Local vs Deployed Grounding Canary Results
+**Task:** Check the live local and deployed systems after the grounding-scope fix, compare the Switzerland-vs-Germany canary jobs, and record what is actually validated versus still provenance-inconclusive.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recorded both service/version states and both canary jobs. Local validation is now considered complete because the local services and the local canary job all ran on `b7783872...` and the warning disappeared. Deployed validation is explicitly not considered complete yet because the deployed services report `b7783872...`, but the sampled deployed canary job still stamped the older execution hash `521040e...`, even though the warning also did not appear there.
+**Open items:** One more deployed rerun of the same claim is still needed. The acceptance condition is that the new deployed canary must both (a) stamp `b7783872...` and (b) remain free of `verdict_grounding_issue`.
+**Warnings:** Do not treat deployed job `82344370fbd54cb9bec1653cc462b84c` as final proof of the grounding fix. It is encouraging behaviorally, but provenance-inconclusive because the job itself ran/stamped as `521040e...`.
+**For next agent:** Use the new section 6 in `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as the current source of truth for the local/deployed status split. The next operational step is a fresh production rerun of the same claim and a quick provenance check on the new job hash.
+**Learnings:** no
+
+---
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Refine Grounding Validator Prompt for Remaining False Positives
+**Task:** Narrow the remaining `verdict_grounding_issue` false positives still seen on deployed `b7783872...` jobs after claim-local grounding scoping had already shipped.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the claim-local grounding code unchanged and tightened only `VERDICT_GROUNDING_VALIDATION`. The prompt now explicitly treats directional citation arrays as non-exhaustive, allows uncited-but-claim-local EV references, allows explicit discussion of invalid/hallucinated challenge IDs when the reasoning is rejecting them, and forbids treating `trackRecordScore: null` or weak source reliability as grounding failures when the source exists in the claim-local source portfolio. This keeps grounding structural and prevents analytical-quality criticism from being misclassified as hallucination.
+**Open items:** A fresh deployed rerun on the new prompt hash is still required. Acceptance condition: the Switzerland-vs-Germany canary and at least one previously affected `b7783` claim family complete without `verdict_grounding_issue`, or any remaining warning is clearly a real cross-claim/hallucination case.
+**Warnings:** This is a prompt-only refinement. If warnings persist after deployment, inspect the exact warning text before changing code again; the next step would likely be a more explicit validator input contract, not broader relaxation.
+**For next agent:** After prompt rollout, re-run the Swiss-vs-Germany canary and one of the previously affected production claims (`38d576...` or `d0c115...` family) and compare the warning text against the three false-positive buckets documented in WIP section 5.10. Verification already passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts` and `npm -w apps/web run build`.
+**Learnings:** no

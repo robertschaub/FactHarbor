@@ -22,6 +22,7 @@ This ordering is recommended because:
 - the newest local and deployed jobs show the same upstream concentration shape across topics/languages
 - verdict grounding issues are real, but they look more like a containment/trust problem than the main source of verdict divergence
 - at least one healthy-distribution deployed run (`cfd508...`) still shows `verdict_grounding_issue`, so grounding has an independent failure mode and should not wait behind the full Stage 2/3 track
+- a fresh local grounding canary on commit `b7783872...` removed the warning entirely, so the validator-scope fix is now locally validated
 
 ---
 
@@ -258,6 +259,82 @@ Interpretation rule:
 - if Bolsonaro EN is unhealthy only under noisy local conditions, do **not** rush into analysis-code changes
 - if concentration reproduces on same-commit clean runs, Stage 2/3 is justified as the primary root-cause fix track
 - if grounding issues persist on healthy-distribution runs, keep the containment slice active in parallel rather than waiting for the root-cause track to finish
+
+---
+
+## 6. 2026-04-04 Local vs Deployed Grounding Canary Results
+
+### 6.1 Local system status
+
+At check time, both local services reported the grounding-fix build:
+
+- Web `/api/version` → `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`
+- API `/version` → `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`
+
+Local canary job:
+
+- `7d2b91b5c48c4b0488a88bdb7adf0b41`
+- input: `Die Schweiz hat kein systematisches Fact-Checking wie Deutschland`
+- visible job hash: `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`
+- result: `MIXED 52 / 71`
+- `analysisIssueCode = null`
+- warning set:
+  - `source_fetch_failure` ×3
+  - `gate1_thesis_direct_rescue`
+  - `evidence_applicability_filter`
+  - `evidence_partition_stats`
+  - `direction_rescue_plausible`
+- **No `verdict_grounding_issue`**
+
+Interpretation:
+
+- the grounding-validation scope fix is validated locally
+- the old `S_015 / S_016`-style false-positive grounding warning no longer appears
+
+### 6.2 Deployed system status
+
+At check time, both deployed version endpoints also reported the grounding-fix build:
+
+- Web `/api/version` → `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`
+- API `/api/fh/version` → `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`
+
+Deployed canary job:
+
+- `82344370fbd54cb9bec1653cc462b84c`
+- input: `Die Schweiz hat kein systematisches Fact-Checking wie Deutschland`
+- visible job hash: `521040e98f361235ab20831209e4549299b1be46`
+- `resultJson.meta.executedWebGitCommitHash`: `521040e98f361235ab20831209e4549299b1be46`
+- result: `MOSTLY-TRUE 72 / 55`
+- `analysisIssueCode = null`
+- warning set:
+  - `source_fetch_failure` ×6
+  - `evidence_applicability_filter`
+  - `insufficient_evidence`
+  - `evidence_partition_stats`
+  - `direction_rescue_plausible`
+- **No `verdict_grounding_issue`**
+
+Interpretation:
+
+- the specific canary did not reproduce the grounding warning on production either
+- **but this run is not acceptable as proof of the new grounding fix in production**, because the job itself still stamped the older execution hash `521040e...`
+- therefore:
+  - local validation = complete
+  - deployed validation = functionally encouraging, but provenance-inconclusive
+
+### 6.3 Practical conclusion
+
+Current status:
+
+- The grounding containment fix appears effective locally.
+- The deployed system now reports the new build at the service/version level.
+- The sampled deployed canary still carries the old execution hash, so one more deployed rerun is still required before declaring the grounding fix production-validated.
+
+Recommended immediate next step:
+
+1. Submit one fresh deployed rerun of the same Switzerland-vs-Germany claim.
+2. Confirm the new job's `gitCommitHash` / `executedWebGitCommitHash` starts with `b7783872...`.
+3. Confirm `verdict_grounding_issue` remains absent.
 
 ### 5.1 Executable Procedure
 
@@ -546,6 +623,56 @@ Interpretation:
 - Stage 2/3 concentration is still a real problem in deployed evidence and in some historical local runs
 - but the latest same-commit local gate no longer justifies treating concentration as the first immediate coding target on local evidence alone
 - the cleanly reproduced local issue on the current build is now **verdict grounding integrity**
+
+---
+
+### 5.10 Deployed `b7783` follow-up: remaining grounding issues narrowed to prompt overreach
+
+After `b7783872` (`scope grounding validation to claim-local context`) reached production, the original Switzerland-vs-Germany family materially improved, but a narrower `verdict_grounding_issue` family remained on some deployed jobs.
+
+Observed on deployed `b7783` jobs:
+
+- `0fb3885846d74a3980f5b9aa858fa590`
+- `38d5760e6ced4a969c3023a9aace03be`
+- `d0c11586ccd145a0bda462b7ac36ce23`
+
+The remaining warnings were **not** the original global-scope bug. They clustered into three prompt-level false-positive patterns:
+
+1. **Uncited-but-claim-local EV references were still treated as failures**
+   - reasoning mentioned EV IDs that existed in the same claim-local evidence pool
+   - validator still complained because those IDs were absent from the directional citation arrays
+
+2. **Reasoning that explicitly rejected invalid challenge IDs was still flagged**
+   - verdict reasoning discussed challenge-side hallucinated IDs as invalid/rejected
+   - validator treated the mere mention of those IDs as a grounding failure
+
+3. **Source-reliability criticism was misclassified as grounding**
+   - reasoning criticized concentration from a claim-local source with `trackRecordScore: null`
+   - validator treated missing reliability metadata as grounding failure rather than analytical context
+
+Response implemented:
+
+- prompt-only refinement in `apps/web/prompts/claimboundary.prompt.md`
+- grounding validator now explicitly allows:
+  - claim-local EV references even when absent from directional citation arrays
+  - explicit discussion of invalid/hallucinated challenge IDs when they are being rejected
+  - criticism of weak/null source reliability when the source is present in the claim-local source portfolio
+- grounding still fails only for:
+  - cited IDs absent from the cited evidence registry
+  - references absent from both claim-local evidence and claim-local source portfolio
+  - genuine internal contradictions
+
+Verification completed for the prompt change:
+
+- `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`
+- `npm -w apps/web run build`
+
+Current status:
+
+- local code path contains both:
+  - claim-local grounding scoping (`b7783872`)
+  - prompt refinement for the remaining false-positive families
+- production still needs a fresh rerun on the new prompt hash before the remaining grounding-warning track can be considered closed
 
 ---
 

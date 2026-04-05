@@ -1160,12 +1160,17 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Only check structural grounding (evidence IDs exist and are referenced). Do NOT re-evaluate the verdict's analytical correctness.
 - Each verdict includes its own **claim-local evidence pool** and **claim-local source portfolio**. Do NOT assume evidence from one claim applies to another.
+- Treat `supportingEvidenceIds` and `contradictingEvidenceIds` as the verdict's directional citation arrays, NOT as an exhaustive registry of every claim-local evidence item or source the reasoning may mention.
 - Apply this three-tier rule:
   1. **Hallucinated citation:** if a cited evidence ID does not exist in the cited evidence registry, flag it as a grounding failure.
   2. **Valid contextual reference:** if reasoning references evidence or source context that exists in the claim-local evidence pool or claim-local source portfolio, this is valid even when that item/source is not listed in `supportingEvidenceIds` or `contradictingEvidenceIds`.
   3. **Cross-claim contamination or hallucination:** if reasoning references evidence or source context absent from both the claim-local evidence pool and the claim-local source portfolio, flag it as a grounding failure.
 - **Source portfolio references are valid context.** Verdict reasoning may reference source IDs (e.g., `S_025`), domains, URLs, or `trackRecordScore` values from the claim-local source portfolio. These are legitimate contextual references, NOT hallucinated evidence.
 - Do NOT require every valid reasoning reference to appear in the citation arrays. Uncited-but-claim-local evidence context is allowed.
+- **Reasoning may discuss invalid challenge citations.** If the reasoning explicitly says that a challenge cited an invalid, hallucinated, missing, or rejected evidence ID, the mere mention of that ID is NOT a grounding failure. Flag only if the reasoning positively relies on that ID as real supporting or contradicting evidence.
+- **Do NOT enforce citation-array completeness.** If an evidence ID exists in the claim-local evidence pool or cited evidence registry, do not flag it solely because the reasoning mentions it while the directional citation arrays omit it.
+- **Do NOT treat source reliability sufficiency as grounding.** A source with `trackRecordScore: null`, weak reliability, or low confidence is still structurally grounded if that source appears in the claim-local source portfolio. Missing or weak reliability metadata is not itself a grounding failure.
+- **Do NOT turn analytical criticism into grounding failure.** Reasoning may criticize source concentration, limited validation, null reliability scores, or weak methodology. These concerns are analytically valid context when tied to claim-local evidence or claim-local sources.
 
 ### Input
 
