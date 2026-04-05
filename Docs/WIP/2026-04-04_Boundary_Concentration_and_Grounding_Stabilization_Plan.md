@@ -687,19 +687,76 @@ Current status:
 
 ---
 
+### 5.11 2026-04-05 grounding root-fix implementation and local validation
+
+The verdict-grounding containment track is now **implemented in code** and has moved from "next fix" to **monitor/validation**.
+
+Committed fix sequence:
+
+- `b7783872`
+  - claim-local grounding validation scope
+- `ec7a8de8`
+  - prompt-level refinement for the remaining false-positive buckets
+- `d9194303`
+  - root-cause fix: single-citation-channel Stage-4 contract, plus source-ID backfill and structured boundary/challenge grounding context
+
+Root-cause conclusion:
+
+- the unstable contract was not just validator scope
+- it was **dual citation channels**
+  - raw machine IDs in prose reasoning/challenge text
+  - plus structured citation arrays
+- this created prose/array drift and then grounding false positives
+
+Implemented root fix:
+
+- structured arrays are now the only machine-readable citation channel:
+  - `supportingEvidenceIds`
+  - `contradictingEvidenceIds`
+  - challenger `evidenceIds`
+  - `adjustmentBasedOnChallengeIds`
+- Stage-4 prose is now explicitly natural-language only:
+  - no raw `EV_*`, `S_*`, `CB_*`, `CP_*` in verdict/challenge prose
+- source-ID reconciliation now catches late-added evidence that previously bypassed the final join
+- grounding validation now receives structured `boundaryIds` and `challengeContext`
+
+Fresh local canaries on prompt hash:
+
+- `79f7e76fa9c624f8256464739b2eb73d9b0ab065f9462190b8e7aa0e50ee1bd4`
+
+Validated local jobs:
+
+- `51751fbc88bb4489a9955f4baf011945`
+  - Meta claim
+  - `TRUE 92 / 85`
+  - no `verdict_grounding_issue`
+- `c4a4c60612ff48f0a3dbb8da764fb0ab`
+  - Plastik DE
+  - `MIXED 51 / 62`
+  - no `verdict_grounding_issue`
+
+Interpretation:
+
+- the grounding false-positive track is now **locally fixed enough to stand**
+- the remaining follow-up is operational:
+  - monitor the first 7+ runs for ID-in-prose leakage
+  - watch grounding-validation token-cost regressions
+  - eventually remove the defensive legacy rules after transition confidence is high
+
 ## 7. Final Recommendation
 
-**Updated recommendation:** the local same-commit validation gate is now complete, so the next work should shift to **narrow verdict-grounding containment first**, while keeping **Stage 2/3 retrieval-boundary stabilization** as the next comparative track driven mainly by deployed evidence and cross-environment reruns.
+**Updated recommendation:** the grounding containment/root-fix track is now implemented and locally validated, so the next active analytical-quality workstream should return to **Stage 2/3 retrieval-boundary stabilization**, while grounding moves into early-run monitoring plus deployed validation.
 
-The current evidence does **not** support a broad Stage-4-first program. It supports:
+The current evidence now supports:
 
 - grounded validation discipline before implementation
-- verdict grounding containment as the most clearly reproduced current defect
-- Stage 2/3 as the next analytical-quality workstream, but no longer as an unvalidated immediate local fix trigger
+- grounding containment/root-fix as **completed in code and locally validated**
+- Stage 2/3 as the next analytical-quality workstream
 
 Short version:
 
 - **Validation gate:** satisfied on `a405c20f...+17524e1c`
-- **Immediate next fix:** verdict grounding containment
+- **Grounding containment:** implemented (`b7783872`, `ec7a8de8`, `d9194303`) and locally clean on fresh canaries
 - **Next comparative quality track:** Stage 2/3 retrieval-boundary stabilization
+- **Immediate operational gate:** first 7+ run monitoring + deployed grounding validation
 - **Evidence source for prioritization right now:** deployed jobs plus the now-valid same-commit local batch

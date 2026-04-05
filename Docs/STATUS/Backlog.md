@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-04
+**Last Updated**: 2026-04-05
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -14,9 +14,9 @@
 
 ---
 
-## Immediate Priorities (2026-04-01)
+## Immediate Priorities (2026-04-05)
 
-All structural integrity fixes are shipped (citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication). Proposal 2 multilingual output/report-language coherency is shipped, and an **experimental default-off EN supplementary lane** now exists behind UCM. The implementation review is clean; the next gate is **cross-linguistic validation + promotion gating**, not fresh architecture design.
+All structural integrity fixes are shipped (citation carriage, claim decomposition, all-insufficient path, verdict uniqueness, matrix alignment, LLM article adjudication). Proposal 2 multilingual output/report-language coherency is shipped, and an **experimental default-off EN supplementary lane** now exists behind UCM. The grounding false-positive root fix is also committed in code: source-ID backfill, structured grounding context, and the single-citation-channel Stage-4 contract are now the baseline. The immediate gates are **grounding run monitoring / deployed validation** and **cross-linguistic validation + promotion gating**, not fresh architecture design.
 
 | Item | Description | Domain | Urgency | Importance | Status | Notes |
 |------|-------------|--------|---------|------------|--------|-------|
@@ -34,6 +34,7 @@ All structural integrity fixes are shipped (citation carriage, claim decompositi
 | **FLAT-EARTH-1** | **Flat-Earth false-ambiguity fix**: review-approved prompt-only narrowing for direct factual-property questions. "Is X flat?" should default to `single_atomic_claim`. Contract validation backup against representational drift. | Analyzer / Quality | med | med | REVIEW-READY | `Docs/WIP/2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md` |
 | **PIPE-INT-1** | **All-insufficient D5→Stage-4 integrity fix (`2705/e407`)**: IMPLEMENTED. Assessable-claims path, verdict uniqueness invariant, report matrix over all claims, LLM article adjudication via VERDICT_NARRATIVE with pure LLM truth adjustment, confidence ceiling, and deterministic fallback only. | Analyzer / Integrity / UI | — | — | DONE | `03387283` + follow-up policy patch |
 | **DIR-1** | **Direction-integrity citation-carriage**: code fix shipped in `e1f2c551`. Citation arrays now carried through reconciliation. Remeasurement on post-fix stack pending. | Analyzer / Verdict | low | high | MONITOR | `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` |
+| **GRND-1** | **Grounding false-positive root fix**: claim-local grounding scope (`b7783872`), prompt false-positive refinement (`ec7a8de8`), and single-citation-channel Stage-4 contract plus source-ID backfill / context expansion (`d9194303`). Local Meta + Plastik canaries on prompt hash `79f7e76f...` are clean. Next gate: first 7+ run monitoring, grounding token-cost watch, deployed validation, then removal of the temporary defensive legacy rules once the transition is stable. | Analyzer / Verdict / Quality | low | high | MONITOR | `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md` |
 | **STG1-DECOMP** | **SRG/SRF over-fragmentation (effizient/wirksam split)**: Pre-existing Stage-1 decomposition instability. `fff7a508` (evidence-separability approach) was attempted and **REVERTED** — caused Plastik UNVERIFIED regression and SRG contract-validation fail-open. 17-run post-rollback validation confirmed baseline restored. A revised approach must avoid regressing broad-evaluative families. 61pp within-family spread, 11% contract fail-open rate for SRG. | Analyzer / Quality | med | high | OPEN | `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`, `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md` |
 | **REMAP-1** | **Seeded preliminary-evidence LLM remap promoted to default-on** (`b5fad127`). Captain approved after current-stack A/B validation. Rollback flag `preliminaryEvidenceLlmRemapEnabled` available. The initial Homeopathy confidence anomaly did not reproduce on post-promotion confirmation runs and is now routine watchlist context only. | Analyzer / Quality | — | high | DONE | `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md` |
 | **OPT-GATE** | **Keep optimization secondary**: `P1-B` is already shipped; Stage-2 fetch runtime hardening (`W15` + per-domain 401/403 short-circuit) is also part of the current baseline. Any reopening of the remaining optimization track (`P1-A`, `P2-*`, `P3-*`) requires explicit Captain approval plus a fresh post-March-31 runtime/cost baseline. Secondary to current trust/observability work. | Planning / Governance | med | high | DEFERRED | Requires explicit approval |
@@ -77,6 +78,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | ✅ **Runner false orphan requeue fix**: stale drain snapshot no longer causes false requeue of running jobs. | Runner / Reliability | 2026-04-03 | `fc864a7f` |
 | ✅ **Ghost boundary sanitization**: `advocateVerdict()` now filters `boundaryFindings` against claim-local valid boundary IDs from coverage matrix. | Analyzer / Verdict | 2026-03-31 | `ef98a07a` |
 | ✅ **Grounding validation source portfolio**: `VERDICT_GROUNDING_VALIDATION` now receives source portfolio (sourceId, domain, trackRecordScore, confidence, evidenceCount) to prevent false-positive warnings on SR references. | Analyzer / Verdict | 2026-03-31 | `3d7f6c85` |
+| ✅ **Grounding false-positive root fix**: claim-local scoping, prompt false-positive refinement, source-ID backfill for late-added evidence, richer boundary/challenge grounding context, and a single-citation-channel Stage-4 contract that removes raw machine IDs from verdict/challenge prose. Local Meta + Plastik canaries clean on prompt hash `79f7e76f...`; now in monitor mode. | Analyzer / Verdict / Quality | 2026-04-05 | `b7783872`, `ec7a8de8`, `d9194303` |
 | ✅ **Claim-local verdict direction scoping**: direction validation and repair now use claim-local evidence instead of global pool. Prevents cross-claim contamination. | Analyzer / Verdict | 2026-03-30 | `17da5b84` |
 | ✅ **Article truth clamp removal**: ±10pp deterministic clamp removed; article truth is now LLM-led within 0-100 range. Confidence ceiling (structural invariant) retained. | Analyzer / Aggregation | 2026-03-30 | `7fdf2b44` |
 | ✅ **Stage-1 decomposition fix REVERTED**: `fff7a508` evidence-separability approach caused Plastik/SRG regressions. Rolled back cleanly (`a1c5caf5`, `ad62334f`, `11019788`). Post-rollback 17-run validation confirmed baseline restored. | Analyzer / Quality | 2026-04-01 | `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md` |
