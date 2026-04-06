@@ -385,6 +385,17 @@ export async function generateVerdictNarrative(
 ): Promise<VerdictNarrative> {
   const currentDate = new Date().toISOString().split("T")[0];
 
+  // Build the two previously-stale template variables that VERDICT_NARRATIVE expects.
+  // These were never wired since the original module extraction (6e347f09).
+  const supportCount = evidence.filter((e) => e.claimDirection === "supports").length;
+  const contradictCount = evidence.filter((e) => e.claimDirection === "contradicts").length;
+  const neutralCount = evidence.length - supportCount - contradictCount;
+  const sourceDomains = new Set(
+    evidence.map((e) => {
+      try { return new URL(e.sourceUrl).hostname; } catch { return e.sourceUrl; }
+    }).filter(Boolean),
+  );
+
   const rendered = await loadAndRenderSection("claimboundary", "VERDICT_NARRATIVE", {
     reportLanguage: reportLanguage ?? "en",
     currentDate,
@@ -393,6 +404,29 @@ export async function generateVerdictNarrative(
       verdict,
       confidence: Math.round(confidence),
     }),
+    aggregation: JSON.stringify({
+      weightedTruthPercentage: Math.round(truthPercentage),
+      weightedConfidence: Math.round(confidence),
+      verdict,
+      claimCount: claimVerdicts.length,
+      perClaim: claimVerdicts.slice(0, 7).map((v) => ({
+        claimId: v.claimId,
+        truthPercentage: v.truthPercentage,
+        verdict: v.verdict,
+        confidence: v.confidence,
+        confidenceTier: v.confidenceTier,
+      })),
+    }, null, 2),
+    evidenceSummary: JSON.stringify({
+      totalItems: evidence.length,
+      sourceCount: sourceDomains.size,
+      boundaryCount: boundaries.length,
+      directionBalance: { supports: supportCount, contradicts: contradictCount, neutral: neutralCount },
+      perClaim: claimVerdicts.slice(0, 7).map((v) => ({
+        claimId: v.claimId,
+        evidenceCount: evidence.filter((e) => e.relevantClaimIds?.includes(v.claimId)).length,
+      })),
+    }, null, 2),
     claimVerdicts: JSON.stringify(
       claimVerdicts.slice(0, 7).map((v) => ({
         claimId: v.claimId,
