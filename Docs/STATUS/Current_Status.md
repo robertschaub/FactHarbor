@@ -1,7 +1,7 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-04-05
+**Last Updated**: 2026-04-06
 **Phase**: **Alpha**
 **Status**: ClaimAssessmentBoundary pipeline is operational. The major refactor wave (WS-1 through WS-4) is complete. The Stage-1 quality stabilization track is **materially complete**: **QLT-1** stabilized predicate strength (Plastik DE 47pp→22pp), **QLT-2** characterized the split root cause, and **QLT-3** fixed Muslims-family structural instability (claim count/direction/facet now stable, spread 27pp→21pp). Remaining variance for both Plastik EN and Muslims-family now appears primarily evidence/verdict-driven, not Stage-1-driven. **VAL-2** (jobs-list sync race) and **OBS-1** (per-job metrics isolation via AsyncLocalStorage) are both complete. **QLT-4** (per-claim contrarian retrieval experiment) is **CLOSED** and the experimental code has been removed from the codebase — feature never triggered on real data; Plastik EN per-claim evidence is already directionally balanced; remaining variance is content/quality-driven, not direction-scarcity-driven. Residual run-to-run variance (Plastik EN ~30pp, Muslims ~21pp) is evidence/verdict-driven and governed by the approved **EVD-1 acceptable-variance policy**. **FLOOD-1** (single-source flooding mitigation) is implemented: SR-aware verdict reasoning via claim-local source portfolios + per-source evidence cap (`maxEvidenceItemsPerSource: 5`). Stage 4.5 SR calibration remains feature-flagged/off. Since 2026-04-01, **Proposal 2 multilingual output/search work is shipped in experimental form**: `LanguageIntent` and `reportLanguage` are explicit cross-stage state, Stage 4/5 report-language threading is implemented, and an **experimental default-off English supplementary retrieval lane** exists behind UCM. As of 2026-04-05, the `verdict_grounding_issue` false-positive track has a committed root-cause fix in code: claim-local grounding scope, source-ID backfill for late-added evidence, richer challenge/boundary validator context, and a single-citation-channel Stage-4 contract that removes raw machine IDs from verdict prose. Local canaries on the new prompt hash no longer reproduce the prior grounding warnings; early-run monitoring and deployed validation remain open. Cross-linguistic neutrality remains the main open comparative quality gap.
 
@@ -14,6 +14,7 @@
 - **Experimental EN supplementary retrieval lane is shipped default-off.** The lane is UCM-controlled and intended only for coverage expansion on non-English inputs under native-language scarcity. It is not yet promoted and requires live A/B validation before any broader use.
 - **Wikipedia supplementary completion is shipped and validated.** Supplementary-provider orchestration now supports bounded `always_if_enabled` mode, Wikipedia is enabled by default, and detected claim/input language is threaded into Wikipedia subdomain selection. This is a retrieval-diversity improvement, not a claimed full neutrality fix by itself.
 - **Grounding false-positive root fix is committed in code.** Source-ID backfill, structured validator context, and the single-citation-channel prompt contract are all implemented. Local canaries on the new prompt hash are clean; the next gate is first-run monitoring plus deployed validation, not new grounding architecture work.
+- **Stage-5 Cross-Boundary Tension cleanup first pass is shipped.** `VERDICT_NARRATIVE` now receives the previously stale `${aggregation}` / `${evidenceSummary}` variables, tension emission is narrowed to material directional divergence, `sourceCount` is based on unique source URLs rather than hostnames, and a dedicated Stage-5 prompt-contract test now guards against unresolved placeholders. The next gate is canary remeasurement, not further design change.
 - **Cross-linguistic neutrality remains the next quality gap.** Plastik recycling 58pp cross-language spread (DE/EN/FR) is still the largest visible gap. The new EN supplementary lane is an experiment toward mitigation, not a validated fix.
 - **Multilingual follow-up work is now validation + promotion gating, not policy-only design.** The earlier Stage-2 review findings are fixed; the remaining gate is live multilingual A/B validation with the EN lane `OFF` vs `ON`.
 - **Flat-Earth false-ambiguity fix is review-approved.** Prompt-only narrowing for direct factual-property questions. Not yet implemented.
@@ -68,6 +69,17 @@
 - ✅ **Single-citation-channel contract shipped**: Stage-4 verdict/challenge prose no longer carries raw machine IDs; `supportingEvidenceIds`, `contradictingEvidenceIds`, `evidenceIds`, and `adjustmentBasedOnChallengeIds` are the authoritative citation channels.
 - ✅ **Local canaries clean on the new prompt hash**: fresh Meta and Plastik jobs on prompt hash `79f7e76f...` no longer show `verdict_grounding_issue`.
 - ⚠️ **Next gate is monitoring, not redesign**: watch the first 7+ runs for any residual ID-in-prose leakage, grounding-token-cost regressions, and genuine cross-claim contamination cases. If those runs stay clean, remove the temporary defensive legacy rules from grounding validation.
+
+---
+
+## Recent Changes (2026-04-06)
+
+**Stage-5 narrative tension cleanup first pass shipped (`08220154`, `2acc4545`):**
+- ✅ **Previously stale narrative variables are now wired**: `VERDICT_NARRATIVE` now receives `${aggregation}` and `${evidenceSummary}` from `generateVerdictNarrative()`.
+- ✅ **Tension classification tightened**: `boundaryDisagreements` now requires material directional divergence; methodology asymmetries, thin caveats, coverage gaps, and concentration observations are redirected to `limitations`.
+- ✅ **`sourceCount` review follow-up closed**: Stage 5 evidence summary now counts unique `sourceUrl` values rather than collapsing to hostnames.
+- ✅ **Stage-5 prompt-contract regression guard added**: dedicated tests now cover `VERDICT_NARRATIVE` section existence, unresolved placeholders, `[object Object]`, and the tightened boundary-disagreement instruction contract.
+- ⚠️ **Next gate is canary measurement**: rerun Swiss no systematic FC, Bolsonaro EN, Plastik, and misinformation-tools families before deciding whether the safer post-reconciliation boundary-summary derivation (Fix 2 / path B) is still necessary.
 
 ---
 
