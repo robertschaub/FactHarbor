@@ -390,10 +390,8 @@ export async function generateVerdictNarrative(
   const supportCount = evidence.filter((e) => e.claimDirection === "supports").length;
   const contradictCount = evidence.filter((e) => e.claimDirection === "contradicts").length;
   const neutralCount = evidence.length - supportCount - contradictCount;
-  const sourceDomains = new Set(
-    evidence.map((e) => {
-      try { return new URL(e.sourceUrl).hostname; } catch { return e.sourceUrl; }
-    }).filter(Boolean),
+  const uniqueSources = new Set(
+    evidence.map((e) => e.sourceUrl).filter(Boolean),
   );
 
   const rendered = await loadAndRenderSection("claimboundary", "VERDICT_NARRATIVE", {
@@ -419,7 +417,7 @@ export async function generateVerdictNarrative(
     }, null, 2),
     evidenceSummary: JSON.stringify({
       totalItems: evidence.length,
-      sourceCount: sourceDomains.size,
+      sourceCount: uniqueSources.size,
       boundaryCount: boundaries.length,
       directionBalance: { supports: supportCount, contradicts: contradictCount, neutral: neutralCount },
       perClaim: claimVerdicts.slice(0, 7).map((v) => ({

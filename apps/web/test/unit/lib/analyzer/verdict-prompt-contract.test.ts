@@ -130,8 +130,21 @@ const DIRECTION_REPAIR_VARS: Record<string, string> = {
   currentDate: "2026-04-02",
 };
 
+/** Stage 5 narrative (aggregation-stage.ts:399-429) */
+const VERDICT_NARRATIVE_VARS: Record<string, string> = {
+  reportLanguage: "German",
+  currentDate: "2026-04-06",
+  overallVerdict: '{"truthPercentage":65,"verdict":"LEANING-TRUE","confidence":58}',
+  aggregation: '{"weightedTruthPercentage":65,"weightedConfidence":58,"verdict":"LEANING-TRUE","claimCount":3,"perClaim":[{"claimId":"AC_01","truthPercentage":72,"verdict":"MOSTLY-TRUE","confidence":75,"confidenceTier":"HIGH"}]}',
+  evidenceSummary: '{"totalItems":80,"sourceCount":34,"boundaryCount":6,"directionBalance":{"supports":35,"contradicts":12,"neutral":33},"perClaim":[{"claimId":"AC_01","evidenceCount":43}]}',
+  claimVerdicts: '[{"claimId":"AC_01","truthPercentage":72,"verdict":"MOSTLY-TRUE","confidence":75,"reasoning":"Test reasoning...","boundaryFindings":[{"boundaryId":"CB_01","boundaryName":"Test","evidenceDirection":"supports","evidenceCount":20}]}]',
+  claimBoundaries: '[{"id":"CB_01","name":"Test boundary","description":"Test description","evidenceCount":20}]',
+  coverageMatrix: '{"claims":["AC_01"],"boundaries":["CB_01"],"counts":[[20]]}',
+  evidenceCount: "80",
+};
+
 // ---------------------------------------------------------------------------
-// Stage-4 prompt contract tests
+// Stage-4 + Stage-5 prompt contract tests
 // ---------------------------------------------------------------------------
 
 describe("Stage-4 prompt contract", () => {
@@ -235,6 +248,47 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Defensive legacy rule for source references");
       expect(section).toContain("Defensive legacy rule for boundary references");
       expect(section).toContain("Defensive legacy rule for challenge references");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stage-5 prompt contract tests
+// ---------------------------------------------------------------------------
+
+describe("Stage-5 prompt contract", () => {
+  describe("VERDICT_NARRATIVE", () => {
+    it("section exists in prompt file", () => {
+      const section = extractSection(promptContent, "VERDICT_NARRATIVE");
+      expect(section, "Section ## VERDICT_NARRATIVE not found in claimboundary.prompt.md").not.toBeNull();
+    });
+
+    it("no unresolved ${...} placeholders after rendering with narrative variables", () => {
+      const section = extractSection(promptContent, "VERDICT_NARRATIVE");
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, VERDICT_NARRATIVE_VARS);
+      expect(
+        unresolved,
+        `Unresolved variables in VERDICT_NARRATIVE: ${unresolved.join(", ")}. ` +
+        `aggregation-stage.ts generateVerdictNarrative() must pass these keys, or the prompt must be updated.`,
+      ).toEqual([]);
+    });
+
+    it("no [object Object] in rendered output", () => {
+      const section = extractSection(promptContent, "VERDICT_NARRATIVE");
+      if (!section) return;
+      const { rendered } = renderWithVars(section, VERDICT_NARRATIVE_VARS);
+      expect(
+        rendered,
+        "[object Object] found in rendered VERDICT_NARRATIVE. " +
+        "Non-string values must be JSON.stringify()'d before prompt rendering.",
+      ).not.toContain("[object Object]");
+    });
+
+    it("boundaryDisagreements instruction requires material directional divergence", () => {
+      const section = extractSection(promptContent, "VERDICT_NARRATIVE");
+      expect(section).toContain("materially different directional conclusions");
+      expect(section).toContain("limitations");
     });
   });
 });
