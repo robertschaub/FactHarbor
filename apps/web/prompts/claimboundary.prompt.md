@@ -486,6 +486,16 @@ ${iterationType}
 ```
 (One of: "main", "contradiction", "contrarian")
 
+**Evidence already found for this claim:**
+```
+${existingEvidenceSummary}
+```
+When existing evidence is available, use it to **identify gaps**, not to confirm what is already known:
+- If one direction (supports/contradicts) is under-represented, prioritize queries that target the weaker direction.
+- If certain methodologies or dimensions appear repeatedly in `coveredDimensions`, generate queries targeting **different** evidence types, methods, or analytical angles.
+- Do NOT avoid a direction entirely just because it already has some coverage — seek better-quality or more authoritative sources for all directions.
+- When `existingEvidenceSummary` is `"none"` (first iteration), ignore this section and rely on `expectedEvidenceProfile` and `distinctEvents` only.
+
 **Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events, proceedings, or time-bounded episodes related to the same claim, you MUST distribute query coverage across those events rather than collapsing onto only the most prominent one. For each iteration:
 - Generate at least one query that explicitly targets a **different** event cluster than the most prominent one in the current evidence pool.
 - Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal focus and proceeding focus.

@@ -61,6 +61,29 @@ export async function generateResearchQueries(
     searchGeo?.geographies,
     searchGeo?.geography,
   );
+
+  // Build claim-local evidence summary so the query generator can target
+  // under-represented dimensions and directions instead of re-covering
+  // already-well-supported areas. Filter to this claim only — sibling-claim
+  // evidence must not pollute the per-claim coverage signal.
+  const claimLocalEvidence = existingEvidence.filter(
+    (e) => e.relevantClaimIds?.includes(claim.id),
+  );
+  const claimSupports = claimLocalEvidence.filter((e) => e.claimDirection === "supports").length;
+  const claimContradicts = claimLocalEvidence.filter((e) => e.claimDirection === "contradicts").length;
+  const claimNeutral = claimLocalEvidence.length - claimSupports - claimContradicts;
+  const existingEvidenceSummary = claimLocalEvidence.length > 0
+    ? JSON.stringify({
+        totalItems: claimLocalEvidence.length,
+        directionBalance: { supports: claimSupports, contradicts: claimContradicts, neutral: claimNeutral },
+        coveredDimensions: [...new Set(
+          claimLocalEvidence
+            .map((e) => e.evidenceScope?.methodology)
+            .filter(Boolean),
+        )].slice(0, 8),
+      })
+    : "none";
+
   const rendered = await loadAndRenderSection("claimboundary", "GENERATE_QUERIES", {
     currentDate,
     claim: claim.statement,
@@ -68,6 +91,7 @@ export async function generateResearchQueries(
     distinctEvents: JSON.stringify(distinctEvents),
     iterationType,
     queryStrategyMode,
+    existingEvidenceSummary,
     detectedLanguage: searchGeo?.language ?? "en",
     inferredGeography: formatPromptInferredGeography(relevantGeographies),
     relevantGeographies: formatPromptRelevantGeographies(relevantGeographies),

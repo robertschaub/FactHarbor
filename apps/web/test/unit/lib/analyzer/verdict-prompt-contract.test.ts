@@ -292,3 +292,58 @@ describe("Stage-5 prompt contract", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Stage-2 prompt contract tests
+// ---------------------------------------------------------------------------
+
+/** Stage 2 query generation (research-query-stage.ts:64-74) */
+const GENERATE_QUERIES_VARS: Record<string, string> = {
+  currentDate: "2026-04-06",
+  claim: "Test claim about policy compliance",
+  expectedEvidenceProfile: '{"sourceTypes":["government_report","news_primary"]}',
+  distinctEvents: '[{"name":"Event A","date":"2025-06-01","description":"First event"}]',
+  iterationType: "main",
+  queryStrategyMode: "legacy",
+  existingEvidenceSummary: '{"totalItems":12,"directionBalance":{"supports":5,"contradicts":4,"neutral":3},"coveredDimensions":["statistical analysis","legal review"]}',
+  detectedLanguage: "en",
+  inferredGeography: "CH",
+  relevantGeographies: "CH, DE",
+};
+
+describe("Stage-2 prompt contract", () => {
+  describe("GENERATE_QUERIES", () => {
+    it("section exists in prompt file", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section, "Section ## GENERATE_QUERIES not found in claimboundary.prompt.md").not.toBeNull();
+    });
+
+    it("no unresolved ${...} placeholders after rendering with query generation variables", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, GENERATE_QUERIES_VARS);
+      expect(
+        unresolved,
+        `Unresolved variables in GENERATE_QUERIES: ${unresolved.join(", ")}. ` +
+        `research-query-stage.ts generateResearchQueries() must pass these keys, or the prompt must be updated.`,
+      ).toEqual([]);
+    });
+
+    it("no [object Object] in rendered output", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      if (!section) return;
+      const { rendered } = renderWithVars(section, GENERATE_QUERIES_VARS);
+      expect(
+        rendered,
+        "[object Object] found in rendered GENERATE_QUERIES. " +
+        "Non-string values must be JSON.stringify()'d before prompt rendering.",
+      ).not.toContain("[object Object]");
+    });
+
+    it("evidence summary instruction uses gap-identification framing", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("identify gaps");
+      expect(section).toContain("under-represented");
+    });
+  });
+});
