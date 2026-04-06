@@ -1,0 +1,162 @@
+= Demo Script — Catherine Gilbert Call, 8. April 2026, 16:00 =
+
+{{info}}
+**Ziel:** Vertrauen aufbauen, Tool zeigen, ihre Praxis verstehen, Netzwerk-Türen öffnen.
+**Dauer:** 30 Min. Nicht pitchen — zeigen und zuhören.
+**Ergänzend:** [[Call Prep>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.Fact-Checker Doc.Call Prep Catherine Gilbert.WebHome]] | [[Glossar>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.Fact-Checker Doc.Glossary.WebHome]]
+{{/info}}
+
+== Teil 1: Einstieg (3 Min) ==
+
+**Persönlich starten:**
+* Danke für die Zeit, freut mich sehr.
+* "Du hast geschrieben, dass Tech-Konzerne ihre Aktivitäten gegen Desinformation zurückschrauben — das sehe ich genauso, und das ist einer der Gründe warum ich FactHarbor baue."
+
+**Kurz zu mir:**
+* Seit November 2025 Vollzeit dran, alleine
+* Hintergrund: Software-Entwicklung, nicht Journalismus — deshalb ist mir Feedback von Profis wie dir so wichtig
+
+**Überleitung:**
+* "Bevor ich zeige — was machst du genau bei dpa? Wie hat sich deine Arbeit seit dem Wechsel von Keystone-SDA verändert?"
+
+----
+
+== Teil 2: Ihre Praxis verstehen (7 Min) ==
+
+**Fragen (nicht alle — spüren was sie erzählen will):**
+
+* "Wie sieht ein typischer Verifikationsauftrag bei dir aus?"
+* "Wo verbringst du die meiste Zeit — Recherche, Quellenbewertung, Schreiben?"
+* "Was sind die grössten Herausforderungen gerade — Deepfakes? Geschwindigkeit? Quellenlage?"
+* "Welche Tools nutzt du täglich? InVID, Reverse Image Search...?"
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Hintergrund (nicht aussprechen, nur wissen):**
+Sie hat 5 Jahre lang Hunderte Schweizer Journalisten in OSINT geschult. Ihre Tools: Reverse Image Search, Video-Verifikation, Telegram/Instagram OSINT, Deepfake-Erkennung. Sie kennt die Grenzen manueller Verifikation besser als jeder andere in der Schweiz.
+)))
+
+----
+
+== Teil 3: Der Kontext — Warum das jetzt wichtig ist (3 Min) ==
+
+**Nur ansprechen wenn es natürlich passt (sie hat es selbst schon erwähnt):**
+
+//"Du hast in deiner Nachricht geschrieben: 'Dass Tech-Konzerne ihre Aktivitäten gegen Desinformation zurückschrauben, finde ich bedenklich.' — Da steckt einiges dahinter."//
+
+**Fakten parat haben:**
+* **Meta** hat im Januar 2025 das Third-Party Fact-Checking Program beendet — 90+ Organisationen in 60+ Sprachen betroffen
+* **Google** hat im Juni 2025 ClaimReview-Snippets aus den Suchergebnissen entfernt
+* **76% der Fact-Checking-Organisationen** weltweit bezeichnen sich als "vulnerable or in crisis" (IFCN 2025)
+* **45% berichten von Einnahmerückgängen** — einzige wachsende Einnahmequelle: Stiftungen
+* **Deepfakes:** Von 500.000 (2023) auf ~8 Millionen Dateien (2025) — 900% Wachstum pro Jahr
+* **Nur 0.1%** der Menschen erkennen alle Deepfakes korrekt (iProov 2025)
+
+**Die Schweizer Lücke:**
+* Kein IFCN-zertifizierter Fact-Checker in der Schweiz (CORRECTIV hat DE, Full Fact hat UK — CH hat nichts)
+* Fact-Checking ist Nebenfunktion — SRF hat ~15 Leute im "Netzwerk Faktencheck", aber als Zusatzaufgabe
+* Alle Schweizer Redaktionen nutzen nur manuelle OSINT-Tools
+* **Kein einziges automatisiertes Fact-Checking-Tool** im Einsatz in der Schweiz
+
+**Nicht als Vortrag — sondern als Gesprächsbasis:**
+* "Siehst du das ähnlich? Oder hat sich seit deinem Wechsel zu dpa was verändert?"
+
+----
+
+== Teil 4: Demo (10 Min) ==
+
+(% class="box warningmessage" %)
+(((
+**VORBEREITUNG:** Am 7. April abends einen Claim laufen lassen! Empfehlung: **"KI-generierte Deepfakes sind in der Schweiz ein wachsendes Problem"** oder ein aktueller Social-Media-Claim.
+)))
+
+=== 4.1 Gesamtbewertung (1 Min) ===
+* Verdikt zeigen: z.B. "Mostly True, 78%, HIGH Confidence"
+* "Das ist der Einstieg — aber der Wert liegt darunter."
+
+=== 4.2 Atomic Claims (2 Min) ===
+* "Das System hat die Behauptung in prüfbare Einzelaussagen zerlegt"
+* 2-3 Claims zeigen mit ihren Einzel-Verdikten
+* "Meinungen und Prognosen werden rausgefiltert — nur prüfbare Fakten bleiben"
+
+=== 4.3 Evidenz und Quellen (3 Min) — DAS HERZSTÜCK ===
+* In einen Claim reinnavigieren → Evidenz-Items zeigen
+* **Zeigen:** Richtung (stützt / widerspricht), Quellentyp, Probative Value
+* **Quellenbewertung:** "Jede Domain bekommt einen Reliability-Score"
+* **Evidence Scope:** "Dieses Ergebnis gilt für die EU, 2020-2023 — ein anderes für die USA mit anderen Annahmen"
+* "Das ist das was du als 'erstaunlich ergiebige Informationen' finden wirst wenn du in die Tiefe gehst"
+
+=== 4.4 Die Debatte (2 Min) ===
+* "Das ist nicht ein einzelner KI-Aufruf. 5 verschiedene Rollen debattieren:"
+** **Advocate:** Macht den stärksten Fall basierend auf der Evidenz
+** **Self-Consistency:** Wird 2x wiederholt — wenn die Antworten abweichen, sinkt die Konfidenz
+** **Challenger:** Ein anderer KI-Anbieter versucht Löcher zu finden
+** **Reconciler:** Entscheidet welche Einwände valide sind
+** **Validator:** Prüft ob die zitierten Quellen wirklich existieren
+* "Nur evidenzbasierte Einwände zählen — 'ich glaube das nicht' reicht nicht"
+
+=== 4.5 Warnungen und Qualität (1 Min) ===
+* Gate 4 Statistiken zeigen: "7 von 9 Verdikten HIGH Confidence, 1 MEDIUM, 1 INSUFFICIENT"
+* "Bei INSUFFICIENT sagt das System: 'Hier fehlt Evidenz — ich mache kein selbstsicheres Verdikt daraus'"
+
+=== 4.6 Coverage Matrix (1 Min) ===
+* Kurz zeigen: Claims x Boundaries
+* "Hier sieht man wo Evidenz-Lücken sind"
+
+----
+
+== Teil 5: Ehrliche Grenzen (2 Min) ==
+
+**Proaktiv ansprechen, nicht warten bis sie fragt:**
+
+* **~15 Minuten** pro Analyse — zu langsam für Breaking News (Ziel: unter 5 Min)
+* **Nur Web-Quellen** — Paywalls, Datenbanken, Offline-Quellen nicht erreichbar
+* **Keine Bild/Video-Analyse** — dafür InVID/TinEye, FactHarbor ist für Text
+* **Kein Claim-Monitoring** — man gibt Behauptungen ein, kein automatisches Medien-Monitoring
+* **Sprachqualität:** Deutsch gut getestet, Cross-Language-Konsistenz ist die grösste offene Baustelle
+
+**Wenn sie "was wenn die KI halluziniert?" fragt:**
+* "Die KI ist nicht frei — sie folgt streng vorgegebenen Abläufen und Datenstrukturen"
+* "Der Validator prüft: Existieren die zitierten Quellen wirklich?"
+* "Verschiedene KI-Anbieter debattieren gegeneinander — was einer halluziniert, hinterfragt der andere"
+
+----
+
+== Teil 6: Netzwerk und Ausblick (5 Min) ==
+
+**Natürlich fragen, nicht als Wunschliste:**
+
+* "Kennst du andere Leute in der Schweiz oder im DACH-Raum die das interessieren könnte?"
+* "Wärst du offen, ab und zu Feedback zu geben — z.B. wenn ich dir einen Report schicke?"
+* "Was müsste das Tool können, damit du es in deinem Alltag einsetzen würdest?"
+
+**Falls sie Sponsoren-Thema anspricht:**
+* "Ich bin gerade dabei den Verein zu gründen und Förderung zu suchen"
+* "Falls du jemanden kennst der sich für gemeinnützige Medien-Infrastruktur interessiert, bin ich sehr dankbar für jede Empfehlung"
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Hintergrundwissen (nicht aussprechen):**
+Catherine kennt durch 5 Jahre Keystone-SDA und Faktencheck-Schulungen praktisch jeden relevanten Verifikations-Kontakt in der Schweiz. Wertvollste mögliche Introductions: **Jan Ludwig** (NZZ OSINT, Co-Trainer), **Teresa Dapp** (dpa Head of Fact-Checking), **Fiona Endres** (SRF/investigativ.ch).
+)))
+
+----
+
+== Checklisten ==
+
+=== Vor dem Call ===
+
+* Demo-Claim am **7. April abends** laufen lassen (app.factharbor.ch, Invite-Code CaGi)
+* Report durchgehen und 2-3 interessante Stellen markieren
+* Teams-Link testen
+* Dieses Script und das [[Glossar>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.Fact-Checker Doc.Glossary.WebHome]] nochmal durchlesen
+
+=== Nach dem Call ===
+
+* Danke-Nachricht auf LinkedIn (gleicher Tag)
+* Falls Kontakte genannt: innerhalb 1 Woche mit Verweis auf Catherine ansprechen
+* Falls Feedback-Bereitschaft: in 2 Wochen einen Report mit konkreter Frage schicken
+
+----
+
+**Navigation:** [[Fact-Checker Doc>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.Fact-Checker Doc.WebHome]] | [[Fact-Checker Cooperation>>FactHarbor.Organisation.Partner & User Relations.Presentations.Fact-Checker Cooperation.WebHome]]
