@@ -307,3 +307,70 @@ Current state:
 3. only if tensions remain too noisy after those runs, reopen Fix 2 via safer path B:
    - derive final boundary summary post-reconciliation
    - do not extend reconciler schema first
+
+## Additional Canary Note (2026-04-06, post-fix rerun)
+
+An additional local post-fix canary was run on `f9b9099d`:
+
+- `7fa8d41830dd43a99e6a2dfcc6e3a67f`
+- input: `Falschinformationen verbreiten sich immer schneller – die derzeit eingesetzten Tools zur Faktenprüfung können damit nicht mehr Schritt halten.`
+- result: `MOSTLY-TRUE 76 / 75.8`
+- tensions: `0`
+- warnings: `9`
+- evidence / sources / iterations: `62 / 37 / 1`
+
+Interpretation:
+- there is **no earlier exact-local comparator** for this German phrasing in the DB, so this is **not** a strict before/after measurement
+- as a same-family signal, it is encouraging for the Stage 5 fix:
+  - the old tension/caveat material is now carried in `limitations`
+  - `boundaryDisagreements` is absent
+  - boundary structure is relatively balanced (`5/6/15/13/10/13`) rather than mega-boundary-dominated
+
+Comparison note:
+- this should be treated as an **added canary**, not proof of build-over-build improvement for that exact input
+- nearest family comparators remain:
+  - local EN wording `86d1d0af...` on the same post-fix build
+  - deployed German-family runs `c5acf6cb...` / `89aa0ba6...`
+
+## 2026-04-06 Measurement Conclusion
+
+The agreed post-fix canaries are now sufficient to decide whether Stage 5 Fix 2
+(safer path B: derive a final post-reconciliation boundary summary) is still
+needed as the next implementation step.
+
+Confirmed post-fix signals:
+
+- Swiss
+  - `5aa28697...` on `f9b9099d`: `0` tensions
+  - `01aa8699...` on `01ddeb1f`: `0` tensions
+- misinformation tools
+  - `86d1d0af...` on `f9b9099d`: `0` tensions
+  - `7fa8d418...` on `f9b9099d`: `0` tensions
+- Bolsonaro EN
+  - `f6ea1496...` on `f9b9099d`: `1` tension
+  - `ae69c30b...` on `01ddeb1f`: `2` tensions
+- Plastik
+  - `207131a4...` on `f9b9099d`: `1` tension
+  - `35c8d210...` on `bdf15679`: `1` tension
+
+Interpretation:
+
+- the original Stage 5 over-reporting problem is largely resolved
+- Swiss and misinformation-tools families now consistently route methodology,
+  thinness, and concentration caveats into `limitations`
+- the remaining Bolsonaro and Plastik tensions look materially substantive,
+  not like the earlier misclassified caveat noise
+
+Decision:
+
+- **Fix 2 is deferred**
+- keep the safer path-B design on the shelf as a fallback
+- do **not** make more Stage 5 narrative changes now
+
+Next workstream:
+
+- shift the active quality track upstream to Stage 2/3 report quality:
+  - evidence-pool quality
+  - query/event anchoring
+  - boundary concentration and stability
+  - hard-family retrieval variance
