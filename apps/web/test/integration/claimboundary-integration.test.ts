@@ -92,6 +92,8 @@ function assertCBSchema(resultJson: Record<string, any>): void {
   expect(Array.isArray(resultJson.evidenceItems)).toBe(true);
   expect(Array.isArray(resultJson.sources)).toBe(true);
   expect(Array.isArray(resultJson.searchQueries)).toBe(true);
+  expect(resultJson.claimAcquisitionLedger).toBeDefined();
+  expect(typeof resultJson.claimAcquisitionLedger).toBe("object");
 
   // Quality gates
   expect(resultJson.qualityGates).toBeDefined();

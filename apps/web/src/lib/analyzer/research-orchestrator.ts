@@ -1,6 +1,9 @@
 import { 
   AtomicClaim, 
   CBResearchState, 
+  ClaimAcquisitionDirectionCounts,
+  ClaimAcquisitionIterationEntry,
+  ClaimAcquisitionLedgerEntry,
   EvidenceItem, 
   FetchedSource,
   EvidenceScope,
@@ -55,6 +58,141 @@ import {
   applyPerSourceCap,
 } from "./research-extraction-stage";
 import { upsertSearchProviderWarning } from "./claim-extraction-stage";
+
+function createEmptyDirectionCounts(): ClaimAcquisitionDirectionCounts {
+  return {
+    supports: 0,
+    contradicts: 0,
+    neutral: 0,
+  };
+}
+
+function cloneDirectionCounts(
+  counts: ClaimAcquisitionDirectionCounts,
+): ClaimAcquisitionDirectionCounts {
+  return {
+    supports: counts.supports,
+    contradicts: counts.contradicts,
+    neutral: counts.neutral,
+  };
+}
+
+function incrementDirectionCounts(
+  counts: ClaimAcquisitionDirectionCounts,
+  direction?: EvidenceItem["claimDirection"],
+): void {
+  if (direction === "supports") {
+    counts.supports++;
+  } else if (direction === "contradicts") {
+    counts.contradicts++;
+  } else {
+    counts.neutral++;
+  }
+}
+
+export function countClaimLocalDirections(
+  evidenceItems: EvidenceItem[],
+  claimId: string,
+): ClaimAcquisitionDirectionCounts {
+  const counts = createEmptyDirectionCounts();
+  for (const item of evidenceItems) {
+    if (!item.relevantClaimIds?.includes(claimId)) continue;
+    incrementDirectionCounts(counts, item.claimDirection);
+  }
+  return counts;
+}
+
+export function ensureClaimAcquisitionLedgerEntry(
+  state: CBResearchState,
+  claimId: string,
+): ClaimAcquisitionLedgerEntry {
+  state.claimAcquisitionLedger ??= {};
+  if (!state.claimAcquisitionLedger[claimId]) {
+    state.claimAcquisitionLedger[claimId] = {
+      seededEvidenceItems: 0,
+      iterations: [],
+      postResearchApplicabilityRemoved: 0,
+      finalEvidenceItems: 0,
+      finalDirectionCounts: createEmptyDirectionCounts(),
+      finalBoundaryCount: 0,
+      maxBoundaryShare: 0,
+      boundaryDistribution: [],
+    };
+  }
+  return state.claimAcquisitionLedger[claimId];
+}
+
+export function recordSeededEvidenceTelemetry(
+  state: CBResearchState,
+  seededItems: EvidenceItem[],
+): void {
+  for (const item of seededItems) {
+    for (const claimId of item.relevantClaimIds ?? []) {
+      ensureClaimAcquisitionLedgerEntry(state, claimId).seededEvidenceItems++;
+    }
+  }
+}
+
+export function recordClaimIterationTelemetry(
+  state: CBResearchState,
+  claimId: string,
+  entry: ClaimAcquisitionIterationEntry,
+): void {
+  ensureClaimAcquisitionLedgerEntry(state, claimId).iterations.push({
+    ...entry,
+    generatedQueries: [...entry.generatedQueries],
+    directionCounts: cloneDirectionCounts(entry.directionCounts),
+    losses: { ...entry.losses },
+  });
+}
+
+export function recordApplicabilityRemovalTelemetry(
+  state: CBResearchState,
+  removedItems: EvidenceItem[],
+): void {
+  for (const item of removedItems) {
+    for (const claimId of item.relevantClaimIds ?? []) {
+      ensureClaimAcquisitionLedgerEntry(state, claimId).postResearchApplicabilityRemoved++;
+    }
+  }
+}
+
+export function finalizeClaimAcquisitionTelemetry(state: CBResearchState): void {
+  const knownClaimIds = new Set(
+    (state.understanding?.atomicClaims ?? []).map((claim) => claim.id),
+  );
+
+  for (const evidenceItem of state.evidenceItems) {
+    for (const claimId of evidenceItem.relevantClaimIds ?? []) {
+      knownClaimIds.add(claimId);
+    }
+  }
+
+  for (const claimId of knownClaimIds) {
+    const entry = ensureClaimAcquisitionLedgerEntry(state, claimId);
+    const claimLocalEvidence = state.evidenceItems.filter(
+      (item) => item.relevantClaimIds?.includes(claimId),
+    );
+    const boundaryCounts = new Map<string, number>();
+
+    for (const item of claimLocalEvidence) {
+      const boundaryId = item.claimBoundaryId ?? "UNASSIGNED";
+      boundaryCounts.set(boundaryId, (boundaryCounts.get(boundaryId) ?? 0) + 1);
+    }
+
+    const boundaryDistribution = Array.from(boundaryCounts.entries())
+      .map(([claimBoundaryId, evidenceCount]) => ({ claimBoundaryId, evidenceCount }))
+      .sort((a, b) => b.evidenceCount - a.evidenceCount || a.claimBoundaryId.localeCompare(b.claimBoundaryId));
+    const maxBoundaryEvidence = boundaryDistribution[0]?.evidenceCount ?? 0;
+    entry.finalEvidenceItems = claimLocalEvidence.length;
+    entry.finalDirectionCounts = countClaimLocalDirections(claimLocalEvidence, claimId);
+    entry.finalBoundaryCount = boundaryDistribution.length;
+    entry.maxBoundaryShare = claimLocalEvidence.length > 0
+      ? maxBoundaryEvidence / claimLocalEvidence.length
+      : 0;
+    entry.boundaryDistribution = boundaryDistribution;
+  }
+}
 
 /**
  * Stage 2: Gather evidence for each central claim using web search and LLM extraction.
@@ -602,6 +740,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
     : undefined;
   let idCounter = state.evidenceItems.length + 1;
   let remappedCount = 0;
+  const seededItems: EvidenceItem[] = [];
 
   for (const pe of preliminary) {
     // Normalize claim IDs: prefer full relevantClaimIds array, fall back to legacy single claimId.
@@ -639,7 +778,7 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
       }
     }
 
-    state.evidenceItems.push({
+    const seededItem: EvidenceItem = {
       id: `EV_${String(idCounter++).padStart(3, "0")}`,
       statement: pe.snippet,
       category: "evidence",
@@ -669,7 +808,13 @@ export function seedEvidenceFromPreliminarySearch(state: CBResearchState): void 
         geographic: "",
       },
       isSeeded: true,
-    });
+    };
+    state.evidenceItems.push(seededItem);
+    seededItems.push(seededItem);
+  }
+
+  if (seededItems.length > 0) {
+    recordSeededEvidenceTelemetry(state, seededItems);
   }
 
   if (remappedCount > 0) {
@@ -699,6 +844,7 @@ export async function runResearchIteration(
   }
   const evidenceCountBeforeIteration = state.evidenceItems.length;
   const searchQueryCountBeforeIteration = state.searchQueries.length;
+  const iterationIndex = state.mainIterationsUsed + state.contradictionIterationsUsed;
   const claimRelevantGeographies = getClaimRelevantGeographies(
     targetClaim,
     searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
@@ -721,6 +867,27 @@ export async function runResearchIteration(
   );
   state.llmCalls++;
   const generatedQueryCount = queries.length;
+  const iterationTelemetry: ClaimAcquisitionIterationEntry = {
+    iteration: iterationIndex,
+    iterationType,
+    languageLane: "primary",
+    generatedQueries: queries.map((query) => query.query),
+    queriesGenerated: queries.length,
+    searchResults: 0,
+    relevanceAccepted: 0,
+    sourcesFetched: 0,
+    rawEvidenceItems: 0,
+    admittedEvidenceItems: 0,
+    directionCounts: createEmptyDirectionCounts(),
+    losses: {
+      relevanceRejected: 0,
+      fetchRejected: 0,
+      sourcesWithoutEvidence: 0,
+      probativeFilteredOut: 0,
+      perSourceCapDroppedNew: 0,
+      perSourceCapEvictedExisting: 0,
+    },
+  };
 
   for (const queryObj of queries) {
     if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
@@ -741,7 +908,7 @@ export async function runResearchIteration(
 
       state.searchQueries.push({
         query: queryObj.query,
-        iteration: state.mainIterationsUsed + state.contradictionIterationsUsed,
+        iteration: iterationIndex,
         focus: iterationType,
         resultsCount: response.results.length,
         timestamp: new Date().toISOString(),
@@ -774,6 +941,7 @@ export async function runResearchIteration(
       }
 
       if (response.results.length === 0) continue;
+      iterationTelemetry.searchResults += response.results.length;
 
       // 3. Relevance classification via LLM (Haiku, batched)
       const relevantSources = await classifyRelevance(
@@ -785,6 +953,11 @@ export async function runResearchIteration(
         claimRelevantGeographies,
       );
       state.llmCalls++;
+      iterationTelemetry.relevanceAccepted += relevantSources.length;
+      iterationTelemetry.losses.relevanceRejected += Math.max(
+        response.results.length - relevantSources.length,
+        0,
+      );
 
       if (relevantSources.length === 0) continue;
 
@@ -803,6 +976,11 @@ export async function runResearchIteration(
         state,
         pipelineConfig,
       );
+      iterationTelemetry.sourcesFetched += fetchedSources.length;
+      iterationTelemetry.losses.fetchRejected += Math.max(
+        relevantSources.length - fetchedSources.length,
+        0,
+      );
 
       if (fetchedSources.length === 0) continue;
 
@@ -818,6 +996,15 @@ export async function runResearchIteration(
         currentDate,
       );
       state.llmCalls++;
+      iterationTelemetry.rawEvidenceItems += rawEvidence.length;
+      const extractedSourceUrls = new Set(
+        rawEvidence
+          .map((item) => item.sourceUrl)
+          .filter((url): url is string => Boolean(url)),
+      );
+      iterationTelemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
+        (source) => !extractedSourceUrls.has(source.url),
+      ).length;
 
       // 7. EvidenceScope validation (deterministic)
       for (const item of rawEvidence) {
@@ -836,6 +1023,10 @@ export async function runResearchIteration(
 
       // 9. Evidence filter (deterministic safety net)
       const { kept } = filterByProbativeValue(rawEvidence);
+      iterationTelemetry.losses.probativeFilteredOut += Math.max(
+        rawEvidence.length - kept.length,
+        0,
+      );
 
       // 10. Tag search strategy and add to state
       if (iterationType === "contrarian") {
@@ -868,11 +1059,20 @@ export async function runResearchIteration(
           details: { maxPerSource, keptNew: cappedItems.length, totalNew: kept.length, droppedNew: cappedCount, evictedExisting: evictedIds.length },
         });
       }
+      iterationTelemetry.losses.perSourceCapDroppedNew += cappedCount;
+      iterationTelemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
       if (evictedIds.length > 0) {
         const evictedSet = new Set(evictedIds);
         state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
       }
       state.evidenceItems.push(...cappedItems);
+      const claimLocalCappedItems = cappedItems.filter(
+        (item) => item.relevantClaimIds?.includes(targetClaim.id),
+      );
+      iterationTelemetry.admittedEvidenceItems += claimLocalCappedItems.length;
+      for (const item of claimLocalCappedItems) {
+        incrementDirectionCounts(iterationTelemetry.directionCounts, item.claimDirection);
+      }
 
       // Track contradiction/contrarian sources
       if (iterationType === "contradiction" || iterationType === "contrarian") {
@@ -911,6 +1111,8 @@ export async function runResearchIteration(
       `[Pipeline] D5 contrarian: claim ${targetClaim.id} -> ${generatedQueryCount} queries generated, ${newItems} new items`,
     );
   }
+
+  recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
 
   // Supplementary English lane: check if THIS iteration's primary-language yield is below scarcity thresholds
   const thisIterationQueries = state.searchQueries.slice(searchQueryCountBeforeIteration);
@@ -982,6 +1184,8 @@ export async function maybeRunSupplementaryEnglishLane(
   console.info(
     `[Stage2] EN supplementary lane: claim ${targetClaim.id} (primary: ${primaryNewEvidenceCount} evidence < min ${minEvidence}). Generating 1 English query.`,
   );
+  const iterationIndex = state.mainIterationsUsed + state.contradictionIterationsUsed;
+  const laneReason = `native_scarcity: ${primaryResultsCount} results / ${primaryNewEvidenceCount} evidence below thresholds`;
 
   // Generate one English query via the standard query generation path
   const enQueries = await generateResearchQueries(
@@ -997,6 +1201,28 @@ export async function maybeRunSupplementaryEnglishLane(
   state.llmCalls++;
 
   if (enQueries.length === 0) return;
+  const enTelemetry: ClaimAcquisitionIterationEntry = {
+    iteration: iterationIndex,
+    iterationType: iterationType as "main" | "contradiction" | "contrarian",
+    languageLane: "supplementary_en",
+    generatedQueries: enQueries.map((query) => query.query),
+    queriesGenerated: enQueries.length,
+    searchResults: 0,
+    relevanceAccepted: 0,
+    sourcesFetched: 0,
+    rawEvidenceItems: 0,
+    admittedEvidenceItems: 0,
+    directionCounts: createEmptyDirectionCounts(),
+    losses: {
+      relevanceRejected: 0,
+      fetchRejected: 0,
+      sourcesWithoutEvidence: 0,
+      probativeFilteredOut: 0,
+      perSourceCapDroppedNew: 0,
+      perSourceCapEvictedExisting: 0,
+    },
+    laneReason,
+  };
 
   const enQuery = enQueries[0];
   try {
@@ -1009,15 +1235,16 @@ export async function maybeRunSupplementaryEnglishLane(
 
     state.searchQueries.push({
       query: enQuery.query,
-      iteration: state.mainIterationsUsed + state.contradictionIterationsUsed,
+      iteration: iterationIndex,
       focus: iterationType,
       resultsCount: response.results.length,
       timestamp: new Date().toISOString(),
       searchProvider: response.providersUsed.join(", "),
       language: "en",
       languageLane: "supplementary_en",
-      laneReason: `native_scarcity: ${primaryResultsCount} results / ${primaryNewEvidenceCount} evidence below thresholds`,
+      laneReason,
     });
+    enTelemetry.searchResults += response.results.length;
 
     if (response.results.length > 0) {
       state.onEvent?.(`EN supplementary: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
@@ -1055,24 +1282,69 @@ export async function maybeRunSupplementaryEnglishLane(
       state.understanding?.inferredGeography ?? null, enLaneRelevantGeographies,
     );
     state.llmCalls++;
+    enTelemetry.relevanceAccepted += relevantSources.length;
+    enTelemetry.losses.relevanceRejected += Math.max(
+      response.results.length - relevantSources.length,
+      0,
+    );
 
     const fetchedSources = await fetchSources(relevantSources, enQuery.query, state, pipelineConfig);
-    if (fetchedSources.length === 0) return;
+    enTelemetry.sourcesFetched += fetchedSources.length;
+    enTelemetry.losses.fetchRejected += Math.max(
+      relevantSources.length - fetchedSources.length,
+      0,
+    );
+    if (fetchedSources.length === 0) {
+      recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
+      return;
+    }
 
     const rawEvidence = await extractResearchEvidence(
       targetClaim, fetchedSources, pipelineConfig, currentDate,
     );
     state.llmCalls++;
+    enTelemetry.rawEvidenceItems += rawEvidence.length;
+    const extractedSourceUrls = new Set(
+      rawEvidence
+        .map((item) => item.sourceUrl)
+        .filter((url): url is string => Boolean(url)),
+    );
+    enTelemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
+      (source) => !extractedSourceUrls.has(source.url),
+    ).length;
 
     // EN lane evidence is traceable via searchQuery.languageLane="supplementary_en"
     // and the source's searchQuery field — no separate tag needed on evidence items.
 
     const { kept } = filterByProbativeValue(rawEvidence);
+    enTelemetry.losses.probativeFilteredOut += Math.max(
+      rawEvidence.length - kept.length,
+      0,
+    );
     const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
-    const { kept: cappedItems } = applyPerSourceCap(kept, state.evidenceItems, maxPerSource);
+    const {
+      kept: cappedItems,
+      capped: cappedCount,
+      evictedIds,
+    } = applyPerSourceCap(kept, state.evidenceItems, maxPerSource);
+    enTelemetry.losses.perSourceCapDroppedNew += cappedCount;
+    enTelemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
+    if (evictedIds.length > 0) {
+      const evictedSet = new Set(evictedIds);
+      state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
+    }
     state.evidenceItems.push(...cappedItems);
+    const claimLocalCappedItems = cappedItems.filter(
+      (item) => item.relevantClaimIds?.includes(targetClaim.id),
+    );
+    enTelemetry.admittedEvidenceItems += claimLocalCappedItems.length;
+    for (const item of claimLocalCappedItems) {
+      incrementDirectionCounts(enTelemetry.directionCounts, item.claimDirection);
+    }
+    recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   } catch (err) {
     console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
+    recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   }
 }
 

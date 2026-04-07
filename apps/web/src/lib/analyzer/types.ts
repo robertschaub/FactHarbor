@@ -337,6 +337,53 @@ export interface SearchQuery {
   laneReason?: string;
 }
 
+export interface ClaimAcquisitionDirectionCounts {
+  supports: number;
+  contradicts: number;
+  neutral: number;
+}
+
+export interface ClaimAcquisitionIterationLosses {
+  relevanceRejected: number;
+  fetchRejected: number;
+  sourcesWithoutEvidence: number;
+  probativeFilteredOut: number;
+  perSourceCapDroppedNew: number;
+  perSourceCapEvictedExisting: number;
+}
+
+export interface ClaimAcquisitionIterationEntry {
+  iteration: number;
+  iterationType: "main" | "contradiction" | "contrarian";
+  languageLane: "primary" | "supplementary_en";
+  generatedQueries: string[];
+  queriesGenerated: number;
+  searchResults: number;
+  relevanceAccepted: number;
+  sourcesFetched: number;
+  rawEvidenceItems: number;
+  admittedEvidenceItems: number;
+  directionCounts: ClaimAcquisitionDirectionCounts;
+  losses: ClaimAcquisitionIterationLosses;
+  laneReason?: string;
+}
+
+export interface ClaimBoundaryConcentrationEntry {
+  claimBoundaryId: string;
+  evidenceCount: number;
+}
+
+export interface ClaimAcquisitionLedgerEntry {
+  seededEvidenceItems: number;
+  iterations: ClaimAcquisitionIterationEntry[];
+  postResearchApplicabilityRemoved: number;
+  finalEvidenceItems: number;
+  finalDirectionCounts: ClaimAcquisitionDirectionCounts;
+  finalBoundaryCount: number;
+  maxBoundaryShare: number;
+  boundaryDistribution: ClaimBoundaryConcentrationEntry[];
+}
+
 export interface ResearchState {
   originalInput: string;
   originalText: string;
@@ -1161,6 +1208,7 @@ export interface CBResearchState {
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   searchQueries: SearchQuery[];
+  claimAcquisitionLedger?: Record<string, ClaimAcquisitionLedgerEntry>;
   // Shared Stage 2 query budget usage: claimId -> queries consumed
   queryBudgetUsageByClaim: Record<string, number>;
   // Iteration tracking (replaces boolean contradictionSearchPerformed)

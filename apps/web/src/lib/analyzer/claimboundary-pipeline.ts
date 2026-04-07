@@ -108,6 +108,8 @@ import {
   ClaimContractOutputSchema,
 } from "./claim-extraction-stage";
 import {
+  finalizeClaimAcquisitionTelemetry,
+  recordApplicabilityRemovalTelemetry,
   researchEvidence,
   runResearchIteration,
   allClaimsSufficient,
@@ -192,7 +194,9 @@ export {
   ClaimContractOutputSchema,
 } from "./claim-extraction-stage";
 export {
+  finalizeClaimAcquisitionTelemetry,
   researchEvidence,
+  recordApplicabilityRemovalTelemetry,
   runResearchIteration,
   seedEvidenceFromPreliminarySearch,
   remapUnresolvedSeededEvidence,
@@ -345,6 +349,7 @@ export async function runClaimBoundaryAnalysis(
       evidenceItems: [],
       sources: [],
       searchQueries: [],
+      claimAcquisitionLedger: {},
       queryBudgetUsageByClaim: {},
       mainIterationsUsed: 0,
       contradictionIterationsReserved: initialPipelineConfig.contradictionReservedIterations ?? 1,
@@ -509,6 +514,10 @@ export async function runClaimBoundaryAnalysis(
           understanding.inferredGeography ?? null,
         ),
       );
+      const removedItems = assessed.filter(
+        (item) => item.applicability === "foreign_reaction"
+      );
+      recordApplicabilityRemovalTelemetry(state, removedItems);
       state.evidenceItems = assessed.filter(
         (item) => item.applicability !== "foreign_reaction"
       );
@@ -532,6 +541,7 @@ export async function runClaimBoundaryAnalysis(
     startPhase("cluster");
     const boundaries = await clusterBoundaries(state);
     state.claimBoundaries = boundaries;
+    finalizeClaimAcquisitionTelemetry(state);
     endPhase("cluster");
 
     // D5 Control 1: Evidence Sufficiency Gate — per-claim evidence check
@@ -902,6 +912,7 @@ export async function runClaimBoundaryAnalysis(
         searchQuery: s.searchQuery,
       })),
       searchQueries: state.searchQueries,
+      claimAcquisitionLedger: state.claimAcquisitionLedger,
 
       // Quality gates
       qualityGates: assessment.qualityGates,
