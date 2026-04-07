@@ -1,5 +1,15 @@
 # Agent Outputs Log
 ---
+### 2026-04-06 | Senior Developer | Claude Code (Sonnet 4.6) | UPQ-1 Cross-Review — Resequenced Phase A Soundness
+**Task:** Cross-review the consolidated UPQ-1 architecture review: is Phase A-1 (wire existingEvidence summary into GENERATE_QUERIES) → A-2 (telemetry) → gate → B the right sequence?
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only; no code changes)
+**Key decisions:** See full review in chat. Judgment: `approve` with one plan change. The dead-parameter finding is strong enough to justify front-loading the prompt fix, but the plan needs a mandatory claim-local filter applied to `existingEvidence` before it is summarised for the prompt; passing the entire `state.evidenceItems` array (all claims) risks polluting the per-claim evidence summary with sibling-claim evidence.
+**Open items:** None blocking.
+**Warnings:** (1) `state.evidenceItems` is the whole-pipeline accumulator — not pre-filtered to `targetClaim.id`. If Phase A-1 passes it unsifted to the prompt, the evidence summary includes evidence for sibling claims, which may produce incorrect "already-covered" signals. (2) `queryGenerationTemperature: 0.2` is conservative for a diversity task; a summary that signals coverage gaps may not be enough if temperature suppresses divergence. Consider whether 0.3–0.4 is worth testing as Phase A-2 telemetry lands.
+**For next agent:** Required plan change: `generateResearchQueries()` must filter `existingEvidence` to items where `relevantClaimIds.includes(claim.id)` before building the summary. This is a one-liner but critical for correctness. Full review text is in the chat response above.
+**Learnings:** No
+
+---
 ### 2026-04-06 | Senior Developer | Claude Code (Opus 4.6) | Cross-Boundary Tension Investigation
 **Task:** Investigate whether cross-boundary tensions increased since previous deployment, find root causes, propose fixes.
 **Files touched:** `Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md` (new)
@@ -3591,4 +3601,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** No code changes yet. The next implementation choice should come from the new upstream-quality proposal: start with claim-level Stage 2/3 telemetry, then rerun the hard families before selecting one bounded Stage-2 improvement slice.
 **Warnings:** The worktree also contains an untracked `Docs/Investigations/` path that was not touched or included here. Do not sweep that directory into a docs commit accidentally. Also, deferring Fix 2 does not mean deleting it; keep path B available if future runs again show methodology-only tensions being promoted.
 **For next agent:** Start from `Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md`. The active question is no longer narrative calibration; it is how to instrument and improve Stage 2/3 claim-level evidence quality without reopening rejected heuristics or broad redesign.
+**Learnings:** no
+
+---
+### 2026-04-06 | Senior Developer | Codex (GPT-5) | Investigate Current Wikipedia Integration Status And Next Steps
+**Task:** Inspect the current code, tests, and status docs for Wikipedia integration and recommend the next engineering steps.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed Wikipedia integration is already shipped as a bounded supplementary provider, not a pending provider-plumbing task. Current `HEAD` has default-on Wikipedia supplementary orchestration, detected-language threading into Wikipedia subdomain selection, and test coverage for both orchestration and language fallback. The main remaining engineering gap is not “turn Wikipedia on,” but observability and pipeline-aware use: `WebSearchResult` does not preserve provider provenance, `FetchedSource` stores only `searchQuery`, merged search results are appended without per-result provider attribution or URL dedupe, and downstream metrics only keep aggregate `providersUsed`. Recommended next slice is a low-risk structural one: add per-result/provider provenance and merged-result URL dedupe before any higher-risk query-shaping or Wikipedia reference-harvesting work.
+**Open items:** If this track is reopened, the next concrete implementation proposal should target provider provenance + URL dedupe first, then run a small measurement batch to quantify Wikipedia’s unique contribution and overlap. Deeper work such as provider-specific query variants, Wikipedia citation harvesting, or broader Semantic Scholar integration should stay deferred until telemetry exists.
+**Warnings:** `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` is partly stale: its “narrow reopening scope” still recommends supplementary participation plus detected-language routing, but those are already shipped. Do not reopen that completed slice by mistake.
+**For next agent:** Source of truth is the live code, not the older concept doc. Start with `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-wikipedia.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, and the related tests plus `Docs/STATUS/Current_Status.md` / `Docs/STATUS/Backlog.md`.
 **Learnings:** no
