@@ -574,6 +574,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Delay in milliseconds between retries for transient fetch failures (default: 2000)"),
   sufficiencyMinMainIterations: z.number().int().min(0).max(10).optional()
     .describe("Min main loop iterations that must complete before sufficiency check can fire (default: 1). Prevents seeded preliminary evidence from short-circuiting real Stage 2 research."),
+  sufficiencyMinResearchedIterationsPerClaim: z.number().int().min(0).max(5).optional()
+    .describe("Per-claim floor: each claim must receive at least this many targeted research iterations before seeded evidence can make it sufficient (default: 1). Prevents heavily-seeded claims from exiting Stage 2 with zero targeted research."),
   contradictionReservedIterations: z.number().int().min(0).max(5).optional()
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
   contradictionReservedQueries: z.number().int().min(0).max(10).optional()
@@ -863,6 +865,9 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.sufficiencyMinMainIterations === undefined) {
     data.sufficiencyMinMainIterations = 1;
+  }
+  if (data.sufficiencyMinResearchedIterationsPerClaim === undefined) {
+    data.sufficiencyMinResearchedIterationsPerClaim = 1;
   }
   if (data.contradictionReservedIterations === undefined) {
     data.contradictionReservedIterations = 1;
@@ -1158,6 +1163,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   maxEvidenceItemsPerSource: 5,
   iterationRetryDelayMs: 2000,
   sufficiencyMinMainIterations: 1,
+  sufficiencyMinResearchedIterationsPerClaim: 1,
   contradictionReservedIterations: 1,
   contradictionReservedQueries: 2,
   researchTimeBudgetMs: 10 * 60 * 1000,

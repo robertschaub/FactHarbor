@@ -351,6 +351,7 @@ export async function runClaimBoundaryAnalysis(
       searchQueries: [],
       claimAcquisitionLedger: {},
       queryBudgetUsageByClaim: {},
+      researchedIterationsByClaim: {},
       mainIterationsUsed: 0,
       contradictionIterationsReserved: initialPipelineConfig.contradictionReservedIterations ?? 1,
       contradictionIterationsUsed: 0,

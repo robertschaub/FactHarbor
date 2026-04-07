@@ -1211,6 +1211,10 @@ export interface CBResearchState {
   claimAcquisitionLedger?: Record<string, ClaimAcquisitionLedgerEntry>;
   // Shared Stage 2 query budget usage: claimId -> queries consumed
   queryBudgetUsageByClaim: Record<string, number>;
+  // Per-claim count of main-lane research iterations that targeted each claim.
+  // Used by sufficiency guard to ensure seeded-heavy claims still get at least
+  // one targeted research iteration before being declared sufficient.
+  researchedIterationsByClaim: Record<string, number>;
   // Iteration tracking (replaces boolean contradictionSearchPerformed)
   mainIterationsUsed: number;
   contradictionIterationsReserved: number;

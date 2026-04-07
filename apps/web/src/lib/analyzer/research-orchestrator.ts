@@ -260,6 +260,9 @@ export async function researchEvidence(
   const sufficiencyThreshold = pipelineConfig.claimSufficiencyThreshold ?? 3;
   // MT-1: minimum main iterations before sufficiency check can fire (default: 1)
   const sufficiencyMinMainIterations = pipelineConfig.sufficiencyMinMainIterations ?? 1;
+  // Per-claim floor: each claim must receive at least this many targeted research
+  // iterations before seeded evidence can make it sufficient (default: 1).
+  const sufficiencyMinResearchedIterationsPerClaim = pipelineConfig.sufficiencyMinResearchedIterationsPerClaim ?? 1;
   const maxSourcesPerIteration = searchConfig.maxSourcesPerIteration ?? 8;
   const timeBudgetMs = pipelineConfig.researchTimeBudgetMs ?? 10 * 60 * 1000;
   const zeroYieldBreakThreshold = pipelineConfig.researchZeroYieldBreakThreshold ?? 2;
@@ -304,7 +307,9 @@ export async function researchEvidence(
     // MT-1 + MT-3: Pass iteration count and distinct event count so sufficiency
     // cannot fire before the minimum required iterations have completed.
     // When diversityConfig is set, also requires D5-level source-type/domain diversity.
-    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount, diversityConfig)) break;
+    // Per-claim floor: each claim must have received at least N targeted research
+    // iterations before seeded evidence can make it sufficient.
+    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount, diversityConfig, state.researchedIterationsByClaim, sufficiencyMinResearchedIterationsPerClaim)) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
     // Fix 4: Stop main loop when remaining budget equals contradiction reserve,
@@ -354,6 +359,8 @@ export async function researchEvidence(
     );
 
     state.mainIterationsUsed++;
+    // Track per-claim researched iterations for the sufficiency per-claim floor.
+    state.researchedIterationsByClaim[targetClaim.id] = (state.researchedIterationsByClaim[targetClaim.id] ?? 0) + 1;
 
     // Diminishing returns detection
     const newItems = state.evidenceItems.length - beforeCount;
@@ -1471,6 +1478,8 @@ export function allClaimsSufficient(
   minMainIterations: number = 1,
   distinctEventCount: number = 0,
   diversityConfig?: DiversitySufficiencyConfig,
+  researchedIterationsByClaim?: Record<string, number>,
+  minResearchedIterationsPerClaim: number = 1,
 ): boolean {
   // Empty claims: vacuously sufficient (no research loop runs anyway)
   if (claims.length === 0) return true;
@@ -1491,6 +1500,16 @@ export function allClaimsSufficient(
     // Default path: exclude seeded evidence and use pipeline sufficiency threshold.
     const effectiveThreshold = diversityConfig ? diversityConfig.minItems : threshold;
     const includeSeeded = diversityConfig?.includeSeeded ?? false;
+
+    // Per-claim researched-iteration floor: when seeded evidence is counted
+    // toward sufficiency, require at least N targeted research iterations
+    // per claim before seeded items can make that claim "sufficient."
+    // This prevents heavily-seeded claims from exiting Stage 2 with zero
+    // targeted research (observed: Plastik AC_01 had 41 seeded, 0 researched).
+    if (includeSeeded && minResearchedIterationsPerClaim > 0 && researchedIterationsByClaim) {
+      const claimResearchedIterations = researchedIterationsByClaim[claim.id] ?? 0;
+      if (claimResearchedIterations < minResearchedIterationsPerClaim) return false;
+    }
 
     const claimEvidence = evidenceItems.filter((e) => {
       if (!e.relevantClaimIds?.includes(claim.id)) return false;

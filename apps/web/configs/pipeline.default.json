@@ -155,6 +155,7 @@
   "maxEvidenceItemsPerSource": 5,
   "iterationRetryDelayMs": 2000,
   "sufficiencyMinMainIterations": 1,
+  "sufficiencyMinResearchedIterationsPerClaim": 1,
   "contradictionReservedIterations": 1,
   "contradictionReservedQueries": 2,
   "researchTimeBudgetMs": 600000,

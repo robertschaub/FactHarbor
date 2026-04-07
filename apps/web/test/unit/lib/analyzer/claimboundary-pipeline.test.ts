@@ -2582,6 +2582,95 @@ describe("allClaimsSufficient with diversityConfig", () => {
   });
 });
 
+// --- Per-claim researched-iteration floor tests ---
+
+describe("allClaimsSufficient with per-claim researched-iteration floor", () => {
+  const diversityConfig: DiversitySufficiencyConfig = {
+    minSourceTypes: 2,
+    minDistinctDomains: 3,
+    minItems: 3,
+    includeSeeded: true,
+  };
+
+  it("claim with seeded evidence but 0 researched iterations is NOT sufficient", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+    ] as any[];
+
+    // 3 seeded items with full diversity, but 0 researched iterations for AC_01
+    // Global iteration guard passes (mainIterationsCompleted=1), but per-claim floor blocks
+    const researchedByClaim: Record<string, number> = {}; // AC_01 has 0 iterations
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
+  });
+
+  it("claim with seeded evidence AND 1 researched iteration IS sufficient", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+    ] as any[];
+
+    const researchedByClaim: Record<string, number> = { AC_01: 1 };
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(true);
+  });
+
+  it("claim without seeded evidence is NOT regressed by the per-claim floor", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+    ] as any[];
+
+    // Non-seeded evidence, without diversity config → default path excludes seeded
+    // The per-claim floor only fires when includeSeeded=true
+    const researchedByClaim: Record<string, number> = {};
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, undefined, researchedByClaim, 1)).toBe(true);
+  });
+
+  it("per-claim floor=0 disables the guard (backward compat)", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+    ] as any[];
+
+    // minResearchedIterationsPerClaim=0 → guard disabled
+    const researchedByClaim: Record<string, number> = {};
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 0)).toBe(true);
+  });
+
+  it("multi-claim: blocks when one claim has 0 researched iterations", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      // AC_01: heavily seeded, 0 research iterations
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+      // AC_02: researched, has iterations
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://d.com/1" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "peer_reviewed_study", sourceUrl: "https://e.com/1" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "F" }, sourceType: "government_report", sourceUrl: "https://f.com/1" },
+    ] as any[];
+
+    // AC_02 has researched iterations, AC_01 does not
+    const researchedByClaim: Record<string, number> = { AC_02: 2 };
+    expect(allClaimsSufficient(claims, evidence, 3, 2, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
+
+    // After AC_01 gets one iteration
+    researchedByClaim.AC_01 = 1;
+    expect(allClaimsSufficient(claims, evidence, 3, 3, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(true);
+  });
+});
+
 describe("findLeastResearchedClaim with diversityConfig", () => {
   const diversityConfig: DiversitySufficiencyConfig = {
     minSourceTypes: 2,
