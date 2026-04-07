@@ -1,5 +1,15 @@
 # Agent Outputs Log
 ---
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase A-2 Telemetry Canary Measurement
+**Task:** Run 4 hard-family canaries on `b130d00c` (A-2 telemetry build), extract `claimAcquisitionLedger`, diagnose A-1 effect and next Stage-2 slice.
+**Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` (new)
+**Key decisions:** (1) A-1 judgment: `still_inconclusive`, keep provisionally. Kill gate (repeatable claim starvation) not met. No cross-claim reallocation detected in ledger — previous AC_02 collapses were normal variance. (2) Ledger is working: per-claim per-iteration evidence flow, direction counts, seeded vs researched split, applicability losses all captured. (3) Strongest new finding: **seeded-evidence dominance** — Plastik AC_01 has 41 seeded items and 0 research iterations; Bolsonaro AC_01 has 26 seeded. Research loop considers these claims "sufficient" before research starts. (4) Recommended next Phase B candidate: investigate seeded-evidence sufficiency interaction, not more A-1 tuning.
+**Open items:** Phase B decision: whether to exclude seeded evidence from sufficiency count, add per-claim iteration floor, or accept current behavior.
+**Warnings:** Anthropic API was under heavy load — clustering Sonnet calls took 30-60+ min instead of typical 2-5 min. Not a code issue.
+**For next agent:** The ledger data is in `resultJson.claimAcquisitionLedger`. Key fields: `seededEvidenceItems`, `iterations[].admittedEvidenceItems`, `iterations[].directionCounts`, `finalEvidenceItems`, `finalDirectionCounts`, `maxBoundaryShare`. Full analysis: `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md`.
+**Learnings:** No
+
+---
 ### 2026-04-06 | Senior Developer | Claude Code (Sonnet 4.6) | UPQ-1 Cross-Review — Resequenced Phase A Soundness
 **Task:** Cross-review the consolidated UPQ-1 architecture review: is Phase A-1 (wire existingEvidence summary into GENERATE_QUERIES) → A-2 (telemetry) → gate → B the right sequence?
 **Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only; no code changes)
@@ -3621,4 +3631,14 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** Next step is to rerun the hard canaries and use the ledger to determine whether Phase A-1 is genuinely rebalancing underrepresented directions or redistributing attention between claims. If telemetry shows repeatable starvation, revise or remove `existingEvidenceSummary`; if it shows constructive rebalancing, proceed to the next bounded Stage-2 improvement slice.
 **Warnings:** Applicability removals happen after Stage 2, so they are recorded as a post-research claim-level total, not as invented per-iteration losses. The worktree also contains unrelated user/other-agent changes (`apps/web/.env.example` and several untracked WIP docs); leave them alone when preparing any commit.
 **For next agent:** The main analysis surface is now `resultJson.claimAcquisitionLedger`. The most relevant code paths are `runResearchIteration()` and `maybeRunSupplementaryEnglishLane()` in `research-orchestrator.ts`, the post-research applicability filter in `claimboundary-pipeline.ts`, and the new helper tests in `research-orchestrator.test.ts`. Verification run in this pass: `npm -w apps/web exec vitest run test/unit/lib/analyzer/research-orchestrator.test.ts`, `npm test`, `npm -w apps/web run build`.
+**Learnings:** no
+
+---
+### 2026-04-07 | Senior Developer | Codex (GPT-5) | Compare UPQ-1 A-2 Local Canaries Against Deployed And Update Docs
+**Task:** Compare the new local `b130d00c` A-2 canary jobs against current deployed results, decide whether local is clearly better, and update status/WIP docs accordingly.
+**Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md`, `Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md`, `Docs/WIP/README.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Live deployed web reports `f1a372bf` via `https://app.factharbor.ch/api/version`, which is still behind local `b130d00c` on the new A-series analyzer work. The exact-family comparison is mixed rather than a clean local win: Swiss is better locally (`035d6e65` `LEANING-TRUE 70/58` vs deployed `8ec68105` `LEANING-TRUE 60/52`), Plastik is not clearly better locally (`c731c5b2` `LEANING-FALSE 41/64` vs deployed `2cf4682c` `LEANING-TRUE 62/72`), Bolsonaro EN has no exact current-deployed rerun and only a near-parity older-runtime comparator (`ee5df495` `70/68` vs `eb02cd2e` `73/70`), and the English misinformation input has no exact deployed counterpart. The docs now state that A-2 succeeded as observability and exposed the real next upstream root cause — seeded-evidence dominance — but `b130d00c` is not yet a clear quality-based deploy candidate.
+**Open items:** The next bounded implementation slice should target seeded-evidence sufficiency interaction, ideally via a per-claim researched-iteration floor before seeded evidence can fully satisfy Stage 2 sufficiency. If a deploy decision is needed later, rerun at least Bolsonaro EN and the English misinformation claim on the current deployed stack for exact same-input comparison.
+**Warnings:** The deployed public job list does not contain an exact current-runtime EN Bolsonaro rerun or an exact current-runtime English misinformation rerun, so those comparisons remain partial. Do not overstate the deploy basis from Swiss alone.
+**For next agent:** Use `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` as the current source of truth. The deployed comparators referenced in this pass are `8ec681050e844becb4ec616eb426731e` (Swiss), `2cf4682c5c914834ac5a58b318c3fc0e` (Plastik), `eb02cd2e535a4556a2bc3c29868412a0` (older-runtime Bolsonaro EN), and `38d5760e6ced4a969c3023a9aace03be` (family-only misinformation reference).
 **Learnings:** no

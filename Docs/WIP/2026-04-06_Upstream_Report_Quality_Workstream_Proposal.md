@@ -170,6 +170,34 @@ Why first:
 - it gives future local-vs-deployed comparisons a better basis than final
   verdicts alone
 
+### Phase A status (2026-04-07)
+
+Phase A is now effectively complete:
+
+- **Phase A-1 shipped**: claim-local `existingEvidenceSummary` was added to
+  `GENERATE_QUERIES`
+- **Phase A-2 shipped**: claim-level `claimAcquisitionLedger` now records
+  seeded counts, per-iteration yield, direction counts, structural losses,
+  post-research applicability removals, and final boundary concentration
+
+What the A-phase measurements showed:
+
+- A-1 remains **inconclusive**
+  - no clear evidence of harmful cross-claim reallocation
+  - no clear evidence of repeatable report-quality gain either
+- the new telemetry revealed a stronger upstream issue than A-1 itself:
+  **seeded-evidence dominance**
+
+Most important concrete finding:
+
+- some claims are treated as sufficient before Stage 2 meaningfully researches
+  them because seeded evidence already satisfies the count/diversity gate
+- the clearest observed case is **Plastik AC_01**, which landed with
+  `41 seeded / 0 researched`
+
+This means the next bounded implementation slice should move to the
+seeded-evidence/sufficiency interaction rather than more A-1 tuning.
+
 ### Phase B — Stage 2 query/event anchoring improvement
 
 Once the claim-level ledger is visible, improve Stage 2 where the evidence pool
@@ -194,6 +222,27 @@ Important constraint:
 - no domain-specific keywords
 - no language-specific heuristics
 - any semantic change must stay prompt/LLM-driven
+
+### Revised next Phase B target
+
+The strongest current Phase B candidate is now:
+
+**seeded-evidence sufficiency interaction**
+
+Preferred first option:
+
+- require at least one researched iteration per claim before seeded evidence can
+  fully satisfy Stage 2 sufficiency
+
+Why this is now preferred over more A-1 prompt work:
+
+- it addresses a measured structural gap rather than a prompt hypothesis
+- it preserves the value of good seeded evidence instead of discarding it
+- it directly targets the observed failure mode where a claim is never actually
+  researched beyond Stage 1
+
+This should remain a bounded Stage 2 intervention, not a broad sufficiency
+redesign.
 
 ### Phase C — Stage 3 boundary concentration stabilization
 
