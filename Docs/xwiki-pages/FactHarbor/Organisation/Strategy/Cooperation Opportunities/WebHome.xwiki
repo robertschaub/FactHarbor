@@ -50,7 +50,23 @@ This is the internal strategy document for FactHarbor's next cooperation and fun
 |**Google.org AI for Government Innovation**|High upside, but extremely conditional.|Round closed **April 3, 2026**. Required a credible government partner. Monitor for future rounds.
 |**Prototype Fund Switzerland**|Interesting public-interest route, but not reliable enough to anchor the plan.|Keep on watchlist until the next call and theme are confirmed.
 
+== Direct Support Platforms ==
+
+Platforms for individual donations and recurring support. Low effort to set up, run in parallel with grant applications.
+
+|=Platform|=Status|=Fees|=Action
+|**[[GitHub Sponsors>>https:~/~/github.com/sponsors]]**|**Set up now**|0%|Apply with AHV-Nummer + Swiss bank account. Approval in days. Tiers: CHF 5/15/50 pro Monat.
+|**[[Liberapay>>https:~/~/en.liberapay.com/]]**|**Set up now**|0% platform, ~2-3% payment processing|Register, create profile. European, open-source-focused, recurring donations.
+|**[[Open Collective Europe>>https:~/~/opencollective.com/europe]]**|**After Verein registration**|4-10% fiscal host fee|Contact hello@oceurope.org to confirm Swiss eligibility. Transparent public budgets.
+|**[[wemakeit>>https:~/~/wemakeit.com/]]**|**Campaign when ready**|10% (only on success)|Swiss crowdfunding, 67% success rate. Best for one-time campaign with specific milestone. CHF 5-15K realistic for Alpha stage.
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Priority:** GitHub Sponsors and Liberapay now (zero cost, passive). Open Collective after Verein. wemakeit only with a defined campaign goal and enough community to reach 30% in the first week.
+)))
+
 == Secondary Targets / Watchlist ==
+
 
 * **ClaimReview / Duke Reporters' Lab** — important ecosystem integration, but it should be treated as a V1.0 credibility multiplier rather than an immediate outreach priority.
 * **AVeriTeC / broader benchmark ecosystem** — important for external proof and reproducibility; useful for credibility and measurement.
