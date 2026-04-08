@@ -249,6 +249,20 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Defensive legacy rule for boundary references");
       expect(section).toContain("Defensive legacy rule for challenge references");
     });
+
+    it("advocate contains scope-of-truth rule preventing semantic drift", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("Scope-of-truth rule");
+      expect(section).toContain("therefore improper");
+      expect(section).toContain("misleadingness");
+    });
+
+    it("reconciliation contains scope-of-truth rule preventing semantic drift", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Scope-of-truth rule");
+      expect(section).toContain("therefore improper");
+      expect(section).toContain("misleadingness");
+    });
   });
 });
 

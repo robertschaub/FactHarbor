@@ -3933,6 +3933,47 @@ describe("isVerdictDirectionPlausible", () => {
     // ratio = 2.0 / (2.0+0.9) = 0.69 > 0.5, truth ≥ 70 → Rule 1 passes
     expect(isVerdictDirectionPlausible(clearTrue, ev)).toBe(true);
   });
+
+  it("polarity mismatch blocks self-consistency rescue: supporting bucket with contradicting evidence", () => {
+    // Reproduces the AC_01 failure pattern from job 21dc9623:
+    // Verdict says FALSE 15, but supportingEvidenceIds contains evidence stored as "supports" claimDirection.
+    // The verdict is stable (self-consistency assessed + stable) but the citation polarity is objectively wrong.
+    const wrongVerdict = createCBVerdict({
+      truthPercentage: 15,
+      supportingEvidenceIds: ["EV_S1", "EV_S2"],
+      contradictingEvidenceIds: ["EV_C1"],
+      consistencyResult: { claimId: "AC_01", percentages: [15, 15, 15], average: 15, spread: 0, stable: true, assessed: true },
+    });
+    const ev = [
+      // EV_S1 is in supportingEvidenceIds but stored as "supports" — correctly labeled.
+      // EV_C1 is in contradictingEvidenceIds but stored as "supports" — mislabeled!
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_S2", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", claimDirection: "supports", probativeValue: "high" }),
+    ];
+    // Despite stable consistency, the contradictingEvidenceIds bucket contains evidence
+    // stored as "supports" — a deterministic polarity mismatch.
+    // Self-consistency rescue must NOT override this.
+    expect(isVerdictDirectionPlausible(wrongVerdict, ev)).toBe(false);
+  });
+
+  it("polarity mismatch: clean citation polarity still allows self-consistency rescue", () => {
+    // Same shape but citation polarity is clean — self-consistency rescue should work.
+    const correctVerdict = createCBVerdict({
+      truthPercentage: 15,
+      supportingEvidenceIds: ["EV_S1"],
+      contradictingEvidenceIds: ["EV_C1", "EV_C2"],
+      consistencyResult: { claimId: "AC_01", percentages: [15, 15, 15], average: 15, spread: 0, stable: true, assessed: true },
+    });
+    const ev = [
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "medium" }),
+      createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C2", claimDirection: "contradicts", probativeValue: "high" }),
+    ];
+    // Citation polarity is clean (supports in supporting, contradicts in contradicting).
+    // Self-consistency rescue should work: stable + assessed + no polarity mismatch.
+    expect(isVerdictDirectionPlausible(correctVerdict, ev)).toBe(true);
+  });
 });
 
 // ============================================================================
