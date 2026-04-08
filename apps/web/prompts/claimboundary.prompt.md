@@ -158,7 +158,10 @@ If `verifiability` assessment is requested (via configuration), also assess how 
   - **Predicate preservation:** When decomposing a broad evaluative predicate (for example, "is useless", "does not work", "brings nothing"), each dimension claim must preserve the ORIGINAL EVALUATIVE MEANING and append only a neutral dimension qualifier. Preferred form: "[Subject] [same evaluative predicate] in terms of [dimension]". Do NOT replace the predicate with a specific mechanism, causal chain, proxy metric, or comparative assertion unless that narrower claim is already explicit in the input. Dimension decomposition specifies WHAT is being evaluated, not HOW or WHY it succeeds or fails. Mechanisms and causal details must emerge from Stage 2 evidence, not be injected into claim content.
   - **No proxy rephrasing:** Do NOT restate a broad evaluative predicate as a feasibility, contribution, efficiency, performance, or cost-effectiveness claim unless that narrower framing is already explicit in the input. For a broad evaluative predicate, the dimension claim must keep the same evaluative meaning and vary only the dimension qualifier. Bad pattern: replacing the user's predicate with "is not viable", "does not contribute", "is inefficient", or similar proxy formulations. Good pattern: preserve the user's broad evaluative meaning and specify only the evaluative dimension.
   - **Predicate strength preservation (CRITICAL):** When the user's thesis uses a strong, absolute, or categorical evaluative predicate, each atomic claim MUST preserve that same intensity level. Do NOT soften, hedge, or weaken the predicate. The strength of the evaluative language directly determines what evidence threshold the verdict stage will apply — a weaker claim is easier to support and produces a materially different (higher) truth percentage. Softening is NOT a neutral reformulation; it systematically biases the pipeline toward higher truth scores on claims the user stated strongly. Examples of prohibited softening: "brings nothing" → "is ineffective" (weakened from categorical negation to degree judgment); "is useless" → "has limited utility" (weakened from absolute to qualified); "does not work" → "is suboptimal" (weakened from negation to comparison). Correct pattern: if the user says "brings nothing", every dimension claim must say "brings nothing in terms of [dimension]" — not "is ineffective in terms of [dimension]".
-  - **Truth-condition-bearing modifier preservation (CRITICAL):** When the input contains a modifier, qualifier, or predicate component whose removal would change the proposition's truth conditions — i.e., would change what evidence is needed to answer the thesis — every atomic claim that covers that dimension MUST preserve the modifier. Dropping a truth-condition-bearing modifier is NOT a neutral simplification; it changes what is being verified and can flip the verdict. Preserve a modifier only when removing it changes what evidence would count as supporting or contradicting. Do NOT treat every adjective or adverb as thesis-defining — only those that change the proposition's truth conditions. Test: "If I remove this modifier, would the same evidence still answer the claim?" If no — the modifier is truth-condition-bearing and must be preserved. When decomposing a multi-proposition input that contains such a modifier, at least one direct atomic claim must carry the modifier's dimension explicitly.
+    - **Truth-condition-bearing modifier identification (MANDATORY):** Before decomposing the input into atomic claims, identify whether the input contains any modifier, qualifier, or predicate component whose presence changes what evidence would answer the user's thesis. A truth-condition-bearing modifier is not just descriptive wording; removing it changes the proposition being verified. Treat this as a semantic role, not a keyword lookup.
+    - **Truth-condition-bearing modifier preservation (CRITICAL):** If the input contains a truth-condition-bearing modifier, at least one direct atomic claim MUST preserve that modifier's meaning explicitly enough that the downstream pipeline can verify the same proposition the user stated. Dropping such a modifier is NOT simplification; it changes the claim contract. Preserve a modifier only when removing it changes what evidence would count as supporting or contradicting. Do NOT treat every adjective or adverb as thesis-defining — only those that change the proposition's truth conditions.
+    - **No decomposition without anchor retention:** When a truth-condition-bearing modifier exists, do NOT decompose the input into only prerequisite, chronological, procedural, or background claims while omitting the modifier-bearing proposition itself. Supporting sub-claims may be added when justified, but they cannot replace the anchored claim.
+    - **Direct-claim anchor test (required self-check):** Before finalizing the claim set, ask: "If a verifier saw only these direct atomic claims, could they still test the exact proposition the user asked about, including the modifier that changes its truth conditions?" If no, the extraction is invalid and must be rewritten before output.
   - Do not decompose a direct real-world predicate into proxy claims about media representation, portrayal, labeling, discourse, or public perception unless the user's input itself explicitly asks about those representational phenomena.
   - **Dimension independence test:** Before finalizing dimension claims, verify each pair is independently falsifiable: if dimension A is true and dimension B is false, both verdicts must be coherent. If two dimensions would require the same evidence body to assess, merge them. A well-formed decomposition of "Entity A is more [AMBIGUOUS_TRAIT] than Entity B" yields dimensions like: → Observable behavioral incidents of [trait] (verified by behavioral/event-count data) → Institutionally documented [trait]-adjacent acts (verified by administrative records) → Attitudinal disposition toward [trait] (verified by survey or opinion research). Each requires a distinct evidence type and can independently be true or false. If your proposed dimensions would all be assessed with the same kind of evidence, collapse them.
   - **No counter-narrative claims (CRITICAL):** Every atomic claim must decompose the user's thesis, not argue against it. Do NOT extract claims that present the opposing viewpoint, victimhood framing, counter-evidence, or a rebuttal to the thesis as an atomic claim. Counter-evidence is gathered by Stage 2 research and weighed in Stage 4 verdicts — it must NOT be injected as a claim that gets its own verdict. Common error: if the thesis is "Group A is more [trait] than Group B", do NOT extract a claim like "Group A is disproportionately targeted/victimized by [trait]" — that is a counter-narrative, not a dimension of the thesis. All dimension claims must decompose WHAT the thesis asserts, not add claims about why it might be wrong.
@@ -233,6 +236,14 @@ ${analysisInput}
 ${preliminaryEvidence}
 ```
 
+### Mandatory internal self-check before output
+
+Before returning the JSON:
+1. Identify the thesis-defining modifier or predicate component, if any.
+2. Verify that at least one direct atomic claim preserves it.
+3. Verify that no direct atomic claim adds legality, constitutionality, validity, or other normative implications not present in the input.
+4. If either check fails, revise the extraction before output.
+
 ### Output Schema
 
 Return a JSON object:
@@ -295,12 +306,18 @@ Assess whether the extracted claims preserve the user's original claim contract.
 
 Focus especially on cases where the input uses a broad evaluative predicate and the extracted claims decompose that predicate into dimensions.
 
+In addition to proxy drift and representational drift, explicitly audit for:
+- omission of any truth-condition-bearing modifier or predicate component
+- injection of normative or legal implications not stated by the user
+
 For each claim, determine:
 - whether it preserves the original evaluative meaning
 - whether any added dimension qualifier is neutral
 - whether the claim drifts into a narrower proxy predicate that was not explicit in the input
 
 Then decide whether the extraction should be accepted as-is or whether Pass 2 should be retried.
+
+Your judgment must be traceable. If you approve preservation of a modifier-bearing proposition, you must identify the modifier-bearing component from the input, name the exact claim IDs that preserve it, and quote the relevant text from those claims.
 
 ### Rules
 
@@ -337,10 +354,20 @@ Then decide whether the extraction should be accepted as-is or whether Pass 2 sh
 9. **Representational drift prohibition.**
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
-10. **Semantic anchor preservation.**
-    Check these two conditions and flag `rePromptRequired: true` if either is violated:
-    - **Modifier omission:** Does a truth-condition-bearing modifier or predicate component from the input (a word or phrase whose removal would change what evidence answers the thesis) disappear from ALL direct atomic claims? If the implied claim preserves it but no atomic claim does, the extraction has silently dropped the thesis-defining proposition. Flag for retry.
-    - **Normative injection:** Does any direct atomic claim add an assertion about legality, constitutionality, procedural validity, or normative compliance that the input text did not make? If the input states only a factual chronology or event sequence, and an extracted claim asserts that this sequence "violates", "complies with", or "contravenes" a legal or constitutional standard, the extraction has injected an inference. Flag for retry.
+10. **Truth-condition-bearing modifier audit (MANDATORY).**
+  First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one direct atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims.
+
+11. **Anti-inference audit (MANDATORY).**
+  Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried.
+
+12. **Traceable validation only.**
+  You MUST justify anchor-preservation approval with explicit traceable evidence from the provided claim set. Do not assume a modifier is preserved; cite the exact claim IDs and quote the relevant phrase from each cited claim. If no claim preserves the modifier, set `rePromptRequired: true`.
+
+13. **No hallucinated claim references.**
+  You may reference only claim IDs that actually appear in the input claim list. If you cannot cite an existing claim ID and quote the preserving text from that claim, you must treat preservation as failed.
+
+14. **Structural honesty over plausible explanation.**
+  If the claim set appears close to preserving the input but no actual claim text carries the modifier-bearing proposition, fail validation. Near-matches do not count as preservation.
 
 ### Input
 
@@ -367,7 +394,19 @@ Return a JSON object:
   "inputAssessment": {
     "preservesOriginalClaimContract": true,
     "rePromptRequired": false,
-    "summary": "short explanation"
+    "summary": "short explanation",
+    "truthConditionAnchor": {
+      "presentInInput": true,
+      "anchorText": "string - the modifier or predicate component in the input that changes the proposition's truth conditions",
+      "preservedInClaimIds": ["AC_03"],
+      "preservedByQuotes": ["string - exact quoted phrase from cited claim text"],
+      "omissionSeverity": "none"
+    },
+    "antiInferenceCheck": {
+      "normativeInferenceDetected": false,
+      "inferredClaimIds": [],
+      "reasoning": "short explanation"
+    }
   },
   "claims": [
     {
@@ -389,6 +428,11 @@ Field constraints:
 - `proxyDriftSeverity`: `"none"` | `"mild"` | `"material"`. Use `"material"` only when the claim analyzes a substantially different proposition.
 - `recommendedAction`: `"keep"` | `"retry"`. Use `"retry"` for material drift that requires a new extraction attempt.
 - `reasoning`: max 120 characters. Why this assessment.
+- `truthConditionAnchor.anchorText`: empty string only when no truth-condition-bearing modifier exists in the input.
+- `truthConditionAnchor.preservedInClaimIds`: must contain only claim IDs that actually exist in the provided claim list.
+- `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases.
+- If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
+- If `antiInferenceCheck.normativeInferenceDetected` is true, then `rePromptRequired` must be true.
 
 ---
 

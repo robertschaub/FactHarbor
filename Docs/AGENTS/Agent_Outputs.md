@@ -1,5 +1,85 @@
 # Agent Outputs Log
 ---
+### 2026-04-08 | LLM Expert | GitHub Copilot (GPT-5.4) | Fix 1 Prompt Strengthening for Proposition Anchoring
+**Task:** Strengthen Fix 1 after first measurement showed partial anti-inference success but unreliable modifier preservation and validator hallucination.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`
+**Key decisions:** (1) Tightened CLAIM_EXTRACTION_PASS2 from general modifier preservation to a procedural anchor-retention contract: identify truth-condition-bearing modifier, require at least one direct anchored claim, forbid decomposition into chronology-only subclaims when anchor exists. (2) Added a mandatory internal self-check before output. (3) Strengthened CLAIM_CONTRACT_VALIDATION to audit truth-condition-bearing modifier preservation and normative injection explicitly. (4) Made validator approvals traceable by requiring real claim IDs plus exact quotes, and expanded the output schema with `truthConditionAnchor` and `antiInferenceCheck`.
+**Open items:** Re-run the Bundesrat canary family to measure whether anchored-modifier preservation rises materially and whether validator hallucination is eliminated.
+**Warnings:** This is still a prompt-only fix. It improves structural traceability but does not add deterministic semantic enforcement. If preservation remains unstable after this round, the next step should be another LLM-led tightening or a structural post-check, not a lexical keyword heuristic.
+**For next agent:** Measure against the same Fix 1 invariants: modifier preserved in direct claims, no normative injection on chronology-only variants, stable direction on the anchored claim, zero validator hallucinations.
+**Learnings:** No
+
+### 2026-04-08 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Consolidated Investigation
+**Task:** Consolidate primary investigation (Claude), adversarial cross-review (GPT), and Captain corrections into one authoritative document.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md` (new)
+**Key decisions:** (1) Strict post-baseline scope: 21 local + 9 deployed jobs, not the larger context counts. (2) Bundesrat treaty family is the proven blocker — 3 distinct failure modes (Stage 1 keyword omission, Stage 1 interpretation injection, Stage 5 underweighting) producing 70pp spread. (3) Boundary concentration is an amplifier, not the primary root cause. (4) Phase B validated, keep it. (5) Deployed Plastik `2cf4682c` (LT 62) is factually worse than local, not a clean anchor. (6) All deployed jobs treated equally — no hidden/public distinction in development.
+**Open items:** Fix priority: (1) Stage 1 predicate preservation + anti-inference, (2) Stage 4 proposition truth anchoring, (3) Stage 5 core-assertion weighting, (4) Phase C Stage 3 concentration.
+**Warnings:** The three Bundesrat jobs (`094e88fc`, `0afb2d88`, `b843fe70`) are verified on the deployed API (HTTP 200). They exist alongside the 6 publicly-listed deployed jobs, making 9 in-range deployed jobs total.
+**For next agent:** The consolidated document supersedes both the primary investigation and the cross-review for decision-making. Source docs remain as audit trail. Priority 1 fix target: `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section.
+**Learnings:** No
+
+---
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Investigation — Final with Bundesrat Failures
+**Task:** Deep dual-environment investigation of all jobs from baseline `f1a372bf` through HEAD `442a5450`, plus detailed Bundesrat EU-Vertrag failure analysis.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md` (updated with 3 critical findings)
+**Key findings:**
+
+**Three critical Bundesrat failure modes (all on deployed `f1a372bf`, same input, 70pp spread):**
+
+1. **Stage 1 keyword omission** (`094e88fc`): "rechtskräftig" silently dropped during decomposition → both atomic claims are trivially-true chronology → verdict TRUE 86. The user's core assertion (legally binding) goes unverified.
+2. **Stage 5 aggregation underweighting** (`0afb2d88`): Stage 1 correctly extracts "rechtskräftig" as AC_03 (LEANING-FALSE 30/68), but trivially-true AC_01 (82) + AC_02 (85) outweigh it → verdict LT 70. Headline acknowledges the problem but the number doesn't reflect it.
+3. **Stage 1 interpretation injection** (`b843fe70`): Stage 1 invents "verstößt gegen die verfassungsrechtliche Ordnung" — not in the input — then finds it false → drags verdict to MF 16.
+
+Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregation.
+
+**Other findings (unchanged from earlier entry):**
+- Phase B validated (Bolsonaro MT 74/68, all claims researched)
+- Boundary concentration amplified on Phase B (Plastik 1.00, Bolsonaro 0.82)
+- Plastik 34pp local-vs-deployed gap is environmental variance
+- Grounding warnings persist at ~65% of all jobs
+
+**Priority order:**
+1. Stage 1 predicate preservation — prevent keyword omission AND interpretation injection
+2. Stage 5 aggregation — core-assertion weighting so trivially-true sub-claims don't bury the contested one
+3. Phase C: Stage 3 boundary concentration
+4. Deploy Phase B after fixes 1-2
+
+**Open items:** Stage 1 prompt fix (CLAIM_EXTRACTION_PASS2 predicate preservation + anti-inference guard), Stage 5 VERDICT_NARRATIVE adjudication strengthening.
+**Warnings:** The Bundesrat family demonstrates that a single input can hit three independent failure modes at two different pipeline layers, producing a 70pp spread. This is the highest-severity quality finding in the current investigation.
+**For next agent:** Full investigation with all findings: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. The three Bundesrat critical findings are documented with exact job IDs, per-claim evidence, and root-cause analysis. The fix targets are: (1) `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section for predicate preservation + anti-inference, (2) `apps/web/src/lib/analyzer/aggregation-stage.ts` and VERDICT_NARRATIVE prompt for core-assertion weighting.
+**Learnings:** No
+
+---
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Job Quality Investigation
+**Task:** Deep investigation of all local (39) and deployed (74) jobs from baseline `f1a372bf` through HEAD `442a5450`, covering both environments.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md` (new)
+**Key decisions:** (1) Phase B is validated — Bolsonaro MT 74/68 matches deployed, all claims get ≥1 researched iteration. (2) Boundary concentration is now the dominant bottleneck — Plastik collapsed to 1 boundary (1.00 share) on Phase B. Phase C is the correct next workstream. (3) Plastik DE has a 34pp local-vs-deployed gap on same baseline build (28-53% local vs 62% deployed) — this is environmental/provider variance, not a code problem. (4) Grounding warnings remain common (~64% of local jobs, ~66% of deployed) but are info-severity. (5) No proven runtime regression from Phase A-1.
+**Open items:** Phase C (Stage 3 concentration), deploy Phase B, continue grounding monitoring.
+**Warnings:** The Plastik local-vs-deployed divergence is the largest unexplained cross-environment gap. Deployed Plastik found far fewer contradicting items than local, producing LEANING-TRUE vs LEANING-FALSE.
+**For next agent:** Full investigation: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. Priority: Phase C > deploy Phase B > grounding monitoring.
+**Learnings:** No
+
+---
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B Canary Measurement — `helps`
+**Task:** Run 4 hard-family canaries on `442a5450` (Phase B: per-claim researched-iteration floor) and measure whether previously skipped claims now receive research.
+**Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md` (new)
+**Key decisions:** (1) Judgment: `helps`. Primary success check passes on all 4 families — no claim has 0 researched iterations. (2) Plastik AC_01 went from 41 seeded/0 researched → 33 seeded/**1 researched iter admitting 33 items**. The forced iteration was highly productive, not a zero-yield pass. (3) Bolsonaro hit MOSTLY-TRUE 74/68 — best local result, matching deployed comparator range. (4) Concentration amplification: Plastik collapsed to 1 boundary (share=1.00), Bolsonaro to 0.82. This is pre-existing Stage 3 problem amplified by more evidence volume, not caused by Phase B. (5) Confirms Phase C (Stage 3 concentration) is now the correct next workstream.
+**Open items:** Phase C: Stage 3 boundary-concentration stabilization.
+**Warnings:** The per-claim floor increases total evidence volume, which amplifies Stage 3 concentration on families where clustering is already fragile (Plastik, Bolsonaro).
+**For next agent:** Phase B is validated and should be kept. The ledger proves the forced iterations are productive. Next target: Stage 3 clustering behavior with larger evidence pools. Full data: `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md`.
+**Learnings:** No
+
+---
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B — Per-Claim Researched-Iteration Floor
+**Task:** Implement per-claim researched-iteration floor for Stage 2 sufficiency, addressing seeded-evidence dominance found by Phase A-2 telemetry.
+**Files touched:** `types.ts` (new `researchedIterationsByClaim` field), `research-orchestrator.ts` (tracking + guard in `allClaimsSufficient`), `claimboundary-pipeline.ts` (state init), `config-schemas.ts` (Zod + TS defaults), `pipeline.default.json`, `claimboundary-pipeline.test.ts` (6 new tests)
+**Key decisions:** (1) Per-claim guard, not global: each claim must receive ≥1 targeted research iteration before seeded items can make it sufficient. (2) Guard only fires when `includeSeeded=true` (diversity-aware path) — non-seeded path unaffected. (3) UCM-configurable via `sufficiencyMinResearchedIterationsPerClaim` (default: 1, 0 disables). (4) LLM Expert approved — the guard is structural plumbing, not semantic. Main risk is zero-yield budget waste on near-sufficient seeded claims, bounded by existing `zeroYieldBreakThreshold`.
+**Open items:** Run 4 hard-family canaries on this build to measure whether Plastik AC_01 now receives at least one research iteration.
+**Warnings:** None.
+**For next agent:** The fix targets the exact pattern from Phase A-2 ledger: Plastik AC_01 had 41 seeded/0 researched. After this change, AC_01 must receive at least 1 targeted iteration. The `claimAcquisitionLedger` will show whether the forced iteration produces useful evidence or is a zero-yield pass.
+**Learnings:** No
+
+---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase A-2 Telemetry Canary Measurement
 **Task:** Run 4 hard-family canaries on `b130d00c` (A-2 telemetry build), extract `claimAcquisitionLedger`, diagnose A-1 effect and next Stage-2 slice.
 **Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` (new)
@@ -271,7 +351,8 @@
 **Task:** Adjudicate the root cause of the AC_02 failure in job 9e4d3712e12d49bc8cadd601766e5f4b.
 **Files touched:** Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md
 **Key decisions:** The downstream explanation is the true root cause. Stage 4's verdict integrity validation processes the entire global boundary evidence pool rather than strictly claim-local evidence. This causes hallucinatory cross-contamination where a claim with poor/neutral evidence falsely fails integrity because a sibling claim's strong evidence leaked into the validation context. Stage-1 proxy drift is real but secondary.
-**Open items:** Need a developer to implement the claim-local scoping fix for unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
+**Open items:** Need a developer to implement the claim-local scoping fix for 
+unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Warnings:** Do not implement Stage 1 drift heuristics yet; do not restore the ±10pp clamp as it played no part in this failure.
 **For next agent:** Read Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md. Implement Option B local scoping for verdict stage validation.
 **Learnings:** no
@@ -3641,4 +3722,34 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Open items:** The next bounded implementation slice should target seeded-evidence sufficiency interaction, ideally via a per-claim researched-iteration floor before seeded evidence can fully satisfy Stage 2 sufficiency. If a deploy decision is needed later, rerun at least Bolsonaro EN and the English misinformation claim on the current deployed stack for exact same-input comparison.
 **Warnings:** The deployed public job list does not contain an exact current-runtime EN Bolsonaro rerun or an exact current-runtime English misinformation rerun, so those comparisons remain partial. Do not overstate the deploy basis from Swiss alone.
 **For next agent:** Use `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` as the current source of truth. The deployed comparators referenced in this pass are `8ec681050e844becb4ec616eb426731e` (Swiss), `2cf4682c5c914834ac5a58b318c3fc0e` (Plastik), `eb02cd2e535a4556a2bc3c29868412a0` (older-runtime Bolsonaro EN), and `38d5760e6ced4a969c3023a9aace03be` (family-only misinformation reference).
+**Learnings:** no
+
+---
+### 2026-04-07 | Senior Developer | Codex (GPT-5) | Diagnose Local-vs-Deployed Swiss-EU Treaty Claim Polarity Split
+**Task:** Investigate why local job `9d79d2a01b1f4af3baf34f6c842f5142` on `442a5450` returned `FALSE 9/89` while deployed job `50e2e1677939441c9e5a8ba33ac5d4f0` on `f1a372bf` returned `TRUE 89/84` for the same German claim about the Federal Council signing the EU treaty before people and Parliament decided.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed through both job artifacts and official Swiss source URLs cited in them that the literal chronology is true: signature on `2026-03-02`, Parliament on `2026-03-13`, any vote later. The polarity split is therefore not a factual disagreement but a semantic/calibration failure. Local Stage 4/reconciliation scores the implied procedural criticism ("this means democratic bypass / illegitimacy") instead of the explicit sequence claim, even though local evidence for `AC_01` is still mostly sequence-supportive. Deployed instead keeps the literal chronology in truth scoring and routes the procedural nuance to limitations. Search-provider mix differs (`Google-CSE, Wikipedia` locally vs `Google-CSE, Serper, Wikipedia` deployed), but that only amplifies source mix and does not explain the truth inversion by itself.
+**Open items:** Implement a generic verdict-contract fix so explicit literal propositions are scored separately from implied framing/omitted-context concerns. Then rerun this exact input and a small analogous canary set of "literal chronology true, implication disputed" cases.
+**Warnings:** Local still emits a separate `verdict_grounding_issue` on `AC_02` because invalid challenge-context IDs leak into grounding validation. That is noise and not the main cause of the truth flip.
+**For next agent:** Focus on Stage 4 prompt/contract calibration, not Stage 2 query tuning. Best root fix is: truthPercentage must stay anchored to the explicit proposition; omitted-context or "normal procedure" arguments should affect `misleadingness`, `limitations`, or at most confidence unless the stronger implication is explicit in the wording. Supporting evidence for this diagnosis: local `claimAcquisitionLedger` and `claimVerdicts` vs deployed `claimVerdicts` for the same input.
+**Learnings:** no
+
+---
+### 2026-04-07 | Lead Architect | Codex (GPT-5) | Cross-Review f1a372bf To HEAD Job Quality Investigation
+**Task:** Independently rebuild the local and deployed job evidence from baseline `f1a372bf7d9e69cfe220953cbfc5e5aa8193d651` through current `HEAD`, adversarially review the primary Claude investigation, adjudicate major factual disagreements against web sources, and consolidate the findings.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md`, `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Corrected the strict post-baseline evidence base to `21` local jobs on runtime builds `62e97e0d`, `b130d00c`, `442a5450` and `6` deployed jobs on live build `f1a372bf`; the larger 39/74 inventory remains useful context but is not the direct causal range. Confirmed `f1a372bf` itself is docs-only, so it is a deployed label rather than a runtime-changing commit. Agreed with Claude that `442a5450` fixes the targeted zero-researched-iteration sufficiency failure mode and that `b130d00c` is telemetry-only, but rejected the stronger narrative that Stage 3 is now the dominant proven bottleneck. The clearest blocker in the strict range is the Bundesrat treaty family: same-build local runs on `442a5450` span `16-74`, and local job `9d79d2a0...` marks a literally true chronology claim false by leaking procedural/misleadingness concerns into truth scoring. Web adjudication against official Swiss and environmental sources also showed that deployed `50e2e167...` is factually closer on the treaty chronology claim, while deployed `2cf4682c...` is factually worse on the Plastik family than the local in-range LF/MF runs.
+**Open items:** The highest-priority engineering fix is proposition anchoring: Stage 1 and Stage 4 must separate literal chronology/legal-effect propositions from implied legitimacy or fairness critiques. A dedicated same-build repeat canary for the Bundesrat `rechtskräftig` family is warranted, and future local-vs-deployed debates should capture query/result traces before attributing gaps to code rather than environment.
+**Warnings:** Deployed analysis is only as complete as the public visible inventory; within that inventory only `6` jobs are strictly in-range, so claims about deployed post-baseline behavior must stay scoped accordingly. Stage 3 concentration is real, but concentration on Plastik also existed pre-baseline, so causal language about `442a5450` must stay at "amplified in some runs," not "created the problem."
+**For next agent:** Start with `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md`. The main corrections to preserve are: do not cite 39/74 as the strict post-baseline range; do not treat deployed `f1a372bf` as a runtime delta commit; do not frame Plastik as a same-baseline local-vs-deployed test; and do prioritize proposition-handling fixes ahead of another Stage 3-only narrative. The most important concrete job IDs are local `9d79d2a0...`, `21fe78d1...`, `5c302710...`, `7ffcab95...`, `87487a15...`, `041c63ab...`, `705b6c17...`, `c731c5b2...` and deployed `50e2e167...`, `2cf4682c...`, `8ec68105...`, `841d6de3...`.
+**Learnings:** no
+
+---
+### 2026-04-07 | Lead Architect | Codex (GPT-5) | Cross-Review Addendum For Hidden Deployed Bundesrat Jobs
+**Task:** Incorporate the hidden deployed Bundesrat jobs surfaced in the primary Claude investigation into the cross-review without collapsing the distinction between public-visible inventory and internal hidden evidence.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md`, `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Accepted the hidden deployed Bundesrat tranche (`094e88fc`, `0afb2d88`, `b843fe70`) as part of the analytical record because the user confirmed those jobs exist and the primary investigation documents them in detail. Updated the cross-review to split deployed evidence into `public visible` versus `documented hidden addendum`. This does not change the earlier public-inventory correction (`21` local / `6` visible deployed in-range) or the docs-only status of `f1a372bf`, but it does strengthen the treaty diagnosis: Stage 1 predicate omission, Stage 1 interpretation injection, and Stage 5 core-assertion underweighting are now all explicitly represented in the deployed evidence base.
+**Open items:** If a future agent has legitimate internal access to the hidden-job source of truth, they should re-export those three records into a reproducible artifact set so the cross-review no longer depends on doc-level provenance for them.
+**Warnings:** These three hidden jobs are included as documented internal evidence, not as public-API-retrieved artifacts. Keep that provenance distinction explicit in any later summary.
+**For next agent:** The updated cross-review now reflects the correct combined position: public-visible strict range remains `21` local / `6` deployed, but the deployed analytical record for the Bundesrat family is larger because of the hidden addendum. Use that split consistently.
 **Learnings:** no
