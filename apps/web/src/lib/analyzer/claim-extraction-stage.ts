@@ -241,8 +241,8 @@ export async function extractClaims(
 
   // ------------------------------------------------------------------
   // Claim Contract Validation — detect proxy drift before Gate 1
-  // Runs after every Pass 2, triggers a single retry if material drift.
-  // Fail-open: if validation fails or is disabled, original Pass 2 stands.
+  // Runs after every Pass 2, triggers a single retry if material drift
+  // or if validation returns no usable structured result.
   // ------------------------------------------------------------------
   let activePass2 = pass2;
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
@@ -289,10 +289,19 @@ export async function extractClaims(
             return claimText.toLowerCase().includes(quote.toLowerCase());
           });
         });
+        const anchorLower = anchor.anchorText.toLowerCase();
+        const claimContainsAnchor = validPreservedIds.some((claimId) => {
+          const claimText = claimTextById.get(claimId) ?? "";
+          return claimText.toLowerCase().includes(anchorLower);
+        });
+        const anchorQuotedHonestly = honestQuotes.some((quote) => {
+          const quoteLower = quote.toLowerCase();
+          return quoteLower.includes(anchorLower) || anchorLower.includes(quoteLower);
+        });
 
-        if (validPreservedIds.length === 0 || honestQuotes.length === 0) {
+        if (validPreservedIds.length === 0 || honestQuotes.length === 0 || (!claimContainsAnchor && !anchorQuotedHonestly)) {
           anchorOverrideRetry = true;
-          anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length})`;
+          anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length}, claimContainsAnchor: ${claimContainsAnchor}, anchorQuotedHonestly: ${anchorQuotedHonestly})`;
           console.info(`[Stage1] Structural anchor check: forcing retry — ${anchorRetryReason}`);
         }
       }
@@ -332,29 +341,44 @@ export async function extractClaims(
       contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
     }
 
-    if (contractResult && contractResult.inputAssessment.rePromptRequired && contractMaxRetries > 0) {
+    const shouldRetryAfterValidation =
+      contractMaxRetries > 0 && (
+        (contractResult?.inputAssessment.rePromptRequired ?? false)
+        || !contractResult
+      );
+
+    if (shouldRetryAfterValidation) {
       // Build corrective guidance from failing claims + anchor omission
-      const failingClaims = contractResult.claims
+      const failingClaims = (contractResult?.claims ?? [])
         .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
       const failingReasons = failingClaims
         .map((c) => `${c.claimId}: ${c.reasoning}`)
         .join("; ");
 
       // Dynamic anchor-specific guidance when the retry is triggered by anchor omission
-      const anchorGuidance = anchorRetryReason && contractResult.truthConditionAnchor?.anchorText
-        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${contractResult.truthConditionAnchor.anchorText}". This modifier changes the proposition's truth conditions. Include it in at least one direct atomic claim.`
+      const anchorText = contractResult?.truthConditionAnchor?.anchorText;
+      const anchorGuidance = anchorRetryReason && anchorText
+        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. Include it in at least one direct atomic claim.`
         : "";
 
-      const contractGuidance =
-        `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
-        `${contractResult.inputAssessment.summary}. ` +
-        `Specific issues: ${failingReasons}.${anchorGuidance} ` +
-        `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-        `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate.`;
+      const fallbackGuidance = !contractResult
+        ? `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. If the input contains any explicit modifier, qualifier, or status/finality term that changes the proposition's truth conditions, preserve it in at least one direct atomic claim. If one sentence applies the same predicate or temporal relation across multiple actors, keep that same predicate for the actor-specific split claims; do not replace one branch with a weaker background-only claim.`
+        : "";
+
+      const contractGuidance = contractResult
+        ? `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
+          `${contractResult.inputAssessment.summary}. ` +
+          `Specific issues: ${failingReasons}.${anchorGuidance} ` +
+          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
+          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
+          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
+          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
+        : fallbackGuidance;
 
       console.info(
-        `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). ` +
-        `Retrying Pass 2 with corrective guidance.`
+        contractResult
+          ? `[Stage1] Claim contract validation detected material drift (${failingClaims.length} claim(s)). Retrying Pass 2 with corrective guidance.`
+          : `[Stage1] Claim contract validation returned no usable result. Retrying Pass 2 with conservative contract guidance.`
       );
 
       try {
@@ -393,6 +417,9 @@ export async function extractClaims(
         if (retryContractResult && !retryContractResult.inputAssessment.rePromptRequired) {
           activePass2 = retryPass2;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
+        } else if (!retryContractResult && !contractResult) {
+          activePass2 = retryPass2;
+          console.info("[Stage1] Claim contract retry could not be re-validated, but conservative retry output replaced the original fail-open Pass 2.");
         } else {
           console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
         }
@@ -1889,13 +1916,18 @@ async function validateClaimContract(
       ClaimContractOutputSchema.parse(parsed),
     );
 
-    // Enforce batch contract: LLM must return exactly the requested claimIds
     const returnedClaimIds = new Set(validated.claims.map((c) => c.claimId));
     const contractViolation =
       returnedClaimIds.size !== expectedClaimIds.size ||
       [...expectedClaimIds].some((id) => !returnedClaimIds.has(id));
 
     if (contractViolation) {
+      validated.inputAssessment.preservesOriginalClaimContract = false;
+      validated.inputAssessment.rePromptRequired = true;
+      validated.inputAssessment.summary = [
+        validated.inputAssessment.summary,
+        `validator batch contract violated: expected [${[...expectedClaimIds].join(",")}], got [${[...returnedClaimIds].join(",")}]`,
+      ].filter(Boolean).join("; ");
       recordLLMCall({
         taskType: "other",
         provider: model.provider,
@@ -1910,7 +1942,7 @@ async function validateClaimContract(
         errorMessage: `Claim contract validation batch contract violated: expected [${[...expectedClaimIds].join(",")}], got [${[...returnedClaimIds].join(",")}]`,
         timestamp: new Date(),
       });
-      return undefined;
+      return validated;
     }
 
     recordLLMCall({

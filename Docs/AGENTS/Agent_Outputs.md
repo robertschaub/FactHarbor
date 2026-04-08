@@ -1,5 +1,25 @@
 # Agent Outputs Log
 ---
+### 2026-04-08 | Code Reviewer | GitHub Copilot (GPT-5.4) | Post-Approval Low-Finding Cleanup
+**Task:** Address the remaining low findings after the post-architect-fixes review approval.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`
+**Key decisions:** Renamed the Stage 4 helper from `summarizeIntrinsicEvidenceDirection` to `summarizeBucketWeightedEvidenceDirection` so the name matches the architected behavior: advocate buckets stay authoritative for weighting while intrinsic claimDirection is used only for mismatch diagnostics. Normalized the indentation of prompt validator rules 6 and 16 to match surrounding rules.
+**Open items:** Fresh canary reruns are still the right next step for validating the `anchorClaimMultiplier` baseline, but no additional code change was needed for this review follow-up.
+**Warnings:** None.
+**For next agent:** This cleanup is naming/formatting only; behavior was verified unchanged with the focused verdict-stage tests and a successful web build.
+**Learnings:** No
+
+---
+### 2026-04-08 | Lead Architect | GitHub Copilot (GPT-5.4) | Code Review Blockers Resolved
+**Task:** Address the review requesting changes on the April 8 quality-hardening work, with priority on the 5 blocker test failures and the related architectural regressions.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/calculation.default.json`
+**Key decisions:** Restored stable self-consistency as a valid Stage 4 rescue path; kept verdict citation buckets authoritative for weighting while still surfacing explicit polarity mismatches as diagnostics; moved claim-contract retry ownership back to `extractClaims` orchestration instead of hiding retries inside `validateClaimContract`; preserved contextual/undefined citations during direction normalization; moved D5 authoritative-directional sufficiency source types and minimum item count into UCM-backed calc config; reduced the default anchor claim multiplier from 4.0 to 2.5 as a safer global baseline.
+**Open items:** Fresh canary reruns are still needed to calibrate the new `anchorClaimMultiplier` default on live Bundesrat-family jobs and confirm the D5 authoritative shortcut settings are appropriate outside the current family.
+**Warnings:** The focused tests pass and the web build succeeds, but no fresh live job rerun was executed in this step; queue reliability on local runner handoff was already known to be flaky earlier in the session.
+**For next agent:** If further review follows, validate the new aggregation baseline with fresh jobs rather than stale stored results. The semantic contracts restored here are covered by targeted tests in `verdict-stage.test.ts` and `claimboundary-pipeline.test.ts`.
+**Learnings:** No — repository memory updated instead for the validator/orchestrator boundary.
+
+---
 ### 2026-04-08 | Lead Architect | GitHub Copilot (GPT-5.4) | Quality Plan Hardening Review
 **Task:** Architect-level review of the revised quality assessment and forward plan.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Quality_Plan_Hardening_Review.md`

@@ -417,7 +417,7 @@ export async function runClaimBoundaryAnalysis(
     onEvent("Researching evidence for claims...", 30);
     startPhase("research");
     await researchEvidence(state, input.jobId);
-    
+
     endPhase("research");
 
     // Evidence pool balance check (C13 — detect directional skew before verdict)
@@ -549,6 +549,10 @@ export async function runClaimBoundaryAnalysis(
     const sufficiencyMinItems = initialCalcConfig.evidenceSufficiencyMinItems ?? 3;
     const sufficiencyMinSourceTypes = initialCalcConfig.evidenceSufficiencyMinSourceTypes ?? 2;
     const sufficiencyMinDistinctDomains = initialCalcConfig.evidenceSufficiencyMinDistinctDomains ?? 3;
+    const authoritativeDirectionalMinItems = initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalMinItems ?? 2;
+    const authoritativeDirectionalSourceTypes = new Set(
+      initialCalcConfig.evidenceSufficiencyAuthoritativeDirectionalSourceTypes ?? ["government_report", "legal_document"],
+    );
     const insufficientClaimIds = new Set<string>();
     for (const claim of understanding.atomicClaims) {
       const claimEvidence = state.evidenceItems.filter(
@@ -566,7 +570,17 @@ export async function runClaimBoundaryAnalysis(
       const hasSufficientSourceDiversity =
         distinctSourceTypes.size >= sufficiencyMinSourceTypes ||
         distinctDomains.size >= sufficiencyMinDistinctDomains;
-      if (!hasSufficientItems || !hasSufficientSourceDiversity) {
+      const directionalEvidence = claimEvidence.filter(
+        (e) => e.claimDirection === "supports" || e.claimDirection === "contradicts",
+      );
+      const hasAuthoritativeDirectionalSufficiency =
+        hasSufficientItems &&
+        directionalEvidence.length >= authoritativeDirectionalMinItems &&
+        directionalEvidence.every((e) => Boolean(e.sourceType) && authoritativeDirectionalSourceTypes.has(e.sourceType!)) &&
+        directionalEvidence.every((e) => e.probativeValue !== "low") &&
+        new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
+
+      if (!hasSufficientItems || (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)) {
         insufficientClaimIds.add(claim.id);
         state.warnings.push({
           type: "insufficient_evidence",

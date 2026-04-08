@@ -1423,6 +1423,8 @@ export const CalcConfigSchema = z.object({
     }).optional(),
     // ClaimBoundary Stage 5: Derivative evidence weight reduction
     derivativeMultiplier: z.number().min(0).max(1).optional(),
+    anchorClaimMultiplier: z.number().min(1).max(10).optional()
+      .describe("Additional weight multiplier for direct claims that preserve a truth-condition-bearing modifier or anchor from the input."),
     contestationWeights: z.object({
       established: z.number().min(0).max(1),
       disputed: z.number().min(0).max(1),
@@ -1486,7 +1488,7 @@ export const CalcConfigSchema = z.object({
 
   /**
    * Deterministic safety net for verdict direction validation.
-   * Maximum allowed difference (as ratio 0-1) between weighted evidence ratio 
+   * Maximum allowed difference (as ratio 0-1) between weighted evidence ratio
    * and verdict truth percentage before an integrity failure is enforced.
    * Default: 0.15 (15pp).
    */
@@ -1693,6 +1695,20 @@ export const CalcConfigSchema = z.object({
   evidenceSufficiencyMinDistinctDomains: z.number().int().min(1).max(20).optional(),
 
   /**
+   * D5 Control 1: authoritative directional sufficiency shortcut.
+   * Minimum directional evidence items required before a claim may bypass
+   * source-diversity thresholds using only authoritative same-direction evidence.
+   * Default 2.
+   */
+  evidenceSufficiencyAuthoritativeDirectionalMinItems: z.number().int().min(1).max(10).optional(),
+
+  /**
+   * D5 Control 1: authoritative source types eligible for the directional
+   * sufficiency shortcut. Default: government_report, legal_document.
+   */
+  evidenceSufficiencyAuthoritativeDirectionalSourceTypes: z.array(z.string()).min(1).max(10).optional(),
+
+  /**
    * D5 Control 2: Evidence Partitioning — route institutional sources to advocate
    * and general sources to challenger for structural independence.
    * When enabled, advocate sees institutional evidence (peer_reviewed_study,
@@ -1781,6 +1797,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     },
     // ClaimBoundary Stage 5: Derivative evidence weight reduction
     derivativeMultiplier: 0.5,
+    // ClaimBoundary Stage 5: Weight for direct anchor-preserving claims
+    anchorClaimMultiplier: 2.5,
     contestationWeights: {
       established: 0.5,
       disputed: 0.7,
@@ -1955,6 +1973,8 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   evidenceSufficiencyMinItems: 3,
   evidenceSufficiencyMinSourceTypes: 2,
   evidenceSufficiencyMinDistinctDomains: 3,
+  evidenceSufficiencyAuthoritativeDirectionalMinItems: 2,
+  evidenceSufficiencyAuthoritativeDirectionalSourceTypes: ["government_report", "legal_document"],
   evidencePartitioningEnabled: true,
   contrarianRetrievalEnabled: true,
   contrarianMaxQueriesPerClaim: 2,

@@ -90,12 +90,28 @@ export async function aggregateAssessment(
     low: 1.0,
   };
   const derivativeMultiplier = aggregation.derivativeMultiplier ?? 0.5;
+  const anchorClaimMultiplier = aggregation.anchorClaimMultiplier ?? 2.5;
   const probativeValueWeights = calcConfig.probativeValueWeights ?? {
     high: 1.0,
     medium: 0.9,
     low: 0.5,
   };
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const anchorText = state.understanding?.contractValidationSummary?.truthConditionAnchor?.anchorText?.trim();
+  const anchorTextLower = anchorText?.toLowerCase() ?? "";
+  const reportedAnchorClaimIds = new Set(
+    state.understanding?.contractValidationSummary?.truthConditionAnchor?.validPreservedIds
+      ?? state.understanding?.contractValidationSummary?.truthConditionAnchor?.preservedInClaimIds
+      ?? [],
+  );
+  const structuralAnchorClaimIds = new Set(
+    claims
+      .filter((claim) => anchorTextLower && claim.statement.toLowerCase().includes(anchorTextLower))
+      .map((claim) => claim.id),
+  );
+  const anchorPreservedClaimIds = structuralAnchorClaimIds.size > 0
+    ? structuralAnchorClaimIds
+    : reportedAnchorClaimIds;
 
   const weightsData = claimVerdicts.map((verdict) => {
     const claim = claims.find((c) => c.id === verdict.claimId);
@@ -112,6 +128,9 @@ export async function aggregateAssessment(
       evidence,
       derivativeMultiplier,
     );
+    const anchorFactor = anchorPreservedClaimIds.has(verdict.claimId)
+      ? anchorClaimMultiplier
+      : 1.0;
 
     const supportingEvidenceIds = verdict.supportingEvidenceIds ?? [];
     const probativeFactors = supportingEvidenceIds
@@ -132,6 +151,7 @@ export async function aggregateAssessment(
       confidenceFactor *
       (1 + triangulationFactor) *
       derivativeFactor *
+      anchorFactor *
       probativeFactor;
 
     const isCounterClaim = claim?.claimDirection === "contradicts_thesis";

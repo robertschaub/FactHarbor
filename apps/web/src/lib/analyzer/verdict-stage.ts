@@ -1063,6 +1063,13 @@ export interface VerdictRepairRequest {
   evidencePool: Array<{ id: string; statement: string; claimDirection?: EvidenceItem["claimDirection"] }>;
 }
 
+type IntrinsicDirectionSummary = {
+  weightedSupports: number;
+  weightedContradicts: number;
+  misbucketedSupportingIds: string[];
+  misbucketedContradictingIds: string[];
+};
+
 export interface VerdictValidationRepairContext {
   claims: AtomicClaim[];
   boundaries: ClaimAssessmentBoundary[];
@@ -1337,8 +1344,18 @@ export async function validateVerdicts(
       }
     }
 
-    if (direction && direction.valid === false) {
-      // Deterministic safety net: if the LLM flags a direction issue, check if the 
+    const deterministicDirectionIssues = getDeterministicDirectionIssues(
+      current,
+      evidence,
+      repairContext?.calculationConfig,
+    );
+    const mergedDirectionIssues = Array.from(new Set([
+      ...(direction?.valid === false ? direction.issues : []),
+      ...deterministicDirectionIssues,
+    ]));
+
+    if (mergedDirectionIssues.length > 0) {
+      // Deterministic safety net: if the LLM flags a direction issue, check if the
       // truth percentage is actually mathematically plausible given the evidence ratio.
       const isPlausible = isVerdictDirectionPlausible(current, evidence, repairContext?.calculationConfig);
 
@@ -1348,11 +1365,11 @@ export async function validateVerdicts(
         const rescueDetail = rescuedByConsistency
           ? `stable self-consistency (spread ${current.consistencyResult!.spread}pp)`
           : "evidence ratio";
-        console.info(`[VerdictStage] Overriding LLM direction failure for claim ${verdict.claimId} (truth ${current.truthPercentage}%) - determined plausible by ${rescueDetail}.`);
+        console.info(`[VerdictStage] Overriding direction failure for claim ${verdict.claimId} (truth ${current.truthPercentage}%) - determined plausible by ${rescueDetail}.`);
         warnings?.push({
           type: "direction_rescue_plausible",
           severity: "info",
-          message: `Claim ${verdict.claimId}: LLM direction issue overridden — ${rescueDetail} (truth ${current.truthPercentage}%).`,
+          message: `Claim ${verdict.claimId}: direction issue overridden — ${rescueDetail} (truth ${current.truthPercentage}%).`,
           details: {
             claimId: verdict.claimId,
             truthPercentage: current.truthPercentage,
@@ -1361,20 +1378,21 @@ export async function validateVerdicts(
           },
         });
       } else {
-        console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, direction.issues);
+        console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, mergedDirectionIssues);
         warnings?.push({
           type: "verdict_direction_issue",
           severity: "info",
-          message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(direction.issues)}`,
+          message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(mergedDirectionIssues)}`,
         });
 
         if (
           config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
           && current.verdictReason !== "verdict_integrity_failure"
         ) {
+          const repairSeedVerdict = normalizeVerdictCitationDirections(current, evidence);
           const repaired = await attemptDirectionRepair(
-            current,
-            direction.issues,
+            repairSeedVerdict,
+            mergedDirectionIssues,
             evidence,
             llmCall,
             config,
@@ -1382,42 +1400,43 @@ export async function validateVerdicts(
           );
 
           if (repaired) {
+            const normalizedRepaired = normalizeVerdictCitationDirections(repaired, evidence);
             const retryDirection = await validateDirectionOnly(
-              repaired,
+              normalizedRepaired,
               evidence,
               llmCall,
               validationTier,
               validationProvider,
             );
             // Also apply plausibility check to the repaired verdict
-            const repairedPlausible = retryDirection.valid !== false || isVerdictDirectionPlausible(repaired, evidence, repairContext?.calculationConfig);
+            const repairedPlausible = retryDirection.valid !== false || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
             if (repairedPlausible) {
               if (retryDirection.valid === false) {
                 // Repaired verdict passed via plausibility rescue, not LLM re-validation
-                const rescuedByConsistency = repaired.consistencyResult?.stable === true && repaired.consistencyResult?.assessed === true;
+                const rescuedByConsistency = normalizedRepaired.consistencyResult?.stable === true && normalizedRepaired.consistencyResult?.assessed === true;
                 const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
                 const rescueDetail = rescuedByConsistency
-                  ? `stable self-consistency (spread ${repaired.consistencyResult!.spread}pp)`
+                  ? `stable self-consistency (spread ${normalizedRepaired.consistencyResult!.spread}pp)`
                   : "evidence ratio";
                 warnings?.push({
                   type: "direction_rescue_plausible",
                   severity: "info",
-                  message: `Claim ${verdict.claimId}: repaired verdict accepted via ${rescueDetail} (truth ${repaired.truthPercentage}%).`,
+                  message: `Claim ${verdict.claimId}: repaired verdict accepted via ${rescueDetail} (truth ${normalizedRepaired.truthPercentage}%).`,
                   details: {
                     claimId: verdict.claimId,
-                    truthPercentage: repaired.truthPercentage,
+                    truthPercentage: normalizedRepaired.truthPercentage,
                     rescueReason,
                     phase: "post_repair",
-                    ...(rescuedByConsistency ? { consistencySpread: repaired.consistencyResult!.spread } : {}),
+                    ...(rescuedByConsistency ? { consistencySpread: normalizedRepaired.consistencyResult!.spread } : {}),
                   },
                 });
               }
-              current = repaired;
+              current = normalizedRepaired;
             } else {
               // Pass `repaired` (not `current`) so the warning records the last-attempted
               // truth value, not the stale pre-repair value.
               current = safeDowngradeVerdict(
-                repaired,
+                normalizedRepaired,
                 "direction",
                 retryDirection.issues,
                 warnings,
@@ -1428,7 +1447,7 @@ export async function validateVerdicts(
             current = safeDowngradeVerdict(
               current,
               "direction",
-              direction.issues,
+              mergedDirectionIssues,
               warnings,
               config.mixedConfidenceThreshold,
             );
@@ -1534,9 +1553,9 @@ function joinIssues(issues: string[]): string {
 
 /**
  * Deterministic sanity check for verdict direction.
- * Returns true if the truth percentage is directionally consistent with the 
+ * Returns true if the truth percentage is directionally consistent with the
  * weighted evidence ratio, allowing us to override false-positive LLM validation failures.
- * 
+ *
  * Uses probativeValue weights from CalcConfig if provided.
  */
 export function isVerdictDirectionPlausible(
@@ -1544,48 +1563,16 @@ export function isVerdictDirectionPlausible(
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
-  // Self-consistency rescue boost: if the advocate produced a stable verdict
-  // (spread ≤ stableThreshold, typically 5pp) across temperature-varied reruns,
-  // the quality-over-quantity judgment is intentional and reproducible.
-  // This overrides the count-based direction check because the debate already
-  // weighed evidence quality — the label-count mismatch is a known limitation
-  // of the validator, not evidence of hallucination.
   if (verdict.consistencyResult?.stable === true && verdict.consistencyResult?.assessed === true) {
     return true;
   }
 
-  // Build a lookup for cited evidence by ID for weighted scoring.
-  // Use the verdict's own supportingEvidenceIds / contradictingEvidenceIds as the
-  // authoritative attribution from Stage 4, rather than re-reading each item's
-  // claimDirection (which could disagree if the debate reassigned an item).
-  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
-
-  const supportIds = verdict.supportingEvidenceIds ?? [];
-  const contradictIds = verdict.contradictingEvidenceIds ?? [];
-  if (supportIds.length === 0 && contradictIds.length === 0) return true;
-
-  // Use UCM weights or system defaults from DEFAULT_CALC_CONFIG
-  const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
-
-  let weightedSupports = 0;
-  let weightedContradicts = 0;
-
-  for (const id of supportIds) {
-    const e = evidenceById.get(id);
-    const pv = e?.probativeValue ?? "low";
-    weightedSupports += weights[pv] ?? 0.5;
-  }
-  for (const id of contradictIds) {
-    const e = evidenceById.get(id);
-    const pv = e?.probativeValue ?? "low";
-    weightedContradicts += weights[pv] ?? 0.5;
-  }
-
-  const totalWeight = weightedSupports + weightedContradicts;
+  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
+  const totalWeight = summary.weightedSupports + summary.weightedContradicts;
   if (totalWeight === 0) return true;
 
   // The expected truth ratio based on weighted evidence
-  const expectedRatio = weightedSupports / totalWeight;
+  const expectedRatio = summary.weightedSupports / totalWeight;
   const truthPercentage = verdict.truthPercentage;
 
   // Rule 1: Clear Hemisphere Match for decisive verdicts
@@ -1608,6 +1595,114 @@ export function isVerdictDirectionPlausible(
   if (Math.abs(expectedRatio - verdictRatio) <= tolerance) return true;
 
   return false;
+}
+
+function summarizeBucketWeightedEvidenceDirection(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  calcConfig?: CalcConfig,
+): IntrinsicDirectionSummary {
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
+  const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
+  const supportIds = Array.from(new Set(verdict.supportingEvidenceIds ?? []));
+  const contradictIds = Array.from(new Set(verdict.contradictingEvidenceIds ?? []));
+
+  let weightedSupports = 0;
+  let weightedContradicts = 0;
+  const misbucketedSupportingIds: string[] = [];
+  const misbucketedContradictingIds: string[] = [];
+
+  for (const id of supportIds) {
+    const item = evidenceById.get(id);
+    const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
+    weightedSupports += weight;
+    if (item?.claimDirection === "contradicts") {
+      misbucketedSupportingIds.push(id);
+    }
+  }
+
+  for (const id of contradictIds) {
+    const item = evidenceById.get(id);
+    const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
+    weightedContradicts += weight;
+    if (item?.claimDirection === "supports") {
+      misbucketedContradictingIds.push(id);
+    }
+  }
+
+  return {
+    weightedSupports,
+    weightedContradicts,
+    misbucketedSupportingIds,
+    misbucketedContradictingIds,
+  };
+}
+
+function getDeterministicDirectionIssues(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  calcConfig?: CalcConfig,
+): string[] {
+  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
+  const issues: string[] = [];
+
+  if (summary.misbucketedSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations are polarity-misaligned: ${summary.misbucketedSupportingIds.length} supportingEvidenceIds point to contradicting evidence in the claim-local pool.`,
+    );
+  }
+  if (summary.misbucketedContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations are polarity-misaligned: ${summary.misbucketedContradictingIds.length} contradictingEvidenceIds point to supporting evidence in the claim-local pool.`,
+    );
+  }
+
+  const totalWeight = summary.weightedSupports + summary.weightedContradicts;
+  if (totalWeight === 0) return issues;
+
+  const expectedRatio = summary.weightedSupports / totalWeight;
+  if (verdict.truthPercentage >= 70 && expectedRatio <= 0.5) {
+    issues.push(
+      `Truth percentage ${verdict.truthPercentage}% is too high for cited evidence that is not majority-supporting by intrinsic evidence direction.`,
+    );
+  }
+  if (verdict.truthPercentage <= 30 && expectedRatio >= 0.5) {
+    issues.push(
+      `Truth percentage ${verdict.truthPercentage}% is too low for cited evidence that is not majority-contradicting by intrinsic evidence direction.`,
+    );
+  }
+
+  return issues;
+}
+
+function normalizeVerdictCitationDirections(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+): CBClaimVerdict {
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
+  const originalSupporting = new Set(verdict.supportingEvidenceIds);
+  const originalContradicting = new Set(verdict.contradictingEvidenceIds);
+  const citedIds = Array.from(new Set([
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+  ]));
+  if (citedIds.length === 0) return verdict;
+
+  const supportingEvidenceIds: string[] = [];
+  const contradictingEvidenceIds: string[] = [];
+  for (const id of citedIds) {
+    const direction = evidenceById.get(id)?.claimDirection;
+    if (direction === "supports") supportingEvidenceIds.push(id);
+    else if (direction === "contradicts") contradictingEvidenceIds.push(id);
+    else if (originalSupporting.has(id)) supportingEvidenceIds.push(id);
+    else if (originalContradicting.has(id)) contradictingEvidenceIds.push(id);
+  }
+
+  return {
+    ...verdict,
+    supportingEvidenceIds,
+    contradictingEvidenceIds,
+  };
 }
 
 function safeDowngradeVerdict(
@@ -1881,6 +1976,9 @@ async function defaultRepairExecutor(
   const repairedReasoning = typeof parsed.reasoning === "string" && parsed.reasoning.trim().length > 0
     ? parsed.reasoning
     : request.verdict.reasoning;
+  const validEvidenceIds = new Set(request.evidencePool.map((item) => item.id));
+  const repairedSupportingEvidenceIds = parseEvidenceIdArray(parsed.supportingEvidenceIds, validEvidenceIds);
+  const repairedContradictingEvidenceIds = parseEvidenceIdArray(parsed.contradictingEvidenceIds, validEvidenceIds);
   return {
     ...request.verdict,
     truthPercentage: repairedTruth,
@@ -1891,6 +1989,8 @@ async function defaultRepairExecutor(
       config.mixedConfidenceThreshold,
     ),
     reasoning: repairedReasoning,
+    supportingEvidenceIds: repairedSupportingEvidenceIds ?? request.verdict.supportingEvidenceIds,
+    contradictingEvidenceIds: repairedContradictingEvidenceIds ?? request.verdict.contradictingEvidenceIds,
   };
 }
 

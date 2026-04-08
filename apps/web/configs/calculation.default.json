@@ -20,6 +20,7 @@
       "conflictedFlag": true
     },
     "derivativeMultiplier": 0.5,
+    "anchorClaimMultiplier": 2.5,
     "contestationWeights": {
       "established": 0.5,
       "disputed": 0.7,
@@ -188,6 +189,11 @@
   "evidenceSufficiencyMinItems": 3,
   "evidenceSufficiencyMinSourceTypes": 2,
   "evidenceSufficiencyMinDistinctDomains": 3,
+  "evidenceSufficiencyAuthoritativeDirectionalMinItems": 2,
+  "evidenceSufficiencyAuthoritativeDirectionalSourceTypes": [
+    "government_report",
+    "legal_document"
+  ],
   "evidencePartitioningEnabled": true,
   "contrarianRetrievalEnabled": true,
   "contrarianMaxQueriesPerClaim": 2,

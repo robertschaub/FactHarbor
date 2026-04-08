@@ -162,6 +162,7 @@ If `verifiability` assessment is requested (via configuration), also assess how 
     - **Truth-condition-bearing modifier preservation (CRITICAL):** If the input contains a truth-condition-bearing modifier, at least one direct atomic claim MUST preserve that modifier's meaning explicitly enough that the downstream pipeline can verify the same proposition the user stated. Dropping such a modifier is NOT simplification; it changes the claim contract. Preserve a modifier only when removing it changes what evidence would count as supporting or contradicting. Do NOT treat every adjective or adverb as thesis-defining — only those that change the proposition's truth conditions.
     - **No decomposition without anchor retention:** When a truth-condition-bearing modifier exists, do NOT decompose the input into only prerequisite, chronological, procedural, or background claims while omitting the modifier-bearing proposition itself. Supporting sub-claims may be added when justified, but they cannot replace the anchored claim.
     - **Direct-claim anchor test (required self-check):** Before finalizing the claim set, ask: "If a verifier saw only these direct atomic claims, could they still test the exact proposition the user asked about, including the modifier that changes its truth conditions?" If no, the extraction is invalid and must be rewritten before output.
+    - **Shared-predicate decomposition fidelity (CRITICAL):** If one input sentence applies the same predicate, modifier, or temporal relation to multiple actors joined together (for example, "before X and Y decided"), any actor-specific decomposition must preserve that same predicate/modifier for the relevant split claims. Do NOT replace one branch with a weaker or background-only reformulation, and do NOT split off a bare prerequisite event as a substitute for the modifier-bearing proposition.
   - Do not decompose a direct real-world predicate into proxy claims about media representation, portrayal, labeling, discourse, or public perception unless the user's input itself explicitly asks about those representational phenomena.
   - **Dimension independence test:** Before finalizing dimension claims, verify each pair is independently falsifiable: if dimension A is true and dimension B is false, both verdicts must be coherent. If two dimensions would require the same evidence body to assess, merge them. A well-formed decomposition of "Entity A is more [AMBIGUOUS_TRAIT] than Entity B" yields dimensions like: → Observable behavioral incidents of [trait] (verified by behavioral/event-count data) → Institutionally documented [trait]-adjacent acts (verified by administrative records) → Attitudinal disposition toward [trait] (verified by survey or opinion research). Each requires a distinct evidence type and can independently be true or false. If your proposed dimensions would all be assessed with the same kind of evidence, collapse them.
   - **No counter-narrative claims (CRITICAL):** Every atomic claim must decompose the user's thesis, not argue against it. Do NOT extract claims that present the opposing viewpoint, victimhood framing, counter-evidence, or a rebuttal to the thesis as an atomic claim. Counter-evidence is gathered by Stage 2 research and weighed in Stage 4 verdicts — it must NOT be injected as a claim that gets its own verdict. Common error: if the thesis is "Group A is more [trait] than Group B", do NOT extract a claim like "Group A is disproportionately targeted/victimized by [trait]" — that is a counter-narrative, not a dimension of the thesis. All dimension claims must decompose WHAT the thesis asserts, not add claims about why it might be wrong.
@@ -179,6 +180,7 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - Each claim must be specific enough to generate targeted search queries without additional framing.
 - Use the preliminary evidence to inform `expectedEvidenceProfile` (what methodologies, metrics, and source types to look for) — but do NOT import evidence-specific details into the claim `statement`, `impliedClaim`, or `articleThesis`. The claim text must be derivable from the original input alone; the evidence only tells you what verification dimensions exist.
 - **Hard prohibition:** Do not introduce new entities, numeric metrics/scales, date ranges, geographies, or scope qualifiers into `statement`, `impliedClaim`, or `articleThesis` unless they already appear in the input.
+- **Action-threshold fidelity (CRITICAL):** For factual or procedural claims, preserve the action/state threshold expressed in the input. Do NOT weaken or strengthen the operative verb or status. If the input says an institution decided, approved, ratified, voted, ruled, signed, entered into force, or otherwise completed a decisive act, do not rewrite that as discussed, considered, consulted on, debated, reviewed, recommended, planned, or another lower-threshold step unless the input itself says so. Likewise, do not upgrade a preparatory step into a final one.
 - Extract only factual/verifiable assertions. Exclude:
   - Attribution claims ("Entity A said Y") — unless Y itself is the central claim
   - Source/timing metadata ("According to a 2024 report")
@@ -309,6 +311,8 @@ Focus especially on cases where the input uses a broad evaluative predicate and 
 In addition to proxy drift and representational drift, explicitly audit for:
 - omission of any truth-condition-bearing modifier or predicate component
 - injection of normative or legal implications not stated by the user
+- weakening or strengthening of a decisive factual/procedural action or state (for example, replacing a final decision with a discussion/review step, or vice versa)
+- loss of a shared predicate or modifier when a single input proposition is decomposed across multiple actors or institutions
 
 For each claim, determine:
 - whether it preserves the original evaluative meaning
@@ -342,32 +346,38 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
 5. **No evidence-derived narrowing.**
    Do not allow extracted claims to become narrower just because preliminary evidence suggests a convenient measurable proxy.
 
-6. **Whole-set coherence matters.**
+6. **Decision-state verb fidelity.**
+    For factual or procedural inputs, preserve the operative action/state threshold expressed by the user. A claim materially drifts if it replaces a decisive or final act/state with a preparatory, advisory, consultative, or merely deliberative one, or if it upgrades a preparatory step into a decisive/final one.
+
+7. **Whole-set coherence matters.**
    Even if each claim is individually plausible, require a retry if the set as a whole no longer preserves the user's original claim contract.
 
-7. **Multilingual semantics.**
+8. **Multilingual semantics.**
    Preserve meaning regardless of language. Do not assume English wording patterns.
 
-8. **Be conservative about retries.**
+9. **Be conservative about retries.**
    Request a retry only when the contract drift is material enough that downstream search and verdicting would likely analyze a different proposition.
 
-9. **Representational drift prohibition.**
+10. **Representational drift prohibition.**
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
-10. **Truth-condition-bearing modifier audit (MANDATORY).**
+11. **Truth-condition-bearing modifier audit (MANDATORY).**
     First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one direct atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims.
 
-11. **Anti-inference audit (MANDATORY).**
+12. **Anti-inference audit (MANDATORY).**
     Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried.
 
-12. **Traceable validation only.**
+13. **Traceable validation only.**
     You MUST justify anchor-preservation approval with explicit traceable evidence from the provided claim set. Do not assume a modifier is preserved; cite the exact claim IDs and quote the relevant phrase from each cited claim. If no claim preserves the modifier, set `rePromptRequired: true`.
 
-13. **No hallucinated claim references.**
+14. **No hallucinated claim references.**
     You may reference only claim IDs that actually appear in the input claim list. If you cannot cite an existing claim ID and quote the preserving text from that claim, you must treat preservation as failed.
 
-14. **Structural honesty over plausible explanation.**
+15. **Structural honesty over plausible explanation.**
     If the claim set appears close to preserving the input but no actual claim text carries the modifier-bearing proposition, fail validation. Near-matches do not count as preservation.
+
+16. **Shared-predicate decomposition fidelity.**
+    When the input applies one predicate, modifier, or temporal relation across multiple coordinated actors, decomposed claims must preserve that same proposition for each relevant split branch unless the input itself differentiates them. Treat it as material drift if one branch keeps the decisive/final proposition while another is weakened into a mere discussion, consultation, or background event, or if the modifier-bearing branch disappears entirely.
 
 ### Input
 
@@ -429,7 +439,7 @@ Field constraints:
 - `reasoning`: max 120 characters. Why this assessment.
 - `truthConditionAnchor.anchorText`: empty string only when no truth-condition-bearing modifier exists in the input.
 - `truthConditionAnchor.preservedInClaimIds`: must contain only claim IDs that actually exist in the provided claim list.
-- `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases.
+- `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
 - If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
 
@@ -692,6 +702,7 @@ Given a claim and source content, extract evidence items with full metadata incl
   - "contradicts": Evidence refutes the claim
   - "contextual": Evidence provides relevant context but doesn't affirm/refute
   - **Partial findings under broad evaluative predicates:** When the claim uses a broad evaluative predicate asserting absence of value, benefit, or effectiveness (e.g., "has no benefit", "is useless", "brings nothing"), classify evidence showing any measurable, documented positive outcome as `contradicts` — unless the source itself explicitly concludes that the positive outcome is negligible, immaterial, or insufficient to constitute a real benefit. A partial or limited benefit still refutes an absolute claim of zero benefit. Do not equate a small measured effect with no effect.
+  - **Status-finality claims:** When a claim asserts that a legal, procedural, or institutional status is already final, binding, approved, ratified, in force, or otherwise completed, evidence showing that additional approval, ratification, referendum, promulgation, judicial confirmation, or another completion step is still pending must be classified as `contradicts`, not `contextual`. Evidence that only confirms signing, filing, submission, or recommendation without final completion does not support a claim of already-final legal status.
 - `probativeValue`: Assess based on source quality, methodology rigor, and directness.
 - `sourceType` must use exactly one canonical value from this list: `peer_reviewed_study`, `fact_check_report`, `government_report`, `legal_document`, `news_primary`, `news_secondary`, `expert_statement`, `organization_report`, `other`. Use `other` only when no listed type fits.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
@@ -1341,7 +1352,7 @@ You are a verdict direction repair validator. Your task is to correct a single v
 Given one verdict plus direction-validation issues, produce a repaired verdict update for the same claim:
 1. Keep the same `claimId`.
 2. Keep the same cited evidence set context (do not invent new evidence IDs or new evidence items).
-3. Adjust only what is necessary to restore directional consistency (primarily `truthPercentage`, optionally concise `reasoning`).
+3. Adjust only what is necessary to restore directional consistency (primarily `truthPercentage`, optionally concise `reasoning`, and when needed corrected citation arrays that use only the provided evidence IDs).
 
 ### Rules
 
@@ -1396,7 +1407,9 @@ Return a single JSON object:
 {
   "claimId": "AC_01",
   "truthPercentage": 46,
-  "reasoning": "Adjusted truth percentage to align with majority contradicting cited evidence."
+  "reasoning": "Adjusted truth percentage to align with the corrected evidence direction.",
+  "supportingEvidenceIds": ["EV_001"],
+  "contradictingEvidenceIds": ["EV_002"]
 }
 ```
 

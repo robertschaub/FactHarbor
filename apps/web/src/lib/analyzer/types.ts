@@ -1188,6 +1188,13 @@ export interface CBClaimUnderstanding {
     preservesContract: boolean;
     rePromptRequired: boolean;
     summary: string;
+    anchorRetryReason?: string;
+    truthConditionAnchor?: {
+      presentInInput: boolean;
+      anchorText: string;
+      preservedInClaimIds: string[];
+      validPreservedIds: string[];
+    };
   };
 }
 
