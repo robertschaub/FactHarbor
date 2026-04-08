@@ -962,7 +962,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - **Report language:** Write all report-authored analytical text (reasoning, explanations, verdicts) in `${reportLanguage}`. Preserve source-authored evidence text (quotes, excerpts, titles) in their original language — do not translate them.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - For each claim, consider evidence from ALL boundaries, not just one.
-- `truthPercentage`: 0 = completely false, 100 = completely true. Base this on the weight and quality of evidence, not on the number of evidence items.
+- `truthPercentage`: 0 = completely false, 100 = completely true. Base this on the weight and quality of evidence, not on the number of evidence items. **truthPercentage measures factual accuracy of the extracted AtomicClaim only.** If the claim's wording is misleading, deceptive, or omits important context, express that EXCLUSIVELY through `misleadingness` and `reasoning` — do NOT reduce truthPercentage to penalize misleading framing. A claim can be simultaneously TRUE (the stated fact is correct) and HIGHLY MISLEADING (the framing creates a false impression). These are independent assessments.
 - `confidence`: 0–100. How confident you are in the verdict given the available evidence. Lower if evidence is thin, contradictory, or low-quality.
 - Use `supportingEvidenceIds` and `contradictingEvidenceIds` as the authoritative evidence-citation channel.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning`. Keep reasoning natural-language only.
