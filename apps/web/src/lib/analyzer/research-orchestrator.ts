@@ -309,7 +309,14 @@ export async function researchEvidence(
     // When diversityConfig is set, also requires D5-level source-type/domain diversity.
     // Per-claim floor: each claim must have received at least N targeted research
     // iterations before seeded evidence can make it sufficient.
-    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, state.mainIterationsUsed, sufficiencyMinMainIterations, distinctEventCount, diversityConfig, state.researchedIterationsByClaim, sufficiencyMinResearchedIterationsPerClaim)) break;
+    if (allClaimsSufficient(claims, state.evidenceItems, sufficiencyThreshold, {
+      mainIterationsCompleted: state.mainIterationsUsed,
+      minMainIterations: sufficiencyMinMainIterations,
+      distinctEventCount,
+      diversityConfig,
+      researchedIterationsByClaim: state.researchedIterationsByClaim,
+      minResearchedIterationsPerClaim: sufficiencyMinResearchedIterationsPerClaim,
+    })) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
     // Fix 4: Stop main loop when remaining budget equals contradiction reserve,
@@ -879,7 +886,6 @@ export async function runResearchIteration(
     iterationType,
     languageLane: "primary",
     generatedQueries: queries.map((query) => query.query),
-    queriesGenerated: queries.length,
     searchResults: 0,
     relevanceAccepted: 0,
     sourcesFetched: 0,
@@ -1213,7 +1219,6 @@ export async function maybeRunSupplementaryEnglishLane(
     iterationType: iterationType as "main" | "contradiction" | "contrarian",
     languageLane: "supplementary_en",
     generatedQueries: enQueries.map((query) => query.query),
-    queriesGenerated: enQueries.length,
     searchResults: 0,
     relevanceAccepted: 0,
     sourcesFetched: 0,
@@ -1351,6 +1356,7 @@ export async function maybeRunSupplementaryEnglishLane(
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   } catch (err) {
     console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
+    enTelemetry.incomplete = true;
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   }
 }
@@ -1470,17 +1476,42 @@ export interface DiversitySufficiencyConfig {
  * a claim is only sufficient if it also meets EITHER the source-type OR
  * domain diversity threshold — matching D5 Control 1's disjunctive OR gate.
  */
+/** Options for the optional parameters of allClaimsSufficient. */
+export interface SufficiencyOptions {
+  mainIterationsCompleted?: number;
+  minMainIterations?: number;
+  distinctEventCount?: number;
+  diversityConfig?: DiversitySufficiencyConfig;
+  researchedIterationsByClaim?: Record<string, number>;
+  minResearchedIterationsPerClaim?: number;
+}
+
 export function allClaimsSufficient(
   claims: AtomicClaim[],
   evidenceItems: EvidenceItem[],
   threshold: number,
-  mainIterationsCompleted: number = 0,
+  mainIterationsCompletedOrOpts: number | SufficiencyOptions = 0,
   minMainIterations: number = 1,
   distinctEventCount: number = 0,
   diversityConfig?: DiversitySufficiencyConfig,
   researchedIterationsByClaim?: Record<string, number>,
   minResearchedIterationsPerClaim: number = 1,
 ): boolean {
+  // Support both positional (backward compat) and options-object calling conventions.
+  // Options-object form: allClaimsSufficient(claims, evidence, threshold, { ... })
+  if (typeof mainIterationsCompletedOrOpts === "object") {
+    const opts = mainIterationsCompletedOrOpts;
+    return allClaimsSufficient(
+      claims, evidenceItems, threshold,
+      opts.mainIterationsCompleted ?? 0,
+      opts.minMainIterations ?? 1,
+      opts.distinctEventCount ?? 0,
+      opts.diversityConfig,
+      opts.researchedIterationsByClaim,
+      opts.minResearchedIterationsPerClaim ?? 1,
+    );
+  }
+  const mainIterationsCompleted = mainIterationsCompletedOrOpts;
   // Empty claims: vacuously sufficient (no research loop runs anyway)
   if (claims.length === 0) return true;
 

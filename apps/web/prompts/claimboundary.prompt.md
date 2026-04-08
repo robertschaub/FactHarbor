@@ -355,19 +355,19 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
 10. **Truth-condition-bearing modifier audit (MANDATORY).**
-  First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one direct atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims.
+    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one direct atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims.
 
 11. **Anti-inference audit (MANDATORY).**
-  Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried.
+    Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried.
 
 12. **Traceable validation only.**
-  You MUST justify anchor-preservation approval with explicit traceable evidence from the provided claim set. Do not assume a modifier is preserved; cite the exact claim IDs and quote the relevant phrase from each cited claim. If no claim preserves the modifier, set `rePromptRequired: true`.
+    You MUST justify anchor-preservation approval with explicit traceable evidence from the provided claim set. Do not assume a modifier is preserved; cite the exact claim IDs and quote the relevant phrase from each cited claim. If no claim preserves the modifier, set `rePromptRequired: true`.
 
 13. **No hallucinated claim references.**
-  You may reference only claim IDs that actually appear in the input claim list. If you cannot cite an existing claim ID and quote the preserving text from that claim, you must treat preservation as failed.
+    You may reference only claim IDs that actually appear in the input claim list. If you cannot cite an existing claim ID and quote the preserving text from that claim, you must treat preservation as failed.
 
 14. **Structural honesty over plausible explanation.**
-  If the claim set appears close to preserving the input but no actual claim text carries the modifier-bearing proposition, fail validation. Near-matches do not count as preservation.
+    If the claim set appears close to preserving the input but no actual claim text carries the modifier-bearing proposition, fail validation. Near-matches do not count as preservation.
 
 ### Input
 
@@ -394,19 +394,18 @@ Return a JSON object:
   "inputAssessment": {
     "preservesOriginalClaimContract": true,
     "rePromptRequired": false,
-    "summary": "short explanation",
-    "truthConditionAnchor": {
-      "presentInInput": true,
-      "anchorText": "string - the modifier or predicate component in the input that changes the proposition's truth conditions",
-      "preservedInClaimIds": ["AC_03"],
-      "preservedByQuotes": ["string - exact quoted phrase from cited claim text"],
-      "omissionSeverity": "none"
-    },
-    "antiInferenceCheck": {
-      "normativeInferenceDetected": false,
-      "inferredClaimIds": [],
-      "reasoning": "short explanation"
-    }
+    "summary": "short explanation"
+  },
+  "truthConditionAnchor": {
+    "presentInInput": true,
+    "anchorText": "string - the modifier or predicate component in the input that changes the proposition's truth conditions",
+    "preservedInClaimIds": ["AC_03"],
+    "preservedByQuotes": ["string - exact quoted phrase from cited claim text"]
+  },
+  "antiInferenceCheck": {
+    "normativeClaimInjected": false,
+    "injectedClaimIds": [],
+    "reasoning": "short explanation"
   },
   "claims": [
     {
@@ -432,7 +431,7 @@ Field constraints:
 - `truthConditionAnchor.preservedInClaimIds`: must contain only claim IDs that actually exist in the provided claim list.
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
-- If `antiInferenceCheck.normativeInferenceDetected` is true, then `rePromptRequired` must be true.
+- If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
 
 ---
 

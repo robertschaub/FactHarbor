@@ -280,11 +280,14 @@ export async function extractClaims(
         const claimTextById = new Map(
           (pass2.atomicClaims as unknown as AtomicClaim[]).map((c) => [c.id, c.statement]),
         );
-        const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote, i) => {
-          const claimId = validPreservedIds[i];
-          if (!claimId) return false;
-          const claimText = claimTextById.get(claimId) ?? "";
-          return claimText.toLowerCase().includes(quote.toLowerCase());
+        // Check each quote against ALL valid preserved claims (not index-aligned).
+        // The LLM may return mismatched array lengths; this avoids positional fragility.
+        const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
+          if (!quote) return false;
+          return validPreservedIds.some((claimId) => {
+            const claimText = claimTextById.get(claimId) ?? "";
+            return claimText.toLowerCase().includes(quote.toLowerCase());
+          });
         });
 
         if (validPreservedIds.length === 0 || honestQuotes.length === 0) {
@@ -1710,37 +1713,86 @@ export function filterByCentrality(
 // CLAIM CONTRACT VALIDATION — LLM-based check for proxy drift / meaning shift
 // ============================================================================
 
+const ClaimContractTruthConditionAnchorSchema = z.object({
+  presentInInput: z.boolean(),
+  anchorText: z.string().catch(""),
+  preservedInClaimIds: z.array(z.string()).catch([]),
+  preservedByQuotes: z.array(z.string()).catch([]),
+});
+
+const ClaimContractLegacyAntiInferenceSchema = z.object({
+  normativeInferenceDetected: z.boolean(),
+  inferredClaimIds: z.array(z.string()).catch([]),
+  reasoning: z.string().catch(""),
+});
+
+const ClaimContractAntiInferenceSchema = z.object({
+  normativeClaimInjected: z.boolean(),
+  injectedClaimIds: z.array(z.string()).catch([]),
+  reasoning: z.string().catch(""),
+});
+
+const ClaimContractInputAssessmentSchema = z.object({
+  preservesOriginalClaimContract: z.boolean(),
+  rePromptRequired: z.boolean(),
+  summary: z.string().catch(""),
+  truthConditionAnchor: ClaimContractTruthConditionAnchorSchema.optional(),
+  antiInferenceCheck: ClaimContractLegacyAntiInferenceSchema.optional(),
+});
+
+const ClaimContractClaimSchema = z.object({
+  claimId: z.string(),
+  preservesEvaluativeMeaning: z.boolean(),
+  usesNeutralDimensionQualifier: z.boolean(),
+  proxyDriftSeverity: z.enum(["none", "mild", "material"]).catch("none"),
+  recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
+  reasoning: z.string().catch(""),
+});
+
 export const ClaimContractOutputSchema = z.object({
-  inputAssessment: z.object({
-    preservesOriginalClaimContract: z.boolean(),
-    rePromptRequired: z.boolean(),
-    summary: z.string().catch(""),
-  }),
-  claims: z.array(z.object({
-    claimId: z.string(),
-    preservesEvaluativeMeaning: z.boolean(),
-    usesNeutralDimensionQualifier: z.boolean(),
-    proxyDriftSeverity: z.enum(["none", "mild", "material"]).catch("none"),
-    recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
-    reasoning: z.string().catch(""),
-  })),
+  inputAssessment: ClaimContractInputAssessmentSchema,
+  claims: z.array(ClaimContractClaimSchema),
   // Structured anchor preservation check (added for proposition anchoring hardening).
   // The validator prompt identifies truth-condition-bearing modifiers and reports
   // whether they are preserved in the extracted claims with traceable citations.
-  truthConditionAnchor: z.object({
-    presentInInput: z.boolean(),
-    anchorText: z.string().catch(""),
-    preservedInClaimIds: z.array(z.string()).catch([]),
-    preservedByQuotes: z.array(z.string()).catch([]),
-  }).optional(),
-  antiInferenceCheck: z.object({
-    normativeClaimInjected: z.boolean(),
-    injectedClaimIds: z.array(z.string()).catch([]),
-    reasoning: z.string().catch(""),
-  }).optional(),
+  truthConditionAnchor: ClaimContractTruthConditionAnchorSchema.optional(),
+  antiInferenceCheck: ClaimContractAntiInferenceSchema.optional(),
 });
 
-export type ClaimContractValidationResult = z.infer<typeof ClaimContractOutputSchema>;
+type ClaimContractRawOutput = z.infer<typeof ClaimContractOutputSchema>;
+
+export interface ClaimContractValidationResult {
+  inputAssessment: z.infer<typeof ClaimContractInputAssessmentSchema>;
+  claims: Array<z.infer<typeof ClaimContractClaimSchema>>;
+  truthConditionAnchor?: z.infer<typeof ClaimContractTruthConditionAnchorSchema>;
+  antiInferenceCheck?: z.infer<typeof ClaimContractAntiInferenceSchema>;
+}
+
+function normalizeClaimContractValidationResult(
+  raw: ClaimContractRawOutput,
+): ClaimContractValidationResult {
+  const truthConditionAnchor = raw.truthConditionAnchor ?? raw.inputAssessment.truthConditionAnchor;
+  const antiInferenceCheck = raw.antiInferenceCheck ?? (raw.inputAssessment.antiInferenceCheck
+    ? {
+      normativeClaimInjected: raw.inputAssessment.antiInferenceCheck.normativeInferenceDetected,
+      injectedClaimIds: raw.inputAssessment.antiInferenceCheck.inferredClaimIds ?? [],
+      reasoning: raw.inputAssessment.antiInferenceCheck.reasoning ?? "",
+    }
+    : undefined);
+
+  return {
+    inputAssessment: {
+      preservesOriginalClaimContract: raw.inputAssessment.preservesOriginalClaimContract,
+      rePromptRequired: raw.inputAssessment.rePromptRequired,
+      summary: raw.inputAssessment.summary ?? "",
+      ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
+      ...(raw.inputAssessment.antiInferenceCheck ? { antiInferenceCheck: raw.inputAssessment.antiInferenceCheck } : {}),
+    },
+    claims: raw.claims,
+    ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
+    ...(antiInferenceCheck ? { antiInferenceCheck } : {}),
+  };
+}
 
 /**
  * Validate extracted claims against the original input's claim contract.
@@ -1833,7 +1885,9 @@ async function validateClaimContract(
       return undefined;
     }
 
-    const validated = ClaimContractOutputSchema.parse(parsed);
+    const validated = normalizeClaimContractValidationResult(
+      ClaimContractOutputSchema.parse(parsed),
+    );
 
     // Enforce batch contract: LLM must return exactly the requested claimIds
     const returnedClaimIds = new Set(validated.claims.map((c) => c.claimId));

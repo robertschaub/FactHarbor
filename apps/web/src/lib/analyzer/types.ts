@@ -357,7 +357,6 @@ export interface ClaimAcquisitionIterationEntry {
   iterationType: "main" | "contradiction" | "contrarian";
   languageLane: "primary" | "supplementary_en";
   generatedQueries: string[];
-  queriesGenerated: number;
   searchResults: number;
   relevanceAccepted: number;
   sourcesFetched: number;
@@ -366,6 +365,8 @@ export interface ClaimAcquisitionIterationEntry {
   directionCounts: ClaimAcquisitionDirectionCounts;
   losses: ClaimAcquisitionIterationLosses;
   laneReason?: string;
+  /** True when the iteration was interrupted by an error before completing all steps. */
+  incomplete?: boolean;
 }
 
 export interface ClaimBoundaryConcentrationEntry {
@@ -1208,7 +1209,7 @@ export interface CBResearchState {
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   searchQueries: SearchQuery[];
-  claimAcquisitionLedger?: Record<string, ClaimAcquisitionLedgerEntry>;
+  claimAcquisitionLedger: Record<string, ClaimAcquisitionLedgerEntry>;
   // Shared Stage 2 query budget usage: claimId -> queries consumed
   queryBudgetUsageByClaim: Record<string, number>;
   // Per-claim count of main-lane research iterations that targeted each claim.
