@@ -1563,8 +1563,28 @@ export function isVerdictDirectionPlausible(
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
+  // Check for deterministic citation-polarity mismatch BEFORE self-consistency rescue.
+  // If supporting/contradicting citation buckets contain evidence whose stored
+  // claimDirection contradicts the bucket label, self-consistency cannot rescue —
+  // a consistently wrong verdict is still wrong.
+  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
+  const supportingItems = verdict.supportingEvidenceIds
+    .map((id) => evidenceById.get(id))
+    .filter(Boolean);
+  const contradictingItems = verdict.contradictingEvidenceIds
+    .map((id) => evidenceById.get(id))
+    .filter(Boolean);
+  const mislabeledSupporting = supportingItems.filter((e) => e!.claimDirection === "contradicts").length;
+  const mislabeledContradicting = contradictingItems.filter((e) => e!.claimDirection === "supports").length;
+  const hasPolarityMismatch = mislabeledSupporting > 0 || mislabeledContradicting > 0;
+
   if (verdict.consistencyResult?.stable === true && verdict.consistencyResult?.assessed === true) {
-    return true;
+    // Stable self-consistency can rescue ONLY when citation polarity is clean.
+    // If there are deterministic polarity mismatches, stability is not plausibility.
+    if (!hasPolarityMismatch) {
+      return true;
+    }
+    // else: fall through to evidence-ratio checks despite stability
   }
 
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
