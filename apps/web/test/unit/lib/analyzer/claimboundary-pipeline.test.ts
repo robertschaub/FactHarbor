@@ -7476,6 +7476,145 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(result.atomicClaims[0].statement).toContain("Original");
   });
 
+  it("should refresh contractValidationSummary when contract retry output is accepted", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Original" });
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "missing finality anchor",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "missing anchor",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return makePass2(1, {
+            inputClassification: "single_atomic_claim",
+            statementPrefix: "final",
+          });
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "contract preserved after retry",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The claim is final.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims[0].statement.toLowerCase()).toContain("final");
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "contract preserved after retry",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "final",
+        preservedInClaimIds: ["AC_01"],
+        validPreservedIds: ["AC_01"],
+      },
+    });
+    expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
+  });
+
 
   // --------------------------------------------------------------------------
   // MT-5(C): Multi-event collapse guard

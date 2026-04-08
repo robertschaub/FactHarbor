@@ -248,7 +248,7 @@ export async function extractClaims(
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
-  let contractValidationSummary: { ran: boolean; preservesContract: boolean; rePromptRequired: boolean; summary: string } | undefined;
+  let contractValidationSummary: ContractValidationSummary | undefined;
 
   if (contractValidationEnabled) {
     state.onEvent?.("Validating claim contract fidelity...", 24);
@@ -267,75 +267,19 @@ export async function extractClaims(
     // Capture observability summary
     let anchorRetryReason: string | undefined;
     if (contractResult) {
-      // Structural verification of truthConditionAnchor: do not trust the LLM's
-      // top-level rePromptRequired flag alone. If the anchor is marked present
-      // but no valid claim preserves it, force retry independently.
-      const anchor = contractResult.truthConditionAnchor;
-      let anchorOverrideRetry = false;
-      let validPreservedIds: string[] = [];
-      if (anchor?.presentInInput && anchor.anchorText) {
-        const claimIds = new Set((pass2.atomicClaims as unknown as AtomicClaim[]).map((c) => c.id));
-        validPreservedIds = (anchor.preservedInClaimIds ?? []).filter((id) => claimIds.has(id));
-        // Verify quoted spans actually appear in the cited claims
-        const claimTextById = new Map(
-          (pass2.atomicClaims as unknown as AtomicClaim[]).map((c) => [c.id, c.statement]),
-        );
-        // Check each quote against ALL valid preserved claims (not index-aligned).
-        // The LLM may return mismatched array lengths; this avoids positional fragility.
-        const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
-          if (!quote) return false;
-          return validPreservedIds.some((claimId) => {
-            const claimText = claimTextById.get(claimId) ?? "";
-            return claimText.toLowerCase().includes(quote.toLowerCase());
-          });
-        });
-        const anchorLower = anchor.anchorText.toLowerCase();
-        const claimContainsAnchor = validPreservedIds.some((claimId) => {
-          const claimText = claimTextById.get(claimId) ?? "";
-          return claimText.toLowerCase().includes(anchorLower);
-        });
-        const anchorQuotedHonestly = honestQuotes.some((quote) => {
-          const quoteLower = quote.toLowerCase();
-          return quoteLower.includes(anchorLower) || anchorLower.includes(quoteLower);
-        });
-
-        if (validPreservedIds.length === 0 || honestQuotes.length === 0 || (!claimContainsAnchor && !anchorQuotedHonestly)) {
-          anchorOverrideRetry = true;
-          anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length}, claimContainsAnchor: ${claimContainsAnchor}, anchorQuotedHonestly: ${anchorQuotedHonestly})`;
-          console.info(`[Stage1] Structural anchor check: forcing retry — ${anchorRetryReason}`);
-        }
-      }
-
-      // Also check anti-inference: if normative claim was injected, force retry
-      const antiInf = contractResult.antiInferenceCheck;
-      if (antiInf?.normativeClaimInjected && (antiInf.injectedClaimIds ?? []).length > 0) {
-        anchorOverrideRetry = true;
-        anchorRetryReason = (anchorRetryReason ? anchorRetryReason + "; " : "") +
-          `normative_injection: claims [${antiInf.injectedClaimIds.join(",")}] added normative/legal assertion not in input`;
-        console.info(`[Stage1] Anti-inference check: forcing retry — normative claim injected in [${antiInf.injectedClaimIds.join(",")}]`);
-      }
-
-      const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
-
-      contractValidationSummary = {
-        ran: true,
-        preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry,
-        rePromptRequired: effectiveRePromptRequired,
-        summary: contractResult.inputAssessment.summary ?? "",
-        ...(anchorRetryReason ? { anchorRetryReason } : {}),
-        ...(anchor ? {
-          truthConditionAnchor: {
-            presentInInput: anchor.presentInInput,
-            anchorText: anchor.anchorText,
-            preservedInClaimIds: anchor.preservedInClaimIds ?? [],
-            validPreservedIds: validPreservedIds ?? [],
-          },
-        } : {}),
-      };
+      const evaluatedContract = evaluateClaimContractValidation(
+        contractResult,
+        pass2.atomicClaims as unknown as AtomicClaim[],
+      );
+      anchorRetryReason = evaluatedContract.anchorRetryReason;
+      contractValidationSummary = evaluatedContract.summary;
 
       // Override the contract result's flag for the retry decision below
-      if (anchorOverrideRetry) {
+      if (evaluatedContract.effectiveRePromptRequired) {
         contractResult.inputAssessment.rePromptRequired = true;
+        if (anchorRetryReason) {
+          console.info(`[Stage1] Claim contract validation override: forcing retry — ${anchorRetryReason}`);
+        }
       }
     } else {
       contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
@@ -414,8 +358,16 @@ export async function extractClaims(
           // Re-validation failure is non-fatal — keep original Pass 2 output.
         }
 
-        if (retryContractResult && !retryContractResult.inputAssessment.rePromptRequired) {
+        const evaluatedRetryContract = retryContractResult
+          ? evaluateClaimContractValidation(
+            retryContractResult,
+            retryPass2.atomicClaims as unknown as AtomicClaim[],
+          )
+          : undefined;
+
+        if (evaluatedRetryContract && !evaluatedRetryContract.effectiveRePromptRequired) {
           activePass2 = retryPass2;
+          contractValidationSummary = evaluatedRetryContract.summary;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
         } else if (!retryContractResult && !contractResult) {
           activePass2 = retryPass2;
@@ -1795,6 +1747,14 @@ export interface ClaimContractValidationResult {
   antiInferenceCheck?: z.infer<typeof ClaimContractAntiInferenceSchema>;
 }
 
+type ContractValidationSummary = NonNullable<CBClaimUnderstanding["contractValidationSummary"]>;
+
+interface EvaluatedClaimContractValidation {
+  summary: ContractValidationSummary;
+  effectiveRePromptRequired: boolean;
+  anchorRetryReason?: string;
+}
+
 function normalizeClaimContractValidationResult(
   raw: ClaimContractRawOutput,
 ): ClaimContractValidationResult {
@@ -1818,6 +1778,72 @@ function normalizeClaimContractValidationResult(
     claims: raw.claims,
     ...(truthConditionAnchor ? { truthConditionAnchor } : {}),
     ...(antiInferenceCheck ? { antiInferenceCheck } : {}),
+  };
+}
+
+function evaluateClaimContractValidation(
+  contractResult: ClaimContractValidationResult,
+  claims: AtomicClaim[],
+): EvaluatedClaimContractValidation {
+  const anchor = contractResult.truthConditionAnchor;
+  let anchorOverrideRetry = false;
+  let anchorRetryReason: string | undefined;
+  let validPreservedIds: string[] = [];
+
+  if (anchor?.presentInInput && anchor.anchorText) {
+    const claimIds = new Set(claims.map((claim) => claim.id));
+    validPreservedIds = (anchor.preservedInClaimIds ?? []).filter((id) => claimIds.has(id));
+    const claimTextById = new Map(claims.map((claim) => [claim.id, claim.statement]));
+    const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
+      if (!quote) return false;
+      return validPreservedIds.some((claimId) => {
+        const claimText = claimTextById.get(claimId) ?? "";
+        return claimText.toLowerCase().includes(quote.toLowerCase());
+      });
+    });
+    const anchorLower = anchor.anchorText.toLowerCase();
+    const claimContainsAnchor = validPreservedIds.some((claimId) => {
+      const claimText = claimTextById.get(claimId) ?? "";
+      return claimText.toLowerCase().includes(anchorLower);
+    });
+    const anchorQuotedHonestly = honestQuotes.some((quote) => {
+      const quoteLower = quote.toLowerCase();
+      return quoteLower.includes(anchorLower) || anchorLower.includes(quoteLower);
+    });
+
+    if (validPreservedIds.length === 0 || honestQuotes.length === 0 || (!claimContainsAnchor && !anchorQuotedHonestly)) {
+      anchorOverrideRetry = true;
+      anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length}, claimContainsAnchor: ${claimContainsAnchor}, anchorQuotedHonestly: ${anchorQuotedHonestly})`;
+    }
+  }
+
+  const antiInf = contractResult.antiInferenceCheck;
+  if (antiInf?.normativeClaimInjected && (antiInf.injectedClaimIds ?? []).length > 0) {
+    anchorOverrideRetry = true;
+    anchorRetryReason = (anchorRetryReason ? `${anchorRetryReason}; ` : "") +
+      `normative_injection: claims [${antiInf.injectedClaimIds.join(",")}] added normative/legal assertion not in input`;
+  }
+
+  const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
+
+  return {
+    summary: {
+      ran: true,
+      preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry,
+      rePromptRequired: effectiveRePromptRequired,
+      summary: contractResult.inputAssessment.summary ?? "",
+      ...(anchorRetryReason ? { anchorRetryReason } : {}),
+      ...(anchor ? {
+        truthConditionAnchor: {
+          presentInInput: anchor.presentInInput,
+          anchorText: anchor.anchorText,
+          preservedInClaimIds: anchor.preservedInClaimIds ?? [],
+          validPreservedIds,
+        },
+      } : {}),
+    },
+    effectiveRePromptRequired,
+    ...(anchorRetryReason ? { anchorRetryReason } : {}),
   };
 }
 
