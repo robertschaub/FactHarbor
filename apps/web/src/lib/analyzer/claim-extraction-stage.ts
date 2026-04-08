@@ -265,29 +265,87 @@ export async function extractClaims(
     state.llmCalls++;
 
     // Capture observability summary
+    let anchorRetryReason: string | undefined;
     if (contractResult) {
+      // Structural verification of truthConditionAnchor: do not trust the LLM's
+      // top-level rePromptRequired flag alone. If the anchor is marked present
+      // but no valid claim preserves it, force retry independently.
+      const anchor = contractResult.truthConditionAnchor;
+      let anchorOverrideRetry = false;
+      let validPreservedIds: string[] = [];
+      if (anchor?.presentInInput && anchor.anchorText) {
+        const claimIds = new Set((pass2.atomicClaims as unknown as AtomicClaim[]).map((c) => c.id));
+        validPreservedIds = (anchor.preservedInClaimIds ?? []).filter((id) => claimIds.has(id));
+        // Verify quoted spans actually appear in the cited claims
+        const claimTextById = new Map(
+          (pass2.atomicClaims as unknown as AtomicClaim[]).map((c) => [c.id, c.statement]),
+        );
+        const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote, i) => {
+          const claimId = validPreservedIds[i];
+          if (!claimId) return false;
+          const claimText = claimTextById.get(claimId) ?? "";
+          return claimText.toLowerCase().includes(quote.toLowerCase());
+        });
+
+        if (validPreservedIds.length === 0 || honestQuotes.length === 0) {
+          anchorOverrideRetry = true;
+          anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length})`;
+          console.info(`[Stage1] Structural anchor check: forcing retry — ${anchorRetryReason}`);
+        }
+      }
+
+      // Also check anti-inference: if normative claim was injected, force retry
+      const antiInf = contractResult.antiInferenceCheck;
+      if (antiInf?.normativeClaimInjected && (antiInf.injectedClaimIds ?? []).length > 0) {
+        anchorOverrideRetry = true;
+        anchorRetryReason = (anchorRetryReason ? anchorRetryReason + "; " : "") +
+          `normative_injection: claims [${antiInf.injectedClaimIds.join(",")}] added normative/legal assertion not in input`;
+        console.info(`[Stage1] Anti-inference check: forcing retry — normative claim injected in [${antiInf.injectedClaimIds.join(",")}]`);
+      }
+
+      const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
+
       contractValidationSummary = {
         ran: true,
-        preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract,
-        rePromptRequired: contractResult.inputAssessment.rePromptRequired,
+        preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry,
+        rePromptRequired: effectiveRePromptRequired,
         summary: contractResult.inputAssessment.summary ?? "",
+        ...(anchorRetryReason ? { anchorRetryReason } : {}),
+        ...(anchor ? {
+          truthConditionAnchor: {
+            presentInInput: anchor.presentInInput,
+            anchorText: anchor.anchorText,
+            preservedInClaimIds: anchor.preservedInClaimIds ?? [],
+            validPreservedIds: validPreservedIds ?? [],
+          },
+        } : {}),
       };
+
+      // Override the contract result's flag for the retry decision below
+      if (anchorOverrideRetry) {
+        contractResult.inputAssessment.rePromptRequired = true;
+      }
     } else {
       contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
     }
 
     if (contractResult && contractResult.inputAssessment.rePromptRequired && contractMaxRetries > 0) {
-      // Build corrective guidance from failing claims
+      // Build corrective guidance from failing claims + anchor omission
       const failingClaims = contractResult.claims
         .filter((c) => c.recommendedAction === "retry" || c.proxyDriftSeverity === "material");
       const failingReasons = failingClaims
         .map((c) => `${c.claimId}: ${c.reasoning}`)
         .join("; ");
 
+      // Dynamic anchor-specific guidance when the retry is triggered by anchor omission
+      const anchorGuidance = anchorRetryReason && contractResult.truthConditionAnchor?.anchorText
+        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${contractResult.truthConditionAnchor.anchorText}". This modifier changes the proposition's truth conditions. Include it in at least one direct atomic claim.`
+        : "";
+
       const contractGuidance =
         `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
         `${contractResult.inputAssessment.summary}. ` +
-        `Specific issues: ${failingReasons}. ` +
+        `Specific issues: ${failingReasons}.${anchorGuidance} ` +
         `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
         `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate.`;
 
@@ -1666,6 +1724,20 @@ export const ClaimContractOutputSchema = z.object({
     recommendedAction: z.enum(["keep", "retry"]).catch("keep"),
     reasoning: z.string().catch(""),
   })),
+  // Structured anchor preservation check (added for proposition anchoring hardening).
+  // The validator prompt identifies truth-condition-bearing modifiers and reports
+  // whether they are preserved in the extracted claims with traceable citations.
+  truthConditionAnchor: z.object({
+    presentInInput: z.boolean(),
+    anchorText: z.string().catch(""),
+    preservedInClaimIds: z.array(z.string()).catch([]),
+    preservedByQuotes: z.array(z.string()).catch([]),
+  }).optional(),
+  antiInferenceCheck: z.object({
+    normativeClaimInjected: z.boolean(),
+    injectedClaimIds: z.array(z.string()).catch([]),
+    reasoning: z.string().catch(""),
+  }).optional(),
 });
 
 export type ClaimContractValidationResult = z.infer<typeof ClaimContractOutputSchema>;
