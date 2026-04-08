@@ -249,6 +249,7 @@ export async function extractClaims(
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
   let contractValidationSummary: ContractValidationSummary | undefined;
+  let lastContractValidatedClaims: AtomicClaim[] | undefined;
 
   if (contractValidationEnabled) {
     state.onEvent?.("Validating claim contract fidelity...", 24);
@@ -271,6 +272,7 @@ export async function extractClaims(
         contractResult,
         pass2.atomicClaims as unknown as AtomicClaim[],
       );
+      lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       anchorRetryReason = evaluatedContract.anchorRetryReason;
       contractValidationSummary = evaluatedContract.summary;
 
@@ -282,6 +284,7 @@ export async function extractClaims(
         }
       }
     } else {
+      lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
     }
 
@@ -367,10 +370,12 @@ export async function extractClaims(
 
         if (evaluatedRetryContract && !evaluatedRetryContract.effectiveRePromptRequired) {
           activePass2 = retryPass2;
+          lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
           contractValidationSummary = evaluatedRetryContract.summary;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
         } else if (!retryContractResult && !contractResult) {
           activePass2 = retryPass2;
+          lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
           console.info("[Stage1] Claim contract retry could not be re-validated, but conservative retry output replaced the original fail-open Pass 2.");
         } else {
           console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
@@ -634,6 +639,49 @@ export async function extractClaims(
         message: `Claim ${claimId} failed both opinion and specificity checks but rescued as thesis-direct claim. Stage 4 will assess with appropriate confidence.`,
         details: { claimId, statement: claim?.statement?.slice(0, 120) },
       });
+    }
+  }
+
+  const finalAcceptedClaims = gate1Result.filteredClaims as AtomicClaim[];
+  if (contractValidationEnabled && !areClaimSetsEquivalent(lastContractValidatedClaims, finalAcceptedClaims)) {
+    if (finalAcceptedClaims.length === 0) {
+      contractValidationSummary = {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "No claims remained after Gate 1; the final accepted claim set cannot preserve the original claim contract.",
+      };
+      console.info("[Stage1] Final accepted claims are empty after Gate 1; contract summary refreshed to reflect the final claim set.");
+    } else {
+      state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 26);
+      state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+
+      const finalContractResult = await validateClaimContract(
+        finalAcceptedClaims,
+        state.originalInput,
+        bestPass2.impliedClaim ?? "",
+        bestPass2.articleThesis ?? "",
+        bestPass2.inputClassification ?? "single_atomic_claim",
+        pipelineConfig,
+      );
+      state.llmCalls++;
+
+      if (finalContractResult) {
+        const evaluatedFinalContract = evaluateClaimContractValidation(
+          finalContractResult,
+          finalAcceptedClaims,
+        );
+        contractValidationSummary = evaluatedFinalContract.summary;
+        console.info("[Stage1] Refreshed contract summary for final accepted claims after Gate 1 / reprompt selection.");
+      } else {
+        contractValidationSummary = {
+          ran: true,
+          preservesContract: true,
+          rePromptRequired: false,
+          summary: "fail-open: final accepted claims could not be re-validated",
+        };
+        console.info("[Stage1] Final accepted claims could not be re-validated; contract summary refreshed with fail-open status.");
+      }
     }
   }
 
@@ -1845,6 +1893,16 @@ function evaluateClaimContractValidation(
     effectiveRePromptRequired,
     ...(anchorRetryReason ? { anchorRetryReason } : {}),
   };
+}
+
+function areClaimSetsEquivalent(left: AtomicClaim[] | undefined, right: AtomicClaim[]): boolean {
+  if (!left) return false;
+  if (left.length !== right.length) return false;
+
+  return left.every((claim, index) => {
+    const rightClaim = right[index];
+    return rightClaim && claim.id === rightClaim.id && claim.statement === rightClaim.statement;
+  });
 }
 
 /**

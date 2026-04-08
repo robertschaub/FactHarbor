@@ -7615,6 +7615,193 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
   });
 
+  it("should refresh contractValidationSummary when a later reprompt changes the final accepted claims", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Original" });
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "missing finality anchor",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "missing anchor",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            ...makePass2(3, { inputClassification: "single_atomic_claim", statementPrefix: "Retry" }),
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "Retry 1 before Parliament." }),
+              createAtomicClaim({ id: "AC_02", statement: "Retry 2 before the people." }),
+              createAtomicClaim({ id: "AC_03", statement: "Retry 3 was final." }),
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "retry preserves the full contract",
+            },
+            claims: [
+              {
+                claimId: "AC_03",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: ["AC_03"],
+              preservedByQuotes: ["final"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_02", passedOpinion: false, passedSpecificity: false, passedFidelity: false, reasoning: "drop" },
+              { claimId: "AC_03", passedOpinion: false, passedSpecificity: false, passedFidelity: false, reasoning: "drop" },
+            ],
+          };
+        case 7:
+          return {
+            ...makePass2(2, { inputClassification: "single_atomic_claim", statementPrefix: "Reprompt" }),
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_02", statement: "Reprompt 2 before Parliament." }),
+              createAtomicClaim({ id: "AC_03", statement: "Reprompt 3 before the people." }),
+            ],
+          };
+        case 8:
+          return makeGate1Pass(2);
+        case 9:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "final accepted claims dropped the finality anchor",
+            },
+            claims: [
+              {
+                claimId: "AC_02",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "finality anchor missing from final accepted claims",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The claim is final before Parliament and the people decide.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(2);
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_02", "AC_03"]);
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: false,
+      rePromptRequired: true,
+      summary: expect.stringContaining("final accepted claims dropped the finality anchor"),
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "final",
+        preservedInClaimIds: [],
+        validPreservedIds: [],
+      },
+    });
+  });
+
 
   // --------------------------------------------------------------------------
   // MT-5(C): Multi-event collapse guard
