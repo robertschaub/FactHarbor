@@ -6206,7 +6206,7 @@ describe("aggregateAssessment dominance and adjudication path", () => {
     vi.clearAllMocks();
   });
 
-  it("returns adjudicationPath with baseline_only when dominance is disabled", async () => {
+  async function setupConfigMocks(dominanceEnabled: boolean) {
     const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
     vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
     vi.mocked(loadCalcConfig).mockResolvedValue({
@@ -6214,118 +6214,140 @@ describe("aggregateAssessment dominance and adjudication path", () => {
         aggregation: {
           centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
           derivativeMultiplier: 0.5,
-          dominance: { enabled: false, strongMultiplier: 2.5, decisiveMultiplier: 5.0, minConfidence: "high" },
+          dominance: { enabled: dominanceEnabled, strongMultiplier: 2.5, decisiveMultiplier: 5.0, minConfidence: "high" },
         },
         mixedConfidenceThreshold: 40,
       } as any,
     } as any);
+  }
 
-    const verdicts: CBClaimVerdict[] = [
-      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 80, confidence: 85, confidenceTier: "HIGH" }),
-      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 40, confidence: 70, confidenceTier: "MEDIUM" }),
-    ];
-    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
-    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
-    const evidence: any[] = [];
-    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
-    const state = {
+  function makeState(claims: any[]) {
+    return {
       understanding: { atomicClaims: claims },
       sources: [],
       searchQueries: [],
       contradictionIterationsUsed: 0,
       llmCalls: 0,
     } as any;
+  }
 
-    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+  const narrativeOutput = {
+    headline: "Test", evidenceBaseSummary: "2 items", keyFinding: "Test.", limitations: "None.",
+    adjustedTruthPercentage: 50, adjustedConfidence: 50,
+  };
+
+  it("returns adjudicationPath baseline_only when dominance is disabled", async () => {
+    await setupConfigMocks(false);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 80, confidence: 85, confidenceTier: "HIGH" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 40, confidence: 70, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
 
     expect(result.adjudicationPath).toBeDefined();
     expect(result.adjudicationPath!.path).toBe("baseline_only");
-    expect(result.adjudicationPath!.baselineAggregate).toBeDefined();
     expect(result.adjudicationPath!.dominanceAdjustedAggregate).toBeUndefined();
     expect(result.dominanceAssessment).toBeUndefined();
   });
 
-  it("complete-assessment jobs do not allow narrative truth override", async () => {
-    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
-    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
-    vi.mocked(loadCalcConfig).mockResolvedValue({
-      config: {
-        aggregation: {
-          centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
-          derivativeMultiplier: 0.5,
-          dominance: { enabled: false, strongMultiplier: 2.5, decisiveMultiplier: 5.0, minConfidence: "high" },
-        },
-        mixedConfidenceThreshold: 40,
-      } as any,
-    } as any);
+  it("complete-assessment: narrative adjustedTruthPercentage is ignored", async () => {
+    await setupConfigMocks(false);
+    // Narrative returns adjustedTruthPercentage=50 which differs from baseline
+    const narrativeWithOverride = { ...narrativeOutput, adjustedTruthPercentage: 50, adjustedConfidence: 50 };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeWithOverride) } as any);
+    mockExtractOutput.mockReturnValue(narrativeWithOverride);
 
-    // Both claims assessed at HIGH tier — this is a complete-assessment job
-    const verdicts: CBClaimVerdict[] = [
+    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
+    const verdicts = [
       createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 85, confidence: 88, confidenceTier: "HIGH" }),
       createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 80, confidence: 82, confidenceTier: "HIGH" }),
     ];
-    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
     const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
-    const evidence: any[] = [];
-    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
-    const state = {
-      understanding: { atomicClaims: claims },
-      sources: [],
-      searchQueries: [],
-      contradictionIterationsUsed: 0,
-      llmCalls: 0,
-    } as any;
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
 
-    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
 
-    // The narrative may have returned an adjustedTruthPercentage, but for
-    // complete-assessment jobs it must NOT change the final truth.
-    expect(result.adjudicationPath).toBeDefined();
+    // Both claims are HIGH tier → complete-assessment → narrative truth IGNORED
     expect(result.adjudicationPath!.path).not.toBe("unresolved_claim_narrative_adjustment");
-    // Final truth should match baseline (within rounding)
     expect(result.adjudicationPath!.finalAggregate.truthPercentage).toBe(
       result.adjudicationPath!.baselineAggregate.truthPercentage,
     );
+    // The narrative returned 50, but the final truth should NOT be 50
+    expect(result.truthPercentage).not.toBe(50);
   });
 
-  it("no-dominance fallback preserves standard weighted-average path", async () => {
-    const { loadPipelineConfig, loadCalcConfig } = await import("@/lib/config-loader");
-    vi.mocked(loadPipelineConfig).mockResolvedValue({ config: {} as any } as any);
-    vi.mocked(loadCalcConfig).mockResolvedValue({
-      config: {
-        aggregation: {
-          centralityWeights: { high: 3.0, medium: 2.0, low: 1.0 },
-          derivativeMultiplier: 0.5,
-          dominance: { enabled: true, strongMultiplier: 2.5, decisiveMultiplier: 5.0, minConfidence: "high" },
-        },
-        mixedConfidenceThreshold: 40,
-      } as any,
-    } as any);
+  it("dominanceMode=none: system falls back to baseline (valid payload, not LLM failure)", async () => {
+    await setupConfigMocks(true);
+    const dominanceNonePayload = {
+      dominanceMode: "none", dominanceConfidence: "low",
+      claimRoles: [{ claimId: "AC_01", role: "supporting" }, { claimId: "AC_02", role: "supporting" }],
+      rationale: "No single claim dominates.",
+    };
+    // First extractOutput call = dominance, second = narrative
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput
+      .mockReturnValueOnce(dominanceNonePayload)
+      .mockReturnValueOnce(narrativeOutput);
 
-    const verdicts: CBClaimVerdict[] = [
+    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
+    const verdicts = [
       createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 70, confidence: 75, confidenceTier: "HIGH" }),
       createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 60, confidence: 65, confidenceTier: "MEDIUM" }),
     ];
-    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
     const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
-    const evidence: any[] = [];
-    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
-    const state = {
-      understanding: { atomicClaims: claims },
-      sources: [],
-      searchQueries: [],
-      contradictionIterationsUsed: 0,
-      llmCalls: 0,
-    } as any;
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
 
-    const result = await aggregateAssessment(verdicts, boundaries, evidence, coverageMatrix, state);
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
 
-    // When the dominance LLM returns "none" (mocked as undefined here since
-    // the LLM call will fail in unit test), the system falls back to baseline.
-    expect(result.adjudicationPath).toBeDefined();
-    // Dominance was attempted but the LLM call returns undefined in unit tests
-    // (no real API), so path should be baseline_only
     expect(result.adjudicationPath!.path).toBe("baseline_only");
+    expect(result.dominanceAssessment).toBeDefined();
+    expect(result.dominanceAssessment!.dominanceMode).toBe("none");
+    expect(result.dominanceAssessment!.appliedMultiplier).toBeUndefined();
+  });
+
+  it("dominanceMode=single with high confidence: shifts article truth toward dominant claim", async () => {
+    await setupConfigMocks(true);
+    const dominanceSinglePayload = {
+      dominanceMode: "single", dominanceConfidence: "high",
+      dominantClaimId: "AC_02", dominanceStrength: "decisive",
+      claimRoles: [{ claimId: "AC_01", role: "supporting" }, { claimId: "AC_02", role: "decisive" }],
+      rationale: "AC_02 is the defining proposition.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput
+      .mockReturnValueOnce(dominanceSinglePayload)
+      .mockReturnValueOnce(narrativeOutput);
+
+    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Decisive claim" })];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 90, confidence: 88, confidenceTier: "HIGH" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 20, confidence: 85, confidenceTier: "HIGH" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    expect(result.adjudicationPath!.path).toBe("dominance_adjusted");
+    expect(result.dominanceAssessment).toBeDefined();
+    expect(result.dominanceAssessment!.dominanceMode).toBe("single");
+    expect(result.dominanceAssessment!.appliedMultiplier).toBe(5.0);
+    // The dominant claim (AC_02=20%) should pull the article truth downward
+    // from the baseline (which would weight AC_01=90 more heavily)
+    const baseline = result.adjudicationPath!.baselineAggregate.truthPercentage;
+    const adjusted = result.adjudicationPath!.dominanceAdjustedAggregate!.truthPercentage;
+    expect(adjusted).toBeLessThan(baseline);
   });
 });
 

@@ -1805,9 +1805,9 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     derivativeMultiplier: 0.5,
     // ClaimBoundary Stage 5: Weight for direct anchor-preserving claims
     anchorClaimMultiplier: 2.5,
-    // ClaimBoundary Stage 5: Claim dominance assessment
+    // ClaimBoundary Stage 5: Claim dominance assessment (default off until live approval set rerun)
     dominance: {
-      enabled: true,
+      enabled: false,
       strongMultiplier: 2.5,
       decisiveMultiplier: 5.0,
       minConfidence: "high" as const,

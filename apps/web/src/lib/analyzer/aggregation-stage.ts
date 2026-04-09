@@ -226,6 +226,8 @@ export async function aggregateAssessment(
   let dominanceAssessment: DominanceAssessment | undefined;
   let dominanceAdjustedTruth: number | undefined;
   let dominanceAdjustedConfidence: number | undefined;
+  // Track effective weights — either baseline or dominance-adjusted — for range computation.
+  let effectiveWeightsData = weightsData;
 
   if (dominanceEnabled && claimVerdicts.length >= 2) {
     state.onEvent?.(`LLM call: dominance assessment — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
@@ -264,6 +266,7 @@ export async function aggregateAssessment(
           dominanceAdjustedConfidence = domWeightsData.reduce((sum, item) => sum + item.confidence * item.weight, 0) / domTotalWeight;
         }
 
+        effectiveWeightsData = domWeightsData;
         dominanceAssessment = { ...rawDominance, appliedMultiplier: multiplier };
       } else {
         // Dominance detected but below minimum confidence — record but do not apply
@@ -386,13 +389,15 @@ export async function aggregateAssessment(
   let overallRange: { min: number; max: number } | undefined;
   const claimsWithRange = claimVerdicts.filter((v) => v.truthPercentageRange);
   if (claimsWithRange.length > 0) {
-    const totalW = weightsData.reduce((sum, item) => sum + item.weight, 0);
+    // Use the same effective weights that produced the final truth — either
+    // baseline or dominance-adjusted — so the range is consistent with the verdict.
+    const totalW = effectiveWeightsData.reduce((sum, item) => sum + item.weight, 0);
     if (totalW > 0) {
       let weightedMin = 0;
       let weightedMax = 0;
-      for (let i = 0; i < weightsData.length; i++) {
-        const v = weightsData[i];
-        const w = weightsData[i]?.weight ?? 0;
+      for (let i = 0; i < effectiveWeightsData.length; i++) {
+        const v = effectiveWeightsData[i];
+        const w = effectiveWeightsData[i]?.weight ?? 0;
         if (v.truthPercentageRange) {
           weightedMin += v.truthPercentageRange.min * w;
           weightedMax += v.truthPercentageRange.max * w;

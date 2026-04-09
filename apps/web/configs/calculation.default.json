@@ -22,7 +22,7 @@
     "derivativeMultiplier": 0.5,
     "anchorClaimMultiplier": 2.5,
     "dominance": {
-      "enabled": true,
+      "enabled": false,
       "strongMultiplier": 2.5,
       "decisiveMultiplier": 5.0,
       "minConfidence": "high"

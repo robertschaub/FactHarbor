@@ -1465,11 +1465,13 @@ ${evidenceSummary}
 
 ### Article-Level Adjudication
 
-When some direct claims are `UNVERIFIED` (insufficient evidence to produce a verdict), the deterministic aggregation cannot adequately represent the overall assessment because zero-confidence claims have zero weight. In these cases, YOU are the final arbiter of the article-level truth and confidence.
+**Important: for complete-assessment jobs (all direct claims fully assessed), the runtime uses the deterministic aggregation as the final article truth. Your `adjustedTruthPercentage` and `adjustedConfidence` will be structurally ignored on this path.** Your role for complete-assessment jobs is explanatory: write the narrative (`headline`, `keyFinding`, `limitations`) to explain the deterministic result, not to override it.
+
+**For unresolved-claim jobs only** (some direct claims are `UNVERIFIED`), you ARE the final arbiter of the article-level truth and confidence, because zero-confidence claims have zero weight in the deterministic aggregation.
 
 **Rules for adjudication:**
-- If ALL direct claims were fully assessed, return `adjustedTruthPercentage` and `adjustedConfidence` equal to the deterministic aggregation values — do not override a complete assessment.
-- If any direct claims are `UNVERIFIED`, adjust the overall confidence DOWNWARD to reflect the incomplete coverage. The adjusted confidence must NOT exceed the deterministic confidence. Unresolved claims add uncertainty, never remove it.
+- If ALL direct claims were fully assessed: return `adjustedTruthPercentage` and `adjustedConfidence` equal to the deterministic aggregation values. These will be ignored by the runtime, but returning them keeps the output consistent.
+- If any direct claims are `UNVERIFIED`: adjust the overall confidence DOWNWARD to reflect the incomplete coverage. The adjusted confidence must NOT exceed the deterministic confidence. Unresolved claims add uncertainty, never remove it.
 - `adjustedTruthPercentage` should reflect the assessed claims. It may stay the same as the deterministic value or adjust conservatively, but it must remain grounded in the assessed evidence basis and the unresolved-claim limitations you identify.
 - The narrative (`headline`, `keyFinding`, `limitations`) must explicitly acknowledge any unresolved claims. Do not narrate as if the assessment is complete when it is not.
 
