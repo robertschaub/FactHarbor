@@ -309,3 +309,14 @@ When the Captain reviews and promotes learnings, record it here:
 **Category:** gotcha
 **Learning:** When an LLM returns a list of classified items with scores, the emission order is not guaranteed to match the scores. Using `.slice(0, N)` on unsorted LLM output silently drops high-scored items that happen to appear later in the response. Always sort by the LLM-assigned score (with a stable tie-break like original input rank) before truncating. This is a structural bug class — any pipeline that takes "top N from LLM list" without sorting is vulnerable.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (classifyRelevance call site)
+
+### 2026-04-09 — Evidence-mix drift outweighs clustering variance as regression root cause
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** wrong-assumption
+**Learning:** When investigating a verdict regression, do not stop at Stage 3 boundary concentration as the root cause. In the Bolsonaro family, the initial 9-agent investigation concluded "Stage 3 is ~95% of the effect" based on the 84% mega-boundary. A Senior Architect review showed this was overclaimed: (1) a same-commit rerun at 74% concentration still scored 52%, disproving concentration as the sole cause; (2) Lula/Lava Jato material volume varied 4→26 items across runs, with the regression job having 56% historical material in AC_03 (vs 3% baseline); (3) source fetch degradation (75-100% failure) correlates with historical backfill. The correct model is three-layer: retrieval drift (primary) → evidence admission (secondary) → clustering amplification. Always trace evidence content upstream before attributing to structural pipeline stages.
+**Files:** `Docs/AGENTS/Handoffs/2026-04-09_LLM_Expert_Bolsonaro_Evidence_Mix_Regression_Investigation.md`
+
+### 2026-04-09 — Multi-agent debate requires fact-checking agent arguments against hard data
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.6)
+**Category:** gotcha
+**Learning:** In a multi-agent debate (9 agents), several agents made compelling-sounding arguments that did not survive numerical verification. Challenger A argued the complete-assessment guard was a "one-way valve" causing the regression — but the actual impact was <1pp. The Defender conceded the stochasticity defense on the "52% attractor" claim — but that claim was based on misunderstanding weighted averages (the narrative LLM was adjusting DOWNWARD, not being blocked from adjusting upward). Always verify agent arguments against the actual job data before accepting their conclusions. Compute the actual numbers yourself rather than trusting agent reasoning about what "must" happen.
