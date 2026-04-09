@@ -462,8 +462,15 @@ describe("Stage-2 prompt contract", () => {
       // Core policy: comparator evidence about different proceedings is contextual
       expect(section).toContain("comparator/precedent");
       expect(section).toContain('"contextual"');
-      // Exception: direct institutional nexus may override
-      expect(section).toContain("direct institutional nexus");
+    });
+
+    it("exception requires finding to be about the target proceeding, not just same institution", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      // The exception must NOT allow "same institution" as sufficient nexus
+      expect(section).toContain("target proceeding");
+      expect(section).not.toContain("direct institutional nexus");
+      // Must contain the contrastive example showing same court ≠ target-specific
+      expect(section).toContain("different case involving a different party");
     });
 
     it("comparator guidance uses abstract examples without domain-specific terms", () => {
@@ -498,6 +505,63 @@ describe("Stage-2 prompt contract", () => {
       if (!section) return;
       const { unresolved } = renderWithVars(section, APPLICABILITY_ASSESSMENT_VARS);
       expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
+    });
+
+    it("direct category requires evidence about the target proceeding/event/actor", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("specific proceeding");
+      expect(section).toContain("target");
+    });
+
+    it("contextual category includes comparator/precedent evidence from same jurisdiction", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Comparator/precedent evidence");
+      expect(section).toContain("different proceeding");
+      // Must have contrastive example: same court, different party = contextual
+      expect(section).toContain("different party in the same court");
+    });
+
+    it("classifies by what the evidence evaluates, not what topic it shares", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("what the evidence evaluates");
+      expect(section).toContain("different case/actor");
+    });
+
+    it("uses abstract examples without domain-specific terms", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      const forbiddenTerms = [
+        "Bolsonaro", "Lula", "Moro", "Car Wash", "Lava Jato",
+        "STF", "Petrobras",
+      ];
+      for (const term of forbiddenTerms) {
+        expect(section, `APPLICABILITY_ASSESSMENT must not contain "${term}"`).not.toContain(term);
+      }
+    });
+  });
+
+  describe("RELEVANCE_CLASSIFICATION — comparator scoring", () => {
+    it("contains target-specific vs comparator source guidance", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section).toContain("target-specific");
+      expect(section).toContain("Comparator/precedent");
+    });
+
+    it("caps comparator source relevance scores", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      // Comparator sources should be scored at most 0.5
+      expect(section).toContain("0.5");
+      expect(section).toContain("comparator");
+    });
+
+    it("uses abstract examples without domain-specific terms", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      const forbiddenTerms = [
+        "Bolsonaro", "Lula", "Moro", "Car Wash", "Lava Jato",
+        "STF", "Petrobras",
+      ];
+      for (const term of forbiddenTerms) {
+        expect(section, `RELEVANCE_CLASSIFICATION must not contain "${term}"`).not.toContain(term);
+      }
     });
   });
 });

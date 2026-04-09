@@ -630,6 +630,11 @@ A result is **not relevant** if:
   - When `${relevantGeographies}` lists multiple jurisdictions, treat all listed jurisdictions as valid anchors for the claim. Evidence from any listed jurisdiction is not "foreign" solely because it differs from `${inferredGeography}`.
   - When `${inferredGeography}` is provided and not "null", use it as a signal for the claim's primary jurisdiction. When it is "null", infer jurisdiction from the claim text if possible.
   - For claims without clear jurisdiction (e.g., scientific claims, global phenomena), all sources are "direct" — do not apply jurisdiction filtering.
+- **Target-specific vs. comparator sources**: When the claim evaluates a specific proceeding, event, actor, or policy, distinguish search results by what they primarily cover:
+  - **Target-specific**: The result primarily covers the specific proceeding, event, or actor named in the claim. Score normally based on relevance.
+  - **Comparator/precedent**: The result primarily covers a different proceeding, event, or actor — even if it involves the same institution, jurisdiction, or subject area. These may provide useful background but are not direct evidence about the target claim. Score at most **0.5** and set `jurisdictionMatch` to `"contextual"`.
+  - A source reporting on a prior case involving a different party in the same court is comparator, not target-specific.
+  - A source reporting on the target proceeding itself, even if it also mentions prior cases, is target-specific.
 
 ### Input
 
@@ -706,7 +711,8 @@ Given a claim and source content, extract evidence items with full metadata incl
     - Evidence that directly documents, evaluates, or legally assesses the specific proceeding, event, actor, or policy named in the claim is **target-specific**. Assign `claimDirection` based on whether it supports or contradicts the claim.
     - Evidence about a **different** proceeding, actor, event, or case — even if it involves the same institution, jurisdiction, or subject area — is **comparator/precedent** material. This includes: historical cases involving different parties, prior investigations of different actors, rulings about different defendants, institutional pattern evidence from a different time period or context, and outcomes of structurally related but legally distinct proceedings.
     - Comparator evidence is normally `"contextual"`. It provides background for interpreting the claim but does not by itself determine whether the target-specific claim is true or false.
-    - **Exception — direct institutional nexus:** Comparator evidence may be classified as `"supports"` or `"contradicts"` only when it directly establishes a fact about the **same** decision-maker, process, or institution that the claim evaluates, AND the finding applies to the target proceeding itself (e.g., a ruling that the same judge was biased in the target case, not in a prior unrelated case).
+    - **Exception — the finding itself is about the target proceeding:** Comparator evidence may be classified as `"supports"` or `"contradicts"` only when the finding directly evaluates, rules on, or documents the **target proceeding, event, or actor named in the claim** — not merely the same institution, court system, or jurisdiction. Sharing the same institution is not sufficient; the evidence must assess the target proceeding itself.
+    - "A judge was found biased in a different case involving a different party" → `"contextual"`, even if it is the same court or the same jurisdiction.
     - "Similar unfairness happened in a prior case involving a different party" → `"contextual"`, not `"contradicts"`.
     - "An international body ruled on deficiencies in this specific proceeding" → may be `"supports"` or `"contradicts"` depending on the finding.
   - **Partial findings under broad evaluative predicates:** When the claim uses a broad evaluative predicate asserting absence of value, benefit, or effectiveness (e.g., "has no benefit", "is useless", "brings nothing"), classify evidence showing any measurable, documented positive outcome as `contradicts` — unless the source itself explicitly concludes that the positive outcome is negligible, immaterial, or insufficient to constitute a real benefit. A partial or limited benefit still refutes an absolute claim of zero benefit. Do not equate a small measured effect with no effect.
@@ -1725,17 +1731,21 @@ For each evidence item, determine whether it was produced by actors within the c
 
 ### Applicability Categories
 
-- **direct**: Evidence produced by actors, institutions, processes, or data sources WITHIN the claim's jurisdiction. Court rulings from the relevant country, statistics from the relevant agency, domestic media reporting, domestic academic analysis.
-- **contextual**: Evidence about the jurisdiction from neutral external observers. International academic studies, international NGO reports using the jurisdiction's own data, comparative legal analyses. These provide useful external perspective.
+- **direct**: Evidence that evaluates, documents, or legally assesses the **specific proceeding, event, or actor named in the claims**. This includes: rulings in the target case, testimony or findings about the target event, official records of the target proceeding, and reporting that primarily covers the target event itself.
+- **contextual**: Evidence that provides relevant background but does not directly evaluate the target proceeding/event/actor. This includes:
+  - Evidence from neutral external observers (international academic studies, NGO reports, comparative legal analyses).
+  - **Comparator/precedent evidence**: findings about a different proceeding, case, actor, or event — even if it involves the same institution, court system, or jurisdiction. Prior cases involving different parties, historical investigations of different actors, and institutional pattern evidence from a different context are contextual, not direct.
+  - A finding about a different party in the same court is `"contextual"`, not `"direct"`.
 - **foreign_reaction**: Evidence produced by foreign governments, foreign legislative bodies, or foreign executive actions ABOUT the claim's jurisdiction. Sanctions, diplomatic statements, foreign congressional resolutions, foreign State Department reports. These are political reactions, not evidence about the claim's substance.
 
 ### Rules
 
-- Do not assume any particular language. Assess based on the evidence's institutional origin, not its language.
+- Do not assume any particular language. Assess based on the evidence's substance, not its language or publisher.
+- **Classify by what the evidence evaluates, not what topic it shares.** An evidence item from within the claim's jurisdiction that evaluates a different case/actor is `"contextual"`, not `"direct"`.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
-- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards; otherwise "contextual."
-- Foreign media reporting (e.g., BBC reporting on Brazilian trials) is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's events using the jurisdiction's own sources.
+- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the target proceeding; otherwise "contextual."
+- Foreign media reporting on the target proceeding's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
 - Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
 
 ### Input
