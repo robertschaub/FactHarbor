@@ -57,6 +57,7 @@ import {
   extractDomain,
   assessEvidenceApplicability,
   selectTopSources,
+  buildClaimBoundaryResultJson,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -537,6 +538,79 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
     it("should exist as the main entry point", async () => {
       const { runClaimBoundaryAnalysis } = await import("@/lib/analyzer/claimboundary-pipeline");
       expect(typeof runClaimBoundaryAnalysis).toBe("function");
+    });
+  });
+
+  describe("buildClaimBoundaryResultJson", () => {
+    it("persists dominanceAssessment and adjudicationPath into resultJson", () => {
+      const claims = [createAtomicClaim({ id: "AC_01" })];
+      const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+      const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+      const assessment: OverallAssessment = {
+        truthPercentage: 42,
+        verdict: "LEANING-FALSE",
+        confidence: 71,
+        verdictNarrative: createVerdictNarrative(),
+        hasMultipleBoundaries: false,
+        claimBoundaries: boundaries,
+        claimVerdicts: [createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 42, confidence: 71 })],
+        coverageMatrix,
+        qualityGates: {
+          passed: true,
+          gate1Stats: { total: 1, passed: 1, filtered: 0, centralKept: 1 },
+          gate4Stats: { total: 1, publishable: 1, highConfidence: 0, mediumConfidence: 1, lowConfidence: 0, insufficient: 0, centralKept: 0 },
+          summary: { totalEvidenceItems: 0, totalSources: 0, searchesPerformed: 0, contradictionSearchPerformed: false },
+        },
+        truthPercentageRange: { min: 35, max: 49 },
+        dominanceAssessment: {
+          dominanceMode: "single",
+          dominanceConfidence: "high",
+          dominantClaimId: "AC_01",
+          dominanceStrength: "decisive",
+          claimRoles: [{ claimId: "AC_01", role: "decisive" }],
+          rationale: "AC_01 governs the article truth.",
+          appliedMultiplier: 5,
+        },
+        adjudicationPath: {
+          baselineAggregate: { truthPercentage: 60, confidence: 71 },
+          dominanceAdjustedAggregate: { truthPercentage: 42, confidence: 71 },
+          finalAggregate: { truthPercentage: 42, confidence: 71 },
+          path: "dominance_adjusted",
+        },
+      };
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input: { inputType: "text", inputValue: "Entity A performed action B." },
+        state: {
+          languageIntent: null,
+          understanding: { atomicClaims: claims } as any,
+          evidenceItems: [],
+          sources: [],
+          searchQueries: [],
+          claimAcquisitionLedger: {},
+          warnings: [],
+          llmCalls: 3,
+          mainIterationsUsed: 1,
+          contradictionIterationsUsed: 0,
+          contradictionSourcesFound: 0,
+        },
+        llmProvider: "anthropic",
+        verdictModelName: "mock-verdict",
+        understandModelName: "mock-understand",
+        extractModelName: "mock-extract",
+        runtimeModelsUsed: new Set(["mock-understand", "mock-verdict"]),
+        runtimeRoleModels: {},
+        searchProvider: "mock-search",
+        searchProviders: "mock-search",
+        evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0.5, isSkewed: false },
+        promptContentHash: "__PROMPT__",
+        boundaryCount: boundaries.length,
+      });
+
+      expect(resultJson.truthPercentageRange).toEqual({ min: 35, max: 49 });
+      expect(resultJson.dominanceAssessment).toEqual(assessment.dominanceAssessment);
+      expect(resultJson.adjudicationPath).toEqual(assessment.adjudicationPath);
     });
   });
 });
@@ -6221,13 +6295,20 @@ describe("aggregateAssessment dominance and adjudication path", () => {
     } as any);
   }
 
-  function makeState(claims: any[]) {
+  function makeState(
+    claims: any[],
+    overrides: Partial<CBResearchState> = {},
+  ) {
     return {
+      originalInput: "Entity A performed action B before authority C completed review.",
+      inputType: "text",
       understanding: { atomicClaims: claims },
       sources: [],
       searchQueries: [],
       contradictionIterationsUsed: 0,
       llmCalls: 0,
+      warnings: [],
+      ...overrides,
     } as any;
   }
 
@@ -6348,6 +6429,78 @@ describe("aggregateAssessment dominance and adjudication path", () => {
     const baseline = result.adjudicationPath!.baselineAggregate.truthPercentage;
     const adjusted = result.adjudicationPath!.dominanceAdjustedAggregate!.truthPercentage;
     expect(adjusted).toBeLessThan(baseline);
+  });
+
+  it("passes original input and contract validation summary to the dominance prompt", async () => {
+    await setupConfigMocks(true);
+    const dominanceNonePayload = {
+      dominanceMode: "none", dominanceConfidence: "high",
+      claimRoles: [{ claimId: "AC_01", role: "supporting" }, { claimId: "AC_02", role: "supporting" }],
+      rationale: "No single claim dominates.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput
+      .mockReturnValueOnce(dominanceNonePayload)
+      .mockReturnValueOnce(narrativeOutput);
+
+    const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
+    const contractValidationSummary = {
+      ran: true,
+      preservesContract: false,
+      rePromptRequired: false,
+      summary: "Truth-condition anchor may have been diluted.",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "before authority C completed review",
+        preservedInClaimIds: ["AC_02"],
+        validPreservedIds: ["AC_02"],
+      },
+    };
+    const state = makeState(claims, {
+      originalInput: "Entity A performed action B before authority C completed review.",
+      understanding: { atomicClaims: claims, contractValidationSummary } as any,
+    });
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 90, confidence: 88, confidenceTier: "HIGH" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 20, confidence: 75, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, state);
+
+    expect(mockLoadSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "CLAIM_DOMINANCE_ASSESSMENT",
+      expect.objectContaining({
+        originalInput: "Entity A performed action B before authority C completed review.",
+        contractValidationSummary: JSON.stringify(contractValidationSummary, null, 2),
+      }),
+    );
+  });
+
+  it("single-claim inputs skip dominance assessment entirely", async () => {
+    await setupConfigMocks(true);
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 80, confidence: 85, confidenceTier: "HIGH" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    expect(result.dominanceAssessment).toBeUndefined();
+    expect(mockLoadSection).not.toHaveBeenCalledWith(
+      "claimboundary",
+      "CLAIM_DOMINANCE_ASSESSMENT",
+      expect.anything(),
+    );
   });
 });
 

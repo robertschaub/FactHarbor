@@ -702,6 +702,13 @@ Given a claim and source content, extract evidence items with full metadata incl
   - "supports": Evidence affirms the claim
   - "contradicts": Evidence refutes the claim
   - "contextual": Evidence provides relevant context but doesn't affirm/refute
+  - **Target-specific vs. comparator evidence — classify by what the evidence evaluates, not what topic it shares:**
+    - Evidence that directly documents, evaluates, or legally assesses the specific proceeding, event, actor, or policy named in the claim is **target-specific**. Assign `claimDirection` based on whether it supports or contradicts the claim.
+    - Evidence about a **different** proceeding, actor, event, or case — even if it involves the same institution, jurisdiction, or subject area — is **comparator/precedent** material. This includes: historical cases involving different parties, prior investigations of different actors, rulings about different defendants, institutional pattern evidence from a different time period or context, and outcomes of structurally related but legally distinct proceedings.
+    - Comparator evidence is normally `"contextual"`. It provides background for interpreting the claim but does not by itself determine whether the target-specific claim is true or false.
+    - **Exception — direct institutional nexus:** Comparator evidence may be classified as `"supports"` or `"contradicts"` only when it directly establishes a fact about the **same** decision-maker, process, or institution that the claim evaluates, AND the finding applies to the target proceeding itself (e.g., a ruling that the same judge was biased in the target case, not in a prior unrelated case).
+    - "Similar unfairness happened in a prior case involving a different party" → `"contextual"`, not `"contradicts"`.
+    - "An international body ruled on deficiencies in this specific proceeding" → may be `"supports"` or `"contradicts"` depending on the finding.
   - **Partial findings under broad evaluative predicates:** When the claim uses a broad evaluative predicate asserting absence of value, benefit, or effectiveness (e.g., "has no benefit", "is useless", "brings nothing"), classify evidence showing any measurable, documented positive outcome as `contradicts` — unless the source itself explicitly concludes that the positive outcome is negligible, immaterial, or insufficient to constitute a real benefit. A partial or limited benefit still refutes an absolute claim of zero benefit. Do not equate a small measured effect with no effect.
   - **Status-finality claims:** When a claim asserts that a legal, procedural, or institutional status is already final, binding, approved, ratified, in force, or otherwise completed, evidence showing that additional approval, ratification, referendum, promulgation, judicial confirmation, or another completion step is still pending must be classified as `contradicts`, not `contextual`. Evidence that only confirms signing, filing, submission, or recommendation without final completion does not support a claim of already-final legal status.
 - `probativeValue`: Assess based on source quality, methodology rigor, and directness.
@@ -1500,7 +1507,7 @@ You are a semantic claim-role assessor. Your task is to determine whether one at
 
 ### Task
 
-Given the final claim verdicts and the original atomic claims, determine:
+Given the original user input, contract-validation summary, final claim verdicts, and atomic claims, determine:
 1. Whether one claim is semantically decisive for the article truth (`dominanceMode: "single"`)
 2. Or whether all claims contribute independently to a genuinely multi-dimensional assessment (`dominanceMode: "none"`)
 
@@ -1508,14 +1515,28 @@ Given the final claim verdicts and the original atomic claims, determine:
 
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - `dominanceMode: "none"` is the default. Only use `"single"` when one claim genuinely determines the article's truth and the others are supporting context.
+- Judge dominance against the ORIGINAL USER INPUT, not only against paraphrased extracted claims. If the extracted claims appear narrower or broader than the original wording, use the original input as the primary semantic anchor.
+- Use the `contractValidationSummary` as structural context. If it indicates a truth-condition anchor or warns that a modifier may have been diluted, that is evidence that one claim may carry the input's defining proposition.
 - A claim is decisive when: (a) the input's core assertion depends primarily on that claim's truth value, AND (b) the other claims are prerequisites, chronological background, or supporting framing that would be trivially true or contextual without the decisive claim.
 - A claim is NOT decisive just because it has the lowest truth score or the most evidence. Multi-dimensional inputs where each claim covers an independently important dimension should return `"none"`.
+- Return `"none"` when the claims are parallel evaluative dimensions. If each claim independently answers a different important criterion, legal standard, or evaluation axis, the assessment is multi-dimensional even when one claim has the lowest truth score.
+- Return `"single"` when one claim carries the defining proposition and the other claims mainly establish setup, chronology, prerequisites, or surrounding framing. A useful check: if the supporting claims were true but the candidate dominant claim were false, would the original input become materially misleading or wrong?
 - `dominanceConfidence`: how confident you are in the dominance assessment. Use `"high"` only when the role distinction is clear and unambiguous. Use `"medium"` when the distinction is plausible but debatable. Use `"low"` when the distinction is speculative.
 - `dominanceStrength`: `"decisive"` = the article truth depends almost entirely on this claim. `"strong"` = the article truth depends primarily but not entirely on this claim.
 - `claimRoles`: every claim must appear exactly once. `"decisive"` for the dominant claim (at most one), `"supporting"` for all others.
 - Be conservative. Multi-dimensional inputs (e.g., environmental + economic + practical evaluations) should almost always return `"none"`. Only return `"single"` when one claim clearly carries the input's defining proposition.
 
 ### Input
+
+**Original User Input:**
+```
+${originalInput}
+```
+
+**Contract Validation Summary:**
+```
+${contractValidationSummary}
+```
 
 **Claim Verdicts (final):**
 ```

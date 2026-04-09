@@ -32,6 +32,7 @@ import type {
   ExplanationQualityCheck,
   FetchedSource,
   AnalysisInput,
+  OverallAssessment,
   SourceType,
 } from "./types";
 
@@ -224,6 +225,130 @@ export {
 export {
   generateResearchQueries,
 } from "./research-query-stage";
+
+type RuntimeRoleModels = Record<string, {
+  provider: string;
+  model: string;
+  strength: string;
+  callCount: number;
+  fallbackUsed: boolean;
+}>;
+
+export function buildClaimBoundaryResultJson(params: {
+  assessment: OverallAssessment;
+  input: Pick<AnalysisInput, "inputType" | "inputValue">;
+  state: Pick<
+    CBResearchState,
+    | "languageIntent"
+    | "understanding"
+    | "evidenceItems"
+    | "sources"
+    | "searchQueries"
+    | "claimAcquisitionLedger"
+    | "warnings"
+    | "llmCalls"
+    | "mainIterationsUsed"
+    | "contradictionIterationsUsed"
+    | "contradictionSourcesFound"
+  >;
+  detectedUrl?: string;
+  llmProvider?: string;
+  verdictModelName: string;
+  understandModelName: string;
+  extractModelName: string;
+  runtimeModelsUsed: Set<string>;
+  runtimeRoleModels: RuntimeRoleModels;
+  searchProvider?: string;
+  searchProviders?: string;
+  evidenceBalance: EvidenceBalanceMetrics;
+  promptContentHash?: string | null;
+  boundaryCount: number;
+}) {
+  const {
+    assessment,
+    input,
+    state,
+    detectedUrl,
+    llmProvider,
+    verdictModelName,
+    understandModelName,
+    extractModelName,
+    runtimeModelsUsed,
+    runtimeRoleModels,
+    searchProvider,
+    searchProviders,
+    evidenceBalance,
+    promptContentHash,
+    boundaryCount,
+  } = params;
+
+  return {
+    _schemaVersion: "3.2.0-cb",
+    meta: {
+      schemaVersion: "3.2.0-cb",
+      generatedUtc: new Date().toISOString(),
+      pipeline: "claimboundary",
+      llmProvider: llmProvider ?? "anthropic",
+      llmModel: verdictModelName,
+      modelsUsed: {
+        understand: understandModelName,
+        extractEvidence: extractModelName,
+        verdict: verdictModelName,
+      },
+      modelsUsedAll: Array.from(runtimeModelsUsed),
+      runtimeRoleModels,
+      searchProvider,
+      searchProviders: searchProviders || undefined,
+      inputType: input.inputType,
+      detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
+      sourceUrl: input.inputType === "url" ? input.inputValue : detectedUrl,
+      hasMultipleBoundaries: assessment.hasMultipleBoundaries,
+      boundaryCount,
+      claimCount: state.understanding?.atomicClaims.length ?? 0,
+      llmCalls: state.llmCalls,
+      mainIterationsUsed: state.mainIterationsUsed,
+      contradictionIterationsUsed: state.contradictionIterationsUsed,
+      contradictionSourcesFound: state.contradictionSourcesFound,
+      evidenceBalance: {
+        supporting: evidenceBalance.supporting,
+        contradicting: evidenceBalance.contradicting,
+        neutral: evidenceBalance.neutral,
+        total: evidenceBalance.total,
+        balanceRatio: isNaN(evidenceBalance.balanceRatio) ? null : Math.round(evidenceBalance.balanceRatio * 100) / 100,
+        isSkewed: evidenceBalance.isSkewed,
+      },
+      promptContentHash,
+    },
+    languageIntent: state.languageIntent,
+    truthPercentage: assessment.truthPercentage,
+    verdict: assessment.verdict,
+    confidence: assessment.confidence,
+    truthPercentageRange: assessment.truthPercentageRange,
+    verdictNarrative: assessment.verdictNarrative,
+    dominanceAssessment: assessment.dominanceAssessment,
+    adjudicationPath: assessment.adjudicationPath,
+    claimBoundaries: assessment.claimBoundaries,
+    claimVerdicts: assessment.claimVerdicts,
+    coverageMatrix: assessment.coverageMatrix,
+    understanding: state.understanding,
+    evidenceItems: state.evidenceItems,
+    sources: state.sources.map((s: FetchedSource) => ({
+      id: s.id,
+      url: s.url,
+      title: s.title,
+      trackRecordScore: s.trackRecordScore,
+      trackRecordConfidence: s.trackRecordConfidence,
+      trackRecordConsensus: s.trackRecordConsensus,
+      category: s.category,
+      fetchSuccess: s.fetchSuccess,
+      searchQuery: s.searchQuery,
+    })),
+    searchQueries: state.searchQueries,
+    claimAcquisitionLedger: state.claimAcquisitionLedger,
+    qualityGates: assessment.qualityGates,
+    analysisWarnings: state.warnings,
+  };
+}
 
 // ============================================================================
 // MAIN ENTRY POINT
@@ -862,79 +987,23 @@ export async function runClaimBoundaryAnalysis(
     }
 
     // Wrap assessment in resultJson structure (no AnalysisContext references)
-    const resultJson = {
-      _schemaVersion: "3.2.0-cb", // ClaimAssessmentBoundary pipeline schema
-      meta: {
-        schemaVersion: "3.2.0-cb",
-        generatedUtc: new Date().toISOString(),
-        pipeline: "claimboundary",
-        llmProvider: initialPipelineConfig.llmProvider ?? "anthropic",
-        llmModel: verdictModel.modelName,
-        modelsUsed: {
-          understand: understandModel.modelName,
-          extractEvidence: extractModel.modelName,
-          verdict: verdictModel.modelName,
-        },
-        modelsUsedAll: Array.from(runtimeModelsUsed),
-        runtimeRoleModels,
-        searchProvider: initialSearchConfig.provider,
-        searchProviders: searchProviders || undefined, // Aggregate of actually-used providers
-        inputType: input.inputType,
-        detectedInputType: state.understanding?.detectedInputType ?? input.inputType,
-        sourceUrl: input.inputType === "url" ? input.inputValue : detectedUrl,
-        hasMultipleBoundaries: assessment.hasMultipleBoundaries,
-        boundaryCount: boundaries.length,
-        claimCount: understanding.atomicClaims.length,
-        llmCalls: state.llmCalls,
-        mainIterationsUsed: state.mainIterationsUsed,
-        contradictionIterationsUsed: state.contradictionIterationsUsed,
-        contradictionSourcesFound: state.contradictionSourcesFound,
-        evidenceBalance: {
-          supporting: evidenceBalance.supporting,
-          contradicting: evidenceBalance.contradicting,
-          neutral: evidenceBalance.neutral,
-          total: evidenceBalance.total,
-          balanceRatio: isNaN(evidenceBalance.balanceRatio) ? null : Math.round(evidenceBalance.balanceRatio * 100) / 100,
-          isSkewed: evidenceBalance.isSkewed,
-        },
-        promptContentHash,
-      },
-      // Language contract (Proposal 2)
-      languageIntent: state.languageIntent,
-      // Core assessment data
-      truthPercentage: assessment.truthPercentage,
-      verdict: assessment.verdict,
-      confidence: assessment.confidence,
-      verdictNarrative: assessment.verdictNarrative,
-
-      // ClaimAssessmentBoundary-specific data (replaces analysisContexts)
-      claimBoundaries: assessment.claimBoundaries,
-      claimVerdicts: assessment.claimVerdicts,
-      coverageMatrix: assessment.coverageMatrix,
-
-      // Supporting data
-      understanding: state.understanding,
-      evidenceItems: state.evidenceItems,
-      sources: state.sources.map((s: FetchedSource) => ({
-        id: s.id,
-        url: s.url,
-        title: s.title,
-        trackRecordScore: s.trackRecordScore,
-        trackRecordConfidence: s.trackRecordConfidence,
-        trackRecordConsensus: s.trackRecordConsensus,
-        category: s.category,
-        fetchSuccess: s.fetchSuccess,
-        searchQuery: s.searchQuery,
-      })),
-      searchQueries: state.searchQueries,
-      claimAcquisitionLedger: state.claimAcquisitionLedger,
-
-      // Quality gates
-      qualityGates: assessment.qualityGates,
-
-      // Analysis quality warnings (surfaced to UI via FallbackReport)
-      analysisWarnings: state.warnings,
-    };
+    const resultJson = buildClaimBoundaryResultJson({
+      assessment,
+      input,
+      state,
+      detectedUrl,
+      llmProvider: initialPipelineConfig.llmProvider,
+      verdictModelName: verdictModel.modelName,
+      understandModelName: understandModel.modelName,
+      extractModelName: extractModel.modelName,
+      runtimeModelsUsed,
+      runtimeRoleModels,
+      searchProvider: initialSearchConfig.provider,
+      searchProviders,
+      evidenceBalance,
+      promptContentHash,
+      boundaryCount: boundaries.length,
+    });
 
     // Record output quality metrics
     recordOutputQuality(resultJson);

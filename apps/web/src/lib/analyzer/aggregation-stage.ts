@@ -231,7 +231,13 @@ export async function aggregateAssessment(
 
   if (dominanceEnabled && claimVerdicts.length >= 2) {
     state.onEvent?.(`LLM call: dominance assessment — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
-    const rawDominance = await assessClaimDominance(claimVerdicts, claims, pipelineConfig);
+    const rawDominance = await assessClaimDominance(
+      claimVerdicts,
+      claims,
+      state.originalInput,
+      pipelineConfig,
+      state.understanding?.contractValidationSummary,
+    );
     state.llmCalls++;
 
     if (rawDominance && rawDominance.dominanceMode === "single" && rawDominance.dominantClaimId) {
@@ -527,14 +533,27 @@ const DominanceAssessmentOutputSchema = z.object({
 async function assessClaimDominance(
   claimVerdicts: CBClaimVerdict[],
   claims: { id: string; statement: string; thesisRelevance?: string }[],
+  originalInput: string,
   pipelineConfig: PipelineConfig,
+  contractValidationSummary?: {
+    ran: boolean;
+    preservesContract: boolean;
+    rePromptRequired: boolean;
+    summary: string;
+    anchorRetryReason?: string;
+    truthConditionAnchor?: {
+      presentInInput: boolean;
+      anchorText: string;
+      preservedInClaimIds: string[];
+      validPreservedIds: string[];
+    };
+  },
 ): Promise<DominanceAssessment | undefined> {
-  const dominanceConfig = (pipelineConfig as any).dominance ?? (pipelineConfig as any).calcConfig?.aggregation?.dominance;
-  // Dominance is controlled by calcConfig, but we receive it already resolved.
-  // If not enabled or <2 direct claims, skip.
+  // Skip when there is no meaningful dominance choice to make.
   if (claimVerdicts.length < 2) return undefined;
 
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_DOMINANCE_ASSESSMENT", {
+    originalInput,
     claimVerdicts: JSON.stringify(
       claimVerdicts.map((v) => ({
         claimId: v.claimId,
@@ -552,13 +571,16 @@ async function assessClaimDominance(
       null,
       2,
     ),
+    contractValidationSummary: JSON.stringify(contractValidationSummary ?? null, null, 2),
   });
 
   if (!rendered) return undefined;
 
   const model = getModelForTask("verdict", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+  let result: Awaited<ReturnType<typeof generateText>> | undefined;
   try {
-    const result = await generateText({
+    result = await generateText({
       model: model.model,
       messages: [
         {
@@ -582,6 +604,19 @@ async function assessClaimDominance(
     if (!parsed) return undefined;
 
     const validated = DominanceAssessmentOutputSchema.parse(parsed);
+    recordLLMCall({
+      taskType: "aggregate",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
 
     // Structural validation: dominantClaimId must exist in the claim set
     if (validated.dominanceMode === "single" && validated.dominantClaimId) {
@@ -598,6 +633,21 @@ async function assessClaimDominance(
       dominanceStrength: validated.dominanceStrength ?? undefined,
     };
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    recordLLMCall({
+      taskType: "aggregate",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result?.usage?.inputTokens ?? 0,
+      completionTokens: result?.usage?.outputTokens ?? 0,
+      totalTokens: result?.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage,
+      timestamp: new Date(),
+    });
     console.warn("[Stage5] Dominance assessment failed (non-fatal):", err);
     return undefined;
   }

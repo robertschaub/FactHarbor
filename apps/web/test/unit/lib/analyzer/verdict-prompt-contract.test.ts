@@ -312,8 +312,10 @@ describe("Stage-5 prompt contract", () => {
 // ---------------------------------------------------------------------------
 
 const DOMINANCE_ASSESSMENT_VARS: Record<string, string> = {
+  originalInput: "Entity A performed action B before authority C completed review.",
   claimVerdicts: '[{"claimId":"AC_01","truthPercentage":92,"verdict":"TRUE","confidence":88,"confidenceTier":"HIGH","reasoning":"Test..."}]',
   atomicClaims: '[{"claimId":"AC_01","statement":"Test claim","thesisRelevance":"direct"}]',
+  contractValidationSummary: '{"ran":true,"preservesContract":true,"rePromptRequired":false,"summary":"Anchor preserved.","truthConditionAnchor":{"presentInInput":true,"anchorText":"before authority C completed review","preservedInClaimIds":["AC_01"],"validPreservedIds":["AC_01"]}}',
 };
 
 describe("Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract", () => {
@@ -334,6 +336,13 @@ describe("Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract", () => {
     expect(section).toContain("none");
     expect(section).toContain("default");
     expect(section).toContain("conservative");
+  });
+
+  it("anchors dominance judgment to original input and contract validation", () => {
+    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+    expect(section).toContain("ORIGINAL USER INPUT");
+    expect(section).toContain("contractValidationSummary");
+    expect(section).toContain("primary semantic anchor");
   });
 });
 
@@ -388,6 +397,107 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
       expect(section).toContain("identify gaps");
       expect(section).toContain("under-represented");
+    });
+  });
+
+  /** Stage 2 relevance classification (research-extraction-stage.ts:113-123) */
+  const RELEVANCE_CLASSIFICATION_VARS: Record<string, string> = {
+    currentDate: "2026-04-06",
+    claim: "Entity A complied with procedural law during proceeding B",
+    inferredGeography: "BR",
+    relevantGeographies: '["BR"]',
+    searchResults: '[{"url":"https://example.com/article","title":"Test Article","snippet":"Relevant snippet"}]',
+  };
+
+  describe("RELEVANCE_CLASSIFICATION", () => {
+    it("section exists in prompt file", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section, "Section ## RELEVANCE_CLASSIFICATION not found").not.toBeNull();
+    });
+
+    it("no unresolved ${...} placeholders after rendering", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, RELEVANCE_CLASSIFICATION_VARS);
+      expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
+    });
+  });
+
+  /** Stage 2 evidence extraction (research-extraction-stage.ts:261-268) */
+  const EXTRACT_EVIDENCE_VARS: Record<string, string> = {
+    currentDate: "2026-04-06",
+    claim: "Entity A complied with procedural law during proceeding B",
+    sourceContent: "[Source 1: Test]\nURL: https://example.com\nContent about proceedings...",
+    sourceUrl: "https://example.com",
+  };
+
+  describe("EXTRACT_EVIDENCE", () => {
+    it("section exists in prompt file", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section, "Section ## EXTRACT_EVIDENCE not found").not.toBeNull();
+    });
+
+    it("no unresolved ${...} placeholders after rendering", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, EXTRACT_EVIDENCE_VARS);
+      expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
+    });
+
+    it("no [object Object] in rendered output", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      if (!section) return;
+      const { rendered } = renderWithVars(section, EXTRACT_EVIDENCE_VARS);
+      expect(rendered).not.toContain("[object Object]");
+    });
+
+    it("contains target-specific vs comparator evidence guidance", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("target-specific");
+      expect(section).toContain("comparator");
+    });
+
+    it("comparator guidance classifies historical precedent as contextual by default", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      // Core policy: comparator evidence about different proceedings is contextual
+      expect(section).toContain("comparator/precedent");
+      expect(section).toContain('"contextual"');
+      // Exception: direct institutional nexus may override
+      expect(section).toContain("direct institutional nexus");
+    });
+
+    it("comparator guidance uses abstract examples without domain-specific terms", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      // Must NOT contain test-case-specific terms
+      const forbiddenTerms = [
+        "Bolsonaro", "Lula", "Moro", "Car Wash", "Lava Jato",
+        "Brazil", "STF", "Petrobras",
+      ];
+      for (const term of forbiddenTerms) {
+        expect(section, `EXTRACT_EVIDENCE must not contain domain-specific term "${term}"`).not.toContain(term);
+      }
+    });
+  });
+
+  /** Stage 2 applicability assessment (research-extraction-stage.ts:441-445) */
+  const APPLICABILITY_ASSESSMENT_VARS: Record<string, string> = {
+    claims: '[{"id":"AC_01","statement":"Entity A complied with procedural law"}]',
+    inferredGeography: "BR",
+    relevantGeographies: '["BR"]',
+    evidenceItems: '[{"index":0,"statement":"Test evidence","sourceUrl":"https://example.com","sourceTitle":"Test","category":"legal_document"}]',
+  };
+
+  describe("APPLICABILITY_ASSESSMENT", () => {
+    it("section exists in prompt file", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section, "Section ## APPLICABILITY_ASSESSMENT not found").not.toBeNull();
+    });
+
+    it("no unresolved ${...} placeholders after rendering", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, APPLICABILITY_ASSESSMENT_VARS);
+      expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
     });
   });
 });
