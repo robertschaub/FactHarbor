@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-06
+**Last Updated**: 2026-04-09
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -66,6 +66,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | **SEARCH-1** | **Deep supplementary-provider integration**: Wikipedia supplementary completion is DONE (bounded `always_if_enabled`, language threading, UCM control). Remaining: pipeline-aware Semantic Scholar / Fact Check usage, provider-specific query variants. | Search / Analyzer | low | med | `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md` |
 | **SR-1** | **Stage 4.5 SR calibration experiment**: feature-flagged/off in code; only reopen after the current fixed-stack validation gate closes. | Analyzer / SR / Quality | low | med | `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md` |
 | **AGG-1** | **LLM-assessed triangulation / derivative weighting**: replace remaining deterministic aggregation heuristics that make analytical judgments. | Analyzer / Architecture | low | med | `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` |
+| **LLMINT-2** | **Deterministic analysis hotspot review and migration**: review and replace the top remaining deterministic analyzer behaviors that still influence analytical outcomes. Current ranked hotspots: (1) Stage-1 truth-condition anchor preservation override, (2) Stage-4 verdict direction plausibility/rescue, (3) SR truth weighting, (4) input-type routing, (5) scope-quality classification. Prioritize the first two as the clearest remaining semantic deterministic logic; treat SR truth weighting as an explicit architecture decision rather than background math. | Analyzer / Architecture / Quality | low | high | `Docs/WIP/2026-04-09_Deterministic_Analysis_Hotspots_Review.md` |
 | **RESILIENCE-1** | **Outage resilience follow-on**: A-track is shipped (network failures feed breaker, Stage-4 preflight probe, damaged-job abort, network-only auto-resume). Remaining future work is Option B/C only: pipeline hold/resume for short outages and checkpoint/resume for long outages or restarts. | Analyzer / Reliability / Runner | low | med | `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md` |
 | **LIVE-1** | **LiveCheck / Innosuisse future track**: funding and research proposal line for live audio/video fact-checking. Keep distinct from the current Alpha validation track. | Product / Research / Funding | low | med | `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md` |
 | **PROV-1** | **Source Provenance Tracking**: Trace evidence back to original creator (person/org) to detect single-source amplification, propaganda, and attribution washing. Design complete (v2, post-GPT review). 3 phases: Phase 1 extraction + telemetry, Phase 1.5 challenger/reconciler prompt integration, Phase 2 LLM entity resolution. Integrates with existing `sourcePortfolioByClaim` and `independence_concern`. Implementation parked. | Analyzer / Quality / SR | low | high | `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` |
