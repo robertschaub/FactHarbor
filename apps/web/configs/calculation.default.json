@@ -21,6 +21,12 @@
     },
     "derivativeMultiplier": 0.5,
     "anchorClaimMultiplier": 2.5,
+    "dominance": {
+      "enabled": true,
+      "strongMultiplier": 2.5,
+      "decisiveMultiplier": 5.0,
+      "minConfidence": "high"
+    },
     "contestationWeights": {
       "established": 0.5,
       "disputed": 0.7,

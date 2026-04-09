@@ -36,6 +36,7 @@ requiredSections:
   - "VERDICT_DIRECTION_VALIDATION"
   - "VERDICT_DIRECTION_REPAIR"
   - "VERDICT_NARRATIVE"
+  - "CLAIM_DOMINANCE_ASSESSMENT"
   - "CLAIM_GROUPING"
   - "EXPLANATION_RUBRIC"
   - "TIGER_SCORE_EVAL"
@@ -1488,6 +1489,61 @@ Return a JSON object:
 ```
 
 `adjustedTruthPercentage` and `adjustedConfidence` are REQUIRED. They represent your final article-level judgment after considering the full claim set, including any claims that could not be assessed.
+
+---
+
+## CLAIM_DOMINANCE_ASSESSMENT
+
+You are a semantic claim-role assessor. Your task is to determine whether one atomic claim is semantically decisive for the article-level verdict — meaning the article's overall truth depends primarily on that claim's outcome, and the other claims are supporting prerequisites or context.
+
+### Task
+
+Given the final claim verdicts and the original atomic claims, determine:
+1. Whether one claim is semantically decisive for the article truth (`dominanceMode: "single"`)
+2. Or whether all claims contribute independently to a genuinely multi-dimensional assessment (`dominanceMode: "none"`)
+
+### Rules
+
+- Do not hardcode any keywords, entity names, or domain-specific categories.
+- `dominanceMode: "none"` is the default. Only use `"single"` when one claim genuinely determines the article's truth and the others are supporting context.
+- A claim is decisive when: (a) the input's core assertion depends primarily on that claim's truth value, AND (b) the other claims are prerequisites, chronological background, or supporting framing that would be trivially true or contextual without the decisive claim.
+- A claim is NOT decisive just because it has the lowest truth score or the most evidence. Multi-dimensional inputs where each claim covers an independently important dimension should return `"none"`.
+- `dominanceConfidence`: how confident you are in the dominance assessment. Use `"high"` only when the role distinction is clear and unambiguous. Use `"medium"` when the distinction is plausible but debatable. Use `"low"` when the distinction is speculative.
+- `dominanceStrength`: `"decisive"` = the article truth depends almost entirely on this claim. `"strong"` = the article truth depends primarily but not entirely on this claim.
+- `claimRoles`: every claim must appear exactly once. `"decisive"` for the dominant claim (at most one), `"supporting"` for all others.
+- Be conservative. Multi-dimensional inputs (e.g., environmental + economic + practical evaluations) should almost always return `"none"`. Only return `"single"` when one claim clearly carries the input's defining proposition.
+
+### Input
+
+**Claim Verdicts (final):**
+```
+${claimVerdicts}
+```
+
+**Atomic Claims:**
+```
+${atomicClaims}
+```
+
+### Output Schema
+
+Return a JSON object:
+```json
+{
+  "dominanceMode": "none | single",
+  "dominanceConfidence": "low | medium | high",
+  "dominantClaimId": "AC_03",
+  "dominanceStrength": "strong | decisive",
+  "claimRoles": [
+    { "claimId": "AC_01", "role": "supporting" },
+    { "claimId": "AC_02", "role": "supporting" },
+    { "claimId": "AC_03", "role": "decisive" }
+  ],
+  "rationale": "string — why this claim is or is not dominant"
+}
+```
+
+When `dominanceMode` is `"none"`, omit `dominantClaimId` and `dominanceStrength`. All claims should have `role: "supporting"`.
 
 ---
 

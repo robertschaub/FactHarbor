@@ -308,6 +308,36 @@ describe("Stage-5 prompt contract", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract tests
+// ---------------------------------------------------------------------------
+
+const DOMINANCE_ASSESSMENT_VARS: Record<string, string> = {
+  claimVerdicts: '[{"claimId":"AC_01","truthPercentage":92,"verdict":"TRUE","confidence":88,"confidenceTier":"HIGH","reasoning":"Test..."}]',
+  atomicClaims: '[{"claimId":"AC_01","statement":"Test claim","thesisRelevance":"direct"}]',
+};
+
+describe("Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract", () => {
+  it("section exists in prompt file", () => {
+    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+    expect(section, "Section ## CLAIM_DOMINANCE_ASSESSMENT not found").not.toBeNull();
+  });
+
+  it("no unresolved ${...} placeholders after rendering", () => {
+    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+    if (!section) return;
+    const { unresolved } = renderWithVars(section, DOMINANCE_ASSESSMENT_VARS);
+    expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
+  });
+
+  it("instructs conservative default (dominanceMode none)", () => {
+    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+    expect(section).toContain("none");
+    expect(section).toContain("default");
+    expect(section).toContain("conservative");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Stage-2 prompt contract tests
 // ---------------------------------------------------------------------------
 

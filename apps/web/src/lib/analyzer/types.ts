@@ -1312,4 +1312,36 @@ export interface OverallAssessment {
   explanationQualityCheck?: ExplanationQualityCheck;
   /** Stage 6: Holistic TIGERScore evaluation (Beta). */
   tigerScore?: TIGERScore;
+  /** Dominance assessment result (v1). */
+  dominanceAssessment?: DominanceAssessment;
+  /** Adjudication path audit trail. */
+  adjudicationPath?: AdjudicationPath;
+}
+
+// ============================================================================
+// DOMINANCE ASSESSMENT (v1)
+// ============================================================================
+
+/** Result of the CLAIM_DOMINANCE_ASSESSMENT LLM step. */
+export interface DominanceAssessment {
+  dominanceMode: "none" | "single";
+  dominanceConfidence: "low" | "medium" | "high";
+  dominantClaimId?: string;
+  dominanceStrength?: "strong" | "decisive";
+  claimRoles: Array<{ claimId: string; role: "supporting" | "decisive" }>;
+  rationale: string;
+  /** The multiplier actually applied, if any. */
+  appliedMultiplier?: number;
+}
+
+/** Adjudication path audit trail for the final article truth/confidence. */
+export interface AdjudicationPath {
+  /** Weighted average before any dominance or narrative adjustment. */
+  baselineAggregate: { truthPercentage: number; confidence: number };
+  /** After dominance multiplier, if present. Absent when dominanceMode=none. */
+  dominanceAdjustedAggregate?: { truthPercentage: number; confidence: number };
+  /** The final stored values. */
+  finalAggregate: { truthPercentage: number; confidence: number };
+  /** How the final article truth was determined. */
+  path: "baseline_only" | "dominance_adjusted" | "unresolved_claim_narrative_adjustment";
 }

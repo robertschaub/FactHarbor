@@ -1424,7 +1424,13 @@ export const CalcConfigSchema = z.object({
     // ClaimBoundary Stage 5: Derivative evidence weight reduction
     derivativeMultiplier: z.number().min(0).max(1).optional(),
     anchorClaimMultiplier: z.number().min(1).max(10).optional()
-      .describe("Additional weight multiplier for direct claims that preserve a truth-condition-bearing modifier or anchor from the input."),
+      .describe("Additional weight multiplier for direct claims that preserve a truth-condition-bearing modifier or anchor from the input. Suppressed when dominance assessment fires."),
+    dominance: z.object({
+      enabled: z.boolean().describe("Enable the claim dominance assessment step in Stage 5."),
+      strongMultiplier: z.number().min(1).max(5).describe("Weight multiplier for a 'strong' dominant claim (default 2.5)."),
+      decisiveMultiplier: z.number().min(1).max(10).describe("Weight multiplier for a 'decisive' dominant claim (default 5.0)."),
+      minConfidence: z.enum(["low", "medium", "high"]).describe("Minimum dominanceConfidence for the multiplier to apply. 'high' = only high-confidence dominance fires; 'medium' = medium and high fire; 'low' = all fire."),
+    }).optional().describe("Claim dominance assessment configuration. When enabled, a dominant claim can receive extra weight to correct article-level verdicts."),
     contestationWeights: z.object({
       established: z.number().min(0).max(1),
       disputed: z.number().min(0).max(1),
@@ -1799,6 +1805,13 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     derivativeMultiplier: 0.5,
     // ClaimBoundary Stage 5: Weight for direct anchor-preserving claims
     anchorClaimMultiplier: 2.5,
+    // ClaimBoundary Stage 5: Claim dominance assessment
+    dominance: {
+      enabled: true,
+      strongMultiplier: 2.5,
+      decisiveMultiplier: 5.0,
+      minConfidence: "high" as const,
+    },
     contestationWeights: {
       established: 0.5,
       disputed: 0.7,
