@@ -305,7 +305,7 @@ export async function extractClaims(
       // Dynamic anchor-specific guidance when the retry is triggered by anchor omission
       const anchorText = contractResult?.truthConditionAnchor?.anchorText;
       const anchorGuidance = anchorRetryReason && anchorText
-        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. Include it in at least one direct atomic claim.`
+        ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. The primary direct claim must fuse this modifier with the action it modifies; do not externalize it into a supporting sub-claim.`
         : "";
 
       const fallbackGuidance = !contractResult
@@ -317,6 +317,7 @@ export async function extractClaims(
           `${contractResult.inputAssessment.summary}. ` +
           `Specific issues: ${failingReasons}.${anchorGuidance} ` +
           `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
+          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies; do not externalize the modifier into a supporting sub-claim if it is thesis-defining. ` +
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
           `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`

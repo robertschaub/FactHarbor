@@ -2011,6 +2011,7 @@ async function defaultRepairExecutor(
     reasoning: repairedReasoning,
     supportingEvidenceIds: repairedSupportingEvidenceIds ?? request.verdict.supportingEvidenceIds,
     contradictingEvidenceIds: repairedContradictingEvidenceIds ?? request.verdict.contradictingEvidenceIds,
+    boundaryFindings: [], // Clear stale findings from prior debate before repair
   };
 }
 

@@ -527,6 +527,84 @@ export async function runClaimBoundaryAnalysis(
 
     endPhase("understand");
 
+    // Wave 1A: Early termination for claim contract failure
+    // If Pass 2 extraction repeatedly fails to preserve the user's original claim contract
+    // (e.g. by omitting truth-condition anchors), the report is considered "damaged"
+    // and analysis terminates early to avoid wasting budget on incorrect claims.
+    if (understanding.contractValidationSummary?.preservesContract === false) {
+      console.warn(`[Pipeline] Claim contract preservation failed. Terminating early with damaged report.`);
+      state.warnings.push({
+        type: "report_damaged",
+        severity: "error",
+        message: "The analysis engine could not faithfully extract the original claim's meaning after multiple attempts. The resulting report may be inaccurate or misleading. Research and verdict stages have been aborted to prevent further drift.",
+        details: {
+          contractValidationSummary: understanding.contractValidationSummary,
+        },
+      });
+
+      // Generate fallback UNVERIFIED verdicts for all extracted claims
+      let claimVerdicts = understanding.atomicClaims.map((claim) =>
+        createUnverifiedFallbackVerdict(
+          claim,
+          "report_damaged",
+          "This claim was marked UNVERIFIED because the extraction process failed to preserve the original input's truth conditions. Analysis was terminated early to prevent misleading results.",
+        )
+      );
+
+      // Aggregate final assessment immediately with zero evidence
+      startPhase("aggregate");
+      const boundaries: ClaimAssessmentBoundary[] = [];
+      const reportCoverageMatrix = buildCoverageMatrix(
+        understanding.atomicClaims,
+        boundaries,
+        [],
+      );
+      const assessment = await aggregateAssessment(
+        claimVerdicts,
+        boundaries,
+        [], // Empty evidence pool
+        reportCoverageMatrix,
+        state,
+      );
+      endPhase("aggregate");
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input,
+        state,
+        detectedUrl,
+        llmProvider: initialPipelineConfig.llmProvider,
+        verdictModelName: getModelForTask("verdict", undefined, initialPipelineConfig).modelName,
+        understandModelName: getModelForTask("understand", undefined, initialPipelineConfig).modelName,
+        extractModelName: getModelForTask("extract_evidence", undefined, initialPipelineConfig).modelName,
+        runtimeModelsUsed: new Set<string>(),
+        runtimeRoleModels: {},
+        searchProvider: initialSearchConfig.provider,
+        evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0, isSkewed: false },
+        boundaryCount: 0,
+      });
+
+      recordOutputQuality(resultJson);
+
+      // Surface contract diagnostic to the user (LLM Expert R2): the user must
+      // see WHY the report is damaged, not just THAT it is. The structured
+      // contractValidationSummary fields are the primary diagnostic channel.
+      const cvs = understanding.contractValidationSummary;
+      const summaryLine = cvs?.summary ?? "(no contract summary available)";
+      const anchorReason = cvs?.anchorRetryReason;
+      const anchorText = cvs?.truthConditionAnchor?.anchorText;
+      const reportMarkdown =
+        "# ClaimAssessmentBoundary Analysis Report (Damaged)\n\n" +
+        "The analysis engine could not faithfully preserve the meaning of your input " +
+        "after multiple extraction attempts. Research and verdict stages were skipped " +
+        "to prevent a misleading report.\n\n" +
+        "**Reason:** " + summaryLine + "\n\n" +
+        (anchorText ? "**Truth-condition anchor in input:** `" + anchorText + "`\n\n" : "") +
+        (anchorReason ? "**Diagnostic:** " + anchorReason + "\n\n" : "") +
+        "Please rephrase your input or contact support if this persists.";
+      return { resultJson, reportMarkdown };
+    }
+
     // Record Gate 1 stats after claim extraction
     if (understanding.gate1Stats) {
       recordGate1Stats({
