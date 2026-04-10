@@ -1120,9 +1120,7 @@ export interface VerdictNarrative {
   keyFinding: string;            // Main synthesis (2–3 sentences) — the "so what"
   boundaryDisagreements?: string[]; // Where and why boundaries diverge (only when relevant)
   limitations: string;           // What the analysis couldn't determine
-  /** LLM-adjudicated overall truth% accounting for unresolved direct claims. */
-  adjustedTruthPercentage?: number;
-  /** LLM-adjudicated overall confidence% — must not exceed deterministic pre-computation. */
+  /** Confidence ceiling — narrative can cap confidence downward, never override truth. */
   adjustedConfidence?: number;
 }
 
@@ -1312,17 +1310,19 @@ export interface OverallAssessment {
   explanationQualityCheck?: ExplanationQualityCheck;
   /** Stage 6: Holistic TIGERScore evaluation (Beta). */
   tigerScore?: TIGERScore;
-  /** Dominance assessment result (v1). */
+  /** Dominance assessment result (v1). @deprecated Use articleAdjudication. */
   dominanceAssessment?: DominanceAssessment;
+  /** Article adjudication result (Option G). */
+  articleAdjudication?: ArticleAdjudication;
   /** Adjudication path audit trail. */
   adjudicationPath?: AdjudicationPath;
 }
 
 // ============================================================================
-// DOMINANCE ASSESSMENT (v1)
+// DOMINANCE ASSESSMENT (v1) — DEPRECATED, retained for backward compat
 // ============================================================================
 
-/** Result of the CLAIM_DOMINANCE_ASSESSMENT LLM step. */
+/** @deprecated Use ArticleAdjudication. Retained for in-flight jobs. */
 export interface DominanceAssessment {
   dominanceMode: "none" | "single";
   dominanceConfidence: "low" | "medium" | "high";
@@ -1334,14 +1334,55 @@ export interface DominanceAssessment {
   appliedMultiplier?: number;
 }
 
+// ============================================================================
+// ARTICLE ADJUDICATION (Option G)
+// ============================================================================
+
+/** LLM-produced article-level adjudication output. */
+export interface ArticleAdjudication {
+  articleTruthPercentage: number;
+  articleConfidence: number;
+  articleTruthRange?: { min: number; max: number };
+  dominanceAssessment: {
+    mode: "none" | "single";
+    dominantClaimId?: string;
+    strength?: "strong" | "decisive";
+    rationale: string;
+  };
+  claimWeightRationale: Array<{
+    claimId: string;
+    effectiveInfluence: "primary" | "significant" | "moderate" | "minor";
+    reasoning: string;
+  }>;
+  adjudicationReasoning: string;
+}
+
 /** Adjudication path audit trail for the final article truth/confidence. */
 export interface AdjudicationPath {
   /** Weighted average before any dominance or narrative adjustment. */
   baselineAggregate: { truthPercentage: number; confidence: number };
-  /** After dominance multiplier, if present. Absent when dominanceMode=none. */
+  /** Whether claims had a direction conflict (Option G gate). */
+  directionConflict?: boolean;
+  /** LLM adjudication output, present only when directionConflict=true and LLM succeeded. */
+  llmAdjudication?: {
+    rawTruthPercentage: number;
+    rawConfidence: number;
+    dominanceAssessment: ArticleAdjudication["dominanceAssessment"];
+    claimWeightRationale: ArticleAdjudication["claimWeightRationale"];
+    adjudicationReasoning: string;
+    articleTruthRange?: { min: number; max: number };
+  };
+  /** Which structural guards fired. Present only when llmAdjudication is present. */
+  guardsApplied?: {
+    deviationCapped: boolean;
+    confidenceCeiled: boolean;
+    integrityDowngraded: boolean;
+    boundsClamped: boolean;
+  };
+  /** @deprecated Use llmAdjudication. Retained for backward compat with dominance v1. */
   dominanceAdjustedAggregate?: { truthPercentage: number; confidence: number };
   /** The final stored values. */
   finalAggregate: { truthPercentage: number; confidence: number };
   /** How the final article truth was determined. */
-  path: "baseline_only" | "dominance_adjusted" | "unresolved_claim_narrative_adjustment";
+  path: "baseline_same_direction" | "llm_adjudicated" | "baseline_fallback" | "baseline_only" | "dominance_adjusted" | "unresolved_claim_narrative_adjustment";
 }

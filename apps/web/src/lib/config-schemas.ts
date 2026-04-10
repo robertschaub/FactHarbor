@@ -1424,13 +1424,12 @@ export const CalcConfigSchema = z.object({
     // ClaimBoundary Stage 5: Derivative evidence weight reduction
     derivativeMultiplier: z.number().min(0).max(1).optional(),
     anchorClaimMultiplier: z.number().min(1).max(10).optional()
-      .describe("Additional weight multiplier for direct claims that preserve a truth-condition-bearing modifier or anchor from the input. Suppressed when dominance assessment fires."),
-    dominance: z.object({
-      enabled: z.boolean().describe("Enable the claim dominance assessment step in Stage 5."),
-      strongMultiplier: z.number().min(1).max(5).describe("Weight multiplier for a 'strong' dominant claim (default 2.5)."),
-      decisiveMultiplier: z.number().min(1).max(10).describe("Weight multiplier for a 'decisive' dominant claim (default 5.0)."),
-      minConfidence: z.enum(["low", "medium", "high"]).describe("Minimum dominanceConfidence for the multiplier to apply. 'high' = only high-confidence dominance fires; 'medium' = medium and high fire; 'low' = all fire."),
-    }).optional().describe("Claim dominance assessment configuration. When enabled, a dominant claim can receive extra weight to correct article-level verdicts."),
+      .describe("Additional weight multiplier for direct claims that preserve a truth-condition-bearing modifier or anchor from the input."),
+    articleAdjudication: z.object({
+      enabled: z.boolean().describe("Enable LLM-led article adjudication on direction-conflict inputs (Option G). When disabled, baseline weighted average is always used."),
+      maxDeviationFromBaseline: z.number().min(0).max(50).describe("Maximum deviation (percentage points) the LLM adjudication can move article truth from the baseline weighted average. Default 30."),
+      borderlineMargin: z.number().min(0).max(25).describe("Claims within [50 - margin, 50 + margin] are treated as borderline and excluded from direction conflict detection. Default 10."),
+    }).optional().describe("Article-level LLM adjudication configuration (Option G). Fires only when direct claims disagree in direction."),
     contestationWeights: z.object({
       established: z.number().min(0).max(1),
       disputed: z.number().min(0).max(1),
@@ -1805,12 +1804,11 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     derivativeMultiplier: 0.5,
     // ClaimBoundary Stage 5: Weight for direct anchor-preserving claims
     anchorClaimMultiplier: 2.5,
-    // ClaimBoundary Stage 5: Claim dominance assessment (default off until live approval set rerun)
-    dominance: {
-      enabled: false,
-      strongMultiplier: 2.5,
-      decisiveMultiplier: 5.0,
-      minConfidence: "high" as const,
+    // ClaimBoundary Stage 5: LLM article adjudication on direction conflict (Option G)
+    articleAdjudication: {
+      enabled: true,
+      maxDeviationFromBaseline: 30,
+      borderlineMargin: 10,
     },
     contestationWeights: {
       established: 0.5,

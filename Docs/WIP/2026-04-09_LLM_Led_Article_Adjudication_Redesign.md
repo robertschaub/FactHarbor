@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-09
 **Authors:** Lead Architect + LLM Expert (Claude Opus 4.6)
-**Status:** **Option G approved by Captain (2026-04-09)** — ready for implementation
+**Status:** **Implementation-ready.** Option G approved by Captain. GPT Lead Architect review passed (2026-04-09). All findings incorporated and verified.
 **Supersedes:** `Handoffs/2026-04-09_Lead_Architect_LLM_Expert_Dominant_Claim_Implementation_Plan_RevA.md` (deterministic dominance path)
 **Decision:** Option G — LLM adjudication only on direction conflict; baseline weighted average for same-direction inputs.
 
@@ -149,7 +149,7 @@ The cap is structural, not semantic: it constrains the output range without deci
 ```json
 {
   "articleAdjudication": {
-    "enabled": false,
+    "enabled": true,
     "maxDeviationFromBaseline": 30
   }
 }
@@ -497,7 +497,7 @@ interface AdjudicationPath {
 ```json
 {
   "articleAdjudication": {
-    "enabled": false,
+    "enabled": true,
     "maxDeviationFromBaseline": 30,
     "borderlineMargin": 10
   }
@@ -526,6 +526,8 @@ The branching simplifies to one decision (direction conflict?) instead of the cu
 **Why:** The complete-assessment predicate was the hinge for the Rev A truth lockdown. Under Option G, the direction conflict predicate is a better hinge because it targets the actual failure mode. Complete-assessment still matters for confidence gating but no longer drives the truth path.
 
 **Problematic: Medium.** The change that same-direction unresolved-claim jobs lose their narrative truth override is a behavior change. Currently, `VERDICT_NARRATIVE` can adjust truth for these jobs. Under Option G, it cannot. This is intentional (narrative-as-adjudicator is the bug), and the GPT Lead Architect review confirmed there is no validated case where the old narrative override was demonstrably "correctly compensating" for a same-direction unresolved baseline. The old narrative path was too uncontrolled to treat as ground truth. **If validation later finds a real same-direction unresolved distortion pattern, the fix is a second structural trigger (e.g., based on unresolved-coverage severity), NOT restoring free-form narrative truth override.**
+
+**Accepted regression (R3, code review 2026-04-09):** Same-direction unresolved-claim jobs can no longer have their article truth adjusted downward by the narrative. Example: two claims, one HIGH at 85% and one INSUFFICIENT (zero weight). Baseline = 85%. The old path let the narrative reduce truth to reflect the unassessed claim. Under Option G, truth stays at 85% — but `adjustedConfidence` from the narrative still fires as a confidence ceiling, and INSUFFICIENT claims produce prominent user-facing warnings. This is accepted because: (a) the confidence signal is the correct uncertainty indicator, not truth reduction; (b) the baseline truth (85%) is factually correct for what was assessed; (c) restoring `adjustedTruthPercentage` for this path reintroduces the dual semantic decision-maker that caused the Swiss sibling drift bug.
 
 ### 5.5 Deterministic vs. LLM-Led Boundary (Option G)
 
@@ -606,7 +608,7 @@ Since dominance is currently `enabled: false`, migration is clean:
 ### Phase 1 — Preparation (no behavior change)
 1. Add baseline `aggregateAssessment()` unit tests (Track A1, still needed)
 2. Add typed `ArticleAdjudication` and updated `AdjudicationPath` to `types.ts`
-3. Add `articleAdjudication` config schema (with `enabled: false`, `maxDeviationFromBaseline: 30`, `borderlineMargin: 10`)
+3. Add `articleAdjudication` config schema (with `enabled: true`, `maxDeviationFromBaseline: 30`, `borderlineMargin: 10`) — Captain approved enabled-by-default; disableable via UCM
 4. Update `calculation.default.json`
 5. Implement direction conflict predicate with borderline margin and INSUFFICIENT exclusion
 

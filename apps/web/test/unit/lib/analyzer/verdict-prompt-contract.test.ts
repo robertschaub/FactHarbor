@@ -308,41 +308,50 @@ describe("Stage-5 prompt contract", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract tests
+// Stage-5 ARTICLE_ADJUDICATION prompt contract tests (Option G)
 // ---------------------------------------------------------------------------
 
-const DOMINANCE_ASSESSMENT_VARS: Record<string, string> = {
+const ARTICLE_ADJUDICATION_VARS: Record<string, string> = {
   originalInput: "Entity A performed action B before authority C completed review.",
   claimVerdicts: '[{"claimId":"AC_01","truthPercentage":92,"verdict":"TRUE","confidence":88,"confidenceTier":"HIGH","reasoning":"Test..."}]',
   atomicClaims: '[{"claimId":"AC_01","statement":"Test claim","thesisRelevance":"direct"}]',
   contractValidationSummary: '{"ran":true,"preservesContract":true,"rePromptRequired":false,"summary":"Anchor preserved.","truthConditionAnchor":{"presentInInput":true,"anchorText":"before authority C completed review","preservedInClaimIds":["AC_01"],"validPreservedIds":["AC_01"]}}',
+  baselineTruthPercentage: "65.3",
+  baselineConfidence: "72.6",
+  evidenceSummary: '{"totalEvidence":14,"totalBoundaries":3}',
 };
 
-describe("Stage-5 CLAIM_DOMINANCE_ASSESSMENT prompt contract", () => {
+describe("Stage-5 ARTICLE_ADJUDICATION prompt contract", () => {
   it("section exists in prompt file", () => {
-    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
-    expect(section, "Section ## CLAIM_DOMINANCE_ASSESSMENT not found").not.toBeNull();
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
+    expect(section, "Section ## ARTICLE_ADJUDICATION not found").not.toBeNull();
   });
 
   it("no unresolved ${...} placeholders after rendering", () => {
-    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
     if (!section) return;
-    const { unresolved } = renderWithVars(section, DOMINANCE_ASSESSMENT_VARS);
+    const { unresolved } = renderWithVars(section, ARTICLE_ADJUDICATION_VARS);
     expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
   });
 
-  it("instructs conservative default (dominanceMode none)", () => {
-    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+  it("instructs conservative dominance default", () => {
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
     expect(section).toContain("none");
-    expect(section).toContain("default");
     expect(section).toContain("conservative");
   });
 
-  it("anchors dominance judgment to original input and contract validation", () => {
-    const section = extractSection(promptContent, "CLAIM_DOMINANCE_ASSESSMENT");
+  it("anchors judgment to original input and contract validation", () => {
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
     expect(section).toContain("ORIGINAL USER INPUT");
     expect(section).toContain("contractValidationSummary");
     expect(section).toContain("primary semantic anchor");
+  });
+
+  it("references baseline weighted average as structural anchor", () => {
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
+    expect(section).toContain("baselineTruthPercentage");
+    expect(section).toContain("baselineConfidence");
+    expect(section).toContain("structural anchor");
   });
 });
 

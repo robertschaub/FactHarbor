@@ -21,11 +21,10 @@
     },
     "derivativeMultiplier": 0.5,
     "anchorClaimMultiplier": 2.5,
-    "dominance": {
-      "enabled": false,
-      "strongMultiplier": 2.5,
-      "decisiveMultiplier": 5.0,
-      "minConfidence": "high"
+    "articleAdjudication": {
+      "enabled": true,
+      "maxDeviationFromBaseline": 30,
+      "borderlineMargin": 10
     },
     "contestationWeights": {
       "established": 0.5,

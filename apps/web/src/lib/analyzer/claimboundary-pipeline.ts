@@ -325,7 +325,7 @@ export function buildClaimBoundaryResultJson(params: {
     confidence: assessment.confidence,
     truthPercentageRange: assessment.truthPercentageRange,
     verdictNarrative: assessment.verdictNarrative,
-    dominanceAssessment: assessment.dominanceAssessment,
+    articleAdjudication: assessment.articleAdjudication,
     adjudicationPath: assessment.adjudicationPath,
     claimBoundaries: assessment.claimBoundaries,
     claimVerdicts: assessment.claimVerdicts,

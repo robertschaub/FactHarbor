@@ -36,7 +36,7 @@ requiredSections:
   - "VERDICT_DIRECTION_VALIDATION"
   - "VERDICT_DIRECTION_REPAIR"
   - "VERDICT_NARRATIVE"
-  - "CLAIM_DOMINANCE_ASSESSMENT"
+  - "ARTICLE_ADJUDICATION"
   - "CLAIM_GROUPING"
   - "EXPLANATION_RUBRIC"
   - "TIGER_SCORE_EVAL"
@@ -1476,17 +1476,13 @@ ${claimBoundaries}
 ${evidenceSummary}
 ```
 
-### Article-Level Adjudication
+### Role
 
-**Important: for complete-assessment jobs (all direct claims fully assessed), the runtime uses the deterministic aggregation as the final article truth. Your `adjustedTruthPercentage` and `adjustedConfidence` will be structurally ignored on this path.** Your role for complete-assessment jobs is explanatory: write the narrative (`headline`, `keyFinding`, `limitations`) to explain the deterministic result, not to override it.
+Your role is **explanatory only**. The article-level truth and confidence have already been determined by prior pipeline steps. Your job is to explain the result in a clear, structured narrative. Do not attempt to override or adjust the truth percentage.
 
-**For unresolved-claim jobs only** (some direct claims are `UNVERIFIED`), you ARE the final arbiter of the article-level truth and confidence, because zero-confidence claims have zero weight in the deterministic aggregation.
+If any direct claims are `UNVERIFIED`, the narrative (`headline`, `keyFinding`, `limitations`) must explicitly acknowledge them. Do not narrate as if the assessment is complete when it is not.
 
-**Rules for adjudication:**
-- If ALL direct claims were fully assessed: return `adjustedTruthPercentage` and `adjustedConfidence` equal to the deterministic aggregation values. These will be ignored by the runtime, but returning them keeps the output consistent.
-- If any direct claims are `UNVERIFIED`: adjust the overall confidence DOWNWARD to reflect the incomplete coverage. The adjusted confidence must NOT exceed the deterministic confidence. Unresolved claims add uncertainty, never remove it.
-- `adjustedTruthPercentage` should reflect the assessed claims. It may stay the same as the deterministic value or adjust conservatively, but it must remain grounded in the assessed evidence basis and the unresolved-claim limitations you identify.
-- The narrative (`headline`, `keyFinding`, `limitations`) must explicitly acknowledge any unresolved claims. Do not narrate as if the assessment is complete when it is not.
+You may return `adjustedConfidence` to cap the article confidence downward as a structural safeguard (e.g., when unresolved claims add uncertainty). The adjusted confidence must NOT exceed the provided aggregation confidence.
 
 ### Output Schema
 
@@ -1498,39 +1494,37 @@ Return a JSON object:
   "keyFinding": "string — main synthesis (2-3 sentences)",
   "boundaryDisagreements": ["string — where and why boundaries diverge"],
   "limitations": "string — what the analysis could not determine",
-  "adjustedTruthPercentage": 58,
   "adjustedConfidence": 40
 }
 ```
 
-`adjustedTruthPercentage` and `adjustedConfidence` are REQUIRED. They represent your final article-level judgment after considering the full claim set, including any claims that could not be assessed.
+`adjustedConfidence` is optional. If provided, it acts as a confidence ceiling — the runtime takes the minimum of this value and the computed confidence. Omit it if no confidence adjustment is needed.
 
 ---
 
-## CLAIM_DOMINANCE_ASSESSMENT
+## ARTICLE_ADJUDICATION
 
-You are a semantic claim-role assessor. Your task is to determine whether one atomic claim is semantically decisive for the article-level verdict — meaning the article's overall truth depends primarily on that claim's outcome, and the other claims are supporting prerequisites or context.
+You are an article-level truth adjudicator. Your task is to produce the final article truth percentage and confidence when the per-claim verdicts disagree in direction (some claims lean true, others lean false).
 
 ### Task
 
-Given the original user input, contract-validation summary, final claim verdicts, and atomic claims, determine:
-1. Whether one claim is semantically decisive for the article truth (`dominanceMode: "single"`)
-2. Or whether all claims contribute independently to a genuinely multi-dimensional assessment (`dominanceMode: "none"`)
+Given the original user input, per-claim verdicts, atomic claims, contract validation summary, and the baseline weighted average, produce the article-level truth assessment that best represents the overall truthfulness of the original input.
 
 ### Rules
 
 - Do not hardcode any keywords, entity names, or domain-specific categories.
-- `dominanceMode: "none"` is the default. Only use `"single"` when one claim genuinely determines the article's truth and the others are supporting context.
-- Judge dominance against the ORIGINAL USER INPUT, not only against paraphrased extracted claims. If the extracted claims appear narrower or broader than the original wording, use the original input as the primary semantic anchor.
+- The baseline weighted average is provided as a structural anchor. Your assessment should be informed by but not bound to this value. The baseline uses centrality, harm potential, confidence, and triangulation weights — it does not account for semantic importance or dominance.
+- Assess whether any single claim is semantically decisive for the original input's truth. If so, that claim should have primary influence on the article truth.
+- For multi-dimensional inputs where claims evaluate independent criteria, weight claims according to their semantic importance to the original question.
+- Your article truth must be grounded in the per-claim verdicts. You are synthesizing their relative importance, not re-evaluating evidence.
+- Judge importance against the ORIGINAL USER INPUT, not only against paraphrased extracted claims. If the extracted claims appear narrower or broader than the original wording, use the original input as the primary semantic anchor.
 - Use the `contractValidationSummary` as structural context. If it indicates a truth-condition anchor or warns that a modifier may have been diluted, that is evidence that one claim may carry the input's defining proposition.
-- A claim is decisive when: (a) the input's core assertion depends primarily on that claim's truth value, AND (b) the other claims are prerequisites, chronological background, or supporting framing that would be trivially true or contextual without the decisive claim.
-- A claim is NOT decisive just because it has the lowest truth score or the most evidence. Multi-dimensional inputs where each claim covers an independently important dimension should return `"none"`.
-- Return `"none"` when the claims are parallel evaluative dimensions. If each claim independently answers a different important criterion, legal standard, or evaluation axis, the assessment is multi-dimensional even when one claim has the lowest truth score.
-- Return `"single"` when one claim carries the defining proposition and the other claims mainly establish setup, chronology, prerequisites, or surrounding framing. A useful check: if the supporting claims were true but the candidate dominant claim were false, would the original input become materially misleading or wrong?
-- `dominanceConfidence`: how confident you are in the dominance assessment. Use `"high"` only when the role distinction is clear and unambiguous. Use `"medium"` when the distinction is plausible but debatable. Use `"low"` when the distinction is speculative.
-- `dominanceStrength`: `"decisive"` = the article truth depends almost entirely on this claim. `"strong"` = the article truth depends primarily but not entirely on this claim.
-- `claimRoles`: every claim must appear exactly once. `"decisive"` for the dominant claim (at most one), `"supporting"` for all others.
-- Be conservative. Multi-dimensional inputs (e.g., environmental + economic + practical evaluations) should almost always return `"none"`. Only return `"single"` when one claim clearly carries the input's defining proposition.
+- A claim is decisive when: (a) the input's core assertion depends primarily on that claim's truth value, AND (b) the other claims are prerequisites, chronological background, or supporting framing.
+- A claim is NOT decisive just because it has the lowest truth score or the most evidence.
+- Be conservative with dominance. Multi-dimensional inputs (e.g., environmental + economic + practical evaluations) should almost always have `dominanceAssessment.mode: "none"`.
+- `articleConfidence` must not exceed the highest individual claim confidence.
+- `articleTruthRange` should reflect the plausible range given evidence uncertainty.
+- Every claim must appear in `claimWeightRationale`.
 
 ### Input
 
@@ -1554,25 +1548,39 @@ ${claimVerdicts}
 ${atomicClaims}
 ```
 
+**Baseline Weighted Average:**
+- Truth: ${baselineTruthPercentage}%
+- Confidence: ${baselineConfidence}%
+
+**Evidence Summary:**
+```
+${evidenceSummary}
+```
+
 ### Output Schema
 
 Return a JSON object:
 ```json
 {
-  "dominanceMode": "none | single",
-  "dominanceConfidence": "low | medium | high",
-  "dominantClaimId": "AC_03",
-  "dominanceStrength": "strong | decisive",
-  "claimRoles": [
-    { "claimId": "AC_01", "role": "supporting" },
-    { "claimId": "AC_02", "role": "supporting" },
-    { "claimId": "AC_03", "role": "decisive" }
+  "articleTruthPercentage": 32,
+  "articleConfidence": 68,
+  "articleTruthRange": { "min": 25, "max": 40 },
+  "dominanceAssessment": {
+    "mode": "none | single",
+    "dominantClaimId": "AC_03",
+    "strength": "strong | decisive",
+    "rationale": "string — why this claim is or is not dominant"
+  },
+  "claimWeightRationale": [
+    { "claimId": "AC_01", "effectiveInfluence": "minor", "reasoning": "string" },
+    { "claimId": "AC_02", "effectiveInfluence": "minor", "reasoning": "string" },
+    { "claimId": "AC_03", "effectiveInfluence": "primary", "reasoning": "string" }
   ],
-  "rationale": "string — why this claim is or is not dominant"
+  "adjudicationReasoning": "string — overall reasoning for the article truth assessment"
 }
 ```
 
-When `dominanceMode` is `"none"`, omit `dominantClaimId` and `dominanceStrength`. All claims should have `role: "supporting"`.
+When `dominanceAssessment.mode` is `"none"`, omit `dominantClaimId` and `strength`. Influence levels: `"primary"` (this claim drives the article truth), `"significant"` (important but not decisive), `"moderate"` (contributes meaningfully), `"minor"` (supporting context only).
 
 ---
 

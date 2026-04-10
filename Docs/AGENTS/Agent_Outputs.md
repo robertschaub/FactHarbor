@@ -1,5 +1,15 @@
 # Agent Outputs Log
 ---
+### 2026-04-10 | Senior Developer | Claude Code (Opus 4.6) | Option G Live Validation
+**Task:** Validate the Option G article adjudication implementation against live jobs and verify config, tests, build, payload.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Senior_Developer_Option_G_Validation_Report.md`
+**Key decisions:** None — validation only.
+**Open items:** No live Swiss direction-conflict observed (input decomposed into 2 claims); Bolsonaro fills the gap. No live deviation cap trigger; covered by unit test.
+**Warnings:** Bolsonaro was expected to be same-direction but produced a genuine direction conflict (AC_01=70 true vs AC_02=32 false). This is correct behavior, not a bug.
+**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-04-10_Senior_Developer_Option_G_Validation_Report.md`. Recommendation: GO for promotion review.
+**Learnings:** No
+
+---
 ### 2026-04-09 | Lead Architect | Codex (GPT-5) | Deterministic Analysis Hotspots Review
 **Task:** Document the top remaining deterministic analyzer behaviors that still influence analytical outcomes, rank them, and add the resulting review to the backlog.
 **Files touched:** `Docs/WIP/2026-04-09_Deterministic_Analysis_Hotspots_Review.md`, `Docs/STATUS/Backlog.md`

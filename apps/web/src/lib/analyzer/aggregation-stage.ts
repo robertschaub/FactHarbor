@@ -13,12 +13,12 @@ import { z } from "zod";
 
 import type {
   AdjudicationPath,
+  ArticleAdjudication,
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
   ClaimAssessmentBoundary,
   CoverageMatrix,
-  DominanceAssessment,
   EvidenceItem,
   ExplanationRubricScores,
   ExplanationStructuralFindings,
@@ -210,88 +210,111 @@ export async function aggregateAssessment(
   const mixedConfidenceThreshold = calcConfig.mixedConfidenceThreshold ?? DEFAULT_CALC_CONFIG.mixedConfidenceThreshold ?? 45;
 
   // ------------------------------------------------------------------
-  // Complete-assessment predicate: every direct claim has confidenceTier !== "INSUFFICIENT"
+  // Baseline truth/confidence
   // ------------------------------------------------------------------
+  const baselineTruth = weightedTruthPercentage;
+  const baselineConfidence = effectiveWeightedConfidence;
+
+  // ------------------------------------------------------------------
+  // Direction conflict detection (Option G gate)
+  // ------------------------------------------------------------------
+  const adjudicationConfig = calcConfig.aggregation?.articleAdjudication;
+  const adjudicationEnabled = adjudicationConfig?.enabled ?? false;
+  const borderlineMargin = adjudicationConfig?.borderlineMargin ?? 10;
+  const maxDeviation = adjudicationConfig?.maxDeviationFromBaseline ?? 30;
+
   const directClaimVerdicts = claimVerdicts.filter((v) => {
     const claim = claims.find((c) => c.id === v.claimId);
     return !claim?.thesisRelevance || claim.thesisRelevance === "direct";
   });
-  const isCompleteAssessment = directClaimVerdicts.length > 0 &&
-    directClaimVerdicts.every((v) => v.confidenceTier !== "INSUFFICIENT");
+
+  const directionConflict = hasDirectionConflict(directClaimVerdicts, claims, borderlineMargin);
 
   // ------------------------------------------------------------------
-  // Dominance assessment: run after per-claim verdicts, before narrative
+  // Article adjudication (Option G): LLM adjudication on conflict path
   // ------------------------------------------------------------------
-  const dominanceEnabled = calcConfig.aggregation?.dominance?.enabled ?? false;
-  let dominanceAssessment: DominanceAssessment | undefined;
-  let dominanceAdjustedTruth: number | undefined;
-  let dominanceAdjustedConfidence: number | undefined;
-  // Track effective weights — either baseline or dominance-adjusted — for range computation.
-  let effectiveWeightsData = weightsData;
+  let articleAdjudication: ArticleAdjudication | undefined;
+  let finalTruthPercentage: number = baselineTruth;
+  let finalConfidence: number = baselineConfidence;
+  let adjudicationPathType: AdjudicationPath["path"] = directionConflict
+    ? "baseline_fallback"    // conflict exists but adjudication not attempted or disabled
+    : "baseline_same_direction";
+  let guardsApplied: AdjudicationPath["guardsApplied"];
 
-  if (dominanceEnabled && claimVerdicts.length >= 2) {
-    state.onEvent?.(`LLM call: dominance assessment — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
-    const rawDominance = await assessClaimDominance(
+  if (adjudicationEnabled && directionConflict && claimVerdicts.length >= 2) {
+    state.onEvent?.(`LLM call: article adjudication — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
+    const rawAdjudication = await assessArticleVerdict(
       claimVerdicts,
       claims,
       state.originalInput,
+      baselineTruth,
+      baselineConfidence,
+      evidence,
+      boundaries,
       pipelineConfig,
       state.understanding?.contractValidationSummary,
     );
     state.llmCalls++;
 
-    if (rawDominance && rawDominance.dominanceMode === "single" && rawDominance.dominantClaimId) {
-      const domConfig = calcConfig.aggregation?.dominance;
-      const minConfidence = domConfig?.minConfidence ?? "high";
-      const confidenceOrder = { low: 0, medium: 1, high: 2 };
-      const meetsMinConfidence = confidenceOrder[rawDominance.dominanceConfidence] >= confidenceOrder[minConfidence];
+    if (rawAdjudication) {
+      articleAdjudication = rawAdjudication;
 
-      if (meetsMinConfidence) {
-        const strength = rawDominance.dominanceStrength ?? "strong";
-        const multiplier = strength === "decisive"
-          ? (domConfig?.decisiveMultiplier ?? 5.0)
-          : (domConfig?.strongMultiplier ?? 2.5);
+      // Apply structural guards
+      let guardedTruth = rawAdjudication.articleTruthPercentage;
+      let guardedConfidence = rawAdjudication.articleConfidence;
+      let deviationCapped = false;
+      let confidenceCeiled = false;
+      let integrityDowngraded = false;
+      let boundsClamped = false;
 
-        // Recompute weighted average with dominance multiplier.
-        // Dominance SUPERSEDES anchor — do not stack.
-        const domWeightsData = weightsData.map((item, idx) => {
-          const verdict = claimVerdicts[idx];
-          const isDominant = verdict.claimId === rawDominance.dominantClaimId;
-          const isAnchor = anchorPreservedClaimIds.has(verdict.claimId);
-          if (isDominant) {
-            // Replace anchor factor with dominance multiplier
-            const anchorFactor = isAnchor ? (aggregation.anchorClaimMultiplier ?? 2.5) : 1.0;
-            const baseWeight = item.weight / anchorFactor; // Remove anchor
-            return { ...item, weight: baseWeight * multiplier };
-          }
-          return item;
-        });
-        const domTotalWeight = domWeightsData.reduce((sum, item) => sum + item.weight, 0);
-        if (domTotalWeight > 0) {
-          dominanceAdjustedTruth = domWeightsData.reduce((sum, item) => sum + item.truthPercentage * item.weight, 0) / domTotalWeight;
-          dominanceAdjustedConfidence = domWeightsData.reduce((sum, item) => sum + item.confidence * item.weight, 0) / domTotalWeight;
-        }
-
-        effectiveWeightsData = domWeightsData;
-        dominanceAssessment = { ...rawDominance, appliedMultiplier: multiplier };
-      } else {
-        // Dominance detected but below minimum confidence — record but do not apply
-        dominanceAssessment = { ...rawDominance, appliedMultiplier: undefined };
+      // Guard 1: Deviation cap
+      const lower = baselineTruth - maxDeviation;
+      const upper = baselineTruth + maxDeviation;
+      if (guardedTruth < lower || guardedTruth > upper) {
+        guardedTruth = Math.max(lower, Math.min(upper, guardedTruth));
+        deviationCapped = true;
       }
-    } else if (rawDominance) {
-      dominanceAssessment = rawDominance;
+
+      // Guard 2: Bounds clamping
+      if (guardedTruth < 0 || guardedTruth > 100) {
+        guardedTruth = Math.max(0, Math.min(100, guardedTruth));
+        boundsClamped = true;
+      }
+      if (guardedConfidence < 0 || guardedConfidence > 100) {
+        guardedConfidence = Math.max(0, Math.min(100, guardedConfidence));
+        boundsClamped = true;
+      }
+
+      // Guard 3: Confidence ceiling — cannot exceed max individual claim confidence
+      const maxClaimConfidence = Math.max(...claimVerdicts.map((v) => v.confidence));
+      if (guardedConfidence > maxClaimConfidence) {
+        guardedConfidence = maxClaimConfidence;
+        confidenceCeiled = true;
+      }
+
+      // Guard 4: Integrity downgrade
+      if (hasIntegrityDowngrade && guardedConfidence > INSUFFICIENT_CONFIDENCE_MAX) {
+        guardedConfidence = INSUFFICIENT_CONFIDENCE_MAX;
+        integrityDowngraded = true;
+      }
+
+      finalTruthPercentage = guardedTruth;
+      finalConfidence = guardedConfidence;
+      adjudicationPathType = "llm_adjudicated";
+      guardsApplied = { deviationCapped, confidenceCeiled, integrityDowngraded, boundsClamped };
+    } else {
+      // LLM failure — fallback to baseline
+      adjudicationPathType = "baseline_fallback";
     }
   }
 
-  // ------------------------------------------------------------------
-  // Determine pre-narrative truth/confidence
-  // ------------------------------------------------------------------
-  const baselineTruth = weightedTruthPercentage;
-  const baselineConfidence = effectiveWeightedConfidence;
-  const preNarrativeTruth = dominanceAdjustedTruth ?? baselineTruth;
-  const preNarrativeConfidence = dominanceAdjustedConfidence != null
-    ? (hasIntegrityDowngrade ? Math.min(dominanceAdjustedConfidence, INSUFFICIENT_CONFIDENCE_MAX) : dominanceAdjustedConfidence)
-    : baselineConfidence;
+  // Apply integrity downgrade to baseline path if needed
+  if (adjudicationPathType === "baseline_same_direction" && hasIntegrityDowngrade) {
+    finalConfidence = Math.min(finalConfidence, INSUFFICIENT_CONFIDENCE_MAX);
+  }
+
+  const preNarrativeTruth = finalTruthPercentage;
+  const preNarrativeConfidence = finalConfidence;
 
   const verdictLabel = percentageToArticleVerdict(
     preNarrativeTruth,
@@ -301,7 +324,7 @@ export async function aggregateAssessment(
   );
 
   // ------------------------------------------------------------------
-  // Narrative generation
+  // Narrative generation (always explanatory — never adjudicatory)
   // ------------------------------------------------------------------
   let verdictNarrative: VerdictNarrative;
   try {
@@ -328,51 +351,32 @@ export async function aggregateAssessment(
     };
   }
 
-  // ------------------------------------------------------------------
-  // Final truth/confidence determination + adjudication path
-  // ------------------------------------------------------------------
-  let finalTruthPercentage: number;
-  let finalConfidence: number;
-  let adjudicationPathType: AdjudicationPath["path"];
-
-  if (isCompleteAssessment) {
-    // Complete-assessment jobs: narrative CANNOT override truth.
-    // Truth is deterministic from the dominance-adjusted (or baseline) aggregate.
-    finalTruthPercentage = preNarrativeTruth;
-    finalConfidence = preNarrativeConfidence;
-    adjudicationPathType = dominanceAdjustedTruth != null ? "dominance_adjusted" : "baseline_only";
-
-    // Confidence ceiling from narrative still applies (structural safeguard)
-    const adjConf = verdictNarrative.adjustedConfidence;
-    if (typeof adjConf === "number" && Number.isFinite(adjConf)) {
-      finalConfidence = Math.min(adjConf, finalConfidence);
-      finalConfidence = Math.max(0, Math.min(100, finalConfidence));
-    }
-  } else {
-    // Unresolved-claim jobs: preserve the existing article-level narrative adjustment path.
-    finalTruthPercentage = preNarrativeTruth;
-    finalConfidence = preNarrativeConfidence;
-    adjudicationPathType = dominanceAdjustedTruth != null ? "dominance_adjusted" : "baseline_only";
-
-    const adjTruth = verdictNarrative.adjustedTruthPercentage;
-    const adjConf = verdictNarrative.adjustedConfidence;
-    if (typeof adjConf === "number" && Number.isFinite(adjConf)) {
-      finalConfidence = Math.min(adjConf, preNarrativeConfidence);
-      finalConfidence = Math.max(0, Math.min(100, finalConfidence));
-    }
-    if (typeof adjTruth === "number" && Number.isFinite(adjTruth)) {
-      finalTruthPercentage = Math.max(0, Math.min(100, adjTruth));
-      adjudicationPathType = "unresolved_claim_narrative_adjustment";
-    }
+  // Narrative is explanatory only — no truth adjustment for any path.
+  // For same-direction unresolved-claim jobs, this means truth stays at the
+  // baseline even when INSUFFICIENT claims exist. The confidence ceiling
+  // is the correct uncertainty signal (accepted regression R3, 2026-04-09).
+  const adjConf = verdictNarrative.adjustedConfidence;
+  if (typeof adjConf === "number" && Number.isFinite(adjConf)) {
+    finalConfidence = Math.min(adjConf, finalConfidence);
+    finalConfidence = Math.max(0, Math.min(100, finalConfidence));
   }
 
+  // ------------------------------------------------------------------
+  // Adjudication path audit trail
+  // ------------------------------------------------------------------
   const adjudicationPath: AdjudicationPath = {
     baselineAggregate: { truthPercentage: Math.round(baselineTruth), confidence: Math.round(baselineConfidence) },
-    ...(dominanceAdjustedTruth != null ? {
-      dominanceAdjustedAggregate: {
-        truthPercentage: Math.round(dominanceAdjustedTruth),
-        confidence: Math.round(dominanceAdjustedConfidence ?? baselineConfidence),
+    directionConflict,
+    ...(articleAdjudication ? {
+      llmAdjudication: {
+        rawTruthPercentage: articleAdjudication.articleTruthPercentage,
+        rawConfidence: articleAdjudication.articleConfidence,
+        dominanceAssessment: articleAdjudication.dominanceAssessment,
+        claimWeightRationale: articleAdjudication.claimWeightRationale,
+        adjudicationReasoning: articleAdjudication.adjudicationReasoning,
+        articleTruthRange: articleAdjudication.articleTruthRange,
       },
+      guardsApplied,
     } : {}),
     finalAggregate: { truthPercentage: Math.round(finalTruthPercentage), confidence: Math.round(finalConfidence) },
     path: adjudicationPathType,
@@ -395,15 +399,13 @@ export async function aggregateAssessment(
   let overallRange: { min: number; max: number } | undefined;
   const claimsWithRange = claimVerdicts.filter((v) => v.truthPercentageRange);
   if (claimsWithRange.length > 0) {
-    // Use the same effective weights that produced the final truth — either
-    // baseline or dominance-adjusted — so the range is consistent with the verdict.
-    const totalW = effectiveWeightsData.reduce((sum, item) => sum + item.weight, 0);
+    const totalW = weightsData.reduce((sum, item) => sum + item.weight, 0);
     if (totalW > 0) {
       let weightedMin = 0;
       let weightedMax = 0;
-      for (let i = 0; i < effectiveWeightsData.length; i++) {
-        const v = effectiveWeightsData[i];
-        const w = effectiveWeightsData[i]?.weight ?? 0;
+      for (let i = 0; i < weightsData.length; i++) {
+        const v = weightsData[i];
+        const w = weightsData[i]?.weight ?? 0;
         if (v.truthPercentageRange) {
           weightedMin += v.truthPercentageRange.min * w;
           weightedMax += v.truthPercentageRange.max * w;
@@ -419,6 +421,21 @@ export async function aggregateAssessment(
     }
   }
 
+  // Use LLM-provided range if available and on the adjudicated path,
+  // but clamp it to the same deviation cap bounds that were applied to truth,
+  // and normalize so min <= max.
+  if (articleAdjudication?.articleTruthRange && adjudicationPathType === "llm_adjudicated") {
+    const lower = baselineTruth - maxDeviation;
+    const upper = baselineTruth + maxDeviation;
+    let clampedMin = Math.max(0, Math.min(100, Math.max(lower, articleAdjudication.articleTruthRange.min)));
+    let clampedMax = Math.max(0, Math.min(100, Math.min(upper, articleAdjudication.articleTruthRange.max)));
+    // Normalize: if clamping or a malformed LLM response inverted the range, swap.
+    if (clampedMin > clampedMax) {
+      [clampedMin, clampedMax] = [clampedMax, clampedMin];
+    }
+    overallRange = { min: clampedMin, max: clampedMax };
+  }
+
   return {
     truthPercentage: Math.round(finalTruthPercentage * 10) / 10,
     verdict: finalVerdictLabel,
@@ -430,7 +447,7 @@ export async function aggregateAssessment(
     coverageMatrix,
     qualityGates,
     truthPercentageRange: overallRange,
-    dominanceAssessment,
+    articleAdjudication,
     adjudicationPath,
   };
 }
@@ -509,31 +526,93 @@ export function computeDerivativeFactor(
 }
 
 // ============================================================================
-// CLAIM DOMINANCE ASSESSMENT (v1)
+// DIRECTION CONFLICT DETECTION (Option G gate)
 // ============================================================================
 
-const DominanceAssessmentOutputSchema = z.object({
-  dominanceMode: z.enum(["none", "single"]),
-  dominanceConfidence: z.enum(["low", "medium", "high"]),
-  dominantClaimId: z.string().optional(),
-  dominanceStrength: z.enum(["strong", "decisive"]).optional(),
-  claimRoles: z.array(z.object({
+/**
+ * Detect whether direct claims disagree in direction (Option G gate).
+ *
+ * A direction conflict exists when at least one non-excluded direct claim is
+ * true-leaning AND at least one is false-leaning. Borderline claims (within
+ * margin of 50%) and INSUFFICIENT claims are excluded.
+ *
+ * This is a structural check on typed LLM outputs, not a semantic heuristic.
+ */
+export function hasDirectionConflict(
+  directClaimVerdicts: CBClaimVerdict[],
+  claims: { id: string; claimDirection?: string }[],
+  borderlineMargin: number = 10,
+): boolean {
+  let hasTrueLeaning = false;
+  let hasFalseLeaning = false;
+
+  for (const verdict of directClaimVerdicts) {
+    // Exclude INSUFFICIENT claims — direction is unreliable
+    if (verdict.confidenceTier === "INSUFFICIENT") continue;
+
+    const claim = claims.find((c) => c.id === verdict.claimId);
+    const direction = claim?.claimDirection;
+    const truth = verdict.truthPercentage;
+
+    // Skip borderline claims (within margin of 50%)
+    if (truth >= 50 - borderlineMargin && truth <= 50 + borderlineMargin) continue;
+
+    // Only supports_thesis and contradicts_thesis participate in conflict detection.
+    // Contextual claims are excluded — they don't have a directional stake.
+    if (direction === "contextual") continue;
+
+    const isSupports = direction === "supports_thesis" || !direction;
+    if (isSupports) {
+      if (truth > 50 + borderlineMargin) hasTrueLeaning = true;
+      else if (truth < 50 - borderlineMargin) hasFalseLeaning = true;
+    } else if (direction === "contradicts_thesis") {
+      // contradicts_thesis: high truth means the contradiction is true, so article is false-leaning
+      if (truth > 50 + borderlineMargin) hasFalseLeaning = true;
+      else if (truth < 50 - borderlineMargin) hasTrueLeaning = true;
+    }
+
+    if (hasTrueLeaning && hasFalseLeaning) return true;
+  }
+
+  return false;
+}
+
+// ============================================================================
+// ARTICLE ADJUDICATION (Option G — LLM-led)
+// ============================================================================
+
+const ArticleAdjudicationOutputSchema = z.object({
+  articleTruthPercentage: z.number().min(0).max(100),
+  articleConfidence: z.number().min(0).max(100),
+  articleTruthRange: z.object({ min: z.number(), max: z.number() }).optional(),
+  dominanceAssessment: z.object({
+    mode: z.enum(["none", "single"]),
+    dominantClaimId: z.string().optional(),
+    strength: z.enum(["strong", "decisive"]).optional(),
+    rationale: z.string(),
+  }),
+  claimWeightRationale: z.array(z.object({
     claimId: z.string(),
-    role: z.enum(["supporting", "decisive"]),
+    effectiveInfluence: z.enum(["primary", "significant", "moderate", "minor"]),
+    reasoning: z.string(),
   })),
-  rationale: z.string(),
+  adjudicationReasoning: z.string(),
 });
 
 /**
- * Run the CLAIM_DOMINANCE_ASSESSMENT LLM step to determine whether one claim
- * is semantically decisive for the article-level verdict.
+ * Run the ARTICLE_ADJUDICATION LLM step to produce the final article truth
+ * when direct claims disagree in direction (Option G conflict path).
  *
- * Returns undefined on failure (fail-open: no dominance applied).
+ * Returns undefined on failure (fail-open: baseline weighted average used).
  */
-async function assessClaimDominance(
+async function assessArticleVerdict(
   claimVerdicts: CBClaimVerdict[],
   claims: { id: string; statement: string; thesisRelevance?: string }[],
   originalInput: string,
+  baselineTruth: number,
+  baselineConfidence: number,
+  evidence: EvidenceItem[],
+  boundaries: ClaimAssessmentBoundary[],
   pipelineConfig: PipelineConfig,
   contractValidationSummary?: {
     ran: boolean;
@@ -548,30 +627,44 @@ async function assessClaimDominance(
       validPreservedIds: string[];
     };
   },
-): Promise<DominanceAssessment | undefined> {
-  // Skip when there is no meaningful dominance choice to make.
+): Promise<ArticleAdjudication | undefined> {
   if (claimVerdicts.length < 2) return undefined;
 
-  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_DOMINANCE_ASSESSMENT", {
+  const rendered = await loadAndRenderSection("claimboundary", "ARTICLE_ADJUDICATION", {
     originalInput,
     claimVerdicts: JSON.stringify(
-      claimVerdicts.map((v) => ({
-        claimId: v.claimId,
-        truthPercentage: v.truthPercentage,
-        verdict: v.verdict,
-        confidence: v.confidence,
-        confidenceTier: v.confidenceTier,
-        reasoning: v.reasoning?.slice(0, 200),
-      })),
+      claimVerdicts.map((v) => {
+        const claim = claims.find((c) => c.id === v.claimId);
+        return {
+          claimId: v.claimId,
+          claimDirection: (claim as any)?.claimDirection,
+          truthPercentage: v.truthPercentage,
+          verdict: v.verdict,
+          confidence: v.confidence,
+          confidenceTier: v.confidenceTier,
+          reasoning: v.reasoning?.slice(0, 200),
+        };
+      }),
       null,
       2,
     ),
     atomicClaims: JSON.stringify(
-      claims.map((c) => ({ claimId: c.id, statement: c.statement, thesisRelevance: c.thesisRelevance })),
+      claims.map((c) => ({
+        claimId: c.id,
+        statement: c.statement,
+        thesisRelevance: c.thesisRelevance,
+        claimDirection: (c as any).claimDirection,
+      })),
       null,
       2,
     ),
     contractValidationSummary: JSON.stringify(contractValidationSummary ?? null, null, 2),
+    baselineTruthPercentage: String(Math.round(baselineTruth * 10) / 10),
+    baselineConfidence: String(Math.round(baselineConfidence * 10) / 10),
+    evidenceSummary: JSON.stringify({
+      totalEvidence: evidence.length,
+      totalBoundaries: boundaries.length,
+    }),
   });
 
   if (!rendered) return undefined;
@@ -590,11 +683,11 @@ async function assessClaimDominance(
         },
         {
           role: "user",
-          content: `Assess whether any single claim is semantically decisive for the article-level verdict across ${claimVerdicts.length} claims.`,
+          content: `Produce the article-level truth assessment for this ${claimVerdicts.length}-claim input where claims disagree in direction. Baseline weighted average: ${Math.round(baselineTruth)}%.`,
         },
       ],
       temperature: 0.1,
-      output: Output.object({ schema: DominanceAssessmentOutputSchema }),
+      output: Output.object({ schema: ArticleAdjudicationOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
       ),
@@ -603,7 +696,7 @@ async function assessClaimDominance(
     const parsed = extractStructuredOutput(result);
     if (!parsed) return undefined;
 
-    const validated = DominanceAssessmentOutputSchema.parse(parsed);
+    const validated = ArticleAdjudicationOutputSchema.parse(parsed);
     recordLLMCall({
       taskType: "aggregate",
       provider: model.provider,
@@ -619,19 +712,17 @@ async function assessClaimDominance(
     });
 
     // Structural validation: dominantClaimId must exist in the claim set
-    if (validated.dominanceMode === "single" && validated.dominantClaimId) {
+    if (validated.dominanceAssessment.mode === "single" && validated.dominanceAssessment.dominantClaimId) {
       const validClaimIds = new Set(claimVerdicts.map((v) => v.claimId));
-      if (!validClaimIds.has(validated.dominantClaimId)) {
-        console.warn(`[Stage5] Dominance assessment cited non-existent claim ${validated.dominantClaimId}`);
-        return undefined;
+      if (!validClaimIds.has(validated.dominanceAssessment.dominantClaimId)) {
+        console.warn(`[Stage5] Article adjudication cited non-existent dominant claim ${validated.dominanceAssessment.dominantClaimId}`);
+        // Clear the invalid reference but keep the rest of the adjudication
+        validated.dominanceAssessment.dominantClaimId = undefined;
+        validated.dominanceAssessment.mode = "none";
       }
     }
 
-    return {
-      ...validated,
-      dominantClaimId: validated.dominantClaimId ?? undefined,
-      dominanceStrength: validated.dominanceStrength ?? undefined,
-    };
+    return validated;
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     recordLLMCall({
@@ -648,7 +739,7 @@ async function assessClaimDominance(
       errorMessage,
       timestamp: new Date(),
     });
-    console.warn("[Stage5] Dominance assessment failed (non-fatal):", err);
+    console.warn("[Stage5] Article adjudication failed (non-fatal, falling back to baseline):", err);
     return undefined;
   }
 }
@@ -663,9 +754,7 @@ const VerdictNarrativeOutputSchema = z.object({
   keyFinding: z.string(),
   boundaryDisagreements: z.array(z.string()).optional(),
   limitations: z.string(),
-  // Article-level adjudication: LLM's final judgment on overall truth/confidence,
-  // accounting for unresolved direct claims that deterministic aggregation ignores.
-  adjustedTruthPercentage: z.number().min(0).max(100).optional(),
+  // Confidence ceiling (explanatory-only): narrative can cap confidence downward, never override truth.
   adjustedConfidence: z.number().min(0).max(100).optional(),
 });
 
