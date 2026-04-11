@@ -1078,10 +1078,37 @@ export default function JobPage() {
     return map;
   }, [claimVerdicts, atomicClaimTextById]);
 
-  // PR 2 (Rev B Track 2): cellVerdicts and claimLevelVerdicts memos were
-  // removed. The coverage matrix is now count-only — verdict colors lived only
-  // in the matrix and confused the count vs. verdict semantics. If a verdict-
-  // oriented matrix is wanted, build a separate component.
+  // Build verdict percentage map for coverage matrix cell coloring
+  const cellVerdicts = useMemo(() => {
+    if (!result?.coverageMatrix || !claimVerdicts.length) return undefined;
+    const { claims, boundaries } = result.coverageMatrix;
+    // Build lookup: claimId → boundaryId → { pct, conf }
+    const vMap = new Map<string, Map<string, { pct: number; conf: number }>>();
+    for (const cv of claimVerdicts) {
+      if (cv.boundaryFindings) {
+        const bfMap = new Map<string, { pct: number; conf: number }>();
+        for (const bf of cv.boundaryFindings) {
+          bfMap.set(bf.boundaryId, { pct: bf.truthPercentage, conf: bf.confidence });
+        }
+        vMap.set(cv.claimId, bfMap);
+      }
+    }
+    // Build 2D array matching counts shape: [claimIdx][boundaryIdx]
+    return claims.map((claimId: string) =>
+      boundaries.map((boundaryId: string) => vMap.get(claimId)?.get(boundaryId) || null)
+    );
+  }, [result?.coverageMatrix, claimVerdicts]);
+
+  // Claim-level verdicts for coverage matrix Total row
+  const claimLevelVerdicts = useMemo(() => {
+    if (!result?.coverageMatrix || !claimVerdicts.length) return undefined;
+    const { claims } = result.coverageMatrix;
+    return claims.map((claimId: string) => {
+      const cv = claimVerdicts.find((v: any) => v.claimId === claimId);
+      if (!cv || cv.truthPercentage == null) return null;
+      return { pct: cv.truthPercentage, conf: cv.confidence ?? 0 };
+    });
+  }, [result?.coverageMatrix, claimVerdicts]);
 
   // Pipeline: preserve what the job requested, but prefer the pipeline that actually executed.
   // This avoids schema/UI mismatches when monolithic pipelines fall back to claimboundary.
@@ -1851,6 +1878,10 @@ export default function JobPage() {
                       boundaryLabels={claimBoundaries.map((b: any) => b.name || b.shortName || `Boundary ${b.id}`)}
                       hideLegend
                       onNavigate={navigateTo}
+                      cellVerdicts={cellVerdicts}
+                      claimVerdicts={claimLevelVerdicts}
+                      overallVerdict={result.truthPercentage != null ? { pct: result.truthPercentage, conf: result.confidence ?? 0 } : null}
+                      verdictColorMap={CLAIM_VERDICT_COLORS}
                     />
                   )}
               </ReportSection>
