@@ -1540,12 +1540,6 @@ export const CalcConfigSchema = z.object({
     requireSourceUrl: z.boolean(),
   }).optional(),
 
-  articleVerdictOverride: z.object({
-    misleadingTarget: z.number().int().min(0).max(100),
-    maxBlendStrength: z.number().min(0).max(1),
-    centralRefutedRatioThreshold: z.number().min(0).max(1),
-  }).optional(),
-
   claimDecomposition: z.object({
     minCoreClaimsPerContext: z.number().int().min(1).max(10),
     minTotalClaimsWithSingleCore: z.number().int().min(1).max(10),
@@ -1892,11 +1886,6 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     requireSourceExcerpt: true,
     minExcerptLength: 30,
     requireSourceUrl: true,
-  },
-  articleVerdictOverride: {
-    misleadingTarget: 35,
-    maxBlendStrength: 0.8,
-    centralRefutedRatioThreshold: 0.5,
   },
   claimDecomposition: {
     minCoreClaimsPerContext: 2,

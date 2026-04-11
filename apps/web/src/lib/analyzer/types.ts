@@ -1310,28 +1310,10 @@ export interface OverallAssessment {
   explanationQualityCheck?: ExplanationQualityCheck;
   /** Stage 6: Holistic TIGERScore evaluation (Beta). */
   tigerScore?: TIGERScore;
-  /** Dominance assessment result (v1). @deprecated Use articleAdjudication. */
-  dominanceAssessment?: DominanceAssessment;
   /** Article adjudication result (Option G). */
   articleAdjudication?: ArticleAdjudication;
   /** Adjudication path audit trail. */
   adjudicationPath?: AdjudicationPath;
-}
-
-// ============================================================================
-// DOMINANCE ASSESSMENT (v1) — DEPRECATED, retained for backward compat
-// ============================================================================
-
-/** @deprecated Use ArticleAdjudication. Retained for in-flight jobs. */
-export interface DominanceAssessment {
-  dominanceMode: "none" | "single";
-  dominanceConfidence: "low" | "medium" | "high";
-  dominantClaimId?: string;
-  dominanceStrength?: "strong" | "decisive";
-  claimRoles: Array<{ claimId: string; role: "supporting" | "decisive" }>;
-  rationale: string;
-  /** The multiplier actually applied, if any. */
-  appliedMultiplier?: number;
 }
 
 // ============================================================================
@@ -1359,7 +1341,7 @@ export interface ArticleAdjudication {
 
 /** Adjudication path audit trail for the final article truth/confidence. */
 export interface AdjudicationPath {
-  /** Weighted average before any dominance or narrative adjustment. */
+  /** Weighted average before any LLM adjudication. */
   baselineAggregate: { truthPercentage: number; confidence: number };
   /** Whether claims had a direction conflict (Option G gate). */
   directionConflict?: boolean;
@@ -1379,10 +1361,8 @@ export interface AdjudicationPath {
     integrityDowngraded: boolean;
     boundsClamped: boolean;
   };
-  /** @deprecated Use llmAdjudication. Retained for backward compat with dominance v1. */
-  dominanceAdjustedAggregate?: { truthPercentage: number; confidence: number };
   /** The final stored values. */
   finalAggregate: { truthPercentage: number; confidence: number };
   /** How the final article truth was determined. */
-  path: "baseline_same_direction" | "llm_adjudicated" | "baseline_fallback" | "baseline_only" | "dominance_adjusted" | "unresolved_claim_narrative_adjustment";
+  path: "baseline_same_direction" | "llm_adjudicated" | "baseline_fallback";
 }

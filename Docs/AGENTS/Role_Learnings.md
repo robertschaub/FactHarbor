@@ -66,6 +66,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Strict inverse pairs (`isStrictInverse: true`) must be exempt from standard absolute skew thresholds. For these pairs, high skew is expected if the topic has a strong evidence consensus (e.g., GMO safety where L=10% and R=75% results in -65pp skew). Gating them on skew produces false positives; they should instead be gated on Complementarity Error (CE), which measures system consistency regardless of topic balance.
 **Files:** `apps/web/src/lib/calibration/metrics.ts`
 
+### 2026-04-11 — Don't pre-solve later gates inside the current gate
+**Role:** Lead Architect  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** useful-pattern
+**Learning:** Rev 2 of the Phase 2 Gate G2 replay plan carried Phase 3/4 judgments ("keep Option G", "refactor `isVerdictDirectionPlausible`", "queue for Phase 4") inside the G2 package body. Both the LLM Expert and Captain Deputy reviewers independently flagged this as scope drift — decisions being made outside the gate they belong to. The fix was a dedicated "Strong priors (NOT decisions)" section at the end of the plan that (a) explicitly labels each hypothesis as a prior, (b) gives each prior a "replay may show" falsification condition, (c) states "none of these priors are being acted on until Phase 3 data is in". This preserves the value of the investigator's intuition without letting it bleed into premature decisions. Reuse this pattern whenever a plan document drifts into pre-solving later work. Also surfaced by the same review: per-input acceptance criteria (e.g. "R2 must have `rechtskräftig` in primary claim + verdict in 11–31 range") are more useful than generic Stage-1 signals (e.g. "Q-S1.3 modifier preservation") when the replay set is narrow, because they give concrete measurable pass/fail per input without forcing the Phase 3 analyst to re-derive the mapping.
+**Files:** `Docs/WIP/2026-04-11_Phase2_Gate_G2_Replay_Plan.md`, `Docs/WIP/2026-04-11_Phase2_Per_Input_Expectations.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_Captain_Deputy_Review.md`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas
@@ -199,6 +205,30 @@ After completing a task, if you discovered something that would help future agen
 **Category:** gotcha
 **Learning:** In `runner.ts`, hardcoding specific model IDs (e.g., `gemini-2.5-pro`) as the return value for a provider prevents the Unified Config Management (UCM) system from injecting newer models. The fix is to check if the UCM-provided model string is valid (and not the default fallback) before returning a hardcoded default. This enables dynamic upgrades to Gemini 3.0 without code deployment.
 **Files:** `apps/web/src/lib/calibration/runner.ts`
+
+### 2026-04-10 — Competing prompt rules are a structural failure, not a wording failure
+**Role:** LLM Expert  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** gotcha
+**Learning:** When a model is told (a) "preserve modifier X" and (b) "do not extract claims about Y" and X happens to be a Y, the model resolves the conflict in the only way the prompt allows — by externalizing the contradiction into a side-claim. No amount of additional "be careful" instructions fix this. The fix is precedence or reconciliation. Concrete case: `CLAIM_EXTRACTION_PASS2` had a "preserve truth-condition modifiers" rule (line 162-166) and a "no inferred normative claims" rule (line 190); for `rechtskräftig` (a German legal-finality adverb that is *both*), the model produced a separate AC_03 carrying the modifier, which Gate 1 then stripped. Look for this pattern any time you investigate a "the model knows X but does Y" failure — read adjacent rules for structural conflict before adding more instructions.
+**Files:** `apps/web/prompts/claimboundary.prompt.md` (CLAIM_EXTRACTION_PASS2 lines 162-166 vs 190)
+
+### 2026-04-10 — Deterministic substring re-checking of LLM structured output is an anti-pattern
+**Role:** LLM Expert  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** gotcha
+**Learning:** If the LLM returns a structured `preservedInClaimIds`/`preservedByQuotes` and your TypeScript then re-checks it with `claimText.toLowerCase().includes(anchor.toLowerCase())`, you have replaced LLM intelligence with a worse heuristic. Substring matching breaks on inflected morphology (German `rechtskräftig`/`rechtskräftige`/`rechtskräftiger`), transliterations, plurals, and any non-English language. Either trust the LLM and add a structural validity check (cited IDs must exist in the claim list), or re-run the LLM contract validator on the final accepted claims. Do not substring-match across LLM judgments — the AGENTS.md LLM Intelligence mandate explicitly prohibits this.
+**Files:** `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (`evaluateClaimContractValidation`, lines 1841-1866)
+
+### 2026-04-10 — Stage 1 cascading: prompt → Pass 2 shape → Gate 1 strip → contract failure → silent ship
+**Role:** LLM Expert  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** useful-pattern
+**Learning:** When a quality investigation lands on "the contract validator detects the failure but the pipeline continues," check whether the contract validator's outputs reach downstream stages (here: Gate 1 has zero visibility into `truthConditionAnchor`), and check whether the post-Gate-1 re-validation has a branch for `preservesContract === false` (here: it refreshes the summary into a variable and then `return`s). The data is often sitting in a result envelope that no one reads. The diagnostic is: grep for the field name in stages downstream of where it is set; if you find no consumers, the enforcement is observational.
+**Files:** `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (lines 645-690)
+
+### 2026-04-10 — Spotting deterministic semantic rescue functions on first read
+**Role:** LLM Expert  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** tip
+**Learning:** Functions named `is*Plausible`, `*Rescue`, `*Override`, or `safeDowngrade*` that sit next to an LLM validation step deserve immediate scrutiny. Test: is the function deciding "is this verdict directionally correct?" or "did the model preserve meaning X?" using arithmetic on weighted ratios, hemisphere checks, or string matching? If yes, it is the deterministic semantic adjudication the LLM Intelligence mandate prohibits — even if it looks like a "robustness layer." Concrete cases in the analyzer: `isVerdictDirectionPlausible` (verdict-stage.ts:1561) uses hemisphere/tolerance/ratio rules to override LLM direction validation; `evaluateClaimContractValidation` (claim-extraction-stage.ts:1832) uses substring matching to override LLM anchor preservation. Both should be replaced with LLM re-validation, keeping only structural plumbing (citation polarity bucket consistency, ID validity).
+**Files:** `apps/web/src/lib/analyzer/verdict-stage.ts:1561`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts:1832`
 
 ## Product Strategist
 

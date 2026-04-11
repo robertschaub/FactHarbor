@@ -105,11 +105,6 @@
     "minExcerptLength": 30,
     "requireSourceUrl": true
   },
-  "articleVerdictOverride": {
-    "misleadingTarget": 35,
-    "maxBlendStrength": 0.8,
-    "centralRefutedRatioThreshold": 0.5
-  },
   "claimDecomposition": {
     "minCoreClaimsPerContext": 2,
     "minTotalClaimsWithSingleCore": 3,

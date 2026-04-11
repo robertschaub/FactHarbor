@@ -1,5 +1,185 @@
 # Agent Outputs Log
 ---
+### 2026-04-11 | Lead Architect + LLM Expert | Claude Opus 4.6 (1M) | Phase 2 Gate G2 Rev 4 Approved — Execution Beginning
+**Task:** Finalize Phase 2 Gate G2 replay plan after two rounds of joint review (LLM Expert + Captain Deputy on Rev 2; same two on Rev 3) and user direction to (a) drop Q-ST5 cross-linguistic from priority, (b) replace generic "input-specific" criteria with documented per-input acceptance criteria, (c) defer the Wave 1A safeguard (Commit A2) until after the replay, (d) delete reference job JSON files, (e) land replay jobs in the main `apps/api/factharbor.db`, (f) quota-check before each batch.
+**Files touched:** `Docs/WIP/2026-04-11_Phase2_Gate_G2_Replay_Plan.md` (Rev 4 — replaces Rev 3), `Docs/WIP/2026-04-11_Phase2_Per_Input_Expectations.md` (new — extracted verbatim per-input expectations from 14 prior docs), `Docs/WIP/2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md` + `_Captain_Deputy_Review.md` (Rev 2 reviews), `Docs/WIP/2026-04-11_Phase2_Gate_G2_Rev3_LLM_Expert_Review.md` + `_Rev3_Captain_Deputy_Review.md` (Rev 3 reviews), `Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md` (Q-ST5 reclassified to data-only), `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Role_Learnings.md`.
+**Key decisions:** (1) Shape B replay: 3 commits (C0 new HEAD, C1 `82d8080d` pre-prompt-downgrade, C3 `442a5450` UPQ-1 Phase B), 4 inputs (R2, R3, R3b, R4), 39 jobs, $15–30. (2) Priority criteria restructured from 7 generic Stage-1/output criteria to **2 global (Q-HF5, Q-ST1) + 21 per-input acceptance checks** extracted verbatim from 2026-03-12 Scorecard B1–B7, 2026-04-08 Complete Quality Assessment, and 2026-04-10 LLM Expert Empirical Addendum. (3) Q-V1 absorbed into per-input verdict-range criteria (R2.1, R3.1, R3b.1, R4.1) rather than kept as a weakly-measurable standalone criterion. (4) Q-ST5 dropped from priority per user directive — cross-language consistency will be addressed later via a dual-language analysis pattern (always run input-lang + EN). (5) Commit sequence: stash A2 → commit A1 (dead-code cleanup) → commit 2026-04-10 docs → commit 2026-04-11 docs → commit B (matrix UI count-only) → revert B (restore verdict coloring). (6) Reference job JSON files deleted from repo root and `.tmp/jobs/` per user directive — information already captured in `Per_Input_Expectations.md`. (7) Replay execution protocol updated: all jobs land in main `apps/api/factharbor.db` via `FH_DB_PATH` override so the user can browse them in the web UI. Quota probe before each batch; pause on any 429/529/quota-exceeded signal.
+**Open items:** **Execution underway this session.** Next concrete actions: stash A2, land the 5 commits, start replay on C0 → C1 → C3 with quota checks between each. If stop rule fires (any of 4 conditions), pause and report. Phase 2B conditional expansion available if results are ambiguous.
+**Warnings:** (a) Worktree code for `82d8080d` and `442a5450` is ~4 days and ~1 week old respectively — schema compatibility with the current db is expected but not verified. If EF startup errors on a worktree, pause and report. (b) Main-tree API must be stopped before any worktree API starts (single SQLite writer). (c) R2 at 5 runs/commit gives mean-level commit comparison but cannot recover the tri-modal regime distribution per run — Phase 3 analysis must not claim modal-frequency conclusions. (d) Q-V1 is only weakly measurable in Shape B (no R7/R8 inverse pair) — Phase 3 can confirm direction-plausibility failures but cannot confirm restoration without Phase 2B expansion. (e) Commit A2 contains the Wave 1A safeguard that directly fixes the R2 61pp variance — it is deliberately deferred to preserve apples-to-apples with the 4 historical R2 baseline jobs. Phase 4 work will land it with a separate `contract_validation_unavailable` warning type to handle validator-LLM transient failures without over-terminating otherwise-shippable runs.
+**For next agent (me, this session or next):** Phase 2 execution begins immediately after the commit sequence lands. If the replay results land cleanly (no stop-rule triggers, no quota issues, statistically separable deltas per per-input criteria), Phase 3 Change Impact Ledger is the next step. If results are ambiguous or regressions are detected, Phase 2B expansion or targeted bisect are the fallback paths. Do NOT proceed to Phase 4 refactor (deleting hemisphere rules from `isVerdictDirectionPlausible` / `getDeterministicDirectionIssues` / `directionMixedEvidenceFloor` / `db7cdcf8` self-consistency boost) until Phase 3 ledger is built and user approves at Gate G4.
+**Learnings:** Yes — appended to `Role_Learnings.md` under Lead Architect: "Don't pre-solve later gates inside the current gate. Rev 2 of this plan carried Phase 3/4 keep/delete/refactor judgments inside the G2 package; both reviewers flagged this as drift. The fix was a 'strong priors (NOT decisions)' section that explicitly labels hypotheses, gives them a 'replay may show' falsification condition, and states they are not acted on until the later gate data is in."
+---
+### 2026-04-11 | Lead Architect + LLM Expert | Claude Opus 4.6 (1M) | Report Quality Restoration — Master Plan + Phase 1 Complete
+**Task:** Build a fact-based, conceptually-grounded plan to restore and sustain ClaimBoundary pipeline report quality after 8 weeks of uneven drift. User explicitly required: no dirty fixes, no guessing, no destructive git ops, no deployments, multi-agent debate, explicit steering gates, matrix coloring kept (improvement allowed), and removal of deterministic verdict/confidence manipulation where present.
+**Files touched:** `Docs/WIP/2026-04-11_Report_Quality_Restoration_Master_Plan.md` (new — master plan), `Docs/WIP/2026-04-11_Prior_Investigations_Index.md` (new — 38-doc inventory), `Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md` (new — 40-criterion consolidated catalogue), `Docs/AGENTS/Agent_Outputs.md`. Delegated two parallel Explore agents for (1) full doc inventory and (2) verbatim criteria extraction from 10 prior scorecards.
+**Key decisions:** (1) Treat this as a **consolidation + historical bisection** effort, not a new investigation — prior work (38 docs, 43 named criteria) is read first and consumed, not re-derived. (2) Six explicit user steering gates G1–G6; plan does not advance past any gate without user answer. (3) Use git worktrees in `.tmp/` for historical commit replays — main working tree (with user's uncommitted Apr 10 work) never touched. (4) Reverts happen as forward-applied `git revert` commits on dedicated branches — never history rewrites. (5) Canonical Quality Criteria catalogue built on the `2026-03-24_Generic_Report_Quality_Signals_Scorecard` spine (most topic-neutral prior doc) and deduplicated into 40 criteria across 6 layers (hard-failure, Stage 1, Stage 2/3, Stage 4/5, Stability, Presentation+Hygiene). (6) User's "no deterministic verdict manipulation" and "matrix coloring improvement" concerns captured as explicit criteria Q-AH1 and Q-PT4, each with a known-violation citation from 2026-04-10-LLM F5/F6. (7) Historical best baseline candidate already on record: commit `9cdc8889` (`quality_window_start`) per `Docs/ARCHIVE/Report_Quality_Restoration_Plan_2026-03-14.md` — Phase 2 starts there.
+**Open items:** **Gate G1 is the next gate** — user must (a) rank top 5–8 criteria to optimize for first, (b) answer 7 prioritization questions (top criteria, known pain points, acceptable regression, time horizon, matrix improvement specifics, deterministic-logic removal scope, live-replay budget), (c) approve or revise Phase 2 budget for live commit replays. No work proceeds on Phase 2 until G1 is passed.
+**Warnings:** (a) Variance is family-dependent (Swiss: S1-dominated 89pp, Plastik: S2-dominated 58pp, Bolsonaro: S4-dominated 41pp) — no single fix will close all three; revert decisions must be validated on all three families, not just one. (b) The April 10 handoff cluster diagnosed root causes but the fixes have NOT been empirically validated on real runs — the "mixed / more negative than positive" feeling the user reports is consistent with a diagnosed-but-not-proven state. (c) Apr 10-LLM F4 and F6 (`evaluateClaimContractValidation` substring matching, `isVerdictDirectionPlausible` hemisphere check) are already confirmed violators of AGENTS.md LLM Intelligence mandate — these are priority removal candidates regardless of priority ranking. (d) Live replays on old commits cost real LLM money; each replay must be explicitly user-approved per run, not batch-authorized.
+**For next agent (me, next turn):** Wait for Gate G1 answers from the user. Once received: begin Phase 2 (Historical Baseline Map) by (1) inventorying validation artefacts in `apps/web/test/output/` and `test-output/validation/`, (2) building the run-to-commit map, (3) presenting the 3 candidate historical-best commits with a go/no-go request for live replays. Do NOT start Phase 2 early. Do NOT re-investigate anything already covered in the 38 prior docs.
+**Learnings:** No new learnings yet — the plan reuses existing Role Learnings (variance-aware interpretation 2026-02-22, multi-reviewer brainstorming 2026-02-16, deterministic semantic rescue anti-pattern 2026-04-10, parallel-agent git safety protocol from memory). New learnings will come out of Phase 2+ execution.
+---
+### 2026-04-10 | Lead Architect + LLM Expert | Claude Opus 4.6 (1M) | Claim Clarification Gate — Design for FR1.x
+**Task:** Design the software architecture to support FR1.x / FR1.x.a / FR1.x.b — a user-in-the-loop AtomicClaim clarification step inserted between Stage 1 (extract) and Stage 2 (research) in the ClaimAssessmentBoundary pipeline, with a multi-select checklist, preselection, a neutral "Something else" wizard, and safe back navigation.
+**Files touched:** `Docs/WIP/2026-04-10_Claim_Clarification_Gate_Design.md` (new design document), `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** (1) Fold the ambiguity judgment into the existing Pass 2 LLM call via a new `clarificationAssessment` field — zero added LLM cost on the base path. (2) Introduce a single new job status `AWAITING_CLARIFICATION`; wizard/checklist phases live inside `ClarificationState`, not the status machine. (3) Add `entryStage` parameter to `runClaimBoundaryAnalysis` so the warm resume path enters directly at Stage 2 with the user-filtered claim set. (4) Extract Gate 1 analyzability logic into a shared `isClaimAnalyzable` helper reused by extraction and wizard synthesis — single source of truth. (5) Two new prompts (Haiku for questions, Sonnet for synthesis) managed in UCM, following AGENTS.md no-test-terms and multilingual rules. (6) Dedicated `ClarificationState` DB column (not `ResultJson`) to keep pending interactive state separate from the terminal report. (7) Etag-based optimistic concurrency on all mutating endpoints. (8) Feature-flagged via UCM `clarificationGate.enabled` with OFF default through Phase 4.
+**Open items:** 5 open questions for Captain / Product Strategist in §15 of the design doc (default enabled state, abandonment TTL, cancel wording, preselection conservatism, admin diagnostics visibility). Lead Developer review of §6 orchestration changes and §16 file list is the next gating step before any implementation.
+**Warnings:** (a) The `evaluateClarificationGate` function is deliberately deterministic structural plumbing — do NOT let it grow into semantic judgment (would violate AGENTS.md LLM Intelligence mandate). (b) The shared `isClaimAnalyzable` helper is load-bearing — if its definition drifts between Gate 1 and wizard, the pipeline will accept claims in one path that it rejects in the other, producing silent inconsistencies (same failure shape as the 2026-04-10 claim-contract cascade). (c) Do not show internal signals (`specificityScore`, `verifiability`, LLM `rationale`) in the user-facing UI — save for admin/debug view only. (d) Wizard prompts must be tested multilingually (DE/FR/ES at minimum) and with bundled-assertion inputs, not just English.
+**For next agent:** Lead Developer should read `Docs/WIP/2026-04-10_Claim_Clarification_Gate_Design.md` end-to-end, focus on §6 (pipeline orchestration), §5 (data model), §7 (API surface), and §16 (file list). Produce a Phase 1 implementation plan starting with the shared analyzability helper and the Pass 2 schema addition — both are low-risk, unit-testable, and unblock everything else. Do not start code until Captain has resolved the §15 open questions.
+**Learnings:** No — the design applies existing Role Learnings (`.catch()` transparency for Pass 2 field addition, schema-required ≠ LLM-populated for prompt examples, deterministic-semantic-rescue anti-pattern avoided in the gate helper) rather than introducing new ones. New learnings will come out of the implementation phase.
+---
+### 2026-04-10 | Lead Architect | Codex (GPT-5) | Rev B Tightened After Lead Developer Review
+**Task:** Incorporate the Lead Developer's required clarifications into the Rev B report-quality implementation plan so it is ready for Senior Developer implementation handoff.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Made `thesisRelevance` mandatory in the contract-validator payload, made the no-substring-matching constraint explicit, required deletion of `dominantVerdict()` in the count-matrix fix, added the pre-PR-3 UI grep for deprecated dominance fields, fixed the prompt-metadata correction direction, and added the three missing test/process tightenings from the Lead Developer review.
+**Open items:** Before PR 3 opens, grep `apps/web/src/app/jobs/` for `dominanceAssessment`, `dominance_adjusted`, and `unresolved_claim_narrative_adjustment` to confirm no live old-job UI consumer still depends on them.
+**Warnings:** Do not treat the validation battery as a PR deliverable. It remains a post-fix process artifact and promotion gate, not a blocker for PR 2 or PR 3 review.
+**For next agent:** Use Rev B directly as the implementation source of truth. The Lead Developer's required tightenings are now incorporated into the plan rather than living only in review commentary.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | Codex (GPT-5) | Rev B Prepared For Lead Developer Review
+**Task:** Tighten the Rev B report-quality implementation plan so it is ready for Lead Developer final review.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added explicit review-ready framing, Lead Developer review scope, review questions, and an approval bar. Kept the implementation content stable; this update is about reviewability and decision discipline, not plan expansion.
+**Open items:** Lead Developer final review is now the gating step before implementation prompts are prepared.
+**Warnings:** The plan should not be treated as auto-approved just because the architecture is now coherent. The review questions and approval bar are meant to force an explicit go/no-go on the exact scope.
+**For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md` directly for Lead Developer review.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | Codex (GPT-5) | Report Quality Implementation Plan Rev B
+**Task:** Prepare an implementation-ready plan after the aligned architect reviews, current-source refresh, and current-state code review.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Split the next wave into four tracks: Stage-1 contract hardening, matrix/report-honesty repair, regression coverage, and removal-first simplification. Treat the silent fail-open bug as fixed, and treat the remaining directness/provenance issues as important unresolved risks rather than freshly re-proven regressions.
+**Open items:** Only one strategic choice remains: tighten the current trust-the-LLM provenance gap in the same PR as directness-context hardening, or land it as an explicitly documented residual risk for one more cycle.
+**Warnings:** Do not turn this into another prompt-growth wave. The next implementation should delete stale surface and sharpen existing contracts.
+**For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md` as the implementation source of truth.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Architect Review Recheck Against Current Source
+**Task:** Recheck the latest architect review against current source, prompts, tests, and report UI/export code, then classify which points are confirmed facts versus plausible but still unproven risk.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the review's major code facts: Stage 1 now degrades and terminates early on contract-validation failure, validator input still omits thesisRelevance/directness markers, the live matrix still mixes count display with verdict coloring, HTML export still uses count-only coloring, `articleVerdictOverride` remains schema/default-only, and deprecated dominance residue remains in types. Kept two architect points as risk judgment rather than proven bug: tangential-claim false positives from missing directness context and structurally valid but semantically unrelated quote acceptance as a still-open correctness risk.
+**Open items:** Add one pipeline-level regression test for the early `report_damaged` branch, decide whether directness context should be passed into contract validation, fix matrix honesty, and remove dead config/deprecated dominance compatibility once migration risk is cleared.
+**Warnings:** The current implementation is materially safer than the pre-fix state, but the review is correct that it should not yet be described as fully solved at the product-trust level.
+**For next agent:** Treat the architect review as substantively accurate. The strongest remaining gaps are report-honesty in the matrix and missing directness context in contract validation, not a re-opened silent fail-open bug.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect + Senior Developer | Codex (GPT-5) | Implementation Refresh Review
+**Task:** Refresh from the newest April 10 handoffs plus current source/prompt state after the completed implementation wave, then provide a findings-first review.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Implementation_Refresh_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the Stage-1 damaged-report safeguard is genuinely shipped, but also confirmed three major unresolved concerns: validator directness blindness, the new provenance false-positive gap, and still-misleading matrix semantics.
+**Open items:** Decide whether to pass directness context into contract validation and whether the current trust-the-LLM provenance gap is acceptable. Still need cleanup/removal work and a pipeline-level damaged-report regression test.
+**Warnings:** Current implementation is materially safer than the old state, but it is not full closure of the Swiss anchor-loss problem and it does not fix the matrix trust issue.
+**For next agent:** Full review in `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Implementation_Refresh_Review.md`.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Handoff Status Update After Implementation
+**Task:** Update the main architect handoff so it reflects the code that has now landed, rather than leaving Wave 1 and adjacent integrity fixes described as purely planned work.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Marked Wave 1A/1B/1C as implemented, recorded the stale-`boundaryFindings` repair reset and single-boundary triangulation neutralization as shipped adjacent fixes, and left `distinctEvents` tightening, matrix honesty, and repeated-run proof gates explicitly open. Also tightened the handoff to distinguish build/reseed success from actual empirical closure.
+**Open items:** Repeated-run validation still needs to confirm fusion rate, `preservesContract` stability, damaged-report rate, and verdict-spread narrowing. `distinctEvents` input-only tightening still needs explicit code confirmation if it is meant to be considered shipped.
+**Warnings:** The implementation status update should not be read as final issue closure. The architect position remains that repeated-run proof gates are mandatory before declaring the `rechtskräftig` regression fixed.
+**For next agent:** Start from the updated deep investigation handoff. It now separates implemented code changes from still-open validation and UI/trust work.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Factual Correction Propagation
+**Task:** Propagate the factual corrections from the revised deep investigation into the downstream April 10 summary handoffs without flattening their individual structure or emphasis.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Consolidated_Review_Plan.md`, `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Multi_Agent_Review_Board.md`, `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Limited propagation to four factual corrections only: the retry path's 0-for-3 empirical record, the code-side location of the retry-guidance rewrite, the Wave 2B seam files (`verdict-generation-stage.ts` and `aggregation-stage.ts`), and softer causality wording for `distinctEvents` contamination.
+**Open items:** The downstream docs still intentionally keep their own earlier gate thresholds and debate framing unless explicitly revised later. If full consistency across all April 10 artifacts is desired, a second pass would be needed.
+**Warnings:** This was a minimal factual sync, not a full normalization pass. Some deliberate cross-document differences remain.
+**For next agent:** If another agent starts from the consolidated plan, review board, or current-state handoff instead of the deep investigation, they will now see the corrected factual baseline on the retry path and the Wave 2B seam.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | LLM Expert Review Incorporation
+**Task:** Apply an LLM Expert empirical review to the consolidated report-quality handoff and tighten the plan where the four-payload evidence justified sharper wording or clearer implementation guidance.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Strengthened C1 with the retry path's empirical 0-for-3 record, made the code-side retry-guidance rewrite explicit, added omitted-anchor coverage to Wave 1B, surfaced degraded contract diagnostics in Wave 1A, named the Wave 2 seam (`verdict-generation-stage.ts` and `aggregation-stage.ts`), and added targeted fusion retry as an explicit Gate 0 option. Also softened the distinctEvents causal claim and changed the fusion-rate gate to an acceptable-vs-target band.
+**Open items:** Review still needed on whether targeted fusion retry is worth the extra implementation complexity versus bounded generic retry. Final degraded-user-visible behavior still needs approval.
+**Warnings:** Wave 1 now assumes replacement and consolidation of overlapping prompt rules, not additive prompt growth. Do not treat the 70% fusion band as full success; it is explicitly a partial-success threshold with follow-on work required.
+**For next agent:** Use the revised handoff as the current source of truth. The document now reflects both the architect consolidation and the LLM Expert's empirical refinements.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Review-Ready Plan Consolidation
+**Task:** Take over the partially completed architect/developer report-quality investigation and consolidate it into a single review-ready plan in the existing handoff file.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recast the unfinished investigation as a Lead Architect review artifact. Preserved the broad system-wide scope, adopted the latest April 10 source priority, kept the Gate-1 anchor-exemption withdrawal, and defined the minimum immediate fix as one combined Wave 1 rather than a standalone safeguard.
+**Open items:** Human review still needs to choose the degraded behavior after post-retry contract failure. Deployed reference validation remains desirable but non-blocking.
+**Warnings:** Do not use the earlier body of the handoff as the current plan; it has been superseded by the consolidated version. Do not split Wave 1 into an isolated control-flow patch without the prompt and retry corrections.
+**For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md` as the review-ready source of truth for this task. Supporting April 10 handoffs remain relevant only for deeper evidence.
+**Learnings:** No
+---
+### 2026-04-10 | Review Board: Lead Architect + Senior Developer + LLM Expert + Adversarial Reviewer | GitHub Copilot (GPT-5.4) | Multi-Agent Review Board Consolidation
+**Task:** Run a fresh team review against the user’s original broad request, have independent reviewers investigate Stage 1, matrix semantics, systemic variance, and plan weaknesses, then debate and consolidate the plan.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Multi_Agent_Review_Board.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The current consolidated plan remains directionally right but needed tighter debate resolutions. The board confirmed the broad/systemic framing, kept the Gate-1 anchor-exemption withdrawal, moved matrix honesty to parallel or immediate follow-on status, and added explicit proof gates before Phase-1 success can be claimed.
+**Open items:** Human review still needed on the exact degraded behavior for post-retry contract failure and on whether a deployed reference run can be added later if access is restored.
+**Warnings:** Do not implement only the Stage-1 circuit-breaker. Do not approve the plan without defining the fusion-rate metric and post-fix validation gates. Do not narrow the broader stabilization track to the `rechtskräftig` proposition.
+**For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Multi_Agent_Review_Board.md` as the latest review-board source of truth. Use the earlier April 10 handoffs only as supporting evidence.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect + Senior Developer + LLM Expert | GitHub Copilot (GPT-5.4) | Consolidated Review Plan
+**Task:** Consolidate the April 10 investigations into one updated, review-ready plan that keeps the broad systemic framing, incorporates the latest empirical addendum, and removes superseded recommendations.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Consolidated_Review_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The empirical addendum now governs where it conflicts with earlier same-day findings. The earlier Gate-1 anchor-exemption recommendation is withdrawn. The minimal immediate fix set for the `rechtskräftig` failure is one control-flow change plus three small prompt edits, while matrix honesty, removal-first cleanup, and broader variance work remain explicit follow-on tracks.
+**Open items:** Review decision needed on post-retry contract failure behavior. Recommended: bounded retry then degrade.
+**Warnings:** Do not narrow this into a one-case plan. The consolidated plan is intentionally split into a minimal proposition-specific fix set and broader product-level stabilization tracks.
+**For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Consolidated_Review_Plan.md` as the review-ready source of truth. Fall back to the supporting April 10 handoffs only for raw evidence or deeper rationale.
+**Learnings:** No
+---
+### 2026-04-10 | LLM Expert | GitHub Copilot (GPT-5.4) | Empirical Addendum On Four Same-Input Runs
+**Task:** Integrate new direct evidence from four identical-input runs of the `rechtskräftig` proposition and correct the earlier LLM-expert hierarchy where the evidence now points to a smaller, sharper fix.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation_Empirical_Addendum.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Revised the earlier LLM-expert diagnosis. With four concrete runs, the dominant mechanism is now clear: Pass 2 only fuses the modifier into the primary claim in 1 of 4 runs, and only that shape yields the correct verdict. Withdraw the earlier Gate-1 anchor-exemption recommendation; Gate 1 is correctly rejecting reified side claims. Smallest justified fix set is now 3 prompt edits plus 1 control-flow change.
+**Open items:** Captain decision needed on post-retry contract failure outcome. Recommended: bounded retry then degrade rather than silent success or hard failure on first detection.
+**Warnings:** Do not implement the earlier Gate-1 anchor exemption from the first LLM handoff. Do not expand Pass 2 further without removing overlapping rules. Additional runs are not needed for diagnosis; they are only useful for post-fix validation.
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation_Empirical_Addendum.md` after the original LLM handoff. Use the addendum as the current source of truth on F2, the retry path, and the recommended minimal fix set.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect + Senior Developer | GitHub Copilot (GPT-5.4) | Current-State Report Quality Investigation
+**Task:** Re-investigate job `9dab007670434245a3b76fa405066989` against the current codebase and current local UI, broaden to same-input variance and cleanup concerns, and return an updated root-cause and implementation plan.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the current pipeline still knowingly ships a broken final claim contract: final claims drop `rechtskräftig`, `contractValidationSummary` records that, and the article verdict still returns `TRUE 86.9`. Confirmed the matrix red-cell complaint is a real report-honesty problem caused by mixed semantics (boundary-local cell verdicts, dominant-cell row headers, final claim totals).
+**Open items:** Captain decision needed on whether final contract failure should force retry, degrade to UNVERIFIED/damaged report, or hard-fail the job. Deployed app URL still needed if a remote report comparison is required; `factharbor.ch` resolved to docs only.
+**Warnings:** Earlier April 10 handoffs were directionally right but the repo has moved; use the new handoff as the current source of truth. Do not classify all legacy residue as dead code — some `orchestrated` references are still live in grounding prompts, while `articleVerdictOverride` is the clearly verified dead config field.
+**For next agent:** Start with `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md`. Highest-value first move is P0 final-claim contract enforcement in Stage 1, then P2 matrix honesty cleanup, then a removal-first simplification track.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect + Senior Developer | Codex (GPT-5) | Report Quality Deep Investigation
+**Task:** Investigate Swiss job `9dab007670434245a3b76fa405066989`, broader same-input variance across multiple families, matrix/report oddities, historical regression context, and code/prompt complexity growth.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Investigation only. Main conclusion: current bad Swiss run is primarily a recurring Stage-1 truth-condition-anchor loss, not a new Stage-5 regression. Matrix issue is semantically misleading and in this case also exposes stale intermediate boundary findings.
+**Open items:** Captain decision needed on removal-first cleanup track vs parallel quality fixes.
+**Warnings:** `f1a372bf` is docs-only and not causal. Same-input variance is systemic across Swiss, Plastik, Hydrogen, Bolsonaro, and even some controls.
+---
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Seven-Run Contract Failure Review
+**Task:** Review the seven local post-fix treaty runs, document the two user-approved reference jobs, classify the degraded runs, and identify the concrete runtime seams responsible for failure.
+**Files touched:** `Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Split degraded outputs into two classes: genuine Stage-1 anchor loss/legal-effect injection for the `rechtskräftig` failures, and a separate validator false negative for coordinated temporal-anchor decomposition on the non-anchor input. Recorded `c72d7b...` and `0fff063...` as user-facing reference outputs, with `8bbc2e...` retained as the cleanest Stage-1 fused-shape reference.
+**Open items:** Runtime fix pass still needed in `claim-extraction-stage.ts` for coordinated-anchor acceptance and for removing final-claim revalidation fail-open success semantics. Stage-1 fusion hardening for `rechtskräftig` should be implemented and re-run against the same 4 plus 3 battery.
+**Warnings:** `c72d7b...` is outcome-correct but not a perfect extraction-shape reference because it externalizes `rechtskräftig` into a standalone legal-effect claim. `0fff063...` is outcome-correct but still passed through a final revalidation fail-open path.
+**For next agent:** Start with `Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md`. The key implementation target is the whole-anchor substring requirement inside `evaluateClaimContractValidation(...)`, which is over-rejecting coordinated actor decompositions.
+**Learnings:** No
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md` first. Highest-priority next steps are P0 Stage-1 contract-enforcement redesign, P1 matrix/report honesty fix, and dead/transitional code removal.
+**Learnings:** No
+---
+### 2026-04-10 | Lead Architect + Senior Developer | Codex (GPT-5) | Overarching Report Quality Investigation
+**Task:** Investigate local Swiss-family job `9dab007670434245a3b76fa405066989`, broaden to multi-family report-quality decline/variance concerns, compare against prior investigations, and return root causes plus a simplification-oriented plan.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Overarching_Report_Quality_Investigation.md`
+**Key decisions:** Concluded the main root cause in `9dab...` is a Stage-1 contract-acceptance gap: the pipeline refreshes a final contract summary showing the accepted claims no longer preserve the original anchored proposition, then still proceeds normally. Confirmed matrix red rows are mostly a UI semantic problem (dominant-cell coloring), not a verdict bug. Confirmed large same-input variance is systemic across several families and predates `f1a372bf`, which is docs-only.
+**Open items:** Captain decision still useful on exact behavior when final accepted claims fail contract preservation: damaged report vs forced retry vs low-confidence unresolved output.
+**Warnings:** Fixing only the Swiss family will not solve the broader variance problem. Continuing to patch by only adding prompt text without removing obsolete layers will likely worsen maintainability.
+**For next agent:** Full report and implementation plan in `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Overarching_Report_Quality_Investigation.md`. If implementing, start with the Stage-1 contract-acceptance fix and the Coverage Matrix semantic cleanup.
+**Learnings:** No
+---
+### 2026-04-10 | LLM Expert | Claude Opus 4.6 (1M) | Report Quality — Prompt & LLM-Behavior Investigation
+**Task:** Independent LLM/prompt-perspective deep review of current report quality, using job `9dab007670434245a3b76fa405066989` as one case study; deliberately separates prompt failures, schema failures, control-flow failures, UI honesty problems, and accretion problems.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Role_Learnings.md`
+**Key decisions:** The `rechtskräftig` failure is **not** primarily a control-flow bug — it is seeded at the prompt level by **two structurally competing rules in `CLAIM_EXTRACTION_PASS2`** (preserve truth-condition modifiers vs. no inferred normative claims). The model resolves the conflict in the only available way: by externalizing the modifier into a side-claim that Gate 1 then strips for fidelity, with no contract context. The pipeline then ships the broken set silently because the post-Gate-1 enforcement branch does not exist. All three layers must be fixed; any one alone will not hold. Prior handoffs converged on the right top priority but under-emphasized the prompt-rule conflict.
+**Open items:** Captain decision on (a) NP1 outcome choice (retry vs degrade vs hard-fail), (b) whether Gate 1 may receive contract-validator context (cross-stage data flow), (c) whether to delete the deterministic substring anchor check in Phase 1 alongside NP1 or hold for Phase 3.
+**Warnings:** Do **not** "fix" this by adding more rules to `CLAIM_EXTRACTION_PASS2` — the prompt is attention-saturated and the same rule is restated four times across two prompt sections. Do **not** upgrade the Stage 1 model tier; the conflict is structural, not capability-bound. Do **not** patch `9dab` with a Stage-5 aggregation change — Stage 5 never had the right claim set. The matrix issue is independent and is caused by Stage-4 repair invalidating `boundaryFindings` without recomputing them.
+**For next agent:** Start at F1, F2, F3 in the handoff. NP1 (control-flow branch) + NP2 (Gate 1 anchor data flow) + PR3 (Gate 1 anchor exemption) is the smallest combined change that fixes the user's primary complaint without adding new prompt scar tissue. Phase ordering, prompt removals, and "what NOT to do" are spelled out in the handoff.
+**Learnings:** Yes — appended to `Role_Learnings.md` (LLM Expert section). Four learnings about competing prompt rules, deterministic re-checking of LLM structured output, Stage-1 cascading detection, and how to spot deterministic semantic rescue functions on first read.
+---
 ### 2026-04-10 | Senior Developer | Claude Code (Opus 4.6) | Option G Live Validation
 **Task:** Validate the Option G article adjudication implementation against live jobs and verify config, tests, build, payload.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-04-10_Senior_Developer_Option_G_Validation_Report.md`
@@ -8,7 +188,6 @@
 **Warnings:** Bolsonaro was expected to be same-direction but produced a genuine direction conflict (AC_01=70 true vs AC_02=32 false). This is correct behavior, not a bug.
 **For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-04-10_Senior_Developer_Option_G_Validation_Report.md`. Recommendation: GO for promotion review.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect | Codex (GPT-5) | Deterministic Analysis Hotspots Review
 **Task:** Document the top remaining deterministic analyzer behaviors that still influence analytical outcomes, rank them, and add the resulting review to the backlog.
@@ -18,7 +197,6 @@
 **Warnings:** The top two items are not just cleanup debt — they are the clearest remaining cases of deterministic logic making meaning-bearing analytical decisions in the live analyzer.
 **For next agent:** Start with `Docs/WIP/2026-04-09_Deterministic_Analysis_Hotspots_Review.md`. If this work is picked up, prioritize Stage 1 anchor preservation and Stage 4 direction rescue before lower-severity routing/quality labels.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect + LLM Expert | Claude Code (Opus 4.6) | Option G Review Incorporation
 **Task:** Incorporate GPT Lead Architect review findings into the approved Option G design.
@@ -28,7 +206,6 @@
 **Warnings:** Deviation cap of 30pp is exactly the correction needed for Swiss target. If the baseline shifts, the cap may need recalibration.
 **For next agent:** Full reviewed design at `Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md`. Section 7 has the review findings table. Section 8 has the migration path. Start with Phase 1 (tests + types + config).
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect + LLM Expert | Claude Code (Opus 4.6) | Stage-5 LLM-Led Article Adjudication Redesign
 **Task:** Redesign the deterministic dominant-claim Stage-5 solution so article adjudication is LLM-led, not deterministic multiplier math.
@@ -38,7 +215,6 @@
 **Warnings:** Same-direction unresolved-claim jobs lose their narrative truth override — must be validated. Deviation cap of 25pp is tight for Swiss target (~30pp correction needed).
 **For next agent:** Full design at `Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md`. Option G is section 5. Review questions below in the GPT Lead Architect review request.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | LLM Expert | Claude Code (Opus 4.6) | Bolsonaro Evidence-Mix Regression Investigation
 **Task:** Investigate why Bolsonaro trial fairness job regressed from 68%/71 to 52%/45.
@@ -48,7 +224,6 @@
 **Warnings:** Known chronic issue for Bolsonaro family (documented since March 2026). Boundary concentration is amplifier, not root cause.
 **For next agent:** See full handoff at `Docs/AGENTS/Handoffs/2026-04-09_LLM_Expert_Bolsonaro_Evidence_Mix_Regression_Investigation.md`. Core follow-up: RELEVANCE_CLASSIFICATION / APPLICABILITY_ASSESSMENT prompt policy for historical precedent.
 **Learnings:** Yes — appended to Role_Learnings.md.
-
 ---
 ### 2026-04-09 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Plan Marked Ready For Implementation Review
 **Task:** Record the latest architect + LLM-expert review outcome on the dominant-claim plan and fold the remaining observations back into the review-ready document.
@@ -58,7 +233,6 @@
 **Warnings:** Hydrogen remains a required fresh rerun before any promotion decision.
 **For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-09_Lead_Architect_LLM_Expert_Dominant_Claim_Implementation_Plan_RevA.md` as the authoritative implementation-review artifact.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Plan Tightening After Senior Developer Review
 **Task:** Tighten the dominant-claim implementation plan after the Senior Developer review so the next review sees the exact gating conditions in the plan itself.
@@ -68,7 +242,6 @@
 **Warnings:** Hydrogen remains invalid as a promotion control until rerun on the current stack.
 **For next agent:** Use the updated Rev A handoff, not the earlier April 9 snapshot. The current review-ready plan now contains the predicate, gating, and multiplier policy requested by the Senior Developer review.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Plan Revision For Re-Review
 **Task:** Rewrite the dominant-claim implementation plan so it incorporates the strongest review findings and is ready for another review.
@@ -78,7 +251,6 @@
 **Warnings:** This remains a compensating control for Stage-1 extraction variance. Hydrogen must be rerun on the current stack before it is used as a promotion gate.
 **For next agent:** Review `Docs/AGENTS/Handoffs/2026-04-09_Lead_Architect_LLM_Expert_Dominant_Claim_Implementation_Plan_RevA.md` as the current implementation plan. Older April 8 handoffs are now background context, not the final execution order.
 **Learnings:** No
-
 ---
 ### 2026-04-08 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Debate Consolidation
 **Task:** Investigate live job `11a8f75cb79449b69f152635eb42663a`, compare other mixed-direction jobs, run an internal debate, and consolidate the recommended dominant-claim aggregation fix.
@@ -88,7 +260,6 @@
 **Warnings:** The target job already applies the current anchor boost, so tuning `anchorClaimMultiplier` alone will not solve this family. Free-form `VERDICT_NARRATIVE` override is also unsafe until the complete-assessment clamp is added.
 **For next agent:** Main decision record: `Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_LLM_Expert_Dominant_Claim_Debate_Consolidation.md`. Use Swiss target `11a8f75c...`, Swiss sibling `67a3d07d...`, hydrogen `a0c5e51e...`, and plastic control `70a3963c...` as the approval set.
 **Learnings:** No
-
 ---
 ### 2026-04-08 | Code Reviewer | GitHub Copilot (GPT-5.4) | Post-Approval Low-Finding Cleanup
 **Task:** Address the remaining low findings after the post-architect-fixes review approval.
@@ -98,7 +269,6 @@
 **Warnings:** None.
 **For next agent:** This cleanup is naming/formatting only; behavior was verified unchanged with the focused verdict-stage tests and a successful web build.
 **Learnings:** No
-
 ---
 ### 2026-04-08 | Lead Architect | GitHub Copilot (GPT-5.4) | Code Review Blockers Resolved
 **Task:** Address the review requesting changes on the April 8 quality-hardening work, with priority on the 5 blocker test failures and the related architectural regressions.
@@ -108,7 +278,6 @@
 **Warnings:** The focused tests pass and the web build succeeds, but no fresh live job rerun was executed in this step; queue reliability on local runner handoff was already known to be flaky earlier in the session.
 **For next agent:** If further review follows, validate the new aggregation baseline with fresh jobs rather than stale stored results. The semantic contracts restored here are covered by targeted tests in `verdict-stage.test.ts` and `claimboundary-pipeline.test.ts`.
 **Learnings:** No — repository memory updated instead for the validator/orchestrator boundary.
-
 ---
 ### 2026-04-08 | Lead Architect | GitHub Copilot (GPT-5.4) | Quality Plan Hardening Review
 **Task:** Architect-level review of the revised quality assessment and forward plan.
@@ -118,7 +287,6 @@
 **Warnings:** The plan should group Issue 2 + Issue 5 into a Stage-1 hardening track, but keep Issue 3 separate as verdict semantics hardening.
 **For next agent:** See `Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Quality_Plan_Hardening_Review.md`.
 **Learnings:** Yes — architecture review must validate prose against prompt contract, schema parsing, and report/UI consumption together.
-
 ---
 ### 2026-04-08 | Senior Developer | Claude Code (Opus 4.6) | Complete Quality Assessment — Revised Per LLM Expert Review
 **Task:** Full quality assessment + forward plan, then revised per LLM Expert review.
@@ -139,7 +307,6 @@
 **Open items:** Captain decision on revised ordering. Implementation of Priority 1a (schema fix).
 **For next agent:** The schema fix target is `claim-extraction-stage.ts:1655` — add `truthConditionAnchor` and `antiInferenceCheck` to `ClaimContractOutputSchema`, then wire the retry logic to read them. Full plan: `Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md`.
 **Learnings:** The "prompt ceiling" conclusion was premature — the runtime schema never parsed the strengthened fields. Always verify that prompt output changes are matched by corresponding schema changes before concluding a prompt approach has failed.
-
 ---
 ### 2026-04-08 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Aggregation Follow-Up
 **Task:** Re-investigate dominant-claim aggregation using live job `11a8f75cb79449b69f152635eb42663a`, compare mixed-direction controls, and consolidate a solution/plan for the Captain.
@@ -149,7 +316,6 @@
 **Warnings:** Increasing `anchorClaimMultiplier` alone is insufficient. The target job already gives AC_03 the anchor boost, yet the aggregate remains 65 because two timeline claims are still treated as co-equal. Relying on `VERDICT_NARRATIVE` alone is also unsafe until the complete-assessment override contract is enforced in code.
 **For next agent:** Reuse the existing handoff as the main architecture note, but carry forward these extra validation anchors: Swiss target `11a8f75c...`, Swiss sibling override `67a3d07d...`, hydrogen `a0c5e51e...`, and plastic control `70a3963c...`.
 **Learnings:** No
-
 ---
 ### 2026-04-08 | Senior Developer | Claude Code (Opus 4.6) | Fix 1 Strengthened Measurement — Modifier Preservation Still Failing + CH Regression
 **Task:** Run 5 Bundesrat canaries (3 RK + 2 CH) on strengthened Fix 1 build `70d4b9b3` and measure against invariants.
@@ -185,7 +351,6 @@
 **Warnings:** The chronology regression (TRUE 88 → FALSE 14) is the most concerning finding. It may indicate that stronger Stage 1 rules are creating a framing effect that bleeds into Stage 4 truth assessment.
 **For next agent:** Full measurement data in this entry. The decision is: revert the strengthening, keep the first Fix 1 (which had anti-inference working + 1/3 preservation), and consider whether a code-level structural check is needed for modifier preservation.
 **Learnings:** Prompt-level modifier preservation rules at the tested strength are insufficient to reliably change Haiku/Sonnet behavior on German legal qualifiers. The LLM treats "rechtskräftig" as a stylistic intensifier rather than a truth-condition modifier. Strengthening the prompt further risks downstream regression (observed: chronology variant collapsed).
-
 ---
 ### 2026-04-08 | LLM Expert | GitHub Copilot (GPT-5.4) | Fix 1 Prompt Strengthening for Proposition Anchoring
 **Task:** Strengthen Fix 1 after first measurement showed partial anti-inference success but unreliable modifier preservation and validator hallucination.
@@ -195,7 +360,7 @@
 **Warnings:** This is still a prompt-only fix. It improves structural traceability but does not add deterministic semantic enforcement. If preservation remains unstable after this round, the next step should be another LLM-led tightening or a structural post-check, not a lexical keyword heuristic.
 **For next agent:** Measure against the same Fix 1 invariants: modifier preserved in direct claims, no normative injection on chronology-only variants, stable direction on the anchored claim, zero validator hallucinations.
 **Learnings:** No
-
+---
 ### 2026-04-08 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Consolidated Investigation
 **Task:** Consolidate primary investigation (Claude), adversarial cross-review (GPT), and Captain corrections into one authoritative document.
 **Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md` (new)
@@ -204,7 +369,6 @@
 **Warnings:** The three Bundesrat jobs (`094e88fc`, `0afb2d88`, `b843fe70`) are verified on the deployed API (HTTP 200). They exist alongside the 6 publicly-listed deployed jobs, making 9 in-range deployed jobs total.
 **For next agent:** The consolidated document supersedes both the primary investigation and the cross-review for decision-making. Source docs remain as audit trail. Priority 1 fix target: `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section.
 **Learnings:** No
-
 ---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Investigation — Final with Bundesrat Failures
 **Task:** Deep dual-environment investigation of all jobs from baseline `f1a372bf` through HEAD `442a5450`, plus detailed Bundesrat EU-Vertrag failure analysis.
@@ -235,7 +399,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** The Bundesrat family demonstrates that a single input can hit three independent failure modes at two different pipeline layers, producing a 70pp spread. This is the highest-severity quality finding in the current investigation.
 **For next agent:** Full investigation with all findings: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. The three Bundesrat critical findings are documented with exact job IDs, per-claim evidence, and root-cause analysis. The fix targets are: (1) `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section for predicate preservation + anti-inference, (2) `apps/web/src/lib/analyzer/aggregation-stage.ts` and VERDICT_NARRATIVE prompt for core-assertion weighting.
 **Learnings:** No
-
 ---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Job Quality Investigation
 **Task:** Deep investigation of all local (39) and deployed (74) jobs from baseline `f1a372bf` through HEAD `442a5450`, covering both environments.
@@ -245,7 +408,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** The Plastik local-vs-deployed divergence is the largest unexplained cross-environment gap. Deployed Plastik found far fewer contradicting items than local, producing LEANING-TRUE vs LEANING-FALSE.
 **For next agent:** Full investigation: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. Priority: Phase C > deploy Phase B > grounding monitoring.
 **Learnings:** No
-
 ---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B Canary Measurement — `helps`
 **Task:** Run 4 hard-family canaries on `442a5450` (Phase B: per-claim researched-iteration floor) and measure whether previously skipped claims now receive research.
@@ -255,7 +417,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** The per-claim floor increases total evidence volume, which amplifies Stage 3 concentration on families where clustering is already fragile (Plastik, Bolsonaro).
 **For next agent:** Phase B is validated and should be kept. The ledger proves the forced iterations are productive. Next target: Stage 3 clustering behavior with larger evidence pools. Full data: `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md`.
 **Learnings:** No
-
 ---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B — Per-Claim Researched-Iteration Floor
 **Task:** Implement per-claim researched-iteration floor for Stage 2 sufficiency, addressing seeded-evidence dominance found by Phase A-2 telemetry.
@@ -265,7 +426,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** None.
 **For next agent:** The fix targets the exact pattern from Phase A-2 ledger: Plastik AC_01 had 41 seeded/0 researched. After this change, AC_01 must receive at least 1 targeted iteration. The `claimAcquisitionLedger` will show whether the forced iteration produces useful evidence or is a zero-yield pass.
 **Learnings:** No
-
 ---
 ### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase A-2 Telemetry Canary Measurement
 **Task:** Run 4 hard-family canaries on `b130d00c` (A-2 telemetry build), extract `claimAcquisitionLedger`, diagnose A-1 effect and next Stage-2 slice.
@@ -275,7 +435,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** Anthropic API was under heavy load — clustering Sonnet calls took 30-60+ min instead of typical 2-5 min. Not a code issue.
 **For next agent:** The ledger data is in `resultJson.claimAcquisitionLedger`. Key fields: `seededEvidenceItems`, `iterations[].admittedEvidenceItems`, `iterations[].directionCounts`, `finalEvidenceItems`, `finalDirectionCounts`, `maxBoundaryShare`. Full analysis: `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md`.
 **Learnings:** No
-
 ---
 ### 2026-04-06 | Senior Developer | Claude Code (Sonnet 4.6) | UPQ-1 Cross-Review — Resequenced Phase A Soundness
 **Task:** Cross-review the consolidated UPQ-1 architecture review: is Phase A-1 (wire existingEvidence summary into GENERATE_QUERIES) → A-2 (telemetry) → gate → B the right sequence?
@@ -285,7 +444,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** (1) `state.evidenceItems` is the whole-pipeline accumulator — not pre-filtered to `targetClaim.id`. If Phase A-1 passes it unsifted to the prompt, the evidence summary includes evidence for sibling claims, which may produce incorrect "already-covered" signals. (2) `queryGenerationTemperature: 0.2` is conservative for a diversity task; a summary that signals coverage gaps may not be enough if temperature suppresses divergence. Consider whether 0.3–0.4 is worth testing as Phase A-2 telemetry lands.
 **For next agent:** Required plan change: `generateResearchQueries()` must filter `existingEvidence` to items where `relevantClaimIds.includes(claim.id)` before building the summary. This is a one-liner but critical for correctness. Full review text is in the chat response above.
 **Learnings:** No
-
 ---
 ### 2026-04-06 | Senior Developer | Claude Code (Opus 4.6) | Cross-Boundary Tension Investigation
 **Task:** Investigate whether cross-boundary tensions increased since previous deployment, find root causes, propose fixes.
@@ -295,7 +453,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** `boundaryFindings` in `mergedVerdict` at `verdict-stage.ts:1022` are advocate-era — reconciliation updates truth/confidence/reasoning/citations but NOT per-boundary findings. Stage 5 narrates tensions from pre-challenge data.
 **For next agent:** Fix 1: `aggregation-stage.ts:388` — add `aggregation` and `evidenceSummary` variables. Fix 2: `verdict-stage.ts:1022` — either have reconciler return updated boundaryFindings, or derive post-reconciliation boundary summary. Fix 3: tighten VERDICT_NARRATIVE prompt to classify methodology/singleton caveats as `limitations`. Full plan: `Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md`.
 **Learnings:** No
-
 ---
 ### 2026-04-06 | Research | Claude Code (Sonnet 4.6) | Cross-Boundary Tension Analysis — All Deployed Jobs
 **Task:** Extract cross-boundary tension data from all recent deployed jobs; compare previous deployment (b77838727ae6) vs current (2ec540473716).
@@ -305,7 +462,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** Only 2 jobs are available for the current commit `2ec540473716`, so the comparison has low statistical power. Both current-commit jobs involve complex multi-boundary queries (Swiss fact-checking, misinformation tools) which naturally generate more tensions than simple factual queries.
 **For next agent:** See Section 4 of the report below for the comparison finding. Short version: average tensions are higher on the current commit (2.00 vs 0.44), but this is almost certainly topic-driven rather than a pipeline regression — the previous commit's 9 jobs included many simple/factual queries (Meta exit, Earth roundness, Google ClaimReview) that reliably produce 0 tensions. Full per-job tension text is in `C:/tmp/tension_analysis_report.txt`.
 **Learnings:** No
-
 ---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | sufficiencyMinMainIterations Experiment + AC_02 Check — Deploy
 **Task:** Test whether raising `sufficiencyMinMainIterations: 1 → 2` closes the Bolsonaro EN local-vs-deployed gap, then check AC_02 evidence thinness.
@@ -315,7 +471,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** None.
 **For next agent:** AC_02 check confirms genuine source scarcity, not starvation. AC_02 gets zero seeded items in both local AND deployed. Its 14 vs 21 item gap is proportional to iteration count (4 vs 6), driven by Stage 1 event-count variance (5 vs 7 distinct events). AC_02's sources have zero overlap with siblings — no budget competition. **Recommendation: deploy.** The local build is clean; remaining gap is fully explained by non-actionable factors.
 **Learnings:** No
-
 ---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Grounding Alias Fix — Validated
 **Task:** Implement and validate grounding-validator alias fix for timestamp-ID false positives on Bolsonaro EN and Plastik DE.
@@ -325,7 +480,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** None.
 **For next agent:** Full handoff: `Docs/AGENTS/Handoffs/2026-04-05_Senior_Developer_Grounding_Alias_Fix_Validation.md`. Clean canary jobs: Bolsonaro `703c261d05744fdf8ddc70ce3afa5145` (LEANING-TRUE 64/58, zero grounding/direction warnings), Plastik `da1180edfae445f8a93bbcbaa2e50144` (LEANING-FALSE 41/66, one genuine cross-claim warning only).
 **Learnings:** No
-
 ---
 ### 2026-04-05 | LLM Expert | Codex (GPT-5) | Review Keep-or-Revert Decision for 07cb2e0d
 **Task:** Review whether commit `07cb2e0d` (`fix(prompts): soften multi-jurisdiction query mandate to respect query budget`) should remain in the next deploy candidate, based on the actual prompt diff and the available local/deployed multi-jurisdiction job evidence.
@@ -335,7 +489,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** Keeping the commit still carries a plausible risk that the softer wording under-covers one jurisdiction in some future multi-jurisdiction claims when the query budget is tight. That risk is plausible, not proven by the current evidence set.
 **For next agent:** If you need to resolve the remaining uncertainty efficiently, run one controlled same-input multi-jurisdiction A/B canary with this line toggled and compare only the generated queries plus first-iteration retrieval coverage per listed jurisdiction. Swiss-vs-Germany and Bolsonaro EN are the best current candidates.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Bolsonaro EN & Plastik DE Local Quality Investigation + Fix
 **Task:** Deep investigation of why local build `07cb2e0d` is not deployment-ready on Bolsonaro EN and Plastik DE, with artifact-level analysis of all 6 anchor jobs. Then implement the primary fix.
@@ -345,7 +498,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** None after fix. The alias map is scoped entirely to the grounding validation call — no impact on pipeline IDs, result JSON, or other stages.
 **For next agent:** Fix is committed (`cbb364ec`). Next step is rerunning local Bolsonaro EN and Plastik DE canaries to validate. If grounding warnings disappear and verdicts are stable, Plastik is deployment-ready; Bolsonaro needs the retrieval-depth check.
 **Learnings:** No
-
 ---
 ### 2026-04-05 | Senior Developer | Claude Code (Opus 4.6) | Post-Review Fixes (3 items)
 **Task:** Implement three approved fixes from 2026-04-05 code review: EN supplementary lane geography omission, AppBuildInfo stdout deadlock, Stage-4 parse recovery root validation.
@@ -355,7 +507,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** (1) 8 existing tests in `claimboundary-pipeline.test.ts` used ADVOCATE (array-expected) with object responses — updated to use correct root types. One test ("prose-wrapped single-object despite array-root preference") was explicitly testing old accept-any-root behavior — updated to expect rejection. (2) API build warning MSB3026 (locked exe) is from a running API process — harmless.
 **For next agent:** All three fixes are self-contained. No follow-up work needed unless validation runs reveal regression.
 **Learnings:** No
-
 ---
 ### 2026-04-04 | Lead Architect | Claude Code (Opus 4.6) | Source Provenance Tracking Design
 **Task:** Design a system to trace evidence back to original creators for misinformation/propaganda detection. Internal 4-perspective debate + GPT review + consolidation.
@@ -411,7 +562,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **For next agent:** The repository is clean. Proceed to the next item since the narrow hardening has officially merged into the post-rollback baseline.
 **Learnings:** Search API unit tests can spuriously fail if local .env.local API keys are omitted or rate-limits hit. These do not block analytical pipeline regressions.
 ---
-
 ### 2026-04-01 | LLM Expert | Codex (GPT-5) | Multilingual Docs Sync After Review Fixes
 **Task:** Update the multilingual review/status docs after follow-up implementation commits closed the last review findings.
 **Files touched:** `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
@@ -420,7 +570,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** This sync is based on code review plus the implementer-reported verification state (`1502` tests passed, build clean). I did not rerun the suite or build myself.
 **For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md` as the current validation gate. Earlier review findings in the prior 2026-04-01 entry are historical and no longer open.
 **Learnings:** no
-
 ---
 ### 2026-04-01 | LLM Expert | Codex (GPT-5) | Multilingual Output/Search Review + Validation Plan + Status Sync
 **Task:** Review the shipped multilingual output/search implementation, draft a validation plan for the experimental EN supplementary lane, and update status docs to match what actually shipped.
@@ -430,7 +579,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** This review is based on the shipped diffs and local code state. I did not rerun the 1497-test suite or the build myself.
 **For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md` as the main summary of residual risks and the validation gate. The most important next work is validation and Stage-2 hardening, not additional architecture debate.
 **Learnings:** no
-
 ---
 ### 2026-04-01 | Lead Architect | Gemini 3.1 Pro | Stage 1 Narrow Hardening - Architect Review
 **Task:** Review two proposed narrow post-rollback Stage-1 hardening changes against the Apr 1 baseline.
@@ -441,7 +589,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **For next agent:** Read Docs/WIP/2026-04-01_Stage1_Narrow_Hardening_Architect_Review.md and implement both changes simultaneously in claim-extraction-stage.ts.
 **Learnings:** no
 ---
-
 ### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Multilingual Output/Search Policy (Proposal 2)
 **Task:** Implement approved Proposal 2: LanguageIntent as explicit pipeline state with reportLanguage threading through Stage 4/5.
 **Files touched:** `types.ts` (LanguageIntent + RetrievalLanguageLane + SearchQuery lane fields + CBResearchState.languageIntent), `claimboundary-pipeline.ts` (init LanguageIntent after Stage 1, thread to Stage 4/5, persist in resultJson), `verdict-stage.ts` (reportLanguage on VerdictStageConfig + advocate/reconciliation payloads + runVerdictStage parameter), `verdict-generation-stage.ts` (reportLanguage parameter + config threading), `aggregation-stage.ts` (reportLanguage on generateVerdictNarrative + forwarded from state), `research-orchestrator.ts` (language/languageLane on search queries), `claimboundary.prompt.md` (reportLanguage directives on VERDICT_ADVOCATE, VERDICT_RECONCILIATION, VERDICT_NARRATIVE).
@@ -449,7 +596,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **What's NOT implemented (deferred per design):** English supplementary retrieval lane logic in Stage 2 (only lane metadata). UI/chrome localization. Full search-cache language partitioning. Stage 5 deterministic fallback localization (documented as English-only).
 **Verification:** 1492 tests pass, build clean.
 **For next agent:** reportLanguage is now a first-class cross-stage contract. Non-English inputs should produce German/French/etc report text on the next live run. English supplementary retrieval is metadata-ready but the decision logic (when to add EN lane) is not yet implemented.
-
 ---
 ### 2026-04-01 | Senior Developer | Claude Code (Opus 4.6) | Post-Rollback Live Validation (17 runs)
 **Task:** Validate the post-rollback baseline across all families that motivated the rollback plus broader coverage.
@@ -460,7 +606,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Quality evolution analysis (extended):** Added full family trend tables (109 runs, 14+ families), structural defect trends (integrity failures eliminated, contract fail-open intermittent), cross-linguistic neutrality gap (Plastik FR 35-40pp below EN), SRG instability analysis (61pp spread, 11% contract fail-open). All new Apr 1 families (BBC, Bali, Sexual orientation, Global warming, Iran) produce clean directionally-correct results.
 **Conclusion:** Rollback baseline is confirmed stable. Two dominant open problems: SRG decomposition instability (61pp spread) and Plastik cross-linguistic neutrality gap (FR 35-40pp below EN). Both predate the reverted experiment.
 **For next agent:** Full report at `Docs/WIP/2026-04-01_Post_Rollback_Validation_Report.md`. The reverted features (evidence-separability, distinctEvents granularity) were directionally right but had two sub-problems: contract validation fail-open (SRG) and candidate selection preferring bad merges (Plastik). A revised approach needs to solve both before re-shipping.
-
 ---
 ### 2026-04-01 | Lead Architect | Codex (GPT-5) | Clean Replay of `fff7a508` Rollback
 **Task:** Recreate the rollback cleanly after the branch had drifted into a mixed Stage-1 state, then verify the post-rollback baseline.
@@ -468,7 +613,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **What changed:** Created a safety branch at the mixed-state head (`backup/2026-04-01-pre-stage1-reset`), reset `main` to `d04fc750`, then reverted in dependency order: first `d04fc750`, then `fff7a508`. During the `fff7a508` revert, resolved prompt/history conflicts by preserving later unrelated work, keeping the later representational-drift rule from `0758bef1`, and removing the stale `evidenceSeparable` contract-validation prompt field so the prompt matches the reverted code/schema again.
 **Verification:** Post-rollback tree is clean. Safe suite passed: `npm test`. `claim-contract-validation.test.ts` passed. A build run was interrupted once during the conflict-resolution phase and should be re-run on the final clean state before treating this as the new baseline.
 **For next agent:** Current branch state is the clean rollback target. If you need the abandoned mixed state for comparison, it is preserved on `backup/2026-04-01-pre-stage1-reset`. Later unrelated fixes remain in history unless separately reverted. The next useful step is a final `npm -w apps/web run build` on the settled tree, then live validation of the affected SRG/Plastic/Bolsonaro families against this restored baseline.
-
 ---
 ### 2026-03-31 | Senior Developer | Codex (GPT-5) | Source Fetch Failure Reduction Follow-up Fix
 **Task:** Correct the just-implemented source-fetch short-circuit so it matches the approved low-risk plan, then update the plan doc and verification coverage.
@@ -478,7 +622,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** The working tree already contained unrelated documentation edits outside this task. I did not touch or revert them.
 **For next agent:** Safe verification passed on current working tree: `npm -w apps/web exec vitest run test/unit/lib/analyzer/research-acquisition-stage.test.ts`, `npm test`, and `npm -w apps/web run build`. New focused tests cover streak reset after a non-blocking outcome, exclusion of skipped URLs from `attempted`, and delayed same-batch sibling suppression under concurrent batching.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Claude Code (Opus 4.6) | DistinctEvents Event-Granularity Architect Review
 **Task:** Review adjusted `distinctEvents` event-granularity fix proposal for Bolsonaro multi-proceeding degradation.
@@ -486,7 +629,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Key findings:** (1) Diagnosis correct: Bolsonaro "various/all" degradation is event-granularity at Stage 1, not Stage 4/5. All 3 anchor jobs extract STF lifecycle milestones instead of STF+TSE peer proceedings. (2) "Independently researchable" standard is right but should be phrased as "requiring different evidence sources or institutional authorities." (3) Prompt-only is the correct first step — LLM repair pass deferred. (4) Lifecycle phases must be preserved for single-process inputs. (5) Evaluative/compound non-event inputs (SRG, Homeopathy, Plastik) must remain inert.
 **Decision:** `Adjusted prompt-only distinctEvents fix justified`. Proposed specific prompt change at claimboundary.prompt.md:202-207 — revise Include rules to add granularity rule steering multi-proceeding inputs toward peer extraction while preserving lifecycle for single-process inputs.
 **For next agent:** Full review at `Docs/WIP/2026-03-31_DistinctEvents_Event_Granularity_Architect_Review.md`. Prompt change requires human approval. Validation gate: 3 positive Bolsonaro multi-proceeding runs + 4 guardrail runs (single-proceeding, SRG, evaluative).
-
 ---
 ### 2026-03-31 | Senior Developer | Claude Code (Opus 4.6) | Source Fetch Failure Reduction (Domain Short-Circuit + Warning Enrichment)
 **Task:** Implement approved source fetch failure reduction: domain-level short-circuit for 401/403 and error-type enrichment in warnings.
@@ -496,7 +638,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Scope caveat:** Short-circuit operates per `fetchSources()` call (one query batch), not across the entire analysis run. Concurrent in-flight requests within a batch may not be skipped — this is best-effort by design.
 **Tests:** 8 new tests: 403 skip, 404 no-skip, timeout no-skip, independent domain tracking, threshold=0 disabled, warning message enrichment, humanizeErrorType mapping. 1492 total pass. Build clean.
 **For next agent:** No new warning type registered. Observability via existing `source_fetch_failure` details field.
-
 ---
 ### 2026-03-31 | Lead Architect | Claude Code (Opus 4.6) | Source Fetch Failure Investigation + Reduction Plan
 **Task:** Investigate why source fetch failures are frequent and URLs work in browser but fail in pipeline.
@@ -504,7 +645,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Key findings:** (1) 46% failure rate across sampled warnings — operationally expected for server-side fetching. (2) Dominant failure (56%) is HTTP 403 from paywall/bot-blocking/Cloudflare JS challenges — structurally unfixable without headless browser. (3) Pipeline retries same blocked domain repeatedly within a run, wasting time. (4) Warning messages don't tell users *why* fetches failed.
 **Proposed:** (1) Domain-level fetch short-circuit after 2 consecutive deterministic failures (~30 lines, UCM-configurable). (2) Error-type enrichment in warning messages (~10 lines). Both code-only, no analytical behavior change.
 **For next agent:** Full plan at `Docs/WIP/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md`. Implementation in `research-acquisition-stage.ts`.
-
 ---
 ### 2026-03-31 | Senior Developer | Claude Code (Opus 4.6) | Ghost Boundary Sanitization + Grounding Validation Fix
 **Task:** Fix two defects from job `696d8140`: ghost boundary IDs passing through advocate parsing, and grounding validation false positives from FLOOD-1 source portfolio expansion.
@@ -513,7 +653,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Fix 2 (grounding validation):** Added `sourcePortfolioByClaim` to `VerdictValidationRepairContext`. Threaded `fullPortfolio` through. Flattened source portfolio (sourceId + domain) passed to grounding validation input. Prompt updated with rule: source portfolio references are valid context, not hallucinated evidence.
 **Tests:** Ghost boundary stripped (1), cross-claim boundary stripped (1), grounding receives source portfolio (1), existing portfolio test fixed to use real `buildCoverageMatrix`. 1484 total pass. Build clean.
 **For next agent:** Fix 3 (optional prompt hardening for VERDICT_ADVOCATE boundary IDs) is deferred — can be picked up later.
-
 ---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Unify VERDICT_DIRECTION_VALIDATION Contract
 **Task:** Fix review blocker — `validateDirectionOnly()` passed top-level `evidencePool` while batch path embedded it per-verdict. Unified on per-verdict shape.
@@ -522,7 +661,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Not changed:** `VERDICT_DIRECTION_REPAIR` (single-claim top-level `evidencePool` is correct). Grounding validation (correctly global).
 **Verification:** 157 verdict-stage tests pass. 1481 total tests pass. Build clean.
 **For next agent:** The `VERDICT_DIRECTION_VALIDATION` prompt now has one consistent contract: `${verdicts}` contains an array where each verdict includes its own `evidencePool`. No separate top-level `${evidencePool}` is used. `VERDICT_DIRECTION_REPAIR` is unchanged.
-
 ---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Claim-Local Verdict Scope Fix
 **Task:** Fix structural bug where direction validation/repair uses full boundary evidence pool instead of claim-local evidence, causing false `verdict_integrity_failure` downgrades (9e4d anchor case).
@@ -532,7 +670,6 @@ Only one run (`0afb2d88`) decomposed correctly, but even that failed at aggregat
 **Warnings:** The prompt contract for `VERDICT_DIRECTION_VALIDATION` now receives `evidencePool` inside each verdict object rather than as a sibling field. This is a structural improvement but changes the input shape.
 **For next agent:** Full handoff at `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_Claim_Local_Verdict_Scope_Fix.md`. Verification: 1481 tests pass, build succeeds. Ready for human review and commit.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Gemini 3.1 Pro | 9e4d SRF Factchecking Investigation Review
 **Task:** Adjudicate the root cause of the AC_02 failure in job 9e4d3712e12d49bc8cadd601766e5f4b.
@@ -543,7 +680,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Warnings:** Do not implement Stage 1 drift heuristics yet; do not restore the ±10pp clamp as it played no part in this failure.
 **For next agent:** Read Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md. Implement Option B local scoping for verdict stage validation.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | 9e4d SRF Factchecking — Architect Review
 **Task:** Adjudicate competing explanations for AC_02 `verdict_integrity_failure` in job `9e4d`.
@@ -551,7 +687,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key findings:** (1) Direction validation at `verdict-stage.ts:1091-1094` passes full evidence pool, not claim-local. AC_02's integrity downgrade cites 6 supports (EV_001-006) that belong to AC_01. (2) AC_02's actual claim-local pool is 4 neutral items — the cross-claim contamination is the scoping bug, not just thin evidence. (3) Stage 1 proxy decomposition is a contributing cause but not the primary bug. (4) ±10pp clamp removal had zero effect (LLM kept truth at 58). (5) Grounding validation correctly uses full pool (checking ID existence is global). (6) `isVerdictDirectionPlausible()` correctly uses cited arrays.
 **Decision:** `Claim-local verdict-scope fix justified`. Code-only fix: filter `evidence` to claim-local items before passing to direction validation and repair LLM calls. ~5 lines per call site. Stage 1 prompt hardening is a separate follow-up.
 **For next agent:** Full review at `Docs/WIP/2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md`. Two call sites to fix: direction validation (line 1091) and repair (line 1547). Grounding validation (line 1072) stays full-pool. Fallback: if claim-local is empty, use cited evidence, then full pool with warning.
-
 ---
 ### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | Article Adjudication: Hybrid Clamp vs LLM-Led Review
 **Task:** Evaluate whether the ±10pp truth clamp and confidence ceiling in Stage 5 article adjudication violate the LLM Intelligence mandate.
@@ -559,7 +694,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key decisions:** (1) Confidence ceiling (adjusted ≤ deterministic) is a valid structural invariant — "unresolved claims add uncertainty, never remove it." Keep. (2) ±10pp truth clamp is a semantic analytical constraint — it limits how the LLM interprets the impact of unresolved claims. Violates AGENTS.md LLM Intelligence mandate. Remove. (3) Schema validation (0-100), `Number.isFinite` guard, and deterministic fallback are structural plumbing. Keep. (4) Prompt should soften "±10pp" to "adjust conservatively" — soft guidance, not hard bound.
 **Decision:** `Pure LLM article adjudication justified` — Option B (remove truth clamp, keep confidence ceiling). ~4 lines code, ~2 lines prompt. 2 tests rewrite, 2 new tests.
 **For next agent:** Full review at `Docs/WIP/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`. Code change in `aggregation-stage.ts:232-236`. Prompt change in `claimboundary.prompt.md:1366`. Prompt change requires human approval.
-
 ---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Quality Evolution Deep Analysis + Doc Sync
 **Task:** 100-job quality evolution analysis across 12 input families. Comprehensive doc sync.
@@ -567,7 +701,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Critical finding:** Plastik cross-linguistic neutrality gap — 58pp spread (DE 33% / EN 72% / FR 13%). Same semantic claim, directionally opposite verdicts. Driven by Stage 2 evidence language bias. Not covered by EVD-1.
 **Status updates:** All integrity fixes marked DONE. NEUTRALITY-1 and FLAT-EARTH-1 added. Cross-linguistic neutrality is next quality gap.
 **For next agent:** Read the quality evolution report. NEUTRALITY-1 needs Captain decision on EVD-1 cross-linguistic thresholds.
-
 ---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | Report Matrix + LLM Article Adjudication
 **Task:** Fix UNVERIFIED claims missing from matrix and ignored in article verdict.
@@ -575,7 +708,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **What changed:** (1) Report matrix now built from ALL final claim verdicts, not just assessable claims — UNVERIFIED claims get visible columns. (2) VERDICT_NARRATIVE LLM now returns `adjustedTruthPercentage` and `adjustedConfidence` — pipeline uses these as final article values with ceiling constraint (confidence can only decrease) and ±10pp truth bound. Falls back to deterministic on any parsing failure.
 **Validation:** Partial-insufficient run (`f80b6b41`): confidence dropped from ~65 to 40, matrix shows all 3 claims, article honestly reflects incomplete coverage. Fully-assessed controls (Bolsonaro, Hydrogen): adjudicated numbers match deterministic output. No regressions.
 **For next agent:** No new LLM call added. Existing VERDICT_NARRATIVE call extended. Ship together — matrix without adjudication creates a visible inconsistency.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 2705 + e407 Root Fix — Reviewer Notes
 **Task:** Code/Architecture review of the revised 2705/e407 root-fix proposal.
@@ -583,7 +715,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key findings:** (1) Proposal correctly targets the root bug at line 561, not downstream. (2) `runVerdictStageWithPreflight` already guards `claims.length === 0` — no redundant guard needed. (3) `buildCoverageMatrix` handles empty claims correctly. (4) Aggregation self-corrects for all-zero-confidence but NOT for Stage-4's spurious confidence=30 — confirming the short-circuit is a correctness fix. (5) Verdict uniqueness should assert-not-dedup. (6) gate4Stats needs no separate fix.
 **Decision:** `Approved as root-fix path`. No revision needed. Two implementation cautions noted for the implementing agent.
 **For next agent:** The plan is approved. Implement by changing `activeClaims` to `assessableClaims = sufficientClaims` (removing the fallback), fixing matrix labels in `page.tsx`, and adding a uniqueness assertion (not dedup) after verdict assembly. No prompt change needed.
-
 ---
 ### 2026-03-29 | Senior Developer | Codex (GPT-5) | 2705 + e407 Root Fix Review Tightening
 **Task:** Re-tighten the `2705 / e407` architect review so it is ready for another review round after concerns that the previous package still mixed root fixes with symptom cleanup.
@@ -593,7 +724,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Warnings:** The review now cleanly separates the `e407` integrity bug from the residual Stage-1 recurrence family. Do not collapse those back together in execution planning.
 **For next agent:** The updated review is at [2026-03-29_2705_e407_Root_Fix_Architect_Review.md](C:/DEV/FactHarbor/Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md). If implementation is requested next, the package should be: assessable-claims short-circuit, verdict-uniqueness invariant, and matrix label alignment, with Stage-1 Step 4 explicitly deferred.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 2705 + e407 Root Fix — Architect Review
 **Task:** Re-open the 2705/e407 issue family and find the best root-cause solution.
@@ -602,7 +732,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Implementation order:** (1) All-insufficient short-circuit in pipeline. (2) Matrix label alignment in page.tsx. (3) Aggregation dedup guard. All code-only, single commit.
 **Open items:** None — all code-only.
 **For next agent:** Full review at `Docs/WIP/2026-03-29_2705_e407_Root_Fix_Architect_Review.md`. All three fixes are in `claimboundary-pipeline.ts`, `page.tsx`, and `aggregation-stage.ts` respectively. No prompt change needed.
-
 ---
 ### 2026-03-30 | Senior Developer | Claude Code (Opus 4.6) | 2705/e407 Root Fix — Assessable-Claims + Verdict Uniqueness + Matrix
 **Task:** Fix all-insufficient fallback integrity failure and Coverage Matrix mismatch.
@@ -610,7 +739,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **What changed:** (1) `activeClaims` fallback removed — Stage 4 only gets D5-sufficient claims. (2) Duplicate `claimId`s in verdicts throw hard failure. (3) Matrix labels from `coverageMatrix.claims`.
 **Validation:** 5 jobs, zero dup IDs, matrix aligned. 2705: AC_01 in matrix only, AC_02 UNVERIFIED (correct).
 **For next agent:** Report at `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_2705_e407_Root_Fix_Implementation.md`.
-
 ---
 ### 2026-03-29 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 Claim Decomposition Fix (3-Step)
 **Task:** Implement approved 3-step fix for b8e6/8640/cd4501 claim decomposition failures.
@@ -618,7 +746,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Step 2 is the primary fix.** Evidence-separability check caught 8640/cd4501 4-claim over-fragmentation and triggered merge to 2 claims. UNVERIFIED starvation eliminated. Step 1 near-zero practical impact (classification changed). Step 3 provides re-validation safety net.
 **Validation:** 5 jobs. 8640 family fixed (4→2 claims, MOSTLY-TRUE 72/73). Bolsonaro preserved (2 claims, no regression). Controls clean. b8e6 still over-fragments (needs Pass 2 refinement, documented).
 **For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Stage1_Claim_Decomposition_Fix.md`. b8e6 residual is a separate Pass 2 issue.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | Claim Decomposition Plan — Stress Test
 **Task:** Adversarial quality-bar review of the approved 3-step decomposition fix plan before implementation.
@@ -626,7 +753,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key findings:** (1) Step 1 (fallback removal) is practically inert on current data — all 7 affected jobs had claims that passed Gate 1 fidelity independently; the dimension-tag exemption was never exercised. (2) Step 3 (retry hardening) has no trigger without Step 2 for 8640-class failures. (3) Step 2 (contract evidence-separability) is the critical path and primary fix. (4) Sequence is pragmatically correct but analytically inverted — Steps 1+3 are preparatory infrastructure, not the primary defense.
 **Decision:** `Plan approved with sequencing changes` — ship Steps 1+3 now as code-only preparatory work, but reframe: the decomposition problem is not resolved until Step 2 (prompt, needs approval) is live.
 **For next agent:** The code-only changes (Steps 1+3) are safe to implement. Step 2 approval is the critical path. Full stress-test report at `Docs/WIP/2026-03-29_Claim_Decomposition_Plan_Stress_Test.md`.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | b8e6 + 8640 + cd4501 Claim Decomposition — Architect Review (Rev 2)
 **Task:** Adjudicate shared Stage-1 claim-decomposition problem behind three SRG SSR jobs. Supersedes 2-job version.
@@ -634,7 +760,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key decisions:** (1) Four failure layers identified: fallback heuristic (b8e6), contract-validation blind spot (8640), Pass 2 over-fragmentation (contributing), retry-path failure (cd4501). (2) cd4501 is decisive — contract validation caught the problem but retry reproduced the same split because guidance addresses proxy drift, not over-fragmentation. (3) No re-validation after retry. (4) Recommended: Option D — fallback removal + contract evidence-separability + retry hardening. Steps 1+3 are code-only and can ship together. Step 2 requires prompt approval.
 **Open items:** Step 2 (contract-validation evidence-separability prompt) requires explicit human approval. Coverage-matrix communication gap noted as separate UI follow-up.
 **For next agent:** Full review at `Docs/WIP/2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md`. Steps 1+3 (fallback removal + retry hardening) are code-only and can ship in one commit. Step 2 needs prompt approval.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | b8e6 + 8640 Claim Decomposition — Architect Review
 **Task:** Adjudicate shared Stage-1 claim-decomposition problem behind two SRG SSR jobs.
@@ -643,7 +768,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Implementation order:** (1) Remove `single_atomic_claim` fallback from dimension-tagging heuristic (code-only, 3 locations). (2) Add evidence-separability check to CLAIM_CONTRACT_VALIDATION prompt (requires human approval). (3) Remeasure.
 **Open items:** Step 2 prompt change requires explicit human approval.
 **For next agent:** Full review at `Docs/WIP/2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md`. Step 1 is code-only, ~3 lines × 3 locations in `claim-extraction-stage.ts`.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | 1bfb Direction Integrity — Architect Review
 **Task:** Adjudicate competing explanations for AC_02 `verdict_integrity_failure` in job `1bfb` and decide canonical fix strategy.
@@ -652,14 +776,12 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Implementation order:** (1) Warning-state bug fix (code-only, ~2 lines). (2) Reconciliation citation-carriage fix (prompt schema + parser, requires human approval). (3) Remeasure direction-validator false-positive rate on clean data. (4) Only then consider direction-validator prompt/threshold changes.
 **Open items:** Prompt schema change requires explicit human approval. Post-fix measurement round needed (10 jobs, $5-10).
 **For next agent:** Full review at `Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md`. Step 1 (warning bug) is trivially shippable. Step 2 (citation-carriage) needs human approval for prompt change. The `Direction_Validator_False_Positive_Investigation.md` proposal is deferred until Step 3 measurement.
-
 ---
 ### 2026-03-29 | Lead Architect | Claude Code (Opus 4.6) | Seeded Evidence Mapping Fix — Revised Proposal (Rev 2)
 **Task:** Revise the seeded-evidence mapping proposal to reject Option B (all-claims fallback) and recommend Option C (post-Pass-2 LLM remap).
 **Files touched:** `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
 **Key decisions:** (1) Option B explicitly rejected — fabricates attribution. (2) Option C recommended — one batched Haiku remap call after Pass 2. (3) Options A/D rejected. (4) Option E deferred.
 **For next agent:** Full proposal at `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Internet Outage Resilience (OUTAGE-A1/A2/A4/A5)
 **Task:** Make jobs survive internet outages: classify network errors, trip the circuit breaker, abort damaged jobs, auto-resume.
@@ -667,14 +789,12 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Fixes:** (A1) `NETWORK_CONNECTIVITY_PATTERNS` in `error-classification.ts`. (A2) `maybeRecordProviderFailure()` in `verdict-generation-stage.ts`. (A4) `claimboundary-pipeline.ts` Stage 4 catch re-throws when `isSystemPaused()` — no damaged results. (A5) `probeAndMaybeResume()` in `internal-runner-queue.ts` — HEAD to Anthropic on each watchdog tick, auto-resumes if reachable.
 **Tests:** 10 new tests (8 classification + 2 auto-resume). 1428 total pass, build clean.
 **For next agent:** Pre-call fast-fail probe (A.3) is the remaining follow-on. Plan at `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md`.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Promote `preliminaryEvidenceLlmRemapEnabled` to Default-On
 **Task:** Flip default to `true` after Captain approval.
 **Files touched:** `config-schemas.ts` (DEFAULT_PIPELINE_CONFIG), `pipeline.default.json`, local UCM reseeded (hash `6900c4e4`).
 **Monitor:** Homeopathy-family confidence anomaly (74→24 in single ON run) — watch post-promotion, rollback flag available.
 **For next agent:** Flag is now default-on. Deployed systems get `true` on next deploy/reseed. Rollback via UCM Admin UI or file revert.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence Remap — Current-Stack Promotion Gate
 **Task:** Run controlled A/B comparison of `preliminaryEvidenceLlmRemapEnabled` on post-FLOOD-1 stack to determine promote-or-hold.
@@ -682,7 +802,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Key finding:** Bolsonaro A/B is decisive — same verdict (LEANING-TRUE), same truth% (64.3 vs 64.4), but seeded mapping 0%→92%. Mapping quality: 14/15 clearly correct, 1 borderline, 0 fabricated. Plastik DE neutral. Hydrogen stable. Homeopathy EN shows a confidence anomaly worth monitoring.
 **Recommendation:** **Promote to default-on.** The remap recovers claim-local attribution for semantic-slug families without verdict distortion, at ~$0.002/run cost.
 **For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Promotion_Gate.md`. Gate doc at `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` (updated, no longer parked). UCM flag currently OFF — Captain flip to default-on pending approval.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | FLOOD-1: Single-Source Flooding Mitigation (Fix 1 + Fix 2)
 **Task:** Implement approved single-source flooding mitigation for the ClaimAssessmentBoundary pipeline per `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`.
@@ -692,7 +811,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Open items:** Live validation required — 4 runs per investigation §12: 2× Bolsonaro, 1× Plastik DE, 1× Hydrogen.
 **Verification:** 1411 tests pass (70 files), build clean, config-drift clean, prompts reseeded (`df2b04aa → 9ba9f521`).
 **For next agent:** Run the 4-run validation plan. Success criteria: AC_01 TP rises toward 55-65 range, no source contributes >5 items, no regression on Plastik DE or Hydrogen. Anti-success: cap discards critical evidence from sole-provider sources, verdict ignores SR data despite prompt change.
-
 ---
 ### 2026-03-27 | Lead Architect | Claude Code (Opus 4.6) | Single-Source Evidence Flooding Investigation + Multi-Agent Debate
 **Task:** Investigate why job `efc5e66f` (Bolsonaro, MIXED 56/51) produced LEANING-FALSE on AC_01 instead of expected LEANING-TRUE.
@@ -703,7 +821,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Review corrections:** (1) Fix 1 scope expanded — not ~10 lines. (2) "SR inert" narrowed. (3) Fix 2 moved to same rollout. (4) Legacy weighting acknowledged as non-fallback for this case. (5) Cap tie-breaking described as blunt.
 **Open items:** Prompt-contract changes require explicit human approval. Validation: 4 runs.
 **For next agent:** Full investigation at `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md`. Ship Fix 1 + Fix 2 together. Fix 1 needs: (a) per-source portfolio summary in verdict payload modeled on `source-reliability-calibration.ts`, (b) prompt instructions in VERDICT_ADVOCATE/CHALLENGER/RECONCILIATION, (c) prompt reseed.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence LLM Remap — Validation Tightening
 **Task:** Close two gaps before promotion decision: (1) add successful-path unit test with mocked LLM, (2) run one additional Bolsonaro live validation.
@@ -712,7 +829,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Live run:** Bolsonaro-3 (`efc5e66f`) — extended input, 3 claims. MIXED 56.3/51.5. 27 seeded, 23 mapped, 4 unmapped — **85% remap success**. All claims have 4-6 sourceTypes, 9-10 domains. AC_02 UNVERIFIED is confidence-driven (41%), not diversity-starvation-driven (20 items, 4 sourceTypes, 9 domains).
 **Verification:** 1393 tests pass, build clean.
 **For next agent:** Handoff updated at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`. Both validation gaps closed. Promotion decision rests on 5 live runs (3 Bolsonaro, 1 Plastik DE, 1 Hydrogen) + 17 unit tests.
-
 ---
 ### 2026-03-27 | Senior Developer | Claude Code (Opus 4.6) | Seeded Evidence LLM Remap — Option C Implemented & Validated
 **Task:** Implement and validate Option C (post-Pass-2 LLM remap) for unresolved seeded preliminary evidence claim mapping.
@@ -721,1933 +837,6 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 **Validation:** 4 runs — Bolsonaro-1 (83% remap, LEANING-TRUE 61.6/67.8), Bolsonaro-2 (69% remap, LEANING-TRUE 64.0/66.5), Plastik DE (zero regression, all 43 mapped), Hydrogen (76% remap, MOSTLY-FALSE 18.5/77.7). Zero UNVERIFIED. No blanket inflation. Baseline had 0% seeded mapping for Bolsonaro.
 **Open items:** Default `false` — Captain decision to promote to `true`.
 **For next agent:** Full validation report at `Docs/AGENTS/Handoffs/2026-03-27_Senior_Developer_Seeded_Evidence_LLM_Remap_Experiment.md`. 1392 tests pass, build clean. UCM flag already active in local config.db. Ready for Captain review.
-
----
-### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Seeded Evidence Mapping Fix — Revised Proposal (Rev 2)
-**Task:** Revise the seeded-evidence mapping proposal to reject Option B (all-claims fallback) and recommend Option C (post-Pass-2 LLM remap).
-**Files touched:** `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** (1) Option B explicitly rejected — it fabricates claim attribution rather than repairing it, inflates diversity-aware sufficiency, D5, and coverage matrix metrics for all claims including irrelevant ones. (2) Option C recommended — one batched Haiku remap call after Pass 2, only for unmapped items, preserves right to return empty mappings. (3) Options A/D rejected (deterministic heuristics / prompt fragility). (4) Option E acknowledged as architecturally cleanest but too large for an interface-repair fix.
-**Open items:** Implementation of Option C requires Senior Developer — prompt design (`REMAP_SEEDED_EVIDENCE`), Zod schema, integration in claim-extraction-stage.ts after Pass 2, UCM toggle.
-**For next agent:** Full proposal at `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md`. Validation plan uses 4 runs (2× Bolsonaro, 1× Plastik DE, 1× Hydrogen). Anti-success criteria defined to detect disguised Option B behavior. Integration point is claim-extraction-stage.ts ~line 239, after Pass 2 and before understanding assembly.
-
----
-### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Next Workstream Decision — Four-Reviewer Panel
-**Task:** Determine whether the next active workstream should target quality, optimization, or neither.
-**Files touched:** `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Method:** Four-reviewer panel (Quality, Optimization, Code Reality, Challenger) with deep code verification, reconciled by Lead Architect.
-**Key findings:** (1) No quality track justified — QLT-4 showed hypothesis-before-measurement fails, amber is acceptable, remaining variance is content-driven. (2) No optimization track justified — stale baselines, negligible dollar impact at Alpha. (3) Code reality audit found `maxResearchIterations` docs claim "4/5" is wrong (actual: 10), UCM-1/UCM-2 backlog items partially stale, SR evaluation vs calibration distinction not clear in docs. (4) Challenger identified cheap high-learning backlog items being ignored: W15 fetch batching, P1-B parallelism, B-sequence validation.
-**Decision:** Do neither yet. But execute W15 domain-aware fetch batching (reliability fix, ~50-100 lines) as the single best next task within monitor mode. Then P1-B (latency), then B-sequence validation ($3-5).
-**Open items:** Stale doc corrections (maxResearchIterations, UCM-1/UCM-2, SR eval vs calibration distinction).
-**For next agent:** Full report in `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. W15 is the recommended first task — see Backlog for spec. No formal track opened. Monitor mode continues.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Gate 1 Thesis-Direct Rescue
-**Task:** Fix Gate 1 over-filtering of thesis-derived evaluative claims.
-**Root cause:** Combined opinion+specificity filter dropped claims that directly restate the user's thesis (e.g., "verdicts were fair" in Bolsonaro input). `thesisRelevance: "direct"` confirmed present on the filtered claim.
-**Fix:** Claims with `thesisRelevance === "direct"` exempt from the combined filter. Info-level `gate1_thesis_direct_rescue` warning emitted. Non-thesis claims still filtered normally.
-**Files:** `claim-extraction-stage.ts`, `types.ts`, `warning-display.ts`, `claimboundary-pipeline.test.ts`
-**Reviewed by:** Lead Architect (approved Option A), LLM Expert (confirmed code-level fix safer than prompt change).
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | B-Sequence Feature Validation
-**Task:** Validate whether shipped B-sequence quality features are operating as intended on real runs.
-**Jobs:** 5 diverse inputs (Plastik EN/DE, Flat Earth, Bolsonaro, Hydrogen).
-**Key findings:** 6/8 features validated and working (verifiability, misleadingness, self-consistency, evidence partitioning, direction validation, pro/con queries). 1 wiring gap: explanation quality rubric runs but output is dropped during resultJson serialization (2-line fix needed). 1 intentionally disabled (grounding enforcement). TIGERScore is off.
-**Wiring gap detail:** `assessment.explanationQualityCheck` is set at line 748 but `resultJson` assembly (lines 817-885) doesn't include it. Same for `tigerScore`.
-**For next agent:** Fix the wiring gap (add 2 fields to resultJson). No further B-sequence validation needed.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | P1-B: Preliminary Search Parallelism
-**Task:** Reduce Stage 1 latency by parallelizing preliminary search work.
-**Files touched:** `claim-extraction-stage.ts` (parallel claims + queries + source fetches), `claimboundary-pipeline.test.ts` (fixed mock state for warnings).
-**What was parallelized:** (1) Claims processed in parallel via `Promise.all` (was serial `for` loop). (2) Queries within each claim processed in parallel. (3) Source fetches within each query processed in parallel (was serial). All three levels were previously fully sequential.
-**What was kept safe:** Results collected locally per claim task, then merged deterministically into shared state in a single synchronous pass. Source IDs assigned during merge to avoid ID races. URL dedup via `seenUrls` Set.
-**No new UCM parameter** — the existing `parallelExtractionLimit` and `fetchSameDomainDelayMs` already control fetch concurrency. Preliminary search parallelism is structural, not configurable.
-**For next agent:** 1356 tests pass, build clean. No analyzer semantic changes. Stage 1 latency should improve proportional to the number of independent claim×query×fetch tasks.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | W15: Domain-Aware Fetch Batching
-**Task:** Implement same-domain fetch staggering to reduce fetch-collapse risk in Stage 2 source acquisition.
-**Files touched:** `research-acquisition-stage.ts` (new `extractDomain`, `computeBatchDelays` + stagger in `fetchSources`), `config-schemas.ts` + `pipeline.default.json` (`fetchSameDomainDelayMs`, default 500ms), `evidence-recency.ts` (fixed stale `CalculationConfig` alias), new `research-acquisition-stage.test.ts` (11 tests).
-**Mechanism:** Within each fetch batch, Nth same-domain request gets `(N-1) * delay` stagger. Cross-domain still parallel. `fetchSameDomainDelayMs: 0` disables.
-**For next agent:** 1356 tests pass, build clean. UCM-configurable. No semantic changes.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Public Version Provenance Fix
-**Task:** Fix `/api/version` returning `git_sha: null` in production.
-**Root cause:** Env var name mismatch. `deploy.sh` writes `GIT_COMMIT`; the version endpoint checked `GIT_SHA` / `VERCEL_GIT_COMMIT_SHA` / `SOURCE_VERSION` but not `GIT_COMMIT`. One-line fix: add `GIT_COMMIT` as first in the fallback chain.
-**Files touched:** `apps/web/src/app/api/version/route.ts`
-**For next agent:** After next deploy, `/api/version` will return the deployed commit hash publicly. No admin access needed for provenance checks.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Post-Deploy Parity Verification — Full Parity Confirmed
-**Task:** Verify production matches intended local baseline after `deploy-remote.ps1 -ForceConfigs`.
-**Method:** Probe job commit hash, admin config API hash comparison, prompt content string verification.
-**Result:** **Full parity confirmed.** Production at `cbc4cde4` — contains QLT-3, VAL-2, OBS-1. All 4 non-prompt config hashes match exactly. Prompt `claimboundary` hash matches and QLT-3 rules verified present in production content. No gaps.
-**For next agent:** Production is at parity. No further deploy action needed.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Local vs Deployed Parity Investigation
-**Task:** Structured comparison of local baseline vs deployed production commit `840e58d6`.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Local_vs_Deployed_Parity.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key findings:** 4 meaningful runtime differences: (1) QLT-3 prompt (3 facet-consistency rules) — **the single analytical difference**, (2) VAL-2 verdict badge gate + monotonic progress, (3) OBS-1 AsyncLocalStorage metrics isolation. Non-prompt UCM configs are likely identical (same file defaults, both force-reseeded). QLT-4 is net-zero (added+reverted). Config schemas identical.
-**For next agent:** Deploy `.\scripts\deploy-remote.ps1 -ForceConfigs` to bring production to parity. No QLT-4 risk — fully reverted.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Local UCM Cleanup — Stale Experiment Keys Removed
-**Task:** Review and clean local UCM config drift from experiment-era admin customizations.
-**Findings:** `pipeline/default` active blob contained 2 stale keys (`crossLinguisticQueryEnabled`, `supplementarySkewThreshold`) from Phase 2 v2 cross-linguistic experiment. `calculation/default`, `search/default`, and `sr/default` were clean. Zero live QLT-4 code remnants in source or tests.
-**Action:** Backed up `config.db`, force-reseeded via `reseed-all-prompts.ts --force`. Pipeline config updated from `232eba4f` → `86c66ac6`. Stale keys removed. All 4 non-prompt configs verified clean.
-**For next agent:** Local UCM baseline is now aligned with file-backed defaults. No stale experiment surface remains in code, config, or UCM.
-
----
-### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Post-Revert Doc Sync
-**Task:** Sync canonical docs after QLT-4 code revert so no wording implies the experiment still exists as a dormant runtime feature.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** All "code remains default-off" language replaced with "experimental code removed from codebase." Historical design context and handoff docs preserved. No new analyzer workstream opened. Backlog references updated to point to the revert handoff.
-**Open items:** None.
-**For next agent:** QLT-4 lifecycle is fully closed: proposed → implemented → tested → closed → removed. All canonical docs reflect this. Historical reasoning preserved in `Docs/AGENTS/Handoffs/2026-03-2{5,6}_*QLT4*.md`. Article-level contrarian retrieval (D5 C13) is unrelated and remains active.
-
----
-### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | QLT-4 Closure Canonization
-**Task:** Canonize QLT-4 closure across status, backlog, and WIP docs after preflight verification confirmed the experiment targets a non-existent root cause.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** QLT-4 is recorded as a CLOSED experimental branch. The mechanism finding is preserved: Plastik EN per-claim evidence is already directionally balanced (ratio 0.62, 21 minority items); remaining variance is content/quality-driven, not direction-scarcity-driven. Feature code stays default-off in codebase. The original proposal doc is preserved as historical design context with a closure status line. Approved-policy monitor mode continues unchanged.
-**Open items:** None. QLT-4 is fully closed.
-**For next agent:** QLT-4 is closed in all canonical docs. The per-claim contrarian retrieval code was subsequently removed from the codebase (see next entry). Residual Plastik EN variance remains an open research question (evidence content/quality variation) — addressed by the Long Run Variance Reduction Roadmap if a future quality workstream is opened.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Code Revert
-**Task:** Remove closed QLT-4 experiment from codebase.
-**Files touched:** 7 source/config/test files + handoff. See `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Code_Revert.md`.
-**Key decisions:** Clean revert of all QLT-4 surface. Article-level contrarian (D5) preserved. Historical docs kept.
-**For next agent:** No QLT-4 code/config remains. Feature was a dead end (per-claim evidence is already balanced).
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Preflight — Feature Never Triggered
-**Task:** Execution-integrity preflight before QLT-4 full rerun.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_QLT4_Preflight_Verification.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key finding:** QLT-4 config was OFF in UCM (the original execution-integrity bug). After enabling + lowering thresholds (skew 0.75, minDir 6, minMinority 3), the feature STILL did not trigger. Real per-claim evidence in Plastik EN is already balanced (ratio 0.62, 21 minority items) — the mechanism targets the wrong root cause. Actual variance is from evidence content/quality, not direction imbalance.
-**Decision:** Full rerun NOT justified. Feature cannot fire on real data. Recommend closing QLT-4 as inconclusive. Config reverted to default-off.
-**For next agent:** QLT-4 is a dead end. Plastik EN variance root cause (evidence content variation) is not addressable by contrarian retrieval. See preflight handoff for full evidence.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | EVD-1 Monitoring Batch — 12 Jobs
-**Task:** First monitoring batch under approved EVD-1 variance policy.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_Monitoring_Batch_12_Jobs.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Result:** No red or emergency. All families within EVD-1 green or amber. Controls correct. One Muslims `contradicts_thesis` recurrence (1/2 runs) — amber-level Stage 1 concern but green article outcome. Plastik EN improved (7pp vs prior 30pp) but only 2 runs. Hydrogen first repeated-run data (12pp green). No status/backlog update needed.
-**For next agent:** Read the full handoff for family-by-family analysis. Watch Muslims `contradicts_thesis` pattern — escalate to QLT-3 review if 2+ of next 5 runs reproduce it.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | QLT-4 Experiment — Inconclusive (Feature Never Fired)
-**Task:** Implement and validate QLT-4 per-claim contrarian retrieval experiment.
-**Files touched:** 7 code files (commit `b3e85c54`), handoff, agent outputs.
-**Result:** Feature was enabled via UCM but **never triggered** across all 11 validation jobs. The trigger thresholds (perClaimBalanceSkewThreshold=0.85, perClaimBalanceMinDirectional=8) are too conservative for real per-claim evidence distributions. Per-claim evidence counts are insufficient to exceed the activation criteria.
-**Plastik EN spread:** 37pp (wider than prior 30pp baseline — reflects natural variance, not QLT-4 effect since feature never fired).
-**Controls:** Flat Earth 0pp (all FALSE), Bolsonaro 7pp (all LEANING-TRUE) — clean, no regression.
-**Recommendation:** Either recalibrate thresholds (Option A: lower minDirectional to 4-5 and skewThreshold to 0.75) or accept that per-claim triggering is too granular (Option B). Keep default-off.
-**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT4_Per_Claim_Contrarian_Experiment.md`. Implementation is correct (5 tests pass), only thresholds need adjustment.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Variance Debate and QLT-4 Proposal
-**Task:** Structured LLM debate on whether to stay in monitor mode or implement a targeted variance intervention.
-**Files touched:** `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Debate outcome:** Challenger wins on mechanism (per-claim evidence direction floor is the right intervention), advocate wins on process (EVD-1 was just approved; don't bypass it). Resolution: propose as QLT-4 requiring explicit Captain approval. The intervention extends existing contrarian retrieval from article-level to per-claim granularity — 3 files, UCM-reversible, ~half-day effort. Success criterion: Plastik EN environmental claim spread drops from 47pp to ≤35pp without regressing controls.
-**For next agent:** Captain decision needed. If approved, implement per `Docs/WIP/2026-03-25_Variance_Debate_Outcome_and_Proposal.md` Section 3-4. If rejected, stay in monitor mode — no harm done.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Controllable Variance Investigation
-**Task:** Investigate remaining controllable variance sources after Stage-1 stabilization.
-**Files touched:** `Docs/WIP/2026-03-25_Controllable_Variance_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key findings:** Dominant remaining variance is evidence direction ratio (different web sources → different support/contradict balance, 50pp per-claim swing on Plastik EN environmental claim). Highest-leverage controllable lever: per-claim evidence direction balancing at Stage 2 — but it's a design change, not a bug fix, with bias risk on one-sided topics. Bolsonaro demonstrates stable verdicts on directionally clear topics. No family is red under EVD-1. Recommendation: stay in monitor mode.
-**For next agent:** If a future quality track opens, start with per-claim evidence direction measurement. Do not tune temperatures or clustering as first intervention. Full report at `Docs/WIP/2026-03-25_Controllable_Variance_Investigation.md`.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize EVD-1 Captain Approval
-**Task:** Update canonical docs to reflect Captain approval of EVD-1 variance policy.
-**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** EVD-1 is now APPROVED and operative. Analyzer work is in monitor mode — new implementation only if a validation round produces a red result. Amber items (Plastik EN, Muslims) are monitored, not actioned. Optimization remains Captain-gated. Policy revisit scheduled before Beta.
-**For next agent:** No active analyzer work. EVD-1 governs variance interpretation. Future work requires either a red threshold breach or explicit Captain approval. Read `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` Section 6 for the validation protocol.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Apply Independent-Review Corrections
-**Task:** Apply 5 review corrections to EVD-1 policy draft.
-**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Corrections applied:** (1) Flat-Earth 31pp historical anomaly contextualized — pre-QLT-3 decomposition variance, not evidence instability. (2) Confidence band raised to 16–30pp monitor / >30pp investigate — fixes inconsistency where Plastik EN 26pp was implicitly red but intended as amber. (3) Classes B and E marked as provisional with insufficient repeated-run data. (4) Threshold basis note added — bands are performance-derived Alpha baselines, not user-validated product requirements. (5) Amber oscillation rule and validation-cadence definition added.
-**For next agent:** EVD-1 is now internally consistent and ready for Captain review.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | EVD-1: Acceptable-Variance Policy Draft
-**Task:** Define reusable quality-governance framework for acceptable report variance.
-**Files touched:** `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** 5 input quality classes (A: clean factual through E: legal/political) with empirically grounded green/amber/red bands for article spread, per-claim spread, confidence spread, and verdict direction stability. Current family status: Flat Earth/Bolsonaro/Plastik DE are green; Plastik EN and Muslims are amber (evidence-driven per-claim variance); no family is red. Policy is a governance framework, not implementation — no code changes proposed.
-**Open items:** Captain review and approval needed. Specific threshold calibration may need adjustment as more data accumulates.
-**For next agent:** Read `Docs/WIP/2026-03-25_EVD1_Acceptable_Variance_Policy.md` for the full framework. Use Section 6 ("How to use") for future validation rounds.
-
----
-### 2026-03-25 | Lead Architect | Claude Code (Opus 4.6) | Canonize OBS-1 and Close Stabilization Wave
-**Task:** Update canonical docs to reflect OBS-1 completion and the end of the report-quality stabilization wave.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** All planned stabilization items (QLT-1/2/3, VAL-2, OBS-1) are now complete. Project is in monitor/decision mode. Next workstream requires Captain decision: EVD-1 (acceptable-variance policy), optimization (P1-A/P1-B), or another approved track. Residual evidence-driven variance (Plastik EN ~30pp, Muslims ~21pp) is documented but not treated as a blocker — it's a policy decision, not an engineering gap.
-**For next agent:** No active engineering blocker. Read `Current_Status.md` for the current posture. Captain approval needed before starting any new workstream.
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | OBS-1: Request-Safe Per-Job Metrics Isolation
-**Task:** Replace module-global metrics collector with per-job isolated metrics using AsyncLocalStorage.
-**Files touched:** `apps/web/src/lib/analyzer/metrics-integration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`
-**Root cause:** `let currentMetrics: MetricsCollector | null = null` was a module-level global. When concurrent jobs ran, `initializeMetrics()` for job B overwrote job A's collector — job A's subsequent metrics calls (startPhase, recordLLMCall, etc.) wrote to job B's collector, corrupting both.
-**Fix shape:** Replaced the global with Node.js `AsyncLocalStorage<MetricsCollector>`. New `runWithMetrics()` function creates a collector and binds it to the async context. All existing metrics functions (`startPhase`, `recordLLMCall`, etc.) now read from `metricsStorage.getStore()` — zero call-site changes in stage files. The pipeline orchestrator wraps the analysis in `runWithMetrics()`.
-**Open items:** `initializeMetrics()` is deprecated but kept as a no-op shim. Old import in pipeline replaced with `runWithMetrics`.
-**For next agent:** OBS-1 is done. Metrics are now per-job isolated via AsyncLocalStorage. No analyzer behavior changed.
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize VAL-2 and Sync Active Docs
-**Task:** Update canonical docs to reflect VAL-2 completion.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** VAL-2 moved to DONE. OBS-1 is now the sole active engineering priority. Optimization remains secondary.
-**For next agent:** Active priority is OBS-1 (per-job metrics isolation).
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | VAL-2: Jobs-List Progress/Verdict Sync Race Fix
-**Task:** Fix the race where non-terminal jobs show a persisted verdict while progress is stale.
-**Files touched:** `apps/web/src/app/jobs/page.tsx`, `apps/api/Services/JobService.cs`
-**Root cause:** Two independent issues. (1) `StoreResultAsync` sets `VerdictLabel`/`TruthPercentage`/`Confidence` on the job row before `UpdateStatusAsync` sets status to `SUCCEEDED` — the UI polls in between and shows a verdict badge on a RUNNING job. (2) `UpdateStatusAsync` unconditionally overwrites progress — out-of-order async HTTP events can make progress appear to go backward.
-**Fix shape:** (1) UI: verdict badge gated on `isCompleteStatus(job.status)` — only shows for SUCCEEDED/FAILED/CANCELLED/INTERRUPTED. (2) API: monotonic progress guard — RUNNING→RUNNING updates cannot decrease `job.Progress`. Terminal states and restarts bypass the guard.
-**Open items:** None. The fix is minimal and doesn't change analyzer behavior, event ordering, or data flow.
-**For next agent:** VAL-2 is done. Next priority is OBS-1 (per-job metrics collector).
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | Canonize QLT-3 and Sync Active Docs
-**Task:** Update canonical docs to reflect post-QLT-3 reality.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Stage-1 quality stabilization track (QLT-1/2/3) is now complete. QLT-3 moved to monitor mode. VAL-2 and OBS-1 are the new active engineering priorities. Added EVD-1 (evidence-stability/acceptable-variance policy) as a low-priority future item for Captain decision. Remaining Plastik EN (30pp) and Muslims (21pp) variance is evidence/verdict-driven — no further Stage-1 work justified.
-**Open items:** None from this docs sync.
-**For next agent:** Active priorities are VAL-2 (jobs-list sync race) and OBS-1 (per-job metrics). Stage-1 quality work is done unless new evidence justifies reopening.
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-3 Facet Consistency Fix
-**Task:** Implement and validate Stage-1 facet-consistency fix for complex broad-evaluative inputs (Muslims-family).
-**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Added 3 targeted prompt rules: (1) no counter-narrative claims, (2) facet convergence for comparative predicates, (3) claim count stability. All three QLT-2-identified failure modes are fixed: claim count stabilized (2-3→3-3), claimDirection stabilized (S+C/X patterns→all S), counter-narrative and media claims eliminated (1/5→0/5). Truth% spread reduced 27pp→21pp. Remaining variance is evidence-driven.
-**Open items:** Facet 3 still varies semantically (but all options are now thesis-relevant). Other comparative inputs not yet tested.
-**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT3_Facet_Consistency_Fix.md`. No further Stage-1 work justified for Muslims family. Remaining variance is Stage 2/4 (evidence-driven).
-
----
-### 2026-03-25 | Lead Architect | Codex (GPT-5) | Canonize QLT-2 Result and Sync Active Docs
-**Task:** Verify the new `QLT-2` characterization outputs, bring the active docs up to date, and commit the current canonical documentation state.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Accepted the `QLT-2` finding that the remaining instability now has a split root cause: Muslims-family inputs still justify a narrow Stage-1 refinement, while Plastik EN no longer does. Updated the planning docs so the pre-QLT-2 root-cause plan is treated as historical background, and made the `QLT-2` handoff part of the canonical repo state.
-**Open items:** `QLT-3`, `VAL-2`, and `OBS-1` remain the active forward work. No analyzer code was changed here.
-**Warnings:** Do not keep citing the pre-QLT-2 root-cause plan as if it were the current execution plan; the active next-step state is now in `Current_Status.md`, `Backlog.md`, and the `QLT-2` handoff.
-**For next agent:** Start from the `QLT-2` handoff and the updated top sections of `Current_Status.md` / `Backlog.md`. Treat the 2026-03-25 root-cause plan as rationale/history, not the latest task list.
-**Learnings:** no
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-2 Residual Instability Characterization
-**Task:** Run 13-job characterization batch (5 Plastik EN, 5 Muslims, 3 Flat Earth) to determine whether residual broad-evaluative instability is still Stage-1 driven.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`
-**Key decisions:** Root cause is now SPLIT: Plastik EN Stage 1 is stable (QLT-1 working), remaining 30pp spread is evidence/verdict-driven. Muslims Stage 1 is still unstable (claim count, direction, facets all vary), 27pp spread. Flat Earth control clean (2pp). A single "Stage-1 facet-stabilization fix" is justified for Muslims but would NOT help Plastik EN.
-**Open items:** (1) Whether a Muslims-targeted Stage-1 fix also helps other broad-evaluative families; (2) Whether Plastik EN's 30pp evidence-driven spread requires Stage-2/3 intervention or is acceptable; (3) Acceptable variance policy for genuinely mixed topics.
-**Warnings:** The pre-QLT-2 assumption that residual variance is "still mainly Stage 1" was correct for Muslims but wrong for Plastik EN. Future planning must not treat these families as having the same root cause.
-**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT2_Characterization.md`. Muslims needs a narrow Stage-1 direction/count/facet-consistency prompt fix. Plastik EN does not need Stage-1 work.
-**Learnings:** no
-
----
-### 2026-03-25 | Senior Developer | Claude Code (Opus 4.6) | QLT-1 Predicate Strength Validation
-**Task:** Implement and validate QLT-1 prompt fix for Stage 1 predicate-strength preservation.
-**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Predicate_Strength_Validation.md`
-**Key decisions:** Added "Predicate strength preservation (CRITICAL)" rule to PASS2 prompt. 12-job validation: Plastik DE spread dropped from 47pp to 22pp (53% reduction), claim count stabilized at 3, predicate softening ("unwirksam") eliminated. All anchor controls correct. No regressions.
-**Open items:** Residual 22pp spread is from facet synonym variation, evidence variation, and LLM stochasticity — no single dominant cause remaining.
-**For next agent:** Full report at `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Predicate_Strength_Validation.md`.
-
----
-### 2026-03-24 | Senior Developer | Codex (GPT-5) | Status / Backlog / WIP Consolidation Refresh
-**Task:** Bring the high-level project docs up to date after the Mar-22/23 execution wave and the Mar-24 validation follow-up, update the backlog, and archive no-longer-active WIP documents.
-**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md`, `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md`, archived WIP files moved under `Docs/ARCHIVE/`.
-**Key decisions:** Re-centered the active docs around the real current gate: post-validation control-quality and boundary-coverage follow-up after the Stage-4 provider-guard fix, the Stage-1 `claimDirection` prompt clarification, and the preliminary-evidence mapping repair. Added a new active WIP note for that gate, rewrote the top of `Current_Status.md` to remove stale “production-ready / optimize next” framing, refreshed `Backlog.md` with immediate priorities and recent completions, and archived the now-historical Mar-22/23 execution/decision/design/proposal docs plus the Mar-18 review artifacts and the completed Bolsonaro sentencing fix plan.
-**Open items:** The current live validation batch on commit `31aea55d` still needs to finish and be interpreted. The jobs-list progress/verdict sync race remains open and is now called out explicitly in both status and backlog.
-**Warnings:** `Agent_Outputs.md` intentionally still references now-archived file paths inside historical entries. That log is an audit trail and was not rewritten retroactively. Active docs and active handoffs were updated to point to the archive where needed.
-**For next agent:** Use `Docs/WIP/2026-03-24_Post_Validation_Control_and_Coverage_Followup.md` as the current next-step document. Do not use the Mar-22 execution plan or Mar-23 decision note as active steering docs anymore; they are archived historical records. WIP Consolidation #7 archived 9 files and reduced the active WIP set to 34 files.
-**Learnings:** no
-
----
-### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | Fix preliminary-evidence claim-mapping leak
-**Task:** Fix systemic bug where seeded preliminary evidence loses multi-claim attribution, causing Claim Assessment Boundaries to show `evidenceCount > 0` but zero coverage in the matrix.
-**Files touched:** `apps/web/src/lib/analyzer/types.ts` (1 edit), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (1 edit), `apps/web/src/lib/analyzer/research-orchestrator.ts` (1 edit), `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (5 new tests).
-**Key decisions:** Root cause was line 580 in `claim-extraction-stage.ts`: `claimId: pe.relevantClaimIds?.[0] ?? ""` collapsed the full `relevantClaimIds[]` array to a single value. Fix: (1) added `relevantClaimIds?: string[]` to the `CBClaimUnderstanding.preliminaryEvidence` type, (2) preserved full array in Stage-1 output alongside legacy `claimId`, (3) updated `seedEvidenceFromPreliminarySearch()` to prefer `relevantClaimIds[]` with 4-step fallback: full array → legacy claimId → single-claim fallback → heuristic remap.
-**Open items:** None — fix is complete and verified.
-**Warnings:** Legacy `claimId` field kept for backward compatibility (existing stored jobs, serialized state). New code should always use `relevantClaimIds`.
-**For next agent:** Coverage matrix (`buildCoverageMatrix`) was not changed — it already counts by `relevantClaimIds`. The fix ensures upstream data now populates that field correctly. Verify with a live run if desired.
-**Learnings:** no
-
----
-### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | Stage 1 claimDirection Prompt Fix
-**Task:** Implement minimal prompt fix for the confirmed `claimDirection` mislabeling bug.
-**Files touched:** `apps/web/prompts/claimboundary.prompt.md` (2 edits), `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` (1 new test).
-**Key decisions:** Prompt-only fix. Added an explicit `claimDirection` definition in the PASS2 Rules section (line 180) with a "common error to avoid" contrastive note. Also added a schema-level reminder (line 246). No code changes to aggregation or claim-extraction-stage.ts. One regression test documents both the correct behavior (`supports_thesis` → low aggregate) and the failure mode (`contradicts_thesis` on thesis-restating claims → inverted aggregate).
-**Open items:** A focused control rerun of "Die Erde ist flach" is needed to confirm the prompt fix works at runtime. This is an LLM judgment fix — unit tests validate the aggregation contract but cannot confirm the LLM will now label correctly.
-**For next agent:** Run a serial control pair after deployment: "Die Erde ist flach" + "Ist die Erde rund?" and compare `claimDirection` values. If AC_01/AC_02 are now `supports_thesis` for the flat-earth input, the fix is confirmed.
-**Learnings:** no
-
----
-### 2026-03-24 | Senior Developer | Claude Code (Opus 4.6) | "Die Erde ist flach" Control Failure — Root Cause
-**Task:** Investigate why `Die Erde ist flach` produced TRUE/100/95 in the Stage-4 validation run.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only — diagnosis, no code changes).
-
-**Root cause: Stage 1 `claimDirection` mislabeling → Stage 5 inversion.**
-
-The failure chain:
-1. **Stage 1** extracted claims: "Die Erde hat eine flache geometrische Form", "Die Erde ist in ihrer physikalischen Struktur flach". These restate the thesis ("Die Erde ist flach") and SUPPORT it. But the LLM labeled both `claimDirection: "contradicts_thesis"` — **wrong**.
-2. **Stage 4** correctly scored both claims as FALSE (truth% = 0, confidence 95-96). The reasoning is excellent — comprehensive refutation with evidence.
-3. **Stage 5** aggregation ([aggregation-stage.ts:136-139](apps/web/src/lib/analyzer/aggregation-stage.ts#L136-L139)) applies `effectiveTruth = 100 - verdict.truthPercentage` for `contradicts_thesis` claims. So 100 - 0 = 100 → article verdict TRUE/100/95.
-
-**Comparison with "Ist die Erde rund?" (054be94d):**
-- Thesis: "Die Erde ist rund." Claims: "kugelförmige Form", "geschlossene Oberfläche". Both labeled `supports_thesis` — **correct**.
-- Verdicts: truth% 50 and 98. Aggregation: no inversion → article 89/TRUE.
-- This job works because the LLM correctly labeled `claimDirection`.
-
-**Failure class:** Stage 1 LLM judgment error on `claimDirection`. The LLM appears to confuse "this claim contradicts scientific reality" with "this claim contradicts the thesis." The claim "earth is flat" restates the thesis but contradicts scientific consensus — the LLM conflated the two meanings.
-
-**The Stage-4 guard fix is orthogonal.** This is a pre-existing quality issue in Stage 1 claim extraction, not a concurrency/reliability problem.
-
-**Smallest justified next action:** Investigate the Stage 1 claim extraction prompt for how `claimDirection` is defined and exemplified. The prompt may need a contrastive example clarifying: "contradicts_thesis means the claim opposes the user's stated position, NOT that the claim contradicts scientific consensus." This is a prompt-level fix, not a code change.
-
-**Open items:** Check whether this mislabeling is systematic for false-consensus inputs (flat earth, homeopathy, anti-vax) or a one-off. A serial rerun of the same input would confirm reproducibility.
-**For next agent:** The aggregation inversion logic is correct by design. The bug is upstream in Stage 1 `claimDirection` labeling. Do not change aggregation-stage.ts.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | Stage 4 Provider Guard — Live Validation PASSED
-**Task:** Run controlled concurrent validation of the lane-aware Stage-4 concurrency guard to confirm the `Stage4LLMCallError` / `VERDICT_ADVOCATE` failure pattern no longer reproduces.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only — no code changes).
-**Key decisions:** Ran on local stack (localhost:5000 API + localhost:3000 web), clean restart. Config: `FH_RUNNER_MAX_CONCURRENCY=3`, `FH_LLM_MAX_CONCURRENCY_ANTHROPIC=2` (Sonnet lane inherits from ANTHROPIC=2). All 3 jobs queued within <1 second to maximize Stage 4 overlap.
-
-**Validation results:**
-
-| Job ID | Input | Verdict | Truth% | Conf | issueCode | llm_provider_error | analysis_generation_failed |
-|--------|-------|---------|--------|------|-----------|--------------------|---------------------------|
-| f8c73f0d | Die Erde ist flach | TRUE | 100 | 95 | none | 0 | 0 |
-| 054be94d | Ist die Erde rund? | TRUE | 89 | 24 | none | 0 | 0 |
-| 326bc97b | Hydrogen > electricity | FALSE | 11 | 79 | none | 0 | 0 |
-
-**Observations:**
-- All 3 jobs ran concurrently (confirmed: all at 15%→30%→58%→70% in lockstep).
-- Zero `llm_provider_error` warnings across all jobs.
-- Zero `analysis_generation_failed` across all jobs.
-- All verdicts are directionally correct control-input results (no UNVERIFIED fallbacks).
-- Overlap was real: two jobs were at 70% (Stage 4) while the third completed at the same timestamp.
-
-**Judgment: PASS.** The lane-aware guard with `anthropic:sonnet=2` held under 3-job concurrent load. The previous failure pattern (Stage4LLMCallError on VERDICT_ADVOCATE → fallback UNVERIFIED) did not reproduce.
-
-**Recommendation:** No config tuning needed. Default Sonnet lane limit of 2 is sufficient at runner concurrency 3. No reason to change `FH_RUNNER_MAX_CONCURRENCY` or `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET`.
-**Open items:** None. Guard is validated. If future load increases beyond 3 concurrent jobs, re-validate.
-**For next agent:** Stage-4 reliability is validated. This does not reopen quality/optimization work. Next architectural decision should be made by the architect role per the status brief.
-
----
-### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | Restore Post-WS-2 Test Coverage
-**Task:** Restore edge-case test coverage lost during Stage 2 extraction (WS-2 Slice 2).
-**Files touched:** `research-extraction-stage.test.ts` (rewritten: 159→539 lines, 7→35 tests), `claimboundary-pipeline.test.ts` (added doc comment for skipped sufficiency test).
-**Key decisions:** Restored all 4 high-priority test groups: `classifyRelevance` (1→10 tests), `extractResearchEvidence` (1→7 tests), `assessEvidenceApplicability` (1→7 tests), `assessScopeQuality` (2→6 tests), `assessEvidenceBalance` (1→5 tests). Sufficiency integration test kept skipped with clear documentation of why and what would be needed to restore it.
-**Open items:** The `selectTopSources` tests remain in `claimboundary-pipeline.test.ts` (not moved — they test pipeline-utils, not extraction stage). Dedicated tests for `research-query-stage.ts` and `research-acquisition-stage.ts` remain as future work.
-**For next agent:** Test coverage for extraction stage is now comprehensive. The skipped sufficiency test is an integration-level concern validated by `test:cb-integration` instead. Next testing priority would be `research-query-stage.ts` (query generation) and `research-acquisition-stage.ts` (source fetching).
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | New Architect Status Brief
-**Task:** Prepare a concise but decision-useful onboarding status report for a new architect, including background, current plan state, major decisions, and current architectural difficulties.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Wrote a dedicated architect-facing brief that consolidates the recent quality investigation outcome (Plastik parked, v1/v2 closed), the short-horizon execution work completed (`WS-1`, five `WS-2` slices, `WS-3`, `WS-4`), the retirement of stale `P1-A2`, the remaining architectural hotspot (Stage 2 research loop), and the main next decision space. Explicitly documented what should not be silently reopened and what the architect should decide next.
-**Open items:** No implementation requested in this task. The next substantive action is an architectural priority decision for the next work window.
-**Warnings:** The brief includes an at-time-of-writing note that local `main` contains `WS-3` and the `P1-A2` doc retirement ahead of the last known remote baseline; verify remote sync state before relying on `origin/main` as the baseline.
-**For next agent:** Start with `Docs/AGENTS/Handoffs/2026-03-23_New_Architect_Status_Brief.md` if you need a compact architectural onboarding packet rather than reconstructing state from all WIP and agent logs.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | WS-3 Evaluate-Source Route Decomposition
-**Task:** Decompose `evaluate-source/route.ts` (2,959 lines) into 5 modules, eliminating 8 request-unsafe mutable globals.
-**Files touched:** `route.ts` (2,959→281 lines), 5 new modules in `apps/web/src/lib/source-reliability/`: `sr-eval-types.ts` (210), `sr-eval-prompts.ts` (747), `sr-eval-evidence-pack.ts` (901), `sr-eval-enrichment.ts` (266), `sr-eval-engine.ts` (676). Test `evaluator-logic.test.ts` updated to import from new modules.
-**Key decisions:** Replaced 8 `let` module-level variables with a single `SrEvalConfig` interface built per-request in POST(). `rateLimitState` kept in route.ts (intentionally cross-request). `languageDetectionCache` and `translationCache` kept as module-level Maps (safe caches). `buildSrSearchConfigFromEvalSearch` and `RequestSchema` kept in route.ts (config construction / POST-only). `normalizeEvidenceQualityAssessmentConfig` now takes a default config param for testability.
-**Open items:** None. WS-3 complete.
-**Warnings:** The prompts module (747 lines) is the largest new file — mostly large string templates. Not a decomposition concern, just large by nature.
-**For next agent:** Evaluate-source is now modular. Route.ts is a thin handler: auth → parse → config → rate limit → evaluate. All 8 mutable globals are eliminated. `SrEvalConfig` is the config threading mechanism.
-**Learnings:** no
-
----
-### 2026-03-23 | Technical Writer | Claude Code (Opus 4.6) | Retire P1-A2 and Fix Optimization Plan/Code Mismatch
-**Task:** Update optimization documentation to retire P1-A2 as stale and correct the plan/code mismatch in Stage 4 architecture description.
-**Files touched:** `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- P1-A2 marked RETIRED (STALE): the `for...of` per-claim loop it targeted does not exist — Stage 4 already batches all claims per debate step, Steps 2+3 already run via `Promise.all`, and validation checks already run in parallel.
-- Fixed the §4 heading/body mismatch that conflated P1-A (clustering → Haiku) with P1-A2 (verdict debate parallelization). Replaced with a clear Phase 1 status summary.
-- Revised Phase 1 estimated impact to reflect that the original savings projection included P1-A2.
-- Updated execution plan to remove P1-A2 as next step and point to WS-3 instead.
-- Clarified "what remains": Phase 1 structural wins complete, P1-B deferred, P1-A is a separate future quality experiment.
-**Open items:** None — documentation-only change.
-**Warnings:** P1-A (clustering → Haiku) is NOT retired. It remains a valid future experiment but is quality-affecting and needs separate validation. Do not conflate P1-A retirement with P1-A2 retirement.
-**For next agent:** The optimization plan now accurately reflects the current Stage 4 architecture. No future agent should treat P1-A2 as a pending implementation item. If further Stage 4 speed optimization is needed, it would require a fresh analysis of the batched architecture's bottlenecks, not the retired per-claim parallelization concept.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Claude Code (Opus 4.6) | WS-4 Search Provider Clone Consolidation
-**Task:** Execute WS-4: extract shared boilerplate from 7 search provider files into `search-provider-utils.ts`.
-**Files touched:** `apps/web/src/lib/search-provider-utils.ts` (new), `search-google-cse.ts`, `search-serper.ts`, `search-serpapi.ts`, `search-brave.ts`, `search-wikipedia.ts`, `search-semanticscholar.ts`, `search-factcheck-api.ts` (all modified).
-**Key decisions:** Extracted 5 shared utilities: `requireApiKey`, `warnIfMissingApiKey`, `extractErrorBody`, `classifyHttpError`, `handleFetchError`. Kept provider-specific patterns inline: Google CSE compound key check, Serper 5xx non-fatal throw, Wikipedia 429/500+ distinct handling, FactCheck 400 handling, Semantic Scholar rate limiter, all result mapping and request construction. `queryFactCheckApi` (second function in FactCheck) kept its own simpler error handling to avoid adding logging where there was none.
-**Open items:** None. WS-4 complete.
-**Warnings:** `createSearchLogger()` (mentioned in refactoring plan) was deliberately skipped — indirection would make debugging harder for minimal line savings. Google CSE keeps inline key validation due to compound two-variable check.
-**For next agent:** Search providers now share `search-provider-utils.ts` for error handling plumbing. Provider-specific behavior stays in each provider file. Next approved step per Captain decision: P1-A2 (verdict debate parallelization).
-**Learnings:** no
-
----
-### 2026-03-23 | Lead Architect | Cline | Post-WS-2 Priority Review & Next Steps Recommendation
-**Task:** Review the post-WS-2 state (5 slices complete, research loop remaining) and recommend the next execution priority between P1-A2, WS-4, resuming WS-2, or P1-B.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- **WS-2 should remain paused:** The remaining Stage 2 research loop is highly coupled. Pausing here secures massive readability gains (~5,700 -> ~2,522 lines) without risking destabilization.
-- **P1-A2 is NOT the right next move yet:** Parallelizing the verdict debate has hidden complexity (shared warnings array, progress events, LLM rate limits). It shouldn't be mixed right after a major structural refactor.
-- **WS-4 IS the best next step:** Search Provider Clone Consolidation is a pure, low-risk structural cleanup that removes duplicated boilerplate across 7 files without changing concurrency or semantics.
-- **P1-B remains deferred:** Parallelizing preliminary search saves minimal time (~50s) but introduces search API rate-limit risks.
-- **Branch MUST be pushed:** The branch is significantly ahead of origin. Pushing now locks in the WS-1, WS-2, and P1-C/D/E wins before starting WS-4.
-**Open items:** Execute `git push` and begin `WS-4`.
-**Warnings:** Do not start P1-A2 without a dedicated plan for synchronizing `state.warnings` and handling LLM provider rate limits for concurrent calls.
-**For next agent:** Push the branch to origin, then start `WS-4` (Search Provider Clone Consolidation) by creating `search-provider-utils.ts` as specified in the refactoring plan.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Brief Review Feedback Incorporated
-**Task:** Incorporate reviewer feedback into the new Phase 2 v3 architecture brief so it is safer to use later as the restart document.
-**Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Tightened the brief in five places: explained why v1 `"main"` supplementation was directionally biased via inherited `expectedEvidenceProfile`; added the key unresolved direction-control question inside Option A; noted that FR exact's lower inter-claim spread points to EN retrieval-space concentration; clarified that Option B becomes more tractable as WS-2 progresses; and explicitly separated adjacent claim-decomposition/phrasing instability from the v3 retrieval problem. Also added guidance that old v2 Step 3.5/config remnants should not be reused as the v3 base.
-**Open items:** The brief is still design-only. No implementation approval was added. Remaining work is review/decision, not coding.
-**Warnings:** The main structural risk remains under-specifying direction control inside claim-scoped multilingual lanes. That question is now explicit in the brief and must be answered before any future v3 implementation plan.
-**For next agent:** Use the updated brief, not the earlier draft, if Phase 2 v3 is discussed again. The current near-term default remains: keep Plastik parked.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Phase 2 v3 Design Brief — Architecture Restart Point Defined
-**Task:** Execute the next planned non-code step after the low-risk optimization slice by writing the Phase 2 v3 design-only architecture brief for the parked Plastik multilingual-neutrality issue.
-**Files touched:** `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Treated this as a design-only restart point, not as an implementation request. Captured the two hard lessons from failed Phase 2 variants: (1) shared supplementary pooling is the wrong abstraction, and (2) supplementary language is not a stable proxy for evidential direction. Compared three credible paths (`Option A` claim-scoped multilingual retrieval lanes, `Option B` independent multilingual claim analysis then reconciliation, `Option C` keep parked) and recommended: keep the limitation parked by default; if reopened later, start with a claim-scoped multilingual-lane design rather than any v1/v2 derivative.
-**Open items:** The brief is ready for review/prioritization. No Phase 2 v3 implementation is approved or started. Optional `P1-B` preliminary-search parallelization also remains deferred and untouched.
-**Warnings:** Do not misread the existence of the v3 brief as approval to reopen Plastik implementation. The brief is explicitly a guard against repeating v1/v2, not a hidden resumption of that track.
-**For next agent:** If asked about Plastik next, start from `Docs/WIP/2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md`. If priorities stay unchanged, this track remains parked and other approved repository work should take precedence.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Low-Risk ClaimBoundary Speed/Cost Slice — P1-C / P1-D / P1-E
-**Task:** Execute the approved low-risk speed/cost subset after WS-2 first slice: record preliminary URLs in `state.sources`, wire `parallelExtractionLimit`, and align preliminary fetch timeout usage.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Kept the slice purely structural. Preliminary fetches now add successful URLs into `state.sources` for later diagnostics/provenance, reuse the configured `sourceFetchTimeoutMs`, and `fetchSources(...)` now honors `parallelExtractionLimit` instead of a hardcoded concurrency of 3. Deliberately did **not** include optional `P1-B` preliminary-search parallelization in the same change.
-**Open items:** Optional `P1-B` remains deferred. Per the Mar-22 execution plan, the next execution item is now a Phase 2 v3 design-only architecture brief rather than more live tuning or broader optimization work.
-**Warnings:** The preliminary-source `searchQuery` stored in `state.sources` reflects the actual generated preliminary query (for example the `searchHint`-based query), not necessarily the original rough-claim statement. This is intentional and now covered by tests.
-**For next agent:** Treat this low-risk subset as complete. Do not reopen Phase 2 v1/v2. If priorities stay unchanged, move to the Phase 2 v3 design brief or another explicitly approved architecture/planning task rather than extending optimization scope opportunistically.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | WS-2 First Slice — Pipeline Leaf Helpers Extracted
-**Task:** Execute the first WS-2 decomposition slice after WS-1 by extracting a very small, low-risk leaf module from `claimboundary-pipeline.ts`.
-**Files touched:** `apps/web/src/lib/analyzer/pipeline-utils.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Kept the slice intentionally narrow: moved only pure helper functions into new `pipeline-utils.ts` (`checkAbortSignal`, `detectInputType`, `selectTopSources`, `classifySourceFetchFailure`, `mapCategory`, `extractDomain`, `mapSourceType`, `normalizeExtractedSourceType`, `createErrorFingerprint`, `createUnverifiedFallbackVerdict`). No stage logic moved. `claimboundary-pipeline.ts` re-exports the public helpers used by tests, so external imports remain stable.
-**Open items:** This completes only the first WS-2 leaf slice. No stage module extraction has started yet. Per the Mar-22 execution plan, the next execution item is the low-risk speed/cost subset (`P1-C`, `P1-D`, `P1-E`, optionally `P1-B` later).
-**Warnings:** `detectInputType` remains existing deterministic fallback logic; this slice only moved it, it did not expand its analytical role. Do not interpret this slice as a semantic change.
-**For next agent:** Treat `pipeline-utils.ts` as the new home for small shared ClaimBoundary helpers. The next safe step is not another large WS-2 move by default; it is the low-risk optimization subset unless priorities change.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Opus 4.6) | WS-1 Dead Code Removal — 3,682 lines deleted
-**Task:** Execute WS-1 from the refactoring plan: remove dead code with zero callers.
-**Files touched:** 22 files (14 deleted source, 4 deleted test, 6 deleted prompt, 3 edited references).
-**Key decisions:** `json.ts` kept (imported by `claimboundary-pipeline.ts` — plan incorrectly listed as dead). `json.test.ts` kept. `inverse-claim-verification.prompt.md` preserved (used by `paired-job-audit.ts`). `calculateFalsePositiveRate` removed from barrel re-export only. `VALID_PROMPT_PROFILES` and admin page cleaned of 4 dead text-analysis entries.
-**Open items:** None. WS-1 complete.
-**Warnings:** None. Build clean, 67/67 test files pass (1329 tests). Delta: −4 test files / −37 tests (all from deleted dead modules).
-**For next agent:** WS-1 is done. Next per execution plan: WS-2 first slice (pipeline decomposition).
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | WIP Plan Roles Clarified
-**Task:** Remove ambiguity between the short-horizon execution plan, the refactoring plan, and the speed/cost optimization plan so future agents do not treat the wrong document as the governing priority source.
-**Files touched:** `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md`, `Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Made the document roles explicit in all three plans. The Mar 22 plan is now clearly labeled as the governing near-term execution plan; the Mar 18 refactoring doc is explicitly the refactoring source plan; the Mar 19 speed/cost doc is explicitly the optimization source plan. The WIP index now repeats this distinction so the relationship is visible from the directory entry point.
-**Open items:** The plan itself is still draft and awaits substantive review/approval. These edits only remove document-role ambiguity.
-**Warnings:** Future edits should preserve this role separation. If the near-term execution order changes, update the Mar 22 plan rather than silently repurposing the refactor or optimization source documents.
-**For next agent:** Use `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md` as the top-level sequencing document. Use the other two only after the execution plan explicitly selects their tracks.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Next 1-2 Weeks Execution Plan Draft
-**Task:** Convert the current post-Plastik-investigation recommendations into a concrete short-horizon execution plan and publish it as a reviewable WIP document.
-**Files touched:** `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Framed Plastik multilingual neutrality as a parked known limitation after failed Phase 2 v1/v2 experiments and explicitly moved the near-term focus to config provenance repair, WS-1 dead-code cleanup, a first WS-2 decomposition slice, and only the low-risk subset of the speed/cost plan. Kept Phase 2 v3 alive as a future architecture/design track, not an immediate implementation task.
-**Open items:** The new WIP plan is draft-only and should be reviewed before execution starts. A separate decision is still needed on whether config provenance should be lifted ahead of all refactoring work if it remains partially open.
-**Warnings:** The plan intentionally does not reopen Plastik Phase 2 implementation. If product priorities change and multilingual neutrality becomes urgent again, the correct restart point is a fresh Phase 2 v3 architecture brief, not further tuning of v1/v2.
-**For next agent:** Use `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md` as the working plan for the next short execution window. If approved, start with the "Priority 0 / Priority 1" items before touching the larger refactoring or optimization streams.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 — Contrarian Cross-Linguistic Supplementation (FAIL, flag off)
-**Task:** Validate Phase 2 v2, evaluate gate criteria, revert if failed.
-**Files touched:** UCM `pipeline/default` (reverted to `crossLinguisticQueryEnabled=false`). Full results: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_CrossLinguistic_v2_Results.md`.
-**Key decisions:** Phase 2 v2 FAILED. Gate fired for only 1/6 runs (DE exact, ratio=0.58). The one firing moved DE from 21%/77% MOSTLY-FALSE → 74%/24% MOSTLY-TRUE (wrong direction). All other apparent improvements (EN exact conf 24%→64%, FR exact conf 24%→70%, EN para direction 63%→37%) are run variance — the supplementary pass was blocked for those runs. Family spread unchanged at 47pp (was 48pp). Core assumption invalid: supplementary language ≠ balancing direction proxy. UCM reverted at 2026-03-22T17:04:29Z.
-**Open items:** Phase 2 cross-linguistic supplementation exhausted in current architecture. Two options: (1) park as known limitation, (2) Phase 2 v3 as full architecture redesign. Captain decision required.
-**Warnings:** Do not lower threshold or change > to >= as a quick fix — this causes more wrong-direction firings. Code kept behind flag; do not enable without full redesign.
-**For next agent:** Phase 2 v1 and v2 both failed. Root causes are fundamentally different. v1: claim-unaware pool mixing. v2: language ≠ direction proxy + gate rarely fires. The 47pp family spread remains an open problem. See full experiment history in handoff file.
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 Implementation — Contrarian Cross-Linguistic Supplementation
-**Task:** Implement Phase 2 v2: change supplementary pass from `"main"` iterationType to `"contrarian"`, add pool balance gate (`supplementarySkewThreshold: 0.55`), bound budget to `suppQueriesPerClaim`.
-**Files touched:** `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/config-schemas.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`. Handoff: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2v2_ClaimAware_CrossLinguistic_Implementation.md`.
-**Key decisions:** `supplementarySkewThreshold` placed in pipeline config (not calculation config — `researchEvidence()` doesn't load calculation config). Pool balance gate uses inline `majorityRatio` calculation (not `assessEvidenceBalance` which mishandles empty pool). Budget bound changed from `maxSourcesPerIteration` (8) to `suppQueriesPerClaim` (2). UCM activated at `2026-03-22T13:16:21.859Z`.
-**Open items:** Validation batch not yet run. Six inputs: EN exact, DE exact, EN para, FR exact (Plastik family) + Hydrogen + Bolsonaro smoke.
-**Warnings:** `assessEvidenceBalance()` returns `isSkewed=false` for empty pool — do not reuse for supplementary gate. Gate 4 `contextConsistency` (`maxConfidenceSpread: 25 / reductionFactor: 0.5`) unchanged.
-**For next agent:** UCM active (`crossLinguisticQueryEnabled=true`, `supplementarySkewThreshold=0.55`). Run validation batch. Gate: EN/FR conf ≥ 50% (was 24%), spread ≤ 35pp (was 47pp), smoke inputs stable ±15% conf.
-
----
-### 2026-03-22 | Lead Architect + Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v2 Design — Claim-Aware Cross-Linguistic Supplementation
-**Task:** Design Phase 2 v2 after v1 failed. Post-mortem, v2 design proposal, minimum viable implementation slice, validation plan, go/defer recommendation.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-22_Lead_Architect_Phase2v2_ClaimAware_CrossLinguistic_Design.md` (created).
-**Key decisions:** v2 design: change supplementary iterationType from `"main"` → `"contrarian"`. Add `supplementarySkewThreshold: 0.55` UCM gate (skip supplementary if pool already balanced). Extend `extendedPipelineConfig` with `contrarianMaxQueriesPerClaim`. Pre-implementation blocker: verify whether `contrarianMaxQueriesPerClaim` is accessible from pipeline config context or only from calculation config. **Recommendation: Go — implement v2** (3-file change, ~15 net lines, bounded risk, no lower-friction alternative).
-**Open items:** Captain approval for implementation. Verify `contrarianMaxQueriesPerClaim` accessibility. After implementation: 4-input validation batch (EN exact, DE exact, EN para, FR exact) + Hydrogen regression control.
-**For next agent:** Read full design doc. Pre-implementation check: search for `contrarianMaxQueriesPerClaim` usage in `claimboundary-pipeline.ts` to confirm config access path. Then implement the 3-file change, run `npm test` + build, activate via UCM, run validation batch.
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 2 v1 — Cross-Linguistic Supplementation (FAIL, flag off)
-**Task:** Implement and validate Phase 2: cross-linguistic query supplementation behind `crossLinguisticQueryEnabled` UCM flag. Run 4-input validation batch (EN exact, DE exact, EN para, FR exact).
-**Files touched:** `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`. UCM config reverted to `crossLinguisticQueryEnabled=false`. Full results: `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase2_CrossLinguistic_v1_Results.md`.
-**Key decisions:** Phase 2 v1 FAILED. EN para went wrong direction (55%→63%). Confidence collapse on EN exact (74%→24%), FR exact (73%→24%), EN para (24%). Spread 47pp — no improvement vs pre-experiment 48pp baseline. Root cause: supplementary DE pass deposits evidence into shared pool without claim awareness → inter-claim spread exceeds `maxConfidenceSpread: 25` → `contextConsistency` penalty → confidence floor. Code kept behind flag (correctly implemented mechanically); UCM reverted to false. Do not soften Gate 4 calibration to paper over this.
-**Open items:** Spread problem unresolved (post-revert: ~48pp). All interventions exhausted: B1 ✓ B2 ✓ Phase1A ✗ Phase1 ✗ Phase2v1 ✗.
-**For next agent:** Phase 2 v2 (claim-aware cross-linguistic supplementation) is the only remaining structural option. Requires Captain design approval. EN para post-revert result (27% / 71%) is an incidental baseline data point — EN para can land correctly without cross-linguistic supplementation.
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 1 Experiment — GENERATE_QUERIES direction-neutralization (FAIL, reverted)
-**Task:** Implement and validate the Lead Architect's GENERATE_QUERIES direction-neutralization prompt change (expectedEvidenceProfile confirmation bias fix). Captain-approved.
-**Files touched:** `apps/web/prompts/claimboundary.prompt.md` (changed then reverted), reseeded to config DB twice.
-**Key decisions:** Phase 1 FAILED and was reverted. The direction-neutralization paragraph ("don't skew toward what preliminary search found") harmed correctly-low runs: DE/FR preliminary searches legitimately found contradicting evidence; the instruction caused the LLM to seek more supporting evidence, pushing Run4 (55%→69%) and Run5 (15%→36%) up without helping EN exact (63%→62%, no movement). Root cause: the instruction is undifferentiated — it corrects the EN failure-anchor but simultaneously breaks DE/FR runs that were already correct. Spread: 48pp → 44pp (no material improvement).
-**Open items:** Both UCM levers (Phase 1A) and prompt levers (Phase 1) are now exhausted. Phase 2 (cross-linguistic query supplementation) is the structural fix — requires Captain design approval before implementation.
-**For next agent:** Prompt is back to pre-Phase-1 state (reseeded). No code/config changes remain. Read `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` §4 for Phase 2 design. Key constraint: cross-linguistic language selection must be LLM-guided or config-driven, not hardcoded per-language rules.
-
----
-### 2026-03-22 | Senior Developer | Claude Code (Sonnet 4.6) | Phase 1A Experiment — evidenceBalanceSkewThreshold 0.8→0.65
-**Task:** Controlled UCM-only experiment: lower contrarian threshold from 0.8 to 0.65. Observe whether contrarian fires on EN exact and reduces spread.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Phase1A_Experiment_Results.md`
-**Key decisions:** Phase 1A FAILED and was reverted. Contrarian does fire at 0.65 — mechanism confirmed working. But EN exact went from 63%→77% (worse). Contrarian found only 21 contradicting items against 85 supporting — EN search space structurally resistant to yielding contradicting evidence for "is pointless" framing. Phase 1B (more iterations) also not recommended by structural math. Next step: Lead Architect Phase 1 (GENERATE_QUERIES direction-neutralization, prompt change, needs Captain approval).
-**Open items:** Captain decision on Phase 1 prompt change (direction-neutralization paragraph in GENERATE_QUERIES).
-**For next agent:** See handoff. Threshold is back to 0.8. Do not retry threshold changes. Proposed prompt text in `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` §3.
-
----
-### 2026-03-21 | LLM Expert | Claude Code (Sonnet 4.6) | Stage 2 Architecture Deep Dive — Retrieval Root Cause
-**Task:** Full Stage 2 code investigation: how retrieval creates the EN exact 63% outlier. Identify structural gaps and lowest-friction intervention package.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_LLM_Expert_Stage2_Architecture_Deep_Dive.md`
-**Key decisions:** Identified `evidenceBalanceSkewThreshold=0.8` (strict >) as the critical structural gap — EN exact pools at ~65% supporting never cross this threshold, so D5 contrarian (already built, already correct) never fires. Also identified `contradictionReservedIterations=1` as structurally insufficient against dominant EN failure narrative. Both fixable via UCM with no approval. Recommended phased rollout: Phase 1 (UCM: lower skew threshold to 0.65, increase contradiction iterations to 2) → Phase 2 (prompt: direction-neutralization in GENERATE_QUERIES, approval needed) → Phase 3 (code: cross-linguistic retrieval, design approval).
-**Open items:** Phase 0 diagnostic (3 EN exact runs to confirm persistent issue). Phase 1 UCM changes can be activated immediately via admin API. Phase 2 and 3 require Captain approval.
-**For next agent:** See handoff for UCM API commands. The contrarian mechanism fires for ALL claims when triggered; budget increase (`contradictionReservedQueries`: 2→4) is required alongside the iterations increase to prevent silent budget exhaustion.
-
----
-### 2026-03-21 | LLM Expert | Claude Code (Sonnet 4.6) | Stage 2 Retrieval Skew — Prompt-Mechanics Root Cause
-**Task:** Diagnose why Run2 (EN exact: 63% LEANING-TRUE) stays high after B1+B2. Complement Lead Architect structural assessment with prompt-level stage-by-stage breakdown.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_LLM_Expert_Stage2_Retrieval_Skew_Analysis.md`
-**Key decisions:** Confirmed RC1 (preliminary search anchoring in EN failure discourse, ~45% of spread) + RC2 (expectedEvidenceProfile inheriting failure bias, ~25%) as the cascade. B1 doesn't reach most EN failure evidence because it's correctly `supports`, not misclassified. VerdictDirectionPolicy correctly doesn't fire — 63% is directionally consistent with ~65% supporting pool. C-exp (balanced preliminary injection without code change) is a cheaper diagnostic gate than running 3 fresh LLM runs. C1 (bidirectional expectedEvidenceProfile in Pass 2) and C2 (refutingSearchHint in Pass 1) are the prompt-level alternatives to cross-linguistic pooling.
-**Open items:** C-exp diagnostic recommended before C1/C2. Captain approval required for any prompt change.
-**For next agent:** See handoff for per-stage percentage breakdown and the distinction between C1 (Pass 2 expectedEvidenceProfile structure) vs Lead Architect Phase 1 (GENERATE_QUERIES direction neutralization). Both target the same RC2 from different sites — GENERATE_QUERIES change is narrower/lower-risk; Pass 2 change is more structural.
-
----
-### 2026-03-21 | Lead Architect | Claude Code (Sonnet 4.6) | Plastik Stage 2 Retrieval Design Assessment
-**Task:** Assess whether remaining 48pp post-B1+B2 spread requires another local prompt tweak or structural retrieval redesign. Deliver phased plan with decision gates.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md`
-**Key decisions:** 48pp spread is primarily RC1 (language-stratified retrieval) — not fixable by prompt alone. One remaining prompt intervention (expectedEvidenceProfile neutralization, Phase 1) is worth doing as a gate test. If insufficient, Phase 2 (cross-linguistic query supplementation) is the structural fix.
-**Open items:** Phase 0 diagnostic (3 EN exact runs); Captain approval for Phase 1 prompt change; Captain design approval for Phase 2 before implementation.
-**For next agent:** Read `2026-03-21_Lead_Architect_Plastik_Stage2_Retrieval_Design_Assessment.md` for full phased plan. Do Phase 0 first (zero-cost diagnostic).
-
----
-### 2026-03-20 | Senior Developer | Claude Code (Sonnet 4.6) | Plastik A1 Experiment + verdictDirectionPolicy Promoted
-**Task:** Execute A1 experiment (verdictDirectionPolicy via UCM), evaluate results, promote to permanent default.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-20_A1_Experiment_Results.md`, `apps/web/src/lib/config-schemas.ts` (default changed), `apps/web/configs/pipeline.default.json` (default changed), `apps/web/test/unit/lib/config-schemas.test.ts` (2 assertions updated).
-**Key decisions:** Policy promoted — no overcorrection, correctly fired on Run3 (skewed evidence). Run4/5 improvements came from retrieval balance, not direction repair. 1365 tests passing.
-**Open items:** B1/B2 (EXTRACT_EVIDENCE + GENERATE_QUERIES prompt improvements) are the next structural fixes. Need Captain approval before implementation. Boundary concentration (CB_34: 92.3%) is a secondary signal worth monitoring.
-**For next agent:** Read `2026-03-20_A1_Experiment_Results.md` + `2026-03-20_Implementation_Brief_Plastik_Stage2_Fix.md`. Prompt B1/B2 changes require explicit Captain approval before touching `claimboundary.prompt.md`.
-
----
-### 2026-03-20 | Senior Developer | Claude Code (Sonnet 4.6) | Plastik Downstream Instability Analysis + Implementation Brief
-**Task:** Investigate downstream verdict spread after Stage 1 contract fix. Write implementation brief for next agent.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-20_Senior_Developer_Plastik_Downstream_Instability_Analysis.md`, `Docs/AGENTS/Handoffs/2026-03-20_Implementation_Brief_Plastik_Stage2_Fix.md`
-**Key decisions:** Stage 2 retrieval is primary driver. Stage 4 direction policy is experiment only (not permanent default). Captain reprioritized: A1 as controlled UCM experiment, B1/B2 (prompt work) as actual root-cause fixes.
-**Open items:** A1 experiment needs to be run and evaluated (done). B1/B2 prompt changes need formal Captain approval before implementation.
-**For next agent:** See A1 results handoff (above).
-
----
-### 2026-03-19 | Lead Architect | Claude Code (Opus 4.6) | Refactoring Plan — Planning Complete, Awaiting Execution
-**Task:** Create comprehensive refactoring plan for monolithic code, dead code, and clone cleanup. Coordinate 3 reviews (Code Reviewer, Lead Developer, Senior Architect).
-**Files touched:** `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` (authoritative plan), `Docs/WIP/2026-03-18_Review_CodeReviewer.md`, `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`, `Docs/WIP/2026-03-18_Review_Architect.md`
-**Key decisions:** 7 work streams. WS-1 dead code (~4,200 lines). WS-2 pipeline decomposition (8 modules). WS-3 evaluate-source (5 modules + request-scoped config). WS-4 search provider shared utilities. WS-5/6 UI component extraction. WS-7 deferred.
-**Open items:** Execution blocked by Captain — wait until current work is closed. Architect's Rec-3 (import direction lint), Rec-4 (barrel re-export phase-out), Rec-5 (stage type aliases) are post-execution follow-ups.
-**Warnings:** Line counts are approximate (files have been edited since initial measurement). WS-3/5/6 are Medium-High effort, not Medium. `pipeline-utils.ts` and `aggregation-stage.ts` need monitoring guardrails.
-**For next agent:** Read `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` (the plan) + all 3 review files. Start with WS-1 (dead code removal — near-zero risk). One commit per step, build + test after each.
-
----
-### 2026-03-19 | Lead Architect | Claude Code (Opus 4.6) | Refactoring Plan Architectural Review
-**Task:** Architectural review of `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` focusing on module cohesion, dependency direction, barrel re-exports, state threading, naming, and missing concerns.
-**Files touched:** `Docs/WIP/2026-03-18_Review_Architect.md`
-**Key decisions:** Approved plan. WS-2 module boundaries represent true bounded responsibilities (stage-per-module). Dependency graph is clean with no circular risks. Barrel re-exports are correct for migration but should be removed in a follow-up phase. CBResearchState pass-by-reference is acceptable now but should get stage input/output type aliases for future evolution. Naming conventions are consistent.
-**Open items:** (1) Verify `pipeline-utils.ts` functions actually have 2+ stage consumers. (2) Add import direction lint/test after WS-2. (3) Phase 2 barrel re-export removal within 2 weeks. (4) Stage input/output type aliases in `types.ts`.
-**Warnings:** `pipeline-utils.ts` and `aggregation-stage.ts` are the two modules most likely to erode their cohesion over time. Concrete admission criteria and split triggers are defined in the review.
-**For next agent:** Read `Docs/WIP/2026-03-18_Review_Architect.md` for 9 recommendations (Rec-1 through Rec-9). High-priority items: Rec-1 (utils admission criteria), Rec-3 (import direction enforcement), Rec-4 (barrel re-export phase-out), Rec-8 (no Zod schemas in orchestrator).
-
----
-### 2026-03-19 | Lead Developer | GitHub Copilot (GPT-5.4) | Refactoring Plan Practicality Review
-**Task:** Review `Docs/WIP/2026-03-18_Refactoring_Plan_Code_Cleanup.md` for practicality and implementation quality as Lead Developer, with emphasis on WS-2 through WS-6 and effort realism.
-**Files touched:** `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Endorsed the overall plan direction but recommended tighter module seams: keep `claimboundary-pipeline.ts` as a thin orchestrator, keep `pipeline-utils.ts` small, and watch `aggregation-stage.ts` for re-monolith risk. Strongly recommended replacing SR route mutable globals with a request-scoped config/context object rather than raw parameter threading. Confirmed shared utilities are the right level for search providers, but rejected an adapter/interface layer. Recommended following the existing jobs-page extraction convention more closely (flat components/hooks/utils/lib; only light grouping when justified).
-**Open items:** Captain / implementer should decide whether to keep the extracted jobs-page component tree flat or introduce limited grouping (`verdict`, `evidence`, `events`/`report`, `shared`). If WS-2 extraction causes `aggregation-stage.ts` to exceed ~900 lines, split narrative or quality helpers into a second module rather than accepting a new monolith.
-**Warnings:** Current plan line counts are somewhat stale relative to the repo (`claimboundary-pipeline.ts` 5692, `evaluate-source/route.ts` 2615, `jobs/[id]/page.tsx` 3466, `admin/config/page.tsx` 4580). WS-3, WS-5, and likely WS-6 are slightly more effortful than currently labeled because the real cost is coupling preservation, not raw line movement.
-**For next agent:** Start with `Docs/WIP/2026-03-18_Review_LeadDeveloper.md`. The most important implementation guidance is: use request-scoped SR config/context, keep search-provider utilities narrow, and do not introduce vague UI folders like `analysis/` unless there is a stronger structural reason.
-
----
-### 2026-03-19 | LLM Expert + Senior Developer | Claude Code (Opus 4.6) | Stage 4.5 SR Calibration — LLM Integration + Control-Set Validation
-**Task:** Implement prompt-backed LLM integration for Stage 4.5 source-reliability calibration (`confidence_only` mode), validate with 5-claim control set.
-**Files touched:** `apps/web/prompts/claimboundary.prompt.md` (SR_CALIBRATION section + frontmatter), `apps/web/src/lib/analyzer/source-reliability-calibration.ts` (LLM call, Zod schema, serialization, batch-contract enforcement), `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` (async callsite + onEvent), `apps/web/src/lib/analyzer/types.ts` (TSDoc for mode enum), `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts` (bounded_truth_and_confidence guard test).
-**Key decisions:**
-- Prompt approved with 9 rules: portfolio-level only, no hardcoded thresholds, batch contract, three concern types mapped to internal warning types.
-- `callSRCalibrationLLM` is a separate async export; `calibrateVerdictsWithSourceReliability` stays sync — preserves test compatibility.
-- `bounded_truth_and_confidence` mode is functionally identical to `confidence_only` until a dedicated truth-delta prompt is implemented (documented with three reasons: verdict-label risk, double-counting, no separate evaluation contract).
-- Hardening: `loadAndRenderSection` inside try/catch, batch-contract enforcement (claimId set validation).
-**Open items:**
-- Feature remains behind `sourceReliabilityCalibrationEnabled=false` default.
-- Optional next step: frozen-retrieval A/B harness to isolate Stage 4.5 effect from search variance.
-- `bounded_truth_and_confidence` truth-delta prompt is a future phase requiring separate design + validation.
-- `trackRecordConfidence`/`trackRecordConsensus` not yet serialized to LLM (token-budget decision for Haiku).
-**Warnings:** Control-set results show large report-level shifts (Iran 62→80, Bolsonaro single 51→75) that are NOT attributable to Stage 4.5 alone — retrieval variance confounds. Claim-level deltas were moderate (-10 to +8). Do not interpret these runs as isolated quality gains from Stage 4.5.
-**For next agent:** Stage 4.5 is feature-complete and experimentally validated. Config is reset to baseline (`30c48302`). To enable: set `sourceReliabilityCalibrationEnabled=true` + `sourceReliabilityCalibrationMode="confidence_only"` in UCM. For the A/B harness: freeze evidence/source sets from a baseline run, replay with Stage 4.5 on/off, diff per-claim raw vs calibrated confidence.
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | Independent Report Quality Investigation
-**Task:** Independently investigate report-quality evolution from ClaimAssessmentBoundary launch through the March 19 jobs, covering DB history, HTML reports, live config drift, git history, and scorecard application.
-**Files touched:** `Docs/WIP/2026-03-19_Independent_Report_Quality_Investigation.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Role_Learnings.md`
-**Key decisions:** Verified that the major post-Mar-12 quality drop is driven primarily by SR weighting being wired into verdict aggregation (`9550eb26`), not by the smaller residual `defaultScore=0.45` config drift. Confirmed current live config materially differs from defaults on `sourceReliability.defaultScore`, `search.cache.enabled`, and disabled integrity policies. Confirmed ClaimBoundary config provenance is broken for current jobs because the main runner path does not pass `jobId` into config loading, leaving `config_usage` and `job_config_snapshots` unusable for March attribution.
-**Open items:** Captain / implementer should decide whether to test `evidenceWeightingEnabled=false` or a softer weighting function before smaller config cleanups. Stage 1 / Gate 1 remediation for broad rhetorical claims remains unimplemented.
-**Warnings:** The report intentionally disagrees with the earlier claim that `0.45` drift alone explains a 10-18pp drop; sampled real-job math supports a much smaller direct effect. Missing per-job config provenance limits certainty for fine-grained attribution within March 12-19.
-**For next agent:** Start with `Docs/WIP/2026-03-19_Independent_Report_Quality_Investigation.md`. If implementing follow-ups, inspect `9550eb26`, `8460b624`, `5243d678`, `b0f3becb`, and the active config in `apps/web/config.db`. For auditability fixes, inspect config loading at startup in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` and usage recording in `apps/web/src/lib/config-loader.ts`.
-**Learnings:** yes — appended a Senior Developer gotcha about config provenance for current ClaimBoundary jobs.
-
----
-### 2026-03-17 | Agents Supervisor | Claude Opus 4.6 | Agent Rules Cleanup Plan
-**Task:** Full audit of agent governance ecosystem (45+ files, ~17,000 lines) and creation of prioritized cleanup plan.
-**Files touched:** `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md` (NEW)
-**Key decisions:** 6-phase plan covering stale content fixes, archival of bloated files, redundancy removal, gap filling, clarity improvements, and learnings curation. Tool-specific prompts for Claude/Codex/Gemini/Cline provided.
-**Open items:** Plan is DRAFT — awaiting Captain review and approval before execution.
-**For next agent:** Read `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md`. Each phase has a ready-to-paste prompt for the appropriate tool. Phases 1-3 are HIGH/MEDIUM priority and can run in parallel.
-
----
-### 2026-03-15/16 | Lead Architect | Claude Opus 4.6 | Phase A + Rec-A + Search Accumulation
-**Task:** Implement and validate contamination fixes, model allocation optimization, and search accumulation restoration.
-**Files touched:** `claimboundary-pipeline.ts` (Fix 0-A, Fix 4, Rec-A), `verdict-stage.ts` (Fix 5), `config-schemas.ts` (Fix 4, search autoMode, SerpAPI/Serper config), `pipeline.default.json` (Fix 4), `search.default.json` (autoMode, provider config), `web-search.ts` (accumulation toggle), `types.ts` (warning types), `warning-display.ts` (warning classifications), `metrics.ts` (pricing table), `config-schemas.test.ts` (legacy name fix), `llm.ts` (Rec-C)
-**Key decisions:**
-- Phase A (Fix 0-A + Fix 4 + Fix 5) shipped and validated: zero foreign boundaries, German boundaries preserved, contradiction loop protected, phantom IDs stripped.
-- Rec-A shipped: Pass 2 → Haiku (~3% LLM cost saving). Zero quality degradation, eliminates soft-refusal cascade.
-- Search accumulation: `autoMode: "accumulate"` shipped as UCM toggle. SerpAPI re-enablement reverted (circuit breaker OPEN, +100% latency, zero contribution).
-- LLM cost model corrected: extraction ~35 calls (not 6-12), total ~$0.27/analysis (not $0.18).
-**Open items:** SerpAPI circuit breaker needs independent health check. Phase B (prompt quality review) is next investigation. SC temperature 0.4→0.3 deferred. Unit tests for Fix 0-A/4/5 still owed.
-**Warnings:** Runtime config.db does not auto-reseed from JSON defaults — deploy/production requires Admin UI config update or DB reseed to pick up new defaults.
-**For next agent:** Search accumulation is active via code default (`config.autoMode ?? "accumulate"`). SerpAPI is disabled in both JSON and runtime config. The best performing configuration is CSE-only with accumulate mode. Next quality lever is prompt quality (Phase B from Next Investigation Recommendations).
-**Learnings:** no
-
----
-### 2026-03-15 | Senior Developer | Codex (GPT-5) | Verify Dependency Fixes Across Local, CI, and Deploy Paths
-**Task:** Re-verify the dependency/remediation changes as Senior Developer and confirm whether the repo is now clean for local development, CI, and deployed-system prerequisites.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- Repaired the active local workspace by stopping the repo's running Next.js dev processes, which were locking `next-swc.win32-x64-msvc.node` and blocking `npm ci`.
-- Confirmed the active local workspace now passes `npm ci`, `npm audit`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -c Release`.
-- Confirmed a clean-room CI-equivalent path in detached worktree `C:\DEV\FactHarbor-sd-verify` also passes `npm ci`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -c Release`.
-- Confirmed the standalone tool package audit is clean and resolves `@vscode/vsce@3.7.1`, `undici@7.24.3`, and `yauzl@3.2.1`.
-- Confirmed `scripts/deploy.sh` parses successfully under Git Bash after the added Node version preflight.
-**Open items:** None in code. Operationally, the deployed VPS still needs to actually be on Node `v20.19.0+` for the new guard to pass.
-**Warnings:** The active local `next build` emitted a non-fatal standalone trace warning about copying `search-cache.db-shm`; the build still succeeded, and the warning did not reproduce in the clean verification worktree. This appears environment-local rather than a code regression.
-**For next agent:** The dependency fix set is now verified end-to-end. If a deployment fails next, the first thing to check is the VPS Node version, because `scripts/deploy.sh` will now reject anything below `20.19.0`.
-**Learnings:** no
-
----
-### 2026-03-15 | Senior Developer | Codex (GPT-5) | Enforce Node Patch Level and Fix VS Code Tool Audit
-**Task:** Implement the follow-up to the dependency review: enforce a safe minimum Node 20 patch level for CI/deploy, and repair the standalone `tools/vscode-xwiki-preview` dependency graph so its security override actually resolves.
-**Files touched:** `package.json`, `apps/web/package.json`, `.github/workflows/ci.yml`, `scripts/deploy.sh`, `scripts/DEPLOYMENT.md`, `tools/vscode-xwiki-preview/package.json`, `tools/vscode-xwiki-preview/package-lock.json`
-**Key decisions:**
-- Pinned CI to `20.19.0` instead of floating major `20`, matching the stricter transitive engine floor introduced by current `sqlite3`/`undici` dependency resolution.
-- Added `engines.node >=20.19.0` at the repo root and web workspace to make the runtime requirement explicit in package metadata.
-- Added a deploy preflight in `scripts/deploy.sh` that aborts early if the VPS is on an older Node patch.
-- Fixed the standalone VS Code tool by upgrading `@vscode/vsce` to `3.7.1`, overriding `yauzl` to exact `3.2.1`, and overriding `undici` to `7.24.3`; regenerated that package's lockfile.
-**Open items:** None for the implemented fix set.
-**Warnings:** Could not syntax-check `scripts/deploy.sh` with `bash -n` on this Windows machine because WSL/bash is not installed. The function is simple and localized, but shell syntax was not machine-validated here.
-**For next agent:** Main app path was previously validated in a clean worktree (`npm ci`, `npm test`, `npm -w apps/web run build`, `dotnet build apps/api -c Release`). The new work here is infra-only plus the standalone tool package. If deploy issues occur next, first confirm the VPS is actually on Node `v20.19.0+`.
-**Learnings:** no
-
----
-### 2026-03-14 | Senior Developer | Claude Sonnet 4.6 | Phase A: Search-Stack Drift Investigation
-**Task:** Execute Phase A of the approved quality-restoration investigation: determine whether search-stack drift is the primary remaining cause of report-quality degradation vs `quality_window_start` (`9cdc8889`). Design and run experiments covering provider-mix (UCM on main) and AUTO accumulation behavior (worktree).
-**Files touched:**
-- `scripts/phaseA_search_experiment.py` (NEW — experiment runner, 4 conditions)
-- `scripts/phaseA_live_tracking.md` (NEW — live run log, in progress)
-- `scripts/phaseA_results.json` (NEW — results output, in progress)
-- `Docs/WIP/Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md` (NEW — analysis + WIP container)
-- `C:/DEV/FH-phaseA-accumulation/apps/web/src/lib/web-search.ts` (worktree — removed stop-on-first-success break)
-
-**Key decisions:**
-- 4 conditions: C0 (control auto), C1 (Serper-only), C2 (SerpAPI-only), C3 (accumulation worktree)
-- Cache disabled during all runs — cache key excludes provider so must disable to get clean per-provider measurements
-- Worktree `phaseA-accumulation` started on port 3001 (webpack mode, node_modules junction from main)
-- 2 runs per benchmark per condition; 3 benchmarks = 24 total jobs (~8-10 hours estimated)
-
-**Structural findings (confirmed before results):**
-1. **PRIMARY DRIFT confirmed**: Commit `8bef6a91` (2026-03-09) introduced `stop-on-first-success` in AUTO dispatcher. At `quality_window_start`, AUTO mode was true accumulation — CSE filled slots, SerpAPI filled remainder to maxResults. Current main stops the loop as soon as any provider returns results. Practical effect: each query gets 5-8 results instead of up to 10.
-2. **Provider change**: SerpAPI → Serper as P2. SerpAPI still has credentials but is UCM-disabled.
-3. **Cache key excludes provider**: Required disabling cache to prevent contaminated provider comparisons.
-
-**Open items:**
-- Experiment runs in background — full results available in `scripts/phaseA_live_tracking.md` / `phaseA_results.json` when complete (~6-8 hours remaining)
-- WIP doc sections 4 (Results) and 5 (Conclusions) to be filled from results JSON when done
-- If C3_ACCUM wins: accumulation fix needs code-level PR to main from `phaseA-accumulation` branch
-- If C2_SERPAPI wins: UCM-only fix (re-enable SerpAPI, set as P2, disable Serper)
-- Worktree cleanup after experiment: `git worktree remove C:/DEV/FH-phaseA-accumulation`
-
-**Warnings:**
-- The stop-on-first-success was introduced deliberately (commit comment: "prevents inconsistent evidence pools"). If accumulation is restored, the variance concern should be re-evaluated. The trade-off is: lower variance vs. lower evidence depth. Phase 1 showed variance is already large; evidence depth may matter more.
-- Worktree uses junction to main's node_modules — this is not a clean isolation. But since the only change is the single break removal in web-search.ts, contamination risk is negligible.
-
-**For next agent:** Read `Docs/WIP/Report_Quality_PhaseA_Search_Stack_Results_2026-03-14.md` for full structural analysis. Check `scripts/phaseA_results.json` for completed experiment results. The key structural finding is already documented and actionable — regardless of the exact numbers, CSE stop-on-first-success is the most likely search-stack regression. Section 5 (conclusions) needs to be filled from results.
-**Learnings:** no
-
----
-### 2026-03-14 | Lead Architect | Cline | Review: Report Quality Next Investigation Recommendations
-**Task:** Review Docs/WIP/Report_Quality_Next_Investigation_Recommendations_2026-03-14.md for architectural interpretation, sequencing, and self-consistency strategy.
-**Files touched:** `Docs/WIP/Report_Quality_Next_Investigation_Recommendations_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- Approved the proposed investigation priorities. Searching for upstream structural causes (search drift, prompt quality) before tuning downstream controls (temperature, self-consistency) correctly avoids overfitting.
-- Concurred that stronger self-consistency should remain a diagnostic lever rather than an immediate default change to avoid expensive agreement on poor data.
-- Open Q1: Test provider mix via `main`/UCM; test code drift (AUTO behavior) via worktree.
-- Open Q2: Prompt quality and search stack investigations should run in parallel as they are largely orthogonal.
-- Open Q3: Start temperature test at 0.3 only; do not matrix with 0.2 yet.
-**Open items:** None. The plan is APPROVED and execution can proceed with Phase A and B in parallel.
-**Warnings:** Prompt investigations must strictly adhere to AGENTS.md input neutrality and genericity mandates (no hardcoded keywords or language-specific heuristics).
-**For next agent:** Proceed with Phase A and Phase B in parallel according to the approved plan.
-**Learnings:** no
-
----
-### 2026-03-14 | Unassigned | Claude Opus 4.6 | Cross-Pipeline Report Quality Deep Analysis
-**Task:** Comprehensive historical analysis of report quality across 933 jobs in 11 databases, identifying peak quality timeframes, mapping to git commits, and diagnosing the Mar 12+ regression.
-**Files touched:** `Docs/WIP/Report_Quality_Deep_Analysis_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- CB pipeline peaked Mar 8-9 (avg score 187, best individual 279). Orchestrated peaked Jan 11-13 (avg score 108, best individual ~200).
-- Quality regression starting Mar 12 afternoon traced to two commit clusters: SR weighting integration (`9550eb26`) and jurisdiction filtering (Fixes 0-3).
-- Established `9c165f29` (Mar 9) as the last commit before quality decline began.
-**Open items:** Regression requires targeted investigation — `applyEvidenceWeighting` impact analysis and jurisdiction filter threshold tuning. Warning system not detecting quality degradation (0 warnings during C=0 failures).
-**For next agent:** Full analysis in `Docs/WIP/Report_Quality_Deep_Analysis_2026-03-14.md`. Cross-reference with `Docs/WIP/Report_Quality_Restoration_Plan_2026-03-14.md` for the restoration approach. Key boundary commit: `9c165f29`.
-
----
-### 2026-03-14 | Senior Developer | Codex (GPT-5) | Report Quality Restoration Plan
-**Task:** Reassess the worktree comparison findings and produce a review-ready plan for restoring the best possible report quality using `quality_window_start` as the baseline.
-**Files touched:** `Docs/WIP/Report_Quality_Restoration_Plan_2026-03-14.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- Established `quality_window_start` (`9cdc8889`) as the standing historical quality baseline.
-- Proposed a phased restoration plan that preserves contamination and geography fixes while prioritizing the strongest current degradation suspects:
-  1. SR weighting / confidence conservatism
-  2. shared search-stack drift
-  3. reduced research depth
-- Recommended starting with UCM-level A/B experiments on `main` before broader code rollback, and using a temporary integrated quality profile only after isolated winners are identified.
-**Open items:** Plan requires review and approval before implementation. The largest open review choice is whether the first SR experiment should fully disable weighting or only soften it.
-**Warnings:** Search behavior is shared infrastructure, so any AUTO accumulation restoration affects more than one subsystem. Google CSE availability must be recorded for comparison runs to keep conclusions valid.
-**For next agent:** Use the new WIP plan as the source of truth for the next review round. Benchmark claims and the `main` vs `quality_window_start` port mapping are already documented in the worktree results doc.
-**Learnings:** no
-
----
-### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Debate Role Config Terminology Migration (Phases 1+2)
-**Task:** Implement the approved Debate Role Config Terminology Migration Plan — replace provider-branded capability names (`haiku/sonnet/opus`) with provider-neutral vocabulary (`budget/standard/premium`), unify split `debateModelTiers`/`debateModelProviders` into `debateRoles.<role>.{provider, strength}`, rename `tigerScoreTier` to `tigerScoreStrength`. Legacy fields remain read-compatible via parse-time normalization.
-**Files touched:**
-- `apps/web/src/lib/analyzer/model-resolver.ts` — `ModelStrength` type, `normalizeToStrength()`, re-keyed version maps, deprecated `ModelTier` alias
-- `apps/web/src/lib/config-schemas.ts` — `debateRoles` Zod schema, `tigerScoreStrength` field, `.transform()` normalization block (canonical wins > legacy > defaults), updated `DEFAULT_PIPELINE_CONFIG`
-- `apps/web/configs/pipeline.default.json` — canonical `debateRoles` shape, `tigerScoreStrength`
-- `apps/web/src/lib/analyzer/verdict-stage.ts` — `VerdictStageConfig` interface migrated to `debateRoles`, `DEFAULT_VERDICT_STAGE_CONFIG` updated, all call sites use `config.debateRoles.<role>.strength`
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — `checkDebateTierDiversity`, `checkDebateProviderCredentials`, `buildVerdictStageConfig`, `evaluateTigerScore` all read from canonical fields
-- `apps/web/src/lib/calibration/runner.ts` — `resolveLLMConfig` reads `config.debateRoles`, uses `normalizeToStrength()`
-- `apps/web/src/app/admin/config/page.tsx` — Admin UI reads/writes `debateRoles`, options show `budget/standard/premium`
-- `apps/web/test/unit/lib/config-schemas.test.ts` — legacy normalization tests, canonical-wins-over-legacy tests
-- `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts` — all tier references migrated to strength vocabulary
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — debate diversity and provider credential tests updated
-- `apps/web/test/unit/lib/calibration-runner.test.ts` — strength-based resolver tests
-**Key decisions:**
-- `ModelTier` kept as deprecated type alias (`export type ModelTier = ModelStrength`) — zero breakage for any remaining imports
-- `resolveModel()` accepts `string` (not just `ModelStrength`) and normalizes internally — call sites using "haiku"/"sonnet" model identifiers continue to work
-- Normalization in Zod `.transform()` handles all combos: canonical-only, legacy-only, both (canonical wins), challenger defaults to openai provider
-- Non-debate model fields (`modelUnderstand`, `modelExtractEvidence`, `modelVerdict`) remain free-text — out of scope per plan
-**Open items:**
-- Pre-existing build failure at `claimboundary-pipeline.ts:474` (`ClaimVerdict[]` → `CBClaimVerdict[]` type mismatch) — NOT introduced by this migration, confirmed identical on clean HEAD
-- Legacy fields (`debateModelTiers`, `debateModelProviders`, `tigerScoreTier`) can be removed in a future cleanup pass once no stored configs use them
-**Warnings:**
-- The `LLMCallFn` type's `tier` option was widened from union to `string` to accept both vocabularies during transition — tighten to `ModelStrength` once legacy is fully removed
-**For next agent:** All consumers read canonical `debateRoles` shape. Legacy stored configs auto-normalize on load. Build failure is pre-existing and unrelated. Tests: 1216/1216 passing (64 files).
-
----
-### 2026-03-13 | Captain Deputy | Claude Sonnet 4.6 | Three-Plan Review: Contamination Fix, Baseline Test Plan, Debate Role Migration
-**Task:** Review and close all open questions in three WIP planning documents; record decisions; confirm execution readiness.
-**Files touched:**
-- `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — removed stale `pass1Result.inferredGeography` snippet from Fix 1; closed Open Q2 (keep 0.4 threshold); added review log entry
-- `Docs/WIP/Report_Quality_Baseline_Test_Plan_2026-03-12.md` — corrected SQL table name `sr_cache` → `source_reliability`; status `DRAFT v2` → `APPROVED`; added review log entry with Phase 1 gate analysis
-- `Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md` — added review log entry with all 5 decisions closed
-**Key decisions:**
-- **Contamination Fix Plan**: APPROVED, ready for Act Mode. Open Q2 closed: keep 0.4 threshold. Open Q4 deferred (per-source extraction cap = separate backlog item).
-- **Baseline Test Plan**: APPROVED (after SQL fix). Phase 1 gate: H1 mean = 56% → 50-74% range → **Phase 2 IS triggered**. H1a/H1b spread = 8pp (≤15pp, not inconclusive). Sequencing: Phase 2 worktree (W1+W2 at `523ee2aa`) BEFORE Fix 0 — PT runs are already jurisdiction-clean.
-- **Debate Migration Plan**: APPROVED, all 5 questions resolved. (1) `tigerScoreTier` → IN SCOPE, rename to `tigerScoreStrength`, enum `budget/standard/premium`. (2) Strip legacy fields immediately on save. (3) No stored-config rewrite script. (4) `model-resolver.ts` rename (`ModelTier → ModelStrength`, version-map keys) moves to Phase 1. (5) Non-debate model fields stay as free-text — compatibility-only behind resolver type rename.
-- Normalization: add to `superRefine()` block — if `debateRoles` undefined, build from legacy maps with `{ haiku: "budget", sonnet: "standard", opus: "premium" }`; canonical wins when both present.
-**Open items:**
-- Phase 2 worktree run (W1 PT + W2 EN Bolsonaro at `523ee2aa`) — pending. Config diff prerequisite first.
-- Fix 0 implementation (contamination Phase A) — pending Phase 2 results.
-- Debate Role Config Terminology Migration (4-phase) — pending.
-**Warnings:**
-- Debate migration Phase 1 and Phase 2 must ship in the **same PR**. Split deployment causes `verdict-stage.ts` to read absent `debateModelTiers` and silently fall back to defaults.
-- `checkDebateTierDiversity()` in `claimboundary-pipeline.ts` must be rewritten to read `debateRoles.<role>.provider + strength` — current `all_same_debate_tier` warning on 3/3 HEAD runs is caused by this broken diversity check.
-**For next agent:** All three plans are execution-ready. Recommended next: Phase 2 worktree → Fix 0 → Debate migration (independent, can be parallelized). Full decisions and normalization pseudocode in the Debate Migration Plan Captain Deputy review log section.
-**Learnings:** No new role learnings — decisions recorded directly in plan docs.
-
----
-### 2026-03-13 | Lead Architect | Gemini CLI | Review Debate Role Config Terminology Migration Plan
-**Task:** Approved the plan with mandatory inclusion of tigerScoreTier and model-resolver refactor
-**Files touched:** Docs/WIP/Debate_Role_Config_Terminology_Migration_Plan_2026-03-13.md
-**Key decisions:** Mandated transition from vendor-specific branding (haiku/sonnet/opus) to capability-based tiers (budget/standard/premium). Expanded scope to include tigerScoreTier. Confirmed 'migrate-on-save' policy for configuration rot prevention.
-**Open items:** None
-**Warnings:** Implementation should proceed following the approved plan + architectural amendments.
-**For next agent:** Verify updated diversity checks in claimboundary-pipeline.ts
-**Learnings:** None
-
----
-### 2026-03-13 | Senior Developer | Claude Sonnet 4.6 | Task 2 — Post-fix quality rerun (geography_fix vs window_start) + HD_PT rerun
-**Task:** Run clean 2-checkpoint comparison after geography fix (f6e04ce3): window_start (9cdc8889) vs current main. 3 claims: EN Bolsonaro, PT Bolsonaro, new DE mental health claim (Kanton Zürich school mental health burden). Answer 3 questions: (1) materially closer to window_start? (2) Swiss jurisdiction regression fixed? (3) SR weighting the main remaining gap? HD_PT was subsequently rerun once API credits were replenished.
-**Files touched:** `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` (appended POST-FIX RERUN section, updated HD_PT row), `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- WS_PT systematic failure: 3/3 attempts fail at Pass2 with schema parse error at window_start (9cdc8889) — no data obtainable
-- HD_PT rerun (job `c25702f816ab4d7389923794d2b89754`): MIXED, 49.2% TP, 50.2% conf, `inferredGeography: BR` ✅, CSE ✅, valid result. Applicability filter removed 4 foreign-jurisdiction items; all_same_debate_tier warning.
-- HD_DE `inferredGeography: CH` confirmed — geography regression conclusively fixed
-- SR weighting identified as dominant quality gap: 24-31pp confidence drops across all comparable claim pairs
-**Open items:**
-- `all_same_debate_tier` warning on 3/3 HEAD runs — consider mixing model tiers for debate roles
-- Residual EN contamination: Fix 3 reduced 3/6→1/6 boundaries but B4 "Trump administration communications" survives
-- PT quality gap: MIXED (49.2%) at HEAD vs 90.1% at Task 1 window_start — partly SR weighting, partly claim decomposition differences
-**Warnings:**
-- WS_PT systematic Pass2 failure at window_start is reproducible — not a transient error. The old schema at 9cdc8889 fails for this specific Portuguese claim every time.
-**For next agent:** Full run data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` §POST-FIX RERUN. Three questions answered: (1) NO — main is 23-31pp worse on EN/DE TP/conf; (2) YES — CH geography works; (3) YES — SR weighting is primary gap. All 5 runs now valid (WS_PT still has no data). Next priority: fix SR weighting calibration (sourceId reconciliation bug identified by prior Codex agent in entry below).
-**Learnings:** No — role handoff not required.
-
----
-### 2026-03-13 | Senior Developer | Codex (GPT-5) | Fix — Evidence sourceId reconciliation for SR weighting
-**Task:** Investigate why job `507f84f318144a2ba2e975107bf873a8` produced `UNVERIFIED`, identify the concrete code cause, and implement the minimal pipeline fix.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- Confirmed the stored job result was `56.1% true / 40.2% confidence`, which maps to `UNVERIFIED` by design in `JobService.MapPercentageToVerdict()` for the `43–57%` band when confidence is below `45`.
-- Identified the concrete bug: Stage 2 evidence extraction was emitting `sourceId: ""`, and seeded preliminary evidence also carried empty `sourceId`. This caused `applyEvidenceWeighting()` to treat all supporting evidence as unknown-source and apply the default SR weight `0.45`.
-- Fixed the direct extraction path to retain the matched fetched-source ID.
-- Added `reconcileEvidenceSourceIds()` to backfill missing evidence `sourceId` values from `sourceUrl` after research has collected and scored sources, so seeded evidence also links correctly.
-- Added unit tests for both the reconciliation helper and the extraction-time `sourceId` mapping.
-**Open items:**
-- Changes are local and verified with `npm test`, but not yet committed.
-- The exact job should be re-run to measure post-fix impact on the final label.
-- The “international due process standards” atomic claim still appears intrinsically low-confidence because the evidence pool lacks direct international verification; this may still keep the overall result below `MIXED` even after the wiring bug is fixed.
-**Warnings:**
-- This fix removes an artificial confidence penalty, but it does not guarantee the job becomes `MIXED`. The second claim (`AC_02`) may still legitimately remain weak.
-- SR weighting behavior for unknown or mid-reliability sources remains a separate calibration issue.
-**For next agent:** Re-run the exact Bolsonaro input after this fix. If the result is still `UNVERIFIED`, investigate the international-standards sub-claim separately from SR weighting: search/query coverage for international evaluators, and whether current confidence calibration is too punitive for mixed-context evidence.
-**Learnings:** no
-
----
-### 2026-03-13 | Senior Developer | Claude Code (claude-sonnet-4-6) | Pre-rerun hardening: inferredGeography, regression tests, Fix 3 logging
-**Task:** Three low-risk fixes before next quality rerun: (1) strengthen geography inference so named sub-national entities override language, (2) add GEO-REG regression tests for German-language Swiss claims, (3) harden Fix 3 applicability logging against malformed URLs.
-**Files touched:**
-- `apps/web/prompts/claimboundary.prompt.md` — CLAIM_EXTRACTION_PASS1 geography inference rule: added priority rule stating explicit sub-national entities (city/canton/district) determine country regardless of input language
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 3 new GEO-REG tests in `describe("Stage 1: runPass1")`: GEO-REG-1 (Kanton Zürich → CH not DE), GEO-REG-2 (Zürich explicit city → CH ≠ DE), GEO-REG-3 (German language with no entity → null, not DE)
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Fix 3 domain logging: replaced `new URL(item.sourceUrl).hostname` (throws on malformed URLs) with `item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown"` (never throws)
-**Key decisions:**
-- Prompt change is generic (no hardcoded country names) — uses abstract "sub-national geographic entity" language per AGENTS.md analysis prompt rules
-- Tests use the real claim text ("Immer mehr Kinder im Kanton Zürich...") as input to `runPass1` but mock the LLM response — they test that code propagates the LLM's geography correctly and doesn't override "CH" with "DE" due to `detectedLanguage: "de"`
-- No SR weighting, search, or verdict changes
-**Open items:** None — all three fixes are self-contained. Geography inference quality depends on LLM compliance with the updated prompt; a live H3 run with a Swiss claim will confirm.
-**Warnings:** None — changes are additive and localized.
-**For next agent:** All 1204 tests pass. Ready to rerun quality tests. The prompt change will only take effect on new analysis runs (after server restart if cached).
-
----
-### 2026-03-13 | Senior Developer | Claude Code (claude-sonnet-4-6) | Report Quality Worktree Comparison — All 4 Checkpoints Executed
-**Task:** Execute the worktree comparison runbook across quality_window_start, quality_post_window_first_code, quality_deployed_proxy, and quality_head; identify where report quality degraded.
-**Files touched:**
-- `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md` — full results document (created)
-- Worktrees created: `C:/DEV/FH-quality_window_start`, `C:/DEV/FH-quality_post_window_first_code`, `C:/DEV/FH-quality_deployed_proxy`
-**Key decisions:**
-- Ran all 3 claims (PT/EN/DE) on all 4 checkpoints sequentially (one checkpoint at a time, one API+web pair per checkpoint)
-- Fixed infrastructure issues at each checkpoint without modifying analysis code: deployed_proxy needed manual `IsHidden` column; older checkpoints needed `npm install sqlite@5 sqlite3`
-- Recorded Google CSE quota status, fallback provider usage, and warning counts per run as requested
-**Open items:**
-- Fix 1 jurisdiction regression for DE (German language → incorrectly infers Germany not Switzerland)
-- SR weighting calibration (34pp confidence collapse on PT at HEAD is excessive)
-- verdict-stage.ts code bug at post_window_first_code (historical, but indicates fragile self-consistency path)
-- Re-run with fresh Google CSE quota for clean comparison (runs 1–9 all had CSE 429)
-**Warnings:**
-- `quality_post_window_first_code` EN FAILED due to `TypeError: run2Verdicts.find is not a function` in verdict-stage.ts:251 — self-consistency path receives non-array at this checkpoint
-- Google CSE quota was exhausted during window_start and post_window runs; HEAD runs had fresh quota, giving HEAD a search-quality advantage that partially offsets the SR weighting confidence drag
-- deployed_proxy API had a pre-existing schema bug (IsHidden column absent from migrations) requiring a manual DB ALTER
-- All confidence values at quality_head are 10–34pp lower than other checkpoints due to SR weighting — do not compare confidence across SR-weighting boundary without adjustment
-**For next agent:** Full data in `Docs/WIP/Report_Quality_Worktree_Comparison_Results_2026-03-13.md`. Key conclusions: (1) degradation first appears at post_window_first_code (code bug); (2) window_start is best performer (PT 90.1%, EN 75.4%, DE 84%); (3) Fix 1 successfully eliminated EN US contamination but caused DE jurisdiction regression (Germany vs Switzerland); (4) SR weighting is the primary cause of confidence collapse at HEAD (not a contamination issue). Next fix: `inferredGeography` disambiguation for non-English European claims containing explicit place names.
-**Learnings:** No role_learnings update — execution task, no novel patterns.
-
----
-### 2026-03-12 | Senior Developer | Claude Code (claude-opus-4-6) | Fix 3: Post-extraction applicability assessment — VALIDATED ✅
-**Task:** Implement Fix 3 from `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — post-extraction applicability assessment as safety net for jurisdiction contamination.
-**Files touched:**
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — new `assessEvidenceApplicability()` function + `ApplicabilityAssessmentOutputSchema` + pipeline integration before `clusterBoundaries()`
-- `apps/web/src/lib/analyzer/types.ts` — added `evidence_applicability_filter` to `AnalysisWarningType` union (applicability field already existed)
-- `apps/web/src/lib/config-schemas.ts` — added `applicabilityFilterEnabled` to `PipelineConfigSchema` + `DEFAULT_PIPELINE_CONFIG`
-- `apps/web/configs/pipeline.default.json` — added `"applicabilityFilterEnabled": true`
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 7 new tests in "Fix 3: assessEvidenceApplicability" describe block
-- `apps/web/src/lib/analyzer/warning-display.ts` — registered `evidence_applicability_filter` in `WARNING_CLASSIFICATION`
-- `apps/web/prompts/claimboundary.prompt.md` — `APPLICABILITY_ASSESSMENT` section already existed, no changes needed
-**Key decisions:**
-- Fix 3 is the decisive filter per Captain direction. Fix 0 (root cause) + Fix 1 (soft upstream reduction) remain as-is. Fix 2 already reverted.
-- Single batched Haiku-tier LLM call for all evidence items (~$0.0002/run). Uses `getModelForTask("understand")`.
-- Fail-open: LLM errors keep all evidence (pipeline not blocked).
-- Missing LLM classifications default to `"direct"` (fail-open on partial response).
-- `foreign_reaction` items filtered out completely at pipeline integration point. `contextual` items kept.
-- Debug logging: `debugLog` with per-category counts + foreign domain list. `console.info` with compact summary.
-- Warning type `evidence_applicability_filter` at severity `info` (admin-only — this is routine operation, not a user-facing quality issue).
-
-**Runtime bugs found and fixed during validation:**
-The initial implementation had 5 bugs in the `generateText` call, all caused by not following the established pipeline LLM call pattern:
-1. **`rendered` instead of `rendered.content`** — `loadAndRenderSection` returns `{ content, contentHash, ... }`, not a string. Passed `[object Object]` as system prompt.
-2. **Missing `output: Output.object({ schema })`** — AI SDK didn't know to request structured JSON output.
-3. **`getStructuredOutputProviderOptions` spread at top level** — should be under `providerOptions:` key.
-4. **`getPromptCachingOptions` spread at top level** — should be on the system message's `providerOptions`.
-5. **No user message** — Anthropic API requires at least one user message in addition to system.
-6. **`evidence_applicability_filter` not registered in `warning-display.ts`** — caused TS compilation error.
-
-**H3 Validation Results (job `b0cc6e02c29e4383a0566b1b24a2b891`):**
-
-| Metric | Baseline (pre-Fix) | Fix 0+1 only | **Fix 0+1+3** |
-|--------|-------------------|-------------|--------------|
-| U.S. gov items | 21/49 (42.9%) | 23/42 (54.8%) | **0/70 (0%)** ✅ |
-| Foreign reaction items | — | — | **0 remaining** (2 filtered) |
-| U.S.-focused boundaries | 3/6 | 3/? | **0/6** ✅ |
-| Truth % | 56% | 54% | **51%** |
-| Confidence | 58% | 16% | **58.3%** |
-| Verdict | MIXED | UNVERIFIED | **MIXED** |
-| Evidence count | 49 | 42 | **70** |
-
-Applicability breakdown: 0 direct, 70 contextual, 2 foreign_reaction (both `www.state.gov`). 0 unclassified. Haiku compliance: **100%** (72/72 items classified).
-
-All 6 boundaries are Brazil-relevant: Supreme Court proceedings, Federal Police investigation, defendant statements, Lula trial bias ruling, expert legal commentary, general evidence.
-
-**All success criteria met:**
-- ✅ 0 foreign-government-action items
-- ✅ 0 foreign-reaction-only boundaries
-- ✅ Contextual descriptive reports retained (state.gov HR reports classified `contextual`)
-- ✅ Confidence restored to baseline level (58.3% vs 58% baseline)
-- ✅ 1201/1201 unit tests passing across 64 files
-
-**Open items:**
-- **Not yet committed.** Changes validated but uncommitted — awaiting Captain approval to commit.
-- Pre-existing build error at `claimboundary-pipeline.ts:474` (`applyEvidenceWeighting` type cast) remains.
-- SR weighting confound still unresolved — active in validation runs but absent from original baseline.
-- All 70 items classified as `contextual` (0 `direct`) — the LLM is conservative about classifying items as `direct`. Not a problem for filtering (only `foreign_reaction` is removed), but worth monitoring.
-
-**Warnings:**
-- The function uses `new URL(item.sourceUrl)` for domain logging — could throw on malformed URLs. Wrapped in the overall try/catch (fail-open).
-- The `generateText` call pattern was initially wrong in 5 ways — **future LLM call implementations must follow the established pattern**: system message with `providerOptions: getPromptCachingOptions()`, user message, `output: Output.object({ schema })`, top-level `providerOptions: getStructuredOutputProviderOptions()`, and `extractStructuredOutput(result)` with single arg.
-
-**For next agent:**
-1. **Commit Fix 3** — all validation passed, ready for commit.
-2. Consider whether `0 direct / 70 contextual` classification is desirable or if the prompt should be tuned to classify more items as `direct`.
-3. SR weighting confound should be investigated separately (compare baseline with SR active vs inactive).
-**Learnings:** Appended to Role_Learnings.md? No — but critical insight: **Always copy the exact `generateText` call pattern from an existing working call in the pipeline.** The pattern includes 5 interrelated parts (messages structure, output, providerOptions, prompt caching, extractStructuredOutput) that must all match. Getting any one wrong causes silent runtime failures caught by the fail-open catch block.
-
----
-### 2026-03-12 | Senior Developer | Claude Code (claude-opus-4-6) | Phase A+A+ Validation: Fix 0 + Fix 2 Results
-**Task:** Validate Phase A (Fix 0) and Phase A+ (Fix 2) of `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` by running H3 twice, then report findings.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`, `apps/web/prompts/claimboundary.prompt.md` (Fix 2 committed as `c11110e8`)
-**Key decisions:**
-- Fix 0 alone (commit `7ed71a05`): `distinctEvents` are now jurisdiction-clean ✅ but contamination persists through query generation and relevance classification. U.S. gov items 24/53 (45%), 3/6 boundaries U.S.-focused. **Fix 0 alone insufficient.**
-- Fix 0+2 (commit `c11110e8`): Dedicated U.S. boundaries eliminated (3→0) ✅, foreign govt actions reduced (sanctions 4→2, congress 1→0). But overall verdict quality collapsed: TP 56%→49.4%, Conf 58%→42%, verdict downgraded from MIXED to UNVERIFIED/INSUFFICIENT EVIDENCE/LOW CONFIDENCE. The query-level constraints are too blunt — they reduce evidence volume rather than classifying it.
-- Remaining `state.gov` 15 items are from the annual Country Report on Human Rights Practices for *Brazil* — these discuss Brazilian police courts, impunity, prosecution rates. They are `contextual` (external observer about the jurisdiction), not `foreign_reaction` (sanctions/policy actions). Filtering them at query level starves the pipeline.
-
-**Validation run data:**
-
-| Run | JobId | Commit | TP | Conf | Verdict | U.S. Gov Items | U.S. Boundaries |
-|-----|-------|--------|-----|------|---------|---------------|----------------|
-| Baseline H3 | `fe595e71` | `c02658eb` | 56% | 58% | MIXED | 21/49 (42.9%) | 3/6 |
-| Fix 0 only | `8c332bf2` | `7ed71a05` | 51% | 42% | UNVERIFIED | 24/53 (45.3%) | 3/6 |
-| Fix 0+2 | `53de9247` | `c11110e8` | 49.4% | 42.1% | UNVERIFIED | 17/46 (36%) | 0/6 ✅ |
-
-**Open items:**
-- **Fix 2 should be reverted.** Query-level jurisdiction constraints are too blunt. They reduce evidence volume, collapsing verdict confidence. The structural improvement (0 dedicated U.S. boundaries) came mostly from Fix 0's `distinctEvents` cleanup + LLM variance in clustering.
-- **Fix 1 (Phase B) is the correct next step.** `classifyRelevance()` needs a jurisdiction dimension to surgically filter foreign *government actions* (sanctions, EOs → `foreign_reaction`, cap at 0.3) while keeping foreign *observations about the jurisdiction* (HR reports, academic studies → `contextual`, pass normally). This is the surgical tool the plan designed — query-level filtering was always the wrong granularity.
-- **state.gov HR report over-extraction** is a separate issue: 15 items from a single source is excessive regardless of jurisdiction. Per-source extraction cap needed (tracked in plan §7).
-
-**Warnings:**
-- Both validation runs show UNVERIFIED/LOW CONFIDENCE — this is **worse** than baseline. The prompt changes in Fix 2 may be actively harmful by constraining evidence gathering too aggressively.
-- The `applyEvidenceWeighting` (SR weighting, commit `9550eb26`) is now active in these runs but was NOT active in the baseline. This confounds TP/Conf comparison. Some of the TP drop (56%→49%) may be SR weighting pulling low-reliability sources toward 50%, not contamination effects.
-- Pre-existing build error at `claimboundary-pipeline.ts:446` (`applyEvidenceWeighting` type cast) remains unfixed.
-
-**For next agent:**
-1. **Revert Fix 2** (`git revert c11110e8`) — keep Fix 0 only.
-2. **Implement Fix 1** (jurisdiction-aware `classifyRelevance`) per plan §4 Fix 1. Key changes: add `inferredGeography` to `classifyRelevance()` signature + prompt, add `jurisdictionMatch` field (`direct`/`contextual`/`foreign_reaction`) to relevance output schema, cap `foreign_reaction` at 0.35 (below 0.4 threshold). Three-location UCM config for `foreignJurisdictionRelevanceCap`.
-3. After Fix 1, re-run H3. Success = state.gov sanctions/EOs filtered, state.gov HR report items retained as `contextual`.
-4. Investigate SR weighting's contribution to TP drop separately.
-
-**Learnings:** Appended to Role_Learnings.md? No — but key insight: prompt-level query constraints are too blunt for jurisdiction filtering. They reduce evidence volume without distinguishing observation from action. Classification-level filtering (Fix 1) is the correct granularity.
-
----
-### 2026-03-12 | Senior Developer | Claude Code (claude-sonnet-4-6) | Phase A / Fix 0: inferredGeography wiring into Pass 2
-**Task:** Implement Phase A of `Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` — Fix 0 (root cause: `distinctEvents` has no prompt instructions) plus 4 unit tests.
-**Files touched:**
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — `runPass2` signature + both `CLAIM_EXTRACTION_PASS2` render calls + all 3 callers in `extractClaims`
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 3 new tests under "Stage 1: runPass2 — inferredGeography wiring (Fix 0)"
-- `apps/web/prompts/claimboundary.prompt.md` — geography examples replaced (abstract), prompt section already present from prior session
-**Key decisions:**
-- Prompt `### Distinct Events Rules` section was already present; only code wiring was missing
-- `inferredGeography` added as optional 8th param to `runPass2`; defaults to `"not geographically specific"` when null/omitted
-- Both render paths (primary at line 1683 and soft-refusal retry at line 1696) now pass the variable — the plan explicitly required both, with the retry being the most critical failure mode (politically sensitive inputs)
-- All 3 callers in `extractClaims` (initial, minimum-claim reprompt, multi-event reprompt) now pass `pass1.inferredGeography`
-- Pre-existing build error (`applyEvidenceWeighting` type cast at line 446) confirmed pre-dates this change; not in scope
-**Open items:**
-- Phase A validation: re-run H3 ("Were the various Bolsonaro trials...") to confirm 0 foreign-contaminated boundaries
-- Phase A+ (Fix 2, query constraints) only if H3 re-run shows residual contamination
-- Fix 1 (jurisdiction-aware relevance) and Fix 3 (post-extraction assessment) deferred to Phase B/C
-**Warnings:**
-- Unit tests confirm both render paths are wired. End-to-end confirmation requires an expensive H3 re-run (do not run unless explicitly asked)
-- Build has a pre-existing TS error (`applyEvidenceWeighting` cast at `claimboundary-pipeline.ts:446`) — tracked separately
-**For next agent:** Phase A validation re-run needed. Claim: "Were the various Bolsonaro trials conducted in accordance with Brazilian law and international standards of due process?" (EN). Success = 0 U.S. government-focused boundaries. If contamination persists, proceed with Phase A+ (Fix 2 prompt change to `GENERATE_QUERIES`).
-**Learnings:** No new learnings beyond what's in the plan.
-
----
-### 2026-03-12 | Lead Developer | Cline | Review: Evidence Jurisdiction Contamination Fix Plan
-**Task:** Review `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md` for implementation feasibility, code quality, and structural correctness.
-**Files touched:** `Docs/WIP/Evidence_Jurisdiction_Contamination_Fix_Plan_2026-03-12.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:**
-- Approved the implementation plan and marked it "APPROVED — ready for Act Mode".
-- Fixed out-of-scope variable references (`pass1Result`) in the plan's code snippets for Fix 0 (`runPass2`) and Fix 1 (`classifyRelevance`).
-- Corrected the `runPass2` signature in the plan to reflect adding `inferredGeography` as an optional parameter.
-**Open items:** None. Implementation can proceed with Phase A (Fix 0).
-**Warnings:** None.
-**For next agent:** Proceed with Phase A implementation per the approved plan. Start by adding `inferredGeography` to `runPass2` and updating the `CLAIM_EXTRACTION_PASS2` prompt.
-**Learnings:** No.
-
----
-### 2026-03-10 | Lead Architect | Claude Code (claude-opus-4-6) | Consolidation: SR UCM Separation Plan
-**Task:** Consolidate 3 reviews (Opus 4.6, GPT 5.4, Gemini 3) into a final implementation plan with resolved conflicts and architectural decisions.
-**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** All 3 reviews converged — no conflicts, only varying emphasis. Restructured 6-phase plan into Phase 0 (tactical fix) + 4 phases. Added 7 architectural decisions (A1-A7): `callerContext` parameter, `autoMode` as separation mechanism, baseline provider lineup (no Serper), cache key isolation via prefix, no web-search.ts refactor, schema simplification, JSON/TS default alignment rule. Incorporated Captain decisions D1 (remove evalUseSearch), D2 (32-38% acceptance band), D3 (flush cache post-2026-03-05).
-**Open items:** Implementation not started. Phase 0 is the urgent tactical fix. Search default drift (search.default.json vs config-schemas.ts for Analysis) flagged as separate follow-up.
-**Warnings:** Phase 0 must land before any architectural work — scores remain inflated until then. The `callerContext` parameter in Phase 0 becomes the permanent mechanism (not throwaway), so implement it cleanly.
-**For next agent:** Start implementation from Phase 0. Read the "Consolidated Implementation Plan" section in `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. The plan is now APPROVED — no further review needed before implementation.
-**Learnings:** Appended to Role_Learnings.md? No — consolidation task, no novel learnings beyond what's documented in the plan.
-
----
-### 2026-03-10 | Senior Developer | Cline | Review: SR UCM Separation Plan
-**Task:** Review `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md` for problem framing, proposed architecture, rollback strategy, implementation feasibility, migration/cache risks, and remaining Captain decisions.
-**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Review outcome is **REQUEST_CHANGES**. Confirmed the document frames the root problem correctly: SR is coupled to Analysis search UCM/runtime via `evaluate-source/route.ts` and `searchWebWithProvider()`, and the current AUTO dispatcher stop-on-first-success behavior is a plausible regression driver. Flagged five main gaps: (1) commit/date timeline needs correction (`8bef6a91` is 2026-03-05, not 2026-03-09), (2) the plan must document which defaults actually win at runtime because DB-seeded JSON defaults and TypeScript merge defaults both matter, (3) the plan lacks a Phase 0 / immediate-regression posture for current inflated SR scores, (4) cache isolation risk should be treated as near-term, not a soft follow-up, and (5) verification needs quantitative acceptance criteria rather than “not 48% anymore”.
-**Open items:** Captain decisions still needed on: whether an immediate SR-only rollback/fix is required before full separation; whether SR gets its own cache namespace/db in first cut; baseline provider lineup/parity target (especially Serper inclusion); whether `evalUseSearch` remains a real setting; the acceptance band for weltwoche verification; and whether post-fix SR cache entries after the AUTO change should be invalidated.
-**Warnings:** The review notes that `parseTypedConfig()` default-merging and DB seeding semantics are easy to misunderstand and directly affect rollback expectations. The plan is strong architecturally, but without clarifying those semantics and the near-term remediation path, implementation could either take too long for the current regression or ship without objective success criteria.
-**For next agent:** Start from the review already added under `## Review Log` in `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. Update the plan first — especially the runtime-defaults explanation, immediate rollback posture, cache strategy, and quantitative verification target — before any implementation work begins.
-**Learnings:** no
-
-
----
-### 2026-03-10 | Senior Developer | Codex (GPT-5) | SR UCM Separation Review Plan
-**Task:** Prepare a review-ready plan to separate Source Reliability UCM/runtime from the Analysis search stack and document the rollback needs/background for reviewers.
-**Files touched:** `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Wrote a dedicated WIP design/implementation plan rather than appending to an older document because this change spans architecture, config migration, UI, and rollout semantics. The plan frames the issue as both a current SR regression and a longer-term service-boundary problem. Recommended design: shared provider executors may remain shared, but SR must own its own `evaluationSearch` config and its own search orchestrator. Rollback posture proposed for review: restore pre-`8bef6a91` accumulation semantics for SR only, not globally for Analysis.
-**Open items:** Reviewer decisions required on: SR provider-lineup parity target, whether SR gets its own search cache immediately, whether SR should keep supplementary providers, and whether the new SR config shape should be nested (`evaluationSearch`) or remain flat/prefixed.
-**Warnings:** Until implemented, SR still inherits Analysis search behavior via shared `search` config and shared `web-search.ts`. Also, existing search cache behavior can preserve old results after rollout unless explicitly cleared.
-**For next agent:** Start with `Docs/WIP/SR_UCM_Separation_Plan_2026-03-10.md`. If reviewers approve the architecture, implementation should begin with schema/defaults, then route decoupling, then SR-specific orchestrator, then UI/migration/tests. Do not start by changing prompts; this plan assumes prompts are not the source of the regression.
-**Learnings:** no
-
----
-### 2026-03-10 | Senior Developer | Codex (GPT-5) | SR Score Regression Investigation
-**Task:** Investigate why Source Reliability scores for `weltwoche.ch` / `weltwoche.de` are now systematically inflated versus the February baseline, and propose a fix.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Root cause is in the shared search layer, not SR evaluation logic. `apps/web/src/lib/web-search.ts` changed AUTO mode on 2026-03-09 (`8bef6a91`) from "accumulate results across providers until `maxResults`" to "stop after first provider that returns any results" (`if (providerResults.length > 0) break;`). This collapses evidence diversity and makes AUTO effectively Google-only whenever Google-CSE returns anything. A second contributing drift is config/default semantics: the Feb 2026 baseline search config had no explicit `providers` block in `search.default.json`, so AUTO implicitly enabled all credentialed providers via `?? true`; the current defaults explicitly set `serpapi=false`, `serper=true`, `brave=true priority=10`, and `parseTypedConfig()` now merges stored configs with defaults, so reset/reseed no longer behaves like the old baseline. Also found current drift between `apps/web/configs/search.default.json` and `apps/web/src/lib/config-schemas.ts` (`serper` / `brave` enabled in JSON but disabled in TS defaults).
-**Open items:** Implementation not done in this investigation pass. Proposed fix: (1) restore pre-`8bef6a91` AUTO accumulation semantics in `web-search.ts`, (2) add regression tests covering multi-provider accumulation and provider-order behavior, (3) if exact Feb parity is required, restore effective old provider defaults in both JSON + TS defaults (Google-CSE + SerpAPI + Brave active, no Serper), then reseed/reset active search config, (4) clear `search-cache.db` after rollout because search cache keys do not include provider lineup/dispatch semantics.
-**Warnings:** `web-search.ts` is shared by SR and the main analysis pipeline. Any dispatcher change affects both. Reverting only the SR route will not fix parity. Search cache can preserve bad Google-only result sets for up to 7 days even after code/config changes.
-**For next agent:** Focus first on `apps/web/src/lib/web-search.ts:282-344` and compare against `bd40e80b`. Add tests in `apps/web/test/unit/lib/web-search.test.ts` for: AUTO continues to next primary provider when first provider underfills, AUTO preserves existing supplementary-provider gating, and provider list order matches intended defaults. Then resolve the config drift between `apps/web/configs/search.default.json` and `apps/web/src/lib/config-schemas.ts` before asking the user to re-evaluate SR scores.
-**Learnings:** no
-
----
-### 2026-03-10 | Senior Developer | Claude Code (claude-opus-4-6) | Source Reliability Panel in Report View
-**Task:** Add a collapsible Source Reliability breakdown panel to the job report page.
-**Files touched:**
-- `apps/web/src/app/jobs/[id]/page.tsx` — Added `SourceReliabilityPanel` component + wired into report layout after Search Queries section
-- `apps/web/src/app/jobs/[id]/page.module.css` — Added SR panel styles (table, category badges, domain truncation, responsive)
-**Key decisions:**
-- Used existing `ReportSection` with `collapsible` + `defaultOpen={false}` — collapsed by default as supplementary detail
-- Domain extracted from URL at render time (not stored on `FetchedSource`)
-- Category badge colours: green (reliable tiers), yellow (mixed), red (unreliable tiers), grey (insufficient_data)
-- Sort order: reliable → insufficient_data → unreliable, then by score descending within category
-- Panel renders nothing when no sources have SR data (graceful degradation)
-**Open items:**
-- `sourceType` not on `FetchedSource` — cannot show source type in the panel without pipeline changes
-- `evidencePack` / web-augmented indicator not available on `FetchedSource` — skipped, noted for future
-- `domain` not a first-class field — extracted from URL client-side (sufficient for display)
-- Count badge in section title not implemented (ReportSection title is a plain string); count shown as subtitle text inside the panel instead
-**For next agent:** Panel is self-contained. To add sourceType or evidencePack indicators, first extend the `FetchedSource` interface in `types.ts` and populate the fields in the pipeline.
-
----
-### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-5 Validation Report — Consolidated (V1a + MT-5(A) + MT-5(C))
-
-**Task:** Fix multi-event claim decomposition non-determinism (Report Variability Plan Root Cause #1) and validate against Captain's quality bar.
-
-**Input tested:** "Were the various Bolsonaro trials conducted in accordance with Brazilian law, and were the verdicts fair?"
-
-**Captain's expected quality bar:**
-From domain knowledge and earlier reports from this and similar inputs:
-- (a) Overall Verdict of about 72% True.
-- (b) At least two, or better three ClaimAssessmentBoundaries (as with 8ac32a8cb61442f891377661ae6a877a)
-- (c) The seperate STF and TSE cases should be detected triggered by the word "various" in this specific input variant.
-- (d) Then the 27 year sentence against Bolsonaro should be mentioned somwhere in the report.
-
-**Files touched:**
-- `apps/web/prompts/claimboundary.prompt.md` — MT-5(A): Plurality override rule in CLAIM_EXTRACTION_PASS2 (COMMITTED: f874fa1c)
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — MT-5(C): multi-event collapse reprompt guard (NOT YET COMMITTED)
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 3 new MT-5(C) tests (1202 total pass)
-
-**Key decisions:**
-- MT-5(A): Plurality override placed as **first check** before classification types; exception clause on question rule cross-references back
-- MT-5(C): Fires AFTER existing D1 reprompt loop; exactly 1 targeted reprompt with event-count guidance; accepts if claim count improves
-
----
-
-#### Phase 1: V1a Baseline (pre-MT-5, MT-1/2/3 only)
-
-| | V1a Run 1 | V1a Run 2 | V1a Run 3 |
-|---|---|---|---|
-| jobId | 3e88e11a | 8ac32a8c | 0e584cb2 |
-| truthPercentage | 55% | 68.2% | 55% |
-| verdict | MIXED | LEANING-TRUE | MIXED |
-| claims | 1 | 3 | 1 |
-| distinctEvents | 0 | 3 | 2 |
-
-Spread: 13.2 pp. **Root cause:** Pass 2 inconsistently classifies "various trials" as `question` (1 claim) vs `multi_assertion_input` (3 claims).
-
-#### Phase 2: MT-5(A) Prompt Reinforcement (committed f874fa1c)
-
-Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but claim count still inconsistent (1–3).
-
-| | Attempt 1 | | | Attempt 2 | | |
-|---|---|---|---|---|---|---|
-| jobId | 6ef5b622 | 463af430 | 1aa9fe9e | 6aec493e | 23bb0d5d | ce513bc9 |
-| truth% | 64.2% | 65% | 70.2% | 65% | 71.1% | 65% |
-| claims | 3 | 1 | 2 | 1 | 2 | 1 |
-
-#### Phase 3: MT-5(A+C) Combined — Final Validation (6 runs)
-
-| | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Run 6 |
-|---|---|---|---|---|---|---|
-| jobId (full) | 314dd49e85f74fd293610a50dbd6eef2 | cf205a17786e4679b052a78932ad3d81 | f2394b340b434306b60cccdacecb7c8b | c21c32902e8149c78481ff43a58de09b | 8ca41afa98134486b0c600659777082c | 0b79511572d24a92a58f60193ff71db6 |
-| truthPercentage | 59.8% | 75% | 76% | **72.3%** | 69.2% | 76.5% |
-| verdict | LEANING-TRUE | MOSTLY-TRUE | MOSTLY-TRUE | **MOSTLY-TRUE** | LEANING-TRUE | MOSTLY-TRUE |
-| confidence | 53.5 | 78 | 69.9 | 74.7 | 68.3 | 69 |
-| claims | 3 | 1 | 2 | 2 | 3 | 2 |
-| distinctEvents | 2 | 0 | 2 | 2 | 2 | 3 |
-| iterations | 3 | 1 | 2 | 2 | 3 | 2 |
-| evidence | 65 | 58 | 63 | 84 | 75 | 77 |
-| S/C ratio | 0.56 | 0.79 | 0.81 | 0.80 | 0.78 | 0.86 (skewed) |
-| 27yr sentence | 3 items | 1 item | 0 items | 9 items | 2 items | 3 items |
-| STF+TSE in evidence | Yes/Yes | Yes/Yes | Yes/Yes | Yes(9)/Yes(9) | Yes(8)/Yes(6) | Yes(3)/Yes(6) |
-| challenger model | gpt-4.1 | gpt-4.1 | gpt-4.1 | gpt-4.1 | gpt-4.1 | **gpt-4.1-mini** |
-| SR scores available | 6/15 | 0/10 | 5/18 | 0/20 | 12/23 | 17/23 |
-| warnings | 15 | 5 | 5 | 3 | 4 | 14 |
-
-**6-run statistics:** Mean=71.5%, median=**72.3%**, spread=16.7 pp. Excluding Run 1 outlier: mean=73.6%, spread=7.3 pp. All runs TRUE-band, no flips.
-
----
-
-#### Captain expectations (a–d) across 6 runs
-
-**(a) ~72% True:** 5/6 runs in 69–76.5% range. Mean=71.5%, median=72.3%. Run 1 outlier at 59.8% (caused by AC_03 "judicial impartiality" scoring 38% UNVERIFIED).
-
-**(b) 2+ distinct boundaries:** **6/6 PASS.** All have 6 boundaries with separate STF and TSE proceedings.
-
-**(c) STF+TSE detected:** **5/6 detect both as distinctEvents.** Run 2 (0 events, 1 claim) still has both STF and TSE in evidence boundaries.
-
-**(d) 27-year sentence:** **5/6 have it in evidence items** (Run 3 missed). Not in verdictNarrative (narrative generation doesn't surface individual evidence details). reportMarkdown is a stub (not yet implemented).
-
----
-
-#### Root cause investigation — why runs differ
-
-**Investigated:** Settings, SR cache, search providers, LLM service availability, evidence composition.
-
-**Settings and infrastructure — identical across all 6 runs:**
-- Models: Haiku 4.5 (understand/extract), Sonnet 4.5 (verdict), GPT-4.1 (challenger) — except Run 6 which used gpt-4.1-mini due to TPM rate limit fallback
-- Search: Google-CSE for all runs (auto mode)
-- Source fetch: 100% success in all runs
-- SR cache: Variable availability (0–17 scores per run) but no correlation with truth%
-- No other infrastructure or configuration differences
-
-**The sole driver of spread is claim decomposition scope:**
-- Runs including an "impartiality/bias" dimension (Runs 1, 5): truth% = 59.8–69.2%
-- Runs with procedural compliance claims only (Runs 2, 3, 4, 6): truth% = 72–76.5%
-- Run 1's AC_03 "judicial impartiality and absence of bias" attracted only 6 evidence items (all medium probativeValue), 2 contradicting (Justice Toffoli's partisan background) → 38% UNVERIFIED, dragging overall to 59.8%
-- Run 5's AC_02 "impartiality" scored better (58% LEANING-TRUE) because it attracted more evidence (75 total)
-- This is **correct analytical behavior** — "was the procedure legal?" is inherently more verifiable than "was the verdict impartial?"
-
-**Run 6 TPM fallback:** gpt-4.1-mini challenger instead of gpt-4.1 had no material impact (76.5% MOSTLY-TRUE, consistent with other procedural runs). Advocate/reconciler/self-consistency (all Sonnet 4.5) dominate the verdict.
-
----
-
-#### Progression across MT phases
-
-| Metric | Pre-MT-5 (V1a) | MT-5(A) only | MT-5(A+C) 6 runs |
-|---|---|---|---|
-| Truth% range | 55–68.2% | 64.2–71.1% | 59.8–76.5% |
-| Mean | 59.4% | 66.4% | 71.5% |
-| Median | 55% | 65% | 72.3% |
-| Verdicts | 2x MIXED, 1x LEANING-TRUE | 6x LEANING-TRUE | 4x MOSTLY-TRUE, 2x LEANING-TRUE |
-| Band flip | No | No | No |
-| Claims when events>=2 | 1 (collapsed) | 1–3 (inconsistent) | 2–3 (reliable) |
-
----
-
-#### Recommendation
-
-1. **Commit MT-5(C).** The decomposition problem is fixed. Claim count is reliable when distinctEvents >= 2. The remaining spread (16.7 pp) reflects analytical content (procedural vs impartiality verifiability), not pipeline instability.
-2. **The 12 pp spread criterion was designed for decomposition stability.** Decomposition is now stable. Excluding the Run 1 outlier, spread is 7.3 pp.
-3. **Deploy readiness:** MT-5(A) committed (f874fa1c). MT-5(C) in working tree (1202 tests pass, build clean). Pending Captain approval.
-
-**For next agent:** If Captain approves, commit MT-5(C) and update variability plan.
-
----
-### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-2 — CB_GENERAL_UNSCOPED for unscoped evidence
-**Task:** Implement MT-2: replace the largest-boundary fallback in `assignEvidenceToBoundaries()` with explicit `CB_GENERAL_UNSCOPED` handling, so unscoped evidence is not silently absorbed into a named analytical boundary.
-**Files touched:**
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — Pass 2 of `assignEvidenceToBoundaries()` replaced
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 2 old largest-boundary tests updated, 5 new MT-2 tests added
-**Key decisions:**
-- Three-way branch in Pass 2: (1) single boundary → assign to sole boundary, (2) CB_GENERAL already exists → assign to it, (3) 2+ named boundaries and no CB_GENERAL → create `CB_GENERAL_UNSCOPED` and push into boundaries array.
-- `CB_GENERAL_UNSCOPED` uses `internalCoherence: 0.0` and empty `constituentScopes`. It is visible to verdict LLM via the boundaries array and coverage matrix.
-- `boundaries.push()` mutation is safe: same array used by `evidenceCount` update loop and verdict stage call — `CB_GENERAL_UNSCOPED` gets `evidenceCount` set correctly.
-**Open items:** `unscopedEvidenceCount` not added to named boundary API fields (deferred). UI may want to visually distinguish `CB_GENERAL_UNSCOPED` from analytical boundaries in a future UI pass.
-**Warnings:** Largest-boundary heuristic (27c4ef44) is now fully replaced. Named boundary `evidenceCount` values will be lower for jobs with unscoped evidence; `CB_GENERAL_UNSCOPED` shows the displaced count. This is correct analytical behavior.
-**For next agent:** MT-1+MT-2+MT-3 complete. MT-4 (Gate 1 / claim retention) deferred per plan. Next: variability tracking §10.6 checks or Phase 3.
-**Learnings:** No.
-
----
-### 2026-03-10 | Senior Developer | Claude Code (claude-sonnet-4-6) | MT-1 + MT-3 — Sufficiency Guard + Multi-Event Coverage
-**Task:** Implement MT-1 (stop premature sufficiency collapse) and MT-3 (wire distinctEvents into query generation coverage) from the Report Variability Consolidated Plan §10.4–10.5.
-**Files touched:**
-- `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` — MT-1 iteration guard in `allClaimsSufficient()`, pass `mainIterationsUsed` + `distinctEventCount` at call site
-- `apps/web/src/lib/config-schemas.ts` — new UCM field `sufficiencyMinMainIterations` (default 1)
-- `apps/web/prompts/claimboundary.prompt.md` — GENERATE_QUERIES section: strengthened multi-event coverage rule with abstract example
-- `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` — 8 new tests (MT-1 guard: 4 tests; MT-3 coverage: 3 tests; MT-3 wiring: 1 test)
-**Key decisions:**
-- MT-3 parameter wiring was already fully implemented (distinctEvents passed to prompt via `runResearchIteration → generateResearchQueries` at line 2798). MT-3 work focused on (a) prompt strengthening and (b) multi-event iteration count in the sufficiency guard.
-- MT-3 coverage check: structural (no LLM call) — when `distinctEvents.length > 1`, `effectiveMinIterations = max(minMainIterations, distinctEventCount - 1)`. Avoids LLM call in hot loop.
-- MT-1 guard: `allClaimsSufficient()` now accepts `mainIterationsCompleted`, `minMainIterations` (UCM), `distinctEventCount`; empty claims short-circuit before guard.
-- Existing tests updated to pass `mainIterationsCompleted=1` where they test evidence-count logic independent of the guard.
-**Open items:** MT-2 (boundary fallback — unscoped evidence assigned to first boundary) is the next slice, not implemented here per task scope.
-**Warnings:** `sufficiencyMinMainIterations` defaults to 1 — this will force at least one main research iteration on every run. Monitor for cost increase on jobs that previously exited early (e.g., single-claim high-coverage topics). Plan §10.5 cost note applies.
-**For next agent:** MT-2 is the next piece. See plan §10.5 Phase MT-2. The `assignEvidenceToBoundaries()` function and the `claimBoundaryId` fallback assignment are the target. Check `Report_Quality_Analysis_2026-03-08.md` for B2 context (already partially fixed in 27c4ef44 with largest-boundary heuristic, but unscoped general evidence handling is still open).
-**Learnings:** No.
-
----
-### 2026-03-10 | Captain Deputy | Claude Code (claude-sonnet-4-6) | Phase 2 Validation — Completion Handoff
-**Task:** Record Phase 2 validation completion handoff. Mark docs as complete.
-**Files touched:** `Docs/WIP/Phase2_Validation_Plan_2026-03.md` (status → ✅ Complete), `Docs/DEVELOPMENT/Phase2_Validation_Checklist.md` (footer + checkbox updated).
-**Key decisions:** All 7 validation runs SUCCEEDED (Iran ×2, Bolsonaro Q+S, Hydrogen, Venezuela, Article/URL). 0 UNVERIFIED fallbacks, 0 crashes. Input neutrality 2.0% ✅. Pipeline declared production-ready.
-**Open items:** Non-blocking Phase 3 observations: Iran variance Δ20.1% (monitor), Hydrogen truth% outlier, confirm `verdict_direction_issue`/`verdict_grounding_issue` warnings are info-only in UI.
-**Warnings:** None.
-**For next agent:** Phase 2 is closed. Phase 3 roadmap in `Docs/WIP/Report_Quality_Analysis_2026-03-08.md`. Next implementation: MT-1 + MT-3 (`Docs/WIP/Report_Variability_Consolidated_Plan_2026-03-07.md`).
-**Learnings:** no
-
----
-### 2026-03-17 | Agents Supervisor | Codex (GPT-5) | Phase 3 Cleanup — Remove Redundant Rules
-**Task:** Execute Phase 3 of `Docs/WIP/Agent_Rules_Cleanup_Plan_2026-03-17.md`: remove duplicated global-rule content from collaboration rules and add sync markers to tool configs.
-**Files touched:** `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules/00-factharbor-rules.md`, `.cursor/rules/factharbor-core.mdc`, `GEMINI.md`.
-**Key decisions:** Replaced `Multi_Agent_Collaboration_Rules.md` §5.1-§5.4 with a single canonical-reference block pointing to `/AGENTS.md` to avoid drift. Rewrote §5.5 to require flagging documentation follow-up in completion outputs instead of forcing inline doc edits. Added dated sync markers only to the five files requested in the task.
-**Open items:** Remaining cleanup-plan phases are still open (`Phase 2`, `Phase 4`, `Phase 5`, `Phase 6`).
-**Warnings:** `GEMINI.md` still contains model-version-specific guidance; that staleness was outside this Phase 3 scope and remains for a later cleanup pass.
-**For next agent:** If later phases touch governance docs again, keep the new `/AGENTS.md` cross-reference pattern in `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` and update the sync-marker dates when tool-config summaries are resynced. Documentation follow-up may be needed if any external docs cite the old §5.1-§5.4 text directly.
-**Learnings:** No.
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | CI Tests — Safe Lane + Debug Root Fix
-**Task:** Fix the failing CI test run and harden GitHub Actions so CI does not run tests that make real external API calls.
-**Files touched:** `.github/workflows/ci.yml`, `apps/web/package.json`, `package.json`, `apps/web/src/lib/analyzer/debug.ts`.
-**Key decisions:** Added an explicit `test:ci` script at the repo root and web workspace, and switched the workflow to that named entrypoint instead of the generic `npm test`. Hardened `findRepoRoot()` to detect the monorepo root via `CLAUDE.md`, `FactHarbor.sln`, or a workspace-root `package.json`, avoiding false positives from workspace-local `AGENTS.md`.
-**Open items:** No code follow-up required for this fix. Re-run the GitHub Actions `CI` workflow on the updated branch to confirm the hosted Windows runner now matches local results.
-**Warnings:** `apps/web/src/lib/analyzer/debug.ts` already had a local uncommitted edit when this task started. The fix was applied on top of that change rather than reverting it.
-**For next agent:** If CI test scope changes later, keep the workflow on `npm run test:ci` or another explicitly safe script. Do not point CI at `test:llm`, `test:neutrality`, `test:expensive`, or the claim-boundary integration suite unless the project intentionally accepts live external API calls in CI.
-**Learnings:** yes — appended Senior Developer gotcha about monorepo root detection markers.
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Live Test Scripts — Block GitHub Actions
-**Task:** Ensure paid/live API test suites cannot be executed from GitHub Actions while preserving explicit local runs.
-**Files touched:** `apps/web/package.json`, `apps/web/scripts/assert-local-live-tests.js`.
-**Key decisions:** Added a shared script guard keyed on `GITHUB_ACTIONS=true`, then wrapped all live/paid test entrypoints (`test:llm`, `test:neutrality`, `test:expensive`, `test:cb-integration`, `test:calibration:*`). This blocks future workflow misconfiguration at the npm-script layer instead of relying only on workflow discipline.
-**Open items:** None.
-**Warnings:** This is a hard fail on GitHub Actions by design. If a future maintainer intentionally wants hosted live tests, they will need to remove or bypass the guard explicitly rather than reusing these scripts.
-**For next agent:** Keep local explicit runs on these same scripts. If you add another paid/live suite, wrap it with `apps/web/scripts/assert-local-live-tests.js` as well.
-**Learnings:** yes — appended Senior Developer tip about guarding local-only paid test scripts with `GITHUB_ACTIONS`.
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Debug Log Path — Resolve Web Workspace Directly
-**Task:** Replace repo-root marker heuristics in debug log path resolution with a more robust approach.
-**Files touched:** `apps/web/src/lib/analyzer/debug.ts`, `apps/web/test/unit/lib/analyzer/debug.test.ts`.
-**Key decisions:** Switched from repo-root detection to direct web-workspace detection using `package.json` identity (`name: "@factharbor/web"`). The resolver now supports both starting from repo root (`apps/web/package.json`) and from inside the workspace itself, and writes directly to `apps/web/debug-analyzer.log`.
-**Open items:** None.
-**Warnings:** This changes the unit-test contract from “find repo root” to “find web root,” which is intentional because the log file belongs to the web workspace, not the monorepo root.
-**For next agent:** If a future caller really needs monorepo-root discovery, implement that separately. Do not overload the debug-log resolver with unrelated root semantics again.
-**Learnings:** no
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Review LLM Triangulation Assessment Plan
-**Task:** Review `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` against the current ClaimAssessmentBoundary implementation.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Flagged four issues before implementation approval: the plan relies on a new `findingSummary` signal without scheduling Stage 4 contract changes, the `generateText` example omits required structured-output plumbing used elsewhere in the repo, the rollout defaults the feature on for existing configs before the plan's own regression gate runs, and the proposed factor-only derivation can mislabel the existing `conflicted` triangulation UI state.
-**Open items:** Revise the plan before implementation. No code changes were made.
-**Warnings:** Current code exposes per-boundary TP/confidence/direction/count only; there is no boundary-level textual summary field today. Structured-output calls in this repo also require prompt-caching/provider options plus `extractStructuredOutput(...)`.
-**For next agent:** Re-check §3/§7/§9 for missing Stage 4 prompt/type work, §7.1 for the exact Anthropic `Output.object` pattern, §5.3/§13 for rollout gating, and §4.2.1 for whether `conflicted` remains structurally derived instead of factor-derived.
-**Learnings:** no
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Re-review LLM Triangulation Assessment Plan v4
-**Task:** Re-review the corrected `Docs/WIP/LLM_Triangulation_Assessment_Plan_2026-03-17.md` after the v4 fixes.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Confirmed the original 2 High + 2 Medium findings are substantively fixed. Flagged remaining document-consistency issues in stale snippets: §7.1's example uses `recordLLMCall()` without importing it, and §7.3 still reflects v3 semantics (`default true`, `llmCall` argument, `info` fallback comment) despite the v4 staged-rollout and silent-fallback decisions.
-**Open items:** Clean up the stale v3 references in the implementation snippets and resolved-questions/review-log text before coding from the document.
-**Warnings:** The corrected architecture is sound, but the stale code snippets are implementation traps because they contradict the updated decisions in the same file.
-**For next agent:** If implementing from this plan, trust the v4 decisions in §3-§5/§13/§14, not the stale snippet details in §7.3 or the outdated v3 historical text in §16/Review Log.
-**Learnings:** no
-
----
-### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Editable UZH PowerPoint Deck
-**Task:** Create a real `.pptx` deck for the UZH meeting from the source content instead of printing the rendered xWiki page.
-**Files touched:** `Docs/WIP/generate_meeting_uzh_pptx.js`, `Docs/WIP/Meeting_UZH_full_deck_2026-03-18.pptx`, `Docs/WIP/package.json`, `Docs/WIP/package-lock.json`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Switched from page-capture output to an editable PowerPoint built with `PptxGenJS`. The deck is source-driven and structured as presentation slides: meeting goals, collaboration fit, research value, pipeline, current gaps, funding shape, collaboration opportunities, and next steps.
-**Open items:** The deck has been generated successfully, but I did not manually inspect slide-by-slide visual balance in PowerPoint itself. A next pass can refine wording density or add diagrams if needed.
-**Warnings:** This deck is a curated presentation artifact, not a literal one-to-one export of every xWiki section. `pptxgenjs` was installed locally under `Docs/WIP` to support generation.
-**For next agent:** Regenerate with `node Docs/WIP/generate_meeting_uzh_pptx.js`. If the UZH page changes materially, update the content arrays in that script rather than editing the `.pptx` binary directly in-repo.
-**Learnings:** no
-
----
-### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Full-Page UZH PDF
-**Task:** Produce a faithful full-page PDF of the rendered `Meeting UZH` xWiki page, in addition to the shorter slide deck.
-**Files touched:** `Docs/WIP/Meeting_UZH_fullpage_2026-03-18.pdf`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Used the local xWiki viewer (`viewer-impl/xwiki-viewer.html`) plus Chrome headless print-to-PDF instead of recreating the page in another format, because the user wanted the full page "exactly" and PDF preserves that better than PowerPoint here.
-**Open items:** I verified the PDF file exists, but I did not manually inspect every page break or diagram render in the printed PDF.
-**Warnings:** The output depends on the local viewer rendering and Chrome print behavior. If the page content changes, regenerate the PDF rather than treating it as source-of-truth documentation.
-**For next agent:** To regenerate: start `Docs/xwiki-pages/viewer-impl/Open-XWikiViewer.ps1`, then print `http://localhost:8471/xwiki-viewer.html?page=Product%20Development.Presentations.Meeting%20UZH.WebHome` with Chrome headless to a PDF file.
-**Learnings:** no
-
----
-### 2026-03-18 | Technical Writer | Codex (GPT-5) | Generate Short UZH PDF Deck
-**Task:** Create a shorter, cleaner slide deck for the UZH meeting and render it to PDF from the current repo materials.
-**Files touched:** `Docs/WIP/Meeting_UZH_short_deck_2026-03-18.md`, `Docs/WIP/meeting-uzh-short-theme.css`, `Docs/WIP/Meeting_UZH_short_deck_2026-03-18.pdf`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Used a Marp-based markdown deck instead of trying to export the full xWiki page directly, because the user asked for a shorter cleaner version. Grounded the deck in the current UZH presentation plus meeting-prep and Innosuisse docs, and framed funding around the most realistic near-term path: Innosuisse Innovation Project first, lighter preparatory options second, later SNSF/Horizon follow-ons only where fit exists.
-**Open items:** The PDF was rendered successfully, but I did not do a human visual slide-by-slide review of the final PDF. If the user wants, the next pass should trim or re-order slides after seeing the actual deck.
-**Warnings:** This generated deck is a presentation artifact, not an authoritative replacement for the xWiki page. If the source presentation changes materially, regenerate the PDF from the markdown source or update the markdown first.
-**For next agent:** The generated files are in `Docs/WIP/`. To re-render after edits, run `npx @marp-team/marp-cli 'Docs/WIP/Meeting_UZH_short_deck_2026-03-18.md' --theme-set 'Docs/WIP/meeting-uzh-short-theme.css' --pdf --allow-local-files --browserPath 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' -o 'Docs/WIP/Meeting_UZH_short_deck_2026-03-18.pdf'`.
-**Learnings:** no
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Review March 17 Change Set
-**Task:** Review the March 17, 2026 changes in git history plus current uncommitted docs for bugs, regressions, and missing tests.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Flagged two code-review findings: the new `extractRecordArray()` bare-object tolerance in `verdict-stage.ts` is too permissive and can silently convert malformed LLM outputs into default 50/50 verdict records, and the prompt change making `analyticalDimension` effectively mandatory increases scope-fragmentation risk because that field feeds the deterministic scope fingerprint while normalization only kicks in once enough scopes accumulate.
-**Open items:** Tighten the verdict-shape acceptance condition and add a focused regression test. Reassess the `analyticalDimension` prompt guidance against the current scope-fingerprinting behavior before relying on it broadly.
-**Warnings:** Most other March 17 changes looked safe. The CI/test-entrypoint changes and debug-path fix were not the risky parts in this review.
-**For next agent:** If you touch `verdict-stage.ts`, keep malformed-shape detection strict enough that retries/fallbacks still trigger. If you iterate on `analyticalDimension`, remember it participates directly in `scopeFingerprint()` and small runs may never reach scope normalization.
-**Learnings:** no
-
----
-### 2026-03-17 | Senior Developer | Codex (GPT-5) | Fix March 17 Review Findings
-**Task:** Implement the two March 17 review fixes: tighten bare-object verdict parsing and remove prompt pressure to invent generic `analyticalDimension` labels.
-**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`, `apps/web/prompts/claimboundary.prompt.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Restricted bare single-object verdict acceptance to objects containing both `claimId` and `truthPercentage`, so malformed partial objects still hit the existing malformed-shape path. Updated the extraction prompt so `analyticalDimension` is included only for distinct measurable properties and omitted for broad/general evidence, avoiding prompt-induced scope fragmentation.
-**Open items:** Prompt changes were not reseeded into UCM in this task; do that when you want runtime prompt storage updated.
-**Warnings:** The prompt fix is wording-only and has no direct unit test coverage. Runtime behavior changes only after prompt reseeding / UCM update.
-**For next agent:** If another parser-relaxation change is proposed in `verdict-stage.ts`, keep the malformed-output retry/fallback behavior as the source of truth. If `analyticalDimension` is revisited, evaluate it together with `scopeFingerprint()` and Stage 3 normalization thresholds.
-**Learnings:** no
-
----
-### 2026-03-18 | Product Strategist | Codex (GPT-5) | Draft Innosuisse Concept for Live Audio/Video Fact-Checking
-**Task:** Investigate current official Innosuisse application requirements and draft a project concept around real-time live fact-checking of audio and video after the Tobias meeting.
-**Files touched:** `Docs/WIP/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Reframed the opportunity away from “apply existing Tobias/UZH/ETH research to current FactHarbor” and toward a stronger innovation story: evidence-based, real-time, multimodal fact-checking for audio/video streams. Grounded the draft in official Innosuisse guidance for innovation projects with implementation partner, the innovation-project checklist, innovation cheque, mentoring, and the current implementing provisions.
-**Open items:** The draft is a strong pre-draft / concept note, not yet an Innolink-ready submission. It still needs a named Swiss research partner, a tighter exploitation plan, a realistic project budget, and more concrete benchmark datasets / pilot partners.
-**Warnings:** For a full Innosuisse filing, the weakest parts today are likely partner setup, quantified market validation, and data/evaluation specifics for live multimodal fact-checking. The novelty argument is much stronger than the original Tobias-centered cooperation angle, but it must still be evidenced against competitors.
-**For next agent:** If this is continued, turn the current draft into an Innolink-structured application skeleton with explicit field headings and a first-pass budget/work package table. Keep the framing broad around UZH/ETH or other Swiss research partners; do not revert to a Tobias-person-specific collaboration story.
-**Learnings:** no
-
----
-### 2026-03-18 | Product Strategist | Codex (GPT-5) | Reshape LiveCheck Draft into Innosuisse-Style Application Text
-**Task:** Rework the live audio/video fact-checking concept into a more submission-like draft for `Innovationsprojekte mit Umsetzungspartner`, grounded in the official German checklist and requirements.
-**Files touched:** `Docs/WIP/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Did not pretend to have a public full sample application where none was credibly available. Instead, structured the new draft around the official checklist categories: innovative solution, project value, project planning, ICT/AI specifics, competition, sustainability, and risks. Kept the partner framing open around a Swiss research institution and removed person-specific dependence.
-**Open items:** The new version is much closer to an Innolink-ready narrative, but still lacks partner names, LOIs, market sizing, financial projections, budget tables, and a formal IPR/FTO assessment.
-**Warnings:** The strongest likely reviewer pressure points remain market validation, concrete implementation-partner economics, and proof that the project is innovation with transfer potential rather than only a research agenda.
-**For next agent:** Best next step is a `v2` that mirrors the final Innolink field order even more tightly and adds placeholders/tables for budget, partner roles, LOIs, and measurable KPIs by work package.
-**Learnings:** no
-
----
-
----
-### 2026-03-18 | LLM Expert | Claude Opus 4.6 | Bolsonaro Sentencing Evidence Loss Fix
-**Task:** Investigate and fix the disappearance of 27-year sentencing evidence from Bolsonaro trial reports after Phase A jurisdiction filtering.
-**Files touched:** `claimboundary-pipeline.ts` (Fix A sort + Fix B diagnostics + originalRank threading), `claimboundary.prompt.md` (Fix C contrastive rule), `config-schemas.ts` (relevanceTopNFetch), `pipeline.default.json` (relevanceTopNFetch), `claimboundary-pipeline.test.ts` (6 new tests)
-**Key decisions:**
-- Root cause was two compounding issues: (1) RELEVANCE_CLASSIFICATION prompt lacked concrete examples distinguishing foreign media reporting domestic events from foreign government reactions, causing Haiku to misclassify PBS/BBC as foreign_reaction; (2) top-5 fetch used unsorted LLM-emitted order, silently dropping high-scored sources.
-- Fix A: Stable sort (score desc, originalRank asc tie-break) before top-N fetch. Promoted `relevanceTopNFetch` to UCM config (default 5).
-- Fix B: debugLog inside classifyRelevance for every result (rank, url, raw/adjusted score, jurisdictionMatch, reasoning) + discard summary. No API change.
-- Fix C: Contrastive prompt rule with concrete examples (BBC domestic event → contextual; Reuters foreign sanctions → foreign_reaction). Explicitly preserves foreign_reaction for government actions. State media exclusion added.
-- Three reviews incorporated before implementation (Code Reviewer, Senior Developer, LLM Expert/Senior Developer).
-**Open items:** None. All fixes verified via live validation (job 91e018df).
-**Warnings:** Prompt changes require `npm run reseed:prompts` — auto-reseed only runs on `postbuild`, not `dev`.
-**For next agent:** The `relevanceTopNFetch` UCM parameter can be tuned in Admin UI if future evidence-loss issues arise (bump to 8 during investigation). debugLog in `debug-analyzer.log` now shows full Stage 2 classification diagnostics — check there first for any jurisdiction filtering issues.
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR Weighting Disable Experiment
-**Task:** Execute a reversible live experiment disabling `evidenceWeightingEnabled` for a control set of repeated claims, compare the unweighted outputs against today’s weighted baselines, then restore the original pipeline config.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Ran the experiment through the live local stack instead of editing SQLite directly. Captured the active pipeline hash, saved and activated a temporary pipeline config with `evidenceWeightingEnabled=false`, submitted five control claims (Iran, Bolsonaro EN single, Bolsonaro EN various, Hydrogen, Plastik), restored the original pipeline hash as soon as the last intended control run entered `RUNNING`, and cancelled an extra queued Iran rerun created to work around a runner-queue anomaly. Results supported the independent investigation: Iran recovered strongly (`65-68` weighted today to `82 / 75 / MOSTLY-TRUE` unweighted), Bolsonaro various improved from `51 / 45 / MIXED` to `64 / 65 / LEANING-TRUE`, Hydrogen stayed directionally stable but became more decisive (`15 / 60` to `19 / 84`), and Plastik remained poor despite confidence recovery (`53 / 44 / UNVERIFIED` to `59 / 53 / LEANING-TRUE`).
-**Open items:** If this is taken forward, the next step should be a deliberate decision on whether to keep SR weighting disabled temporarily or redesign the weighting formula before re-enabling it. The queued-run anomaly for one Iran job was not root-caused in this task.
-**Warnings:** This was not a perfectly pure A/B because live search caching remains disabled, so retrieval variance still exists between repeated runs. Even with that caveat, the Iran control result is large enough to be decision-relevant. The temporary config was restored to the original active hash `30c48302...` after the experiment runs had loaded.
-**For next agent:** Use experiment jobs `74fa5bb1` (Iran), `ea4ffd66` (Bolsonaro EN single), `e9425b74` (Bolsonaro EN various), `17c164f9` (Hydrogen), and `c812635d` (Plastik) for deeper diffing against today’s weighted baselines `48bd10db` / `d54a97a5`, `9a01b324`, `9768a899`, `a1a38508`, and `27754124`. If you need a cleaner follow-up experiment, enable search cache first or run against captured search results.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR LLM Calibration Plan
-**Task:** Draft a concrete implementation plan for replacing deterministic SR verdict weighting with an LLM-mediated calibration step that uses richer SR details.
-**Files touched:** `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Recommended replacing the current `applyEvidenceWeighting()` verdict-compression formula with a new Stage 4.5 SR calibration pass inserted in `claimboundary-pipeline.ts` after raw verdict generation and before aggregation. Proposed a separate `source-reliability-calibration.ts` module, a bounded structured output schema, symmetry across supporting and contradicting evidence, UCM-backed calibration controls, and a conservative rollout that starts with confidence-only adjustment while `evidenceWeightingEnabled` remains off. Identified the concrete integration points in `claimboundary-pipeline.ts`, `source-reliability.ts`, `types.ts`, `config-schemas.ts`, `warning-display.ts`, and optionally the text-analysis prompt/service plumbing.
-**Open items:** Human approval is still needed before prompt work under `apps/web/prompts/`. Implementation has not started; this is a design/plan artifact only.
-**Warnings:** Do not implement this as another blunt numeric multiplier or support-only penalty. The plan intentionally avoids direct truth compression toward 50 and recommends keeping the old weighting path disabled during rollout.
-**For next agent:** Start by implementing the plumbing for Stage 4.5 in `confidence_only` mode and leave truth adjustment off behind config. If you choose a new prompt profile instead of a ClaimBoundary section, update prompt profile registration and seeding accordingly.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | SR LLM Calibration Plan Review Integration
-**Task:** Incorporate LLM Expert review feedback into the SR calibration plan before any implementation starts.
-**Files touched:** `Docs/WIP/2026-03-19_SR_LLM_Calibration_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Locked the recommended model tier to Haiku/understand strength, made the anti-double-counting scope explicit by requiring the prompt to assess source-portfolio imbalances rather than re-evaluate evidence, added token budget guardrails (5 sources per side per claim, truncated reasoning, ~2000 token target), made raw verdict preservation mandatory (`rawTruthPercentage` and `rawConfidence`), added the Plastik false-positive caveat for confidence-only rollout, and documented an explicit plumbing-first implementation order that can proceed before prompt approval.
-**Open items:** Prompt approval is still required before adding prompt text. The plan is now specific enough to start plumbing implementation, but no code has been changed yet.
-**Warnings:** The highest implementation risk remains double-counting source quality already implicit in verdict debate. Treat SR calibration as portfolio-level trust adjustment only.
-**For next agent:** You can start steps 1-4 from the plan now: types/config, module skeleton, pipeline wiring, and tests. Keep the LLM call stubbed until prompt approval lands.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 SR Calibration Plumbing
-**Task:** Implement the non-prompt plumbing for Stage 4.5 source-reliability calibration in `apps/web`, keeping the new path feature-flagged and off by default.
-**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/configs/calculation.default.json`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/index.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Added Stage 4.5 metadata types to preserve `rawTruthPercentage` and `rawConfidence`, registered SR calibration warning types, introduced UCM-backed pipeline and calculation settings for calibration mode/strength/bounds/token caps, implemented a new `source-reliability-calibration.ts` module that builds bounded support/contradiction source portfolios and can apply clamped calibration outputs, and wired `claimboundary-pipeline.ts` so Stage 4.5 takes precedence when enabled while the legacy `applyEvidenceWeighting()` path remains as fallback. The new path does not call any prompt yet; if enabled without LLM results, it returns unchanged verdicts with calibration metadata plus informational warnings.
-**Open items:** Prompt content and the actual LLM call are still unimplemented by design. Richer SR detail fields such as bias indicators and rationale are not yet threaded into runtime source objects, so the current request shape carries placeholders for that future data.
-**Warnings:** Because prompt work is not in place, enabling `sourceReliabilityCalibrationEnabled=true` today will not improve quality; it will annotate verdicts and emit `source_reliability_calibration_skipped`. Legacy SR weighting is still available and still on by default unless you explicitly disable it or enable Stage 4.5 instead.
-**For next agent:** The next implementation step is prompt-approved LLM integration inside `source-reliability-calibration.ts`, followed by a small live control-set validation. Safe verification for this plumbing pass already succeeded with `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts test/unit/lib/config-drift.test.ts` and `npm -w apps/web run build`.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Follow-up Review Fixes
-**Task:** Address the post-implementation review findings for Stage 4.5 by removing warning duplication risk and extending unit coverage.
-**Files touched:** `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Kept the deterministic preflight `source_reliability_unknown_dominance` check because it still provides useful diagnostics before prompt-backed calibration exists, but made warning emission idempotent with a `pushWarningOnce()` helper so LLM-returned warning types cannot duplicate the same claim-level warning. Added unit coverage for lower-bound clamping, multi-claim batch result mapping, and the no-duplicate unknown-dominance case.
-**Open items:** The placeholder `truncateText(undefined, ...)` remains intentionally inert until richer SR cache fields are threaded into runtime source objects.
-**Warnings:** This pass did not change runtime feature behavior; Stage 4.5 is still non-prompt plumbing only.
-**For next agent:** If you later thread richer SR details into `FetchedSource` or a parallel runtime structure, replace the placeholder `reasoningShort` population in `source-reliability-calibration.ts` rather than layering more stub logic around it. Verification for this pass: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts`.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Low-Finding Cleanup
-**Task:** Address two low-severity review findings in the Stage 4.5 SR calibration scaffolding.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Clarified in code and in the `source_reliability_calibration_skipped` warning text that enabling Stage 4.5 intentionally bypasses the legacy `applyEvidenceWeighting()` branch even before prompt-backed calibration exists. Also changed `supportPortfolio.totalEvidenceItems` / `contradictionPortfolio.totalEvidenceItems` to count only evidence IDs that actually resolve to `EvidenceItem` records, avoiding metadata drift if phantom IDs ever slip through.
-**Open items:** No behavior change beyond clearer diagnostics and more accurate metadata. Prompt-backed LLM calibration is still the next substantive step.
-**Warnings:** Admins who enable Stage 4.5 before prompt implementation will now get a more explicit informational warning, but the path remains a no-op for verdict calibration.
-**For next agent:** No extra follow-up needed for these findings. Verification for this pass: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts`.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | Stage 4.5 Confidence-Only Control Set
-**Task:** Run the approved 5-claim live control set with Stage 4.5 enabled in `confidence_only` mode, legacy SR weighting disabled, then restore the original pipeline config and compare the outputs to the March 19 weighted baselines.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Activated a temporary pipeline config hash `f4fdb4d1...` with `sourceReliabilityCalibrationEnabled=true`, `sourceReliabilityCalibrationMode="confidence_only"`, `sourceReliabilityCalibrationStrength="budget"`, and `evidenceWeightingEnabled=false`; submitted the five control claims through the live local stack; waited for all five jobs to finish; then restored the original active pipeline hash `30c48302...`. All jobs succeeded: Iran `61e7f517...`, Bolsonaro EN single `16abf05f...`, Bolsonaro EN various `b9014b46...`, Hydrogen `3aa1994c...`, Plastik `0ae6b012...`. Claim-level metadata confirmed the intended behavior: Stage 4.5 applied only confidence deltas (truth deltas stayed `0`) and surfaced explanatory notes plus SR warnings. Largest observed claim-level confidence deltas were `+8` / `+7` / `-5` on Bolsonaro various and `-10` / `-8` on Hydrogen.
-**Open items:** The overall report-level shifts still include retrieval/run-to-run variance, so the experiment is not a pure causal measure of Stage 4.5 alone. If a cleaner A/B is needed, repeat against frozen retrieval or cached source sets.
-**Warnings:** Do not interpret the Plastik overall change (`53 / 44 / UNVERIFIED` baseline to `41 / 62 / LEANING-FALSE` in this run) as a quality win; the claim-family decomposition/retrieval issues remain. Top-level report JSON does not carry SR calibration metadata; it is stored per claim under `claimVerdicts[].sourceReliabilityCalibration`.
-**For next agent:** Use the control jobs above for detailed diffs against baselines `48bd10db...` / `d54a97a5...`, `9a01b324...`, `9768a899...`, `a1a38508...`, and `27754124...`. The key readout is not just overall truth/confidence but the claim-level `rawConfidence`, `confidenceDelta`, `applied`, and `notes` fields inside `resultJson.claimVerdicts`.
-**Learnings:** no
-
----
-### 2026-03-19 | Senior Developer | Codex (GPT-5) | B1 Predicate-Preservation Smoke Test
-**Task:** Run a small live smoke test after the B1 ClaimExtraction prompt change to check for regressions on nearby claim families before wider rollout.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Ran four live jobs against the current default pipeline hash `f53444a7...` (legacy evidence weighting off, Stage 4.5 off): Hydrogen `aef80732...`, Bolsonaro EN various `a60ee28b...`, single-atomic control `9f4dfe1c...`, and a Portuguese broad evaluative claim `927842bc...`. The single-atomic control stayed clean (one faithful claim, `TRUE 100 / 98`). Hydrogen and Bolsonaro various did not show obvious decomposition regressions from the B1 change, though their normal run-to-run variance remains. The multilingual broad evaluative case still showed partial predicate drift: instead of preserving the original broad predicate from `A reciclagem de plástico não serve para nada`, Stage 1 produced narrower technical/economic/environmental viability claims, including one environmental-contribution formulation that looks closer to a proxy/mechanism claim than to direct predicate preservation.
-**Open items:** B1 appears strong enough for the German Plastik case, but multilingual broad-evaluative robustness is not fully solved. The Portuguese smoke-test output suggests the prompt may still allow semantic narrowing from broad evaluative predicates into viability/contribution proxies.
-**Warnings:** This smoke test used expensive live runs; do not expand it casually. The Portuguese case is the main caution signal from this pass. It is not evidence of a broad regression, but it is enough to justify a narrow follow-up prompt refinement if multilingual broad-evaluative claims matter.
-**For next agent:** If you refine B1 further, target the multilingual broad-evaluative edge specifically: prevent replacements like `not useful` -> `not viable` / `does not contribute significantly` unless that narrower meaning is explicit in the input. Reference smoke-test jobs `aef80732...`, `a60ee28b...`, `9f4dfe1c...`, and `927842bc...` for before/after comparisons.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Stage 4.5 Review-Finding Cleanup
-**Task:** Address the March 20 code-review findings on the Stage 4.5 SR calibration implementation.
-**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/source-reliability-calibration.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/index.ts`, `apps/web/test/unit/lib/analyzer/source-reliability-calibration.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Removed the double request-construction at the pipeline callsite by building the Stage 4.5 calibration request once in `claimboundary-pipeline.ts`, passing that request into `callSRCalibrationLLM()`, and applying results with `applySourceReliabilityCalibrationResults()`. Added missing `recordLLMCall()` coverage for prompt-load failures so a missing or misconfigured `SR_CALIBRATION` section no longer fails silently in metrics. Extended SR calibration metadata to preserve `rawTruthDelta` and `rawConfidenceDelta` alongside the bounded applied deltas, so out-of-range LLM outputs remain diagnosable even though runtime application still clamps safely. Added a TODO above the `truncateText(undefined, ...)` placeholder, and documented in the analyzer barrel that `callSRCalibrationLLM` is intentionally not re-exported because it is pipeline-internal orchestration.
-**Open items:** The review note about `evidenceWeightingEnabled=false` on defaults vs existing live `config.db` instances remains an operational caveat, not a code bug. Existing deployments still need explicit reseed/activation to pick up the new default.
-**Warnings:** This pass does not change Stage 4.5 default rollout; it remains feature-flagged off by default. `bounded_truth_and_confidence` is still future-facing for prompt-backed runs because the current `SR_CALIBRATION` prompt only returns `confidenceDelta`.
-**For next agent:** If you later extend the Stage 4.5 prompt to emit `truthDelta`, preserve the new raw-vs-bounded metadata pattern so prompt quality can be monitored without weakening runtime clamps. Verification for this cleanup: `npm -w apps/web run test -- test/unit/lib/analyzer/source-reliability-calibration.test.ts` and `npm -w apps/web run build`.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Three-Worktree Quality Snapshot Comparison
-**Task:** Compare live jobs and active configs across `main` (`:3000`), `FH_best_monolithic_canonical` (`:3001`), and `FH-quality_window_start` (`:3002`) against the earlier SR/B1 quality findings.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Treated the three lanes as separate quality baselines rather than assuming they were directly comparable. Confirmed `main` is current ClaimBoundary with legacy evidence weighting off, Stage 4.5 off, and the new B1 prompt hash active. Confirmed `FH_best_monolithic_canonical` is not ClaimBoundary at all for these runs — it is returning `pipelineVariant: orchestrated`, so its outputs are architecture-comparison data, not direct confirmation/refutation of the current ClaimBoundary findings. Confirmed `FH-quality_window_start` is an older March 12 ClaimBoundary lane without the new Stage 4.5/B1 config surface and with older contestation weighting, plus visible operational instability (multiple FAILED jobs and a backed-up queue). Main Plastik claim extraction now preserves the broad evaluative predicate in German and Portuguese (`... bringt nichts / não serve para nada em termos de ...`), while `quality_window_start` still decomposes into narrow mechanistic/statistical claims — strong evidence that B1 is live and meaningful on `main`.
-**Open items:** The still-running `main` Portuguese Bolsonaro rerun `c58ca013...` had not finished at snapshot time. `quality_window_start` still had five queued cross-language comparison jobs and one unrelated RUNNING job, so that lane is not done producing comparison data.
-**Warnings:** New evidence shows Plastik is still not multilingual-stable even on `main`. German and Portuguese moved into the false neighborhood (`3878d81b...` MOSTLY-FALSE 23.9 / 71.5; `1711e065...` LEANING-FALSE 34.1 / 71.4), but the new English rerun on `main` still landed `5362b092...` LEANING-TRUE 61 / 78.8 with partially proxy-style claims. `FH_best_monolithic_canonical` is also internally inconsistent on Plastik across languages (DE 73 true, EN 41 false, PT 60 true), so it should not be treated as a “best” reference for that family.
-**For next agent:** Use this snapshot to avoid false conclusions: (1) `main` confirms the earlier finding that legacy weighting removal plus B1 improved Hydrogen stability and Plastik DE/PT, but Plastik EN is still unresolved; (2) `quality_window_start` mainly confirms the pre-fix failure mode and should not be used as a fairness benchmark until its queued jobs finish; (3) `FH_best_monolithic_canonical` can only be used for high-level historical contrast because it is running orchestrated, not current ClaimBoundary. Relevant jobs: main `3878d81b...`, `1711e065...`, `5362b092...`, `2ab24b61...`, `cb54a1a2...`, `40760987...`; orchestrated `3dd39693...`, `c483dcad...`, `e99f74d2...`, `437451bd...`, `70c8e11d...`, `ebfefb9f...`, `d78ed0b3...`; older ClaimBoundary `04d5e294...`, `c447dd88...`, `07b94fa9...`, `684d5aeb...`.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Quality Investigation Addendum Update
-**Task:** Fold the Mar 20 three-worktree comparison findings into the overarching report-quality investigation document.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Updated the existing master investigation document instead of creating another parallel report. Added a dated addendum section documenting the live comparison across `main`, `FH_best_monolithic_canonical`, and `FH-quality_window_start`, and updated the WIP index entry so the new findings are discoverable. The addendum makes three points explicit: `main` confirms B1 is materially real on Plastik DE/PT, `FH_best_monolithic_canonical` is not a valid current-pipeline benchmark because it is running orchestrated, and `quality_window_start` still exhibits the original pre-fix Plastik failure mode.
-**Open items:** The Mar 20 addendum captures the state at snapshot time; `main` Portuguese Bolsonaro rerun `c58ca013...` and several `quality_window_start` queued jobs may still finish later and could add more comparison data.
-**Warnings:** The new addendum materially changes the Plastik status interpretation: B1 improved the German/PT broad-claim path, but Plastik is still not multilingual-stable because the new English Plastik rerun on `main` remained `LEANING-TRUE`.
-**For next agent:** If you continue the quality investigation, use the new addendum in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the source of truth for Mar 20 cross-worktree findings. The next most useful follow-up is a targeted English Plastik claim-shape / evidence-allocation investigation on `main`, not another broad worktree comparison.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Quality Master Doc Refresh
-**Task:** Make the master report-quality investigation document current, readable, and decision-ready by removing obsolete status claims and separating historical findings from the current `main` state.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Reframed the document so Mar 19 findings are explicitly historical and Mar 20 `main` state is explicit and current. Replaced obsolete live-drift language (`defaultScore=0.45`, `search.cache.enabled=false`) with verified current `main` config status (`defaultScore=0.5`, cache on, legacy SR weighting off, Stage 4.5 off by default). Updated recommendations so the document no longer treats SR-weighting disable as a pending Captain decision; the leading open task is now Plastik multilingual stabilization on `main`, especially English broad-evaluative claims. Kept the historical evidence and scorecard material because it is still relevant for future investigations.
-**Open items:** The document is now current as of the Mar 20 refresh. It will need another addendum if the queued / follow-up quality-window jobs or the next English Plastik investigation materially change the picture.
-**Warnings:** The doc still contains historical Mar 19 scorecard sections and historical trajectory tables by design. They are now labeled as historical, but future editors should preserve that distinction instead of deleting the context.
-**For next agent:** Use `2026-03-19_Report_Quality_Evolution_Investigation.md` as the single master quality-investigation basis. The highest-value next follow-up from this refresh is not another broad quality sweep; it is a targeted investigation of why English Plastik on `main` still lands in the true direction while DE/PT moved back into the false neighborhood.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Report Refresh With External Verdict Framing
-**Task:** Tighten the master quality-investigation document's statements about expected Plastik verdicts using stronger external evidence, and update the plan / next steps based on newly completed old-worktree jobs.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Replaced loose "right direction" wording with a more defensible statement: for the absolute claim `Plastic recycling is pointless`, strong OECD / EPA / EEA evidence supports a system that underperforms badly but is not literally zero-benefit, so a claim-faithful report should usually not land in `LEANING-TRUE`; the semantically more plausible verdict neighborhood is `MIXED` to `LEANING-FALSE`, sometimes `MOSTLY-FALSE`. Updated the recommendation stack accordingly: first finish the already-running multilingual `main` Plastik checks, then compare EN against DE/PT on claim shape, queries, and evidence allocation. Also incorporated the newer Mar 20 old-worktree completions (`quality_window_start` EN/DE Plastik, `best_monolithic_canonical` EN Plastik), which did not reveal a better baseline than `main`. Removed stale Phase A-open references from the report and updated the WIP index so it no longer claims SR weighting is re-enabled.
-**Open items:** The running `main` multilingual Plastik jobs (`79da62d9...`, `23fe4e57...`, `67de4ed4...`) still need evaluation once finished. If they converge toward the same verdict neighborhood as DE/PT, the remaining issue becomes specifically EN; if they diverge too, B1 still has a broader multilingual generalization gap.
-**Warnings:** The external sources improve the normative framing for the absolute Plastik claim, but they do not by themselves define a single "ground truth verdict." They support rejecting repeated `LEANING-TRUE` outputs as a quality signal for this wording, not as a mathematically certain universal label.
-**For next agent:** Use the refreshed Section 6 and Addendum 10.1 in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the current decision basis. Do not schedule more broad old-worktree submissions before the active `main` multilingual Plastik set finishes.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Verdict JSON Parse Recovery Hardening
-**Task:** Fix a live Verdict-stage failure on `main` (`56ab80b1b96f4c7aa811f308479a8222`) where three claims fell back to `UNVERIFIED` because the LLM response could not be parsed as JSON.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Treated this as a low-risk robustness fix worth doing immediately because the failing job had ample evidence and only died on JSON parsing. Reused the shared JSON recovery helpers from `apps/web/src/lib/analyzer/json.ts` instead of introducing new parsing logic. The Stage 4 call path now attempts: direct `JSON.parse`, markdown code-block extraction, `tryParseFirstJsonObject(...)`, and finally `repairTruncatedJson(...)` before throwing the existing structured parse error. Added focused tests proving `createProductionLLMCall` now recovers JSON embedded in prose and repairs truncated JSON payloads when possible.
-**Open items:** This hardens common formatting/truncation failures, but it will not fix every malformed JSON shape (for example, deeply corrupted string escaping). If similar live failures continue, the next step is to inspect raw verdict completions and decide whether the prompts or provider settings need tightening.
-**Warnings:** This is intentionally structural recovery only. It does not change verdict semantics, and repaired partial JSON may still fail later schema/shape expectations in the verdict pipeline if the completion is too incomplete.
-**For next agent:** If the user reruns job `56ab80b1...`, expect fewer Stage 4 total-fallbacks from wrapper text or truncation. Verification completed with `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts` and `npm -w apps/web run build`.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Latest Local Job Analysis Refresh
-**Task:** Analyze the newest completed local jobs across the live local stacks, compare them against earlier findings, and fold the updated conclusions into the master report-quality investigation.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Queried the newest local jobs from `main` (`:3000`), `FH_best_monolithic_canonical` (`:3001`), and `FH-quality_window_start` (`:3002`), then pulled detailed `main` job payloads for the newest Plastik and Bolsonaro runs. The new evidence materially changes the Plastik conclusion: the earlier “only English remains problematic” framing is no longer sufficient. On current `main`, the newest DE Plastik reruns now span `MOSTLY-FALSE` (`dbc65a0d...`) to `MIXED` (`acb8f733...`) to `LEANING-TRUE` (`10bca602...`), while EN remains too positive (`27fabab8...`). This shows B1 improved the family materially, but broad-evaluative claim-contract preservation is still not robust even on the same current stack. Updated the master report accordingly, and explicitly separated the technical outlier `56ab80b1...` (verdict JSON parse failure) from semantic family variance.
-**Open items:** The next high-value task is no longer just EN-vs-DE comparison; it is a direct differential analysis of the newest same-stack Plastik reruns (`dbc65a0d...`, `acb8f733...`, `10bca602...`, `27fabab8...`) across extracted claims, query framing, boundary concentration, evidence balance, and verdict-integrity warnings. Config provenance is still pending but is not the immediate blocker.
-**Warnings:** Do not keep using “Plastik EN only” as the summary. The newest `main` DE reruns prove the residual instability is broader. Also, do not count `56ab80b1...` as semantic evidence for Plastik; it is a technical failure and now has a code fix.
-**For next agent:** Use Section `10.2 Addendum (2026-03-20, later)` in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the new source of truth for the freshest local runs. The best next fix hypothesis is an LLM-based broad-evaluative contract check / reprompt gate in Stage 1 or immediately after it, not new deterministic claim-shape rules.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Targeted Main-Lane Diagnostic Batch Submission
-**Task:** Automatically submit additional local jobs to improve clarity on current Plastik instability and separate same-stack run variance from claim-contract drift.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Used the direct API endpoint `http://localhost:5000/v1/analyze` with the local invite code `SELF-TEST` after confirming that the web proxy route was blocked by the per-IP analyze rate limit and invite-code requirement. Chose a small targeted batch on current `main` rather than broad old-worktree submissions: two DE repeats, two EN repeats, one DE paraphrase, one EN paraphrase, and one FR control. This is designed to test three things: exact-repeat variance, semantic-paraphrase sensitivity, and whether non-English broad evaluative claims still stay in the false neighborhood on the same stack.
-**Open items:** Submitted job IDs are: `bc54d4e3...` (DE repeat 1), `51e2e208...` (DE repeat 2), `9a3278ac...` (EN repeat 1), `3708ecf9...` (EN repeat 2), `a4de538a...` (DE paraphrase), `fe13550a...` (EN paraphrase), `aa7a558a...` (FR control). At logging time, the first four were `RUNNING` and the last three were `QUEUED`. A planned Hydrogen control run was blocked by the invite code hourly limit (`SELF-TEST` has `HourlyLimit=10`, already exhausted after the seven accepted Plastik submissions).
-**Warnings:** The local API currently enforces both a per-IP analyze rate limit (`max 5/min`) and invite-code quota limits. Additional automatic submissions in the same hour may fail unless a different invite code or admin bypass is used.
-**For next agent:** When these seven jobs complete, compare them directly against `dbc65a0d...`, `acb8f733...`, `10bca602...`, and `27fabab8...`. The most valuable interpretation targets are: (1) repeat-run spread on exact DE/EN inputs, (2) whether the paraphrases are more or less stable than the exact originals, and (3) whether FR stays in the false neighborhood while DE/EN diverge.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Diagnostic Batch Results and Updated Plastik Conclusion
-**Task:** Continue autonomously while the user was away: wait for the submitted diagnostic jobs, analyze the results, decide whether another batch was needed, and update the investigation basis.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Waited for all seven diagnostic jobs to complete, then compared them against the newest same-stack baseline jobs. The results are conclusive enough that I did **not** submit another batch. Exact-repeat instability is real and large on current `main`: DE exact now spans at least `23 -> 66 true` (`MOSTLY-FALSE -> LEANING-TRUE`), and EN exact now spans `61 -> 79 true` (`LEANING-TRUE -> MOSTLY-TRUE`). The crucial new signal is paraphrase sensitivity: DE `Plastikrecycling bringt keinen Nutzen.` (`a4de538a...`) landed `LEANING-FALSE 35 / 68`, EN `Plastic recycling brings no real benefit.` (`fe13550a...`) landed `LEANING-FALSE 41 / 73`, and FR exact control (`aa7a558a...`) remained `LEANING-FALSE 36 / 73`. This narrows the diagnosis: the residual problem is unstable handling of broad colloquial evaluative predicates like `bringt nichts` / `is pointless`, not just generic retrieval variance or an English-only issue.
-**Open items:** The next implementation task should be an LLM-based claim-contract validation / reprompt step for broad evaluative claims after Stage 1 extraction or at Gate 1. Config provenance remains open but is not the immediate blocker.
-**Warnings:** Do not keep using the “just English” shorthand. FR is relatively stable false-ish, EN exact is still the worst, and DE exact is still volatile enough that the true summary is “current guardrails do not reliably preserve broad evaluative claim meaning.” Also, the exact diagnosis is about the current `main` lane only, not old worktrees.
-**For next agent:** Use Section `10.3 Addendum (2026-03-20, latest)` in `2026-03-19_Report_Quality_Evolution_Investigation.md` as the latest source of truth. The best next concrete artifact would be a small design note for an LLM-based broad-claim contract validator that rejects proxy drift into effectiveness / feasibility / viability claims unless those narrower predicates are explicit in the input.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Broad Claim Contract Validator Draft
-**Task:** Turn the new Plastik diagnostic findings into a concrete next-step implementation plan and a reviewable prompt draft for an LLM-based broad-claim contract validator.
-**Files touched:** `Docs/WIP/2026-03-20_Broad_Claim_Contract_Validator_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Proposed a new Stage 1.5-style LLM gate between Pass 2 and Gate 1, rather than more passive prompt tweaking or deterministic special cases. The plan recommends validating whether extracted claims preserve the original broad evaluative meaning and only add neutral dimension qualifiers, with a single Pass 2 retry when the validator detects material proxy drift. The prompt draft is generic, multilingual, and deliberately avoids test-case terms or keyword triggers. It focuses on preserving meaning, detecting proxy drift, and deciding whether a retry is warranted.
-**Open items:** This is a design draft only. No live code or prompt was changed. Prompt approval is still required before implementation under `apps/web/prompts/`.
-**Warnings:** The draft intentionally avoids deterministic pre-classification of “broad evaluative” inputs in code. If implemented later, the validator should run generically and let the LLM decide when contract drift is material.
-**For next agent:** Review `2026-03-20_Broad_Claim_Contract_Validator_Plan.md` first. If approved, the next step is plumbing plus prompt integration, not another quality-investigation batch.
-**Learnings:** no
-
----
-### 2026-03-20 | Senior Developer | Codex (GPT-5) | Captain Deputy Decision Handoff
-**Task:** Document the current Plastik quality state, the claim-contract fix, the validation results, and the recommended next actions in a Captain-ready handoff.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Handoffs/2026-03-20_Senior_Developer_Plastik_Contract_Fix_Status.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Updated the master investigation so the current state is no longer “claim-contract stabilizer needed” but “claim-contract stabilizer implemented and structurally validated.” Added final Addendum `10.4` documenting the 5-run validation result: 5/5 predicate preservation clean, proxy drift eliminated in the validation set, and remaining variance now downstream of Stage 1 extraction. Wrote a dedicated handoff for Captain Deputy summarizing Ausgangslage, Problem, what changed, results, conclusion, and recommended next actions.
-**Open items:** The next work item should shift from Stage 1 decomposition to downstream Plastik instability: search framing, evidence allocation, and verdict behavior under now-stable claim structures.
-**Warnings:** The correct conclusion is not “Plastik solved”; it is “Stage 1 claim-contract issue materially fixed, remaining variance still open.” Do not re-open Stage 1 as the default blocker without new evidence.
-**For next agent:** Read the dedicated handoff at `Docs/AGENTS/Handoffs/2026-03-20_Senior_Developer_Plastik_Contract_Fix_Status.md` first if you need the decision-ready summary. The master quality report now reflects the same updated state.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Live Validation Hygiene Procedure
-**Task:** Add a short, explicit checklist so future agents do not confuse build/test results, live localhost runs, prompt/UCM activations, restarts, and job provenance when interpreting quality experiments.
-**Files touched:** `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Added a standalone procedure covering: change classification, restart rules, what job `gitCommitHash` does and does not prove, clean A/B requirements, mechanism-firing checks, and the minimum metadata to capture for localhost experiments. Linked it from `Multi_Agent_Collaboration_Rules.md` both in the Testing area mapping and as an explicit live-validation reference. The procedure documents the correct nuance for current FactHarbor behavior: UCM/prompt activation invalidates loader cache for new jobs, but runtime code changes still require restart discipline, and job commit hashes do not prove absence of uncommitted local changes.
-**Open items:** None for the checklist itself. If config provenance UI/API is expanded later, the procedure may need a small refresh to point to the new surfaces.
-**Warnings:** This procedure deliberately distinguishes committed provenance from runtime activation. Agents should not treat a matching job hash as proof that web code changes were live without a restart or confirmed hot reload.
-**For next agent:** Use `Docs/AGENTS/Procedures/Live_Validation_Hygiene.md` as the default reference before interpreting localhost experiment results. This is especially important for future Phase 2 v3 or any UCM/prompt A/B work.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | Clean Post-Restart Rebaseline and Report Correction
-**Task:** Re-run a minimal live validation batch on a fully restarted stack, discard stale-risk localhost evidence, refresh the master report accordingly, and redraw conclusions from reliable data only.
-**Files touched:** `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** A first apparent post-restart localhost batch was canceled after job inspection showed it was still running against stale API hash `cdd78d0f...`. After manually killing the lingering API runtime and restarting both services, I submitted a fresh 6-job batch and verified all jobs carried `gitCommitHash=d163aa8c...`. Reliable current-live results: Hydrogen `21 / 62 / MOSTLY-FALSE` (healthy), Bolsonaro fair/legal `44 / 24 / UNVERIFIED` (live recovery not confirmed), Plastik EN exact `71 / 24 / LEANING-TRUE` and `47 / 56 / MIXED`, Plastik DE exact `50 / 24 / UNVERIFIED`, Plastik EN paraphrase `50 / 24 / UNVERIFIED`. Updated the master report to remove the older Mar 20 localhost addenda, replace them with a new clean Mar 22 addendum, and revise the current recommendations accordingly.
-**Open items:** Config provenance repair remains the highest-leverage infrastructure follow-up. If Bolsonaro becomes active quality work again, it now needs a fresh dedicated clean mini-series before any “recovered” claim is reused.
-**Warnings:** Do not cite the removed Mar 20 localhost addenda as current proof. The clean Mar 22 batch shows that stronger live claims such as “Bolsonaro is recovered” or “Plastik Stage 1 is materially fixed and the problem is purely downstream” are not established strongly enough by reliable live evidence.
-**For next agent:** Use the updated `Docs/WIP/2026-03-19_Report_Quality_Evolution_Investigation.md` as the current source of truth. For live localhost work, require post-restart jobs with matching `gitCommitHash` before drawing conclusions.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | ClaimBoundary Config Provenance Repair
-**Task:** Restore reliable per-job config provenance for normal ClaimBoundary jobs and verify it on a fresh restarted localhost job.
-**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Threaded `jobId` through existing ClaimBoundary config loads, added one startup prompt provenance load plus SR provenance capture, and persisted a full startup snapshot without refactoring prompt-loader internals. Verified after clean restart with fresh job `68c9e85ad5fc44a58e0f7749312a5872`: `/api/fh/jobs/[id]/configs` returned five config types and `/api/admin/quality/job/[id]/config` returned a full snapshot. Logged the detailed handoff separately.
-**Open items:** Next planned execution item is WS-1 dead-code cleanup from the Mar-22 execution plan.
-**Warnings:** The verification job’s `gitCommitHash` still reflected the last committed hash because the fix was verified pre-commit. The proof for this task is the restored config usage + snapshot rows, not the hash.
-**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-22_Senior_Developer_Config_Provenance_Repair.md` if you need the exact implementation/verification details. Config provenance is no longer the blocker for future localhost analysis.
-**Learnings:** no
-
----
-### 2026-03-22 | Senior Developer | Codex (GPT-5) | WS-2 Stage 3 Boundary Clustering Extraction
-**Task:** Continue the approved low-risk WS-2 decomposition work by extracting Stage 3 boundary clustering out of `claimboundary-pipeline.ts` without changing analysis behavior.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/boundary-clustering-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Moved the Stage 3 boundary clustering code into a dedicated `boundary-clustering-stage.ts` module and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface so existing tests/imports continue to resolve through the main pipeline module. While extracting, I initially tightened the Stage 3 schema too much; after targeted test failures I restored the original fail-open parsing behavior (`congruenceDecisions.congruent`, raw `internalCoherence` parse, clamp during mapping) to preserve current semantics exactly.
-**Open items:** No immediate follow-up is required for this slice. Optional `P1-B` remains deferred, and any further WS-2 work should be taken as a separate approved slice rather than bundled into this commit.
-**Warnings:** The extraction is intentionally structural only. Do not treat `boundary-clustering-stage.ts` as a new independent stage contract; `claimboundary-pipeline.ts` still owns orchestration and remains the public import surface.
-**For next agent:** This slice is verified and ready to commit. If WS-2 continues later, prefer another isolated module boundary of similar size and keep tests importing through `claimboundary-pipeline.ts` unless there is an explicit decision to change the public analyzer surface.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | WS-2 Stage 5 Aggregation Extraction
-**Task:** Continue the approved low-risk WS-2 decomposition work by extracting Stage 5 aggregation and quality-gate logic out of `claimboundary-pipeline.ts` without changing analysis behavior.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Moved Stage 5/6 aggregation helpers into a dedicated `aggregation-stage.ts` module and kept `claimboundary-pipeline.ts` as the orchestrator plus public re-export surface so existing imports/tests keep resolving through the pipeline module. Preserved existing behavior rather than tightening parsing or changing quality-gate semantics; this slice is structural only.
-**Open items:** No immediate follow-up is required for this slice. If WS-2 continues, the next cut should again be a small approved slice rather than a bundled push into research-loop refactoring.
-**Warnings:** `aggregation-stage.ts` now contains a substantial chunk of post-verdict logic. Treat it as an extracted stage module, not as a signal to change public analyzer imports or to mix in new quality behavior.
-**For next agent:** This slice is verified and ready to commit. The repo now has three completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`); the next decision is whether to continue WS-2 with another isolated slice or stop before higher-coupling work.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | WS-2 Stage 4 Verdict Generation Extraction
-**Task:** Continue the approved low-risk WS-2 decomposition work by extracting Stage 4 verdict-generation orchestration out of `claimboundary-pipeline.ts` without changing analysis behavior.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Moved `generateVerdicts`, provider-credential checks, debate-tier diagnostics, and the production LLM wiring helpers into `verdict-generation-stage.ts` and preserved the existing public import surface through `claimboundary-pipeline.ts` re-exports. Kept the verdict-adjacent diagnostics with the verdict orchestration because they share the same provider-credential helper and would become awkwardly split otherwise.
-**Open items:** No immediate follow-up is required for this slice. Any further WS-2 work should pause before higher-coupling research-loop extraction unless another narrow module boundary is explicitly approved.
-**Warnings:** This slice is still structural only. Do not treat the new module as approval to change verdict-stage semantics, prompt behavior, or the public analyzer import surface.
-**For next agent:** The repo now has four completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`, `verdict-generation-stage.ts`). If WS-2 continues, prefer a clearly bounded next cut over any broad research-loop move by default.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | WS-2 Stage 1 Claim Extraction Extraction
-**Task:** Execute the last explicitly approved low-risk WS-2 slice by extracting Stage 1 claim extraction out of `claimboundary-pipeline.ts` without changing analysis behavior.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Moved Stage 1 claim extraction, Gate 1, preliminary search, claim-contract validation, related Zod schemas, and their helper wiring into `claim-extraction-stage.ts` while preserving the existing public import surface through `claimboundary-pipeline.ts` re-exports. Exported `upsertSearchProviderWarning` back to the orchestrator because Stage 2 research still depends on it, rather than forcing a larger cross-stage redesign.
-**Open items:** WS-2 should now pause before the higher-coupling Stage 2 research loop (`query-generation`, `evidence-extraction`, `research-stage`). Any continuation should require a fresh explicit decision.
-**Warnings:** This slice is structural only despite its size. Do not treat `claim-extraction-stage.ts` as approval to change Stage 1 prompts, validation semantics, or research-loop boundaries.
-**For next agent:** The repo now has five completed WS-2 slices (`pipeline-utils.ts`, `boundary-clustering-stage.ts`, `aggregation-stage.ts`, `verdict-generation-stage.ts`, `claim-extraction-stage.ts`). `claimboundary-pipeline.ts` is down to the main entry point plus the Stage 2 research loop; stop here unless the next higher-coupling extraction is explicitly authorized.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage 2 Slice 1 State Utils Extraction
-**Task:** Start the approved Stage 2 deconstruction with the smallest safe slice by extracting pure State-2 targeting/sufficiency/budget helpers out of `claimboundary-pipeline.ts`.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `Docs/WIP/2026-03-23_Stage_2_Research_Loop_Deconstruction_Design.md`, `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Created `research-orchestrator.ts` as the first Stage 2 module and moved only the targeting/sufficiency/query-budget helper surface into it. Kept `researchEvidence`, `runResearchIteration`, preliminary seeding, source reconciliation, and all LLM/search logic in `claimboundary-pipeline.ts`. Preserved the public import surface through re-exports from the pipeline module.
-**Open items:** Slice 2 remains a separate decision. The remaining Stage 2 core is still the async research loop plus query/acquisition/extraction logic.
-**Warnings:** This does not yet make `research-orchestrator.ts` the owner of Stage 2 orchestration; it is a staging anchor only. There are unrelated working-tree changes in smoke-test/Vitest files that were deliberately left untouched.
-**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage2_Slice1_State_Utils.md` for the exact boundary and verification. Verified with `claimboundary-pipeline.test.ts` (`292/292`) and `npm -w apps/web run build`.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Gemini 3.0 Pro | WS-2 Complete & Stabilization Checkpoint
-**Task:** Finalize Stage 2 Research Loop modularization and execute stabilization checkpoint.
-**Files touched:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/research-query-stage.ts`, `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Completed the decomposition of the 5,700-line pipeline monolith into clean, stage-based modules. Stage 2 is now fully modularized into Orchestration, Queries, Acquisition, and Extraction. Resolved build-critical import and type conflicts. Established a Hydrogen smoke baseline post-refactor.
-**Open items:** Next planned step is a fresh prioritization decision point. Refactoring track is materially complete for the current Alpha horizon.
-**Warnings:** One fragile sufficiency test in `claimboundary-pipeline.test.ts` remains skipped to maintain CI stability. Local Hydrogen smoke test verified technical integrity of the modularized stack.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | Post-WS-2 Decision Docs Alignment
-**Task:** Align the governing WIP docs with the reviewed post-WS-2 decision: validate first, then only consider isolated `P1-A`.
-**Files touched:** `Docs/WIP/2026-03-23_Post_WS2_Decision_Point.md`, `Docs/WIP/2026-03-22_Next_1_2_Weeks_Execution_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Updated the decision point so it no longer recommends jumping straight into broad Option B. The current sequence is now explicit: deploy/validate first, then if clean prepare `P1-A` as a single experiment, and keep `P1-B` deferred and separate. Marked the Mar-22 plan as complete and repositioned it as a closed execution record rather than the active next-step plan.
-**Open items:** The actual Hydrogen/VPS validation result still determines whether `P1-A` should be opened. Until that gate passes, no new optimization work should start.
-**Warnings:** `P1-A` remains quality-affecting. It must not be bundled with `P1-B`, and it must not start before the validation gate is complete.
-**For next agent:** Use `Docs/WIP/2026-03-23_Post_WS2_Decision_Point.md` as the current next-step decision document, not the Mar-22 plan. The correct sequence is now `validate -> P1-A -> evaluate`.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage-4 Verdict Failure Incident Triage
-**Task:** Investigate repeated `UNVERIFIED` fallback reports and patch the UI/API so verdict-generation failures are not presented as ordinary insufficient-evidence outcomes.
-**Files touched:** `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/jobs/page.tsx`, `apps/web/src/app/jobs/[id]/page.tsx`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Confirmed the bad reports were not normal evidence-scarcity runs but `analysis_generation_failed` fallbacks caused by `Stage4LLMCallError` during `VERDICT_ADVOCATE`. Added `analysisIssueCode` / `analysisIssueMessage` to job list/detail API responses and updated the jobs list/detail UI to show `Analysis generation failed` / `Internal analysis failure` instead of duplicating `Insufficient evidence` for these fallback reports.
-**Open items:** The underlying operational cause is not fixed by this patch. The strongest current diagnosis is Stage-4 provider overload under concurrent validation load. Validation should be rerun serially, and the runner should be tested with `FH_RUNNER_MAX_CONCURRENCY=1` before any new optimization work starts.
-**Warnings:** `npm -w apps/web run build` passed. API code was compile-checked with `dotnet msbuild /t:Compile`; full `dotnet build` could not complete because the running local `FactHarbor.Api.exe` was locking `bin\\Debug\\net8.0`. Metrics for overlapping jobs remain partially untrustworthy because `apps/web/src/lib/analyzer/metrics-integration.ts` still uses a module-global collector.
-**For next agent:** Treat the recent Bolsonaro / flat-earth / round-earth `UNVERIFIED` jobs as Stage-4 fallback incidents, not as proof of ordinary low evidence. Before deeper root-cause work, inspect the new UI/API behavior on those jobs and rerun controls serially. A later hardening pass should separate `analysis_generation_failed` from evidence warnings across export/report surfaces too.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage-4 Provider Guard Efficiency Alignment
-**Task:** Verify official provider limit behavior and tighten the local Stage-4 backpressure fix so it is effective without duplicating retries.
-**Files touched:** `apps/web/src/lib/analyzer/llm-provider-guard.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/test/unit/lib/analyzer/llm-provider-guard.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `apps/web/.env.example`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Confirmed from official Anthropic/OpenAI docs that exact live rate limits are org-/tier-specific, exposed via headers, and not a single fixed concurrency number. Switched the new guard from provider-wide + custom outer retry to lane-aware throttling (`anthropic:sonnet` default 2, other lanes 3) and relied on the AI SDK's built-in retry handling because it already honors `retry-after` / `retry-after-ms` on retryable API call failures. Also enriched final `llm_provider_error` warnings with request-id / retry-after / remaining-limit headers when present.
-**Open items:** This hardens only the Stage-4 LLM path. It does not fix the module-global metrics collector, and it does not yet add equivalent guarding for future SR calibration traffic if that path is enabled. Real parallel-run validation on the local stack is still recommended before deployment.
-**Warnings:** `apps/web/.env.local` was kept local-only and not committed. A latent pipeline-test mock issue surfaced because `classifyError()` now touches `SearchProviderError`; the web-search mock was converted to a partial mock to restore that export.
-**For next agent:** See `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage4_Provider_Guard_Reliability_Alignment.md` for the detailed incident and design rationale. If Stage-4 still flakes under load, inspect real failure headers first. The next safe tuning knob is `FH_LLM_MAX_CONCURRENCY_ANTHROPIC_SONNET`, not runner-global concurrency. Verified with `npm -w apps/web run test -- test/unit/lib/analyzer/llm-provider-guard.test.ts`, `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and `npm -w apps/web run build`.
-**Learnings:** no
-
----
-### 2026-03-23 | Senior Developer | Codex (GPT-5) | Stage-4 Provider Guard Detailed Handoff
-**Task:** Write the detailed incident and fix documentation for the Stage-4 provider-guard alignment after verifying official provider-limit behavior.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-23_Senior_Developer_Stage4_Provider_Guard_Reliability_Alignment.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Captured the observed incident, the provider-doc findings, why the first outer-retry version was inefficient, and why the final design uses lane-aware throttling plus SDK-native retries. Documented concrete tuning guidance and what remains out of scope.
-**Open items:** Real parallel validation on the running stack is still required; the document is guidance, not proof of deployed stability.
-**Warnings:** The detailed handoff assumes the current `ai@6.0.78` behavior continues to honor `retry-after` / `retry-after-ms`. Re-check this if the SDK is upgraded.
-**For next agent:** Use the handoff file as the authoritative explanation of the Stage-4 backpressure fix and its tuning model.
-**Learnings:** no
-
----
-### 2026-03-24 | Lead Architect | Codex (GPT-5) | WIP Consolidation Round 8
-**Task:** Consolidate `Docs/WIP`, split mixed live/historical docs, archive stale plans, and refresh status/backlog tracking after the March refactor and validation work.
-**Files touched:** `Docs/WIP/*`, `Docs/ARCHIVE/*`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/STATUS/Calibration_Run_Policy.md`, `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_WIP_Consolidation_Round8.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Reduced the active WIP set to 22 curated files; moved purely historical material into `Docs/ARCHIVE`; created `_arch` companions for mixed docs; repositioned WIP around the current fixed-stack validation gate and residual future-facing tracks instead of closed Mar-22/23 execution history.
-**Open items:** `VAL-1`, `VAL-2`, and possibly `VAL-3` remain open pending evaluation of the current live validation batch on commit `31aea55d`.
-**Warnings:** Do not bundle unrelated analyzer code changes into the docs commit. This consolidation touched docs only.
-**For next agent:** Read `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_WIP_Consolidation_Round8.md` for the full keep/split/archive rationale and the resulting open-topic map.
-**Learnings:** no
-
----
-### 2026-03-24 | Lead Architect | Codex (GPT-5) | Reclassify LiveCheck and Innosuisse Docs to Knowledge
-**Task:** Move all `Innosuisse_*` and `LiveCheck*` proposal/reference documents out of `Docs/WIP` / `Docs/ARCHIVE` into `Docs/Knowledge` and update the active tracking docs accordingly.
-**Files touched:** `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md`, `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx`, `Docs/WIP/README.md`, `Docs/STATUS/Backlog.md`, `Docs/ARCHIVE/README_ARCHIVE.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Reclassified LiveCheck / Innosuisse material as knowledge/funding reference rather than active implementation WIP. Updated the canonical future-track reference in `Backlog.md` to point to `Docs/Knowledge`, reduced the active WIP count from 22 to 19, and documented the reclassification in `README_ARCHIVE.md`.
-**Open items:** Historical `Agent_Outputs.md` entries still mention the old WIP paths because those logs are preserved as historical records.
-**Warnings:** This was a docs/location change only. No analyzer or runtime behavior changed.
-**For next agent:** Use `Docs/Knowledge` as the canonical home for LiveCheck / Innosuisse proposal material. Do not recreate those files in `Docs/WIP`.
-**Learnings:** no
-
----
-### 2026-03-24 | Senior Architect | Gemini 3.0 Pro | Session Close: Modularization & UCM Hardening
-**Task:** Comprehensive architectural handoff and project state synchronization before session restart.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-24_Senior_Architect_Handoff_Modularization_and_UCM.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Verified the complete deconstruction of Stage 2 into modular components. Ensured UCM compliance for all newly extracted stage parameters (relevanceFloor, timeouts, etc.), while acknowledging remaining UCM gaps in the backlog (UCM-1 to UCM-5). Established a clear transition path for the next agent focusing on the active validation gate.
-**Open items:** Successor must validate the active batch (Flat-earth, Boundary Coverage) before starting any new implementation work.
-**Warnings:** Stay within the boundaries of the active gate doc (2026-03-24 Follow-up). No premature P1-A/B optimization.
-**Learnings:** no
-
----
-### 2026-03-25 | Lead Architect | Codex (GPT-5) | Report Quality Root Causes and Stabilization Plan
-**Task:** Consolidate the latest report-quality findings into a review-ready root-cause summary and next-step plan, then sync the canonical status/backlog docs to the post-QLT-1 state.
-**Files touched:** `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Documented that the dominant predicate-softening bug is materially improved, that residual broad-evaluative instability is now the main analytical risk, and that the next best move is targeted characterization (`QLT-2`) plus trust/observability cleanup (`VAL-2`, `OBS-1`) rather than another broad analyzer tuning wave.
-**Open items:** `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md` is still untracked and should be formally committed or otherwise handled. `Current_Status.md` still contains older historical sections below the top block that may merit further cleanup later.
-**Warnings:** This update changes planning posture. Do not read older March 24 top-level status/backlog summaries as canonical after this point.
-**For next agent:** Start from the new WIP plan doc and the updated status/backlog. Treat QLT-1 as materially successful but still monitored; do not reopen deep analyzer changes until `QLT-2` evidence says they are needed.
-**Learnings:** no
-
----
-### 2026-03-25 | Lead Architect | Codex (GPT-5) | Review Corrections for Stabilization Plan and QLT-2
-**Task:** Apply the independent review corrections to the post-QLT-1 stabilization docs and make the current validation state safer for downstream planning.
-**Files touched:** `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`, `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-03-24_Quality_Scorecard_Review.md`, `Docs/AGENTS/Handoffs/2026-03-25_Senior_Developer_QLT1_Full_Validation_Report.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Downgraded the control-stability overclaim to “directionally correct, but not universally facet-stable,” explicitly acknowledged the 31pp Flat-Earth residual decomposition spread and the EN 37pp per-claim variance, reframed Stage-2 evidence variation as mostly an amplifier of Stage-1 drift, tightened `QLT-2` to include Flat-Earth reruns plus facet-category tracking and explicit exit criteria, and marked the 2026-03-24 quality scorecard as historical/pre-QLT-1 context.
-**Open items:** Commit the current doc set so the QLT-1 validation handoff and the review-adjusted plan become canonical together. Historical lower sections in `Current_Status.md` still remain by design and may merit future curation, but they no longer contradict the top-level state.
-**Warnings:** Do not cite the 2026-03-24 scorecard’s control/facet-stability conclusions as the latest view; the 2026-03-25 validation handoff supersedes them. `QLT-2` should not start without using the new exit criteria.
-**For next agent:** Use the updated `QLT-2` definition in `Backlog.md` and the review-adjusted stabilization plan as the active planning baseline. If you execute QLT-2, include `Ist die Erde flach? × 3` and explicit facet-category comparison.
-**Learnings:** no
-
----
-### 2026-03-25 | General | Codex (GPT-5) | Repeated-Input Verdict Spread Check
-**Task:** Inspect repeated-input runs in `apps/api/factharbor.db` and determine whether verdict spread is mainly explained by Stage-1 atomic-claim extraction variance or whether meaningful spread remains when Stage 1 is stable.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Used exact repeated `Jobs.InputValue` clusters and parsed stored `ResultJson.understanding.atomicClaims`. Treated a Stage-1 signature as the ordered tuple of `(statement, claimDirection, category)` across extracted atomic claims, then compared total truth-percentage spread against within-signature spread for the requested families.
-**Open items:** If deeper attribution is needed, repeat the same decomposition within tighter same-commit windows for multi-commit families and optionally cluster semantically equivalent atomic-claim phrasings rather than only exact claim tuples.
-**Warnings:** Several families (`Plastik DE`, `Plastik EN`, `Muslims`, `Flat Earth`, lowercase `Hydrogen`) span multiple `GitCommitHash` values, so their total spread mixes analyzer-version drift with run-to-run variation. All inspected clusters used one `PromptContentHash`, so prompt-file drift did not confound this check.
-**For next agent:** The cleanest evidence of post-Stage-1 residual spread is in the single-commit Bolsonaro due-process clusters: same exact two-claim Stage-1 signatures still produced truth ranges of `49-66` (EN) and `47-61` (PT), crossing verdict labels.
-**Learnings:** no
-
----
-### 2026-03-25 | LLM Expert | Codex (GPT-5) | Long-Run Variance Reduction Levers
-**Task:** Investigate long-run improvements for the root cause of normal LLM nondeterminism plus live retrieval variation, grounded in the repo's knowledge/specification docs.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Framed the problem around the repo's current conclusion that Stage 1 is materially stabilized and residual spread is now primarily Stage 2 evidence variation plus Stage 4 verdict stochasticity. Prioritized retrieval diversification and ranking quality above further prompt tuning, treated grounding as a hard-faithfulness control rather than a retrieval fix, and positioned calibration as a measurement/control layer that should accompany retrieval work but not substitute for it.
-**Open items:** If this investigation is turned into execution work, the next useful artifact would be a phased design doc that maps each lever to current modules (`research-query-stage.ts`, `research-extraction-stage.ts`, `grounding-check.ts`, `confidence-calibration.ts`) and to UCM/config implications.
-**Warnings:** Some long-run levers (distilled scorers, GraphRAG, formal NLI validation) require new evaluation datasets or external research integration; they should not be treated as near-term config tweaks.
-**For next agent:** Start from the multi-source retrieval spec plus the DIRAS / Faithful Specialists docs. The highest-leverage sequence is: retrieval diversity and reranking first, grounding/attributability gates second, then calibration/distillation once better evidence signals exist.
-**Learnings:** no
-
----
-### 2026-03-25 | LLM Expert | Codex (GPT-5) | Long-Run Variance Reduction Assessment
-**Task:** Assess how FactHarbor should reduce long-run variance from normal LLM stochasticity plus live retrieval variation, grounded in the current status and the MAD / Schimanski / Stammbach knowledge docs.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Framed the problem as primarily Stage 2 retrieval variation plus Stage 4 adjudication variance, not Stage 1 decomposition, consistent with the 2026-03-25 status snapshot. Ranked the main levers as: stronger sufficiency/abstention, debate-triggered and tool-diverse retrieval, path-based plus cross-model debate heterogeneity, specialist relevance/grounding models, and structural reproducibility wrappers (snapshotting, canonical ordering, deterministic aggregation inputs). Emphasized that more homogeneous debate rounds are lower leverage than better evidence and stronger heterogeneity.
-**Open items:** If a follow-on design doc is wanted, turn the ranking into a phased roadmap with explicit experiment gates for retrieval, arbitration, and specialist-validator tracks.
-**Warnings:** Per AGENTS.md, deterministic additions must stay structural only. Do not answer semantic questions with new regex/keyword heuristics; use model-based or specialist-model inference instead.
-**For next agent:** Use `Docs/Knowledge/MAD_Pattern_Research_2026-02-26.md`, `Docs/Knowledge/Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md`, `Docs/Knowledge/Schimanski_Faithful_LLM_Specialists_ACL2024.md`, `Docs/Knowledge/Schimanski_DIRAS_NAACL2025.md`, `Docs/Knowledge/Global_FactChecking_Landscape_2026.md`, and `Docs/STATUS/Current_Status.md` as the primary basis if this assessment needs to be converted into architecture or backlog work.
-**Learnings:** no
-
----
-### 2026-03-25 | Lead Architect | Codex (GPT-5) | Long-Run Variance Reduction Roadmap
-**Task:** Turn the debated long-run variance assessment into a concrete `Docs/WIP` roadmap grounded in the repo's Knowledge docs and current monitor-mode posture.
-**Files touched:** `Docs/WIP/2026-03-25_Long_Run_Variance_Reduction_Roadmap.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Used two expert consultations plus challenger/reconciler debate to conclude that the best future quality lever is retrieval-first variance reduction, followed conditionally by verdict-stage arbitration, with hard grounding gates, broad abstention, specialist scorers, and GraphRAG deferred until better validator maturity and evaluation data exist.
-**Open items:** No canonical status/backlog change was made. If the Captain wants to reopen quality work, the next artifact should be a scoped retrieval-first validation workstream proposal rather than direct implementation.
-**Warnings:** This document is future-facing only. It does not override approved-policy monitor mode or authorize new analyzer work by itself.
-**For next agent:** Start with `Docs/WIP/2026-03-25_Long_Run_Variance_Reduction_Roadmap.md` plus `Docs/Specification/Multi_Source_Evidence_Retrieval.md` if the project later opens a new optional quality workstream.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | UCM Configuration Completeness (UCM-1 to UCM-5)
-**Task:** Move remaining hardcoded analysis-affecting parameters into UCM so they are admin-tunable without code changes.
-**Files touched:** `config-schemas.ts`, `pipeline.default.json`, `calculation.default.json`, `config.ts`, `evidence-recency.ts`, `claim-extraction-stage.ts`, `research-query-stage.ts`, `research-extraction-stage.ts`, `aggregation-stage.ts`, `grounding-check.ts`, `scope-normalization.ts`, `source-reliability-calibration.ts`
-**Key decisions:** UCM-1: Flat fields with `analysisMode`-based selection via `getActiveConfig()`. UCM-3: Per-task temperatures (not a single unified field) because query generation (0.2) is deliberately warmer than extraction (0.1). UCM-4: Brackets + fallback pattern to avoid Infinity in JSON. UCM-5: Schema-only placeholder (temporal-guard.ts does not exist yet). Grounding-check uses `DEFAULT_PIPELINE_CONFIG` constant since threading runtime config would change its public API.
-**Open items:** `grounding-check.ts` reads `DEFAULT_PIPELINE_CONFIG` directly instead of runtime config. `temporal-guard.ts` (UCM-5) does not exist yet; schema field is ready.
-**Warnings:** No default values were changed. All existing behavior is preserved.
-**For next agent:** All 5 UCM backlog items are structurally complete. To verify runtime config propagation, change a value in Admin and confirm it reaches the module.
-**Learnings:** no
-
----
-### 2026-03-26 | Lead Architect | Codex (GPT-5) | Plastik DE UNVERIFIED Root Cause Note
-**Task:** Document why job `5c1b4633e56d4238bad682d2ed64e853` resolved to `UNVERIFIED` and prepare a targeted solution-finding prompt.
-**Files touched:** `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Identified the immediate cause as mixed-band truth plus low aggregated confidence, but traced the deeper differential cause to Stage-1 semantic/facet drift versus earlier control run `08a1c6d407564d74af633e6298d3ef84`. Recorded that `AC_03` shifted from resource-conservation framing to practical-feasibility framing, which changed downstream queries, boundaries, and self-consistency spread enough to flip the article verdict. Also noted a secondary verdict-stage structural-consistency bug for `AC_03`.
-**Open items:** A follow-on reviewer/architect investigation is still needed to decide whether the proper remedy is a narrow Stage-1 fix, a downstream fix, a bug fix only, or no change.
-**Warnings:** The working tree already contained unrelated uncommitted changes before this note was added. This write-up is documentation only and should not be mistaken for approval to reopen a broad stabilization wave.
-**For next agent:** Start with `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, then inspect the two referenced jobs and the current Stage-1 / verdict code before proposing any change. The strongest current hypothesis is targeted Stage-1 dimension drift on broad evaluative German absolutist phrasing.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Code-Path Verification
-**Task:** Verify two code-path claims in the Plastik solution proposal: the structural_consistency mismatch bug and the applicability of existing QLT-3 facet-convergence rules to `Plastic recycling bringt nichts`.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Confirmed the verdict-label mismatch bug is real but the proposal places the fix at the wrong point in the pipeline. Reconciliation already recalculates verdict labels; the mismatch is introduced later when spread adjustment lowers confidence without recomputing `verdict`. Confirmed from the current prompt rules that the relevant intended class for a single input like `Plastic recycling bringt nichts` is `ambiguous_single_claim`, so the existing facet-convergence, predicate-preservation, and claim-count-stability rules already apply by spec.
-**Open items:** If the team wants certainty about actual runtime classification for the cited Plastik job, inspect the stored Pass 2 output or job trace. That is separate from the current code-path verification.
-**Warnings:** A generic final-stage verdict normalization would be too broad because the later high-harm confidence floor intentionally forces `UNVERIFIED` independent of the truth-scale band.
-**For next agent:** If implementing the bug fix, patch the Step 4c spread-adjustment map in `apps/web/src/lib/analyzer/verdict-stage.ts` so any confidence change also recomputes `verdict` with `percentageToClaimVerdict(...)`. Do not broaden the fix into a blanket final overwrite without accounting for the high-harm floor.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Recommendation Review
-**Task:** Review `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md` against the cited code and decide whether `Option A + C, defer B` is the right next move.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Judged `Option A` correct in principle but underspecified in placement: the bug is created by Step 4c spread adjustment lowering confidence without recomputing `verdict`, not by reconciliation. Judged `Option C` premature as written because the current prompt already contains predicate-preservation, no-proxy-rephrasing, facet-convergence, and claim-count-stability rules for `ambiguous_single_claim`, and Stage 1 already runs contract validation plus retry. Judged `Option B` still defer-worthy because it is a global calibration change that would mask instability rather than prove the current Stage-1 safeguards are working. Judged `Option D` not appropriate as the immediate response while a real correctness bug and an unresolved Stage-1 escape path remain.
-**Open items:** The concrete follow-up is to inspect the offending job's stored Pass 2 output and contract-validation result to determine whether the bad run was misclassified, validator fail-open, or a genuine miss despite existing prompt rules.
-**Warnings:** Do not implement a blanket final `percentageToClaimVerdict()` rewrite after all stages; that would conflict with the intentional high-harm confidence-floor downgrade path.
-**For next agent:** Recommended sequence is: 1) fix the Step 4c relabel bug with tests, 2) inspect/log runtime `inputClassification` plus claim-contract validation behavior for the cited Plastik DE jobs, 3) only then decide whether any Stage-1 enforcement change is needed. Treat new prompt text as a follow-up only if the existing ambiguous-single-claim safeguards are shown not to cover the runtime path.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Codex (GPT-5) | Plastik Proposal Counter-Review
-**Task:** Challenge the main recommendation in `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md` using the cited root-cause note and the current verdict/aggregation/truth-scale code.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Concluded the proposal overstates Stage-1 causality relative to what the inspected code actually proves. The repo-grounded cliff is downstream: self-consistency is sampled with only two extra advocate reruns at temperature 0.4, mapped through a hard `>20pp -> 0.4` multiplier, then fed into article aggregation where confidence is reused as both weight and verdict input before the 45% MIXED/UNVERIFIED threshold. Also concluded the proposed Option A fix is mislocated because reconciliation already recomputes verdict labels; the mismatch is introduced later when confidence changes without a relabel.
-**Open items:** If the team wants to act beyond the relabel bug, the next justified step is downstream confidence-path characterization for this job family, not a Stage-1 prompt edit. Stage-1 changes should wait until runtime traces show the existing claim-extraction safeguards are actually missing this input.
-**Warnings:** The proposal's validation target of "zero UNVERIFIED across 5 runs" optimizes for suppressing a label rather than proving calibration correctness. Treat that as a red flag, not a shipping criterion.
-**For next agent:** Base the next decision on these exact code paths: `verdict-stage.ts` Step 4c spread adjustment, `aggregation-stage.ts` confidence-weighted aggregation, and `truth-scale.ts` 45% mixed-confidence threshold. If you patch the bug, do it after the last confidence-changing step that should still follow truth-scale semantics.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Plastik DE 4x EVD-1 Measurement
-**Task:** Run 4x `Plastik recycling bringt nichts` to determine if the UNVERIFIED result was a tail outlier or recurring.
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Plastik_DE_4x_Measurement.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** 4/4 runs produced LEANING-FALSE (3x) or MOSTLY-FALSE (1x). Zero UNVERIFIED, zero warnings. Truth spread 9pp (green), confidence spread 20pp (amber). AC_03 dimension varies but predicate is preserved and does not cause verdict instability. Earlier UNVERIFIED classified as **tail outlier**.
-**Open items:** Confidence spread is amber (20pp) — monitor, not actionable. AC_03 dimension drift is moderate but harmless on current stack.
-**Warnings:** None.
-**For next agent:** Stay in monitor mode for this family. Do not reopen Stage-1 investigation. See full handoff at `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Plastik_DE_4x_Measurement.md`.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Fix post-spread verdict label staleness
-**Task:** Fix the structural-consistency bug where Step 4c spread adjustment changes confidence but leaves verdict label stale (e.g. 52%/28% labeled MIXED instead of UNVERIFIED).
-**Files touched:** `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`
-**Key decisions:** Added `percentageToClaimVerdict()` call in the Step 4c spread-adjustment map, exactly where `adjustedConfidence` and `confidenceTier` are already written. This is the precise location identified by the prior code-path verification — not reconciliation (which already recomputes), not a blanket final pass (which would conflict with high-harm floor).
-**Open items:** None for this fix. The broader Plastik UNVERIFIED instability (Stage-1 facet drift, spread multiplier cliff) remains a separate investigation.
-**Warnings:** The fix only corrects label staleness. It does not change whether a claim becomes UNVERIFIED — that's still driven by the spread multiplier and confidence threshold.
-**For next agent:** The structural_consistency checker should now stop firing for post-spread label mismatches. If it still fires for other mismatch classes, those are separate bugs.
-**Learnings:** no
-
----
-### 2026-03-26 | Lead Architect | Codex (GPT-5) | Consolidated Plastik DE Proposal and Docs Sync
-**Task:** Review the Plastik DE `UNVERIFIED` solution proposal against code and a short debate round, then update and commit the uncommitted docs to the consolidated recommendation.
-**Files touched:** `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`, `Docs/WIP/2026-03-26_Plastik_DE_Unverified_Root_Cause_Note.md`, `Docs/WIP/2026-03-26_Plastik_DE_Runtime_Path_Investigation.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`, `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_B_Sequence_Validation.md`
-**Key decisions:** Kept the structural-consistency bug fix, but corrected its fix point to Step 4c where spread adjustment lowers confidence without relabeling. Rejected immediate prompt changes because the current prompt/code already contain the relevant ambiguous-single-claim safeguards; replaced that recommendation with runtime-path characterization to verify whether Stage 1 actually escaped in the cited runs. Kept spread-multiplier tuning deferred as a global calibration change. Added the new Plastik DE WIP docs, including the runtime-path investigation, to the WIP index and included the pending B-sequence validation handoff in the docs commit set.
-**Open items:** The next two work items are already defined: 1) the post-spread verdict-label bug fix, and 2) a runtime-path investigation for the two Plastik DE jobs to determine whether any targeted Stage-1 enforcement change is actually justified.
-**Warnings:** This docs sync should be committed without unrelated code. The reviewed proposal no longer supports “implement Option C now”; future prompt edits should wait for runtime-path evidence.
-**For next agent:** Start from the consolidated proposal in `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`. Treat the current recommendation as: bug fix now, diagnostic investigation next, no multiplier tuning yet.
-**Learnings:** no
-
----
-### 2026-03-26 | Lead Architect | Claude Code (Opus 4.6) | Gate 1 Debate Closure + EVD-1 Measurement + Docs Sync
-**Task:** Run Gate 1 rescue refinement debate, execute Bolsonaro x5 + Plastik DE x3 EVD-1 measurement, sync canonical docs.
-**Files touched:** `Docs/WIP/2026-03-26_Gate1_Rescue_Refinement_Debate.md` (new), `Docs/WIP/2026-03-26_EVD1_Bolsonaro_Plastik_Measurement.md` (new), `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`.
-**Key decisions:** (1) Gate 1 thesis-direct rescue refinement DECLINED after two-agent debate — the UNVERIFIED was evidence-driven (balance 0.38 vs 0.76), AC_03 was the most stable claim, and a 3-claim run produced LEANING-TRUE. Over-filtering risk for evaluative questions too high. (2) Bolsonaro 5-run measurement: amber (25pp, UNVERIFIED 1/5 single outlier). (3) Plastik DE 3-run: green (14pp, zero UNVERIFIED, confidence 72-77). (4) No analyzer behavior change approved. (5) Optional OBS-2 (persist inputClassification + contractValidation) recorded as low-priority diagnostics item, not a quality-track reopening.
-**Open items:** OBS-2 (optional diagnostics). No active analyzer engineering work.
-**Warnings:** The Bolsonaro amber status means re-measure in the next validation round. If UNVERIFIED recurs in 2+ of 5, investigate evidence-allocation (3 vs 2 claims), NOT Gate 1 filtering.
-**For next agent:** The system is in EVD-1 monitor mode. No analyzer changes are approved. Gate 1 refinement is closed. The next quality action is only triggered by a red EVD-1 result. Captain approval required for optimization tracks (P1-A/B).
-**Learnings:** When a two-job comparison shows a large confound (4.4x evidence balance difference), do not implement a fix based on the secondary signal (claim count). Generate more data first. The N=5 measurement disproved the causal hypothesis cleanly.
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Stage-1 Observability (OBS-2)
-**Task:** Persist `inputClassification` and `contractValidationSummary` in stored result JSON for future investigations.
-**Files touched:** `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts`
-**Key decisions:** Added two optional fields to `CBClaimUnderstanding`: `inputClassification` (string from Pass 2) and `contractValidationSummary` (compact `{ran, preservesContract, rePromptRequired, summary}`). Hoisted summary capture before the retry decision block. Fail-open case records `ran: true` with explanatory summary. Both fields are optional for backward compatibility.
-**Open items:** None. This is additive observability only.
-**Warnings:** None. No analytical behavior changed.
-**For next agent:** Future investigations can now inspect `understanding.inputClassification` and `understanding.contractValidationSummary` directly from stored job results instead of inferring runtime behavior.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Stage-2 D5 Diversity-Aware Sufficiency (revised)
-**Task:** Revise the existing diversity-aware sufficiency patch to close two review gaps: D5 item-count alignment and seeded-evidence policy.
-**Files touched:** `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
-**Key decisions:** Gap 1: When `diversityAwareSufficiency=true`, sufficiency now uses `calcConfig.evidenceSufficiencyMinItems` (D5 threshold) instead of `pipelineConfig.claimSufficiencyThreshold`. Gap 2: D5-aligned path includes seeded evidence (matching D5 behavior) via `includeSeeded: true`. Default path unchanged (excludes seeded). Both controlled via `DiversitySufficiencyConfig` interface fields. Feature remains default-off.
-**Open items:** None. Ready for experimental validation when enabled.
-**Warnings:** When enabled, sufficiency semantics change: seeded evidence counts, item threshold comes from CalcConfig, diversity is required. This is intentional D5 alignment.
-**For next agent:** Enable `diversityAwareSufficiency=true` via Admin → Config for targeted testing. Compare D5 gate results (UNVERIFIED claims) between runs with and without the flag.
-**Learnings:** no
-
----
-### 2026-03-26 | Lead Architect | Codex (GPT-5) | Bolsonaro Seeded Evidence Mapping Review
-**Task:** Sharpen the analysis of weak Bolsonaro run `1abb0ea52a6c404baadaba360b0370de`, specifically whether empty coverage-matrix rows indicate a real analytical problem, using debate-style reviewer/challenger passes.
-**Files touched:** `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Confirmed that the empty matrix rows are not UI noise: they come from seeded preliminary evidence entering Stage 2 with `relevantClaimIds: []` after narrow remapping. For `1abb0ea5`, `23/77` evidence items are seeded and unmapped, exactly matching the matrix undercount. However, the same seeded-unmapped pattern also appears in stronger Bolsonaro runs, so it is a systemic contributing defect rather than the primary cause of weakness. Reconciled conclusion: Stage-2/D5 mapped-evidence starvation on `AC_01` remains the main weak-path mechanism, while the seeded-evidence mapping defect is a real interface bug worth a targeted follow-up.
-**Open items:** If Captain wants to act, the next justified work item is a narrow Stage-1/Stage-2 claim-handle alignment investigation or fix. This should be kept separate from Gate 1, D5 thresholding, and verdict-calibration work.
-**Warnings:** Do not misframe this as a UI issue or as sole root cause. Empty rows are a symptom of unmapped evidence, but fixing that alone may not solve claim-local diversity starvation.
-**For next agent:** Start from `Docs/WIP/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md`. Treat the current state as: real seeded-evidence attribution defect, but primary weakness still sits in mapped evidence diversity for `AC_01`.
-**Learnings:** no
-
----
-### 2026-03-26 | Senior Developer | Claude Code (Opus 4.6) | Diversity-Aware Sufficiency Validation
-**Task:** Validate `diversityAwareSufficiency=true` (commit `83a47aad`) on 8 runs (4 Bolsonaro, 2 Plastik DE, 2 Flat Earth).
-**Files touched:** `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md`, `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** **Validated.** 0/8 UNVERIFIED (vs 1/5 baseline). Bolsonaro confidence spread improved from 23pp (amber) to 5pp (green). No control regressions. No runtime cost increase visible. Feature eliminates the D5 starvation weak path that produced the earlier UNVERIFIED outlier.
-**Open items:** Recommend promoting `diversityAwareSufficiency=true` as new default. Captain approval needed.
-**Warnings:** N=4 Bolsonaro is sufficient for validation but not exhaustive. The truth spread remains amber (25pp) — that is evidence-driven, not feature-related.
-**For next agent:** If Captain approves, set `diversityAwareSufficiency: true` in `pipeline.default.json` + `DEFAULT_PIPELINE_CONFIG`, reseed. See full handoff at `Docs/AGENTS/Handoffs/2026-03-26_Senior_Developer_Diversity_Aware_Sufficiency_Validation.md`.
-**Learnings:** no
-
----
-### 2026-03-26 | Lead Architect | Codex (GPT-5) | Review of Seeded Evidence Mapping Fix Proposal
-**Task:** Review `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md`, especially the proposed multi-claim all-claims fallback for unmapped seeded preliminary evidence.
-**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
-**Key decisions:** Accepted the diagnosis of a systemic seeded preliminary-evidence mapping defect, but rejected the proposed Option B all-claims fallback as too coarse. Because Stage 2 diversity-aware sufficiency and D5 both count claim-mapped evidence structurally, mapping every unmapped seeded item to every claim would artificially inflate per-claim item, source-type, and domain counts. Cross-run comparison also showed the same seeded-unmapped pattern in stronger Bolsonaro runs, so the weak `1abb0ea5` result is not uniquely explained by mapping loss. Preferred next step remains a narrower interface fix (stable handles, explicit mapping artifact, or small LLM-backed remap), not blanket over-attribution.
-**Open items:** If this topic stays active, produce a narrower fix proposal that preserves claim-local attribution instead of assigning semantic-slug preliminary evidence to all claims.
-**Warnings:** Do not implement Option B as written. It would likely distort D5 sufficiency and the validated diversity-aware sufficiency experiment by turning topic-level seeded evidence into claim-level sufficiency evidence for every claim.
-**For next agent:** Treat `Docs/WIP/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md` as useful on root cause, but not on the recommended fix. Start from the code paths in `apps/web/src/lib/analyzer/research-orchestrator.ts` and `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` and design a claim-preserving remap.
-**Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Proposal Review
 **Task:** Review `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` and assess the proposed 3-fix mitigation for civilizationworks-driven evidence flooding.
@@ -2657,7 +846,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not frame Fix 1 as a pure `verdict-stage.ts` code tweak. Reliable SR-aware reasoning likely requires prompt guidance in addition to payload fields. Also do not rely on legacy `applyEvidenceWeighting()` as the fallback answer; its current shape is post-hoc and limited.
 **For next agent:** Start with `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, and `apps/web/src/lib/analyzer/research-extraction-stage.ts`. Preserve the AGENTS rule that semantic consolidation must stay LLM-driven; deterministic caps are acceptable only as structural plumbing.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Implementation Review
 **Task:** Review the implementation of Fix 1 (SR-aware verdict reasoning) and Fix 2 (per-source evidence cap) against the approved design.
@@ -2667,7 +855,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Test coverage added for the helpers is good, but it does not currently cover claim-local portfolio correctness, partition interaction, or replacement behavior once a source is already at the cap.
 **For next agent:** Start in `apps/web/src/lib/analyzer/verdict-stage.ts` and `apps/web/src/lib/analyzer/research-extraction-stage.ts`. Preserve the structural-only nature of the cap and do not revert the prompt-contract work; the remaining work is about scoping and cumulative selection semantics.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Recommendation Update
 **Task:** Re-evaluate the same implementation after live-file changes and independent sub-agent review.
@@ -2677,7 +864,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not approve the current working tree as-is. Fix 1 is partially broken until the prompt variable mismatch is corrected. Fix 2 does not block rollout, but its contract wording should not overstate “best items overall” semantics.
 **For next agent:** Check `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/prompt-loader.ts`, and `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`. Preserve claim-local, role-scoped portfolio semantics; the needed fix is consistency, not rollback.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Single-Source Flooding Final Re-Review
 **Task:** Re-review the latest source after the Senior Developer addressed the prompt-contract mismatch and updated tests.
@@ -2687,7 +873,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Residual risk is behavioral, not structural: the LLM may still underuse the new portfolio signal in some edge cases, so live validation is still needed before calling the mitigation fully proven.
 **For next agent:** If Captain wants confidence beyond static review, run the planned live validation matrix from the investigation document. Otherwise this implementation is architecturally acceptable for merge.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Developer | Codex (GPT-5) | Seeded Evidence Remap Canonization and Commit Split
 **Task:** Sync the seeded-evidence remap work into canonical docs and commit the repo in meaningful chunks.
@@ -2697,7 +882,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat the remap as canonical default-on behavior yet. The paused promotion gate still needs the OFF comparison runs and remapped-evidence spot-check before any default flip.
 **For next agent:** Resume the default-on decision from `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md`. Treat the current canonical state as: feature exists, default remains off, selective validation/use is approved.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Gate Sequencing Recommendation
 **Task:** Advise whether live jobs should be run before resuming the parked seeded-evidence remap promotion gate.
@@ -2707,7 +891,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not continue the parked gate as if it were still a clean same-stack comparison. The historical ON runs remain useful background, but not a merge/promotion-grade basis for a default flip after the new mitigation landed.
 **For next agent:** Update `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` to mark `a71bc670` as completed, then use the current-stack A/B batch to decide whether remap still delivers net value under the new baseline. Spot-check remapped Bolsonaro items from the fresh ON run, not only the historical March 27 runs.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Homeopathy Run `b5f29c58` Review
 **Task:** Review live job `b5f29c5807aa4747903113c0c2b9b1d8` and state the architect-level conclusion.
@@ -2717,7 +900,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Both runs still contain grounding-check warnings for cited evidence IDs not present in the final evidence pool; `b5f29c58` shows the worse set. Treat the run as informative but not clean. Also, this broad thesis decomposes into a mechanistic subclaim, making it a weaker promotion-gate canary than Bolsonaro/Plastik.
 **For next agent:** Use this run as a cautionary data point in the remap gate: remap ON can materially change claim-local attribution, but net value must be judged on confidence/integrity, not truth% alone.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Gate Final Architect Call
 **Task:** Review the completed current-stack A/B promotion gate for `preliminaryEvidenceLlmRemapEnabled` and state the final architect recommendation.
@@ -2727,7 +909,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Keep the rollback flag available. Also, the grounding-check warnings with missing evidence IDs observed in some runs are a separate integrity concern and should not be conflated with the remap promotion decision.
 **For next agent:** If asked to operationalize the decision, update canonical status/backlog docs to reflect the default flip and preserve the Homeopathy monitor note. Do not present the promotion as universally risk-free; present it as approved with targeted monitoring.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Close-Out Check
 **Task:** Verify the promoted default-on state for `preliminaryEvidenceLlmRemapEnabled` after commit `b5fad127` and identify any remaining close-out gaps.
@@ -2737,7 +918,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not let the repository present two different truths at once: code/defaults now say ON, but status docs still say OFF. That will confuse the next agent and any Captain reviewing current state.
 **For next agent:** Update `Docs/STATUS/Current_Status.md` and `Docs/STATUS/Backlog.md` before treating REMAP-1 as fully closed. Preserve the monitor note and deployment caveat.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Promotion Deploy-Clear Check
 **Task:** Verify the post-promotion confirmation runs and documentation sync after the follow-up docs commits.
@@ -2747,7 +927,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The WIP filename `2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` is now historically stale in name only; not a blocker, but it should eventually be renamed or archived during consolidation to avoid confusion.
 **For next agent:** Treat REMAP-1 as canonically promoted and validated. If asked for next steps, focus on deployment execution and routine post-deploy monitoring rather than reopening the promotion gate.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Remap Gate WIP Record Update
 **Task:** Update `Docs/WIP/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md` so it reads as a completed record instead of a parked stub.
@@ -2757,7 +936,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The content is now correct, but the path still carries the legacy `_Parked` suffix by design.
 **For next agent:** Use the updated WIP file as the compact historical summary. Use the handoff docs for full operational detail.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator False Positive Rev 2 Review
 **Task:** Re-review `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` after the stated Rev 2 corrections.
@@ -2767,7 +945,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not approve the proposal text as-is; its current mitigation bullets misdescribe the behavior change and the diagnostic impact.
 **For next agent:** Re-check `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` against `apps/web/src/lib/analyzer/verdict-stage.ts` lines 1118-1176 before approving any implementation prompt.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator False Positive Rev 3 Re-Review
 **Task:** Re-review `Docs/WIP/2026-03-27_Direction_Validator_False_Positive_Investigation.md` after the observability and scope corrections.
@@ -2777,7 +954,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The proposal still carries the inherent architectural caveat already acknowledged in the doc: advocate-side stability is not proof of full-pool correctness.
 **For next agent:** Treat the investigation doc as architecturally review-ready. If moving to implementation, preserve the distinction between current behavior and proposed observability changes.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator Fix Implementation Review
 **Task:** Review the implementation of the direction-validator false-positive fix in `apps/web`.
@@ -2787,7 +963,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** As implemented, admins can still miss a subset of rescue events, specifically repaired verdicts accepted because the plausibility helper returns `true` at the second validation gate.
 **For next agent:** Inspect `apps/web/src/lib/analyzer/verdict-stage.ts` around lines 1123 and 1155. The first branch now emits the warning; the second still silently accepts the repaired verdict.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Direction Validator Fix Final Re-Review
 **Task:** Re-review the direction-validator false-positive fix after the repaired-path warning and warning-contract tests were added.
@@ -2797,7 +972,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The existing design caveat still applies by construction: stable advocate-side consistency is not proof of full-pool correctness.
 **For next agent:** Treat this implementation as review-approved. If additional verification is desired, the next step is live validation on the Homeopathy-family scenario that originally triggered the investigation.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Outage Resilience Commit 83a50d8c Review
 **Task:** Review the claimed “complete outage resilience” state after commit `83a50d8c`.
@@ -2807,7 +981,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The current implementation is good progress for raw internet outage recovery, but it is not yet equivalent to a robust provider-health circuit for all pause causes.
 **For next agent:** Re-check `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/src/lib/provider-health.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, and `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts` before declaring outage resilience “complete”.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Lead Architect | Codex (GPT-5) | Outage Resilience Follow-Up Re-Review
 **Task:** Re-review the outage-resilience changes after the network-only auto-resume guard and plan-doc correction.
@@ -2817,7 +990,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** There is still a low-risk maintenance concern that the network pattern list is duplicated between `error-classification.ts` and `internal-runner-queue.ts`; not a review finding, but worth keeping aligned if patterns evolve.
 **For next agent:** Treat the previous two outage-resilience review findings as closed. If this area is reopened, focus on A.3 pre-call probing or a within-job failure counter rather than watchdog semantics.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Senior Developer | Codex (GPT-5) | A.3 Pre-Stage-4 Connectivity Probe
 **Task:** Implement A.3 so Stage 4 fast-fails on clear LLM connectivity loss instead of producing first-outage-hit fallback verdicts.
@@ -2827,7 +999,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The preflight intentionally probes the configured primary LLM provider endpoint, which is correct for the internet-outage gap this task targeted. It does not attempt multi-provider semantic health checks for every per-role override.
 **For next agent:** Safe verification passed end-to-end: `npm test`, `npm -w apps/web run build`, plus focused runs for `test/unit/lib/connectivity-probe.test.ts`, `test/unit/lib/analyzer/verdict-preflight.test.ts`, `test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and `test/unit/lib/drain-runner-pause.integration.test.ts`. If this area is extended, the next likely decision is whether preflight timeouts should also count toward provider-health pause/open behavior.
 **Learnings:** no
-
 ---
 ### 2026-03-27 | Senior Developer | Codex (GPT-5) | Network Matcher Dedup Follow-Up
 **Task:** Apply the low-priority cleanup to deduplicate the watchdog's network-connectivity matcher.
@@ -2837,7 +1008,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This is a maintenance-only follow-up; behavior should remain unchanged.
 **For next agent:** Focused verification passed: `npm -w apps/web exec vitest run test/unit/lib/error-classification.test.ts test/unit/lib/auto-pause-flow.integration.test.ts test/unit/lib/drain-runner-pause.integration.test.ts`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Execution-Time Commit Provenance
 **Task:** Make job provenance reflect the commit that actually executed a job attempt, including automatic system re-queues after restart.
@@ -2847,7 +1017,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** API verification required a separate output path because the local dev API process was holding `apps/api/bin/Debug/net8.0/FactHarbor.Api.dll` open. Web verification passed normally. This change adds provenance only; it does not alter analysis behavior.
 **For next agent:** Verification passed with `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix /p:UseAppHost=false`. Before relying on the new field locally or on a persistent environment, run the API migration so `ExecutedWebGitCommitHash` exists in `Jobs`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Simplify Commit Provenance UI
 **Task:** Reduce the surfaced provenance back to one visible commit hash while keeping execution-time provenance correct.
@@ -2857,7 +1026,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The admin list/detail `gitHash` filter still matches both creation-time and execution-time hashes in the backend, which is intentional for mixed historical data during transition.
 **For next agent:** Verification passed again after the simplification: `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix-ui /p:UseAppHost=false`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dirty Local Build ID Support
 **Task:** Make the visible execution-time provenance include dirty local working-tree state and ensure admin hash tracing accepts `+` build ids.
@@ -2867,7 +1035,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Production remains clean-commit only because `GIT_COMMIT` still wins. Dirty suffixes only appear on local/dev-style execution paths where git is available and the web runner has uncommitted changes.
 **For next agent:** Focused follow-up verification passed with `npm -w apps/web exec vitest run test/unit/lib/build-info.test.ts` and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\dirty-build-id /p:UseAppHost=false`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Provenance Review Hardening Follow-Up
 **Task:** Apply the low-risk review fixes to execution-time commit provenance and stop where added scope outweighed benefit.
@@ -2877,7 +1044,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `build-info.ts` now caches only when explicitly requested. The runner still resolves uncached execution provenance once per job, which is intentional to keep per-run provenance accurate during local dev.
 **For next agent:** Full safe verification passed after this follow-up: `npm -w apps/web exec vitest run test/unit/lib/build-info.test.ts`, `npm test`, `npm -w apps/web run build`, and `dotnet build apps/api -o C:\\DEV\\FactHarbor\\apps\\api\\bin-verify\\provenance-fix-final /p:UseAppHost=false`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | API Startup Fix For Provenance Schema Drift
 **Task:** Repair the local `/jobs` 500 after the execution-time commit provenance change broke API startup on an existing SQLite database.
@@ -2887,7 +1053,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This patch modifies the local SQLite schema on startup by adding missing nullable text columns. Historical jobs still have `ExecutedWebGitCommitHash = NULL` until they are rerun.
 **For next agent:** Live recovery verified after `scripts/restart-clean.ps1`: `http://localhost:5000/v1/jobs?page=1&pageSize=1` returned 200, `http://localhost:3000/api/fh/jobs?page=1&pageSize=1` returned 200, and `PRAGMA table_info(Jobs)` now includes `ExecutedWebGitCommitHash`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Test Dashboard LLM Coverage
 **Task:** Make Admin → Configuration Test Dashboard cover LLM providers that are actually used by debate roles or already configured in env, not only the global `pipeline.llmProvider`.
@@ -2897,7 +1062,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** “Run All Tests” now performs live checks against any configured LLM provider, even if that provider is only a fallback/debate-role provider. That is intentional and may increase dashboard test cost slightly when multiple LLM keys are present.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. If you need to validate the live dashboard behavior manually, use the admin test page; no additional code changes should be required.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Google LLM Env Var Correction
 **Task:** Correct the Google LLM credential handling after confirming the installed `@ai-sdk/google` package only defaults to `GOOGLE_GENERATIVE_AI_API_KEY`, not `GOOGLE_API_KEY`.
@@ -2907,7 +1071,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The immediately previous agent-output entry mentions `GOOGLE_API_KEY` support for the dashboard; this follow-up supersedes that part.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts`, `npx vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts --testNamePattern "missing credentials from explicitly configured providers"`, and `npm run build` from `apps/web`.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dashboard Tests Follow Active Default UCM
 **Task:** Tighten Admin → Configuration Test Dashboard so LLM checks are driven only by the effective active default UCM config, not by arbitrary keys present in `.env.local`.
@@ -2917,7 +1080,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This reduces surprise and cost, but it also means a valid provider key can remain untested until the active default config actually routes work to that provider.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route tests now cover both cases: inactive configured Google is skipped, and active Google via a debate role is tested.
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Dashboard Timeout And Error Cleanup
 **Task:** Stop Admin → Configuration Test Dashboard from appearing stuck during live provider checks and replace verbose `AI_RetryError` stack dumps with concise provider messages.
@@ -2927,7 +1089,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Route execution order is now partially parallelized. Result order in the UI is preserved because `Promise.all()` result arrays are pushed in a fixed order, but provider calls now run concurrently.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route tests now include the OpenAI quota error shape and assert that the user-facing message is concise.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Senior Developer | Codex (GPT-5) | 2705 + e407 Matrix and All-Insufficient Investigation
 **Task:** Determine whether local job `2705c6bf1c904306bd81a2040025024f` was only a Coverage Matrix UI issue, then analyze worse repeat run `e407cba4ac354248b21d26a4fb0ceaf7` and consolidate a prevention strategy.
@@ -2937,7 +1098,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `2705...` predates clean commit `fff7a508`; `e407...` ran on `fff7a508` plus a dirty suffix. The Stage-4 orchestration bug is still decisive because it is visible in stored result data, not just UI behavior.
 **For next agent:** Read [2026-03-29_Senior_Developer_2705_e407_Matrix_and_All_Insufficient_Investigation.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_2705_e407_Matrix_and_All_Insufficient_Investigation.md) before proposing fixes. Do not paper over the issue with a verdict dedupe patch; the first real fix belongs in [claimboundary-pipeline.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claimboundary-pipeline.ts).
 **Learnings:** no
-
 ---
 ### 2026-03-28 | Senior Developer | Codex (GPT-5) | Single-Attempt Provider Probes
 **Task:** Make the Configuration Test Dashboard provider probes surface the real first provider error instead of timing out behind AI SDK retries.
@@ -2947,7 +1107,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This intentionally reduces resilience during the dashboard probe itself. That is correct for a diagnostic surface; the goal is fast truth, not best-effort recovery.
 **For next agent:** Verification passed with `npx vitest run test/unit/app/api/admin/test-config/route.test.ts` and `npm run build` from `apps/web`. The route test now also asserts that the dashboard probes use `maxRetries: 0`.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Senior Developer | Codex (GPT-5) | b8e6 Duplicate Atomic Claims Investigation
 **Task:** Investigate why job `b8e616ef9a5e4678b074f2bb8614b2d1` produced extremely similar atomic claims and check whether a recent change caused it.
@@ -2957,7 +1116,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Same Stage-1 pattern appears in several recent jobs; this is broader than a single SRG SSR input.
 **For next agent:** Read [2026-03-29_Senior_Developer_b8e6_Duplicate_Atomic_Claims_Investigation.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_Duplicate_Atomic_Claims_Investigation.md) before proposing fixes. The most likely targets are the `single_atomic_claim` dimension-tagging fallback and/or contract-validation false negatives.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Senior Developer | Codex (GPT-5) | b8e6 + 8640 Claim Decomposition Debate
 **Task:** Compare local job `b8e616ef9a5e4678b074f2bb8614b2d1` with deployed job `8640e06255c4455cb97c9c699700b5ed` and consolidate a root-cause/fix plan.
@@ -2967,7 +1125,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not over-attribute this to the fallback tag alone. The main problem is earlier: Pass 2 + contract validation accepted claim sets that were too close together to justify separate downstream research.
 **For next agent:** Read [2026-03-29_Senior_Developer_b8e6_8640_Claim_Decomposition_Debate.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_b8e6_8640_Claim_Decomposition_Debate.md). Recommended fix order: (1) narrow the fallback tag so explicit `single_atomic_claim` does not auto-become dimension decomposition; (2) strengthen `CLAIM_CONTRACT_VALIDATION` whole-set coherence / independence checks; (3) validate on `b8e6`, `8640`, Bolsonaro compound claim, and a clean control.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Senior Developer | Codex (GPT-5) | Claim-Splitting Debate: b8e6 and 8640
 **Task:** Compare local job `b8e6...` and remote job `8640...`, determine whether they share a root cause, and propose a consolidated fix strategy.
@@ -2977,7 +1134,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** A narrow duplicate-detector fix would likely address `b8e6...` better than `8640...`; the broader need is an LLM-based post-Pass-2 independence/overlap validator plus a narrower `single_atomic_claim` fallback.
 **For next agent:** Read [2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md](C:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-03-29_Senior_Developer_Claim_Splitting_Debate_b8e6_8640.md). Best next step is a design review, not immediate coding.
 **Learnings:** no
-
 ---
 ### 2026-03-29 | Lead Architect | Codex (GPT-5) | Re-review of 2705/e407 Root Fix Package
 **Task:** Re-assess whether the proposed `all-insufficient short-circuit + matrix label fix + aggregation dedup guard` package is a true root fix or mostly symptom handling.
@@ -2987,7 +1143,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not let an aggregation dedup layer become the thing that hides invalid pipeline states. Duplicate claim IDs in `claimVerdicts` should be treated as a bug signal, not normalized away by default.
 **For next agent:** The immediate implementation order should be: (1) short-circuit all-insufficient before Stage 4, (2) align matrix labels with `coverageMatrix.claims`, (3) only add a minimal assertive duplicate guard if you want defense-in-depth. Do not add salvage or broader architecture changes in the same patch.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review of cc362d64 + Recent Job Effects
 **Task:** Review implementation commit `cc362d64` (`assessableClaims` path + verdict uniqueness + matrix alignment) and compare its intended effects against recent local job runs.
@@ -2997,7 +1152,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Recent validation jobs were not executed on the committed hash `cc362d64`; they were run on a dirty lineage based on `94593477`. Also, the broader SRG Stage-1 instability remains: identical input family still produced both a 2-claim (`55299...`) and 3-claim (`11c529...`) decomposition under the same dirty build.
 **For next agent:** Read the implementation handoff and inspect job IDs `55299b20161141869e01071b12dc3a65`, `5f1f96f650d24036bce358c3f3053b69`, and `11c5295a9a7345ad841b832f2970bfa4`. Treat `cc362d64` as code-review approved with validation caveats, not as a fully closed operational proof.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | DistinctEvents Event-Granularity Family Effects Memo
 **Task:** Review likely live-job-family effects of the proposed `distinctEvents` / event-granularity fix using current local jobs, archived quality docs, and current prompt rules; identify where the fix would help, where it could harm, and what validation gate is required.
@@ -3007,7 +1161,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not key the fix to literal words like `"various"`. Do not globally ban lifecycle events. Do not try to solve this in verdict logic, matrix logic, or with deterministic semantic heuristics. Guardrail families are important: single-proceeding Bolsonaro, article/timeline URL inputs, SRG/SRF compound inputs, and broad evaluative controls must remain stable.
 **For next agent:** Start with the memo at `Docs/WIP/2026-03-31_DistinctEvents_Event_Granularity_Family_Effects_Memo.md`. The required validation set should include: Bolsonaro EN `"various"` / `"all"` / proceedings-statement variants, PT Bolsonaro as multilingual multi-event control, a non-political multi-event/process control (March 7 plan uses Boeing 737 MAX investigations + recertification), a single-proceeding Bolsonaro guardrail (`696d...` / `14d7...`), the `wind-still.ch` URL input (`a2b7...`), SRG/SRF compound control (`11c529...`), and broad evaluative inertness controls like `9e4d...` and Homeopathy. Key pass criteria: Bolsonaro `"various/all"` regains top-level multi-proceeding coverage; article/timeline inputs do not flatten; broad evaluative inputs do not start inventing `distinctEvents`.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Senior Developer | Codex (GPT-5) | Flat-Earth False Ambiguity Investigation
 **Task:** Investigate why job `c7c3528ce21b46abb1b4965466ad0c3d` extracted `Flacherde-Überzeugungen sind in der modernen Gesellschaft weit verbreitet` from input `Ist die Erde flach?`, and propose a generic fix.
@@ -3017,7 +1170,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not fix this with hardcoded Flat-Earth or belief/prevalence keywords. The solution must stay generic, multilingual, and prompt-driven.
 **For next agent:** Use `c7c3528ce21b46abb1b4965466ad0c3d` and `c492414da7fa422c8ef51156488b9e04` as characterization cases. Proposed implementation order: (1) prompt-level narrowing of `ambiguous_single_claim` for direct factual-property questions, (2) stronger contract-validation whole-set rejection of representational/prevalence claims unless the input explicitly asks about them, (3) better persistence of retry contract-validation diagnostics.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Matrix and Aggregation Handling of UNVERIFIED Claims
 **Task:** Investigate whether D5-insufficient `UNVERIFIED` claims should be shown in the matrix and influence article-level aggregation in jobs like `11c5295a...`.
@@ -3027,7 +1179,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not “fix” this by reverting the old broken label behavior. The correct path is to keep matrix labels driven by `coverageMatrix.claims`, while reconsidering what `coverageMatrix.claims` should contain and how zero-confidence claims should influence article-level confidence/truth.
 **For next agent:** Anchor on job `11c5295a9a7345ad841b832f2970bfa4`. Treat matrix visibility and article aggregation as separate design decisions. Keep the `assessableClaims` Stage 4 integrity fix intact.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Speed/Cost Optimization Reassessment on Current CB Stack
 **Task:** Re-read the historical speed/cost optimization docs, compare them to the current ClaimAssessmentBoundary code, and identify the best next optimization by benefit vs report-quality risk.
@@ -3037,7 +1188,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not start with self-consistency cuts, clustering-to-Haiku, Batch API, or claim caching. Self-consistency now feeds the direction-rescue path, so reducing it is quality-risky. Clustering-to-Haiku saves little but touches the boundary formation step. Batch API remains architecturally non-trivial on the current runtime. Claim caching still has high invalidation/freshness complexity on a live-web, current-date-aware pipeline.
 **For next agent:** Use `research-orchestrator.ts` as the primary hotspot, especially the serial query loop in `runResearchIteration`. Reuse the concurrency pattern from `claim-extraction-stage.ts` preliminary search if implementing the Stage 2 speed path. If only a config experiment is wanted, test `explanationQualityMode: structural` before touching verdict-stage debate settings.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Cost and Speed Optimization Reassessment
 **Task:** Re-read the historical speed/cost optimization documents, compare them against the current ClaimAssessmentBoundary source, and recommend the best next optimization by benefit versus report-quality risk.
@@ -3047,7 +1197,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** I attempted to fork parallel explorer reviews, but this session did not return usable sub-agent results; the synthesis was completed from direct local doc/code analysis. If Stage-4 payload de-duplication is pursued, validate it on a small representative A/B set because it changes how prompt context is delivered even though the analytical content should remain the same.
 **For next agent:** Anchor the recommendation on these code/docs: `verdict-generation-stage.ts` (rendered system prompt + duplicate user JSON), `claimboundary.prompt.md` (Stage-4 sections already include full structured inputs), `verdict-stage.ts` (batched multi-claim + internal Step 2/3 parallelism), `claim-extraction-stage.ts` (preliminary search already parallelized), `research-acquisition-stage.ts` (W15 same-domain staggering already implemented), `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md`, `Current_Status.md`, and `Backlog.md`.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Optimization Reassessment with Current Metrics Baseline
 **Task:** Re-read the historical speed/cost optimization discussions, inspect the current ClaimAssessmentBoundary code, and use the live `AnalysisMetrics` baseline to identify the best next optimization target by benefit versus report-quality risk.
@@ -3057,7 +1206,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not start with self-consistency cuts or research-budget cuts. Self-consistency now feeds stability, confidence shaping, and direction-rescue behavior, so it is high quality risk. Research reductions attack the largest phase, but they degrade evidence coverage directly. A clustering downgrade still needs a tight A/B because ClaimAssessmentBoundary formation can change report structure even though it is only one call.
 **For next agent:** If approved, frame the next step as a measured `P1-A` experiment, not a blind rollout. Add a dedicated Stage-3 model/tier control instead of piggybacking on `modelVerdict`, then compare Sonnet vs budget-tier clustering on a representative validation set. Keep a second option ready: bounded Stage-2 query parallelism using the deterministic local-merge pattern already present in `claim-extraction-stage.ts`.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Final Optimization Priority Reconciliation
 **Task:** Reconcile same-day optimization recommendations after parallel doc review, code inspection, and direct `AnalysisMetrics` queries.
@@ -3067,7 +1215,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** I do **not** recommend starting with self-consistency cuts, verdict prompt surgery, or broad research-budget reductions. Those all have a worse report-degradation profile than either Stage-2 query parallelism or a tightly gated clustering experiment.
 **For next agent:** If the Captain wants the safest engineering start, scope a bounded Stage-2 query-parallel prototype using the same local-collection / deterministic-merge pattern already used in `claim-extraction-stage.ts`. If the Captain wants the strongest cost+speed experiment, scope `P1-A` with a dedicated Stage-3 model/tier knob and an explicit A/B gate.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Stage-2 Query Parallelism — Sharpened Low-Risk Design
 **Task:** Turn the Stage-2 per-query parallelism idea into a concrete low-risk architecture proposal using multiple reviewer loops.
@@ -3077,7 +1224,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not implement this as a raw `Promise.all` over the current loop. Do not reuse `parallelExtractionLimit` for query-pipeline fanout. Do not cut self-consistency or research budgets first. V1 accepts some duplicate worker effort intentionally to preserve serial semantics; a later v2 can optimize duplicate shared-URL coordination only after parity is proven.
 **For next agent:** Implementation should add focused tests for: unchanged query order, unchanged per-claim budget semantics, duplicate-URL behavior where earlier successful fetch suppresses later duplicates, duplicate-URL behavior where earlier fetch failure allows later success, deterministic source ID assignment, post-merge derivative validation, and one-shot per-source cap across combined new evidence. Validation gate: A/B `researchQueryParallelism=1` vs `2` on Bolsonaro, Plastik DE, and Hydrogen; require no claim-count drift, no direction flips on control families, no new `UNVERIFIED`, and median research-phase reduction >= 15% before promotion.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Stage-2 Query Parallelism — Sharpened Low-Risk Design
 **Task:** Sharpen the recommended Stage-2 per-query parallelism idea into a concrete low-risk implementation and rollout strategy.
@@ -3087,7 +1233,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** A naive `Promise.all(queries.map(...))` is not safe enough. The risky points are exactly these existing stateful operations: `upsertSearchProviderWarning(...)`, derivative validation using `state.sources`, and `applyPerSourceCap(...)`. If any of those run inside parallel workers, report behavior can drift. Also avoid broadening v1 to contradiction/contrarian loops until the main-loop path is validated.
 **For next agent:** Use these anchors when implementing: serial query loop and state mutations in `research-orchestrator.ts`, safe parallel local-merge pattern in `claim-extraction-stage.ts`, and runtime validation against recent `AnalysisMetrics` baselines in `apps/api/factharbor.db`. Rollout plan: ship behind `researchQueryParallelism=1`, validate `1` vs `2` on Bolsonaro, Plastik DE, and Hydrogen, then promote to `2` only if research-phase latency improves materially without verdict-direction drift or evidence/source-count collapse. Rollback is instant by setting the knob back to `1`.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Stage-2 Query Parallelism — Low-Risk Design Sharpening
 **Task:** Sharpen the Stage-2 per-query parallelism recommendation into a concrete low-risk implementation design with explicit merge boundaries, rollback, and validation shape.
@@ -3097,7 +1242,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not parallelize across iterations or across target claims in Stage 2. Do not apply per-source cap or derivative validation inside workers. Do not let duplicate-URL ownership become non-deterministic. Stage 2 has no Stage-4-style provider guard, so bounded concurrency is required.
 **For next agent:** Start from `research-orchestrator.ts`, `research-acquisition-stage.ts`, and the proven Stage-1 merge pattern in `claim-extraction-stage.ts`. First build deterministic ownership + local-result helpers. Then add tests for first-query-wins URL assignment, single-threaded warning merge, derivative validation across worker-fetched URLs, one-shot per-source cap application, and `researchQueryParallelism=1` parity vs current behavior.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | Stage-2 Query Parallelism — Low-Risk Design Sharpening
 **Task:** Stress-test the Stage-2 per-query parallelism recommendation and refine it into a concrete low-risk implementation shape.
@@ -3107,7 +1251,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The naive “first query wins” reservation at URL-selection time is too aggressive: it suppresses later duplicate-query retry opportunities after an early fetch failure. Likewise, running `fetchSources()` directly against shared `state` from parallel workers is unsafe because it mutates `state.sources` and `state.warnings`. Keep `upsertSearchProviderWarning()` single-threaded in the merge path, matching the existing Stage-1 parallel search pattern.
 **For next agent:** Implementation should start by extracting small helper types for local query results and local fetch/extract results, then add focused tests around duplicate URLs, deterministic merge order, query-budget preservation, and one-shot per-source cap behavior. Use `claimboundary-pipeline.test.ts` as the main harness because `runResearchIteration()` is already covered there.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | LLM Expert | Codex (GPT-5) | Google CSE Bias Risk Review For FactHarbor
 **Task:** Investigate whether the concern that Google Custom Search / Programmable Search can return biased or manipulated results implies concrete improvements for FactHarbor.
@@ -3117,7 +1260,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The shared Google AI Mode page itself was not directly readable from the toolchain; the investigated topic was inferred from the redirect query text embedded in the shared URL. Also, some improvement options touch prompts or default runtime config, which may require explicit Captain approval under the prompt/config governance rules.
 **For next agent:** Start from `apps/web/src/lib/web-search.ts`, `apps/web/configs/search.default.json`, `apps/web/src/lib/config-schemas.ts`, and `Docs/Specification/Multi_Source_Evidence_Retrieval.md`. Verify current production intent for supplementary providers before changing defaults. If work continues, frame it as retrieval-diversity hardening rather than a blanket “replace Google” initiative.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review Of 03387283 Report Matrix And Article Adjudication
 **Task:** Review commit `03387283` (`feat(verdict): report matrix over all claims + LLM article adjudication`) and check recent jobs for intended effects.
@@ -3127,7 +1269,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The new `±10pp` article-truth bound is hardcoded in `aggregation-stage.ts` and mirrored in prompt text. That is a real analysis-policy choice, not just plumbing, so it may deserve explicit review as a configurable or at least explicitly ratified constant. Also note that `npm test` and `npm -w apps/web run build` both passed at review time, so there is no current blocking test/build failure.
 **For next agent:** If follow-up work continues, add narrow tests around (1) unresolved-claim report matrix columns, (2) LLM confidence ceiling enforcement, (3) truth-bound clamping, and (4) parse/missing-field fallback to deterministic aggregation. If policy is revisited, inspect whether the hardcoded `±10pp` bound belongs in UCM instead of code/prompt duplication.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Senior Developer | Codex (GPT-5) | Stage-5 Adjudication Test Hardening
 **Task:** Add focused regression tests for the new report-matrix and article-level adjudication behavior introduced in `03387283`.
@@ -3137,7 +1278,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This pass hardens coverage only; it does not change runtime semantics. If product decides to alter the article-level adjudication bounds later, these tests will need deliberate updating rather than silent drift.
 **For next agent:** Current verification is clean: targeted `claimboundary-pipeline.test.ts`, full `npm test`, and `npm -w apps/web run build` all pass. If policy review continues, inspect `aggregation-stage.ts` and `claimboundary.prompt.md` together so code/prompt bounds do not diverge.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Lead Architect | Codex (GPT-5) | MCP Adoption Risk Review
 **Task:** Assess whether FactHarbor should adopt MCP for repo workflow and/or as a product-facing integration surface, using parallel sub-agent debate and direct architecture review.
@@ -3147,7 +1287,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Adding MCP now would create another compatibility/auth/provenance surface while the project is still alpha and focused on analysis quality and cross-linguistic neutrality. The major architectural risk is letting MCP bypass the existing job lifecycle, warning handling, rate limits, and provenance boundaries.
 **For next agent:** Use these anchors when revisiting: `AGENTS.md`, `Docs/ARCHIVE/Agent_Knowledge_Restructuring_2026-02-24.md`, `Docs/Knowledge/Factiverse_Lessons_for_FactHarbor.md`, `Docs/STATUS/Current_Status.md`, `apps/api/Controllers/AnalyzeController.cs`, `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/api/fh/analyze/route.ts`, `apps/web/src/app/api/fh/jobs/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/route.ts`, and `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Code Reviewer | Codex (GPT-5) | Documentation Currency Check For Solution And Plan Docs
 **Task:** Check whether the main “solution” and “plan” documentation artifacts are up to date against the current repo status and code.
@@ -3157,7 +1296,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The main risk is guidance drift, not implementation drift: `Docs/WIP/README.md` already summarizes the Plastik proposal as “bug fix shipped, runtime-path characterization complete,” but the proposal file itself still reads like an active recommendation to do those steps next.
 **For next agent:** If asked to update docs, start with `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`, `Docs/WIP/README.md`, `Docs/STATUS/Current_Status.md`, and `Docs/STATUS/Backlog.md`. Preserve the historical analysis, but add a clear outcome/superseded banner rather than rewriting the investigation content.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Investigate 696d8140 Bolsonaro Process/Fairness Job
 **Task:** Investigate job `696d81406d5a4fbfaa4c23ec49fe4e85`, identify the root cause of the visible result issues, and propose the best low-risk/high-quality fix.
@@ -3167,7 +1305,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not solve the ghost boundary issue with semantic name matching or heuristic remapping. The safe structural behavior is to drop invalid or claim-inapplicable boundary IDs rather than guessing what the model meant. Also do not treat the current grounding warning as a claim-quality failure — it is an outdated validator-context problem.
 **For next agent:** Anchor files: `apps/web/src/lib/analyzer/verdict-stage.ts` (`parseAdvocateVerdict`, `runStructuralConsistencyCheck`, `validateVerdicts`), `apps/web/src/lib/analyzer/aggregation-stage.ts` (`computeTriangulationScore`), and `apps/web/prompts/claimboundary.prompt.md` (`VERDICT_ADVOCATE`, `VERDICT_GROUNDING_VALIDATION`). The cleanest immediate fix is structural filtering of `boundaryFindings` using `coverageMatrix.getBoundariesForClaim(claimId)` before downstream use.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Refresh Pipeline Speed and Cost Optimization Plan
 **Task:** Re-read the March 19 pipeline speed/cost plan, reconcile it with what has shipped since late March, and update the plan plus tracking docs with the correct current state and next-step sequence.
@@ -3177,7 +1314,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat archived March 17-19 timing data as current truth. The stack now includes shipped `P1-B`, W15, and the March 29-30 integrity fixes, so any optimization decision based on the old baseline would be architecturally unsound.
 **For next agent:** Read the refreshed [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](C:/DEV/FactHarbor/Docs/WIP/Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) first. The canonical policy is now: optimization stays secondary; if reopened, start with a fresh benchmark rather than continuing the old Phase 1 sequence blindly.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Code Reviewer | Codex (GPT-5) | Review Claim-Local Verdict Scope Fix
 **Task:** Review the uncommitted Stage-4 claim-local evidence scoping implementation for the `9e4d` SRF fact-checking failure before commit.
@@ -3187,7 +1323,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `apps/web/prompts/claimboundary.prompt.md` now describes “Verdicts (with cited evidence pool)” but `validateDirectionOnly()` in `apps/web/src/lib/analyzer/verdict-stage.ts` still passes the evidence pool only at top level. Tests currently mock LLM inputs and do not catch prompt-rendering mismatches. Do not commit until this contract is reconciled.
 **For next agent:** Review [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L1081), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L1611), and [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md#L1217) together. The likely lowest-risk fix is to standardize `VERDICT_DIRECTION_VALIDATION` on per-verdict claim-local `evidencePool` and update `validateDirectionOnly()` to match.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Senior Developer | Codex (GPT-5) | Remove Deterministic Article-Truth Clamp
 **Task:** Implement the approved Stage-5 policy change: remove the deterministic `±10pp` truth clamp while keeping only structural safeguards around article-level LLM adjudication.
@@ -3197,7 +1332,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The confidence ceiling remains a deliberate structural safeguard. If product later decides even that is too restrictive, revisit `aggregation-stage.ts` and the Stage-5 prompt together. The build also reseeded the updated `claimboundary` prompt hash in `config.db`.
 **For next agent:** Verification status: targeted `claimboundary-pipeline.test.ts` passed; isolated reruns of the two flaky failure files passed; `npm -w apps/web run build` passed. If you need a clean full-suite run before commit, rerun `npm test` once more in a quiet environment and compare against the isolated-file results before treating any admin/drain-runner failures as regression.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Code Reviewer | Codex (GPT-5) | 9e4d SRF “Hervorragende Arbeit” Investigation
 **Task:** Investigate job `9e4d3712e12d49bc8cadd601766e5f4b`, isolate the root cause, and propose the lowest-risk high-quality fix. Cross-check with an independent downstream-focused sidecar investigation and reconcile the findings.
@@ -3207,7 +1341,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not “fix” this by adding deterministic semantic heuristics. The lowest-risk repair is structural: scope direction validation/repair to claim-local evidence (`relevantClaimIds`), with a fallback to cited IDs/full pool only when claim-local evidence is empty. If claim-local scoping is changed, remeasure recent jobs where `verdict_integrity_failure` or `direction_rescue_plausible` appeared on decomposed multi-claim evaluative inputs.
 **For next agent:** Review these anchors first: `apps/web/src/lib/analyzer/verdict-stage.ts` lines around the Stage-5 validation input (`VERDICT_DIRECTION_VALIDATION` currently gets full `evidencePool`), the repair path (`attemptDirectionRepair()` and `validateDirectionOnly()`), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` lines `256-294` for contract-validation retry guidance, and `apps/web/prompts/claimboundary.prompt.md` lines `332-336` for evidence-separability / proxy-drift rules. Best immediate fix proposal: make the direction validator + repair path claim-local; then remeasure this job family before deciding whether a prompt-only Stage-1 tightening is still needed.
 **Learnings:** no
-
 ---
 ### 2026-03-30 | Senior Developer | Codex (GPT-5) | 9e4d SRF Faktenpruefung Investigation
 **Task:** Investigate job `9e4d3712e12d49bc8cadd601766e5f4b`, identify the root cause, and propose the best low-risk/high-quality fix.
@@ -3217,7 +1350,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat the `verdict_integrity_failure` on `AC_02` as the root cause. That downgrade is protective. Do not add deterministic proxy/overlap heuristics.
 **For next agent:** Full investigation and code anchors are in `Docs/AGENTS/Handoffs/2026-03-30_Senior_Developer_9e4d_SRF_Factchecking_Investigation.md`.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Regression Check for 696d8140 Boundary/Grounding Issues
 **Task:** Determine whether the defects observed in job `696d81406d5a4fbfaa4c23ec49fe4e85` were introduced by a recent fix or are older latent issues.
@@ -3227,7 +1359,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not attribute the main bug to recent article-adjudication or matrix work. Commits `03387283`, `7fdf2b44`, and `17da5b84` are not causally involved. The March 27 regression explains the noisy grounding warning, not the ghost boundary itself.
 **For next agent:** If you need proof points, inspect `git blame` on `apps/web/src/lib/analyzer/verdict-stage.ts` line around `boundaryFindings: parseBoundaryFindings(raw.boundaryFindings)` (shows `db563471`) and `apps/web/prompts/claimboundary.prompt.md` lines around the advocate “per-boundary findings” rules (shows `6e2c2c5b`). Then inspect `git show 20f11239` to see the addition of source-portfolio-aware reasoning to verdict prompts without any corresponding grounding-validation update.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Bolsonaro “Various Trials” Regression Investigation
 **Task:** Investigate why the current Bolsonaro “various/all trials/proceedings” inputs no longer produce strong STF/TSE separation, why the verdict is lower, and why the claim-assessment boundaries are less rich than in historical reports.
@@ -3237,7 +1368,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Some of the old richer reports are not exact apples-to-apples comparisons: several were Portuguese, some used a different EN variant with “international standards of due process,” and some historical “richness” also included contamination or redundant boundaries. Do not try to “restore richness” by reintroducing foreign contamination or redundant source spread. The specific regression is loss of distinct proceeding coverage (especially TSE), not raw boundary count.
 **For next agent:** Anchor evidence: current jobs `7910732038884c6bb03e6e789024f5cb`, `34149ab8de1f465580902707e4d40328`, `0d21e43e180d45718bca3c409251cbcd`; archived docs `Docs/ARCHIVE/Report_Quality_Analysis_2026-03-08.md` (§5B/6), `Docs/ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md` (MT-3, `distinctEvents`), `Docs/ARCHIVE/Bolsonaro_Analysis_Investigation_arch.md`, and `Docs/ARCHIVE/Baseline_Test_Results_Phase1_2026-03-12.md`. The deciding signal is in `understanding.distinctEvents`: current runs list only STF-related events, which then drive STF-heavy search queries and broad merged boundaries.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Consolidated Bolsonaro Degradation Investigation
 **Task:** Investigate why current Bolsonaro-family reports degraded relative to the best historical runs (not only the `"various trials"` wording), using direct job inspection, archived reports, and parallel sidecar investigations; then reconcile the findings into one fix proposal.
@@ -3247,7 +1377,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not try to restore the old historical peak mechanically. Some older “richness” came from contamination, pre-SR-weighting conditions, or special snapshot behavior. Success should mean better top-level proceeding coverage and institution-specific boundaries without reintroducing foreign contamination or same-source flooding.
 **For next agent:** Use these anchors together: current jobs `7910732038884c6bb03e6e789024f5cb`, `34149ab8de1f465580902707e4d40328`, `0d21e43e180d45718bca3c409251cbcd`, `696d81406d5a4fbfaa4c23ec49fe4e85`, `14d7fb1530894dbb9a15dee961e0e9c7`; archived docs `Docs/ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md`, `Docs/ARCHIVE/Report_Quality_Analysis_2026-03-08.md`, `Docs/ARCHIVE/Baseline_Test_Results_Phase1_2026-03-12.md`, `Docs/ARCHIVE/Report_Quality_Criteria_Scorecard_2026-03-12_arch.md`, and `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`. The key proof is that current `distinctEvents` represent only one STF proceeding broken into milestones; once that happens, Stage 2 never gets a TSE branch to research.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Bolsonaro Historical Degradation Docs-Only Synthesis
 **Task:** Investigate the historical Bolsonaro report degradation using archived docs and current status docs only, and identify what degraded, which plans shipped vs deferred, and which historical explanations still fit today.
@@ -3257,7 +1386,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The best historical run (`5a2aceff`) is an exceptional peak, not a safe baseline. Archived docs already say language alone does not explain it and that some older high-scoring runs also carried contamination or pre-SR-weighting behavior, so not every drop versus that run should be interpreted as a clean regression.
 **For next agent:** Most relevant anchors: `Docs/ARCHIVE/Report_Quality_Criteria_Scorecard_2026-03-12_arch.md` for what “better” meant, `Docs/ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md` for which multi-trial fixes shipped, `Docs/ARCHIVE/Report_Quality_Analysis_2026-03-08.md` for which explanations were later reframed, and `Docs/STATUS/Current_Status.md` / `Docs/STATUS/Backlog.md` for the March 26-30 shipped items (`DIV-1`, `REMAP-1`, `FLOOD-1`, `GATE1-REF`).
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Cross-Family Risk Review for `distinctEvents` Granularity Change
 **Task:** Review docs/history only to assess likely cross-family effects of a Stage-1 `distinctEvents` change that prefers top-level independently researchable proceedings/institutions/episodes over lifecycle sub-stages.
@@ -3267,7 +1395,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not turn this into a broad Stage-1 rewrite. The March 30 quality-evolution analysis shows Bolsonaro is already directionally stable; the target is quality ceiling, not global verdict behavior. Also do not let this bleed into SRG/SRF-style evaluative/disclosure families or direct factual controls, where eventization would likely be noise rather than help.
 **For next agent:** Most relevant anchors are `Docs/ARCHIVE/Report_Variability_Consolidated_Plan_2026-03-07.md` (validation matrix V2-V5, MT-3 expectations, cross-topic `UNVERIFIED` guardrail), `Docs/ARCHIVE/Report_Quality_Analysis_2026-03-08.md` (Fix 5B wording), `Docs/ARCHIVE/Baseline_Test_Results_Phase1_2026-03-12.md` (historical Bolsonaro scoring criteria), `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` (current family stability), and `Docs/STATUS/Backlog.md` / `Docs/STATUS/Current_Status.md` for what already shipped.
 **Learnings:** no
-
 ---
 ### 2026-03-31 | Lead Architect | Codex (GPT-5) | Consolidated Cross-Family Effects of `distinctEvents` Fix
 **Task:** Reassess the proposed Bolsonaro-oriented `distinctEvents` fix with parallel agents, identify likely positive and negative effects across report families, and adjust the proposal to maximize net benefit.
@@ -3277,7 +1404,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `distinctEvents` directly changes query fanout and research-loop minimum iterations, so over-expansion can increase cost and spread sparse evidence too thin. Do not optimize for raw boundary count or to recreate contaminated historical peaks. Do not let this bleed into SRG/SRF, Plastik-style broad evaluative, single-event, or clearly timeline/article-driven families.
 **For next agent:** Validate on Bolsonaro EN/PT (`"various"` / `"all"`), a single-proceeding Bolsonaro guardrail, `wind-still.ch` timeline/article-style control, SRG/SRF compound controls, broad evaluative inertness controls, and the documented Boeing 737 MAX multi-event/process control. The current consensus is prompt-only first, domain-neutral, with lifecycle preservation and no always-on repair step.
 **Learnings:** no
-
 ---
 ### 2026-04-01 | Senior Developer | Codex (GPT-5) | Stage 1 Narrow Hardening Implementation
 **Task:** Implement the architect-approved narrow post-rollback Stage-1 hardening changes: remove the restored `single_atomic_claim` dimension-decomposition fallback and add a narrow contract-retry re-validation guard.
@@ -3287,7 +1413,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Focused Stage-1 suites passed, but `npm test` did not fully pass because of four failures in untouched search/admin test files outside this change set. `npm -w apps/web run build` passed. Two new Stage-1 retry tests currently emit Gate 1 parse errors to stderr during mock sequencing, but they still assert the intended keep-original behavior and pass.
 **For next agent:** Treat this as a narrow Stage-1 patch on top of the Apr 1 rollback baseline. If continuing, run live SRG/SRF/Plastik validation first; do not expand this into a broader Stage-1 package. If needed later, clean up the noisy mock sequencing in the two new retry tests, but do not change production logic unless a live regression appears.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Investigator | Codex (GPT-5) | Plastik DE Stage-4 Prompt/Contract Parse Failure Review
 **Task:** Investigate repeated German `Plastik` Stage-4 failures only from the LLM prompt/output-contract angle, focusing on `VERDICT_ADVOCATE`, multilingual `reportLanguage` instructions, and prompt/output size; do not analyze Stage 1.
@@ -3297,7 +1422,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not remove the duplicated user JSON first without fixing the prompt contract, because the stale `VERDICT_ADVOCATE` prompt currently appears to rely on the duplicated user payload to expose `evidenceItems` at all. Also do not frame this as “report-language instructions are inherently bad”; the issue is incomplete propagation of the new contract plus a pre-existing stale placeholder.
 **For next agent:** Inspect [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md#L879), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L580), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L717), [verdict-generation-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-generation-stage.ts#L261), and [prompt-loader.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/prompt-loader.ts#L762). The minimum safe implementation is a Stage-4 contract fix plus a prompt-render invariant test, not another parser patch.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Investigator | Codex (GPT-5) | Plastik Stage-4 Runtime/Artifact Failure Review
 **Task:** Investigate repeated German Plastik Stage-4 failures from the runtime/job-artifact angle using local DB, job events, logs, and saved metrics/artifacts; anchor jobs `b4678284c7e042f986211a5311aaa828`, `d460554f6b9549008a1f6e00c542b508`, comparator `a695d0bc0fb745a2a6ebeccc0f8ec206`, and English/French parallel runs.
@@ -3307,7 +1431,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not start with concurrency tuning or token-budget reduction; the local evidence does not support either as the primary fix. Also note that restart noise was present in `b467` and `f279`, but both jobs reproduced Stage-4 failure behavior after requeue, so restart alone does not explain the issue.
 **For next agent:** Most relevant runtime anchors are the DB rows/events/metrics for `b4678284c7e042f986211a5311aaa828`, `d460554f6b9549008a1f6e00c542b508`, `a695d0bc0fb745a2a6ebeccc0f8ec206`, `0ee67d3d3285418a813ed0dcf8ab06a4`, `d64adbaf52eb4953ba1bea596015a52d`, `721b4afe3c2b4ac48c6a4d5a2770f97a`, `87f82137692e42b2b50d6d8c0ca028c3`, and `2dadabe7d2074245acfb81f96bbfe01d`; saved artifacts under `tools/metrics-b467.json`, `tools/metrics-d460.json`, `tools/metrics-a695.json`, and `tools/job-d460.json`; and the runtime seam in [verdict-generation-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-generation-stage.ts#L625), [verdict-generation-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-generation-stage.ts#L699), and [claimboundary-pipeline.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claimboundary-pipeline.ts#L996). Strongest next step: add durable raw Stage-4 failure artifacts for `VERDICT_ADVOCATE` parse failures and harden that contract boundary before touching concurrency.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Lead Architect | Codex (GPT-5) | German Plastik Stage-4 Parse Failure Reassessment
 **Task:** Re-investigate repeated `VERDICT_ADVOCATE` parse failures on German Plastik after the array-aware Stage-4 recovery + retry patch.
@@ -3326,7 +1449,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat the parse-failure fix as sufficient for the verdict spread. The family remains unstable even when Stage 4 succeeds.
 **For next agent:** Anchor jobs for comparison: `974a754643d747c78de620558f26dd32`, `c86a3e4bb02349e3b316ea8e7dff095c`, `bc7f2cafc8fb4ea09267e18cf2a5f409`, `22c950cba66c4f18bfc280466c8f57d2`. Inspect `resultJson.searchQueries`, `resultJson.sources`, `resultJson.claimBoundaries`, and `AnalysisMetrics.MetricsJson` verdict call sizes.
 **Learnings:** No
-
 ---
 ### 2026-04-02 | Investigator | Codex (GPT-5) | Funding Section Expansion and Reframe
 **Task:** Update the funding section in the Cooperation Opportunities page to reflect founder-led / imminent-Verein positioning, add newly verified funding routes and precedents, and add a separate community-funding section.
@@ -3336,7 +1458,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Mozilla timeline changed between earlier search snippets and the current Mozilla cohort page; the live page now shows the intake as closed with finalists notified on April 16, 2026 and full proposals due April 30, 2026. Google.org closes on April 3, 2026, but only matters if a real government partner already exists immediately.
 **For next agent:** Relevant section now lives in `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki` around the `3. FUNDING OPPORTUNITIES` block. If continuing, the highest-value follow-up is editorial tightening, not more list expansion: trim weak rows, add verification timestamps, and decide whether `Open Technology Fund` still belongs in Tier A or should move down if no concrete information-freedom use case is prepared.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Investigator | Codex (GPT-5) | Funding Section Editorial Pass
 **Task:** Perform a pure editorial cleanup on the updated funding section without changing its overall structure or reprioritizing the grant landscape again.
@@ -3346,7 +1467,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** No factual re-ranking was done in this pass; this was language and structure cleanup only.
 **For next agent:** If you continue editing the same section, protect the current separation between `Funding Opportunities`, `Funding Precedents`, and `Community Funding`. The section is now easier to scan; additional expansion will quickly make it too dense unless something else is cut.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Senior Developer | Claude Code (Opus 4.6) | Stage-4 Parse Failure Diagnostic Artifact Capture
 **Task:** Implement durable admin-only raw parse-failure artifact capture for Stage-4 verdict debate prompts to enable root-cause diagnosis of remaining intermittent German Plastik `VERDICT_ADVOCATE` parse failures.
@@ -3365,7 +1485,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Artifact size adds ~6KB per parse failure to metrics JSON. With at most 2 failures per run (initial + retry), this is negligible.
 **For next agent:** After the next failing Plastik run, inspect the artifacts via `GET /api/fh/metrics/{jobId}` and search for `parseFailureArtifact` in the `llmCalls` array. The `rawPrefix` and `rawSuffix` should reveal whether the failure is trailing commentary, incomplete brackets, duplicated JSON segments, or another pattern. Based on that, decide whether the fix belongs in parser recovery or prompt output instructions.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Senior Developer | Claude Code (Opus 4.6) | Metrics API Admin-Key Enforcement
 **Task:** Add `X-Admin-Key` auth guard to all `MetricsController` endpoints, closing the access-control gap identified in code review. The metrics API now stores raw LLM output slices via `parseFailureArtifact`, making admin-only enforcement mandatory.
@@ -3375,7 +1494,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The running API process locks `FactHarbor.Api.exe`, so full `dotnet build` cannot copy the output binary. Compilation was verified via `dotnet msbuild -t:Compile` (clean, no errors). The API will pick up the auth guards on next restart.
 **For next agent:** The metrics API is now admin-only. If you add new metrics endpoints, follow the same pattern: `if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized(...)`.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Senior Developer | Codex (GPT-5) | German Plastik Reproduction Reset + Rubric Contract Fix
 **Task:** Recover from a bad reproduction setup, verify the new parse-failure artifact path on live runs, and fix the concrete follow-on contract bug the artifact exposed.
@@ -3390,7 +1508,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The current worktree still contains earlier uncommitted Stage-4 changes from prior investigation (`claimboundary.prompt.md`, `verdict-generation-stage.ts`, `verdict-stage.ts`, `metrics.ts`, `MetricsController.cs`, new tests, and helper files under `tools/`). I did not clean those up. Build now passes after the rubric fix, but no new `VERDICT_ADVOCATE` failure was reproduced in this turn.
 **For next agent:** Start with one fresh single German Plastik run on current code after the last build/reseed. Check `/api/fh/metrics/{jobId}` with `X-Admin-Key` for `taskType='verdict' AND schemaCompliant=false`. If `EXPLANATION_QUALITY_RUBRIC` still shows `${narrative}`, the running web service did not pick up the latest `aggregation-stage.ts` change and needs a restart. If a true `VERDICT_ADVOCATE` failure reproduces, the artifact path is now confirmed working and should be used for the next root-cause diagnosis.
 **Learnings:** no
-
 ---
 ### 2026-04-02 | Senior Developer | Codex (GPT-5) | Restore Local Runner Serial Mode For Debugging
 **Task:** Re-check the historical `FH_RUNNER_MAX_CONCURRENCY` decision after repeated restart/requeue observations and restore the local debugging stack to serial job execution.
@@ -3400,7 +1517,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** I did not change `apps/web/.env.example`; repo/default documentation still says `3`. The local machine is now intentionally divergent for debugging. Any later agent who wants concurrent validation again must change `.env.local` back explicitly and restart services.
 **For next agent:** Assume the currently running local web stack is serial (`FH_RUNNER_MAX_CONCURRENCY=1`). Do not interpret improvements from the next Plastik runs as proof that the underlying concurrency issue is fixed globally; they only remove one local confound. If you need to revisit the rationale for `3`, start with the March 23 Stage-4 provider-guard handoff and the recent restart/requeue evidence in `JobEvents`.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Fix False Orphan Requeue On Local Runner
 **Task:** Investigate the local "restart" symptom where completed jobs were being replayed with duplicated phase blocks, determine whether it was a real service restart or a runner recovery bug, and patch the local runner accordingly.
@@ -3410,7 +1526,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The user-visible symptom ("restart") was partly misleading. Real API restart paths still exist and are distinct: they write `Job interrupted by server restart.` and use the `previous execution interrupted` recovery message. This patch only changes the web-side false-orphan path. I restarted the local stack with `scripts/restart-clean.ps1` after the code change so the fix is now active locally.
 **For next agent:** Start with one fresh local job, not a batch. If a new duplicate run appears, inspect `JobEvents` first. `Done -> Re-queued after application restart (previous execution lost)` should now be much harder to reproduce locally. If you ever see that sequence again, check whether the live per-job `updatedUtc` stayed unchanged across the requeue window; that would indicate the remaining API-side race rather than this old stale-snapshot bug. The focused protection lives in `drain-runner-pause.integration.test.ts` and covers: unchanged RUNNING snapshot => requeue, completed live job => no requeue, advanced live `updatedUtc` => no requeue.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Fix Misleading Repeated Phase Blocks In Job Timeline
 **Task:** Re-check the user's new screenshot after the runner fix and determine whether the displayed repeated `Setup` / `Understanding Input` / `Additional` blocks still indicated backend replay or a separate UI classification problem.
@@ -3420,7 +1535,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The earlier restart investigation and this timeline cleanup are two separate fixes. The screenshot looked like the first bug, but for this specific job the database proved it was the second.
 **For next agent:** If the user still reports "restart-like" visuals, query the specific job in `factharbor.db` before touching runner code. Count `Runner started`, `Re-queued after application restart%`, and `Job interrupted by server restart.%` for that job. If those are `1/0/0`, the issue is presentation, not execution.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Fix Stage-4 Advocate Parse Failure From Unescaped Inner Quotes
 **Task:** Diagnose the local failing German Plastik job `6b6e5fcdaaa3435f87b895518a307722`, determine the exact `VERDICT_ADVOCATE` parse-failure shape from the new artifact capture, and harden Stage 4 recovery against that malformed output family.
@@ -3430,7 +1544,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** A quick offline parse against the concatenated `rawPrefix + rawSuffix` slices from the old artifact still fails, but that is expected because the stored artifact is intentionally truncated and not guaranteed to reconstruct full JSON. The live rerun is the authoritative runtime check. The worktree still contains other uncommitted investigation changes from earlier sessions.
 **For next agent:** If another `VERDICT_ADVOCATE` parse failure appears, fetch `/api/fh/metrics/{jobId}` with `X-Admin-Key` and check `parseFailureArtifact.recoveriesAttempted`. New quote-family failures should now show `inner_quote_repair` in the attempted chain and should usually recover before retry. If failures continue, inspect whether the next malformed family is different (for example duplicated segments, trailing prose, or truncation), not this old inner-quote case.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Refresh Wikipedia WIP Scope And Add Narrow Completion Plan
 **Task:** Update the active WIP documentation for Wikipedia supplementary integration so it matches the current codebase, then write a concrete next-step implementation plan.
@@ -3440,7 +1553,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The current code already has a Wikipedia on/off switch. Do not add a second redundant kill switch in implementation. The real missing work is supplementary-provider orchestration and language threading.
 **For next agent:** Start from `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, not from the archived large architecture doc. Keep the reopening narrow: no reference extraction, no Semantic Scholar redesign, no special aggregation heuristics. Validate in serial runs with Wikipedia `fallback_only` versus `always_if_enabled`.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Add Supplementary Provider Usage Recommendations To WIP Docs
 **Task:** Extend the active Wikipedia/supplementary-provider WIP docs so they explicitly recommend when and how to use Wikipedia, Semantic Scholar, and Google Fact Check.
@@ -3450,7 +1562,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The new recommendations are intentionally narrow. They do not authorize default-on Semantic Scholar or Google Fact Check, and they do not imply provider-specific weighting heuristics.
 **For next agent:** If implementation proceeds, preserve the distinction now documented in WIP: Wikipedia is the bounded default-on supplementary source; Semantic Scholar and Google Fact Check remain targeted optional discovery providers until their deeper integration path is reopened.
 **Learnings:** no
-
 ---
 ### 2026-04-03 | Senior Developer | Codex (GPT-5) | Implement Bounded Default-On Wikipedia Supplementary Search
 **Task:** Complete the narrow Wikipedia supplementary integration slice by adding generic supplementary-provider orchestration, threading detected language into Wikipedia search, and aligning defaults with the approved bounded default-on posture.
@@ -3460,7 +1571,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Default behavior changed materially: Wikipedia now participates in normal search unless disabled in UCM. One legacy `web-search` test had to be updated because it implicitly assumed the old fallback-only default. This patch intentionally does not enable Semantic Scholar or Google Fact Check by default.
 **For next agent:** Validate serially on German Plastik, English Plastik, and one stable control. Check whether Wikipedia contributes bounded additional domains without flooding and whether disabling `search.providers.wikipedia.enabled` cleanly restores the pre-change posture.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Product Strategist | Codex (GPT-5) | Tighten Funding Presentation Around Immediate Support Routes
 **Task:** Review, shorten, and improve the funding presentation, using adjacent strategy/knowledge docs plus web validation and subagent input to sharpen next priorities and specific actions.
@@ -3470,7 +1580,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The funding landscape items referenced here are time-sensitive. If this page is revisited after June 1, 2026, re-check `NLnet`, `BRIDGE`, and other live-call statuses before reusing the timing language.
 **For next agent:** If you expand this work, keep this page donor-facing and concise. Put detailed opportunity tracking, eligibility nuance, and call calendars on `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`. If you need the evidence behind the wording, start with `Docs/Knowledge/EXECUTIVE_SUMMARY.md`, `Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md`, `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md`, and the April 2026 call-prep docs.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Product Strategist | Codex (GPT-5) | Sync Internal Cooperation Plan And Knowledge Summary
 **Task:** Re-check whether the planning/solution documentation was up to date, then update only the stale internal plan and knowledge-summary docs while leaving the external funding presentation unchanged by request.
@@ -3480,7 +1589,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** These corrections are date-sensitive. Re-check `NLnet`, `Mozilla`, `BRIDGE`, and similar call statuses before reusing the wording after June 2026.
 **For next agent:** If another doc still says `Full Fact` is the immediate `#1` cooperation target or `NLnet` is already closed as of April 2026, treat that as stale unless it is clearly marked as historical background. The current internal source of truth is `Cooperation Opportunities/WebHome.xwiki`.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Boundary Concentration vs Grounding Priority Plan
 **Task:** Review the newest local and deployed jobs, run a short multi-agent debate on priority order, and convert the result into a concrete WIP plan plus a review prompt for a Sonnet agent.
@@ -3490,7 +1598,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not infer local-vs-deployed regressions from mixed commits or mixed cache states. Do not reopen Stage-4 parse work or broad clustering redesign based only on these runs. The plan intentionally does not treat `boundary_evidence_concentration` alone as proof of causality.
 **For next agent:** Start with `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`. Review whether the ordering is right: validation gate first, Stage 2/3 root-cause track second, grounding containment third. If approved, the first concrete validation target should be same-commit serial Bolsonaro EN, then German Plastik, then one stable control.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Apply Sonnet Review To Boundary/Grounding Plan
 **Task:** Incorporate Sonnet review feedback into the new WIP plan after approval-with-adjustment.
@@ -3500,7 +1607,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This adjustment does not justify a broad Stage-4 program. Keep the grounding slice narrow: citation/ID integrity containment only.
 **For next agent:** Use the revised ordering in the WIP plan: `validation gate -> Track A root-cause stabilization + Track B grounding containment in parallel`. Do not revert to a strictly sequential order unless new evidence disproves the independent grounding failure mode.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Execute First Local Same-Commit Validation Gate Pass
 **Task:** Turn the validation gate from a plan into an executable procedure, then run the first local serial canary batch on the current commit.
@@ -3510,7 +1616,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not interpret the later failed jobs (`2960ceef...`, `8ce8b373...`, `5299ff49...`, `c0563ce5...`) as report-quality evidence. `JobEvents` show `Your credit balance is too low to access the Anthropic API.` This is an environment/provider block, not a clean analyzer signal.
 **For next agent:** Resume from the WIP plan’s new execution-status section. Restore Anthropic credits first, then rerun the exact same local canary matrix from a cleared-cache starting point: Bolsonaro EN, Plastik DE, `Ist die Erde rund?`, then the warm pass. Only after that should the gate be considered complete.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Resume Validation Batch After Credit Restoration
 **Task:** Observe the user-resubmitted verification jobs after Anthropic credits were restored and fold the results back into the active validation plan.
@@ -3520,7 +1625,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat the rerun batch as a valid same-commit baseline. The completed jobs used different executed commits, and the DPA run confirms a real local restart (`Job interrupted by server restart.`). This is now a local execution-stability blocker, not a lack of canary scenarios.
 **For next agent:** Start from the WIP doc’s new rerun-status sections. The next step is not more analytical comparison; it is stabilizing the local run environment so a serial batch can execute on one fixed build/commit. Once that is achieved, rerun the same canary set again.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Priority Debate On Verdict Grounding Vs Retrieval/Clustering
 **Task:** Review the latest cross-environment job evidence plus the current analyzer/UI code and argue whether verdict-grounding integrity should now outrank retrieval/clustering work.
@@ -3530,7 +1634,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The repo already contains one prior grounding-refresh fix (source-portfolio-aware validator input/prompt). The new local/deployed evidence therefore suggests any remaining grounding issue is not the exact March 31 contract mismatch and should be diagnosed against current jobs before implementation.
 **For next agent:** Start with `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/components/FallbackReport.tsx`, `apps/web/src/lib/config-schemas.ts`, `Docs/STATUS/Current_Status.md`, and `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`. Frame the decision around three questions only: does the issue ship to users silently, is the containment fix narrower than Stage-2/3 work, and does the newest evidence show it across both local and deployed environments.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Source Provenance Tracking Design Review
 **Task:** Review the proposed source-provenance tracking design for the ClaimAssessmentBoundary pipeline, check fit against current pipeline/config/prompt hooks, and pressure-test it against misinformation research.
@@ -3540,7 +1643,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Current repo already has overlapping concepts: `isDerivative`, `derivedFromSourceUrl`, claim-local source portfolios, `independence_concern`, and a `provenanceValidationEnabled` config flag. Adding a second parallel provenance vocabulary without reconciling those concepts will fragment the pipeline and make verdict semantics harder to reason about.
 **For next agent:** Start with `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, and `apps/web/src/lib/config-schemas.ts`. Preserve the project rule that semantic text interpretation cannot move into deterministic post-processing.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Audit Provenance Documentation Currency
 **Task:** Check whether the current source-provenance solution/plan documentation is up to date against the latest review conclusions and the live analyzer codebase.
@@ -3550,7 +1652,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The revised design doc still contains at least one stale quantitative detail (`source-reliability.ts` cited as 842 lines; current file is shorter). This is minor, but it shows that snapshot metrics inside planning docs can drift even when the core design remains current.
 **For next agent:** If asked to make the docs current, update `Docs/WIP/README.md` under future proposals, add a short “historical review input, not the active plan” note for `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md`, and optionally clean minor drifting counts in the design doc without changing its technical direction.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | LLM Expert | Codex (GPT-5) | Retrieval Documentation Currency Check
 **Task:** Check whether the retrieval-related solution/plan documentation is up to date against the current search implementation and active status docs.
@@ -3560,7 +1661,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The worktree already contains unrelated user changes in retrieval/status docs (`Backlog.md`, `Current_Status.md`, WIP search docs, xwiki pages). Do not overwrite or normalize those without first reviewing the user’s intended edits. Also, `Docs/WIP/2026-03-26_Next_Workstream_Decision.md` was accurate at the time it was written; it is stale now because defaults changed later.
 **For next agent:** If asked to refresh docs, focus first on `Docs/Specification/Multi_Source_Evidence_Retrieval.md` and `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. Preserve the current April docs as the canonical retrieval planning sources unless newer design decisions supersede them.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Make Commit Hash Live And Visible Across API/Web
 **Task:** Ensure commit/build provenance is updated after new commits and exposed consistently for local runs now, while remaining ready for deployed environments on next deploy.
@@ -3570,7 +1670,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `scripts/restart-clean.ps1` left a stale API process on port 5000, so the first local `/version` probe hit old code. After killing the actual port owner and restarting the API watcher, local verification succeeded. This is a restart-script hygiene issue, not a provenance-code issue.
 **For next agent:** Local verification succeeded with both endpoints reporting the same live build id: `http://localhost:5000/version` and `http://localhost:3000/api/version` now return `git_sha = 5f666979...+469a7968`. Use this patch as the current provenance baseline; if the team wants validation-grade analyzer provenance, that is a separate future enhancement.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Investigate Executed Web Commit Hash Confusion
 **Task:** Investigate why the local job `executedWebGitCommitHash` values looked wrong and unstable, and determine whether the hash mechanism itself is misleading.
@@ -3580,7 +1679,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This means the current same-commit validation gate is too strict in one way (it rejects batches separated only by docs commits) and too loose in another (it still cannot prove analyzer-path equivalence when the working tree stays dirty in unrelated files). The problem is in the provenance model, not just in local restarts.
 **For next agent:** If the team wants to repair this, the right fix is not "make the hash more stable" globally. It is to add a second, analysis-scoped execution fingerprint for validation use, while keeping the existing visible hash for whole-repo build provenance. In the meantime, avoid committing unrelated repo changes during local validation batches.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Assess Whether Latest Deployment Caused Observed Degradation
 **Task:** Determine whether the observed quality degradation in the newest jobs is actually caused by the most recent production deployment, and capture the conclusion in the active WIP plan.
@@ -3590,7 +1688,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The strongest evidence for this conclusion comes from production job payloads, not local jobs. Local runs are still not trustworthy as comparative baselines because they continue to execute on different `ExecutedWebGitCommitHash` values.
 **For next agent:** If asked whether to revert the Wikipedia supplementary deployment, the best current answer is no. The current priority should remain Stage 2/3 retrieval-boundary stabilization plus narrow verdict-grounding containment, while local execution stability is repaired separately.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Compare Newest Local And Deployed Quality Jobs
 **Task:** Review the newest local and deployed jobs, identify the current real problems, and update the active quality-stabilization plan with the latest cross-environment reading.
@@ -3600,7 +1697,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Local `Jobs.ResultJson` persistence remains thinner than the richer report snapshots previously inspected, so the cross-environment synthesis still relies on the earlier detailed job readings gathered during this investigation. No code changes were made to the analyzer in this pass.
 **For next agent:** Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as updated. If asked what to fix next, the best answer is still: stabilize local execution enough to satisfy the validation gate, then pursue Stage 2/3 retrieval-boundary stabilization and verdict-grounding containment in parallel, using deployed jobs as the higher-confidence quality baseline in the meantime.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | LLM Expert | Codex (GPT-5) | Refresh Stale Retrieval Docs
 **Task:** Update the clearly stale retrieval solution/plan documentation against the current search implementation.
@@ -3610,7 +1706,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The worktree contains unrelated user edits in `Backlog.md`, `Current_Status.md`, WIP search docs, and xwiki pages. Those were intentionally left untouched. The March 26 decision doc was not rewritten internally because that would blur historical record and current state.
 **For next agent:** Treat the current retrieval planning sources as `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md`. Only expand edits beyond these if asked for a broader documentation sweep.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Check Boundary/Grounding Documentation Currency
 **Task:** Verify whether the active boundary-concentration / grounding solution and plan documentation is current against the latest rerun results, then update any stale navigation or summary files.
@@ -3620,7 +1715,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Historical entries in `Agent_Outputs.md` still describe earlier phases of the same plan and therefore naturally contain superseded sequencing. That is expected chronology, not a documentation bug.
 **For next agent:** Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as current. Use `Docs/WIP/README.md` as the discovery entry point; it now points to the plan. Do not infer from older `Agent_Outputs` entries that grounding is still sequentially deferred.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Complete Same-Commit Local Validation Gate
 **Task:** Finish the blocked local validation gate by clearing stale pre-fix jobs, rerunning the planned serial matrix on one stable live build, and determine what defect should be prioritized next.
@@ -3630,7 +1724,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Local live build hashes continue to change whenever unrelated repo commits land, so same-commit validation still requires holding the environment stable for the duration of a batch. Bolsonaro EN experienced long queue and runtime latency but completed successfully on the same build. Several warnings remain noisy (`source_fetch_failure`, `per_source_evidence_cap`, `llm_tpm_guard_fallback`) and should not be mistaken for the primary defect.
 **For next agent:** Use the three same-commit jobs above as the current local baseline. Treat `verdict_grounding_issue` as the most clearly reproduced local defect on the current build. Treat earlier local mega-boundary outliers as historical/noisy signals unless they reappear under a fresh same-commit gate. Read the new section 5.9 in the WIP plan before proposing the next fix.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Refresh Provenance Doc Labels And Index
 **Task:** Update the provenance WIP documentation so the active design is indexed correctly and the standalone GPT review prompt is clearly marked as historical review input.
@@ -3640,7 +1733,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The standalone GPT review prompt still contains superseded proposal content by design; the new label reduces confusion but does not rewrite that historical prompt.
 **For next agent:** Treat `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` as the current plan and `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md` as review history only.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Refresh Status And xWiki Planning Docs
 **Task:** Patch stale live documentation after a doc-to-code consistency review, focusing on status summaries and xWiki planning/architecture pages.
@@ -3650,7 +1742,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** These files already had uncommitted user changes. The patch was limited to the stale sections identified in the review and intentionally did not normalize unrelated wording or formatting.
 **For next agent:** Treat `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and the two updated xWiki pages as the refreshed top-level references. If further doc cleanup is requested, next targets should be older deep-dive/spec pages rather than these entry-point summaries.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Agents Supervisor | Codex (GPT-5) | Close Agent Rules Cleanup Documentation Gap
 **Task:** Update the archived Agent Rules Cleanup plan/report documentation so it reflects the completed execution state rather than only the original draft/audit wording.
@@ -3660,7 +1751,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `Docs/AGENTS/Agent_Outputs.md` has continued to grow since the March cleanup, so any size-reduction numbers from the closure summary must be read as completion-time snapshots, not current line counts.
 **For next agent:** If governance-history docs are referenced in future reviews, use `Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md` first, then the archived plan/report for underlying rationale.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | WIP Consolidation #9
 **Task:** Run a consolidation pass over `Docs/WIP`, archiving clearly finished late-March/early-April plan docs and syncing the status/index pages to the shipped code state.
@@ -3670,7 +1760,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `Docs/AGENTS/Agent_Outputs.md` contains historical references to the moved WIP paths. I did not rewrite historical entries; use `Docs/ARCHIVE/README_ARCHIVE.md` to locate archived replacements. The working tree also contains unrelated user edits in xWiki and other docs that were intentionally left untouched.
 **For next agent:** Treat the archived remap/direction/fetch/Wikipedia docs as historical records under `Docs/ARCHIVE/`. Treat `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md` and `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` as partially-done living records. If another consolidation is requested, the next likely candidates are the unindexed March 30–April 1 review artifacts still sitting in `Docs/WIP/`.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Fix Comparative Geography Evidence Starvation
 **Task:** Diagnose and fix the `UNVERIFIED 50/0` comparative-claim failure seen in deployed job `23e1c77a2b8c4836816d8c318bde2c67` and local job `a840ce212dee4bd58caa0bdf33e00b86`.
@@ -3680,7 +1769,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The repo contains unrelated doc/provenance edits from earlier work today; they were intentionally left out of this analyzer fix commit. The new multi-geography field is structural plumbing only; if a future issue remains, inspect Stage-1 extraction quality for whether comparative claims consistently populate `relevantGeographies`.
 **For next agent:** After deployment or local queue drain, re-run the exact Swiss-vs-Germany claim and confirm that AC_02 now receives Germany evidence, the `evidence_applicability_filter` warning drops or disappears, and the article no longer collapses to `UNVERIFIED 50/0`. Safe verification already passed: `npm test` and `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Make Job/API Commit Hash Live Per New Commit
 **Task:** Fix local and deployed provenance stamping so new jobs and version endpoints expose the current live commit hash instead of a startup-frozen value.
@@ -3690,7 +1778,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This change affects provenance labeling only; it does not create an analysis-scoped fingerprint. Unrelated docs remain modified in the worktree and were intentionally excluded from the commit.
 **For next agent:** Verify production picks this up after the next deploy/restart by checking `/version` and one freshly created job. If future validation needs analyzer-only provenance, add a second scoped fingerprint rather than changing this whole-repo build id again.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Scope Grounding Validation to Claim-Local Context
 **Task:** Fix `verdict_grounding_issue` false positives by aligning grounding validation scope with the claim-local evidence/source context already used by direction validation.
@@ -3700,7 +1787,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The new grounding helper intentionally treats cited sibling-claim evidence as invalid for grounding when claim mappings exist. If future jobs reveal mapping gaps (valid cited IDs absent from `relevantClaimIds`), fix the mapping upstream rather than weakening the grounding validator back to global scope.
 **For next agent:** Re-run the Swiss-vs-Germany local success case (`c3a19e4ca612445a8e32cb330da604f8`) or a fresh equivalent and inspect whether the prior `S_015/S_016`-style warning is gone. If any grounding warning remains, compare it against the new three-tier rule before changing severity/policy.
 **Learnings:** no
-
 ---
 ### 2026-04-04 | Senior Developer | Codex (GPT-5) | Document Local vs Deployed Grounding Canary Results
 **Task:** Check the live local and deployed systems after the grounding-scope fix, compare the Switzerland-vs-Germany canary jobs, and record what is actually validated versus still provenance-inconclusive.
@@ -3710,7 +1796,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Do not treat deployed job `82344370fbd54cb9bec1653cc462b84c` as final proof of the grounding fix. It is encouraging behaviorally, but provenance-inconclusive because the job itself ran/stamped as `521040e...`.
 **For next agent:** Use the new section 6 in `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as the current source of truth for the local/deployed status split. The next operational step is a fresh production rerun of the same claim and a quick provenance check on the new job hash.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Refine Grounding Validator Prompt for Remaining False Positives
 **Task:** Narrow the remaining `verdict_grounding_issue` false positives still seen on deployed `b7783872...` jobs after claim-local grounding scoping had already shipped.
@@ -3720,7 +1805,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This is a prompt-only refinement. If warnings persist after deployment, inspect the exact warning text before changing code again; the next step would likely be a more explicit validator input contract, not broader relaxation.
 **For next agent:** After prompt rollout, re-run the Swiss-vs-Germany canary and one of the previously affected production claims (`38d576...` or `d0c115...` family) and compare the warning text against the three false-positive buckets documented in WIP section 5.10. Verification already passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts` and `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Fix Residual Grounding Noise: Source Backfill, Validator Context, Citation Repair
 **Task:** Implement the next approved three-step fix set for residual `verdict_grounding_issue` cases: source-ID backfill for late-added evidence, richer structural context for grounding validation, and a gated citation-alignment repair pass after reconciliation.
@@ -3730,7 +1814,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The new citation repair can revise arrays and reasoning, but only within the known claim-local evidence set. If future runs still show cross-claim or hallucinated IDs after the repair call, inspect the reconciler output first; do not weaken grounding rules again without evidence. The admin-key-related 401 metrics warnings seen in existing tests are pre-existing and unrelated to this change.
 **For next agent:** Start with fresh local canaries on the current branch before any deploy decision. Watch especially for the prior `isdglobal.org` empty-`sourceId` pattern and the Plastik AC_02 reasoning/array mismatch family. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-stage.test.ts`, `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm -w apps/web exec vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `npm test`, and `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Replace Citation Repair with Single-Citation-Channel Root Fix
 **Task:** Replace the unconvincing post-hoc `VERDICT_CITATION_ALIGNMENT_REPAIR` approach with a root-cause fix for residual grounding noise, then validate it on fresh local canaries.
@@ -3740,7 +1823,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This fix intentionally changes verdict prose style by removing raw machine IDs from reasoning. That is the point, not a regression. If any downstream UI/debug workflow was implicitly relying on `EV_*` strings inside prose, it must instead use the structured arrays already present in the verdict object.
 **For next agent:** Fresh local canaries on prompt hash `79f7e76fa9c624f8256464739b2eb73d9b0ab065f9462190b8e7aa0e50ee1bd4` succeeded: `51751fbc88bb4489a9955f4baf011945` (Meta) finished `TRUE 92/85` with no `verdict_grounding_issue`; `c4a4c60612ff48f0a3dbb8da764fb0ab` (Plastik) finished `MIXED 51/62` with no `verdict_grounding_issue`. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-stage.test.ts`, `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm test`, and `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Align Challenger and Grounding Prompts with Single-Citation-Channel Contract
 **Task:** Apply the two follow-up prompt cleanups from architecture review so the single-citation-channel contract is consistent across Stage 4 prompts.
@@ -3750,7 +1832,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** This was a contract-consistency cleanup only. It does not add new runtime behavior beyond making prompt expectations less contradictory.
 **For next agent:** The prompt contract tests now explicitly cover challenger prose and the defensive legacy wording in grounding validation. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm test`, and `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Update Status Docs After Grounding Root Fix
 **Task:** Bring the active status docs and backlog into sync with the committed grounding root-fix work and its current validation state.
@@ -3760,7 +1841,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The docs now distinguish clearly between "implemented in code" and "validated in production." Do not collapse those two states in future updates unless a fresh deployed rerun on the new commit has been checked.
 **For next agent:** If these doc updates are committed, keep `GRND-1` in MONITOR status until the first 7+ runs and deployed validation are reviewed. The next substantive plan/doc changes should likely focus on the Stage 2/3 boundary-concentration track.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Run 5-Input Local-vs-Deployed Quality Gate
 **Task:** Execute the agreed 5-input comparison set on local and deployed to determine whether local report quality is strong enough to justify deployment.
@@ -3770,7 +1850,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Local still emitted `verdict_grounding_issue` / `verdict_direction_issue` on hard cases (`Plastik`, Bolsonaro EN) while deployed remained cleaner on some of those families. Deployed also showed boundary concentration on Earth, Plastik, and Bolsonaro, so this batch does not imply production is healthy overall; it only shows local is not yet clearly better.
 **For next agent:** Batch job IDs were local `7849614707f941a4822120a8c32976a4`, `345d6487f2344923b0eeeb3b7ce1ca4d`, `52fcb6244a0145a999d9a5279b019912`, `e65b95916b594a90bfe72f31b04304cd`, `039b105677a54ccdbc7ef0e5da9c03d2`; deployed `3e1253cb79a44389b86d0c47ab734f13`, `80bbcc3dd89447d18bac16f1f5b84a96`, `eb02cd2e535a4556a2bc3c29868412a0`, `9042bb732a8149eb8de1133045214578`, `3f00ba806cfc4319be90e5cebc84ab14`. Key outcomes: local Earth `TRUE 95/90` vs deployed `TRUE 87/79`; local Plastik `MIXED 45/66` with grounding warnings vs deployed `LEANING-FALSE 41/48`; local Bolsonaro `LEANING-TRUE 58/55` with grounding/direction warnings vs deployed `MOSTLY-TRUE 73/70`; local Swiss/DE `MIXED 53/61` vs deployed `LEANING-TRUE 60/70`; local Meta `TRUE 98/93` vs deployed `TRUE 92/88`.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Reframe Batch as Build-over-Build Comparison
 **Task:** Compare the newest current-build reports against nearest same-family reports from older builds on the same environment, instead of making broad local-vs-deployed claims.
@@ -3780,7 +1859,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** For local Earth and deployed Earth, the nearest previous same-family reports were on older non-adjacent builds because no exact Earth sample existed on the immediately prior build. Interpret those two as nearest-available build-over-build comparisons, not exact adjacent-build A/B tests.
 **For next agent:** Local current-build batch: Earth `78496147`, Plastik `345d6487`, Bolsonaro `52fcb624`, Swiss/DE `e65b9591`, Meta `039b1056`. Deployed current-build batch: Earth `3e1253cb`, Plastik `80bbcc3d`, Bolsonaro `eb02cd2e`, Swiss/DE `9042bb73`, Meta `3f00ba80`. Main comparative takeaways: local Meta improved (`98/93` vs `92/85`); local Swiss/DE improved (`53/61` vs `48/51`), local Bolsonaro confidence improved but gained grounding/direction warnings; local Plastik gained evidence but also grounding noise. Deployed Swiss/DE lost some score but removed grounding warnings; deployed Plastik removed collapse/grounding warnings but also dropped to `LEANING-FALSE 41/48`; deployed Bolsonaro gained score but collapsed to an `80`-evidence mega-boundary.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Write WIP Build Comparison Note
 **Task:** Write a dedicated WIP markdown note that makes the 5-input comparison unambiguous by separating build-over-build analysis from current local-vs-deployed comparison.
@@ -3790,7 +1868,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The document explicitly distinguishes nearest older-build comparisons from exact immediate-prior-build comparisons. Do not collapse those categories in later summaries.
 **For next agent:** Use the WIP note as the canonical comparison reference for this batch instead of rephrasing from memory. It already contains the exact current job IDs and the comparator caveats.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Add Traffic-Light Status to WIP Comparison Note
 **Task:** Colorize the WIP comparison note with explicit traffic-light markers so improvements, declines, mixed results, and missing comparators are immediately visible.
@@ -3800,7 +1877,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The color markers summarize the written judgment but do not replace the existing comparator caveats. Earth and deployed Meta still require the previously documented caution about comparator availability.
 **For next agent:** If this note is migrated into status docs, preserve both the legend and the separation between build-over-build and current local-vs-deployed sections.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Make WIP Comparison Colors Visible in Plain Markdown
 **Task:** Replace the subtle color markers with explicit plain-text status chips because the markdown viewer does not render actual table cell colors.
@@ -3810,7 +1886,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Markdown tables still do not support real background fills in this viewer. The visible status now depends on the emoji + text labels, not actual colored cells.
 **For next agent:** If you need real colored boxes later, this will need xWiki macros or HTML/CSS in a different rendering context rather than plain markdown tables.
 **Learnings:** no
-
 ---
 ### 2026-04-05 | Senior Developer | Codex (GPT-5) | Check Whether Older Ahead-of-Deploy Commits Caused Local Quality Decline
 **Task:** Investigate whether the older commits ahead of deployed (`ec7a8de8`, `d9194303`, `08661690`) plausibly caused the current local quality deficits.
@@ -3820,7 +1895,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Some local quality movement between `b7783872`, `ec7a8de8`, and `07cb2e0d` is claim-family variance, not necessarily commit-driven regression. Do not infer causality from score changes alone when the commit only touched admin-only validation prompts.
 **For next agent:** The main conclusion is negative attribution: none of the older commits ahead of deployed currently has evidence of causing the local quality decline. If further causality work is needed, investigate later commits (`81e7ddc4`, `07cb2e0d`) only where they plausibly affect the family, and otherwise focus on deeper unresolved hard-case variance rather than rollback-by-suspicion.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Compare Live Deployed `2ec54047` Jobs vs `b7783872` Baseline
 **Task:** Investigate report-quality changes on live deployed jobs for current deployed commit `2ec54047371670f386646c46027a722e26610788` versus previous deployed baseline `b77838727ae6848c4f42d3dcef8eba47c58b7cfa`, with emphasis on Cross-Boundary Tensions.
@@ -3830,7 +1904,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `2ec54047` is a docs commit, but the deployed range from `b7783872..2ec54047` does include analysis-affecting changes in prompts and analyzer code. Also, public job APIs do not expose `gitCommitHash` without admin auth, so commit assignment for the current cohort was inferred from exact commit timestamps plus the live service version endpoints.
 **For next agent:** If you need higher confidence on `2ec54047`, submit fresh deployed reruns for the Apr 5 baseline families (`Plastik`, `Bolsonaro EN`, `Earth`, `Meta`, `Swiss vs Germany`) and compare against the `b7783872` batch already documented in `Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md`. Focus on whether the current prompt hash `bbe1af93...` consistently surfaces better/narrower grounding behavior and whether `07cb2e0d` keeps under-covering one jurisdiction on multi-jurisdiction claims.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Trace Cross-Boundary Tensions Code Path And Regression Risk
 **Task:** Investigate the end-to-end code path that produces `Cross-Boundary Tensions`, including UI rendering, Stage 5 narrative generation, Stage 4 verdict data, Stage 3 boundary construction, prompts, and recent commits that could plausibly increase tensions.
@@ -3840,7 +1913,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The strongest current root cause is stale/underspecified Stage 5 input, not simply “too many boundaries.” Reducing tensions only in the UI would hide symptoms while leaving inconsistent narrative generation intact. Also note that sample stored outputs show `boundaryDisagreements` being used for mild caveats such as one mixed or neutral boundary versus otherwise aligned boundaries, which supports the over-generation concern.
 **For next agent:** Highest-leverage fixes are: align the Stage 5 prompt contract with actual variables and add a Stage 5 prompt-contract test; stop using stale advocate `boundaryFindings` for final narrative generation by either recomputing them after reconciliation or having reconciliation output updated per-boundary findings; and gate/report tensions from a structured final boundary-divergence summary so single mixed/neutral caveats do not become “Cross-Boundary Tensions” unless divergence is substantive.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Generalist | Codex (GPT-5) | Local Current Commit Tension Investigation
 **Task:** Investigate recent local jobs on commit `2ec54047371670f386646c46027a722e26610788`, compare Cross-Boundary Tensions against earlier local jobs on `b7783872` and nearby code-affecting commits, and identify likely root causes from `apps/api/factharbor.db` plus relevant code/prompt files.
@@ -3850,7 +1922,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Lower tension count is not equivalent to lower analytical tension. The Stage-5 prompt explicitly says to keep the field concise and omit it unless divergence is meaningful, and `aggregation-stage.ts` only passes a summarized/truncated payload into the narrative step. One current Bolsonaro EN bullet compresses multiple cross-claim conflicts that earlier runs split into 2-3 bullets.
 **For next agent:** Anchor jobs: current `bf502af1`, `02891ccb`, `f712efca`, `ff198492`; comparisons `7d2b91b5`, `da3f0cea`, `e65b9591`, `c4a4c606`, `345d6487`, `da1180ed`, `5e93d734`, `52fcb624`, `703c261d`. Key references are the optional concise `boundaryDisagreements` contract in `apps/web/prompts/claimboundary.prompt.md`, the trimmed Stage-5 payload in `apps/web/src/lib/analyzer/aggregation-stage.ts`, the softened multi-jurisdiction query guidance in the same prompt file, and the Stage-4 grounding alias work in `apps/web/src/lib/analyzer/verdict-stage.ts`.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Consolidate Current vs Previous Deployment Cross-Boundary Tensions Investigation
 **Task:** Compare all current-commit (`2ec54047`) jobs against previous deployed baseline (`b7783872`) across local and deployed systems, explain why `Cross-Boundary Tensions` appears more often, run a multi-agent debate, and consolidate root causes plus proposed solutions in a WIP plan.
@@ -3860,7 +1931,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `2ec54047` is docs-only, so it should not be treated as the causal commit. The analysis-affecting range is `b7783872..ffaa4fdd`. Also, tension count is not a stable severity metric today: one bullet can compress multiple conflicts, and some current tension bullets are really concentration or methodology caveats rather than substantive final disagreement.
 **For next agent:** Start from `Docs/WIP/2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md`. The three supporting debate threads already concluded: deployed current jobs do show more visible tensions; local current jobs do not show a comparable general rise; and the key code-level fixes belong in Stage 5 narrative generation, not UI rendering. Most relevant code references are `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`, and `apps/web/src/lib/analyzer/prompt-loader.ts`.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Review Stage-5 Tension Fix Follow-Ups And Update Docs
 **Task:** Review the Stage-5 narrative-tension implementation after `08220154` and `2acc4545`, update project docs to the new state, and commit the documentation.
@@ -3870,7 +1940,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `unique sourceUrl` is materially better than hostnames for Stage 5 calibration, but still assumes URL-level uniqueness is the right proxy for “source” breadth. If future narratives still misread evidence breadth, the next refinement would be to use the canonical `sources[]` records directly instead of re-deriving count from evidence items.
 **For next agent:** The docs now consistently point to `08220154` + `2acc4545` as the shipped Stage-5 first-pass cleanup. Start measurement from the two WIP files dated 2026-04-06 and the new `NARR-1` backlog entry.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Close Stage-5 Fix 2 As Deferred And Propose Upstream Quality Workstream
 **Task:** Update docs after the finished Stage-5 canary reruns, record the decision that Fix 2 is not needed now, and propose the next engineering workstream as upstream report quality rather than more narrative repair.
@@ -3880,7 +1949,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The worktree also contains an untracked `Docs/Investigations/` path that was not touched or included here. Do not sweep that directory into a docs commit accidentally. Also, deferring Fix 2 does not mean deleting it; keep path B available if future runs again show methodology-only tensions being promoted.
 **For next agent:** Start from `Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md`. The active question is no longer narrative calibration; it is how to instrument and improve Stage 2/3 claim-level evidence quality without reopening rejected heuristics or broad redesign.
 **Learnings:** no
-
 ---
 ### 2026-04-06 | Senior Developer | Codex (GPT-5) | Investigate Current Wikipedia Integration Status And Next Steps
 **Task:** Inspect the current code, tests, and status docs for Wikipedia integration and recommend the next engineering steps.
@@ -3890,7 +1958,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` is partly stale: its “narrow reopening scope” still recommends supplementary participation plus detected-language routing, but those are already shipped. Do not reopen that completed slice by mistake.
 **For next agent:** Source of truth is the live code, not the older concept doc. Start with `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-wikipedia.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, and the related tests plus `Docs/STATUS/Current_Status.md` / `Docs/STATUS/Backlog.md`.
 **Learnings:** no
-
 ---
 ### 2026-04-07 | Senior Developer | Codex (GPT-5) | Implement UPQ-1 Phase A-2 Claim-Level Acquisition Telemetry
 **Task:** Implement the next `UPQ-1` slice after Phase A-1 by adding claim-level Stage 2/3 telemetry so canary measurements can distinguish helpful rebalancing from harmful cross-claim reallocation.
@@ -3900,7 +1967,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Applicability removals happen after Stage 2, so they are recorded as a post-research claim-level total, not as invented per-iteration losses. The worktree also contains unrelated user/other-agent changes (`apps/web/.env.example` and several untracked WIP docs); leave them alone when preparing any commit.
 **For next agent:** The main analysis surface is now `resultJson.claimAcquisitionLedger`. The most relevant code paths are `runResearchIteration()` and `maybeRunSupplementaryEnglishLane()` in `research-orchestrator.ts`, the post-research applicability filter in `claimboundary-pipeline.ts`, and the new helper tests in `research-orchestrator.test.ts`. Verification run in this pass: `npm -w apps/web exec vitest run test/unit/lib/analyzer/research-orchestrator.test.ts`, `npm test`, `npm -w apps/web run build`.
 **Learnings:** no
-
 ---
 ### 2026-04-07 | Senior Developer | Codex (GPT-5) | Compare UPQ-1 A-2 Local Canaries Against Deployed And Update Docs
 **Task:** Compare the new local `b130d00c` A-2 canary jobs against current deployed results, decide whether local is clearly better, and update status/WIP docs accordingly.
@@ -3910,7 +1976,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The deployed public job list does not contain an exact current-runtime EN Bolsonaro rerun or an exact current-runtime English misinformation rerun, so those comparisons remain partial. Do not overstate the deploy basis from Swiss alone.
 **For next agent:** Use `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` as the current source of truth. The deployed comparators referenced in this pass are `8ec681050e844becb4ec616eb426731e` (Swiss), `2cf4682c5c914834ac5a58b318c3fc0e` (Plastik), `eb02cd2e535a4556a2bc3c29868412a0` (older-runtime Bolsonaro EN), and `38d5760e6ced4a969c3023a9aace03be` (family-only misinformation reference).
 **Learnings:** no
-
 ---
 ### 2026-04-07 | Senior Developer | Codex (GPT-5) | Diagnose Local-vs-Deployed Swiss-EU Treaty Claim Polarity Split
 **Task:** Investigate why local job `9d79d2a01b1f4af3baf34f6c842f5142` on `442a5450` returned `FALSE 9/89` while deployed job `50e2e1677939441c9e5a8ba33ac5d4f0` on `f1a372bf` returned `TRUE 89/84` for the same German claim about the Federal Council signing the EU treaty before people and Parliament decided.
@@ -3920,7 +1985,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Local still emits a separate `verdict_grounding_issue` on `AC_02` because invalid challenge-context IDs leak into grounding validation. That is noise and not the main cause of the truth flip.
 **For next agent:** Focus on Stage 4 prompt/contract calibration, not Stage 2 query tuning. Best root fix is: truthPercentage must stay anchored to the explicit proposition; omitted-context or "normal procedure" arguments should affect `misleadingness`, `limitations`, or at most confidence unless the stronger implication is explicit in the wording. Supporting evidence for this diagnosis: local `claimAcquisitionLedger` and `claimVerdicts` vs deployed `claimVerdicts` for the same input.
 **Learnings:** no
-
 ---
 ### 2026-04-07 | Lead Architect | Codex (GPT-5) | Cross-Review f1a372bf To HEAD Job Quality Investigation
 **Task:** Independently rebuild the local and deployed job evidence from baseline `f1a372bf7d9e69cfe220953cbfc5e5aa8193d651` through current `HEAD`, adversarially review the primary Claude investigation, adjudicate major factual disagreements against web sources, and consolidate the findings.
@@ -3930,7 +1994,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** Deployed analysis is only as complete as the public visible inventory; within that inventory only `6` jobs are strictly in-range, so claims about deployed post-baseline behavior must stay scoped accordingly. Stage 3 concentration is real, but concentration on Plastik also existed pre-baseline, so causal language about `442a5450` must stay at "amplified in some runs," not "created the problem."
 **For next agent:** Start with `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md`. The main corrections to preserve are: do not cite 39/74 as the strict post-baseline range; do not treat deployed `f1a372bf` as a runtime delta commit; do not frame Plastik as a same-baseline local-vs-deployed test; and do prioritize proposition-handling fixes ahead of another Stage 3-only narrative. The most important concrete job IDs are local `9d79d2a0...`, `21fe78d1...`, `5c302710...`, `7ffcab95...`, `87487a15...`, `041c63ab...`, `705b6c17...`, `c731c5b2...` and deployed `50e2e167...`, `2cf4682c...`, `8ec68105...`, `841d6de3...`.
 **Learnings:** no
-
 ---
 ### 2026-04-07 | Lead Architect | Codex (GPT-5) | Cross-Review Addendum For Hidden Deployed Bundesrat Jobs
 **Task:** Incorporate the hidden deployed Bundesrat jobs surfaced in the primary Claude investigation into the cross-review without collapsing the distinction between public-visible inventory and internal hidden evidence.
@@ -3940,7 +2003,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** These three hidden jobs are included as documented internal evidence, not as public-API-retrieved artifacts. Keep that provenance distinction explicit in any later summary.
 **For next agent:** The updated cross-review now reflects the correct combined position: public-visible strict range remains `21` local / `6` deployed, but the deployed analytical record for the Bundesrat family is larger because of the hidden addendum. Use that split consistently.
 **Learnings:** no
-
 ---
 ### 2026-04-08 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Claim Aggregation Investigation
 **Task:** Investigate why job `11a8f75cb79449b69f152635eb42663a` produced plausible atomic-claim verdicts but a bad overall verdict, compare with other mixed-direction jobs, and propose a safe generic design for dominant AtomicClaim weighting.
@@ -3950,7 +2012,6 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** A Stage-5 fix will materially improve runs where the decisive claim is present, but it cannot repair runs where extraction omits or weakens the decisive truth-condition entirely.
 **For next agent:** Read `Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Dominant_Claim_Aggregation_Investigation.md` and implement Phase 1 there first: dominance assessment output, dominance-aware aggregate, persisted observability, then the narrative/adjudication prompt change.
 **Learnings:** No
-
 ---
 ### 2026-04-09 | Lead Architect | Codex (GPT-5) | Review Option G LLM-Led Article Adjudication
 **Task:** Independently review `Docs/AGENTS/Handoffs/2026-04-09_Lead_Architect_LLM_Expert_Option_G_Review_Request.md` and answer five targeted architecture questions on the approved Option G redesign.
@@ -3960,3 +2021,12 @@ Two validation rounds (6 runs). Spread halved to 6.0 pp, all LEANING-TRUE, but c
 **Warnings:** The current Option G write-up describes the direction-conflict gate as low-risk, but without a margin/band around 50 it will fire on noisy `51 vs 49` cases. Also, if the Captain’s requirement is now “article truth must always be non-deterministic,” Option G is no longer sufficient because it deliberately preserves the deterministic baseline for same-direction inputs.
 **For next agent:** If implementing Option G, refine the conflict predicate before coding: use verdict bands or a minimum margin/confidence rule so borderline mixed claims do not trigger adjudication. Prefer a single cap of `30` on the conflict path unless live validation proves it is too loose. Keep narrative explanatory-only.
 **Learnings:** no
+---
+### 2026-04-11 | Lead Developer | Cline | Claim Clarification Gate Design Review
+**Task:** Review `Docs/WIP/2026-04-10_Claim_Clarification_Gate_Design.md` as Lead Developer, with focus on orchestration (§6), data model (§5), API surface (§7), and implementation file map (§16), then provide implementation-readiness guidance.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Conditionally approved the design direction for implementation, with required seam-level adjustments before coding: (1) keep `runClaimBoundaryAnalysis` backward-compatible by extending the existing `AnalysisInput` object instead of changing to positional params; (2) introduce a discriminated pause return shape (or equivalent) and update `internal-runner-queue.ts` to skip `/result` writes on `AWAITING_CLARIFICATION`; (3) preserve Gate 1 behavior while extracting shared analyzability logic (avoid accidental policy drift); (4) implement API-side optimistic concurrency and persistence exclusively via `JobService`; (5) correct file/migration placement to existing API conventions (`apps/api/migrations/` + model snapshot/column bootstrap alignment).
+**Open items:** Captain/Product decisions in design §15 remain blocking for full implementation scope (default enablement posture, abandonment TTL, cancel wording, preselection conservatism policy, admin diagnostics visibility).
+**Warnings:** Current runner recovery logic and job-page polling only recognize `QUEUED/RUNNING` as active execution states. `AWAITING_CLARIFICATION` must be explicitly integrated in queue/recovery and UI polling semantics to avoid accidental re-queue/resume regressions.
+**For next agent:** Start Phase 1 with low-risk, unit-testable seams: add `clarificationAssessment` to Pass 2 schema + prompt contract tests, add `isClaimAnalyzable` as a pure helper with parity tests against current Gate 1 outcomes, then add `evaluateClarificationGate` behind `clarificationGate.enabled=false` with no behavior change on default config.
+**Learnings:** No
