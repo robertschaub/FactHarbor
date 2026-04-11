@@ -12,6 +12,46 @@ Extracted verbatim from prior quality investigations. Basis for replacing the ge
 
 ---
 
+## R1 — *Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz*
+
+**Documentation strength: USER-PROVIDED (2026-04-11)** — no prior investigation documents this input; acceptance criteria supplied directly by user.
+
+### Expected verdict
+
+| Condition | Truth % | Source |
+|---|---|---|
+| **Correct** — claim supported by Swiss federal asylum statistics | **TRUE or MOSTLY-TRUE**, TP ≥75% (target ≥85%) | User directive 2026-04-11 |
+
+Rationale (from user): the claim concerns the count of people currently in the Swiss asylum process. The authoritative data source is the Swiss State Secretariat for Migration (SEM) annual asylum statistics. Per user, the SEM-published figure supports the "more than 235 000" claim, so the correct verdict is TRUE.
+
+### Required evidence citation
+
+**The analysis MUST retrieve and cite:**
+`https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf`
+
+This is the SEM "Statistik Jahr 2025 Kommentar" publication — the authoritative 2025 annual commentary on Swiss asylum statistics. For the verdict to be grounded, at least one `supportingEvidenceIds` entry must reference this URL (or a direct derivation of it), not merely a secondary source discussing it.
+
+### Expected claim structure
+
+- Single atomic claim capturing the numeric assertion ("more than 235 000 people") and the scope ("asylum sector", "currently", "Switzerland")
+- The numeric threshold (235 000) must appear in the extracted claim text — not rounded away, not dropped
+- The temporal qualifier "zurzeit" ("currently") must be preserved
+
+### Known failure modes (expected a priori, not yet observed on this input)
+
+- **Numeric precision loss**: claim extraction rounds or drops "235 000" from the atomic claim text — would produce a claim that cannot be verified against the specific SEM figure
+- **Jurisdiction contamination**: evidence from non-Swiss asylum data (EU-wide, German, Austrian, international) displaces the Swiss-specific source — would yield an uninformed verdict even if the SEM URL is retrieved
+- **Authoritative source not retrieved**: the analysis uses secondary news or commentary sources instead of the primary SEM publication — verdict may be directionally correct but ungrounded
+
+### Per-input acceptance criteria for R1
+
+- **R1.1** — Verdict label is **TRUE or MOSTLY-TRUE**, truthPercentage **≥75%** (target TRUE, ≥85%). Violation: verdict in MIXED band or FALSE-side.
+- **R1.2** — At least one `supportingEvidenceIds` entry references the SEM 2025 asylum statistics PDF URL (`https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf`). Violation: SEM URL absent from supporting evidence OR present only in `contradictingEvidenceIds` OR only referenced in narrative without evidence-item citation.
+- **R1.3** — Numeric threshold **"235 000"** appears verbatim in the primary atomic claim's `statement`. Violation: number rounded, dropped, or replaced with an approximation.
+- **R1.4** — Temporal qualifier **"zurzeit"** (or semantically equivalent "currently") is preserved in the primary atomic claim. Violation: claim generalised to historical or non-temporal form.
+
+---
+
 ## R2 — *Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben*
 
 **Documentation strength: HIGH** — 4 explicit job artifacts, 3 distinct failure modes, quantified targets.
@@ -166,9 +206,12 @@ Same ecology as R3 but mirrored:
 
 | Input | Per-input verdict target | Per-input claim structure | Per-input failure modes | Confidence |
 |---|---|---|---|---|
+| **R1** | ✅ TRUE, TP ≥75% (target ≥85%) | ✅ preserve 235 000 + zurzeit | ⚠️ Expected a priori, not observed | **USER-PROVIDED** |
 | **R2** | ✅ 11–31 correct / 68–90 wrong | ✅ rechtskräftig fused | ✅ 3 distinct modes catalogued | **HIGH** |
 | **R3** | ⚠️ Only cross-lang relationship | ⚠️ 3-claim family expected | ⚠️ Language bias only | **MEDIUM-LOW** |
 | **R3b** | ✅ mean 38.8 / median 37 / 80% ≤50% | ✅ 3-claim family | ⚠️ Same as R3 | **MEDIUM** |
 | **R4** | ✅ 68–80% | ✅ ≥2 claims (STF/TSE) | ✅ B1–B7 catalogued | **HIGH** |
 
 R3 is the weakest-documented input for per-input expectations. The R3 criteria above (R3.1–R3.4) are best-effort syntheses from cross-language evidence and structural expectations, not from a single authoritative source.
+
+R1 is user-provided rather than document-extracted — the criteria reflect the user's direct specification on 2026-04-11 (verdict = TRUE, must cite the SEM 2025 asylum statistics PDF) rather than prior investigation findings.

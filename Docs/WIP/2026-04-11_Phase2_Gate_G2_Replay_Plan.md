@@ -38,6 +38,17 @@ Dropped from Rev 3:
 
 Extracted from [`2026-04-11_Phase2_Per_Input_Expectations.md`](2026-04-11_Phase2_Per_Input_Expectations.md), which cites the source docs verbatim.
 
+#### R1 — *Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz*
+
+| ID | Criterion | Violation |
+|---|---|---|
+| **R1.1** | Verdict label = **TRUE or MOSTLY-TRUE**, truthPercentage **≥75%** (target TRUE ≥85%) | Verdict in MIXED band or FALSE-side |
+| **R1.2** | At least one `supportingEvidenceIds` entry references `https://www.sem.admin.ch/dam/sem/de/data/publiservice/statistik/asylstatistik/2025/stat-jahr-2025-kommentar.pdf` | SEM URL absent from supporting evidence, or present only in `contradictingEvidenceIds`, or only in narrative without evidence-item citation |
+| **R1.3** | Numeric threshold **"235 000"** appears verbatim in primary atomic claim's `statement` | Number rounded, dropped, or approximated |
+| **R1.4** | Temporal qualifier **"zurzeit"** (or semantically equivalent) preserved in primary atomic claim | Claim generalised to historical or non-temporal form |
+
+Documentation strength: **USER-PROVIDED** (2026-04-11) — acceptance criteria supplied directly by user, no prior investigation baseline.
+
 #### R2 — *Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben*
 
 | ID | Criterion | Violation |
@@ -87,12 +98,12 @@ Documentation strength: **HIGH** (2026-03-12 Scorecard B1–B7, 13-run scored da
 
 ### Priority criteria total
 
-- 2 global criteria + (4 + 4 + 4 + 7) per-input criteria = **21 pass/fail checks** across the replay
+- 2 global criteria + (4 + 4 + 4 + 4 + 7) per-input criteria = **25 pass/fail checks** across the replay (R1 added 2026-04-11 per user direction)
 - Each check is **input-specific and directly measurable** from a single run's `resultJson`
 
 ## Decisions carried forward from earlier gates
 
-- **Inputs (4)**: R2, R3, R3b, R4 (Shape B). R1, R5-R9 deferred to Phase 2B.
+- **Inputs (5)**: R1 (added 2026-04-11 per user direction with documented criteria), R2, R3, R3b, R4. R5–R9 deferred to Phase 2B.
 - **R2 phrasing**: `unterschreibt` (matches 4 historical baseline jobs)
 - **`tmp_jobs*.json` excluded** as baseline source
 - **Matrix improvement**: explicitly deferred to a separate post-replay workstream
@@ -113,14 +124,15 @@ Documentation strength: **HIGH** (2026-03-12 Scorecard B1–B7, 13-run scored da
 
 | # | Input | Runs/commit |
 |---|---|---|
+| **R1** | Asylum 235 000 (DE) | **2** |
 | R2 | Bundesrat rechtskräftig (`unterschreibt`) | **5** |
 | R3 | Plastic recycling is pointless | 3 |
 | R3b | Plastik recycling bringt nichts | 3 |
 | R4 | Bolsonaro various | 2 |
-| | **Per commit** | **13** |
-| | **Across 3 commits** | **39** |
+| | **Per commit** | **15** |
+| | **Across 3 commits** | **45** |
 
-Cost envelope: **$15–30** (weighted average ~$0.45/job).
+Cost envelope: **$17–33** (weighted average ~$0.45/job; R1 added 2026-04-11 per user direction — +6 jobs, +$2–3).
 
 ## Commit sequence (before replay)
 
