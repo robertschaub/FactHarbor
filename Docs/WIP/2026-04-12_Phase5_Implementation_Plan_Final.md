@@ -97,6 +97,33 @@ Consistent with the >5% escalation rule: 1/5 = 20% ≫ 5%.
 **Escalation path if C10 also fails 5/5:**
 - Lever 2 (bounded repair pass) becomes principled with evidence that prompts genuinely cannot instruct the modifier-preservation behavior.
 
+### C10 replay result — Phase B fail, failure class changed
+
+- **What C10 fixed:** `rechtskräftig` preserved verbatim in AC_02, no `normative_injection`. Target failure mode closed.
+- **What surfaced next:** validator flagged three issues on Run 1. LLM Expert + Architect debate post-C10 concluded:
+  1. AC_01 added "beraten" → **real** threshold drift (L164).
+  2. AC_02 renamed treaty "EU-Vertrag des Pakets Schweiz-EU" → **real** L182 scope import.
+  3. Validator claimed `rechtskräftig` lost on Parliament branch as "shared predicate" → **validator over-reach**. Syntactically `rechtskräftig` modifies *unterschreibt* (matrix clause); it does NOT distribute into the *bevor*-subordinate clause where Volk/Parlament decided.
+- Both agents independently recommended fixing the validator before any more extractor-prompt iteration, because demanding `rechtskräftig` on the Parliament branch would force the LLM to inject falsehood. Adds **C11a** below.
+
+### C11a — Validator scope-guard on shared-predicate rule
+
+**Problem:** CONTRACT_VALIDATION rule 16 (`Shared-predicate decomposition fidelity`) assumes a predicate/modifier distributes across all coordinated actors. For R2, this caused the validator to demand `rechtskräftig` on the Parliament branch, where it is not semantically scoped. The rule has no mechanism to check whether the modifier's semantic scope actually covers each actor before demanding preservation.
+
+**Change (prompt-only, ~2 lines, additive guard):**
+- Add an explicit **Scope guard (MANDATORY)** clause to rule 16 in [claimboundary.prompt.md:380-381](../../apps/web/prompts/claimboundary.prompt.md#L380-L381).
+- Before flagging loss of a shared predicate/modifier on a split branch, the validator must verify the modifier's semantic scope actually covers that branch's actor/action.
+- Explicit guidance: a modifier on a matrix-clause action does NOT automatically distribute into subordinate temporal, conditional, or causal clauses. Example: adverbial on "X signs" does NOT apply to actors in a "before Y decided" sub-clause.
+- Call out that demanding preservation on an out-of-scope branch is validator over-reach, not drift.
+
+**Non-goals:**
+- No code change, no schema change, no new task.
+- Does not reduce validator strictness where scope genuinely distributes — real shared-predicate drift still counts.
+
+**Escalation path if C11a replay still fails 5/5 on AC_01 "beraten" or AC_02 scope import:**
+- **C11b** (narrow retry-guidance): exactly two clauses — no added verbs/actions not in input; no entity renaming using evidence-derived scope.
+- Only if C11b also fails: reconsider Lever 2 (bounded repair pass).
+
 ---
 
 ## Deferred to Phase C (measure before implementing)
