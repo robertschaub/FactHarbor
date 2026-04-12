@@ -1563,58 +1563,26 @@ export function isVerdictDirectionPlausible(
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
-  // Check for deterministic citation-polarity mismatch BEFORE self-consistency rescue.
-  // If supporting/contradicting citation buckets contain evidence whose stored
-  // claimDirection contradicts the bucket label, self-consistency cannot rescue —
-  // a consistently wrong verdict is still wrong.
+  // Polarity-mismatch structural check only. Returns false if the verdict's
+  // citation buckets (supportingEvidenceIds / contradictingEvidenceIds) contain
+  // evidence whose own claimDirection contradicts the bucket label. This is a
+  // schema guard (two LLM-assigned labels disagree), not semantic adjudication.
+  //
+  // Hemisphere-ratio rules (Rules 1-3) and the self-consistency rescue boost
+  // were removed because they used arithmetic on weighted evidence ratios to
+  // decide what text means — a Q-AH1 violation per AGENTS.md LLM Intelligence
+  // mandate. LLM direction validation now stands on its own.
   const evidenceById = new Map(evidence.map((e) => [e.id, e]));
-  const supportingItems = verdict.supportingEvidenceIds
-    .map((id) => evidenceById.get(id))
-    .filter(Boolean);
-  const contradictingItems = verdict.contradictingEvidenceIds
-    .map((id) => evidenceById.get(id))
-    .filter(Boolean);
-  const mislabeledSupporting = supportingItems.filter((e) => e!.claimDirection === "contradicts").length;
-  const mislabeledContradicting = contradictingItems.filter((e) => e!.claimDirection === "supports").length;
-  const hasPolarityMismatch = mislabeledSupporting > 0 || mislabeledContradicting > 0;
+  const mislabeledSupporting = (verdict.supportingEvidenceIds ?? [])
+    .filter((id) => evidenceById.get(id)?.claimDirection === "contradicts").length;
+  const mislabeledContradicting = (verdict.contradictingEvidenceIds ?? [])
+    .filter((id) => evidenceById.get(id)?.claimDirection === "supports").length;
 
-  if (verdict.consistencyResult?.stable === true && verdict.consistencyResult?.assessed === true) {
-    // Stable self-consistency can rescue ONLY when citation polarity is clean.
-    // If there are deterministic polarity mismatches, stability is not plausibility.
-    if (!hasPolarityMismatch) {
-      return true;
-    }
-    // else: fall through to evidence-ratio checks despite stability
+  if (mislabeledSupporting > 0 || mislabeledContradicting > 0) {
+    return false;
   }
 
-  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
-  const totalWeight = summary.weightedSupports + summary.weightedContradicts;
-  if (totalWeight === 0) return true;
-
-  // The expected truth ratio based on weighted evidence
-  const expectedRatio = summary.weightedSupports / totalWeight;
-  const truthPercentage = verdict.truthPercentage;
-
-  // Rule 1: Clear Hemisphere Match for decisive verdicts
-  // If verdict is clear TRUE (>= 70), evidence ratio must be > 0.5.
-  if (truthPercentage >= 70 && expectedRatio > 0.5) return true;
-  // If verdict is clear FALSE (<= 30), evidence ratio must be < 0.5.
-  if (truthPercentage <= 30 && expectedRatio < 0.5) return true;
-
-  // Rule 2: Middle ground flexibility (UCM: directionMixedEvidenceFloor, default 0.3)
-  // If the verdict is in the mixed range (31-69) AND evidence is also mixed (ratio within floor..1-floor),
-  // defer to LLM nuance. But if evidence is unanimously one-sided (e.g., 0 supports with
-  // 10 contradicts at truth=65%), this is a genuine direction issue — don't auto-pass.
-  const mixedFloor = calcConfig?.directionMixedEvidenceFloor ?? DEFAULT_CALC_CONFIG.directionMixedEvidenceFloor ?? 0.3;
-  if (truthPercentage > 30 && truthPercentage < 70 && expectedRatio >= mixedFloor && expectedRatio <= (1 - mixedFloor)) return true;
-
-  // Rule 3: Tolerance zone (Configurable in UCM - using 15pp system default)
-  // Provides a safety net for edge cases near the 70/30 boundaries.
-  const tolerance = calcConfig?.verdictIntegrityTolerance ?? DEFAULT_CALC_CONFIG.verdictIntegrityTolerance ?? 0.15;
-  const verdictRatio = truthPercentage / 100;
-  if (Math.abs(expectedRatio - verdictRatio) <= tolerance) return true;
-
-  return false;
+  return true;
 }
 
 function summarizeBucketWeightedEvidenceDirection(
@@ -1674,21 +1642,6 @@ function getDeterministicDirectionIssues(
   if (summary.misbucketedContradictingIds.length > 0) {
     issues.push(
       `Contradicting citations are polarity-misaligned: ${summary.misbucketedContradictingIds.length} contradictingEvidenceIds point to supporting evidence in the claim-local pool.`,
-    );
-  }
-
-  const totalWeight = summary.weightedSupports + summary.weightedContradicts;
-  if (totalWeight === 0) return issues;
-
-  const expectedRatio = summary.weightedSupports / totalWeight;
-  if (verdict.truthPercentage >= 70 && expectedRatio <= 0.5) {
-    issues.push(
-      `Truth percentage ${verdict.truthPercentage}% is too high for cited evidence that is not majority-supporting by intrinsic evidence direction.`,
-    );
-  }
-  if (verdict.truthPercentage <= 30 && expectedRatio >= 0.5) {
-    issues.push(
-      `Truth percentage ${verdict.truthPercentage}% is too low for cited evidence that is not majority-contradicting by intrinsic evidence direction.`,
     );
   }
 

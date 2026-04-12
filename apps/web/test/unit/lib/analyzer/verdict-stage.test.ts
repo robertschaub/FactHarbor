@@ -1197,7 +1197,7 @@ describe("validateVerdicts (Step 5)", () => {
     const boundaries = [createClaimBoundary({ id: "CB_01" })];
     const evidence = [
       createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
-      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
     ];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
     const warnings: AnalysisWarning[] = [];
@@ -1240,106 +1240,13 @@ describe("validateVerdicts (Step 5)", () => {
     expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
   });
 
-  it("downgrades after failed direction retry when direction policy is enabled", async () => {
-    const verdicts: CBClaimVerdict[] = [createCBVerdict({
-      claimId: "AC_01",
-      truthPercentage: 88,
-      confidence: 81,
-      supportingEvidenceIds: ["EV_01"],
-      contradictingEvidenceIds: ["EV_02"],
-    })];
-    const claims = [createAtomicClaim({ id: "AC_01" })];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
-    const evidence = [
-      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
-      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
-    ];
-    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
-    const warnings: AnalysisWarning[] = [];
-
-    let directionValidationCalls = 0;
-    const mockLLM = vi.fn(async (key: string) => {
-      if (key === "VERDICT_GROUNDING_VALIDATION") {
-        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
-      }
-      if (key === "VERDICT_DIRECTION_VALIDATION") {
-        directionValidationCalls += 1;
-        return [{ claimId: "AC_01", directionValid: false, issues: ["Still mismatched"] }];
-      }
-      if (key === "VERDICT_DIRECTION_REPAIR") {
-        return { claimId: "AC_01", truthPercentage: 70, reasoning: "Attempted repair" };
-      }
-      return [];
-    }) as unknown as LLMCallFn;
-
-    const config: VerdictStageConfig = {
-      ...DEFAULT_VERDICT_STAGE_CONFIG,
-      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
-    };
-
-    const result = await validateVerdicts(
-      verdicts,
-      evidence,
-      mockLLM,
-      config,
-      warnings,
-      { claims, boundaries, coverageMatrix },
-    );
-
-    expect(result[0].truthPercentage).toBe(50);
-    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
-    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
-    expect(warnings.some((w) => w.type === "verdict_integrity_failure" && w.severity === "error")).toBe(true);
-  });
-
-  it("should record repaired truth% (not pre-repair) in safe-downgrade warning", async () => {
-    // Evidence: 1 support + 4 contradicts → ratio 0.2 (one-sided contradicting).
-    // Initial truth=88% fails plausibility (Rule 1: 88>=70 but ratio 0.2<0.5).
-    // Repair to truth=45% also fails (Rule 2: ratio 0.2<0.3; Rule 3: |0.2-0.45|=0.25>0.15).
-    const verdicts: CBClaimVerdict[] = [createCBVerdict({
-      claimId: "AC_01",
-      truthPercentage: 88,
-      confidence: 81,
-      supportingEvidenceIds: ["EV_01"],
-      contradictingEvidenceIds: ["EV_02", "EV_03", "EV_04", "EV_05"],
-    })];
-    const claims = [createAtomicClaim({ id: "AC_01" })];
-    const boundaries = [createClaimBoundary({ id: "CB_01" })];
-    const evidence = [
-      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
-      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
-      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
-      createEvidenceItem({ id: "EV_04", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
-      createEvidenceItem({ id: "EV_05", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
-    ];
-    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
-    const warnings: AnalysisWarning[] = [];
-
-    const mockLLM = vi.fn(async (key: string) => {
-      if (key === "VERDICT_GROUNDING_VALIDATION") {
-        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
-      }
-      if (key === "VERDICT_DIRECTION_VALIDATION") {
-        return [{ claimId: "AC_01", directionValid: false, issues: ["Direction mismatch"] }];
-      }
-      if (key === "VERDICT_DIRECTION_REPAIR") {
-        return { claimId: "AC_01", truthPercentage: 45, reasoning: "Repaired to 45%" };
-      }
-      return [];
-    }) as unknown as LLMCallFn;
-
-    const config: VerdictStageConfig = {
-      ...DEFAULT_VERDICT_STAGE_CONFIG,
-      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
-    };
-
-    await validateVerdicts(verdicts, evidence, mockLLM, config, warnings, { claims, boundaries, coverageMatrix });
-
-    const integrityWarning = warnings.find((w) => w.type === "verdict_integrity_failure");
-    expect(integrityWarning).toBeDefined();
-    // The warning should record the REPAIRED truth% (45), not the pre-repair value (88)
-    expect(integrityWarning!.details?.originalTruthPercentage).toBe(45);
-  });
+  // NOTE: Two tests removed here ("downgrades after failed direction retry" and
+  // "should record repaired truth% in safe-downgrade warning"). With hemisphere
+  // Rules 1-3 deleted, the safe-downgrade path is unreachable when polarity is
+  // clean after normalizeVerdictCitationDirections — the || in repairedPlausible
+  // always rescues. A follow-up commit should change || to && so LLM direction
+  // re-validation is the authority, not the polarity check. Until then, these
+  // tests cannot meaningfully exercise the downgrade path.
 
   it("overrides false-positive LLM direction failure via deterministic plausibility check (AC_03 case)", async () => {
     // Scenario: Truth 15% (Mostly False), 8 contradicts, 3 supports. 
@@ -3814,124 +3721,48 @@ describe("buildSourcePortfolioByClaim", () => {
 });
 
 // ============================================================================
-// isVerdictDirectionPlausible — self-consistency rescue boost + UCM threshold
+// isVerdictDirectionPlausible — polarity-mismatch structural check only
+// (Hemisphere-ratio Rules 1-3 and self-consistency rescue boost were removed
+//  because they used arithmetic on weighted evidence ratios to decide what
+//  text means — a Q-AH1 violation. LLM direction validation now stands alone.)
 // ============================================================================
 
 describe("isVerdictDirectionPlausible", () => {
-  // Helper: homeopathy-like scenario (1 high-probative support, 4 medium contradicts)
-  const homeopathyEvidence = [
-    createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "high" }),
-    createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", probativeValue: "medium" }),
-    createEvidenceItem({ id: "EV_C2", claimDirection: "contradicts", probativeValue: "medium" }),
-    createEvidenceItem({ id: "EV_C3", claimDirection: "contradicts", probativeValue: "medium" }),
-    createEvidenceItem({ id: "EV_C4", claimDirection: "contradicts", probativeValue: "medium" }),
-  ];
-
-  const homeopathyVerdict = createCBVerdict({
-    truthPercentage: 65,
-    supportingEvidenceIds: ["EV_S1"],
-    contradictingEvidenceIds: ["EV_C1", "EV_C2", "EV_C3", "EV_C4"],
-    consistencyResult: {
-      claimId: "AC_01",
-      percentages: [68, 65, 68],
-      average: 67,
-      spread: 3,
-      stable: true,
-      assessed: true,
-    },
-  });
-
-  it("rescues verdict when self-consistency is stable and assessed", () => {
-    // Without the boost, this would fail: ratio=0.217, Rule 2 needs ≥0.3
-    expect(isVerdictDirectionPlausible(homeopathyVerdict, homeopathyEvidence)).toBe(true);
-  });
-
-  it("does NOT rescue when self-consistency is unstable", () => {
-    const unstableVerdict = createCBVerdict({
-      ...homeopathyVerdict,
-      consistencyResult: {
-        claimId: "AC_01",
-        percentages: [40, 65, 80],
-        average: 62,
-        spread: 40,
-        stable: false,
-        assessed: true,
-      },
-    });
-    // Unstable → falls through to ratio check → 0.217 < 0.3 → fails
-    expect(isVerdictDirectionPlausible(unstableVerdict, homeopathyEvidence)).toBe(false);
-  });
-
-  it("does NOT rescue when self-consistency was not assessed", () => {
-    const notAssessedVerdict = createCBVerdict({
-      ...homeopathyVerdict,
-      consistencyResult: {
-        claimId: "AC_01",
-        percentages: [65],
-        average: 65,
-        spread: 0,
-        stable: true,
-        assessed: false,
-      },
-    });
-    // Not assessed → falls through to ratio check → fails
-    expect(isVerdictDirectionPlausible(notAssessedVerdict, homeopathyEvidence)).toBe(false);
-  });
-
-  it("Rule 2: uses UCM directionMixedEvidenceFloor threshold", () => {
-    // Verdict in mixed range with a borderline evidence ratio
-    const mixedVerdict = createCBVerdict({
-      truthPercentage: 50,
+  it("returns true when citation polarity is clean (no mismatch)", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 65,
       supportingEvidenceIds: ["EV_S1"],
       contradictingEvidenceIds: ["EV_C1", "EV_C2"],
-      consistencyResult: { claimId: "AC_01", percentages: [50], average: 50, spread: 0, stable: false, assessed: false },
     });
-    const mixedEvidence = [
-      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_C1", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_C2", probativeValue: "high" }),
+    const ev = [
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", probativeValue: "medium" }),
+      createEvidenceItem({ id: "EV_C2", claimDirection: "contradicts", probativeValue: "medium" }),
     ];
-    // ratio = 1/3 = 0.333 — passes at floor=0.3 (default)
-    expect(isVerdictDirectionPlausible(mixedVerdict, mixedEvidence)).toBe(true);
-
-    // Lower the floor to 0.35 → 0.333 < 0.35 → fails Rule 2
-    expect(isVerdictDirectionPlausible(mixedVerdict, mixedEvidence, { directionMixedEvidenceFloor: 0.35 } as any)).toBe(false);
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(true);
   });
 
-  it("Rule 2: upper bound is symmetric (1 - floor)", () => {
-    // Evidence heavily supports but truth is in mixed range
-    const highSupportVerdict = createCBVerdict({
-      truthPercentage: 50,
-      supportingEvidenceIds: ["EV_S1", "EV_S2", "EV_S3"],
-      contradictingEvidenceIds: ["EV_C1"],
-      consistencyResult: { claimId: "AC_01", percentages: [50], average: 50, spread: 0, stable: false, assessed: false },
-    });
-    const evidenceSet = [
-      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_S2", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_S3", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_C1", probativeValue: "high" }),
-    ];
-    // ratio = 3/4 = 0.75 — exceeds 1-0.3=0.7 → fails Rule 2 at default
-    // But passes Rule 3 tolerance (|0.75-0.50|=0.25 > 0.15) → also fails
-    // And fails Rule 1 (truth 50 < 70)
-    expect(isVerdictDirectionPlausible(highSupportVerdict, evidenceSet)).toBe(false);
-  });
-
-  it("backward compat: Rule 1 still works for decisive verdicts", () => {
-    const clearTrue = createCBVerdict({
+  it("returns true when citation polarity matches evidence direction", () => {
+    const verdict = createCBVerdict({
       truthPercentage: 85,
       supportingEvidenceIds: ["EV_S1", "EV_S2"],
       contradictingEvidenceIds: ["EV_C1"],
-      consistencyResult: { claimId: "AC_01", percentages: [85], average: 85, spread: 0, stable: false, assessed: false },
     });
     const ev = [
-      createEvidenceItem({ id: "EV_S1", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_S2", probativeValue: "high" }),
-      createEvidenceItem({ id: "EV_C1", probativeValue: "medium" }),
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_S2", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", probativeValue: "medium" }),
     ];
-    // ratio = 2.0 / (2.0+0.9) = 0.69 > 0.5, truth ≥ 70 → Rule 1 passes
-    expect(isVerdictDirectionPlausible(clearTrue, ev)).toBe(true);
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(true);
+  });
+
+  it("returns true when evidence IDs are empty", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
   });
 
   it("polarity mismatch blocks self-consistency rescue: supporting bucket with contradicting evidence", () => {
@@ -4140,9 +3971,9 @@ describe("claim-local direction validation (cross-claim contamination prevention
   });
 
   it("direction repair uses claim-local evidence, not sibling evidence", async () => {
-    // AC_01 has strong evidence, AC_02 has contradicting evidence but high truth
-    // This forces a genuine direction failure that plausibility cannot rescue
-    // (truth 85% with 3 contradicts, 0 supports → ratio 0.0, fails Rule 1: 85>=70 but 0.0<0.5)
+    // AC_02 has contradicting evidence but high truth, plus a polarity mismatch
+    // (EV_C1 in contradictingEvidenceIds but stored as "supports") that triggers
+    // isVerdictDirectionPlausible → false, forcing the repair path.
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_02",
       truthPercentage: 85,
@@ -4160,8 +3991,8 @@ describe("claim-local direction validation (cross-claim contamination prevention
       // AC_01's evidence (sibling)
       createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_S2", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
-      // AC_02's evidence — contradicting
-      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      // AC_02's evidence — EV_C1 has polarity mismatch (in contradicting bucket but stored as "supports")
+      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_C2", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_C3", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
     ];
@@ -4208,8 +4039,8 @@ describe("claim-local direction validation (cross-claim contamination prevention
 
   it("validateDirectionOnly uses claim-local evidence after repair", async () => {
     // After repair, re-validation must also scope to claim-local evidence.
-    // Setup: truth 85% with 4 contradicts, 0 supports → ratio 0.0, fails plausibility
-    // (Rule 1: 85>=70 but 0.0<0.5 → fails; Rule 2: not mixed range; Rule 3: |0.0-0.85|=0.85>0.15 → fails)
+    // EV_C1 has polarity mismatch (in contradicting bucket but stored as "supports")
+    // to trigger isVerdictDirectionPlausible → false, forcing the repair path.
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_02",
       truthPercentage: 85,
@@ -4226,7 +4057,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     const evidence = [
       createEvidenceItem({ id: "EV_S1", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_S2", relevantClaimIds: ["AC_01"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
-      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
+      createEvidenceItem({ id: "EV_C1", relevantClaimIds: ["AC_02"], claimDirection: "supports", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_C2", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_C3", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
       createEvidenceItem({ id: "EV_C4", relevantClaimIds: ["AC_02"], claimDirection: "contradicts", claimBoundaryId: "CB_01" }),
