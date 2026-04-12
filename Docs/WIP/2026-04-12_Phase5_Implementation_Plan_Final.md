@@ -124,6 +124,49 @@ Consistent with the >5% escalation rule: 1/5 = 20% ≫ 5%.
 - **C11b** (narrow retry-guidance): exactly two clauses — no added verbs/actions not in input; no entity renaming using evidence-derived scope.
 - Only if C11b also fails: reconsider Lever 2 (bounded repair pass).
 
+### C11a replay result — Phase B fail, stochastic variance discovered
+
+C11a Run 1 produced `failureMode: contract_violated` with `rechtskräftig` OMITTED from all claims. Between C10 Run 1 and C11a Run 1 the retry guidance and extractor prompt did not change — only validator rule 16 changed — yet the extractor output diverged dramatically:
+
+| Run | `rechtskräftig` preserved? | Primary failure |
+|---|---|---|
+| C10 Run 1 | ✅ in AC_02 | threshold drift + scope import + validator over-reach |
+| C11a Run 1 | ❌ in no claim | modifier omission (Mode A) |
+
+**Interpretation:** Sonnet retry non-compliance on R2 is ~50% per draw, not the ~10-15% residual assumed at Phase 5 start. Prompt iteration alone cannot reach a 5/5 gate at this tier — the extractor has a stochastic floor.
+
+Second debate (LLM Expert + Lead Architect) independently converged on a new **Option 6**: anchor-gated targeted repair pass. Adds **C11b** below, replacing the prior "narrow retry-guidance" fallback which is now superseded by a more structural fix.
+
+### C11b — Anchor-gated targeted repair pass (supersedes prior C11b plan)
+
+**Problem:** Sonnet retry's modifier-preservation is stochastic (~50% per draw on R2). Broadcast retry guidance competes with decomposition priors — even a verbatim-preservation clause isn't enough. Tier escalation (Opus) or more retries would raise the mean but not eliminate variance. Gate adjustment would gut the metric.
+
+**Approach:** Convert the stochastic failure into a structural invariant. After the contract-failure retry completes, perform a deterministic structural check:
+
+- Is `contractValidationSummary.truthConditionAnchor.anchorText` (LLM-emitted) a literal substring of at least one claim's `statement`?
+- If yes → proceed to final revalidate (no extra LLM call).
+- If no → fire **one narrow-scope LLM call** with a single instruction: *"Output the same claim set with the anchor fused verbatim into the thesis-direct claim."* No decomposition task, no enumeration, no evidence integration.
+- Repair output goes through a structural post-check (anchor must land as substring) and then the normal final revalidate path.
+
+**Legality under AGENTS.md:**
+- The anchor comes from the LLM's own `truthConditionAnchor.anchorText` output — not a hardcoded keyword list. String Usage Boundary not crossed.
+- Comparison is substring equality of two LLM-emitted strings — the same class as schema validation or ID equality, not semantic interpretation. LLM Intelligence rule not crossed.
+- Repair prompt text lives inline in the orchestration function — architect confirmed this is in the permitted prompt-text string-usage zone.
+
+**Why this wins:**
+- Narrow single-instruction prompts have ~90%+ instruction-following rates (no competing decomposition task).
+- Feature-flag (`repairPassEnabled`) for reversibility — disable reverts to pre-C11b behavior.
+- Deterministic gate: modifier-omission class becomes structurally impossible to ship.
+- Placement (between retry and final revalidate) keeps the contract-validator as the single authority for what reaches downstream.
+
+**Change surface:**
+- New config field `claimContractValidation.repairPassEnabled: boolean` (default `true`) in [config-schemas.ts](../../apps/web/src/lib/config-schemas.ts) + [calculation.default.json](../../apps/web/configs/calculation.default.json).
+- New `runContractRepair` function in [claim-extraction-stage.ts](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts) — narrow single-instruction LLM call, `context_refinement` tier (Sonnet today, same as C6), structural post-check.
+- New block in `performUnderstandStage` right after the retry block closes: anchor-presence check + conditional repair call.
+- 2 new tests: source-structure regression (gate + repair function exist + anchor substring check present) and config-schema presence.
+
+**Risk:** If the narrow repair LLM still fails to insert the modifier, we have strong evidence the sentence is beyond single-retry capability. Next step in that case: Opus escalation, best-of-N, or a deterministic structural post-processing. But we'd have hard data to justify it.
+
 ---
 
 ## Deferred to Phase C (measure before implementing)

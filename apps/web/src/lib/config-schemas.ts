@@ -1537,6 +1537,16 @@ export const CalcConfigSchema = z.object({
   claimContractValidation: z.object({
     enabled: z.boolean(),
     maxRetries: z.number().int().min(0).max(3),
+    /**
+     * C11b (Phase 5): anchor-gated targeted repair pass. When the contract
+     * retry returns and the LLM-emitted `truthConditionAnchor.anchorText` is
+     * non-empty, `presentInInput: true`, and NOT a literal substring of any
+     * claim's `statement`, fire one narrow-scope LLM call asking the model
+     * to output the same claim set with the anchor fused verbatim into the
+     * thesis-direct claim. Runs before final revalidate — the same validator
+     * authority governs the repaired output.
+     */
+    repairPassEnabled: z.boolean().optional(),
   }).optional(),
 
   contextSimilarity: z.object({
@@ -1881,6 +1891,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   claimContractValidation: {
     enabled: true,
     maxRetries: 1,
+    repairPassEnabled: true,
   },
   contextSimilarity: {
     nameWeight: 0.35,

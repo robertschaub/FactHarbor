@@ -112,7 +112,8 @@
   },
   "claimContractValidation": {
     "enabled": true,
-    "maxRetries": 1
+    "maxRetries": 1,
+    "repairPassEnabled": true
   },
   "contextSimilarity": {
     "nameWeight": 0.35,

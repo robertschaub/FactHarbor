@@ -431,6 +431,56 @@ export async function extractClaims(
     // state carries forward and the Wave 1A safeguard in
     // claimboundary-pipeline.ts terminates the run as damaged. No silent
     // fail-open path remains here.
+
+    // ------------------------------------------------------------------
+    // C11b (Phase 5): anchor-gated targeted repair pass.
+    // After retry: if the LLM emitted a truthConditionAnchor whose anchorText
+    // is marked present-in-input but does NOT appear as a literal substring
+    // in any claim's statement, the retry has a deterministic modifier-omission
+    // failure. Fire one narrow-scope LLM call to insert the anchor verbatim
+    // into the thesis-direct claim, then let final revalidate authorize the
+    // repaired set. Structural token-presence check is legal under AGENTS.md:
+    // the anchor originates from the LLM's own structured output and the
+    // comparison is substring equality (plumbing), not semantic classification.
+    // ------------------------------------------------------------------
+    const repairPassEnabled = calcConfig.claimContractValidation?.repairPassEnabled ?? true;
+    if (repairPassEnabled && contractValidationSummary) {
+      const anchor = contractValidationSummary.truthConditionAnchor;
+      const anchorText = anchor?.anchorText?.trim();
+      const anchorPresentInInput = anchor?.presentInInput === true;
+      const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+      const anchorMissing =
+        !!anchorText &&
+        anchorPresentInInput &&
+        !currentClaims.some((c) => typeof c.statement === "string" && c.statement.includes(anchorText));
+
+      if (anchorMissing && anchorText) {
+        state.onEvent?.(`Repairing claim set to carry anchor "${anchorText}" verbatim...`, 25);
+        try {
+          const repairedPass2 = await runContractRepair(
+            currentClaims,
+            anchorText,
+            state.originalInput,
+            activePass2.impliedClaim ?? "",
+            activePass2.articleThesis ?? "",
+            pipelineConfig,
+            state,
+          );
+          if (repairedPass2) {
+            state.llmCalls++;
+            activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
+            lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
+            console.info(
+              `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${anchorText}" fused.`
+            );
+          } else {
+            console.warn("[Stage1] Contract repair returned no usable output; keeping retry Pass 2.");
+          }
+        } catch (repairErr) {
+          console.warn("[Stage1] Contract repair failed (non-fatal):", repairErr);
+        }
+      }
+    }
   }
 
   // ------------------------------------------------------------------
@@ -1406,6 +1456,93 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
   }
 
   return raw;
+}
+
+/**
+ * C11b (Phase 5): anchor-gated targeted repair pass.
+ *
+ * Narrow single-instruction LLM call: given a claim set whose retry output
+ * already drifted, insert the verbatim anchor modifier into the thesis-direct
+ * claim. The prompt is scoped to one job — no decomposition, no enumeration,
+ * no evidence integration — because competing priors are what make broadcast
+ * retry noisy. Returns the updated Pass2 output on success, undefined otherwise.
+ *
+ * Uses `context_refinement` tier (same as the contract-failure retry) so the
+ * repair runs on the standard tier (Sonnet today) without a new task key.
+ */
+async function runContractRepair(
+  claims: AtomicClaim[],
+  anchorText: string,
+  inputText: string,
+  impliedClaim: string,
+  articleThesis: string,
+  pipelineConfig: PipelineConfig,
+  state: Pick<CBResearchState, "onEvent"> | undefined,
+): Promise<z.infer<typeof Pass2OutputSchema> | undefined> {
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  state?.onEvent?.(`LLM call: contract repair — ${model.modelName}`, -1);
+
+  const claimsJson = JSON.stringify(claims, null, 2);
+
+  const systemPrompt =
+    `You are performing a targeted repair of an atomic-claim decomposition. ` +
+    `A truth-condition-bearing modifier from the user's original input is missing from every claim ` +
+    `in the current set. Your only job is to output the SAME claim set, but with the anchor modifier ` +
+    `fused verbatim into the one thesis-direct claim that best carries the input's core proposition.\n\n` +
+    `Rules:\n` +
+    `- Do NOT add or remove claims. The input claim set and the output claim set must have the same ids and count.\n` +
+    `- Do NOT rename ids, change categories, add new predicates, or introduce content from outside the input text.\n` +
+    `- Do NOT translate, paraphrase, or restate the anchor in different legal or normative terminology.\n` +
+    `- The anchor text must appear as a literal substring of exactly one claim's \`statement\` — the thesis-direct one.\n` +
+    `- Fuse the anchor with the action it modifies in the input; do not append it as a disconnected adverbial tag.\n` +
+    `- Preserve all other wording in every claim unchanged unless a minimal edit is necessary to carry the anchor.`;
+
+  const userPrompt =
+    `Original input:\n\`\`\`\n${inputText}\n\`\`\`\n\n` +
+    `Implied claim: ${impliedClaim}\n` +
+    `Article thesis: ${articleThesis}\n\n` +
+    `Missing anchor (must appear verbatim in exactly one thesis-direct claim's statement): "${anchorText}"\n\n` +
+    `Current claim set (repair these — keep ids and count identical):\n\`\`\`json\n${claimsJson}\n\`\`\`\n\n` +
+    `Output the full Pass2 JSON object with the same structure as the input claim set, ` +
+    `preserving impliedClaim and articleThesis exactly, with the anchor fused into one thesis-direct claim.`;
+
+  const result = await generateText({
+    model: model.model,
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt,
+        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+      },
+      {
+        role: "user" as const,
+        content: userPrompt,
+      },
+    ],
+    temperature: 0,
+    output: Output.object({ schema: Pass2OutputSchema }),
+    providerOptions: getStructuredOutputProviderOptions(
+      pipelineConfig.llmProvider ?? "anthropic",
+    ),
+  });
+
+  const parsed = extractStructuredOutput(result);
+  if (!parsed) return undefined;
+
+  const repaired = Pass2OutputSchema.parse(parsed);
+
+  // Structural post-check: anchor must actually be present as substring in
+  // at least one claim now. If the LLM ignored the instruction, bail out so
+  // we keep the pre-repair state rather than shipping a silent-failure retry.
+  const anchorLanded = repaired.atomicClaims.some(
+    (c) => typeof c.statement === "string" && c.statement.includes(anchorText),
+  );
+  if (!anchorLanded) {
+    console.warn(`[Stage1] Contract repair output still missing anchor "${anchorText}"; discarding.`);
+    return undefined;
+  }
+
+  return repaired;
 }
 
 /**

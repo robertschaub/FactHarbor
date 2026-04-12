@@ -7951,7 +7951,11 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     vi.mocked(loadCalcConfig).mockResolvedValue({
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 },
-        claimContractValidation: { enabled: true, maxRetries: 1 },
+        // C11b: disable the anchor-gated repair pass for this legacy test.
+        // The test exercises the old retry + final-revalidate path; it does not
+        // model the repair call's LLM interaction. C11b is covered by its own
+        // dedicated tests.
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],

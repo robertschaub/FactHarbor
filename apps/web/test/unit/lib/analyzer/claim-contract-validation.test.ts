@@ -1123,6 +1123,46 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     expect(evaluated.summary.failureMode).toBe("contract_violated");
   });
 
+  it("C11b: source defines anchor-gated repair gate and narrow-scope repair function", () => {
+    const sourcePath = path.resolve(
+      __dirname,
+      "../../../../src/lib/analyzer/claim-extraction-stage.ts",
+    );
+    const source = readFileSync(sourcePath, "utf-8");
+
+    // Narrow repair function exists and uses context_refinement tier.
+    expect(source).toContain("async function runContractRepair");
+    expect(source).toMatch(/getModelForTask\("context_refinement"[^\n]+runContractRepair|runContractRepair[\s\S]+?getModelForTask\("context_refinement"/);
+
+    // Structural gate fires only when anchor is non-empty, present-in-input,
+    // and NOT a substring of any claim statement.
+    expect(source).toContain("repairPassEnabled");
+    expect(source).toContain("presentInInput === true");
+    expect(source).toMatch(/statement\.includes\(anchorText\)/);
+
+    // Repair output must carry the anchor verbatim — post-check discards
+    // silent-failure responses. This is what converts the stochastic
+    // failure into a structural invariant.
+    const postCheck = source.indexOf("Contract repair output still missing anchor");
+    expect(postCheck, "C11b post-check for anchor landing is missing").toBeGreaterThan(-1);
+  });
+
+  it("C11b: config schema exposes repairPassEnabled", () => {
+    const schemaPath = path.resolve(
+      __dirname,
+      "../../../../src/lib/config-schemas.ts",
+    );
+    const schema = readFileSync(schemaPath, "utf-8");
+    expect(schema).toContain("repairPassEnabled");
+
+    const jsonPath = path.resolve(
+      __dirname,
+      "../../../../configs/calculation.default.json",
+    );
+    const json = readFileSync(jsonPath, "utf-8");
+    expect(json).toContain('"repairPassEnabled": true');
+  });
+
   it("source sets failureMode='validator_unavailable' on both unavailable-path summary literals", () => {
     // Structural regression guard: the two code sites that synthesize a
     // contract summary when the validator LLM returns no usable result must
