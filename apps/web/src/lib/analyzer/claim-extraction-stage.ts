@@ -1905,29 +1905,23 @@ export function evaluateClaimContractValidation(
     validPreservedIds = (anchor.preservedInClaimIds ?? [])
       .filter((id) => claimIds.has(id))
       .filter((id) => directClaimIds.has(id));
-    const claimTextById = new Map(claims.map((claim) => [claim.id, claim.statement]));
 
-    // Provenance check: a "honest" quote is one that actually appears verbatim
-    // in a cited valid claim. This proves the LLM did not fabricate the quote
-    // from thin air. It does NOT check whether the quote semantically preserves
-    // the anchor — that is the LLM's job.
-    const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
-      if (!quote) return false;
-      return validPreservedIds.some((claimId) => {
-        const claimText = claimTextById.get(claimId) ?? "";
-        return claimText.toLowerCase().includes(quote.toLowerCase());
-      });
-    });
+    // honestQuotes substring check REMOVED: it used
+    // claimText.toLowerCase().includes(quote.toLowerCase()) which is the
+    // same anti-pattern as the F4 anchor check deleted in C1 (9ca8c514).
+    // Fails on German morphology and paraphrasing, causing ~60% false-
+    // positive anchorOverrideRetry on R2 rechtskräftig-class inputs even
+    // after F4 was fixed. The LLM's preservedByQuotes is trusted as-is;
+    // structural validity is checked via validPreservedIds (ID existence +
+    // thesis-directness) and the self-consistency check below.
 
     // LLM self-consistency check (structural, not semantic): if the LLM
     // lists a claim as anchor-preserving in preservedInClaimIds but that
     // same claim is marked as drifted in the per-claim assessment array
     // (recommendedAction=retry, proxyDriftSeverity=material, or
     // preservesEvaluativeMeaning=false), the LLM is internally contradicting
-    // itself. The anchor-preservation judgment cannot stand if the LLM's
-    // own per-claim judgment says the claim has drifted. This is a pure
-    // structural cross-check of LLM output against itself, NOT a deterministic
-    // semantic re-check of the anchor text.
+    // itself. This is a pure structural cross-check of LLM output against
+    // itself, NOT a deterministic semantic re-check.
     const claimAssessmentById = new Map(
       (contractResult.claims ?? []).map((c) => [c.claimId, c] as const),
     );
@@ -1942,13 +1936,11 @@ export function evaluateClaimContractValidation(
     });
 
     // Override the LLM's judgment when its citations are structurally
-    // invalid (no valid cited IDs or all quotes hallucinated) OR when the
-    // LLM contradicts itself between preservedInClaimIds and its per-claim
-    // assessment.
+    // invalid (no valid thesis-direct IDs) OR when the LLM contradicts
+    // itself between preservedInClaimIds and its per-claim assessment.
     const noValidIds = validPreservedIds.length === 0;
-    const noHonestQuotes = honestQuotes.length === 0;
     const selfContradicted = contradictedPreservedIds.length > 0;
-    if (noValidIds || noHonestQuotes || selfContradicted) {
+    if (noValidIds || selfContradicted) {
       anchorOverrideRetry = true;
       const reasons: string[] = [];
       if (noValidIds) {
@@ -1961,9 +1953,8 @@ export function evaluateClaimContractValidation(
           reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
         }
       }
-      if (noHonestQuotes) reasons.push("no provenance-verified quotes");
       if (selfContradicted) reasons.push(`LLM self-contradiction on claim(s) [${contradictedPreservedIds.join(",")}] — listed as anchor-preserving but flagged as drifted in per-claim assessment`);
-      anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${(anchor.preservedInClaimIds ?? []).join(",")}], valid IDs=[${validPreservedIds.join(",")}], honest quotes=${honestQuotes.length}`;
+      anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${(anchor.preservedInClaimIds ?? []).join(",")}], valid IDs=[${validPreservedIds.join(",")}]`;
     }
   }
 

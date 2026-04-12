@@ -574,28 +574,12 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     expect(evaluated.anchorRetryReason).toContain("no valid cited claim IDs");
   });
 
-  it("rejects when all quotes are hallucinated (not verbatim substrings of any cited claim)", () => {
-    const claims = [makeClaim("AC_01", "The council signed the treaty before parliament decided.")];
-    const result = makeResult({
-      anchorText: "fully ratified",
-      preservedInClaimIds: ["AC_01"],
-      preservedByQuotes: ["fully ratified"], // this string is NOT in AC_01
-      claims: [{
-        claimId: "AC_01",
-        preservesEvaluativeMeaning: true,
-        usesNeutralDimensionQualifier: true,
-        proxyDriftSeverity: "none",
-        recommendedAction: "keep",
-        reasoning: "anchor preserved",
-      }],
-    });
-
-    const evaluated = evaluateClaimContractValidation(result, claims);
-
-    expect(evaluated.summary.preservesContract).toBe(false);
-    expect(evaluated.effectiveRePromptRequired).toBe(true);
-    expect(evaluated.anchorRetryReason).toContain("no provenance-verified quotes");
-  });
+  // "rejects when all quotes are hallucinated" test REMOVED: the honestQuotes
+  // substring check was deleted because it uses the same .includes() anti-pattern
+  // as the F4 anchor check (fails on German morphology and paraphrasing, causing
+  // ~60% false-positive anchorOverrideRetry). The LLM's preservedByQuotes field
+  // is now trusted as-is. Structural validity is checked via validPreservedIds
+  // (ID existence + thesis-directness) and the self-consistency check below.
 
   it("rejects LLM self-contradiction: preservedInClaimIds cites a claim marked recommendedAction=retry", () => {
     const claims = [makeClaim("AC_01", "The council signed the treaty before parliament decided.")];
