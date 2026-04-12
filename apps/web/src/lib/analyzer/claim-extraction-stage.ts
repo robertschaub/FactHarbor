@@ -1837,34 +1837,18 @@ function evaluateClaimContractValidation(
   const anchor = contractResult.truthConditionAnchor;
   let anchorOverrideRetry = false;
   let anchorRetryReason: string | undefined;
-  let validPreservedIds: string[] = [];
 
-  if (anchor?.presentInInput && anchor.anchorText) {
-    const claimIds = new Set(claims.map((claim) => claim.id));
-    validPreservedIds = (anchor.preservedInClaimIds ?? []).filter((id) => claimIds.has(id));
-    const claimTextById = new Map(claims.map((claim) => [claim.id, claim.statement]));
-    const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
-      if (!quote) return false;
-      return validPreservedIds.some((claimId) => {
-        const claimText = claimTextById.get(claimId) ?? "";
-        return claimText.toLowerCase().includes(quote.toLowerCase());
-      });
-    });
-    const anchorLower = anchor.anchorText.toLowerCase();
-    const claimContainsAnchor = validPreservedIds.some((claimId) => {
-      const claimText = claimTextById.get(claimId) ?? "";
-      return claimText.toLowerCase().includes(anchorLower);
-    });
-    const anchorQuotedHonestly = honestQuotes.some((quote) => {
-      const quoteLower = quote.toLowerCase();
-      return quoteLower.includes(anchorLower) || anchorLower.includes(quoteLower);
-    });
-
-    if (validPreservedIds.length === 0 || honestQuotes.length === 0 || (!claimContainsAnchor && !anchorQuotedHonestly)) {
-      anchorOverrideRetry = true;
-      anchorRetryReason = `anchor_omission: "${anchor.anchorText}" identified in input but not preserved in any claim (cited IDs: [${(anchor.preservedInClaimIds ?? []).join(",")}], valid: [${validPreservedIds.join(",")}], honest quotes: ${honestQuotes.length}, claimContainsAnchor: ${claimContainsAnchor}, anchorQuotedHonestly: ${anchorQuotedHonestly})`;
-    }
-  }
+  // Structural validity only: verify LLM-cited preservedInClaimIds reference
+  // claims that actually exist. This is a schema guard (do the IDs exist?),
+  // NOT a semantic check (does the text contain the anchor?).
+  // The previous substring-based anchor check (.toLowerCase().includes())
+  // was removed because it overrode LLM contract-validator judgments with
+  // a heuristic that fails on German morphology and evaluative paraphrasing,
+  // causing ~75% false-positive anchorOverrideRetry on rechtskräftig-class inputs.
+  const claimIds = new Set(claims.map((claim) => claim.id));
+  const validPreservedIds = anchor?.preservedInClaimIds
+    ? anchor.preservedInClaimIds.filter((id) => claimIds.has(id))
+    : [];
 
   const antiInf = contractResult.antiInferenceCheck;
   if (antiInf?.normativeClaimInjected && (antiInf.injectedClaimIds ?? []).length > 0) {
