@@ -329,7 +329,7 @@ export async function extractClaims(
       const fallbackGuidance = !contractResult
         ? `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
           `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies; do not externalize the modifier into a supporting sub-claim if it is thesis-defining. ` +
+          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
           `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
@@ -340,7 +340,7 @@ export async function extractClaims(
           `${contractResult.inputAssessment.summary}. ` +
           `Specific issues: ${failingReasons}.${anchorGuidance} ` +
           `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies; do not externalize the modifier into a supporting sub-claim if it is thesis-defining. ` +
+          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
           `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`

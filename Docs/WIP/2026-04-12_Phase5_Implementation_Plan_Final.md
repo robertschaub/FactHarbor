@@ -1,12 +1,17 @@
-# Phase 5 Implementation Plan — Final (Rev 2)
+# Phase 5 Implementation Plan — Final (Rev 3)
 
 **Date:** 2026-04-12
-**Status:** Approved with debate refinements, ready to implement
+**Status:** C6-C9 landed. Phase B gate FAILED on Run 1 (UNVERIFIED). C10 added to target the actual failure mode.
 **Goal:** Close R2 contract-failure gap (currently 80% fail on R2 replay set) via LLM tier escalation on retry + subtractive prompt cleanup + validator tiebreaker + validator-unavailable measurement split.
 
 **Changes vs. Rev 1 (from debate, verified against code):**
 - C6 retry model resolves via `context_refinement`, not `verdict`. Verified at [llm.ts:92-95](../../apps/web/src/lib/analyzer/llm.ts#L92-L95): both cases return `config.modelVerdict`, identical tier outcome today, `context_refinement` is semantically closer to claim-shape repair.
 - New **C9**: measurement split for `revalidation_unavailable` vs. genuine contract violation. Verified at [claim-extraction-stage.ts:294-300](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts#L294-L300): the distinguishing string already lives in `summary`, so C9 is mostly telemetry (surface a `failureMode` discriminant), not a semantic rewrite.
+
+**Changes vs. Rev 2 (from R2 Run 1 + LLM Expert + Lead Architect debate):**
+- R2 Run 1 on the new build produced UNVERIFIED / `failureMode: "contract_violated"`. 14 LLM calls confirm C6's Sonnet retry fired. Sonnet's retry output still: (a) omitted `rechtskräftig`, (b) added normative/legal injection caught by CONTRACT_VALIDATION rule 12. C9 telemetry verified end-to-end.
+- Phase B gate is **failed** (5/5 required; Run 1 = UNVERIFIED makes this batch unrecoverable). Replay stopped after Run 1 per decision rule (continuation is characterization, not decision-relevant).
+- Debate converged on **Lever 1 (retry-guidance revision)** as the Phase C first move. Both roles independently rejected Lever 2 (premature — papers over prompt gap), Lever 3 (tri-state — C9 already provides needed telemetry granularity), and Lever 4 (wrong target — R2 terminates at Stage 1). Adds **C10** below.
 
 ---
 
@@ -68,6 +73,29 @@ Four small commits (C6–C9). Measure after each. No new schema, no new task key
 > With C9 telemetry, any Phase B failure is additionally classified as `contract_violated` or `validator_unavailable` so the gate is read against contract fidelity, not validator uptime.
 
 Consistent with the >5% escalation rule: 1/5 = 20% ≫ 5%.
+
+---
+
+### C10 — Retry-guidance verbatim-modifier clause (Phase C, first move)
+
+**Problem:** Phase B Run 1 shows C6's Sonnet retry is executing but under-instructed. The current retry guidance in [claim-extraction-stage.ts:336-345](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts#L336-L345) tells the LLM *what relationship to produce* ("fuse the modifier with the action") but not *which tokens must survive*. A capable model with abstract instructions produces capable paraphrase. Sonnet is also more prone than Haiku to *elaborate on meaning* ("the signature is legally binding on Switzerland") — exactly what the anti-inference audit (CONTRACT_VALIDATION rule 12) now catches as `normative_injection`.
+
+**Change (prompt-only, subtractive-biased):**
+- Update both `contractGuidance` and `fallbackGuidance` strings in `claim-extraction-stage.ts`.
+- Add a concrete verbatim-preservation clause: "The input's original word(s) for the truth-condition-bearing modifier must appear **verbatim** in the primary direct claim's `statement` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology."
+- Keep the fusion requirement (prevents append-without-fuse — validator still requires both token presence AND predicate fusion).
+- Remove/compress softer duplicate wording already covered by the canonical L162 prompt block.
+
+**Non-goals:**
+- No code change. No schema edits. No new LLM task. No new stage.
+- Multilingual Robustness is not violated: requiring an input-originating token to survive in one claim is language-agnostic structural plumbing (works identically for `rechtskräftig`, `définitivement`, or "legally binding").
+
+**Append-without-fuse mitigation:**
+- C8's anchor tiebreaker remains active: "prefer the claim whose predicate fuses the modifier with the input's original action; a claim about the modifier alone or its effect does NOT qualify as the anchor carrier."
+- Validator still requires both lexical anchor AND structural fusion.
+
+**Escalation path if C10 also fails 5/5:**
+- Lever 2 (bounded repair pass) becomes principled with evidence that prompts genuinely cannot instruct the modifier-preservation behavior.
 
 ---
 
