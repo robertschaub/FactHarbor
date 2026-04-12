@@ -284,8 +284,20 @@ export async function extractClaims(
         }
       }
     } else {
+      // Fix 3 extended (2026-04-10): do NOT stamp preservesContract=true on a
+      // path that explicitly could not verify success. Prior behavior was a
+      // silent fail-open that, when the retry also failed to revalidate,
+      // produced an unverified "lottery win" report. Mark as degraded and
+      // let the retry path recover if it can; if the retry also fails to
+      // revalidate, this summary carries forward and the Wave 1A safeguard
+      // terminates the run.
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
-      contractValidationSummary = { ran: true, preservesContract: true, rePromptRequired: false, summary: "fail-open: LLM call returned undefined" };
+      contractValidationSummary = {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: false,
+        summary: "revalidation_unavailable: initial contract validation LLM call returned no usable result",
+      };
     }
 
     const shouldRetryAfterValidation =
@@ -308,8 +320,17 @@ export async function extractClaims(
         ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. The primary direct claim must fuse this modifier with the action it modifies; do not externalize it into a supporting sub-claim.`
         : "";
 
+      // Track 1 (Rev B): align validator-unavailable fallback guidance with the
+      // fusion-first wording used on the normal anchor-retry path. The previous
+      // fallback wording was weaker than contractGuidance below and produced
+      // inconsistent retry behavior on the validator-unavailable branch.
       const fallbackGuidance = !contractResult
-        ? `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. If the input contains any explicit modifier, qualifier, or status/finality term that changes the proposition's truth conditions, preserve it in at least one direct atomic claim. If one sentence applies the same predicate or temporal relation across multiple actors, keep that same predicate for the actor-specific split claims; do not replace one branch with a weaker background-only claim.`
+        ? `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
+          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
+          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies; do not externalize the modifier into a supporting sub-claim if it is thesis-defining. ` +
+          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
+          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
+          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
         : "";
 
       const contractGuidance = contractResult
@@ -375,9 +396,15 @@ export async function extractClaims(
           contractValidationSummary = evaluatedRetryContract.summary;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
         } else if (!retryContractResult && !contractResult) {
+          // Both initial and retry contract validation calls returned no
+          // usable result. Use the conservative retry output as the active
+          // claim set, but the contractValidationSummary from the initial
+          // call (set to revalidation_unavailable / preservesContract=false
+          // above) is NOT overwritten here. It carries forward and the
+          // Wave 1A safeguard terminates the run as damaged.
           activePass2 = retryPass2;
           lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
-          console.info("[Stage1] Claim contract retry could not be re-validated, but conservative retry output replaced the original fail-open Pass 2.");
+          console.warn("[Stage1] Claim contract retry could not be re-validated either; using conservative retry output but contract state remains degraded.");
         } else {
           console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
         }
@@ -390,7 +417,12 @@ export async function extractClaims(
         `[Stage1] Claim contract validation passed: ${contractResult.inputAssessment.summary}`
       );
     }
-    // undefined contractResult = fail-open, original Pass 2 stands
+    // If contractResult is undefined AND the retry did not replace it, the
+    // contractValidationSummary was marked revalidation_unavailable /
+    // preservesContract=false above (see Fix 3 extended at line 294). That
+    // state carries forward and the Wave 1A safeguard in
+    // claimboundary-pipeline.ts terminates the run as damaged. No silent
+    // fail-open path remains here.
   }
 
   // ------------------------------------------------------------------
@@ -675,13 +707,21 @@ export async function extractClaims(
         contractValidationSummary = evaluatedFinalContract.summary;
         console.info("[Stage1] Refreshed contract summary for final accepted claims after Gate 1 / reprompt selection.");
       } else {
+        // Fix 3 (2026-04-10): do NOT stamp preservesContract=true on a path
+        // that explicitly could not verify success. This branch is only
+        // reached when the final accepted claim set differs from the last
+        // validated set (see guard above), so the prior summary is stale
+        // by construction and cannot be carried forward. Mark the state
+        // as degraded/unknown so the Wave 1A safeguard in
+        // claimboundary-pipeline.ts can decide how to surface the failure
+        // to the user instead of silently shipping an unverified report.
         contractValidationSummary = {
           ran: true,
-          preservesContract: true,
+          preservesContract: false,
           rePromptRequired: false,
-          summary: "fail-open: final accepted claims could not be re-validated",
+          summary: "revalidation_unavailable: final accepted claim set changed after Gate 1, but the contract re-validation LLM call returned no usable result. State is unknown and treated as degraded.",
         };
-        console.info("[Stage1] Final accepted claims could not be re-validated; contract summary refreshed with fail-open status.");
+        console.warn("[Stage1] Final accepted claims could not be re-validated; marked as degraded (no silent fail-open).");
       }
     }
   }
@@ -1798,7 +1838,7 @@ export interface ClaimContractValidationResult {
 
 type ContractValidationSummary = NonNullable<CBClaimUnderstanding["contractValidationSummary"]>;
 
-interface EvaluatedClaimContractValidation {
+export interface EvaluatedClaimContractValidation {
   summary: ContractValidationSummary;
   effectiveRePromptRequired: boolean;
   anchorRetryReason?: string;
@@ -1830,25 +1870,102 @@ function normalizeClaimContractValidationResult(
   };
 }
 
-function evaluateClaimContractValidation(
+export function evaluateClaimContractValidation(
   contractResult: ClaimContractValidationResult,
   claims: AtomicClaim[],
 ): EvaluatedClaimContractValidation {
   const anchor = contractResult.truthConditionAnchor;
   let anchorOverrideRetry = false;
   let anchorRetryReason: string | undefined;
+  let validPreservedIds: string[] = [];
 
-  // Structural validity only: verify LLM-cited preservedInClaimIds reference
-  // claims that actually exist. This is a schema guard (do the IDs exist?),
-  // NOT a semantic check (does the text contain the anchor?).
-  // The previous substring-based anchor check (.toLowerCase().includes())
-  // was removed because it overrode LLM contract-validator judgments with
-  // a heuristic that fails on German morphology and evaluative paraphrasing,
-  // causing ~75% false-positive anchorOverrideRetry on rechtskräftig-class inputs.
-  const claimIds = new Set(claims.map((claim) => claim.id));
-  const validPreservedIds = anchor?.preservedInClaimIds
-    ? anchor.preservedInClaimIds.filter((id) => claimIds.has(id))
-    : [];
+  if (anchor?.presentInInput && anchor.anchorText) {
+    // Structural provenance checks only — no deterministic semantic matching
+    // of the anchor text against claim text. The F4 substring-based anchor
+    // check (.toLowerCase().includes(anchor)) was removed in C1 (9ca8c514)
+    // because it overrode LLM contract-validator judgments with a heuristic
+    // that fails on German morphology and evaluative paraphrasing, causing
+    // ~75% false-positive anchorOverrideRetry on rechtskräftig-class inputs.
+    //
+    // The LLM's own preservedInClaimIds is authoritative for preservation
+    // judgment; our job here is only to verify the LLM did not hallucinate
+    // that judgment by citing non-existent IDs or fabricated quotes.
+    const claimIds = new Set(claims.map((claim) => claim.id));
+    // Track 1 (Rev B): structural directness gate. Cited preservation IDs must
+    // reference claims marked thesisRelevance="direct". Tangential or contextual
+    // claims cannot serve as anchor carriers, even if their text happens to
+    // contain modifier-like wording. This is a typed-field check, not a semantic
+    // re-check of anchor text. Claims with thesisRelevance undefined default to
+    // "direct" (matches the validator payload default in validateClaimContract).
+    const directClaimIds = new Set(
+      claims
+        .filter((claim) => (claim.thesisRelevance ?? "direct") === "direct")
+        .map((claim) => claim.id),
+    );
+    validPreservedIds = (anchor.preservedInClaimIds ?? [])
+      .filter((id) => claimIds.has(id))
+      .filter((id) => directClaimIds.has(id));
+    const claimTextById = new Map(claims.map((claim) => [claim.id, claim.statement]));
+
+    // Provenance check: a "honest" quote is one that actually appears verbatim
+    // in a cited valid claim. This proves the LLM did not fabricate the quote
+    // from thin air. It does NOT check whether the quote semantically preserves
+    // the anchor — that is the LLM's job.
+    const honestQuotes = (anchor.preservedByQuotes ?? []).filter((quote) => {
+      if (!quote) return false;
+      return validPreservedIds.some((claimId) => {
+        const claimText = claimTextById.get(claimId) ?? "";
+        return claimText.toLowerCase().includes(quote.toLowerCase());
+      });
+    });
+
+    // LLM self-consistency check (structural, not semantic): if the LLM
+    // lists a claim as anchor-preserving in preservedInClaimIds but that
+    // same claim is marked as drifted in the per-claim assessment array
+    // (recommendedAction=retry, proxyDriftSeverity=material, or
+    // preservesEvaluativeMeaning=false), the LLM is internally contradicting
+    // itself. The anchor-preservation judgment cannot stand if the LLM's
+    // own per-claim judgment says the claim has drifted. This is a pure
+    // structural cross-check of LLM output against itself, NOT a deterministic
+    // semantic re-check of the anchor text.
+    const claimAssessmentById = new Map(
+      (contractResult.claims ?? []).map((c) => [c.claimId, c] as const),
+    );
+    const contradictedPreservedIds = validPreservedIds.filter((claimId) => {
+      const assessment = claimAssessmentById.get(claimId);
+      if (!assessment) return false;
+      return (
+        assessment.recommendedAction === "retry" ||
+        assessment.proxyDriftSeverity === "material" ||
+        assessment.preservesEvaluativeMeaning === false
+      );
+    });
+
+    // Override the LLM's judgment when its citations are structurally
+    // invalid (no valid cited IDs or all quotes hallucinated) OR when the
+    // LLM contradicts itself between preservedInClaimIds and its per-claim
+    // assessment.
+    const noValidIds = validPreservedIds.length === 0;
+    const noHonestQuotes = honestQuotes.length === 0;
+    const selfContradicted = contradictedPreservedIds.length > 0;
+    if (noValidIds || noHonestQuotes || selfContradicted) {
+      anchorOverrideRetry = true;
+      const reasons: string[] = [];
+      if (noValidIds) {
+        const citedRaw = anchor.preservedInClaimIds ?? [];
+        const existingCited = citedRaw.filter((id) => claimIds.has(id));
+        const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
+        if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
+          reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
+        } else {
+          reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
+        }
+      }
+      if (noHonestQuotes) reasons.push("no provenance-verified quotes");
+      if (selfContradicted) reasons.push(`LLM self-contradiction on claim(s) [${contradictedPreservedIds.join(",")}] — listed as anchor-preserving but flagged as drifted in per-claim assessment`);
+      anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${(anchor.preservedInClaimIds ?? []).join(",")}], valid IDs=[${validPreservedIds.join(",")}], honest quotes=${honestQuotes.length}`;
+    }
+  }
 
   const antiInf = contractResult.antiInferenceCheck;
   if (antiInf?.normativeClaimInjected && (antiInf.injectedClaimIds ?? []).length > 0) {
@@ -1918,7 +2035,22 @@ async function validateClaimContract(
       impliedClaim,
       articleThesis,
       atomicClaimsJson: JSON.stringify(
-        claims.map((c) => ({ claimId: c.id, statement: c.statement, category: c.category })),
+        claims.map((c) => {
+          // Track 1 (Rev B): pass directness context so the LLM validator can
+          // distinguish thesis-direct anchor carriers from tangential side claims.
+          // thesisRelevance is required; claimDirection and isDimensionDecomposition
+          // are included when present. This is structural plumbing — the LLM still
+          // makes the semantic judgment about anchor preservation.
+          const payload: Record<string, unknown> = {
+            claimId: c.id,
+            statement: c.statement,
+            category: c.category,
+            thesisRelevance: c.thesisRelevance ?? "direct",
+          };
+          if (c.claimDirection !== undefined) payload.claimDirection = c.claimDirection;
+          if (c.isDimensionDecomposition !== undefined) payload.isDimensionDecomposition = c.isDimensionDecomposition;
+          return payload;
+        }),
         null,
         2,
       ),
