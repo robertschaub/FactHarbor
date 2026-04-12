@@ -619,6 +619,7 @@ async function assessArticleVerdict(
     preservesContract: boolean;
     rePromptRequired: boolean;
     summary: string;
+    failureMode?: "contract_violated" | "validator_unavailable";
     anchorRetryReason?: string;
     truthConditionAnchor?: {
       presentInInput: boolean;

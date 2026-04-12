@@ -34,6 +34,7 @@ import {
   extractStructuredOutput,
   getStructuredOutputProviderOptions,
   getPromptCachingOptions,
+  type ModelTask,
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure } from "./pipeline-utils";
@@ -296,6 +297,7 @@ export async function extractClaims(
         ran: true,
         preservesContract: false,
         rePromptRequired: false,
+        failureMode: "validator_unavailable",
         summary: "revalidation_unavailable: initial contract validation LLM call returned no usable result",
       };
     }
@@ -352,6 +354,11 @@ export async function extractClaims(
 
       try {
         state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 24);
+        // C6 (Phase 5): escalate only the contract-failure retry to the
+        // standard tier (Sonnet today). `context_refinement` resolves to
+        // `config.modelVerdict` and is semantically closer to claim-shape
+        // repair than `verdict`. The first-attempt Pass 2 call (and its
+        // internal retry loop) continues on Haiku via `extract_evidence`.
         const retryPass2 = await runPass2(
           state.originalInput,
           preliminaryEvidence,
@@ -361,6 +368,7 @@ export async function extractClaims(
           contractGuidance,
           pass1.inferredGeography,
           pass1.detectedLanguage,
+          "context_refinement",
         );
         state.llmCalls++;
 
@@ -682,6 +690,7 @@ export async function extractClaims(
         ran: true,
         preservesContract: false,
         rePromptRequired: true,
+        failureMode: "contract_violated",
         summary: "No claims remained after Gate 1; the final accepted claim set cannot preserve the original claim contract.",
       };
       console.info("[Stage1] Final accepted claims are empty after Gate 1; contract summary refreshed to reflect the final claim set.");
@@ -719,6 +728,7 @@ export async function extractClaims(
           ran: true,
           preservesContract: false,
           rePromptRequired: false,
+          failureMode: "validator_unavailable",
           summary: "revalidation_unavailable: final accepted claim set changed after Gate 1, but the contract re-validation LLM call returned no usable result. State is unknown and treated as degraded.",
         };
         console.warn("[Stage1] Final accepted claims could not be re-validated; marked as degraded (no silent fail-open).");
@@ -1411,6 +1421,7 @@ export async function runPass2(
   repromptGuidance?: string,
   inferredGeography?: string | null,
   detectedLanguage?: string,
+  modelTaskOverride?: ModelTask,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
     JSON.stringify(
@@ -1452,7 +1463,11 @@ export async function runPass2(
   // Rec-A: Pass 2 is extraction/understanding, not verdict reasoning.
   // Using "extract_evidence" routes to Haiku (budget) and makes UCM modelExtractEvidence
   // effective for this step. Was "verdict" (Sonnet) which bypassed modelUnderstand.
-  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
+  // C6 (Phase 5): caller may override the task tier for the contract-failure retry
+  // path only — that invocation escalates to `context_refinement` (Sonnet) because
+  // Haiku has ~10–15% residual non-compliance on the multi-rule PASS2 prompt and
+  // retrying on the same tier reproduces the failure.
+  const model = getModelForTask(modelTaskOverride ?? "extract_evidence", undefined, pipelineConfig);
 
   // Retry logic with quality validation and Zod-aware feedback.
   // Schema uses .catch() defaults so AI SDK never throws NoObjectGeneratedError.
@@ -1966,13 +1981,20 @@ export function evaluateClaimContractValidation(
   }
 
   const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
+  const preservesContract = contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry;
+  // C9 (Phase 5): validator returned a usable result. Any failure here is a
+  // genuine contract violation, not a validator-availability issue.
+  const failureMode: "contract_violated" | undefined = !preservesContract || effectiveRePromptRequired
+    ? "contract_violated"
+    : undefined;
 
   return {
     summary: {
       ran: true,
-      preservesContract: contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry,
+      preservesContract,
       rePromptRequired: effectiveRePromptRequired,
       summary: contractResult.inputAssessment.summary ?? "",
+      ...(failureMode ? { failureMode } : {}),
       ...(anchorRetryReason ? { anchorRetryReason } : {}),
       ...(anchor ? {
         truthConditionAnchor: {

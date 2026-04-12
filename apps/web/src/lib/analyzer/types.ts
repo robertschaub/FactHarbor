@@ -1186,6 +1186,15 @@ export interface CBClaimUnderstanding {
     preservesContract: boolean;
     rePromptRequired: boolean;
     summary: string;
+    /**
+     * C9 (Phase 5): diagnostic discriminant for Phase B reporting.
+     * Absent when the contract is preserved (success). Set to "contract_violated"
+     * when the validator returned a usable result that flagged drift, and to
+     * "validator_unavailable" when the validator LLM call returned no usable
+     * result. Observational only — does not change runtime semantics or the
+     * Wave 1A safeguard path.
+     */
+    failureMode?: "contract_violated" | "validator_unavailable";
     anchorRetryReason?: string;
     truthConditionAnchor?: {
       presentInInput: boolean;

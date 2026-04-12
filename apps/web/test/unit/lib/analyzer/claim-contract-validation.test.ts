@@ -1047,3 +1047,104 @@ describe("PR 1: validator-unavailable fallback guidance wording", () => {
     }
   });
 });
+
+// ============================================================================
+// C9 (Phase 5): failureMode discriminant
+// ============================================================================
+//
+// Phase B reporting partitions contract failures into genuine violations vs
+// validator-availability hiccups via a new `failureMode` field on the
+// contractValidationSummary. Preserved/success leaves the field undefined.
+// Runtime semantics (preservesContract, Wave 1A safeguard) are unchanged —
+// this is observational only.
+// ============================================================================
+
+describe("C9: contractValidationSummary.failureMode discriminant", () => {
+  const makeClaim = (id: string, statement: string): AtomicClaim => ({
+    id,
+    statement,
+    category: "factual",
+    centrality: "high",
+    harmPotential: "medium",
+    isCentral: true,
+    claimDirection: "supports_thesis",
+    keyEntities: [],
+    checkWorthiness: "high",
+    specificityScore: 0.8,
+    groundingQuality: "moderate",
+    expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+  });
+
+  it("leaves failureMode undefined on clean preservation", () => {
+    const claims = [makeClaim("AC_01", "Council signed the binding treaty.")];
+    const result: ClaimContractValidationResult = {
+      inputAssessment: {
+        preservesOriginalClaimContract: true,
+        rePromptRequired: false,
+        summary: "preserved",
+      },
+      claims: [{
+        claimId: "AC_01",
+        preservesEvaluativeMeaning: true,
+        usesNeutralDimensionQualifier: true,
+        proxyDriftSeverity: "none",
+        recommendedAction: "keep",
+        reasoning: "ok",
+      }],
+    };
+
+    const evaluated = evaluateClaimContractValidation(result, claims);
+
+    expect(evaluated.summary.preservesContract).toBe(true);
+    expect(evaluated.summary.failureMode).toBeUndefined();
+  });
+
+  it("sets failureMode='contract_violated' when validator returns a usable result flagging drift", () => {
+    const claims = [makeClaim("AC_01", "Council discussed the treaty.")];
+    const result: ClaimContractValidationResult = {
+      inputAssessment: {
+        preservesOriginalClaimContract: false,
+        rePromptRequired: true,
+        summary: "material drift",
+      },
+      claims: [{
+        claimId: "AC_01",
+        preservesEvaluativeMeaning: false,
+        usesNeutralDimensionQualifier: false,
+        proxyDriftSeverity: "material",
+        recommendedAction: "retry",
+        reasoning: "predicate drifted from 'signed' to 'discussed'",
+      }],
+    };
+
+    const evaluated = evaluateClaimContractValidation(result, claims);
+
+    expect(evaluated.summary.preservesContract).toBe(false);
+    expect(evaluated.summary.failureMode).toBe("contract_violated");
+  });
+
+  it("source sets failureMode='validator_unavailable' on both unavailable-path summary literals", () => {
+    // Structural regression guard: the two code sites that synthesize a
+    // contract summary when the validator LLM returns no usable result must
+    // both carry failureMode='validator_unavailable'. We cannot easily unit-
+    // test these sites without full Stage 1 orchestration, so this locks in
+    // their presence via source inspection.
+    const sourcePath = path.resolve(
+      __dirname,
+      "../../../../src/lib/analyzer/claim-extraction-stage.ts",
+    );
+    const source = readFileSync(sourcePath, "utf-8");
+
+    // Count occurrences of the literal mode inside summaries whose `summary`
+    // field starts with "revalidation_unavailable". Two sites expected:
+    // initial contract-validation unavailable + final-revalidation unavailable.
+    const unavailableSummaryMatches = source.match(/failureMode:\s*"validator_unavailable"/g) ?? [];
+    expect(unavailableSummaryMatches.length).toBeGreaterThanOrEqual(2);
+
+    // Each of those sites must sit alongside a "revalidation_unavailable"
+    // summary string, so that the discriminant and the human-readable summary
+    // stay consistent.
+    const revalUnavailableCount = (source.match(/revalidation_unavailable/g) ?? []).length;
+    expect(revalUnavailableCount).toBeGreaterThanOrEqual(2);
+  });
+});

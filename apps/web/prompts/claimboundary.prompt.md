@@ -185,7 +185,7 @@ If `verifiability` assessment is requested (via configuration), also assess how 
   - Source/timing metadata ("According to a 2024 report")
   - Peripheral context-setting claims
   - Claims about the text's structure or rhetoric
-- **No inferred normative claims (CRITICAL):** Do NOT extract claims about legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance unless the input TEXT ITSELF explicitly makes that assertion using those concepts. If the input states a factual sequence of events (e.g., "A happened before B"), extract the factual chronology — do NOT add a claim that this sequence "violates", "complies with", or "contravenes" any legal, constitutional, or procedural standard unless those words appear in the input. The verification pipeline will surface normative context through evidence in Stage 2 and assess it in Stage 4; normative implications must NOT be injected at the claim extraction stage. Test: "Does the input text itself use words like 'violates', 'unconstitutional', 'illegal', 'binding', or equivalent?" If no — do not extract a normative claim.
+- **No inferred normative claims (CRITICAL):** Do NOT extract claims about legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance unless the input TEXT ITSELF explicitly makes that assertion using those concepts. If the input states a factual sequence of events (e.g., "A happened before B"), extract the factual chronology — do NOT add a claim that this sequence "violates", "complies with", or "contravenes" any legal, constitutional, or procedural standard unless those words appear in the input. The verification pipeline will surface normative context through evidence in Stage 2 and assess it in Stage 4; normative implications must NOT be injected at the claim extraction stage. Test: "Does the input text itself use words like 'violates', 'unconstitutional', 'illegal', or equivalent?" If no — do not extract a normative claim.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Each claim must be independently verifiable — do not create claims that only make sense in the context of other claims.
 - Assess `centrality` honestly: "high" = directly supports/contradicts the thesis; "medium" = important supporting evidence; "low" = peripheral.
@@ -243,9 +243,9 @@ ${preliminaryEvidence}
 
 Before returning the JSON:
 1. Identify the thesis-defining modifier or predicate component, if any.
-2. Verify that at least one direct atomic claim preserves it.
+2. Verify at least one direct atomic claim **fuses** it with the original action. A standalone claim about the modifier or its effect does NOT count.
 3. Verify that no direct atomic claim adds legality, constitutionality, validity, or other normative implications not present in the input.
-4. If either check fails, revise the extraction before output.
+4. If any check fails, revise the extraction before output.
 
 ### Output Schema
 
@@ -363,7 +363,7 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
 11. **Truth-condition-bearing modifier audit (MANDATORY).**
-    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct: tangential or contextual claims do NOT count as anchor carriers, even if they happen to contain wording that resembles the modifier.
+    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct: tangential or contextual claims do NOT count as anchor carriers, even if they happen to contain wording that resembles the modifier. **Anchor tiebreaker:** when multiple thesis-direct claims are candidate anchors, prefer the one whose predicate fuses the modifier with the input's original action; a claim about the modifier alone or its effect does NOT qualify as the anchor carrier.
 
 12. **Anti-inference audit (MANDATORY).**
     Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried.
