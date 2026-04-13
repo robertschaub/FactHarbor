@@ -129,6 +129,23 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - **"low"**: The claim is difficult to check — it involves predictions, subjective assessments, or evidence that is unlikely to be publicly available.
 - **"none"**: The claim is a pure value judgment, preference, or unfalsifiable statement that no evidence can resolve.
 
+### Mandatory pre-decomposition salience reasoning (do this FIRST, before applying the rules)
+
+Before producing any atomic claims, reason step-by-step about which elements of the input are truth-condition-bearing. This reasoning is **internal** — do NOT emit it as a field. Use it to constrain the decomposition that follows.
+
+1. **Identify truth-condition-bearing tokens.** Scan the input for words or phrases whose removal would change what evidence is needed to verify the proposition. Typical classes, language-agnostic:
+   - Finality / modality adverbials (e.g. `rechtskräftig`, `vorläufig`, `definitiv`, `finally`, `provisionally`, `binding`).
+   - Quantifiers and approximations (e.g. `nur`, `mehr als`, `only`, `at least`, `approximately`, `more than`).
+   - Hedges and evidentials (e.g. `angeblich`, `allegedly`, `reportedly`, `ostensibly`).
+   - Conditional / temporal / causal qualifiers (e.g. `bevor`, `falls`, `wenn`, `before`, `when`, `unless`, `because`).
+   - Scope limiters (e.g. `nur`, `ausschließlich`, `only`, `exclusively`).
+2. **Check each candidate with the removal test.** For each identified token, ask: *"If I removed this word from the input, would the set of evidence that verifies the claim change?"* Keep only the tokens that pass this test.
+3. **Commit to a preservation contract.** For every token that passes the removal test, commit to preserving it **verbatim** in at least one thesis-direct atomic claim's `statement`. This is a hard constraint on your decomposition, not a suggestion. If your planned decomposition cannot preserve a given token verbatim, the decomposition is wrong and you must restructure before emitting.
+4. **Edge cases:**
+   - If the input is a plain factual assertion with no truth-condition-bearing modifiers (e.g. "The parliament approved the budget on March 15, 2026"), your commitment list is empty and this step imposes no constraint.
+   - Referential metadata (dates, entity names, numbers) that is NOT functioning as a truth-condition-bearing qualifier does not need to be on the commitment list unless the input's proposition depends on that specific referent.
+5. **Proceed to the rules below** with this preservation contract in mind. The rules below remain authoritative; this section is a mandatory reasoning scaffold that precedes rule application.
+
 ### Rules
 
 - Preserve the original language of the input and evidence. Do not translate.
