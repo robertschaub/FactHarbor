@@ -113,7 +113,7 @@ Each experiment gates the next. No A/B/C cross-comparison.
 
 | E1 result | Next action |
 |---|---|
-| **Decisive PASS:** full-pass rate on positive cohort ≥ 60% AND negative-control contamination = 0% | **Ship E1.** Phase 7 closes with the prompt-scaffold fix. E2 not needed. |
+| **Decisive PASS:** full-pass rate on positive cohort ≥ 80% AND negative-control contamination = 0% | **Ship E1.** Phase 7 closes with the prompt-scaffold fix. E2 not needed. |
 | **Decisive FAIL:** full-pass rate ≤ 20% OR any negative-control regressions | **Revert E1.** The prompt-only intervention is insufficient and/or harmful. Proceed to E2 on clean pre-E1 HEAD. |
 | **Ambiguous:** anything in between | **Keep E1 (do not revert), proceed to E2** on top of E1. The scaffold may be helping without closing the gap; leaving it in place gives E2 the best chance. Re-measure the full-pass rate after E2 to see if the combined intervention closes the gap. |
 
