@@ -1,98 +1,129 @@
 # C16 Replay — Combined R2 Analysis (HEAD build `6a7227d9`)
 
 **Date:** 2026-04-13
-**Scope:** Phase 5 + Phase 6 closure evidence, combining the scripted R2 × 5 batch with user-submitted UI jobs on the same HEAD build.
 **Status:** Analysis only — no code change. Ship/don't-ship decision rests with the user.
 
-## Context
+## Revision history
 
-Between the scripted R2 × 5 replay on the C16 build (commit `6a7227d9`) and this analysis, the user submitted additional R2 jobs through the UI. Re-analyzing the full combined sample so the Phase 5/6 closure decision rests on the right data, not just the 5 fired programmatically.
+- **2026-04-13 initial:** claimed HEAD 2/7 full pass, 3/7 gate pass vs sampled pre-C16 2/14 full pass. See corrections below.
+- **2026-04-13 rev B (this file):** reviewer caught three substantive errors:
+  1. Cohort leaked the past-tense variant (`unterschrieb`) of the R2 input into the HEAD sample (job `99ffd5bb`). That job uses a different input string from the locked one and should not be in the R2 cohort.
+  2. Pre-C16 "full pass" count wrongly included `0ce78ee9` (verdict = `UNVERIFIED`, truthPercentage = 50, confidence = 0), violating the doc's own "full pass = non-UNVERIFIED verdict" definition.
+  3. Pre-C16 baseline was computed against a cherry-picked subset (14 of the 25 exact-input succeeded runs) rather than the full window.
+- All three findings were independently reproduced by fetching full `inputValue` and `resultJson.*` for every R2 candidate job from the local API. Corrected numbers and the reproduction script are below.
 
-R2 input (locked): `Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
+## Corrected data (exact-locked-input, sourced from `GET /v1/jobs/{id}.inputValue`)
 
-Phase B success criterion (per C16-alt rescope):
-**`validPreservedIds` non-empty** = anchor preserved in a valid thesis-direct claim = Phase B PASS.
+**Locked input:** `Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
 
-A stricter read ("full pass") also requires `preservesContract: true` and a non-UNVERIFIED verdict — i.e. the run would ship a real fact-check to a user.
+**Full pass (strict)** = `validPreservedIds` non-empty AND `preservesContract` is `true` AND `verdictLabel` is not `UNVERIFIED`.
+**C16-alt gate pass** = `validPreservedIds` non-empty.
 
-## Data — all R2 jobs on HEAD build (commit `6a7227d9`, Phase 5 + Phase 6 complete)
+### HEAD (commit `6a7227d9`), exact-input, SUCCEEDED
 
-| jobId | source | anchor | validPreservedIds | preservesContract | failureMode | verdict | C16-alt gate | full pass |
-|---|---|---|---|---|---|---|---|---|
-| `99ffd5bb` | user UI | yes | `['AC_02']` | **true** | — | **MOSTLY-FALSE** | **PASS** | **✅ yes** |
-| `9fb8323c` | scripted | yes | `['AC_03']` | **true** | — | **LEANING-FALSE** | **PASS** | **✅ yes** |
-| `bffca494` | scripted | yes | `['AC_03']` | false | contract_violated | UNVERIFIED | PASS | no (secondary flag) |
-| `b224a01a` | user UI | yes | `[]` | false | contract_violated | UNVERIFIED | FAIL | no |
-| `31745108` | scripted | yes | `[]` | false | contract_violated | UNVERIFIED | FAIL | no |
-| `d685d88d` | scripted | yes | `[]` | false | contract_violated | UNVERIFIED | FAIL | no |
-| `d5a7dc33` | scripted | (none) | `[]` | false | validator_unavailable | UNVERIFIED | FAIL | no |
+| jobId | created (UTC) | validPreservedIds | preservesContract | verdict | gate | full |
+|---|---|---|---|---|---|---|
+| `9fb8323c` | 2026-04-13 10:53 | `['AC_03']` | true | LEANING-FALSE | PASS | **YES** |
+| `31745108` | 2026-04-13 11:03 | `[]` | false | UNVERIFIED | FAIL | no |
+| `d685d88d` | 2026-04-13 11:14 | `[]` | false | UNVERIFIED | FAIL | no |
+| `bffca494` | 2026-04-13 11:24 | `['AC_03']` | false | UNVERIFIED | PASS | no |
+| `d5a7dc33` | 2026-04-13 11:30 | `[]` | false | UNVERIFIED | FAIL | no |
+| `b224a01a` | 2026-04-13 13:01 | `[]` | false | UNVERIFIED | FAIL | no |
 
-**7 runs on HEAD.**
-- C16-alt gate: **3/7 PASS** (43%)
-- Full pass (preservesContract=true + real verdict): **2/7** (29%) — shipping-quality fact-check produced
-- Validator hiccup (`validator_unavailable`): 1/7 (14%)
-- Anchor-preservation failure (`validPreservedIds=[]` despite anchor in input): 3/7 (43%)
+**HEAD totals: 2/6 gate PASS (33%), 1/6 full pass (17%).**
 
-## Comparison — pre-C16 builds (24 earlier R2 jobs, 2026-04-11 → 2026-04-13 06:42)
+`99ffd5bb` (past-tense `unterschrieb`) is excluded — it does not match the locked input and should not be counted in R2 cohort statistics.
 
-From the 24 jobs on earlier commits (e.g. `b6e226c2`, `2232ef33`, `d3824fe9`, `927e2dc0`, `9d6cdb38`, `f5cf31ee`, `576c0606`, `53f13b4d`), the pattern on the 14 most recent sampled:
+### Pre-C16, exact-input, SUCCEEDED (full window 2026-04-11 → 2026-04-13 06:42)
 
-- **2/14 full pass** (`0ce78ee9` on `2232ef33`, `b3fe2f36` on `b6e226c2`) — ~14%
-- **3/14 gate-only PASS** (anchor preserved but preservesContract=false)
-- Validator-hiccup rate similar to HEAD
-- Older builds show more `failureMode` nulls because C9 wasn't active yet (`b6e226c2`, `2232ef33`)
+25 runs across commits `02d8c3b1`, `894294f4`, `442a5450`, `b943ee42`, `b6e226c2`, `2232ef33`, `53f13b4d`, `576c0606`, `d3824fe9`, `f5cf31ee`, `9d6cdb38`, `927e2dc0`.
 
-**Relative movement HEAD vs sampled pre-C16:** full-pass rate roughly doubled (14% → 29%); gate-PASS rate roughly doubled (21% → 43%). Sample size too small for statistical significance but direction is consistent across both the user's ad-hoc UI jobs and the scripted batch.
+| Bucket | Count |
+|---|---|
+| Total succeeded, exact-input | 25 |
+| `validPreservedIds` non-empty (**gate PASS**) | **10 / 25** (40%) |
+| Full pass (`preservesContract=true` AND verdict non-UNVERIFIED) | **4 / 25** (16%) |
 
-## Residual failure partition (on HEAD, 7 runs)
+The 4 full-pass pre-C16 runs: `b661c8be` (MOSTLY-FALSE, `894294f4`), `d7056186` (FALSE, `b943ee42`), `1e720b89` (LEANING-FALSE, `b943ee42`), `b3fe2f36` (MOSTLY-FALSE, `b6e226c2`).
 
-1. **Extractor stochasticity — anchor loss** (3/7). The extractor sometimes produces claims that the validator won't accept as anchor carriers, even though `rechtskräftig` is in the input. No prompt change has fully eliminated this.
-2. **Secondary-claim validator judgment** (1/7, `bffca494`). Anchor preserved; validator failed the contract on some other rule. C16 narrowed this class; one marginal case still slipped through.
-3. **Validator LLM unavailability** (1/7). C12's single retry didn't recover. Happens at ~14% on R2 — higher than typical LLM-API transient rates, suggests this specific claim set sometimes triggers a refusal.
+`0ce78ee9` on `2232ef33` has `preservesContract=true` but `verdict=UNVERIFIED, truth=50, confidence=0` — downgraded to "gate PASS, not full pass."
 
-None of these classes is in-scope of Phase 5 + Phase 6 as chartered. Each would require a separate, scoped lever:
-- Opus extractor retry (for #1)
-- More aggressive secondary-claim lenience or broader `failureMode` exemption (for #2)
-- Multi-retry + jitter at final revalidation (for #3)
+`4e83b9a0` on `442a5450` has `verdict=FALSE` but `validPreservedIds=[]` (anchor not preserved in a valid thesis-direct claim) — gate FAIL despite a decisive verdict. Flagged for follow-up: the verdict was produced without the contract-anchor carrier, which is exactly the failure mode Phase 5 existed to prevent at the contract stage.
 
-## Finding
+## Comparison
 
-**The original goal ("improve report quality") is demonstrably met on HEAD.** Two runs on HEAD (`99ffd5bb` MOSTLY-FALSE, `9fb8323c` LEANING-FALSE) produced real, shippable fact-checks with `preservesContract=true` — a verdict class that did not exist pre-Phase-5.
+| Cohort | N | Gate PASS | Full pass |
+|---|---|---|---|
+| HEAD (commit `6a7227d9`) | 6 | 2 (33%) | 1 (17%) |
+| Pre-C16 (full window) | 25 | 10 (40%) | 4 (16%) |
 
-The residual R2 failures are **not Phase 5/6 scope**. They are extractor/validator stochasticity floors that require either Opus escalation (cost) or best-of-N sampling (orchestration), both explicitly deferred at each prior debate.
+**There is no measurable R2-cohort improvement of HEAD over the pre-C16 baseline** at these sample sizes. The prior "roughly doubled" conclusion was an artifact of the mis-cohorted sample and cherry-picked comparator.
 
-## Recommended closure
+The two failure modes that HEAD clearly closes on R2 are:
+- `normative_injection` false positives on verbatim input (C14→C15): observable by inspection of the validator's `anchorRetryReason` field in pre-C16 runs, not by the aggregate gate rate.
+- Validator unavailability carry-forward (C12): surfaces in pre-C16 as `validator_unavailable`-equivalent hiccups that wedge Wave 1A; C12's one-retry recovers a subset.
 
-1. **Close Phase 5 + Phase 6 as delivered.** 11 commits (C6–C16) each targeted and removed a real failure mode. HEAD is strictly better than pre-Phase-5.
-2. **Document the HEAD R2 rate** (29% full pass, 43% gate pass on N=7) as a known ceiling. R2 is an edge case in the test matrix.
-3. **Shift next measurement** to broader characterization: run HEAD against non-R2 inputs (other Phase 2 test-set items) to confirm the general quality lift. This is the work that answers "is HEAD ship-worthy?" — R2 alone cannot.
-4. **Defer Opus / best-of-N R2 fix** until broader data shows it's justified. Neither is a single-line change; both deserve a separate Phase 7 charter if pursued.
+These are real improvements, but they don't translate into a higher gate-pass rate because R2's dominant failure is **extractor anchor loss** (`validPreservedIds=[]` on 15 of 25 pre-C16 runs, 4 of 6 HEAD runs). That class was explicitly deferred (Opus / best-of-N) at each prior debate and is not touched by C6–C16.
+
+## Revised finding
+
+**The original goal ("improve report quality") is met on individual runs but not reflected in aggregate R2 cohort rates at this sample size.** HEAD run `9fb8323c` (LEANING-FALSE, preservesContract=true) demonstrates the pipeline can produce a shippable fact-check on R2; pre-C16 runs `b661c8be`, `d7056186`, `1e720b89`, `b3fe2f36` show the same pipeline could do so *before* C6–C16 as well, on the same locked input.
+
+The Phase 5/6 work removed specific failure classes (modifier omission in the retry path; validator over-reach on verbatim input; Gate 1 fidelity contradictions; reprompt destruction of contract-approved sets). Those are real, targeted fixes worth keeping. They just do not add up to a measurable R2-cohort gate-pass delta.
+
+## Residual failure partition (HEAD, 6 runs)
+
+| Class | Count | In-scope of C6–C16? |
+|---|---|---|
+| Extractor anchor loss (`validPreservedIds=[]`) | 3/6 | No — requires Opus/best-of-N |
+| Validator secondary-claim judgment (`bffca494`) | 1/6 | Partially — C16 narrowed, one case slipped |
+| Validator LLM unavailability (`d5a7dc33`) | 1/6 | Partially — C12 retried once, did not recover |
+| Full pass | 1/6 | — |
+
+## Recommended closure (revised)
+
+1. **Phase 5 + Phase 6 are closed on their own terms.** Every commit (C6–C16) is a targeted, reversible fix for a real failure mode. HEAD ships those fixes without regression.
+2. **Do NOT claim a measurable R2 improvement from aggregate rates.** The corrected numbers do not support that claim at N≈6 HEAD vs N≈25 pre-C16. Report the specific failure-class closures instead.
+3. **R2 remains an edge case.** The dominant failure mode on R2 (extractor anchor loss) was explicitly deferred; its prevalence did not change.
+4. **Next measurement should be broader** — non-R2 inputs, larger N per cohort, and an exact-input filter gate before counting. R2 alone cannot answer "is HEAD ship-worthy for general users."
+5. **Do not ship the original "2/7 full pass, doubled vs baseline" message** — it is wrong and reviewer caught it. Send the corrected numbers if a Phase 5/6 summary is circulated.
 
 ## Files referenced (for reviewers reproducing the data)
 
-- [apps/web/src/lib/analyzer/claim-extraction-stage.ts](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts) — Stage 1 orchestration, repair pass, Gate 1 (C6, C11b, C12, C13, C14)
-- [apps/web/prompts/claimboundary.prompt.md](../../apps/web/prompts/claimboundary.prompt.md) — CONTRACT_VALIDATION rules 11, 12, 16 (C7, C8, C10, C11a, C15, C16)
-- [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts) — `contractValidationSummary.failureMode` (C9)
-- [apps/web/src/lib/config-schemas.ts](../../apps/web/src/lib/config-schemas.ts) + [apps/web/configs/calculation.default.json](../../apps/web/configs/calculation.default.json) — `repairPassEnabled` flag (C11b)
-- [Docs/WIP/2026-04-12_Phase5_Implementation_Plan_Final.md](2026-04-12_Phase5_Implementation_Plan_Final.md) — full Phase 5/6 trajectory, rescoped gate, closure text
+- [apps/web/src/lib/analyzer/claim-extraction-stage.ts](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts)
+- [apps/web/prompts/claimboundary.prompt.md](../../apps/web/prompts/claimboundary.prompt.md)
+- [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts)
+- [apps/web/src/lib/config-schemas.ts](../../apps/web/src/lib/config-schemas.ts) + [apps/web/configs/calculation.default.json](../../apps/web/configs/calculation.default.json)
+- [Docs/WIP/2026-04-12_Phase5_Implementation_Plan_Final.md](2026-04-12_Phase5_Implementation_Plan_Final.md)
 
-## Verification
+## Verification (exact-input cohort, correct method)
 
-Reviewer can reproduce the data with read-only calls against the local API (HEAD build commit `6a7227d9`):
+The prior snippet used substring matching on `inputPreview`, which mixed the `unterschreibt` and `unterschrieb` variants and truncated at the preview boundary. Correct reproduction uses `GET /v1/jobs/{id}` and compares the full `inputValue` field:
 
 ```bash
-# List all R2 jobs
+# List candidate ids (pre-filter by preview; still fetch full to verify)
 curl -s 'http://localhost:5000/v1/jobs?limit=200' \
-  | python -c "import sys,json; [print(j['jobId'][:8], j['createdUtc'][:19], j.get('verdictLabel')) \
-      for j in json.load(sys.stdin)['jobs'] \
-      if 'Bundesrat' in (j.get('inputPreview') or '') and 'rechtskr' in (j.get('inputPreview') or '')]"
+  | python -c "import sys,json; [print(j['jobId']) for j in json.load(sys.stdin)['jobs'] \
+      if 'Bundesrat' in (j.get('inputPreview') or '') and 'rechtskr' in (j.get('inputPreview') or '') \
+      and j.get('status')=='SUCCEEDED']"
 
-# Pull contract summary for a specific job
-curl -s 'http://localhost:5000/v1/jobs/<jobId>' \
-  | python -c "import sys,json; d=json.load(sys.stdin); u=(d['resultJson'].get('understanding') or {}); \
-      cvs=(u.get('contractValidationSummary') or {}); a=(cvs.get('truthConditionAnchor') or {}); \
-      print('commit:', (d['resultJson'].get('meta') or {}).get('executedWebGitCommitHash','')); \
-      print('anchor:', a.get('anchorText')); print('vpi:', a.get('validPreservedIds')); \
-      print('preservesContract:', cvs.get('preservesContract')); print('failureMode:', cvs.get('failureMode')); \
-      print('verdict:', d.get('verdictLabel'))"
+# For each id, fetch and filter to the exact locked string:
+curl -s 'http://localhost:5000/v1/jobs/<jobId>' | python -c "
+import sys, json
+LOCK = 'Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben'
+d = json.load(sys.stdin)
+if d.get('inputValue','') != LOCK:
+    print('SKIP: non-locked variant'); sys.exit(0)
+r = d.get('resultJson',{}) or {}
+meta = r.get('meta',{}) or {}
+u = r.get('understanding',{}) or {}
+cvs = u.get('contractValidationSummary') or {}
+a = cvs.get('truthConditionAnchor') or {}
+vpi = a.get('validPreservedIds') or []
+pc = cvs.get('preservesContract')
+v = d.get('verdictLabel','')
+gate = 'PASS' if len(vpi)>0 else 'FAIL'
+full = 'YES' if (len(vpi)>0 and pc is True and v not in ('UNVERIFIED','',None)) else 'NO'
+print(f\"{d['jobId'][:8]} commit={(meta.get('executedWebGitCommitHash') or '-')[:8]} vpi={vpi} pc={pc} verdict={v} gate={gate} full={full}\")
+"
 ```
