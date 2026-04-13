@@ -1,8 +1,19 @@
 # Phase 7 Charter — Salience-First Extraction
 
 **Date:** 2026-04-13
-**Status:** Design only. No code change until E1/E2 measurement decides the path.
+**Status:** Design only. No code change until E1 measurement decides the path.
 **Relation to prior work:** Supersedes the "deferred Opus / best-of-N" recommendation from the Phase 5+6 closure analysis at [Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md](2026-04-13_C16_R2_Combined_Replay_Analysis.md). Does not change any HEAD code.
+
+## Captain's directive (2026-04-13, mid-charter)
+
+> "Stop verifying older versions / commits. Continue working on main HEAD to improve report quality there."
+
+**What this changes about the charter:**
+
+- **Drop all pre-C16 / baseline comparisons.** The Phase 5+6 closure analysis already documented the pre-Phase-5 picture; there is no further value in re-running historical commits or maintaining a three-variant A/B/C experiment setup.
+- **Each experiment lands on HEAD and is measured against the HEAD before it.** E1 lands → measure HEAD-E1. E2 lands on top of E1 (assuming E1 ships) → measure HEAD-E2. Linear iteration, not parallel cohorts.
+- **Budget drops** from ~105 runs to ~35 runs per experiment (7 inputs × 5 runs). Sequential, not interleaved.
+- **The decision tree simplifies** because there is no E1-vs-E2 cross-comparison to resolve — each experiment closes on its own terms before the next begins.
 
 ---
 
@@ -29,7 +40,7 @@ This hypothesis has two failure modes we need to test for:
 - **H-false (cheap):** a prompt-level "think first, then extract" scaffold inside the existing Pass 2 closes the gap without any architectural change.
 - **H-false-hard:** even a dedicated upstream stage drops salient content at a similar rate — the architectural move does not help. In that case the fix is Opus/best-of-N and this charter closes with a negative result.
 
-## Experiments (run in parallel, prompt-only, cheap)
+## Experiments (run serially on HEAD, prompt-only first)
 
 ### E1 — Prompt-scaffold CoT preamble in Pass 2
 
@@ -54,9 +65,9 @@ This hypothesis has two failure modes we need to test for:
 
 **Multi-anchor support:** mandatory from day 1. Real inputs have multiple truth-condition modifiers ("only X may Y when Z"). Output is a list.
 
-### Why both experiments, not just one
+### Why serial, not parallel
 
-Architect's pushback: if E1 alone works, we skip E2's new stage and schema entirely. If E1 doesn't work but E2 shows Pass 0 correctly identifies anchors, we know the architectural move is worth the refactor. If neither works, we have hard data to justify Opus/best-of-N as a Phase 7b.
+Per Captain's directive, we iterate on HEAD rather than maintaining three variants in parallel. E1 is cheap and reversible — we land it, measure it, and decide whether to revert, keep as-is, or proceed to E2. If E1 closes the gap we skip E2 entirely. If E1 does not, E2 lands on top of the same HEAD and is measured against the post-E1 baseline. Each step is independently reversible.
 
 ## Input corpus for both experiments
 
@@ -76,37 +87,45 @@ Each input runs ×5 on the same build, measured independently. Corpus is split i
 - **Plain factual (English):** `The parliament approved the budget on March 15, 2026` — date is not truth-condition-bearing in the sense Rule 12 targets (it's referential metadata, not a finality/modality/quantifier qualifier); ideal outcome is Pass 0 either emits no anchor or correctly classifies the date as `temporal` referential rather than as a critical modifier.
 - **Plain assertion (English):** `Switzerland is a federal republic` — no modifiers, quantifiers, or qualifiers; Pass 0 should emit an empty anchor list.
 
-7 inputs × 5 runs × 3 variants (baseline HEAD / E1 / E2-log) = **105 runs**. Budget estimate ~$8–15.
+7 inputs × 5 runs = **35 runs per experiment**, measured on the live HEAD after that experiment lands. Budget estimate ~$3–5 per measurement batch (E1 or E2). Total ≤ ~$10 if both land.
 
 ## Measurements
 
 Per-run, record:
-- For E1 and HEAD baseline: does the extractor output preserve the expected anchor(s) as verbatim substring in any claim statement? `preservesContract` and `validPreservedIds`.
+- Does the extractor output preserve the expected anchor(s) as verbatim substring in any claim statement? `preservesContract` and `validPreservedIds`.
 - For E2: does Pass 0's emitted `anchors` list contain each expected anchor? And does downstream Pass 2 (unchanged) still drop it?
 - LLM call count and wall-clock per run.
+- `executedWebGitCommitHash` (so we can tie the result to the exact HEAD that produced it).
 
-Per-cohort aggregate:
-- Gate-pass rate (validPreservedIds non-empty).
-- Full-pass rate (preservesContract=true AND verdict non-UNVERIFIED).
-- For E2: anchor-identification **recall** measured on the positive cohort (did Pass 0 emit every expected truth-condition-bearing modifier?) and **precision** measured on the negative-control cohort (did Pass 0 correctly emit an empty or near-empty anchor list on inputs without non-trivial salient modifiers?). Both metrics require both cohorts; neither is computable from the positive cohort alone.
+Per-experiment aggregate (on 35 runs, 25 positive + 10 negative-control):
+- Gate-pass rate (validPreservedIds non-empty) on positive cohort.
+- Full-pass rate (preservesContract=true AND verdict non-UNVERIFIED) on positive cohort.
+- Negative-control contamination rate (contract-violation rate on plain factual inputs; ideally zero — any failure here is a regression, not a win).
+- For E2: anchor-identification **recall** on positive cohort (did Pass 0 emit every expected truth-condition-bearing modifier?) and **precision** on negative-control cohort (did Pass 0 return empty or near-empty anchor lists on plain factual inputs?).
 
 Exact-input filter (from the reviewer finding): all measurements use byte-identical `inputValue` matching, not substring preview matching.
 
-## Decision tree after measurement
+## Decision tree after each experiment
 
-| E1 result | E2 result | Next action |
-|---|---|---|
-| Gap closes | — | **Ship E1.** Mark Phase 7 closed with the prompt-scaffold fix. No refactor. |
-| Small improvement | Pass 0 reliably identifies anchors extractor drops | **Proceed to Shape B refactor** (binding Pass 0 + required `sourceSpan` field; multi-anchor schema; validator reframed as audit-against-commitment). Phase 7b. |
-| No improvement | Pass 0 also drops anchors | **Architectural hypothesis fails.** Close Phase 7 with negative result. Open Phase 7c scoped to Opus/best-of-N with the measurement as justification. |
-| No improvement | Pass 0 fine | E1 is not enough alone; go to Shape B. |
-| Mixed / ambiguous E1 | — | Expand corpus, re-measure, then decide. Do NOT commit to Shape B on thin evidence. |
-| — | Mixed / ambiguous E2 (Pass 0 finds some anchors but misses others, or emits spurious anchors on negative controls above a set threshold) | **Do NOT proceed to Shape B.** Treat Pass 0 as insufficiently reliable to serve as a binding input. Two options in this branch: (a) iterate on the Pass 0 prompt once and re-measure (one lap only — avoid prompt-tuning treadmill); or (b) close Phase 7 with "Pass 0 concept unreliable at this tier" and fold the finding into the Phase 7c (Opus/best-of-N) justification. Choose based on whether the misses and false-positives have a visible pattern (pattern → fix; no pattern → close). |
+Each experiment gates the next. No A/B/C cross-comparison.
 
-Explicit thresholds to call "ambiguous" vs decisive on E2 (lock before measuring, not after):
-- **Decisive PASS for Pass 0:** recall ≥ 80% on positive cohort (4/5 positive inputs have all expected anchors emitted) AND precision ≥ 80% on negative-control cohort (≤ 1/3 negative controls emit a spurious anchor).
-- **Decisive FAIL for Pass 0:** recall ≤ 40% OR precision ≤ 40%. Hypothesis dies.
-- **Ambiguous:** anything in between. Route to the new row above.
+### After E1 measurement (35 runs on HEAD-E1)
+
+| E1 result | Next action |
+|---|---|
+| **Decisive PASS:** full-pass rate on positive cohort ≥ 60% AND negative-control contamination = 0% | **Ship E1.** Phase 7 closes with the prompt-scaffold fix. E2 not needed. |
+| **Decisive FAIL:** full-pass rate ≤ 20% OR any negative-control regressions | **Revert E1.** The prompt-only intervention is insufficient and/or harmful. Proceed to E2 on clean pre-E1 HEAD. |
+| **Ambiguous:** anything in between | **Keep E1 (do not revert), proceed to E2** on top of E1. The scaffold may be helping without closing the gap; leaving it in place gives E2 the best chance. Re-measure the full-pass rate after E2 to see if the combined intervention closes the gap. |
+
+### After E2 measurement (35 runs on HEAD-E2, log-only — does NOT constrain Pass 2)
+
+| E2 result | Next action |
+|---|---|
+| **Decisive PASS for Pass 0:** recall ≥ 80% on positive cohort AND precision ≥ 80% on negative-control cohort | **Proceed to Shape B** (binding Pass 0 + required `sourceSpan`). Phase 7b. |
+| **Decisive FAIL for Pass 0:** recall ≤ 40% OR precision ≤ 40% | **Architectural hypothesis fails.** Close Phase 7 with negative result. Pass 0 concept is not reliable enough to serve as a binding input at this tier. Open Phase 7c scoped to Opus/best-of-N with the measurement as justification. |
+| **Ambiguous:** anything in between | Treat Pass 0 as insufficiently reliable to serve as a binding input. Two options: (a) iterate on the Pass 0 prompt once and re-measure (**one lap only** — avoid prompt-tuning treadmill); or (b) close Phase 7 and fold the finding into Phase 7c's justification. Choose based on whether the misses and false-positives show a visible pattern (pattern → one fix lap; no pattern → close). |
+
+Thresholds are locked *ex ante*. No post-hoc "was 55% good enough?" debate.
 
 ## Shape B (post-measurement, only if data supports it) — NOT COMMITTED YET
 
@@ -133,14 +152,21 @@ Documented here so the refactor footprint is transparent up front:
 
 **Phase 7 is "complete" when we have data that decisively routes us to exactly one of the four outcomes in the decision tree.** Shipping Shape B is optional and conditional. Closing with a negative result (and a concrete case for Opus/best-of-N) is equally valid — the goal is a decision, not an outcome.
 
-## Implementation order (strict)
+## Implementation order (strict, serial on HEAD)
 
-1. **Write this charter** (this commit). No code.
-2. **Land E1 as one prompt edit** to `CLAIM_EXTRACTION_PASS2`. Single commit. Reversible.
-3. **Land E2 as a shadow stage** (~60 lines + 1 prompt file + 1 wire-up, log-only). Single commit. Feature-flag off.
-4. **Run the 75-run measurement batch** (five inputs × five runs × three variants = baseline / E1 / E2-with-logging). Record in a new `Docs/WIP/2026-04-1X_Phase7_E1_E2_Measurement.md`.
-5. **Debate the result** (LLM Expert + Architect, same cadence as prior phases).
-6. **Decide per the decision tree.** If Shape B: open as Phase 7b with its own charter.
+1. **Charter committed** (done).
+2. **Land E1** as one prompt edit to `CLAIM_EXTRACTION_PASS2`. Single commit. Reversible.
+3. **Run E1 measurement: 35 runs on HEAD-E1.** Record results in `Docs/WIP/2026-04-1X_Phase7_E1_Measurement.md`.
+4. **Decide per the E1 decision tree**:
+   - PASS → ship, Phase 7 closes.
+   - FAIL → revert E1, HEAD returns to pre-E1, proceed to E2.
+   - Ambiguous → keep E1, proceed to E2 on top of E1.
+5. **Land E2** as a shadow stage (~60 lines + 1 prompt file + 1 wire-up, log-only). Single commit. Feature-flag off.
+6. **Run E2 measurement: 35 runs on HEAD-E2.** Record in `Docs/WIP/2026-04-1X_Phase7_E2_Measurement.md`.
+7. **Debate the E2 result** (LLM Expert + Architect).
+8. **Decide per the E2 decision tree.** If Shape B: open as Phase 7b with its own charter.
+
+No pre-C16 replays. No three-variant cross-runs. Each measurement batch characterizes HEAD as it stood when the batch ran, identified by `executedWebGitCommitHash`.
 
 ## Rollback path
 
