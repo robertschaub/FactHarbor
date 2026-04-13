@@ -63,7 +63,7 @@ The two failure modes that HEAD clearly closes on R2 are:
 - `normative_injection` false positives on verbatim input (C14→C15): observable by inspection of the validator's `anchorRetryReason` field in pre-C16 runs, not by the aggregate gate rate.
 - Validator unavailability carry-forward (C12): surfaces in pre-C16 as `validator_unavailable`-equivalent hiccups that wedge Wave 1A; C12's one-retry recovers a subset.
 
-These are real improvements, but they don't translate into a higher gate-pass rate because R2's dominant failure is **extractor anchor loss** (`validPreservedIds=[]` on 15 of 25 pre-C16 runs, 4 of 6 HEAD runs). That class was explicitly deferred (Opus / best-of-N) at each prior debate and is not touched by C6–C16.
+These are real improvements, but they don't translate into a higher gate-pass rate because R2's dominant failure is **extractor anchor loss** (`validPreservedIds=[]` AND `failureMode != validator_unavailable`): 13 of 25 pre-C16 runs and 3 of 6 HEAD runs. The other `validPreservedIds=[]` cases (2 pre-C16, 1 HEAD) are `validator_unavailable` hiccups, classified separately in the residual table below. That anchor-loss class was explicitly deferred (Opus / best-of-N) at each prior debate and is not touched by C6–C16.
 
 ## Revised finding
 
