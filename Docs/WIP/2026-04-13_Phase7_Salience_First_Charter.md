@@ -100,7 +100,13 @@ Exact-input filter (from the reviewer finding): all measurements use byte-identi
 | Small improvement | Pass 0 reliably identifies anchors extractor drops | **Proceed to Shape B refactor** (binding Pass 0 + required `sourceSpan` field; multi-anchor schema; validator reframed as audit-against-commitment). Phase 7b. |
 | No improvement | Pass 0 also drops anchors | **Architectural hypothesis fails.** Close Phase 7 with negative result. Open Phase 7c scoped to Opus/best-of-N with the measurement as justification. |
 | No improvement | Pass 0 fine | E1 is not enough alone; go to Shape B. |
-| Mixed / ambiguous | — | Expand corpus, re-measure, then decide. Do NOT commit to Shape B on thin evidence. |
+| Mixed / ambiguous E1 | — | Expand corpus, re-measure, then decide. Do NOT commit to Shape B on thin evidence. |
+| — | Mixed / ambiguous E2 (Pass 0 finds some anchors but misses others, or emits spurious anchors on negative controls above a set threshold) | **Do NOT proceed to Shape B.** Treat Pass 0 as insufficiently reliable to serve as a binding input. Two options in this branch: (a) iterate on the Pass 0 prompt once and re-measure (one lap only — avoid prompt-tuning treadmill); or (b) close Phase 7 with "Pass 0 concept unreliable at this tier" and fold the finding into the Phase 7c (Opus/best-of-N) justification. Choose based on whether the misses and false-positives have a visible pattern (pattern → fix; no pattern → close). |
+
+Explicit thresholds to call "ambiguous" vs decisive on E2 (lock before measuring, not after):
+- **Decisive PASS for Pass 0:** recall ≥ 80% on positive cohort (4/5 positive inputs have all expected anchors emitted) AND precision ≥ 80% on negative-control cohort (≤ 1/3 negative controls emit a spurious anchor).
+- **Decisive FAIL for Pass 0:** recall ≤ 40% OR precision ≤ 40%. Hypothesis dies.
+- **Ambiguous:** anything in between. Route to the new row above.
 
 ## Shape B (post-measurement, only if data supports it) — NOT COMMITTED YET
 
@@ -108,6 +114,7 @@ Documented here so the refactor footprint is transparent up front:
 
 - Pass 2 prompt receives `<preCommittedAnchors>` block with hard directive: every anchor's `text` MUST appear verbatim as substring of at least one claim's `statement`.
 - New required field on atomic claim output: `sourceSpan: string` — verbatim span from input the claim paraphrases. Forces emission order: span first, claim second. LLM Expert's strongest-effect intervention; makes dropping the anchor *ungrammatical*, not merely discouraged.
+  - **Dependencies (reviewer-flagged):** this field addition requires matching changes to `Pass2AtomicClaimSchema` at [claim-extraction-stage.ts:70](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts#L70) AND the `AtomicClaim` interface at [types.ts:824](../../apps/web/src/lib/analyzer/types.ts#L824). Downstream consumers of `AtomicClaim.statement` (Gate 1, contract validator, verdict stages, aggregation, UI rendering) are unaffected if `sourceSpan` is additive and optional-with-default during migration; breaking changes if required immediately. Phase 7b should make it optional first, gated by `SALIENCE_FIRST_MODE`, and promote to required only after a follow-up cleanup commit.
 - Contract validator reframed from "discover anchor + audit preservation" to "audit commitment honored."
 - C11b anchor-gated repair: stays; now targets a known list of anchors from Pass 0, not a single re-discovered one.
 - C6 Sonnet retry: still fires on contract failure; less often because Pass 2 has upstream guidance.
