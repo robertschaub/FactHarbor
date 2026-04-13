@@ -35,10 +35,10 @@ This hypothesis has two failure modes we need to test for:
 
 **Mechanics:**
 - One edit to [apps/web/prompts/claimboundary.prompt.md](../../apps/web/prompts/claimboundary.prompt.md), `CLAIM_EXTRACTION_PASS2` section.
-- Add a CoT preamble: the extractor must, *before* emitting atomic claims, reason explicitly about which words/phrases in the input change truth conditions if removed. Output goes into a throwaway reasoning field; claim emission follows.
+- Add a CoT preamble **inside the system prompt** — an instruction to the model to **reason internally** about which words/phrases in the input change truth conditions if removed, and to let that reasoning constrain the atomic-claim decomposition that follows. The reasoning is purely internal (unstructured pre-decomposition deliberation inside the prompt flow) and is **not emitted as a new field**. This keeps Pass 2's existing `Pass2OutputSchema` ([claim-extraction-stage.ts:96](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts#L96)) unchanged and keeps `Output.object({ schema: Pass2OutputSchema })` at [line ~1605](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts#L1605) untouched.
 - No schema change. No code change. Reversible via one `git revert`.
 
-**What it tests:** can the existing Pass 2 prompt, with a salience-first reasoning scaffold, close the gap without any architectural move?
+**What it tests:** can the existing Pass 2 prompt, with an internal salience-first reasoning scaffold, close the gap without any architectural move?
 
 ### E2 — Shadow Pass 0 salience stage
 
@@ -60,7 +60,9 @@ Architect's pushback: if E1 alone works, we skip E2's new stage and schema entir
 
 ## Input corpus for both experiments
 
-Each input runs ×5 on the same build, measured independently.
+Each input runs ×5 on the same build, measured independently. Corpus is split into **positive** inputs (contain at least one truth-condition-bearing modifier we expect Pass 0 to flag) and **negative-control** inputs (plain factual assertions with no non-trivial salient modifier; Pass 0 should return an empty or near-empty anchor list).
+
+**Positive inputs (test recall + preservation):**
 
 - **R2 (locked, German):** `Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
 - **R2-plural (German):** `Nur rechtskräftige Urteile werden vollstreckt`
@@ -68,7 +70,13 @@ Each input runs ×5 on the same build, measured independently.
 - **Multi-modifier (English):** `Only qualified voters may participate when at least 60% turnout is reached`
 - **Plain hedge (English):** `Approximately 30% of participants reported side effects` (or an equivalent from existing test set)
 
-5 inputs × 5 runs × (E1 + E2 + baseline HEAD) = ~75 runs. Budget estimate ~$5–10.
+**Negative-control inputs (test Pass 0 precision — no salient modifier should be flagged):**
+
+- **Plain factual (German):** `Der Bundesrat hat den EU-Vertrag unterzeichnet` — same subject/action as R2, modifiers stripped; Pass 0 should return an empty anchor list (or flag only the subject/action themselves, which do not pass the "removal changes truth conditions" test).
+- **Plain factual (English):** `The parliament approved the budget on March 15, 2026` — date is not truth-condition-bearing in the sense Rule 12 targets (it's referential metadata, not a finality/modality/quantifier qualifier); ideal outcome is Pass 0 either emits no anchor or correctly classifies the date as `temporal` referential rather than as a critical modifier.
+- **Plain assertion (English):** `Switzerland is a federal republic` — no modifiers, quantifiers, or qualifiers; Pass 0 should emit an empty anchor list.
+
+7 inputs × 5 runs × 3 variants (baseline HEAD / E1 / E2-log) = **105 runs**. Budget estimate ~$8–15.
 
 ## Measurements
 
@@ -80,7 +88,7 @@ Per-run, record:
 Per-cohort aggregate:
 - Gate-pass rate (validPreservedIds non-empty).
 - Full-pass rate (preservesContract=true AND verdict non-UNVERIFIED).
-- For E2: anchor-identification recall (Pass 0 found the anchor the validator later identified) and precision (Pass 0 did NOT emit spurious anchors on inputs where none exist).
+- For E2: anchor-identification **recall** measured on the positive cohort (did Pass 0 emit every expected truth-condition-bearing modifier?) and **precision** measured on the negative-control cohort (did Pass 0 correctly emit an empty or near-empty anchor list on inputs without non-trivial salient modifiers?). Both metrics require both cohorts; neither is computable from the positive cohort alone.
 
 Exact-input filter (from the reviewer finding): all measurements use byte-identical `inputValue` matching, not substring preview matching.
 
