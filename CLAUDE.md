@@ -1,62 +1,34 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-13 -->
 
 # Claude Code instructions — FactHarbor
 
-Full project rules, terminology, and architecture: @AGENTS.md (auto-loaded alongside this file — do not duplicate content here).
+**Primary rules live in [/AGENTS.md](AGENTS.md)** (auto-loaded via `@AGENTS.md`). If your tool does not follow `@`-imports, read `/AGENTS.md` directly — it is authoritative. Do not duplicate its content here.
 
-## Project overview
+## Project snapshot
 
-Two apps + one tool:
-- `apps/api` — ASP.NET Core API (SQLite). Key files: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`, `Controllers/*`.
-- `apps/web` — Next.js (UI + runner/orchestrator). Key files: `src/app/api/internal/run-job/route.ts`, `src/lib/analyzer/claimboundary-pipeline.ts` (Orchestrator), `src/lib/analyzer/research-orchestrator.ts` (Stage 2 Orch), `src/lib/analyzer/research-query-stage.ts` (Stage 2 Queries), `src/lib/analyzer/research-acquisition-stage.ts` (Stage 2 Fetching), `src/lib/analyzer/research-extraction-stage.ts` (Stage 2 Extraction), `src/lib/analyzer/verdict-stage.ts` (Stage 4 Validation), `src/lib/analyzer/verdict-generation-stage.ts` (Stage 4 Debate), `src/lib/analyzer/aggregation-stage.ts` (Stage 5).
-- `tools/vscode-xwiki-preview` — VS Code extension for XWiki page previews.
+- `apps/api` — ASP.NET Core API (SQLite, port 5000). Entry: `Program.cs`, `Services/JobService.cs`, `Services/RunnerClient.cs`.
+- `apps/web` — Next.js UI + runner/orchestrator (port 3000). Pipeline entry: `src/lib/analyzer/claimboundary-pipeline.ts`. Runner route: `src/app/api/internal/run-job/route.ts`.
+- `tools/vscode-xwiki-preview` — VS Code extension for xWiki previews.
 
-## Primary data flow
+Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) → `runClaimBoundaryAnalysis` → writes progress back to API.
 
-1. Client/UI -> API creates a job via `JobService` (`apps/api/Services/JobService.cs`).
-2. API triggers the runner via `RunnerClient` which POSTs to `/api/internal/run-job`.
-3. Runner fetches the job, calls `runClaimBoundaryAnalysis` (ClaimAssessmentBoundary pipeline), writes progress/results back to API.
+## Terminology cheat sheet (full table in AGENTS.md)
 
-> **ClaimAssessmentBoundary pipeline v1.0 (2026-02-17):** All 5 stages implemented and operational. Orchestrated pipeline removed. 1501 tests passing (74 files). See `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline/WebHome.xwiki`.
-
-## Critical terminology (always follow — see AGENTS.md for full details)
-
-- **ClaimAssessmentBoundary** = Evidence-emergent grouping of compatible EvidenceScopes. The top-level analytical frame.
-- **AtomicClaim** = Single verifiable assertion extracted from user input. The analytical unit.
-- **EvidenceScope** = Per-evidence source metadata. NEVER call this "context".
-- **EvidenceItem** = Extracted evidence. NEVER call these "facts" in new code.
-- **No hardcoded keywords**: Code, prompts, and logic must be generic for ANY topic.
-- **Input neutrality**: "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%).
-
-## Auth & headers
-
-- Runner -> Next: header `X-Runner-Key` (`FH_INTERNAL_RUNNER_KEY`)
-- Runner -> API: header `X-Admin-Key` (`FH_ADMIN_KEY`)
-- Config: `apps/api/appsettings.Development.json` (from `.example`), `apps/web/.env.local` (from `.env.example`).
+**ClaimAssessmentBoundary / AtomicClaim / EvidenceScope / EvidenceItem** — the four core analytical types. **NEVER** call any of these "context". **NEVER** call EvidenceItem a "fact" in new code.
 
 ## Run commands
 
 - Bootstrap: `powershell -ExecutionPolicy Bypass -File scripts/first-run.ps1`
-- Web: `cd apps/web && npm run dev` (port 3000)
-- API: `cd apps/api && dotnet run` (port 5000)
-- Tests: `npm test` (vitest, safe — excludes expensive LLM tests). Build: `npm -w apps/web run build`.
-- Validation: `npm run validate:run -- <batchLabel>` (runs 16 families, writes JSON to `test-output/validation/`). Compare: `npm run validate:compare -- <oldDir> <newDir>`.
-- **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive` unless explicitly asked — these make real LLM API calls and cost $1-5+ per run.
+- Web: `cd apps/web && npm run dev` (3000) · API: `cd apps/api && dotnet run` (5000)
+- Tests (safe): `npm test` · Build: `npm -w apps/web run build`
+- **Do NOT run** `test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive` unless asked — real LLM calls at $1-5+/run.
 
-## Safety
+## Pointers
 
-- No production data access. No secrets in commits.
-- No destructive git commands unless explicitly asked.
-- Do not overwrite `apps/api/factharbor.db` unless asked.
-- Platform: Windows. Use PowerShell-compatible commands.
-- **PreToolUse hooks** (`.claude/settings.json`) enforce: no `git reset --hard`, no `git push --force`, no `factharbor.db` writes, no expensive test runs. These are main-session only — hooks do not fire for subagents (anthropics/claude-code#34692).
-
-## Roles & Multi-Agent Workflow
-
-When user assigns a role with "As \<Role\>", follow the Role Activation Protocol in `AGENTS.md`.
-Role definitions: `Docs/AGENTS/Roles/`. Shared workflows and protocols: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
+- **Safety, hooks, destructive-git rules**: see `AGENTS.md` §Safety (authoritative).
+- **Roles** ("As \<Role\>"): `Docs/AGENTS/Roles/` — activation protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md`.
+- **Multi-agent workflows & collaboration**: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
 
 ## Workflow
 
-- Solo developer + AI agents. Direct push to main is normal.
-- Commits: conventional commits `type(scope): description`.
+Solo developer + AI agents. Direct push to main is normal. Commits follow conventional commits: `type(scope): description`.

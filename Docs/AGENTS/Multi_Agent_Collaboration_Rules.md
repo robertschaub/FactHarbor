@@ -68,7 +68,7 @@ When activated in a role, use this table to identify which areas are within your
 
 - **Location:** `/Docs/WIP/`
 - **Purpose:** Design documents, plans, reviews in progress, and Investigation hub/spoke files (§3.4)
-- **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `AGENTS.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
+- **NOT for agent completion outputs.** Task completions and role handoffs use the Agent Exchange Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` → `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`
 - **On Completion:** Move finalized documents to an appropriate `Docs/` subfolder or `Docs/ARCHIVE/`
 
 ### 1.5 Live Validation Hygiene
@@ -109,7 +109,7 @@ job-hash interpretation, and "mechanism fired vs run variance" checks.
 
 > **Usage:** The 5-phase workflow below is active for complex or risky tasks. For simple changes, use the Quick Fix Workflow (3.2).
 >
-> **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role and LLM model tier are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `/AGENTS.md` and Model-Class Guidelines in §6.
+> **Pre-task fitness check:** Before starting any workflow, every agent must verify that their current role and LLM model tier are appropriate for the task. If not, inform the Captain and propose a better fit. See the Agent Handoff Protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md` and Model-Class Guidelines in §6.
 
 ### 3.1 Standard Feature Workflow
 
@@ -364,18 +364,18 @@ Use **REVIEW**, **PROPOSE**, or **IMPLEMENT** commands as needed. These can go t
 
 ### 3.5 Role Handoff Protocol
 
-Role handoffs follow the **Agent Exchange Protocol** in `AGENTS.md` (Role Handoff mode).
+Role handoffs follow the **Agent Exchange Protocol** in `Docs/AGENTS/Policies/Handoff_Protocol.md` (Role Handoff mode).
 
 - **Outgoing role:** Write a completion output using the unified template. The **Warnings** and **Learnings** fields are required (not optional). Always append learnings to `/Docs/AGENTS/Role_Learnings.md`.
-- **Incoming role:** Follow the incoming-role checklist in AGENTS.md § Agent Exchange Protocol.
+- **Incoming role:** Follow the incoming-role checklist in `Docs/AGENTS/Policies/Handoff_Protocol.md` § Role Handoff.
 
-See `AGENTS.md` § Agent Exchange Protocol for the full template, output tiers, and file locations.
+See `Docs/AGENTS/Policies/Handoff_Protocol.md` for the full template, output tiers, and file locations.
 
 ---
 
 ## 4. Collaboration Document Protocol
 
-> This section governs **formal collaborative documents** (plans, reviews, investigations) that live in `Docs/WIP/`. For agent task-completion outputs and role handoffs, see `AGENTS.md` § Agent Exchange Protocol.
+> This section governs **formal collaborative documents** (plans, reviews, investigations) that live in `Docs/WIP/`. For agent task-completion outputs and role handoffs, see `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 
 ### 4.1 Document Naming Convention
 

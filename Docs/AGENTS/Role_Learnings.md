@@ -230,6 +230,19 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Functions named `is*Plausible`, `*Rescue`, `*Override`, or `safeDowngrade*` that sit next to an LLM validation step deserve immediate scrutiny. Test: is the function deciding "is this verdict directionally correct?" or "did the model preserve meaning X?" using arithmetic on weighted ratios, hemisphere checks, or string matching? If yes, it is the deterministic semantic adjudication the LLM Intelligence mandate prohibits — even if it looks like a "robustness layer." Concrete cases in the analyzer: `isVerdictDirectionPlausible` (verdict-stage.ts:1561) uses hemisphere/tolerance/ratio rules to override LLM direction validation; `evaluateClaimContractValidation` (claim-extraction-stage.ts:1832) uses substring matching to override LLM anchor preservation. Both should be replaced with LLM re-validation, keeping only structural plumbing (citation polarity bucket consistency, ID validity).
 **Files:** `apps/web/src/lib/analyzer/verdict-stage.ts:1561`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts:1832`
 
+### 2026-04-13 — Trimming root AI-instruction files without losing rules
+**Role:** LLM Expert  **Agent/Tool:** Claude Opus 4.6 (1M)
+**Category:** tip
+**Learning:** Three lessons from trimming a 458-line `AGENTS.md` and 62-line `CLAUDE.md` down to 297 and 34 lines respectively, while externalizing ~170 lines to `Docs/AGENTS/Policies/`:
+
+1. **Grep the destination file before declaring any section "duplicate and safe to delete."** An initial Plan-agent assessment said `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md` duplicated the Agent Exchange Protocol in `AGENTS.md` and recommended outright deletion. Grep of MACR.md during Phase 3 review found the opposite — MACR.md explicitly points *to* `AGENTS.md` as the source of truth ("see AGENTS.md § Agent Exchange Protocol"). Had the original "delete as duplicate" recommendation been followed, the protocol content would have been lost and MACR.md's pointers would dangle. **Rule of thumb: when one file says "see X for full details," X is the source, not the duplicate.**
+
+2. **Use a three-layer stub pattern when externalizing from multi-tool instruction files.** Claude Code supports `@path/to/file.md` auto-imports, but Cursor, Codex, Copilot, and Gemini do not reliably follow them. For every externalized section, leave in the root file: (a) the section heading (so the section still exists in search), (b) a one-line human-readable summary, (c) an explicit `Docs/AGENTS/Policies/Xxx.md` path pointer. This makes the externalized content reachable even for tools that ignore `@`-imports.
+
+3. **Capture a keyword-based rule-inventory baseline before editing and verify count is ≥ baseline after.** Grep for `MANDATORY|MUST|NEVER|always` across the root files pre-trim, save the count, and re-run post-trim across all affected files (including new Policies files). If the total drops, a rule was silently lost. In this refactor: 23 baseline → 24 post-refactor. Fast, cheap, catches regressions that line-diff review would miss in 450+-line files.
+
+**Files:** `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/AGENTS/Policies/Tool_Strengths.md`, `Docs/AGENTS/Policies/xWiki_Reading.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
+
 ## Product Strategist
 
 _(No entries yet)_
