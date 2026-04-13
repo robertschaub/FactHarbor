@@ -1463,16 +1463,17 @@ describe("Stage 1: runGate1Validation", () => {
     expect(result.stats.filteredCount).toBe(1);
   });
 
-  it("should filter claims that fail fidelity even if they pass opinion and specificity", async () => {
+  it("C13: Gate 1 NO LONGER filters on fidelity (contract validator is the sole fidelity authority)", async () => {
     const claims = [
       createAtomicClaim({ id: "AC_01", statement: "Input-faithful claim" }),
-      createAtomicClaim({ id: "AC_02", statement: "Evidence-derived drifted claim" }),
+      createAtomicClaim({ id: "AC_02", statement: "Gate-1 flags as fidelity-failing" }),
     ];
 
     const gate1Fixture = {
       validatedClaims: [
         { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "ok" },
-        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "introduces evidence-specific details absent from input" },
+        // Gate 1 says fidelity failed — but C13 makes this telemetry-only.
+        { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "Gate-1 fidelity vote (now ignored)" },
       ],
     };
 
@@ -1482,11 +1483,13 @@ describe("Stage 1: runGate1Validation", () => {
 
     const result = await runGate1Validation(claims, mockPipelineConfig, "2026-02-17", "Original input claim");
 
-    expect(result.stats.passedOpinion).toBe(2);
-    expect(result.stats.passedSpecificity).toBe(2);
+    // Telemetry still captures Gate 1's fidelity vote.
     expect(result.stats.passedFidelity).toBe(1);
-    expect(result.filteredClaims).toHaveLength(1);
-    expect(result.filteredClaims[0].id).toBe("AC_01");
+    // But BOTH claims survive — Gate 1 no longer drops a claim for fidelity alone.
+    // Only opinion+specificity and specificity-threshold filters remain active.
+    expect(result.filteredClaims).toHaveLength(2);
+    const ids = result.filteredClaims.map((c) => c.id).sort();
+    expect(ids).toEqual(["AC_01", "AC_02"]);
   });
 });
 
@@ -7539,8 +7542,14 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const result = await extractClaims(state);
 
-    expect(result.atomicClaims).toHaveLength(1);
-    expect(result.atomicClaims[0].id).toBe("AC_01");
+    // C13: Gate 1 no longer filters on fidelity, so AC_02 survives. The
+    // dimension-decomposition tag is what this test actually verifies:
+    // single_atomic_claim input must NOT auto-tag its claims as dimensions
+    // (only ambiguous_single_claim does).
+    expect(result.atomicClaims.length).toBeGreaterThan(0);
+    for (const c of result.atomicClaims) {
+      expect(c.isDimensionDecomposition).not.toBe(true);
+    }
   });
 
   it("should still tag explicit ambiguous_single_claim outputs as dimension decompositions", async () => {

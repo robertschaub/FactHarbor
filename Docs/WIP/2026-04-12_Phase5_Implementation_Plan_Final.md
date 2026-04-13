@@ -169,6 +169,63 @@ Second debate (LLM Expert + Lead Architect) independently converged on a new **O
 
 ---
 
+## Phase 5 closure — retry path robust; failure migrated
+
+C11b Run 1 produced `failureMode: validator_unavailable`. Server log showed:
+- **First-attempt Pass 2 succeeded** — Haiku preserved `rechtskräftig`, contract validator approved. No retry fired; C11b's anchor-gated check did not trigger (by design — anchor was already present).
+- **Gate 1 then rejected one of the two contract-approved claims** as a "fidelity failure", contradicting the contract validator.
+- Post-Gate-1 reprompt loop produced a 3-claim set that no longer contained the anchor.
+- Final revalidation LLM call returned no usable result → validator_unavailable → Wave 1A safeguard.
+
+Third debate (LLM Expert + Lead Architect) independently converged: **two LLM authorities (Gate 1 and the contract validator) are adjudicating the same property (fidelity) with asymmetric information.** The contract validator has anchor metadata, thesis, verbatim-preservation rules, structural checks; Gate 1 has less context. When they disagree, the less-informed judge currently wins.
+
+**Both agents recommended: declare Phase 5 closed (retry-path scope delivered) and open Phase 6 for Stage 1 orchestration coherence.**
+
+Phase 5 residual status:
+- Modifier preservation in retry path: **robust** (C11b Run 1 proves first-attempt extraction is now reliable).
+- Phase B 5/5 gate: **not reached**, because failure migrated out of retry scope.
+- Do NOT extend Phase 5 further; scope is closed.
+
+---
+
+## Phase 6 — Stage 1 Orchestration Coherence
+
+### C12 — Retry `validator_unavailable` once at final revalidation
+
+**Problem:** C11b Run 1's final-revalidate call returned no usable result (transient LLM hiccup). Current code treats this as validator_unavailable and fires Wave 1A. One retry recovers transient failures cheaply.
+
+**Change:** Single retry of `validateClaimContract(finalAcceptedClaims, ...)` when the first call returns undefined. One try/catch, narrow, orthogonal. No change to fidelity authority.
+
+### C13 — Gate 1 NO LONGER filters on fidelity
+
+**Problem:** Two LLM authorities adjudicating the same property. Contract validator has richer input (anchor metadata, thesis, verbatim-preservation rules, structural checks, rule IDs). Gate 1's independent fidelity check is a legacy duplicate with less context. When they disagree, the less-informed judge can destroy a contract-approved claim set.
+
+**Change:**
+- `runGate1Validation` still calls the LLM and captures `passedFidelity` in its output.
+- The `passedFidelity` field is now **telemetry-only** — it no longer filters claims.
+- Gate 1's filter logic retains opinion + specificity checks (those cover distinct properties the contract validator does not).
+- Safety-net rescue no longer prefers fidelity-passing (centrality-only sort).
+- Log message updated to call out the new authority boundary explicitly.
+
+**Long-term stability:**
+- Contract validator is the **sole fidelity authority**, as recommended by both LLM Expert and Lead Architect.
+- Gate 1's prompt still asks for `passedFidelity` (schema unchanged); cleanup of the prompt + schema is a follow-up task.
+- Reprompt loop will fire less often because fewer Gate-1 rejections, which reduces the chance of anchor loss via reprompt-generated claim sets.
+
+**Risk:** if there were edge cases where Gate 1 fidelity caught something contract validation missed, C13 removes that catch. Mitigation: the contract validator has been strengthened through Phase 5 (C8 tiebreaker, C11a scope guard); Phase 5 showed it was the superior authority on R2.
+
+### Deferred for Phase 6
+
+- **C14 (conditional):** revisit reordering Gate 1 before contract validation so the validator becomes the final-authority-by-position. Only if C13 alone does not close the gate.
+- **Lever A** (extend C11b post-reprompt anchor check): both agents advised against. Papers over a coherence bug. Defer unless evidence arrives that C13 does not close the gate.
+- **Gate 1 prompt + schema cleanup:** remove `passedFidelity` from the prompt and schema once C13's behavior is validated across a broader test matrix.
+
+### Success metric (Phase 6)
+
+Same R2 × 5 replay protocol. Gate: 5/5 clean. Partition by `failureMode` (C9 telemetry). Since the failure class changed between C11a and C11b, Phase 6's success case is: first-attempt extraction clean → Gate 1 does not destroy it → final revalidation succeeds (or retries once and succeeds).
+
+---
+
 ## Deferred to Phase C (measure before implementing)
 
 - **Final bounded repair pass after Gate 1** — GPT 5.4 reviewer's proposal.

@@ -748,7 +748,7 @@ export async function extractClaims(
       state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 26);
       state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
 
-      const finalContractResult = await validateClaimContract(
+      let finalContractResult = await validateClaimContract(
         finalAcceptedClaims,
         state.originalInput,
         bestPass2.impliedClaim ?? "",
@@ -757,6 +757,26 @@ export async function extractClaims(
         pipelineConfig,
       );
       state.llmCalls++;
+
+      // C12 (Phase 6): single retry on transient LLM failure at final
+      // revalidation. Run 1 on the C11b build produced validator_unavailable
+      // here, causing a report_damaged outcome for what looks like a
+      // network/LLM hiccup rather than a contract-fidelity problem. One
+      // retry is narrow, orthogonal, and cheap; it does not change the
+      // fidelity authority of the validator.
+      if (!finalContractResult) {
+        console.info("[Stage1] Final revalidation returned no result; retrying once (C12).");
+        state.onEvent?.("Retrying final contract revalidation...", 27);
+        finalContractResult = await validateClaimContract(
+          finalAcceptedClaims,
+          state.originalInput,
+          bestPass2.impliedClaim ?? "",
+          bestPass2.articleThesis ?? "",
+          bestPass2.inputClassification ?? "single_atomic_claim",
+          pipelineConfig,
+        );
+        state.llmCalls++;
+      }
 
       if (finalContractResult) {
         const evaluatedFinalContract = evaluateClaimContractValidation(
@@ -2461,20 +2481,23 @@ export async function runGate1Validation(
         .map((v) => v.claimId),
     );
 
-    // Filter claims: remove those that fail fidelity, fail both opinion+specificity,
-    // or are below specificity threshold when grounded.
+    // Filter claims: remove those that fail both opinion+specificity, or are
+    // below specificity threshold when grounded.
+    //
+    // C13 (Phase 6): Gate 1 NO LONGER filters on fidelity. The
+    // CONTRACT_VALIDATION stage is the sole fidelity authority — it has richer
+    // input (anchor metadata, thesis, verbatim-preservation rules, structural
+    // checks) and its judgment is already captured in
+    // `contractValidationSummary`. Running a second, less-informed LLM
+    // fidelity judge here produced contradictory rejections on C11b Run 1,
+    // destroying a contract-approved claim set and triggering a reprompt
+    // loop that lost the anchor. `failedFidelityIds` is still computed from
+    // the Gate 1 output for telemetry/logging only.
     let fidelityFiltered = 0;
     let bothFiltered = 0;
     let specificityFiltered = 0;
     const rescuedThesisDirect: string[] = [];
     const keptClaims = claims.filter((claim) => {
-      // Remove if claim is not faithful to original input meaning
-      // BUT exempt dimension-decomposed claims — they are inherent interpretations
-      // of the input's semantic range, not evidence imports (D1 Option B)
-      if (failedFidelityIds.has(claim.id) && !claim.isDimensionDecomposition) {
-        fidelityFiltered++;
-        return false;
-      }
       // Remove if LLM says both opinion and specificity fail —
       // EXCEPT thesis-direct claims: the user explicitly asked about this dimension.
       // Stage 4's verdict debate handles evaluative claims with confidence calibration.
@@ -2500,22 +2523,14 @@ export async function runGate1Validation(
 
     // Safety net: never filter ALL claims — an empty pipeline produces a
     // meaningless default verdict which is worse than analyzing a vague claim.
-    // If filtering would leave 0, keep the highest-centrality claim that
-    // passed fidelity (or the first claim if none passed fidelity).
+    // If filtering would leave 0, keep the highest-centrality claim.
+    // C13: fidelity is no longer a filter; rescue prefers centrality only.
     if (keptClaims.length === 0 && claims.length > 0) {
-      const fidelityPassIds = new Set(
-        validated.validatedClaims.filter((v) => v.passedFidelity).map((v) => v.claimId),
-      );
       const centralityOrder = ["high", "medium", "low"];
       const rescued = [...claims]
-        .sort((a, b) => {
-          // Prefer fidelity-passing claims
-          const aFid = fidelityPassIds.has(a.id) ? 0 : 1;
-          const bFid = fidelityPassIds.has(b.id) ? 0 : 1;
-          if (aFid !== bFid) return aFid - bFid;
-          // Then by centrality
-          return centralityOrder.indexOf(a.centrality ?? "low") - centralityOrder.indexOf(b.centrality ?? "low");
-        })[0];
+        .sort((a, b) =>
+          centralityOrder.indexOf(a.centrality ?? "low") - centralityOrder.indexOf(b.centrality ?? "low"),
+        )[0];
       keptClaims.push(rescued);
       console.warn(
         `[Stage1] Gate 1: all ${claims.length} claims would be filtered — rescued "${rescued.id}" (centrality: ${rescued.centrality}) to prevent empty pipeline.`,
@@ -2523,9 +2538,10 @@ export async function runGate1Validation(
     }
 
     const filteredCount = claims.length - keptClaims.length;
-    if (filteredCount > 0) {
+    const fidelityTelemetry = failedFidelityIds.size;
+    if (filteredCount > 0 || fidelityTelemetry > 0) {
       console.info(
-        `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${fidelityFiltered} fidelity failures, ${bothFiltered} failed both checks, ${specificityFiltered} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter).`,
+        `[Stage1] Gate 1: filtered ${filteredCount} of ${claims.length} claims (${bothFiltered} failed both opinion+specificity, ${specificityFiltered} below specificity minimum ${specificityMin}; ungrounded claims exempt from specificity filter). C13: Gate 1 fidelity is telemetry-only; ${fidelityTelemetry} claim(s) flagged by Gate 1 fidelity but NOT filtered (CONTRACT_VALIDATION is the sole fidelity authority).`,
       );
     }
 
