@@ -1,0 +1,166 @@
+# Phase 7 Charter — Salience-First Extraction
+
+**Date:** 2026-04-13
+**Status:** Design only. No code change until E1/E2 measurement decides the path.
+**Relation to prior work:** Supersedes the "deferred Opus / best-of-N" recommendation from the Phase 5+6 closure analysis at [Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md](2026-04-13_C16_R2_Combined_Replay_Analysis.md). Does not change any HEAD code.
+
+---
+
+## Context
+
+Phase 5 + Phase 6 (commits C6–C16) delivered targeted fixes for specific failure modes in the retry path and validator. On the R2-locked input, the HEAD aggregate rate is 1/6 full pass — indistinguishable from the pre-C16 baseline (4/25). See the [combined analysis doc](2026-04-13_C16_R2_Combined_Replay_Analysis.md) for the corrected numbers.
+
+The residual failure mode is **extractor anchor loss**: the extractor (Haiku first attempt, Sonnet on retry) sometimes drops truth-condition-bearing modifiers from every claim it produces. The validator correctly flags the loss post-hoc; the repair pass (C11b) tries one narrow corrective LLM call and can also fail.
+
+**User reframing that triggered this charter:**
+
+> "I think this one is high priority and I don't see it as an edge case and it's not about just `rechtskräftig` — it's much more about to get LLM to understand what's most important in an input."
+
+The reframe moves the problem from "R2 edge case" to a **class-level capability concern**: the pipeline asks the LLM to preserve truth-defining content without ever asking the LLM to explicitly commit to *what the truth-defining content is*. Salience is audited after the fact by the contract validator, not committed to up front. That inversion is the root of the class of failures.
+
+The problem shows up with adverbials, qualifiers, modal operators, temporal markers, and quantifiers in any language — not just German legal adverbs. `only`, `mainly`, `approximately`, `allegedly`, `rechtskräftig`, `nur`, `vorläufig`, `angeblich` all sit in syntactic positions that summarization-trained decoders routinely strip.
+
+## Hypothesis
+
+Moving truth-condition identification **upstream of extraction**, as an explicit LLM commitment that the extractor operates under as a binding constraint, will materially reduce anchor-loss failures on inputs with non-trivial truth-condition-bearing content.
+
+This hypothesis has two failure modes we need to test for:
+
+- **H-false (cheap):** a prompt-level "think first, then extract" scaffold inside the existing Pass 2 closes the gap without any architectural change.
+- **H-false-hard:** even a dedicated upstream stage drops salient content at a similar rate — the architectural move does not help. In that case the fix is Opus/best-of-N and this charter closes with a negative result.
+
+## Experiments (run in parallel, prompt-only, cheap)
+
+### E1 — Prompt-scaffold CoT preamble in Pass 2
+
+**Mechanics:**
+- One edit to [apps/web/prompts/claimboundary.prompt.md](../../apps/web/prompts/claimboundary.prompt.md), `CLAIM_EXTRACTION_PASS2` section.
+- Add a CoT preamble: the extractor must, *before* emitting atomic claims, reason explicitly about which words/phrases in the input change truth conditions if removed. Output goes into a throwaway reasoning field; claim emission follows.
+- No schema change. No code change. Reversible via one `git revert`.
+
+**What it tests:** can the existing Pass 2 prompt, with a salience-first reasoning scaffold, close the gap without any architectural move?
+
+### E2 — Shadow Pass 0 salience stage
+
+**Mechanics:**
+- New file: `apps/web/src/lib/analyzer/stages/salience-stage.ts` (new stage, ~60 lines).
+- New prompt section: `CLAIM_SALIENCE_COMMITMENT` in the same prompt file.
+- Output schema: `{ anchors: [{ text: string, inputSpan: string, type: "modifier"|"predicate"|"threshold"|"temporal"|"modal"|"quantifier", rationale: string, truthConditionShiftIfRemoved: string }] }`.
+- Wire into [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) post-Pass-1, **log-only**: the stage runs, writes its output to the job record (new optional field on the understanding block), and does NOT yet constrain Pass 2.
+- New LLM call: +1 Haiku per run (~$0.001). Tier choice revisable after E2 measurement.
+- Promote `truthConditionAnchor` to a shared type so Pass 0 and the existing validator both reference the same shape.
+
+**What it tests:** does a dedicated single-task salience stage identify the anchors the extractor later drops? If yes on most failing cases, Pass 0 is viable as a binding input. If Pass 0 also drops them, the architectural hypothesis is wrong and we save the refactor.
+
+**Multi-anchor support:** mandatory from day 1. Real inputs have multiple truth-condition modifiers ("only X may Y when Z"). Output is a list.
+
+### Why both experiments, not just one
+
+Architect's pushback: if E1 alone works, we skip E2's new stage and schema entirely. If E1 doesn't work but E2 shows Pass 0 correctly identifies anchors, we know the architectural move is worth the refactor. If neither works, we have hard data to justify Opus/best-of-N as a Phase 7b.
+
+## Input corpus for both experiments
+
+Each input runs ×5 on the same build, measured independently.
+
+- **R2 (locked, German):** `Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
+- **R2-plural (German):** `Nur rechtskräftige Urteile werden vollstreckt`
+- **Reported-speech hedge (German):** `Die Behörde hat angeblich den Bericht unterdrückt`
+- **Multi-modifier (English):** `Only qualified voters may participate when at least 60% turnout is reached`
+- **Plain hedge (English):** `Approximately 30% of participants reported side effects` (or an equivalent from existing test set)
+
+5 inputs × 5 runs × (E1 + E2 + baseline HEAD) = ~75 runs. Budget estimate ~$5–10.
+
+## Measurements
+
+Per-run, record:
+- For E1 and HEAD baseline: does the extractor output preserve the expected anchor(s) as verbatim substring in any claim statement? `preservesContract` and `validPreservedIds`.
+- For E2: does Pass 0's emitted `anchors` list contain each expected anchor? And does downstream Pass 2 (unchanged) still drop it?
+- LLM call count and wall-clock per run.
+
+Per-cohort aggregate:
+- Gate-pass rate (validPreservedIds non-empty).
+- Full-pass rate (preservesContract=true AND verdict non-UNVERIFIED).
+- For E2: anchor-identification recall (Pass 0 found the anchor the validator later identified) and precision (Pass 0 did NOT emit spurious anchors on inputs where none exist).
+
+Exact-input filter (from the reviewer finding): all measurements use byte-identical `inputValue` matching, not substring preview matching.
+
+## Decision tree after measurement
+
+| E1 result | E2 result | Next action |
+|---|---|---|
+| Gap closes | — | **Ship E1.** Mark Phase 7 closed with the prompt-scaffold fix. No refactor. |
+| Small improvement | Pass 0 reliably identifies anchors extractor drops | **Proceed to Shape B refactor** (binding Pass 0 + required `sourceSpan` field; multi-anchor schema; validator reframed as audit-against-commitment). Phase 7b. |
+| No improvement | Pass 0 also drops anchors | **Architectural hypothesis fails.** Close Phase 7 with negative result. Open Phase 7c scoped to Opus/best-of-N with the measurement as justification. |
+| No improvement | Pass 0 fine | E1 is not enough alone; go to Shape B. |
+| Mixed / ambiguous | — | Expand corpus, re-measure, then decide. Do NOT commit to Shape B on thin evidence. |
+
+## Shape B (post-measurement, only if data supports it) — NOT COMMITTED YET
+
+Documented here so the refactor footprint is transparent up front:
+
+- Pass 2 prompt receives `<preCommittedAnchors>` block with hard directive: every anchor's `text` MUST appear verbatim as substring of at least one claim's `statement`.
+- New required field on atomic claim output: `sourceSpan: string` — verbatim span from input the claim paraphrases. Forces emission order: span first, claim second. LLM Expert's strongest-effect intervention; makes dropping the anchor *ungrammatical*, not merely discouraged.
+- Contract validator reframed from "discover anchor + audit preservation" to "audit commitment honored."
+- C11b anchor-gated repair: stays; now targets a known list of anchors from Pass 0, not a single re-discovered one.
+- C6 Sonnet retry: still fires on contract failure; less often because Pass 2 has upstream guidance.
+- Schema migration: `truthConditionAnchor: {…}` → `truthConditionAnchors: [{…}]` (list), with a stored-record compatibility shim.
+- Test surface: Gate tests, contract tests, C11b tests (~15–25 tests touch the anchor shape).
+- Feature flag: `SALIENCE_FIRST_MODE` default off; enabled after E1+E2 validate.
+
+## Non-goals for Phase 7
+
+- **Not** a validator correctness refactor. The validator's role changes from discovery to audit, but its prompt quality remains a separate workstream.
+- **Not** an Opus escalation. Tier choice is a separate lever measured only after Phase 7 evidence (E1+E2) is in.
+- **Not** a Gate 1 rework. Gate 1 already stabilized in C13; it stays as opinion/specificity only.
+- **Not** a user-facing verdict-schema change. All of Phase 7 is upstream of verdict generation.
+
+## Success criterion for the Phase 7 charter itself
+
+**Phase 7 is "complete" when we have data that decisively routes us to exactly one of the four outcomes in the decision tree.** Shipping Shape B is optional and conditional. Closing with a negative result (and a concrete case for Opus/best-of-N) is equally valid — the goal is a decision, not an outcome.
+
+## Implementation order (strict)
+
+1. **Write this charter** (this commit). No code.
+2. **Land E1 as one prompt edit** to `CLAIM_EXTRACTION_PASS2`. Single commit. Reversible.
+3. **Land E2 as a shadow stage** (~60 lines + 1 prompt file + 1 wire-up, log-only). Single commit. Feature-flag off.
+4. **Run the 75-run measurement batch** (five inputs × five runs × three variants = baseline / E1 / E2-with-logging). Record in a new `Docs/WIP/2026-04-1X_Phase7_E1_E2_Measurement.md`.
+5. **Debate the result** (LLM Expert + Architect, same cadence as prior phases).
+6. **Decide per the decision tree.** If Shape B: open as Phase 7b with its own charter.
+
+## Rollback path
+
+- E1: `git revert` the prompt edit. Zero downstream surface.
+- E2 (shadow): `git revert` the stage wire-up. The stage file can stay (dead code) or be removed in the same revert.
+- Shape B (if taken): feature flag off, then `git revert` if quality regresses on non-R2 inputs.
+
+## Files referenced
+
+- [apps/web/src/lib/analyzer/claim-extraction-stage.ts](../../apps/web/src/lib/analyzer/claim-extraction-stage.ts) — Pass 1, Pass 2, contract validation, C11b repair.
+- [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) — stage wiring, Wave 1A safeguard.
+- [apps/web/prompts/claimboundary.prompt.md](../../apps/web/prompts/claimboundary.prompt.md) — all prompt sections. E1 edits `CLAIM_EXTRACTION_PASS2`; E2 adds `CLAIM_SALIENCE_COMMITMENT`.
+- [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts) — Pass 0 output type and the `truthConditionAnchor(s)` schema shared across pre- and post-extraction.
+- [Docs/WIP/2026-04-12_Phase5_Implementation_Plan_Final.md](2026-04-12_Phase5_Implementation_Plan_Final.md) — Phase 5+6 trajectory.
+- [Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md](2026-04-13_C16_R2_Combined_Replay_Analysis.md) — corrected HEAD baseline that triggered this charter.
+
+## Verification (after E1 + E2 land)
+
+```bash
+# List R2 jobs on the Phase 7 experiment build (commit hash set after each step)
+curl -s 'http://localhost:5000/v1/jobs?limit=200' \
+  | python -c "import sys,json; [print(j['jobId'][:8], j['createdUtc'][:19], j.get('verdictLabel')) \
+      for j in json.load(sys.stdin)['jobs'] if 'Bundesrat' in (j.get('inputPreview') or '') \
+      and 'rechtskr' in (j.get('inputPreview') or '')]"
+
+# Per-job: compare Pass 0 anchors (E2) against validator-discovered anchors (HEAD)
+curl -s 'http://localhost:5000/v1/jobs/<jobId>' | python -c "
+import sys, json
+d = json.load(sys.stdin)
+r = d.get('resultJson', {}) or {}
+u = r.get('understanding', {}) or {}
+print('Pass 0 anchors:', (u.get('salienceCommitment') or {}).get('anchors'))
+print('validator anchor:', (u.get('contractValidationSummary') or {}).get('truthConditionAnchor', {}).get('anchorText'))
+print('claim statements:', [c.get('statement') for c in u.get('atomicClaims', []) or []])
+"
+```
+
+(If E2 never lands, the Pass 0 lookup is None; if the hypothesis holds, the Pass 0 anchors list will include the validator's `anchorText` on runs where the extractor drops it.)
