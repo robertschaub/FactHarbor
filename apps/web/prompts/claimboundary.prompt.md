@@ -133,16 +133,11 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 
 Before producing any atomic claims, reason step-by-step about which elements of the input are truth-condition-bearing. This reasoning is **internal** — do NOT emit it as a field. Use it to constrain the decomposition that follows.
 
-1. **Identify truth-condition-bearing tokens.** Scan the input for words or phrases whose removal would change what evidence is needed to verify the proposition. Typical classes, language-agnostic:
-   - Finality / modality adverbials (e.g. `rechtskräftig`, `vorläufig`, `definitiv`, `finally`, `provisionally`, `binding`).
-   - Quantifiers and approximations (e.g. `nur`, `mehr als`, `only`, `at least`, `approximately`, `more than`).
-   - Hedges and evidentials (e.g. `angeblich`, `allegedly`, `reportedly`, `ostensibly`).
-   - Conditional / temporal / causal qualifiers (e.g. `bevor`, `falls`, `wenn`, `before`, `when`, `unless`, `because`).
-   - Scope limiters (e.g. `nur`, `ausschließlich`, `only`, `exclusively`).
+1. **Identify truth-condition-bearing tokens.** Scan the input for words or phrases whose removal would change what evidence is needed to verify the proposition. Consider all linguistic functions that carry truth conditions, without relying on a closed list — you, the model, know the relevant categories for the input language. Broad classes to survey include (but are not limited to): finality and modality markers; quantifiers and approximation qualifiers; evidential hedges and attributive markers; conditional, temporal, and causal qualifiers; scope limiters; and any other constituent whose presence materially shifts what counts as verifying evidence. **Do not rely on any example list — including any that has appeared in earlier prompt versions.** Your job is to detect salience in the specific input you were given, not to match against canned examples.
 2. **Check each candidate with the removal test.** For each identified token, ask: *"If I removed this word from the input, would the set of evidence that verifies the claim change?"* Keep only the tokens that pass this test.
 3. **Commit to a preservation contract.** For every token that passes the removal test, commit to preserving it **verbatim** in at least one thesis-direct atomic claim's `statement`. This is a hard constraint on your decomposition, not a suggestion. If your planned decomposition cannot preserve a given token verbatim, the decomposition is wrong and you must restructure before emitting.
 4. **Edge cases:**
-   - If the input is a plain factual assertion with no truth-condition-bearing modifiers (e.g. "The parliament approved the budget on March 15, 2026"), your commitment list is empty and this step imposes no constraint.
+   - If the input is a plain factual assertion with no truth-condition-bearing modifiers, your commitment list is empty and this step imposes no constraint.
    - Referential metadata (dates, entity names, numbers) that is NOT functioning as a truth-condition-bearing qualifier does not need to be on the commitment list unless the input's proposition depends on that specific referent.
 5. **Proceed to the rules below** with this preservation contract in mind. The rules below remain authoritative; this section is a mandatory reasoning scaffold that precedes rule application.
 
