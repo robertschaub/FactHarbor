@@ -1,0 +1,8 @@
+### 2026-04-06 | Senior Developer | Claude Code (Opus 4.6) | Cross-Boundary Tension Investigation
+**Task:** Investigate whether cross-boundary tensions increased since previous deployment, find root causes, propose fixes.
+**Files touched:** `Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md` (new)
+**Key decisions:** (1) Increase is empirically real (deployed 1.86 avg vs previous 0.60) but not a proven causal regression from `2ec54047` (docs-only). (2) Three root causes: stale `${aggregation}`/`${evidenceSummary}` prompt variables (never wired since `6e347f09`), stale advocate-era `boundaryFindings` surviving reconciliation (`verdict-stage.ts:1022`), and under-specified prompt that doesn't distinguish tensions from methodology caveats. (3) Captain corrected original ranking: `.max(3)` cap is NOT a root cause (current jobs are 1-3 tensions) — the missed root cause is stale `boundaryFindings`. (4) GPT debate confirmed Captain's corrections on all points.
+**Open items:** Fix 1 (wire stale variables), Fix 2 (stop stale `boundaryFindings`), Fix 3 (tighten prompt classification).
+**Warnings:** `boundaryFindings` in `mergedVerdict` at `verdict-stage.ts:1022` are advocate-era — reconciliation updates truth/confidence/reasoning/citations but NOT per-boundary findings. Stage 5 narrates tensions from pre-challenge data.
+**For next agent:** Fix 1: `aggregation-stage.ts:388` — add `aggregation` and `evidenceSummary` variables. Fix 2: `verdict-stage.ts:1022` — either have reconciler return updated boundaryFindings, or derive post-reconciliation boundary summary. Fix 3: tighten VERDICT_NARRATIVE prompt to classify methodology/singleton caveats as `limitations`. Full plan: `Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md`.
+**Learnings:** No

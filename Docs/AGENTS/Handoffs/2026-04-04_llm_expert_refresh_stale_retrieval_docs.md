@@ -1,0 +1,8 @@
+### 2026-04-04 | LLM Expert | Codex (GPT-5) | Refresh Stale Retrieval Docs
+**Task:** Update the clearly stale retrieval solution/plan documentation against the current search implementation.
+**Files touched:** `Docs/Specification/Multi_Source_Evidence_Retrieval.md`, `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the old multi-source spec from “proposed / implementation not started” to a partial-implementation state that matches the shipped provider layer, current Wikipedia supplementary completion, and the current UCM-controlled supplementary policy. Preserved the March 26 workstream decision as a historical decision record, but added an explicit 2026-04-04 update note so readers do not mistake its provider-default observations for current reality.
+**Open items:** Older retrieval docs may still contain historical assumptions beyond the two corrected files. If the team wants a fuller cleanup, the next pass should check xwiki planning pages and any archived-but-still-linked retrieval notes for current-vs-historical labeling.
+**Warnings:** The worktree contains unrelated user edits in `Backlog.md`, `Current_Status.md`, WIP search docs, and xwiki pages. Those were intentionally left untouched. The March 26 decision doc was not rewritten internally because that would blur historical record and current state.
+**For next agent:** Treat the current retrieval planning sources as `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md`. Only expand edits beyond these if asked for a broader documentation sweep.
+**Learnings:** no

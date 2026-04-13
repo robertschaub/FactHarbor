@@ -1,0 +1,8 @@
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Update Status Docs After Grounding Root Fix
+**Task:** Bring the active status docs and backlog into sync with the committed grounding root-fix work and its current validation state.
+**Files touched:** `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated the top-level status snapshot to state that the grounding false-positive root fix is now committed in code, locally validated on fresh canaries, and shifted from "next fix" to monitor/deployed-validation status. Added a new 2026-04-05 recent-changes block in `Current_Status.md`, added `GRND-1` as a monitor item in `Backlog.md`, and recorded the grounding track as completed-in-code in the active WIP stabilization plan so the next analytical workstream is Stage 2/3 stabilization rather than more grounding redesign.
+**Open items:** Docs are updated but not committed. Deployed validation of the grounding root fix and first-7-run monitoring still remain open operationally.
+**Warnings:** The docs now distinguish clearly between "implemented in code" and "validated in production." Do not collapse those two states in future updates unless a fresh deployed rerun on the new commit has been checked.
+**For next agent:** If these doc updates are committed, keep `GRND-1` in MONITOR status until the first 7+ runs and deployed validation are reviewed. The next substantive plan/doc changes should likely focus on the Stage 2/3 boundary-concentration track.
+**Learnings:** no

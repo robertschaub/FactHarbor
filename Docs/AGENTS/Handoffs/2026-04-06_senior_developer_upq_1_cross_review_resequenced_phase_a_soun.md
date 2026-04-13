@@ -1,0 +1,8 @@
+### 2026-04-06 | Senior Developer | Claude Code (Sonnet 4.6) | UPQ-1 Cross-Review — Resequenced Phase A Soundness
+**Task:** Cross-review the consolidated UPQ-1 architecture review: is Phase A-1 (wire existingEvidence summary into GENERATE_QUERIES) → A-2 (telemetry) → gate → B the right sequence?
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md` (this entry only; no code changes)
+**Key decisions:** See full review in chat. Judgment: `approve` with one plan change. The dead-parameter finding is strong enough to justify front-loading the prompt fix, but the plan needs a mandatory claim-local filter applied to `existingEvidence` before it is summarised for the prompt; passing the entire `state.evidenceItems` array (all claims) risks polluting the per-claim evidence summary with sibling-claim evidence.
+**Open items:** None blocking.
+**Warnings:** (1) `state.evidenceItems` is the whole-pipeline accumulator — not pre-filtered to `targetClaim.id`. If Phase A-1 passes it unsifted to the prompt, the evidence summary includes evidence for sibling claims, which may produce incorrect "already-covered" signals. (2) `queryGenerationTemperature: 0.2` is conservative for a diversity task; a summary that signals coverage gaps may not be enough if temperature suppresses divergence. Consider whether 0.3–0.4 is worth testing as Phase A-2 telemetry lands.
+**For next agent:** Required plan change: `generateResearchQueries()` must filter `existingEvidence` to items where `relevantClaimIds.includes(claim.id)` before building the summary. This is a one-liner but critical for correctness. Full review text is in the chat response above.
+**Learnings:** No

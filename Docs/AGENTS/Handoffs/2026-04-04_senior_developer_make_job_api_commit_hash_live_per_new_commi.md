@@ -1,0 +1,8 @@
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Make Job/API Commit Hash Live Per New Commit
+**Task:** Fix local and deployed provenance stamping so new jobs and version endpoints expose the current live commit hash instead of a startup-frozen value.
+**Files touched:** `apps/api/Helpers/AppBuildInfo.cs`, `apps/api/Services/JobService.cs`, `apps/api/Controllers/VersionController.cs`, `apps/api/Program.cs`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the old startup-resolved `AppBuildInfo.Resolve()` singleton record with a live resolver service that prefers deployment-injected `GIT_COMMIT`, falls back to local git state, and exposes `GetGitCommitHash(useCache: false)` for new job creation/retry stamping. Added `git_sha` to the API `/version` response and updated DI so the API no longer freezes commit provenance at process startup. This keeps the visible job hash current after new local commits without requiring an API restart, while still preserving deployment provenance in production.
+**Open items:** The deployed environment still needs the patched API build running before production jobs benefit from the live resolver. `scripts/restart-clean.ps1` leaving stale port owners was observed separately and was not fixed in this change.
+**Warnings:** This change affects provenance labeling only; it does not create an analysis-scoped fingerprint. Unrelated docs remain modified in the worktree and were intentionally excluded from the commit.
+**For next agent:** Verify production picks this up after the next deploy/restart by checking `/version` and one freshly created job. If future validation needs analyzer-only provenance, add a second scoped fingerprint rather than changing this whole-repo build id again.
+**Learnings:** no

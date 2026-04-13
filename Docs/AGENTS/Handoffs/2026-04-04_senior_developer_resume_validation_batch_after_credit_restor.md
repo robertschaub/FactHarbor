@@ -1,0 +1,8 @@
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Resume Validation Batch After Credit Restoration
+**Task:** Observe the user-resubmitted verification jobs after Anthropic credits were restored and fold the results back into the active validation plan.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The rerun produced three usable results and one interruption: Plastik `045e240...` completed `LEANING-FALSE 34/71`, control `42476c7...` completed `TRUE 96/91`, Bolsonaro EN `b6a7bcc...` completed `LEANING-TRUE 68/67`, and DPA `0488e397...` was interrupted by server restart. The more important finding is that the rerun batch still failed the intended validation-gate requirement: the three completed jobs recorded different `executedWebGitCommitHash` values, so this was not a true same-commit batch even though the scenarios completed.
+**Open items:** The validation gate remains incomplete. A clean canary batch still needs a stable local execution environment with no mid-batch restart/reload drift.
+**Warnings:** Do not treat the rerun batch as a valid same-commit baseline. The completed jobs used different executed commits, and the DPA run confirms a real local restart (`Job interrupted by server restart.`). This is now a local execution-stability blocker, not a lack of canary scenarios.
+**For next agent:** Start from the WIP doc’s new rerun-status sections. The next step is not more analytical comparison; it is stabilizing the local run environment so a serial batch can execute on one fixed build/commit. Once that is achieved, rerun the same canary set again.
+**Learnings:** no

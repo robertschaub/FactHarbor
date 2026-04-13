@@ -1,0 +1,8 @@
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Job Quality Investigation
+**Task:** Deep investigation of all local (39) and deployed (74) jobs from baseline `f1a372bf` through HEAD `442a5450`, covering both environments.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md` (new)
+**Key decisions:** (1) Phase B is validated — Bolsonaro MT 74/68 matches deployed, all claims get ≥1 researched iteration. (2) Boundary concentration is now the dominant bottleneck — Plastik collapsed to 1 boundary (1.00 share) on Phase B. Phase C is the correct next workstream. (3) Plastik DE has a 34pp local-vs-deployed gap on same baseline build (28-53% local vs 62% deployed) — this is environmental/provider variance, not a code problem. (4) Grounding warnings remain common (~64% of local jobs, ~66% of deployed) but are info-severity. (5) No proven runtime regression from Phase A-1.
+**Open items:** Phase C (Stage 3 concentration), deploy Phase B, continue grounding monitoring.
+**Warnings:** The Plastik local-vs-deployed divergence is the largest unexplained cross-environment gap. Deployed Plastik found far fewer contradicting items than local, producing LEANING-TRUE vs LEANING-FALSE.
+**For next agent:** Full investigation: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. Priority: Phase C > deploy Phase B > grounding monitoring.
+**Learnings:** No

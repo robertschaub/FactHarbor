@@ -1,0 +1,10 @@
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Seven-Run Contract Failure Review
+**Task:** Review the seven local post-fix treaty runs, document the two user-approved reference jobs, classify the degraded runs, and identify the concrete runtime seams responsible for failure.
+**Files touched:** `Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Split degraded outputs into two classes: genuine Stage-1 anchor loss/legal-effect injection for the `rechtskräftig` failures, and a separate validator false negative for coordinated temporal-anchor decomposition on the non-anchor input. Recorded `c72d7b...` and `0fff063...` as user-facing reference outputs, with `8bbc2e...` retained as the cleanest Stage-1 fused-shape reference.
+**Open items:** Runtime fix pass still needed in `claim-extraction-stage.ts` for coordinated-anchor acceptance and for removing final-claim revalidation fail-open success semantics. Stage-1 fusion hardening for `rechtskräftig` should be implemented and re-run against the same 4 plus 3 battery.
+**Warnings:** `c72d7b...` is outcome-correct but not a perfect extraction-shape reference because it externalizes `rechtskräftig` into a standalone legal-effect claim. `0fff063...` is outcome-correct but still passed through a final revalidation fail-open path.
+**For next agent:** Start with `Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md`. The key implementation target is the whole-anchor substring requirement inside `evaluateClaimContractValidation(...)`, which is over-rejecting coordinated actor decompositions.
+**Learnings:** No
+**For next agent:** Read `Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md` first. Highest-priority next steps are P0 Stage-1 contract-enforcement redesign, P1 matrix/report honesty fix, and dead/transitional code removal.
+**Learnings:** No

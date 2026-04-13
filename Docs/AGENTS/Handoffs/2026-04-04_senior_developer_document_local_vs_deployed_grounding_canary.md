@@ -1,0 +1,8 @@
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Document Local vs Deployed Grounding Canary Results
+**Task:** Check the live local and deployed systems after the grounding-scope fix, compare the Switzerland-vs-Germany canary jobs, and record what is actually validated versus still provenance-inconclusive.
+**Files touched:** `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Recorded both service/version states and both canary jobs. Local validation is now considered complete because the local services and the local canary job all ran on `b7783872...` and the warning disappeared. Deployed validation is explicitly not considered complete yet because the deployed services report `b7783872...`, but the sampled deployed canary job still stamped the older execution hash `521040e...`, even though the warning also did not appear there.
+**Open items:** One more deployed rerun of the same claim is still needed. The acceptance condition is that the new deployed canary must both (a) stamp `b7783872...` and (b) remain free of `verdict_grounding_issue`.
+**Warnings:** Do not treat deployed job `82344370fbd54cb9bec1653cc462b84c` as final proof of the grounding fix. It is encouraging behaviorally, but provenance-inconclusive because the job itself ran/stamped as `521040e...`.
+**For next agent:** Use the new section 6 in `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as the current source of truth for the local/deployed status split. The next operational step is a fresh production rerun of the same claim and a quick provenance check on the new job hash.
+**Learnings:** no

@@ -1,0 +1,8 @@
+### 2026-04-10 | Lead Architect | GitHub Copilot (GPT-5.4) | Architect Review Recheck Against Current Source
+**Task:** Recheck the latest architect review against current source, prompts, tests, and report UI/export code, then classify which points are confirmed facts versus plausible but still unproven risk.
+**Files touched:** `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed the review's major code facts: Stage 1 now degrades and terminates early on contract-validation failure, validator input still omits thesisRelevance/directness markers, the live matrix still mixes count display with verdict coloring, HTML export still uses count-only coloring, `articleVerdictOverride` remains schema/default-only, and deprecated dominance residue remains in types. Kept two architect points as risk judgment rather than proven bug: tangential-claim false positives from missing directness context and structurally valid but semantically unrelated quote acceptance as a still-open correctness risk.
+**Open items:** Add one pipeline-level regression test for the early `report_damaged` branch, decide whether directness context should be passed into contract validation, fix matrix honesty, and remove dead config/deprecated dominance compatibility once migration risk is cleared.
+**Warnings:** The current implementation is materially safer than the pre-fix state, but the review is correct that it should not yet be described as fully solved at the product-trust level.
+**For next agent:** Treat the architect review as substantively accurate. The strongest remaining gaps are report-honesty in the matrix and missing directness context in contract validation, not a re-opened silent fail-open bug.
+**Learnings:** No

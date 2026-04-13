@@ -1,0 +1,8 @@
+### 2026-04-03 | Senior Developer | Codex (GPT-5) | Add Supplementary Provider Usage Recommendations To WIP Docs
+**Task:** Extend the active Wikipedia/supplementary-provider WIP docs so they explicitly recommend when and how to use Wikipedia, Semantic Scholar, and Google Fact Check.
+**Files touched:** `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Added explicit provider-usage guidance to both docs. The concept doc now states when each provider is useful and how it should be treated in FactHarbor's retrieval design. The implementation-plan doc now makes the operational recommendation explicit: Wikipedia enabled by default as bounded multilingual supplementary context; Semantic Scholar and Google Fact Check kept optional/off by default and used as targeted discovery layers when their specific evidence ecosystems are likely to matter.
+**Open items:** This is still documentation only. The actual code implementation of `supplementaryProviders.mode`, bounded supplementary dispatch, and language-aware Wikipedia routing is still pending.
+**Warnings:** The new recommendations are intentionally narrow. They do not authorize default-on Semantic Scholar or Google Fact Check, and they do not imply provider-specific weighting heuristics.
+**For next agent:** If implementation proceeds, preserve the distinction now documented in WIP: Wikipedia is the bounded default-on supplementary source; Semantic Scholar and Google Fact Check remain targeted optional discovery providers until their deeper integration path is reopened.
+**Learnings:** no

@@ -1,0 +1,8 @@
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B — Per-Claim Researched-Iteration Floor
+**Task:** Implement per-claim researched-iteration floor for Stage 2 sufficiency, addressing seeded-evidence dominance found by Phase A-2 telemetry.
+**Files touched:** `types.ts` (new `researchedIterationsByClaim` field), `research-orchestrator.ts` (tracking + guard in `allClaimsSufficient`), `claimboundary-pipeline.ts` (state init), `config-schemas.ts` (Zod + TS defaults), `pipeline.default.json`, `claimboundary-pipeline.test.ts` (6 new tests)
+**Key decisions:** (1) Per-claim guard, not global: each claim must receive ≥1 targeted research iteration before seeded items can make it sufficient. (2) Guard only fires when `includeSeeded=true` (diversity-aware path) — non-seeded path unaffected. (3) UCM-configurable via `sufficiencyMinResearchedIterationsPerClaim` (default: 1, 0 disables). (4) LLM Expert approved — the guard is structural plumbing, not semantic. Main risk is zero-yield budget waste on near-sufficient seeded claims, bounded by existing `zeroYieldBreakThreshold`.
+**Open items:** Run 4 hard-family canaries on this build to measure whether Plastik AC_01 now receives at least one research iteration.
+**Warnings:** None.
+**For next agent:** The fix targets the exact pattern from Phase A-2 ledger: Plastik AC_01 had 41 seeded/0 researched. After this change, AC_01 must receive at least 1 targeted iteration. The `claimAcquisitionLedger` will show whether the forced iteration produces useful evidence or is a zero-yield pass.
+**Learnings:** No

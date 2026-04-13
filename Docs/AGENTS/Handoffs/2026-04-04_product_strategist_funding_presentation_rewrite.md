@@ -1,0 +1,8 @@
+### 2026-04-04 | Product Strategist | Codex (GPT-5) | Funding Presentation Rewrite
+**Task:** Review, shorten, and update the outward-facing funding/support presentation using adjacent xWiki docs, `Docs/Knowledge`, current status, and current funding/program validation.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Replaced the long product explainer + generic grant catalog with a shorter support page centered on why support matters now, the current Alpha posture, the April-June 2026 priorities, and the specific support types that fit the project today. Kept one UI image, retained independence safeguards, aligned the page with the updated cooperation strategy, and made the Swiss research/Innosuisse lane the clearest near-term path instead of treating all funding routes as equally actionable.
+**Open items:** If desired, the next pass could create a matching external one-pager or donor/partner outreach email set that reuses the same priority framing. Current external program timing will need periodic refresh.
+**Warnings:** The page is intentionally outward-facing and therefore does not surface some internal partner-status details. Any live funding decision should still be cross-checked against the detailed `Cooperation Opportunities` page and current official funder pages.
+**For next agent:** Keep this page short and donor/partner-facing. Detailed partner sequencing, funder timing, and internal readiness notes belong in `Cooperation Opportunities`, `Academic Cooperation`, `Docs/Knowledge`, and `Docs/WIP`, not back in this presentation.
+**Learnings:** No

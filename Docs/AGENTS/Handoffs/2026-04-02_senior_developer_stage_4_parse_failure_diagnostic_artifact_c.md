@@ -1,0 +1,17 @@
+### 2026-04-02 | Senior Developer | Claude Code (Opus 4.6) | Stage-4 Parse Failure Diagnostic Artifact Capture
+**Task:** Implement durable admin-only raw parse-failure artifact capture for Stage-4 verdict debate prompts to enable root-cause diagnosis of remaining intermittent German Plastik `VERDICT_ADVOCATE` parse failures.
+**Files touched:** `apps/web/src/lib/analyzer/metrics.ts` (new `ParseFailureArtifact` interface + optional field on `LLMCallMetric`), `apps/web/src/lib/analyzer/verdict-generation-stage.ts` (artifact builder, recovery tracking, artifact attachment to both initial and retry parse-failure `recordLLMCall` calls), `apps/web/test/unit/lib/analyzer/verdict-parse-artifact.test.ts` (7 new focused tests).
+**Key decisions:**
+- Artifact is stored as an optional `parseFailureArtifact` field on `LLMCallMetric`, flowing through the existing metrics pipeline into `AnalysisMetrics.MetricsJson` in SQLite. No new tables, no new API endpoints, no new storage mechanisms.
+- Raw response is truncated to prefix (4096 chars) + suffix (2048 chars), enough to diagnose trailing prose, missing brackets, duplicated segments, localized key drift, and fence/commentary patterns.
+- Each parse attempt tracks which recovery strategies were attempted (`direct_parse`, `fenced_parse`, `embedded_value_extraction`, `truncated_repair`), persisted in the artifact.
+- Both initial and retry failures get separate artifacts with `attempt: "initial" | "retry"`.
+- Successful parses do NOT produce artifacts — verified by test.
+**Where the artifact is stored:** Inside `llmCalls[]` entries in the per-job `MetricsJson` blob, accessible via `GET /api/fh/metrics/{jobId}` (admin-key protected).
+**How admins inspect it:** Query the metrics API for a failing job, then look at `llmCalls` entries where `schemaCompliant=false` — each will have a `parseFailureArtifact` object with `rawPrefix`, `rawSuffix`, `rawLength`, `startsWithKind`, `expectedRoot`, `recoveriesAttempted`, and identity fields.
+**What is NOT exposed to normal users:** Raw LLM output is never shown in the job detail page (`/jobs/[id]`), the public API job response, or any user-facing warning. The artifact exists only in the admin metrics JSON blob.
+**Artifact content:** Truncated diagnostic slices (first 4096 + last 2048 chars), not full raw output. This is sufficient to distinguish all known malformation patterns while keeping metrics JSON size manageable.
+**Open items:** The next failing German Plastik run will produce inspectable artifacts. The actual root-cause diagnosis of the malformed output is the follow-on task — this change provides the evidence capture needed for that diagnosis.
+**Warnings:** Artifact size adds ~6KB per parse failure to metrics JSON. With at most 2 failures per run (initial + retry), this is negligible.
+**For next agent:** After the next failing Plastik run, inspect the artifacts via `GET /api/fh/metrics/{jobId}` and search for `parseFailureArtifact` in the `llmCalls` array. The `rawPrefix` and `rawSuffix` should reveal whether the failure is trailing commentary, incomplete brackets, duplicated JSON segments, or another pattern. Based on that, decide whether the fix belongs in parser recovery or prompt output instructions.
+**Learnings:** no

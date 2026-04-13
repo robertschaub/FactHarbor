@@ -1,0 +1,8 @@
+### 2026-04-02 | Investigator | Codex (GPT-5) | Funding Section Editorial Pass
+**Task:** Perform a pure editorial cleanup on the updated funding section without changing its overall structure or reprioritizing the grant landscape again.
+**Files touched:** `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Standardized the main funding tables to `Action / gating condition`, removed inconsistent `Robert:` owner markers, rewrote action cells into imperative next steps, and aligned Tier A/B/C wording so the page consistently distinguishes immediate actions from partner-gated routes. Also softened one unverified Lokalhelden fee claim, clarified Open Collective host-fee wording, and replaced the awkward `after Vereinsgruendung` phrasing with `once the Swiss Verein is established`.
+**Open items:** The next useful cleanup would be adding `Last verified` timestamps to the main tables and possibly shortening a few longer `Fit for FactHarbor` cells, especially Prototype Fund CH and Mozilla.
+**Warnings:** No factual re-ranking was done in this pass; this was language and structure cleanup only.
+**For next agent:** If you continue editing the same section, protect the current separation between `Funding Opportunities`, `Funding Precedents`, and `Community Funding`. The section is now easier to scan; additional expansion will quickly make it too dense unless something else is cut.
+**Learnings:** no

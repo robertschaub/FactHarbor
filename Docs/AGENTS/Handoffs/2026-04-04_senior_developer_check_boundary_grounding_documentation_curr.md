@@ -1,0 +1,8 @@
+### 2026-04-04 | Senior Developer | Codex (GPT-5) | Check Boundary/Grounding Documentation Currency
+**Task:** Verify whether the active boundary-concentration / grounding solution and plan documentation is current against the latest rerun results, then update any stale navigation or summary files.
+**Files touched:** `Docs/WIP/README.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Confirmed that the active plan doc `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` is already current: it includes the Sonnet sequencing adjustment, the credit-exhaustion interruption, the rerun results, and the latest blocker that the local validation batch is still not same-commit because completed jobs recorded different `executedWebGitCommitHash` values. The only stale piece was the WIP index: `Docs/WIP/README.md` still showed `Last Updated: 2026-04-03` and did not list the new plan. Updated the README date and added the new plan under active quality tracks.
+**Open items:** `Current_Status.md` and `Backlog.md` were not changed; for now the active WIP plan is the canonical live planning doc for this issue.
+**Warnings:** Historical entries in `Agent_Outputs.md` still describe earlier phases of the same plan and therefore naturally contain superseded sequencing. That is expected chronology, not a documentation bug.
+**For next agent:** Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as current. Use `Docs/WIP/README.md` as the discovery entry point; it now points to the plan. Do not infer from older `Agent_Outputs` entries that grounding is still sequentially deferred.
+**Learnings:** no

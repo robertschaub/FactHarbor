@@ -1,0 +1,8 @@
+### 2026-04-08 | LLM Expert | GitHub Copilot (GPT-5.4) | Fix 1 Prompt Strengthening for Proposition Anchoring
+**Task:** Strengthen Fix 1 after first measurement showed partial anti-inference success but unreliable modifier preservation and validator hallucination.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`
+**Key decisions:** (1) Tightened CLAIM_EXTRACTION_PASS2 from general modifier preservation to a procedural anchor-retention contract: identify truth-condition-bearing modifier, require at least one direct anchored claim, forbid decomposition into chronology-only subclaims when anchor exists. (2) Added a mandatory internal self-check before output. (3) Strengthened CLAIM_CONTRACT_VALIDATION to audit truth-condition-bearing modifier preservation and normative injection explicitly. (4) Made validator approvals traceable by requiring real claim IDs plus exact quotes, and expanded the output schema with `truthConditionAnchor` and `antiInferenceCheck`.
+**Open items:** Re-run the Bundesrat canary family to measure whether anchored-modifier preservation rises materially and whether validator hallucination is eliminated.
+**Warnings:** This is still a prompt-only fix. It improves structural traceability but does not add deterministic semantic enforcement. If preservation remains unstable after this round, the next step should be another LLM-led tightening or a structural post-check, not a lexical keyword heuristic.
+**For next agent:** Measure against the same Fix 1 invariants: modifier preserved in direct claims, no normative injection on chronology-only variants, stable direction on the anchored claim, zero validator hallucinations.
+**Learnings:** No

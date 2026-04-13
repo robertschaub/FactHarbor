@@ -1,0 +1,8 @@
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase B Canary Measurement — `helps`
+**Task:** Run 4 hard-family canaries on `442a5450` (Phase B: per-claim researched-iteration floor) and measure whether previously skipped claims now receive research.
+**Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md` (new)
+**Key decisions:** (1) Judgment: `helps`. Primary success check passes on all 4 families — no claim has 0 researched iterations. (2) Plastik AC_01 went from 41 seeded/0 researched → 33 seeded/**1 researched iter admitting 33 items**. The forced iteration was highly productive, not a zero-yield pass. (3) Bolsonaro hit MOSTLY-TRUE 74/68 — best local result, matching deployed comparator range. (4) Concentration amplification: Plastik collapsed to 1 boundary (share=1.00), Bolsonaro to 0.82. This is pre-existing Stage 3 problem amplified by more evidence volume, not caused by Phase B. (5) Confirms Phase C (Stage 3 concentration) is now the correct next workstream.
+**Open items:** Phase C: Stage 3 boundary-concentration stabilization.
+**Warnings:** The per-claim floor increases total evidence volume, which amplifies Stage 3 concentration on families where clustering is already fragile (Plastik, Bolsonaro).
+**For next agent:** Phase B is validated and should be kept. The ledger proves the forced iterations are productive. Next target: Stage 3 clustering behavior with larger evidence pools. Full data: `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md`.
+**Learnings:** No

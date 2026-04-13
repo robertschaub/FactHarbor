@@ -1,0 +1,8 @@
+### 2026-04-08 | Senior Developer | Claude Code (Opus 4.6) | f1a372bf-to-HEAD Consolidated Investigation
+**Task:** Consolidate primary investigation (Claude), adversarial cross-review (GPT), and Captain corrections into one authoritative document.
+**Files touched:** `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md` (new)
+**Key decisions:** (1) Strict post-baseline scope: 21 local + 9 deployed jobs, not the larger context counts. (2) Bundesrat treaty family is the proven blocker — 3 distinct failure modes (Stage 1 keyword omission, Stage 1 interpretation injection, Stage 5 underweighting) producing 70pp spread. (3) Boundary concentration is an amplifier, not the primary root cause. (4) Phase B validated, keep it. (5) Deployed Plastik `2cf4682c` (LT 62) is factually worse than local, not a clean anchor. (6) All deployed jobs treated equally — no hidden/public distinction in development.
+**Open items:** Fix priority: (1) Stage 1 predicate preservation + anti-inference, (2) Stage 4 proposition truth anchoring, (3) Stage 5 core-assertion weighting, (4) Phase C Stage 3 concentration.
+**Warnings:** The three Bundesrat jobs (`094e88fc`, `0afb2d88`, `b843fe70`) are verified on the deployed API (HTTP 200). They exist alongside the 6 publicly-listed deployed jobs, making 9 in-range deployed jobs total.
+**For next agent:** The consolidated document supersedes both the primary investigation and the cross-review for decision-making. Source docs remain as audit trail. Priority 1 fix target: `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section.
+**Learnings:** No

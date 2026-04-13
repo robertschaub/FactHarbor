@@ -1,0 +1,8 @@
+### 2026-04-06 | Research | Claude Code (Sonnet 4.6) | Cross-Boundary Tension Analysis — All Deployed Jobs
+**Task:** Extract cross-boundary tension data from all recent deployed jobs; compare previous deployment (b77838727ae6) vs current (2ec540473716).
+**Files touched:** None (read-only research task). Analysis written to `C:/tmp/tension_analysis_report.txt`.
+**Key decisions:** Used `https://app.factharbor.ch/api/fh/jobs?limit=40` (returned 50 jobs); fetched each job individually; merged two fetch passes (second pass used urllib to avoid Windows cp1252 encoding failures on non-Latin characters).
+**Open items:** None.
+**Warnings:** Only 2 jobs are available for the current commit `2ec540473716`, so the comparison has low statistical power. Both current-commit jobs involve complex multi-boundary queries (Swiss fact-checking, misinformation tools) which naturally generate more tensions than simple factual queries.
+**For next agent:** See Section 4 of the report below for the comparison finding. Short version: average tensions are higher on the current commit (2.00 vs 0.44), but this is almost certainly topic-driven rather than a pipeline regression — the previous commit's 9 jobs included many simple/factual queries (Meta exit, Earth roundness, Google ClaimReview) that reliably produce 0 tensions. Full per-job tension text is in `C:/tmp/tension_analysis_report.txt`.
+**Learnings:** No

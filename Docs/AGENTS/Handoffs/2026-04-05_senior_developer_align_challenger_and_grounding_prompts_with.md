@@ -1,0 +1,8 @@
+### 2026-04-05 | Senior Developer | Codex (GPT-5) | Align Challenger and Grounding Prompts with Single-Citation-Channel Contract
+**Task:** Apply the two follow-up prompt cleanups from architecture review so the single-citation-channel contract is consistent across Stage 4 prompts.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Updated `VERDICT_CHALLENGER` so `evidenceIds` is the authoritative citation channel and challenge prose must not contain raw machine IDs. Tightened `VERDICT_GROUNDING_VALIDATION` wording so `S_*`, `CB_*`, `CP_*`, and rejected challenge-cited `EV_*` are treated as defensive legacy cases if they still appear in reasoning, rather than described as expected prose content.
+**Open items:** None specific to this cleanup. If future grounding warnings recur, they should now be interpreted against the cleaner contract: machine IDs in prose are discouraged everywhere, but still handled defensively when they appear.
+**Warnings:** This was a contract-consistency cleanup only. It does not add new runtime behavior beyond making prompt expectations less contradictory.
+**For next agent:** The prompt contract tests now explicitly cover challenger prose and the defensive legacy wording in grounding validation. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm test`, and `npm -w apps/web run build`.
+**Learnings:** no

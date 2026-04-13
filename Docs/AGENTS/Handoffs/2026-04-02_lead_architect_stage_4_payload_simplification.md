@@ -1,0 +1,8 @@
+### 2026-04-02 | Lead Architect | Codex (GPT-5) | Stage-4 Payload Simplification
+**Task:** Implement the architect-approved Stage-4 payload simplification by removing the default duplicated `JSON.stringify(input)` user payload while preserving explicit `userMessage` overrides.
+**Files touched:** `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the repaired serialized system-prompt contract intact and changed only the fallback user message in `createProductionLLMCall()` to a short fixed instruction. Preserved the explicit `input.userMessage` branch. Added focused tests proving the default Stage-4 user message no longer contains the full serialized payload and that explicit overrides still work.
+**Open items:** Live validation is still required on German Plastik x3, English Plastik x1, and one German non-Plastik control to confirm advocate prompt-token reduction and disappearance of `analysis_generation_failed` on the heavy family.
+**Warnings:** The broader Plastik family still has an upstream research/boundary variability issue separate from the Stage-4 parse-failure track. This patch only targets the Stage-4 size/duplication problem.
+**For next agent:** Verify advocate `promptTokens`, `schemaCompliant`, retry firing, and final verdict/confidence on the live reruns. If parse failures persist after this simplification, the next investigation should focus on remaining Stage-4 output-shape failure artifacts rather than Stage 1.
+**Learnings:** No

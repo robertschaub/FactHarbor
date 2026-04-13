@@ -1,0 +1,8 @@
+### 2026-04-07 | Senior Developer | Claude Code (Opus 4.6) | UPQ-1 Phase A-2 Telemetry Canary Measurement
+**Task:** Run 4 hard-family canaries on `b130d00c` (A-2 telemetry build), extract `claimAcquisitionLedger`, diagnose A-1 effect and next Stage-2 slice.
+**Files touched:** `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` (new)
+**Key decisions:** (1) A-1 judgment: `still_inconclusive`, keep provisionally. Kill gate (repeatable claim starvation) not met. No cross-claim reallocation detected in ledger — previous AC_02 collapses were normal variance. (2) Ledger is working: per-claim per-iteration evidence flow, direction counts, seeded vs researched split, applicability losses all captured. (3) Strongest new finding: **seeded-evidence dominance** — Plastik AC_01 has 41 seeded items and 0 research iterations; Bolsonaro AC_01 has 26 seeded. Research loop considers these claims "sufficient" before research starts. (4) Recommended next Phase B candidate: investigate seeded-evidence sufficiency interaction, not more A-1 tuning.
+**Open items:** Phase B decision: whether to exclude seeded evidence from sufficiency count, add per-claim iteration floor, or accept current behavior.
+**Warnings:** Anthropic API was under heavy load — clustering Sonnet calls took 30-60+ min instead of typical 2-5 min. Not a code issue.
+**For next agent:** The ledger data is in `resultJson.claimAcquisitionLedger`. Key fields: `seededEvidenceItems`, `iterations[].admittedEvidenceItems`, `iterations[].directionCounts`, `finalEvidenceItems`, `finalDirectionCounts`, `maxBoundaryShare`. Full analysis: `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md`.
+**Learnings:** No
