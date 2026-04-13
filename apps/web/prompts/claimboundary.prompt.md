@@ -129,17 +129,18 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - **"low"**: The claim is difficult to check — it involves predictions, subjective assessments, or evidence that is unlikely to be publicly available.
 - **"none"**: The claim is a pure value judgment, preference, or unfalsifiable statement that no evidence can resolve.
 
-### Mandatory pre-decomposition salience reasoning (do this FIRST, before applying the rules)
+### Mandatory pre-decomposition meaning analysis (do this FIRST, before applying the rules)
 
-Before producing any atomic claims, reason step-by-step about which elements of the input are truth-condition-bearing. This reasoning is **internal** — do NOT emit it as a field. Use it to constrain the decomposition that follows.
+Before producing any atomic claims, reason step-by-step about what the input is asserting — at the level of **meaning**, not surface words. This reasoning is **internal** — do NOT emit it as a field. Use it to constrain the decomposition that follows.
 
-1. **Identify truth-condition-bearing tokens.** Scan the input for words or phrases whose removal would change what evidence is needed to verify the proposition. Consider all linguistic functions that carry truth conditions, without relying on a closed list — you, the model, know the relevant categories for the input language. Broad classes to survey include (but are not limited to): finality and modality markers; quantifiers and approximation qualifiers; evidential hedges and attributive markers; conditional, temporal, and causal qualifiers; scope limiters; and any other constituent whose presence materially shifts what counts as verifying evidence. **Do not rely on any example list — including any that has appeared in earlier prompt versions.** Your job is to detect salience in the specific input you were given, not to match against canned examples.
-2. **Check each candidate with the removal test.** For each identified token, ask: *"If I removed this word from the input, would the set of evidence that verifies the claim change?"* Keep only the tokens that pass this test.
-3. **Commit to a preservation contract.** For every token that passes the removal test, commit to preserving it **verbatim** in at least one thesis-direct atomic claim's `statement`. This is a hard constraint on your decomposition, not a suggestion. If your planned decomposition cannot preserve a given token verbatim, the decomposition is wrong and you must restructure before emitting.
-4. **Edge cases:**
-   - If the input is a plain factual assertion with no truth-condition-bearing modifiers, your commitment list is empty and this step imposes no constraint.
-   - Referential metadata (dates, entity names, numbers) that is NOT functioning as a truth-condition-bearing qualifier does not need to be on the commitment list unless the input's proposition depends on that specific referent.
-5. **Proceed to the rules below** with this preservation contract in mind. The rules below remain authoritative; this section is a mandatory reasoning scaffold that precedes rule application.
+1. **Paraphrase the input's proposition to yourself.** What is this input claiming? What would have to be true in the world for the claim to hold?
+2. **Identify the distinguishing aspects of that meaning** — the components that differentiate this proposition from nearby, related propositions it is NOT making. For each candidate aspect, apply the **sibling test**: construct an alternative claim that shares surface vocabulary but differs in that aspect. If the alternative would require different evidence to verify, the aspect is a distinguishing meaning component of the original.
+
+   *Worked example of the sibling test:* for an input stating that "the committee approved" a proposal, a surface-vocabulary sibling is "a committee member approved" the proposal. The alternative differs in whether the approval was an institutional decision of the committee as a body vs. an individual endorsement — different evidence would verify each. The "collective-body-vs-individual-member" aspect is therefore distinguishing. Note: this is the **method**, not a template. Apply the sibling test to the actual input you were given.
+3. **Aspects commonly distinguishing** (not exhaustive; you identify what applies to this specific input): agent; action or predicate; temporal and causal relations; scope or quantification; modal and illocutionary status (examples from other domains: possible vs certain, obligatory vs permitted, licensed vs prohibited); attribution and source-framing.
+4. **Commit to preserving each distinguishing aspect in the decomposition.** Preservation requires retaining the input's own words for each distinguishing aspect in the **primary thesis-direct claim's statement**. If the input's own wording carries an aspect, the primary thesis-direct claim must carry it too — dropping, weakening, or shifting the aspect's role (adverbial force → mere descriptor, finality → mere occurrence, binding commitment → mere scheduling) is a preservation failure even if the claim reads fluently.
+5. **Edge case — plain assertions:** if the input is a plain factual assertion with no distinguishing aspect beyond the bare agent-action-object, the commitment list is minimal.
+6. **Proceed to the rules below** with this meaning commitment in mind. The rules below remain authoritative; this section is a mandatory reasoning scaffold that precedes rule application.
 
 ### Rules
 
