@@ -541,7 +541,30 @@ export async function extractClaims(
   const minCoreClaims = calcConfig.claimDecomposition?.minCoreClaimsPerContext ?? 2;
   const maxRepromptAttempts = calcConfig.claimDecomposition?.supplementalRepromptMaxAttempts ?? 2;
 
-  if (gate1Result.filteredClaims.length < minCoreClaims && maxRepromptAttempts > 0) {
+  // C14 (Phase 6): skip the reprompt loop when the current claim set has
+  // already been validated by the contract authority. The reprompt exists to
+  // hit an atomicity floor, NOT to recover from a quality problem — and on
+  // Phase 6 Run 1 it destroyed a clean 1-claim contract-approved set and
+  // produced a replacement that the final revalidator could not re-authorize.
+  // A contract-approved claim set is sacred; do not regenerate it to hit a
+  // count minimum.
+  const currentSetIsContractApproved =
+    contractValidationSummary?.preservesContract === true &&
+    contractValidationSummary?.rePromptRequired === false;
+
+  if (
+    gate1Result.filteredClaims.length < minCoreClaims &&
+    maxRepromptAttempts > 0 &&
+    currentSetIsContractApproved
+  ) {
+    console.info(
+      `[Stage1] Post-Gate-1 claim count (${gate1Result.filteredClaims.length}) < minimum (${minCoreClaims}), ` +
+      `but the current claim set is contract-approved (C14). Skipping reprompt loop.`
+    );
+  } else if (
+    gate1Result.filteredClaims.length < minCoreClaims &&
+    maxRepromptAttempts > 0
+  ) {
     console.info(
       `[Stage1] Post-Gate-1 claim count (${gate1Result.filteredClaims.length}) < minimum (${minCoreClaims}). ` +
       `Starting reprompt loop (max ${maxRepromptAttempts} attempts).`
