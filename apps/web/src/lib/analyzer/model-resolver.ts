@@ -34,12 +34,12 @@ export interface ResolvedModel {
 // ============================================================================
 
 const ANTHROPIC_VERSIONS = {
-  budget: "claude-haiku-4-5-20251001",
-  standard: "claude-sonnet-4-5-20250929",
+  budget: "claude-haiku-4-5-latest",
+  standard: "claude-sonnet-4-6",
   premium: "claude-opus-4-6",
   latest: {
     budget: "claude-haiku-4-5-latest",
-    standard: "claude-sonnet-4-5-latest",
+    standard: "claude-sonnet-4-6",
     premium: "claude-opus-4-6",
   }
 };
