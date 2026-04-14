@@ -21,6 +21,7 @@ variables:
   - atomicClaimsJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
+  - "CLAIM_SALIENCE_COMMITMENT"
   - "CLAIM_EXTRACTION_PASS2"
   - "CLAIM_CONTRACT_VALIDATION"
   - "CLAIM_VALIDATION"
@@ -101,6 +102,57 @@ Return a JSON object:
   ],
   "detectedLanguage": "string — BCP-47 code of input language (e.g., 'de', 'en', 'fr')",
   "inferredGeography": "string | null — ISO 3166-1 alpha-2 country code inferred from claim content (e.g., 'CH', 'US'), or null if not geographically specific"
+}
+```
+
+---
+
+## CLAIM_SALIENCE_COMMITMENT
+
+You are identifying what matters most in the input for faithful claim verification. This is a dedicated, single-responsibility stage whose only job is to surface the distinguishing meaning aspects of the input so downstream extraction can preserve them. You do NOT produce claims, verdicts, or search strategy here.
+
+### Task
+
+Read the input. Identify the distinguishing meaning aspects whose removal or weakening would change what evidence is needed to verify the proposition. Emit a structured list of anchors, each with the exact verbatim span from the input, an aspect category, a short rationale, and a one-line description of what would shift if the aspect were removed.
+
+### Method
+
+Apply the sibling test for each candidate: construct an alternative claim that shares surface vocabulary but differs in the candidate aspect. If the alternative would require different evidence to verify, the aspect is distinguishing and must appear on the anchor list.
+
+Worked example of the sibling test (method only, not a template): for an input stating that "the committee approved" a proposal, a surface-vocabulary sibling is "a committee member approved" the proposal. The alternative differs in whether the approval was an institutional decision of the committee as a body vs. an individual endorsement — different evidence would verify each. The "collective-body-vs-individual-member" aspect is therefore distinguishing. Apply this method to the actual input you were given; do not transplant the example.
+
+### Aspect categories (for classification)
+
+Assign one of: `agent` · `action_predicate` · `temporal` · `causal` · `scope` · `quantification` · `modal_illocutionary` · `attribution` · `other`. Generic examples (do not copy): modal_illocutionary ≈ possible vs certain, obligatory vs permitted; quantification ≈ all vs some, at least vs at most; attribution ≈ what X said vs what actually happened. Do not rely on any example; infer from the input.
+
+### Rules
+
+- `text` must be a **verbatim** substring of the input. Do not paraphrase, translate, or normalize.
+- `inputSpan` is the same verbatim substring; duplicated for downstream consumers that index by span.
+- **Do not hallucinate anchors.** If the input is a plain factual assertion with no distinguishing meaning aspect beyond the bare agent-action-object, return `anchors: []`. Empty is the correct answer for inputs that lack truth-condition-bearing structure.
+- **Referential metadata** (specific dates, named entities, numeric identifiers) is an anchor only if the proposition depends on that specific referent — e.g. "the vote of 12 March" where the date is constitutive, not merely descriptive. Otherwise exclude.
+- Keep `rationale` to one sentence. Keep `truthConditionShiftIfRemoved` to one sentence.
+- Operate in the input's own language. Do not translate anchors.
+
+### Input
+
+Original input:
+`${analysisInput}`
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "anchors": [
+    {
+      "text": "string — verbatim substring of the input",
+      "inputSpan": "string — same verbatim substring",
+      "type": "agent | action_predicate | temporal | causal | scope | quantification | modal_illocutionary | attribution | other",
+      "rationale": "string — one sentence on why this aspect is distinguishing",
+      "truthConditionShiftIfRemoved": "string — one sentence on what would shift if this aspect were removed"
+    }
+  ]
 }
 ```
 

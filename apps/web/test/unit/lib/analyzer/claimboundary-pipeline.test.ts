@@ -7280,6 +7280,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7349,6 +7350,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7417,6 +7419,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 3, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7494,6 +7497,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7568,6 +7572,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7636,6 +7641,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
         claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7737,6 +7743,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
         claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7822,6 +7829,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
         claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -7965,6 +7973,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         // model the repair call's LLM interaction. C11b is covered by its own
         // dedicated tests.
         claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -8170,6 +8179,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -8242,6 +8252,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
@@ -8304,6 +8315,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       config: {
         claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 2 },
         claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
         mixedConfidenceThreshold: 40,
       } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],

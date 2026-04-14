@@ -1180,6 +1180,23 @@ export interface CBClaimUnderstanding {
   }>;
   /** Stage-1 input classification used by Pass 2. Stored for observability. */
   inputClassification?: string;
+  /**
+   * Phase 7 E2: upstream salience commitment produced by the dedicated
+   * salience stage (runs between Pass 1 and Pass 2). Log-only in this
+   * iteration — does NOT yet constrain Pass 2. Captured for auditability
+   * and for Pass 0 recall/precision measurement against the contract
+   * validator's post-hoc anchor discovery.
+   */
+  salienceCommitment?: {
+    ran: boolean;
+    anchors: Array<{
+      text: string;
+      inputSpan: string;
+      type: string;
+      rationale: string;
+      truthConditionShiftIfRemoved: string;
+    }>;
+  };
   /** Compact contract-validation summary. Stored for observability. */
   contractValidationSummary?: {
     ran: boolean;

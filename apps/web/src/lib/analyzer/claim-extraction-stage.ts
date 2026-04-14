@@ -119,6 +119,32 @@ const Pass2OutputSchema = z.object({
   retainedEvidence: z.array(z.string()).nullish(),
 });
 
+// Phase 7 E2: salience commitment stage output schema. Runs between Pass 1 and
+// Pass 2. Log-only in this iteration — does NOT yet constrain Pass 2. The
+// stage emits a list of distinguishing-meaning-aspect anchors for auditability
+// and measurement.
+const SalienceAnchorSchema = z.object({
+  text: z.string().catch(""),
+  inputSpan: z.string().catch(""),
+  type: z.enum([
+    "agent",
+    "action_predicate",
+    "temporal",
+    "causal",
+    "scope",
+    "quantification",
+    "modal_illocutionary",
+    "attribution",
+    "other",
+  ]).catch("other"),
+  rationale: z.string().catch(""),
+  truthConditionShiftIfRemoved: z.string().catch(""),
+});
+
+const SalienceOutputSchema = z.object({
+  anchors: z.array(SalienceAnchorSchema).catch([]),
+});
+
 const Gate1OutputSchema = z.object({
   validatedClaims: z.array(z.object({
     claimId: z.string(),
@@ -210,6 +236,24 @@ export async function extractClaims(
   state.onEvent?.(`LLM call: claim extraction (Pass 1) — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   const pass1 = await runPass1(state.originalInput, pipelineConfig, currentDate);
   state.llmCalls++;
+
+  // ------------------------------------------------------------------
+  // Phase 7 E2: salience-commitment stage (log-only).
+  // Runs after Pass 1 and before preliminary search so the anchors can be
+  // referenced during later measurement. Does NOT yet constrain Pass 2.
+  // ------------------------------------------------------------------
+  const salienceEnabled = calcConfig.salienceCommitment?.enabled ?? true;
+  let salienceCommitment: z.infer<typeof SalienceOutputSchema> | undefined;
+  if (salienceEnabled) {
+    state.onEvent?.("Extracting claims: salience commitment (E2 log-only)...", 14);
+    salienceCommitment = await runSalienceCommitment(state.originalInput, pipelineConfig, state);
+    if (salienceCommitment) {
+      state.llmCalls++;
+      console.info(
+        `[Stage1] E2 salience commitment: ${salienceCommitment.anchors.length} anchor(s) identified.`,
+      );
+    }
+  }
 
   // ------------------------------------------------------------------
   // Preliminary search: search web for rough claims, fetch sources, extract evidence
@@ -863,6 +907,16 @@ export async function extractClaims(
     // Observability: Stage-1 diagnostics for future investigations
     inputClassification: bestPass2.inputClassification ?? undefined,
     contractValidationSummary,
+    // Phase 7 E2 (log-only): upstream salience commitment for recall/precision
+    // measurement against the contract validator's post-hoc anchor discovery.
+    ...(salienceCommitment
+      ? {
+          salienceCommitment: {
+            ran: true,
+            anchors: salienceCommitment.anchors,
+          },
+        }
+      : {}),
   };
 }
 
@@ -966,6 +1020,110 @@ export async function runPass1(
       timestamp: new Date(),
     });
     throw error;
+  }
+}
+
+/**
+ * Phase 7 E2: upstream salience-commitment stage.
+ *
+ * Runs between Pass 1 and Pass 2, after language/geography are known.
+ * A dedicated, single-responsibility LLM call that identifies the
+ * distinguishing meaning aspects (anchors) of the input via the sibling
+ * test. Uses the `understand` tier (Haiku today) — this is an interpretive
+ * step, not verdict reasoning.
+ *
+ * **Log-only in this iteration.** The emitted anchors are written to
+ * `understanding.salienceCommitment` for auditability and measurement.
+ * Pass 2 does NOT yet consume them as a binding constraint; that is the
+ * Phase 7b Shape B promotion, gated on this measurement.
+ *
+ * Non-fatal: returns undefined on any error. Pipeline continues with the
+ * existing V5 in-prompt scaffold as the only salience-preservation
+ * mechanism, preserving current behavior if this stage is disabled or
+ * fails.
+ */
+export async function runSalienceCommitment(
+  inputText: string,
+  pipelineConfig: PipelineConfig,
+  state: Pick<CBResearchState, "onEvent"> | undefined,
+): Promise<z.infer<typeof SalienceOutputSchema> | undefined> {
+  const model = getModelForTask("understand", undefined, pipelineConfig);
+  state?.onEvent?.(`LLM call: salience commitment — ${model.modelName}`, -1);
+
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_SALIENCE_COMMITMENT", {
+    analysisInput: inputText,
+  });
+  if (!rendered) {
+    console.warn("[Stage1] CLAIM_SALIENCE_COMMITMENT prompt section not found; skipping.");
+    return undefined;
+  }
+
+  const llmCallStartedAt = Date.now();
+  try {
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        { role: "user", content: inputText },
+      ],
+      temperature: 0,
+      output: Output.object({ schema: SalienceOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Salience commitment returned no structured output",
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    const validated = SalienceOutputSchema.parse(parsed);
+
+    // Structural sanity: filter out anchors whose `text` is not actually a
+    // substring of the input. This is structural plumbing (no semantic
+    // judgment) and matches the AGENTS.md rules for anchor handling.
+    const cleaned = {
+      anchors: (validated.anchors ?? []).filter(
+        (a) => typeof a.text === "string" && a.text.length > 0 && inputText.includes(a.text),
+      ),
+    };
+
+    recordLLMCall({
+      taskType: "understand",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+    return cleaned;
+  } catch (error) {
+    console.warn("[Stage1] Salience commitment failed (non-fatal):", error instanceof Error ? error.message : String(error));
+    return undefined;
   }
 }
 

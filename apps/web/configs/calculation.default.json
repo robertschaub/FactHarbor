@@ -115,6 +115,9 @@
     "maxRetries": 1,
     "repairPassEnabled": true
   },
+  "salienceCommitment": {
+    "enabled": true
+  },
   "contextSimilarity": {
     "nameWeight": 0.35,
     "primaryMetadataWeight": 0.3,

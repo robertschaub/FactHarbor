@@ -1549,6 +1549,18 @@ export const CalcConfigSchema = z.object({
     repairPassEnabled: z.boolean().optional(),
   }).optional(),
 
+  /**
+   * Phase 7 E2: upstream salience-commitment stage (between Pass 1 and Pass 2).
+   * Log-only in this iteration: runs a dedicated LLM call to identify
+   * distinguishing meaning aspects and writes the result into
+   * `understanding.salienceCommitment` for auditability/measurement. Does NOT
+   * yet constrain Pass 2. Promoted to a binding input in Phase 7b Shape B
+   * only if the measurement justifies it.
+   */
+  salienceCommitment: z.object({
+    enabled: z.boolean(),
+  }).optional(),
+
   contextSimilarity: z.object({
     nameWeight: z.number().min(0).max(1),
     primaryMetadataWeight: z.number().min(0).max(1),
@@ -1892,6 +1904,9 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
     enabled: true,
     maxRetries: 1,
     repairPassEnabled: true,
+  },
+  salienceCommitment: {
+    enabled: true,
   },
   contextSimilarity: {
     nameWeight: 0.35,
