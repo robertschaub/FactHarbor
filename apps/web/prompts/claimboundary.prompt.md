@@ -2005,9 +2005,7 @@ Return a JSON object:
 - `index`: the evidence item's index from the unmapped evidence list (0-based).
 - `relevantClaimIds`: array of matching atomic claim IDs, or empty array if no claim is relevant.
 
----
-# SECTION: CLAIM_CONTRACT_REPAIR
----
+## CLAIM_CONTRACT_REPAIR
 
 You are an expert editor specializing in structural claim fidelity.
 
@@ -2016,28 +2014,60 @@ The user's original claim contains a critical truth-condition-bearing modifier (
 ### Input
 
 **Original Input:**
-{{analysisInput}}
+${analysisInput}
+
+**Implied Claim:**
+${impliedClaim}
+
+**Article Thesis:**
+${articleThesis}
 
 **Missing Anchor:**
-"{{anchorText}}"
+`${anchorText}`
 
 **Current Claims:**
-{{atomicClaimsJson}}
+${atomicClaimsJson}
 
 ### Rules
 
-1. **Verbatim Fusion:** You MUST include the anchor text "{{anchorText}}" exactly as written in the `statement` of at least one claim.
-2. **Structural Integrity:** Do not change the `id` of existing claims.
-3. **Thesis-Direct Target:** Prefer fusing the anchor into a claim where `thesisRelevance` is "direct".
-4. **No New Claims:** Do not add new claims; modify the existing ones to restore the missing meaning.
-5. **Neutral Tone:** Maintain the neutral, factual tone of the other claims.
+1. **Verbatim Fusion:** You MUST include the anchor text `${anchorText}` exactly as written in the `statement` of at least one claim.
+2. **Structural Integrity:** Do not change any existing claim `id`.
+3. **Preserve The Claim Set:** Return the same number of claims you received. Do not add or remove claims.
+4. **Thesis-Direct Target:** Prefer fusing the anchor into a claim where `thesisRelevance` is `"direct"`.
+5. **Field Preservation:** Keep every non-meaning field stable unless changing it is strictly required to keep the repaired claim structurally coherent.
 6. **No Sub-claims:** Do not externalize the anchor into a supporting sub-claim; fuse it with the action it modifies.
+7. **No New Inference:** Repair the existing claim set only. Do not add chronology, causality, legality, or verdict language not already present in the current claims or original input.
 
 ### Output Format
 
 Return a JSON object matching this schema:
+
+```json
 {
   "atomicClaims": [
-    { "id": "AC_01", "statement": "Modified statement including the anchor...", "category": "...", "thesisRelevance": "direct" }
+    {
+      "id": "AC_01",
+      "statement": "Modified statement including the anchor...",
+      "category": "factual",
+      "verifiability": "high",
+      "centrality": "high",
+      "harmPotential": "medium",
+      "isCentral": true,
+      "claimDirection": "supports_thesis",
+      "thesisRelevance": "direct",
+      "keyEntities": ["Entity A"],
+      "relevantGeographies": [],
+      "checkWorthiness": "high",
+      "specificityScore": 0.8,
+      "groundingQuality": "strong",
+      "expectedEvidenceProfile": {
+        "methodologies": ["official record"],
+        "expectedMetrics": [],
+        "expectedSourceTypes": ["legal_document"]
+      }
+    }
   ]
 }
+```
+
+Return only the JSON object. Do not include explanation text.

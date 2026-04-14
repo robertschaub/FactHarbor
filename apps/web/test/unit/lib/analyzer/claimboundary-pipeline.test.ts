@@ -8258,6 +8258,161 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     });
   });
 
+  it("should execute the contract repair pass and accept a narrowed repair payload", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: true },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Bundesrat" }),
+            atomicClaims: [
+              createAtomicClaim({
+                id: "AC_01",
+                statement: "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+              }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "missing rechtskräftig anchor",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "legal-binding anchor missing",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            atomicClaims: [
+              createAtomicClaim({
+                id: "AC_01",
+                statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+              }),
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "repair preserved contract",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor restored",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["rechtskräftig"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims[0].statement).toContain("rechtskräftig");
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "repair",
+      summary: "repair preserved contract",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_01"],
+        validPreservedIds: ["AC_01"],
+      },
+    });
+
+    const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
+    expect(renderedSections).toContain("CLAIM_CONTRACT_REPAIR");
+  });
+
   it("should persist full salience status including mode when salience commitment succeeds", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");

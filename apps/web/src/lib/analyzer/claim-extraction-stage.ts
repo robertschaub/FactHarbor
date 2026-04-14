@@ -119,6 +119,13 @@ const Pass2OutputSchema = z.object({
   retainedEvidence: z.array(z.string()).nullish(),
 });
 
+// Narrow repair-pass contract: the repair path only needs to return a claim set
+// with the anchor fused into an existing thesis-direct claim. Top-level Pass 2
+// metadata stays on the pre-repair envelope already held in memory.
+const ContractRepairOutputSchema = z.object({
+  atomicClaims: z.array(Pass2AtomicClaimSchema).catch([]),
+});
+
 // Phase 7 E2: salience commitment stage output schema. Runs between Pass 1 and
 // Pass 2. Log-only in this iteration — does NOT yet constrain Pass 2. The
 // stage emits a list of distinguishing-meaning-aspect anchors for auditability
@@ -1745,7 +1752,7 @@ async function runContractRepair(
   articleThesis: string,
   pipelineConfig: PipelineConfig,
   state: Pick<CBResearchState, "onEvent"> | undefined,
-): Promise<z.infer<typeof Pass2OutputSchema> | undefined> {
+): Promise<z.infer<typeof ContractRepairOutputSchema> | undefined> {
   const model = getModelForTask("context_refinement", undefined, pipelineConfig);
   state?.onEvent?.(`LLM call: contract repair — ${model.modelName}`, -1);
 
@@ -1756,16 +1763,7 @@ async function runContractRepair(
       anchorText,
       impliedClaim,
       articleThesis,
-      atomicClaimsJson: JSON.stringify(
-        claims.map((c) => ({
-          id: c.id,
-          statement: c.statement,
-          category: c.category,
-          thesisRelevance: c.thesisRelevance ?? "direct",
-        })),
-        null,
-        2,
-      ),
+      atomicClaimsJson: JSON.stringify(claims, null, 2),
     });
 
     if (!rendered) {
@@ -1787,7 +1785,7 @@ async function runContractRepair(
         },
       ],
       temperature: 0,
-      output: Output.object({ schema: Pass2OutputSchema }),
+      output: Output.object({ schema: ContractRepairOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         pipelineConfig.llmProvider ?? "anthropic",
       ),
@@ -1796,7 +1794,7 @@ async function runContractRepair(
     const parsed = extractStructuredOutput(result);
     if (!parsed) return undefined;
 
-    const repaired = Pass2OutputSchema.parse(parsed);
+    const repaired = ContractRepairOutputSchema.parse(parsed);
 
     // Structural post-check: anchor must actually be present as substring in
     // at least one claim now. If the LLM ignored the instruction, bail out so
