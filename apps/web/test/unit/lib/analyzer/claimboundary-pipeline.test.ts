@@ -8534,6 +8534,115 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     });
   });
 
+  it("should keep audit mode on the base contract validation prompt without loading the binding appendix", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: true, mode: "audit" },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            anchors: [
+              {
+                text: "final",
+                inputSpan: "final",
+                type: "modal_illocutionary",
+                rationale: "Finality changes the proposition.",
+                truthConditionShiftIfRemoved: "The claim becomes weaker.",
+              },
+            ],
+          };
+        case 3:
+          return makePass2(1, {
+            inputClassification: "single_atomic_claim",
+            statementPrefix: "final",
+          });
+        case 4:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "contract preserved",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 5:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The claim is final.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    await extractClaims(state);
+
+    const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
+    expect(renderedSections).toContain("CLAIM_CONTRACT_VALIDATION");
+    expect(renderedSections).not.toContain("CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+  });
+
 
   // --------------------------------------------------------------------------
   // MT-5(C): Multi-event collapse guard

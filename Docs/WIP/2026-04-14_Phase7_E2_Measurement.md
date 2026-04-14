@@ -39,6 +39,22 @@ These points remain directionally useful:
 2. **Case-insensitive matching is a real code-path improvement.** It is a substring check, not morphology-aware matching.
 3. **Auditability improved in code.** `preservedByQuotes` and `stageAttribution` now exist in the committed contract surface.
 
+## 3A. Provenance Caveat For Shape B Readouts
+
+`stageAttribution` is currently **contract-recovery provenance**, not full final-claim-set provenance.
+
+It distinguishes whether the contract-preserving claim set last came from:
+- `initial`
+- `retry`
+- `repair`
+
+It does **not** yet encode later D1 or MT-5(C) reshaping paths that can still alter the final accepted claim set after contract recovery.
+
+Therefore:
+- use `stageAttribution` to discuss **contract recovery pressure**
+- do **not** use it to claim a pure raw-extraction win in the first binding-mode closeout
+- if a future closeout needs full provenance, extend the persisted provenance model before making that claim
+
 ## 4. Input-Specific Outcomes
 
 | Input Family | Anchor Targeted | Recall (E2) | Outcome |
