@@ -27,22 +27,23 @@ What this document intentionally does **not** do:
 
 - Phase 5/6 fixed real failure classes, but did **not** deliver aggregate R2 improvement.
 - Phase 7 is the active workstream.
-- **Bundle A (Measurement Hardening) and Bundle B (Contract Cleanup) are IMPLEMENTED (2026-04-14).**
-- The measurement surface is now **hardened**:
-    - `salienceCommitment` persists full status (ran, enabled, success, anchors, error).
-    - `contractValidationSummary` persists exact quoted proof (`preservedByQuotes`).
-    - Recovery is attributable via `stageAttribution` (initial, retry, repair).
-    - **Blocker fix:** mandatory summary refresh now occurs after every successful repair pass.
-    - **Blocker fix:** anchor matching is now case-insensitive to avoid German morphology traps.
-    - Repair prompt is now governed by the `CLAIM_CONTRACT_REPAIR` section in `claimboundary.prompt.md`.
+- **Bundle A (Measurement Hardening) and Bundle B (Contract Cleanup) are committed in `61815f41`.**
+- The code/contract surface is materially improved:
+  - `salienceCommitment` has a fuller declared contract in code, but slice 1 still needs to ensure the full status survives persistence on every path
+  - `contractValidationSummary` now includes `preservedByQuotes`
+  - recovery attribution exists in code, but slice 1 still needs to ensure it survives final summary replacement
+  - successful repair now forces revalidation before persistence
+  - repair prompt governance now lives in `CLAIM_CONTRACT_REPAIR`
+  - repair-path anchor checks are case-insensitive
 - E2 is still **log-only** and does **not** constrain Pass 2.
-- The immediate engineering goal is now **Bundle C: Rerun and Decision**.
+- The immediate engineering question is no longer “what is broken?” It is “do we have enough to begin Shape B responsibly?”
 
 ### Current decision standard
 
-- The next useful evidence is still the E2 batch on current HEAD.
-- That batch should be interpreted as an **anchor-recognition audit**, not proof that the salience-first architecture works end-to-end.
-- Shape B should **not** be promoted until the measurement surface is trustworthy.
+- The repo now knows enough to begin **Phase 7b / Shape B as a bounded engineering step behind a feature flag**.
+- The current E2 packet should still be interpreted as an **anchor-recognition audit**, not as a fully reproduced committed-build statistical close-out.
+- Do **not** cite the current measurement packet as decision-grade empirical closure unless and until the committed-build batch is reproducible from local `Jobs` data.
+- Final external review result: **Proceed only with constraints.** The architecturally correct next step is still Shape B, but slice 1 must include the remaining observability/mode-separation fixes rather than deferring them.
 
 ### Primary supporting sources
 
@@ -112,14 +113,18 @@ What this document intentionally does **not** do:
 
 ### 3.3 Code/prompt-specific Step 2 findings that matter for Phase 7
 
-These findings are implementation-level and come from the deep review:
+These findings are implementation-level and come from the deep review plus the later hardening commit:
 
 - E2 is currently **audit-only**, not a binding architectural input.
 - Retry and repair can improve the final claim set after the original Pass 2 output, so raw extraction quality and final job success are not the same thing.
-- `contractValidationSummary` can become stale after repair.
-- salience-stage failure is not persisted structurally
-- quote-level validator proof is dropped before persistence
-- part of the Stage 1 contract still lives in inline TypeScript prompt text
+- Several earlier contract-surface blockers were fixed in `61815f41`, but the core architectural distinction remains: audit-only E2 is not Shape B.
+- The remaining weakness is not primarily code blindness anymore; it is overclaim risk if the measurement packet is treated as stronger than the locally reproducible evidence.
+- Final reviewer round identified two still-live slice-1 blockers:
+  - full salience status is still not durably persisted on every path
+  - `stageAttribution` can still be lost when final revalidation replaces the summary
+- Final reviewer round also identified two mandatory Shape B design constraints:
+  - explicit config-level separation between audit-only E2 and binding Shape B
+  - explicit resolution of thesis-direct vs literal-substring precedence before anchor mapping becomes authoritative
 
 Source: `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`
 
@@ -132,6 +137,7 @@ Source: `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`
 - The Bolsonaro family’s clearest stable issue is the decomposition-vs-contamination trade-off.
 - The Plastic family combines inherent evaluative variance with concrete pipeline weaknesses.
 - For Phase 7 specifically, E2 is live but audit-only, and the current measurement surface is not yet clean enough to support large architectural claims.
+- After `61815f41`, the repo does appear clean enough to begin Shape B implementation as the next bounded step, but not clean enough to overstate the current measurement packet as fully reproduced proof.
 
 #### Inference
 
@@ -206,84 +212,91 @@ Before any Shape B promotion claim, the repo should be able to say all of the fo
 #### Proven
 
 - The repo can already measure E2 as an anchor-recognition probe.
-- The repo cannot yet treat current E2 output as architecture proof.
-- The highest-value fixes before any stronger claim are measurement-surface and contract-surface fixes, not another prompt-turning lap.
+- The repo cannot treat audit-only E2 output as Shape B proof.
+- The major contract-surface blockers identified in the first deep review were materially addressed in `61815f41`.
 
 #### Inference
 
-- If those P0/P1 fixes are made cleanly, the next E2 batch becomes decision-grade enough to justify either:
-  - opening Phase 7b / Shape B, or
-  - closing Phase 7 with a negative result
+- A fully reproduced committed-build batch would still be the cleanest empirical closeout.
+- It is nevertheless reasonable to begin Phase 7b now, because the architectural issues are sufficiently understood and the key pre-implementation blockers have already been removed.
 
 ## 5. Step 4: Implementation And Verification Plan
 
 ### 5.1 Implementation strategy
 
-Implement in three bounded bundles.
+Implement in two bounded tracks.
 
-- **Bundle A: measurement-surface hardening**
-  This is the highest-value work. It makes the next E2 batch trustworthy enough to interpret.
-- **Bundle B: contract-surface cleanup**
-  This removes avoidable prompt/runtime drift and makes Stage 1 easier to review and maintain.
-- **Bundle C: rerun and decision package**
-  This executes the E2 batch on the hardened surface and produces the decision-grade report.
+- **Track 1: Phase 7b / Shape B implementation**
+  This is now the recommended next engineering step.
+- **Track 2: empirical closeout hygiene**
+  This remains valuable, but it should not block Phase 7b implementation.
 
-### 5.2 Bundle A: measurement-surface hardening
+### 5.2 Completed hardening and cleanup
 
-| Change | Files / scope | Why now | Rollback | Verification |
-|---|---|---|---|---|
-| Persist full salience-stage status, not only success-path anchors | `apps/web/src/lib/analyzer/claim-extraction-stage.ts`; `apps/web/src/lib/analyzer/types.ts` | current E2 measurement cannot distinguish skipped vs failed vs zero-anchor success | revert the schema/storage change commit | targeted unit tests for understanding serialization; one synthetic run each for enabled-success, enabled-failure, disabled |
-| Always refresh `contractValidationSummary` after repair changed the active set | `apps/web/src/lib/analyzer/claim-extraction-stage.ts` | prevents stale pre-repair summaries from being stored against post-repair claim sets | revert the refresh logic commit | targeted tests covering: no repair, repair with change, repair with no change, Gate 1 unchanged after repair |
-| Persist `preservedByQuotes` with the stored contract summary | `apps/web/src/lib/analyzer/claim-extraction-stage.ts`; `apps/web/src/lib/analyzer/types.ts` | turns validator approval into auditable evidence instead of ID-only metadata | revert the summary schema/persistence commit | unit tests confirming quote persistence on approved anchor cases and absence on non-anchor cases |
-| Expose stage attribution needed for measurement (`rawPass2`, `retried`, `repaired`, `finalAccepted`) either in stored data or in a deterministic measurement report path | minimum: reporting path; optionally persisted understanding metadata | current final-job view mixes extraction quality and recovery quality | revert reporting/persistence addition | replay one known run and confirm all four stage states can be reconstructed mechanically |
-
-### 5.3 Bundle B: contract-surface cleanup
+The following items are no longer planning items; they are completed in `61815f41`:
 
 | Change | Files / scope | Why now | Rollback | Verification |
 |---|---|---|---|---|
-| Move inline `runContractRepair` prompt into `apps/web/prompts/claimboundary.prompt.md` as a dedicated section | `apps/web/prompts/claimboundary.prompt.md`; `apps/web/src/lib/analyzer/claim-extraction-stage.ts` | Stage 1 contract should be reviewable in one prompt system, not split between prompt files and inline TypeScript | revert the prompt extraction commit | prompt-load test; one repair-path test confirming functional parity |
-| Resolve prompt/runtime mismatch on literal anchor presence vs thesis-direct filtering | prompt section + `evaluateClaimContractValidation` logic in `claim-extraction-stage.ts` | current system states two slightly different acceptance rules | revert the alignment commit | explicit tests for: direct carrier, tangential literal carrier, missing carrier, self-contradicting validator output |
-| Narrow persisted salience-anchor `type` contract to match schema enum | `apps/web/src/lib/analyzer/types.ts` and any dependent consumers | removes unnecessary type drift | revert the type contract commit | typecheck/build plus any affected unit tests |
+| Expand salience-stage status contract in code/types | `claim-extraction-stage.ts`; `types.ts` | establish a richer contract for success/failure state | revert `61815f41` | targeted unit/integration verification |
+| Force post-repair contract revalidation before persistence | `claim-extraction-stage.ts` | prevent stale pre-repair summaries | revert `61815f41` | repair-path verification |
+| Persist `preservedByQuotes` and add `stageAttribution` to the contract surface | `claim-extraction-stage.ts`; `types.ts` | add auditability and recovery attribution hooks | revert `61815f41` | JSON/result inspection |
+| Move repair prompt into prompt system | `claimboundary.prompt.md`; `claim-extraction-stage.ts` | unify Stage 1 contract governance | revert `61815f41` | prompt-load verification |
 
-### 5.4 Bundle C: rerun and decision package
+### 5.3 Phase 7b implementation track
 
 | Step | Scope | Output | Verification |
 |---|---|---|---|
-| Lock the E2 corpus and precision rule wording | docs / measurement spec | final input list plus explicit negative-control rule | human review before run |
-| Run the E2 batch on hardened HEAD | jobs / measurement | exact run ledger with stage attribution | exact-input matching; no cohort leakage |
-| Write the E2 measurement report | `Docs/WIP/...Phase7_E2_Measurement.md` | decision-grade report, not narrative summary | counts reproducible from local data |
-| Decide | architecture | either open Phase 7b / Shape B, or close Phase 7 with a negative result | decision must cite thresholds and actual measured outcomes |
+| Add explicit mode separation: `audit` vs `binding` | config / runtime wiring | Shape B has its own mode boundary, not just `enabled=true` | config test + disabled-path parity |
+| Persist full salience status contract on every path | Stage 1 extraction + persistence contract | disabled, failed, success, and zero-anchor-success are distinguishable | targeted persistence tests |
+| Preserve recovery attribution through final refresh | contract summary path | final summary still carries stage provenance | targeted repair/final-refresh tests |
+| Add binding salience input to Pass 2 | Stage 1 extraction + prompt contract | Pass 2 receives E2 anchors explicitly | unit/integration tests on structured prompt payload |
+| Require claim-to-anchor preservation mapping | Pass 2 output schema + prompt | each thesis-direct claim can point to preserved anchor(s) | schema tests + golden examples |
+| Pivot validator from discovery to audit | contract validator prompt + evaluation path | validator checks preservation against pre-committed anchors | targeted validator tests |
+| Resolve thesis-direct vs literal-substring precedence explicitly | validator prompt + evaluation logic | no ambiguity once anchor mapping is authoritative | focused validator tests |
+| Tighten anchor typing end-to-end | schema + persisted type | binding anchor contract is typed, not loose-string | build/type tests |
+| Run bounded verification set | focused canaries, not necessarily another full expensive corpus first | implementation sanity before broader validation | targeted scenario checks on R2a/R2b and one control |
+
+### 5.4 Empirical closeout hygiene track
+
+| Step | Why it still matters |
+|---|---|
+| rebuild a reproducible committed-build E2 packet when practical | lets later docs claim a statistically clean closeout |
+| replace placeholder/non-local appendix evidence with real job IDs only | preserves review honesty |
+| keep wording exact: “directionally supportive” vs “reproduced committed-build proof” | avoids overclaiming |
 
 ### 5.5 Verification checklist
 
-Before rerunning E2, all of the following should be true:
+Before or during Phase 7b implementation, all of the following should remain true:
 
 1. A repaired claim set cannot persist with a stale pre-repair contract summary.
 2. The salience stage has a structurally visible status on success, failure, and disabled paths.
 3. Approved anchor preservation is auditable from persisted quotes.
 4. The repair prompt is no longer hidden in inline TypeScript.
 5. The negative-control precision rule is explicit enough that two reviewers would score the same run the same way.
+6. Phase 7b ships behind a feature flag with a clear rollback path.
+7. Audit-only mode and binding mode are distinguishable in config and persisted results.
+8. Final contract summaries cannot silently lose recovery attribution.
 
 ### 5.6 Recommended execution order
 
-1. Bundle A first.
-2. Bundle B second.
-3. Stop and review the resulting contract surface.
-4. Only then run Bundle C.
+1. Open Phase 7b / Shape B implementation behind a feature flag.
+2. Make the slice-1 observability/mode-separation fixes part of the same first patch.
+3. Verify binding-anchor behavior on focused canaries.
+4. Keep the empirical closeout hygiene track separate from the engineering start signal.
 
 ### 5.7 Step 4 carry-forward
 
 #### Proven
 
-- The repo already has enough architecture to run E2.
-- The repo does not yet have enough observability cleanliness to use that run as strong architectural proof.
-- The fastest path to a trustworthy decision is not another prompt experiment; it is a short hardening pass plus a disciplined rerun.
+- The repo already has enough architecture knowledge to begin Shape B responsibly.
+- The repo does not yet have a locally reproduced committed-build packet strong enough to justify “decisive empirical closeout” language.
+- The fastest path forward is Shape B implementation behind a feature flag, not another discovery loop.
 
 #### Inference
 
-- If Bundle A lands cleanly, most of the current argument about “can we trust the E2 batch?” should disappear.
-- If Bundle B lands cleanly as well, Phase 7 will have a much firmer basis for either promoting Shape B or rejecting it.
+- A later reproduced batch would improve the paper trail.
+- It is not necessary to delay Phase 7b solely to recover that paper trail.
 
 ## 6. Next Document
 
-The next useful document should be the **E2 measurement report on the hardened surface**.
+The next useful document should be the **Phase 7b / Shape B implementation charter**.

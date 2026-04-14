@@ -7,6 +7,36 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Final Reviewer Constraints Folded Into Plan -- [Standard] [open-items: yes]
+**For next agent:** A final external reviewer agreed with the Shape B direction but required stricter slice-1 constraints. `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` now reflects that Shape B is a go only with explicit mode separation, full salience persistence, durable recovery attribution, validator precedence cleanup, and typed anchor mapping in the first implementation slice.
+→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+
+---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Docs Corrected For Shape B Start Signal -- [Standard] [open-items: yes]
+**For next agent:** The Phase 7 docs were corrected to separate three things clearly: (1) the first deep review’s still-valid architectural reasoning, (2) the blockers materially fixed in `61815f41`, and (3) the remaining honesty gap that the current E2 note is not a locally reproduced committed-build statistical closeout. Current architect position: proceed to Phase 7b / Shape B behind a feature flag, but do not overstate the current measurement note.
+→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+
+---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Working Baseline Consolidated Through Step 4 -- [Standard] [open-items: yes]
+**For next agent:** `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` was rewritten into a shorter Phase 7 working baseline for humans and agents. It now carries the durable Step 1 summary, Step 2 root-cause summary, Step 3 root fixes/specification, and Step 4 implementation/verification plan. Code/prompt-specific detail remains in `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`. Next step is the hardened-surface E2 measurement report.
+→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+
+---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Code / Prompt Deep Review And Debate Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Use `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md` as the current code/prompt review note for Phase 7. It consolidates direct code inspection plus a two-reviewer debate and concludes that E2 is still worth measuring, but only as an anchor-recognition audit unless the measurement surface is tightened.
+→ Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md
+
+---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Step 2 Issues / Root Causes Consolidation -- [Standard] [open-items: yes]
+**For next agent:** `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` now contains both Step 1 and Step 2. The summary tables were rewritten after two reviewer-agent challenges: explicit `Pain/Need/Expectation`, explicit provenance, explicit confidence/caveat, plus Step 2 root-cause tables separating proven causes from hypotheses. Next step is Step 3: root fixes and specification.
+→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+
+---
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Step 1 Pains / Issues / Needs Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Use `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the Step 1 source of truth. It consolidates current HEAD job evidence, direct user statements preserved in docs, and the earlier Bundesrat expectation trail (`094e88fc`, `0afb2d88`, `b843fe70`) while explicitly separating proven facts from inference. Next step is Step 2: root causes and specification ambiguities.
+→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+
+---
 ### 2026-04-13 | LLM Expert | Claude Code (Opus 4.6) | Trim root AI-instruction files -- [Significant] [open-items: yes]
 **For next agent:** Full context in `Docs/AGENTS/Handoffs/2026-04-13_LLM_Expert_Root_Instruction_File_Trim.md`. Code Reviewer approved with one staging fix and two non-blocking notes. To extend handoff protocol, edit `Docs/AGENTS/Policies/Handoff_Protocol.md` directl...
 → Docs/AGENTS/Handoffs/2026-04-13_LLM_Expert_Root_Instruction_File_Trim.md
@@ -754,6 +784,36 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-04-01 | LLM Expert | Codex (GPT-5) | Multilingual Docs Sync After Review Fixes -- [Significant] [open-items: yes]
 **For next agent:** Use `Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md` as the current validation gate. Earlier review findings in the prior 2026-04-01 entry are historical and no longer open.
 → Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md
+
+---
+
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Status And E2 Measurement Plan — [Standard] [open-items: yes]
+**For next agent:** Phase 7 is already past planning: E1 V5 and E2 log-only are both on `main`. Do not keep changing prompts/stages. Write the missing E1 status note and run/document the E2 35-run batch from current HEAD before any Shape B or Opus decision.
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_current_work_and_plan_takeover.md
+
+---
+
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Current Work And Plan Takeover — [Standard] [open-items: yes]
+**For next agent:** Active workstream is Phase 7. E1 V5 and E2 log-only stage are already on `main`; no committed Phase 7 measurement doc exists yet. Next recommended step is to stop changing code, write the missing measurement ledger, then run and record the E2 35-run batch on current HEAD.
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_current_work_and_plan_takeover.md
+
+---
+
+### 2026-04-13 | Lead Architect + LLM Expert | Codex (GPT-5) | Phase 7 Salience-First Charter Review — [Standard] [open-items: yes]
+**For next agent:** Before executing E1, fix two charter issues: E1 currently claims "no schema/code change" while requiring a new Pass 2 reasoning field, and the E2 precision metric has no negative-control inputs in the proposed corpus.
+→ Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_phase7_salience_first_charter_review.md
+
+---
+
+### 2026-04-13 | Lead Architect + LLM Expert | Codex (GPT-5) | C16 Replay Review Round 2 — [Standard] [open-items: yes]
+**For next agent:** The corrected doc math now matches the DB, but `Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md` still has one internal mismatch: line 66 says extractor anchor loss is `4/6`, while the partition table correctly shows `3/6` with `d5a7dc33` counted as `validator_unavailable`.
+→ Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_c16_replay_review_round2.md
+
+---
+
+### 2026-04-13 | Lead Architect + LLM Expert | Codex (GPT-5) | C16 Combined Replay Review — [Standard] [open-items: yes]
+**For next agent:** Recompute `Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md` using the exact locked R2 input only. The current doc mixes `unterschreibt` and `unterschrieb`, mislabels `0ce78ee9` as a full pass, and overstates the pre-C16 delta.
+→ Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_c16_combined_replay_review.md
 
 ---
 
