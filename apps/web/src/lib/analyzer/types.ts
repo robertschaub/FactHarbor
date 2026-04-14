@@ -1190,12 +1190,22 @@ export interface CBClaimUnderstanding {
   salienceCommitment?: {
     ran: boolean;
     enabled: boolean;
+    mode: "audit" | "binding";
     success: boolean;
     errorMessage?: string;
     anchors: Array<{
       text: string;
       inputSpan: string;
-      type: string;
+      type:
+        | "agent"
+        | "action_predicate"
+        | "temporal"
+        | "causal"
+        | "scope"
+        | "quantification"
+        | "modal_illocutionary"
+        | "attribution"
+        | "other";
       rationale: string;
       truthConditionShiftIfRemoved: string;
     }>;

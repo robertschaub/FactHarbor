@@ -1554,11 +1554,12 @@ export const CalcConfigSchema = z.object({
    * Log-only in this iteration: runs a dedicated LLM call to identify
    * distinguishing meaning aspects and writes the result into
    * `understanding.salienceCommitment` for auditability/measurement. Does NOT
-   * yet constrain Pass 2. Promoted to a binding input in Phase 7b Shape B
-   * only if the measurement justifies it.
+   * yet constrain Pass 2 when mode=`audit`. Phase 7b introduces explicit
+   * `audit` vs `binding` mode separation so rollout and rollback remain honest.
    */
   salienceCommitment: z.object({
     enabled: z.boolean(),
+    mode: z.enum(["audit", "binding"]),
   }).optional(),
 
   contextSimilarity: z.object({
@@ -1907,6 +1908,7 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
   },
   salienceCommitment: {
     enabled: true,
+    mode: "audit",
   },
   contextSimilarity: {
     nameWeight: 0.35,

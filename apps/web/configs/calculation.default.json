@@ -116,7 +116,8 @@
     "repairPassEnabled": true
   },
   "salienceCommitment": {
-    "enabled": true
+    "enabled": true,
+    "mode": "audit"
   },
   "contextSimilarity": {
     "nameWeight": 0.35,

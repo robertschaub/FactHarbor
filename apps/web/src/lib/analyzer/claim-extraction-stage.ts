@@ -242,17 +242,31 @@ export async function extractClaims(
   // Runs after Pass 1 and before preliminary search so the anchors can be
   // referenced during later measurement. Does NOT yet constrain Pass 2.
   // ------------------------------------------------------------------
-  const salienceEnabled = calcConfig.salienceCommitment?.enabled ?? true;
-  let salienceCommitment: z.infer<typeof SalienceOutputSchema> | undefined;
+  const salienceConfig = calcConfig.salienceCommitment ?? { enabled: true, mode: "audit" as const };
+  const salienceEnabled = salienceConfig.enabled ?? true;
+  let salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]>;
   if (salienceEnabled) {
-    state.onEvent?.("Extracting claims: salience commitment (E2 log-only)...", 14);
-    salienceCommitment = await runSalienceCommitment(state.originalInput, pipelineConfig, state);
-    if (salienceCommitment) {
+    state.onEvent?.(`Extracting claims: salience commitment (${salienceConfig.mode})...`, 14);
+    salienceCommitment = await runSalienceCommitment(
+      state.originalInput,
+      pipelineConfig,
+      salienceConfig,
+      state,
+    );
+    if (salienceCommitment.ran) {
       state.llmCalls++;
       console.info(
         `[Stage1] E2 salience commitment: ${salienceCommitment.anchors.length} anchor(s) identified.`,
       );
     }
+  } else {
+    salienceCommitment = {
+      ran: false,
+      enabled: false,
+      mode: salienceConfig.mode,
+      success: false,
+      anchors: [],
+    };
   }
 
   // ------------------------------------------------------------------
@@ -805,6 +819,7 @@ export async function extractClaims(
         rePromptRequired: true,
         failureMode: "contract_violated",
         summary: "No claims remained after Gate 1; the final accepted claim set cannot preserve the original claim contract.",
+        stageAttribution,
       };
       console.info("[Stage1] Final accepted claims are empty after Gate 1; contract summary refreshed to reflect the final claim set.");
     } else {
@@ -847,6 +862,7 @@ export async function extractClaims(
           finalAcceptedClaims,
         );
         contractValidationSummary = evaluatedFinalContract.summary;
+        contractValidationSummary.stageAttribution = stageAttribution;
         console.info("[Stage1] Refreshed contract summary for final accepted claims after Gate 1 / reprompt selection.");
       } else {
         // Fix 3 (2026-04-10): do NOT stamp preservesContract=true on a path
@@ -863,6 +879,7 @@ export async function extractClaims(
           rePromptRequired: false,
           failureMode: "validator_unavailable",
           summary: "revalidation_unavailable: final accepted claim set changed after Gate 1, but the contract re-validation LLM call returned no usable result. State is unknown and treated as degraded.",
+          stageAttribution,
         };
         console.warn("[Stage1] Final accepted claims could not be re-validated; marked as degraded (no silent fail-open).");
       }
@@ -905,14 +922,7 @@ export async function extractClaims(
     contractValidationSummary,
     // Phase 7 E2 (log-only): upstream salience commitment for recall/precision
     // measurement against the contract validator's post-hoc anchor discovery.
-    ...(salienceCommitment
-      ? {
-          salienceCommitment: {
-            ran: true,
-            anchors: salienceCommitment.anchors,
-          },
-        }
-      : {}),
+    ...(salienceCommitment ? { salienceCommitment } : {}),
   };
 }
 
@@ -1041,13 +1051,16 @@ export async function runPass1(
 export async function runSalienceCommitment(
   inputText: string,
   pipelineConfig: PipelineConfig,
+  salienceConfig: { enabled: boolean; mode: "audit" | "binding" },
   state: Pick<CBResearchState, "onEvent"> | undefined,
-): Promise<CBClaimUnderstanding["salienceCommitment"]> {
-  const enabled = pipelineConfig.salienceCommitment?.enabled !== false;
+): Promise<NonNullable<CBClaimUnderstanding["salienceCommitment"]>> {
+  const enabled = salienceConfig.enabled !== false;
+  const mode = salienceConfig.mode ?? "audit";
   if (!enabled) {
     return {
       ran: false,
       enabled: false,
+      mode,
       success: false,
       anchors: [],
     };
@@ -1065,6 +1078,7 @@ export async function runSalienceCommitment(
     return {
       ran: true,
       enabled: true,
+      mode,
       success: false,
       errorMessage: "CLAIM_SALIENCE_COMMITMENT prompt section not found",
       anchors: [],
@@ -1109,6 +1123,7 @@ export async function runSalienceCommitment(
       return {
         ran: true,
         enabled: true,
+        mode,
         success: false,
         errorMessage: "Salience commitment returned no structured output",
         anchors: [],
@@ -1148,6 +1163,7 @@ export async function runSalienceCommitment(
     return {
       ran: true,
       enabled: true,
+      mode,
       success: true,
       anchors,
     };
@@ -1157,6 +1173,7 @@ export async function runSalienceCommitment(
     return {
       ran: true,
       enabled: true,
+      mode,
       success: false,
       errorMessage,
       anchors: [],

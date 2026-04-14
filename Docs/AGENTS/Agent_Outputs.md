@@ -856,3 +856,10 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ### 2026-04-01 | Senior Developer | Codex (GPT-5) | Stage 1 Narrow Hardening Implementation -- [Standard] [open-items: yes]
 **For next agent:** Treat this as a narrow Stage-1 patch on top of the Apr 1 rollback baseline. If continuing, run live SRG/SRF/Plastik validation first; do not expand this into a broader Stage-1 package. If needed later, clean up the noisy mock sequencing in the two...
 → Docs/AGENTS/Handoffs/2026-04-01_senior_developer_stage_1_narrow_hardening_implementation.md
+
+---
+
+### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7b Slice 1 Mode Separation + Persistence Hardening -- [Standard] [open-items: yes]
+**For next agent:** `ba150b4d` consolidated the Phase 7 docs; this follow-up slice hardens the runtime surface for Shape B. `salienceCommitment` now has explicit `audit` vs `binding` mode in config/defaults, the full salience status is persisted on success and disabled paths, and final contract-summary refresh preserves `stageAttribution`. Next step is to wire binding-mode anchors into Pass 2/validator behavior behind the new mode flag without removing the existing V5 scaffold.
+Warnings: Current E2 remains audit-only at runtime; binding mode is config-visible and persisted, but not yet consumed by Pass 2. Do not claim Shape B is active until the next slice lands. `npm -w apps/web run build` reseeded prompt/config storage as part of postbuild; that is expected.
+Learnings: The persisted interface being optional masked a local runtime type hole; using `NonNullable<CBClaimUnderstanding["salienceCommitment"]>` in Stage 1 keeps compile-time expectations honest. Stage attribution after final revalidation must be preserved explicitly because the refreshed summary replaces the prior object.
