@@ -1021,6 +1021,117 @@ describe("Stage 1: runPass2", () => {
     expect(result.articleThesis).toBe("Overall thesis");
   });
 
+  it("should keep audit mode on the base Pass 2 prompt without loading the binding appendix", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background info",
+      articleThesis: "Overall thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50% in 2024",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "medium",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.85,
+          groundingQuality: "strong",
+          expectedEvidenceProfile: {
+            methodologies: ["data analysis"],
+            expectedMetrics: ["metric X"],
+            expectedSourceTypes: ["peer_reviewed_study"],
+          },
+        },
+      ],
+    };
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    await runPass2("test input", [], mockPipelineConfig, "2026-02-17");
+
+    const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
+    expect(renderedSections).toContain("CLAIM_EXTRACTION_PASS2");
+    expect(renderedSections).not.toContain("CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX");
+
+    const firstCall = mockGenerateText.mock.calls[0][0];
+    expect(firstCall.messages[0].content).toContain("section:CLAIM_EXTRACTION_PASS2");
+    expect(firstCall.messages[0].content).not.toContain("CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX");
+  });
+
+  it("should append the binding appendix when precommitted salience anchors are active", async () => {
+    const pass2Fixture = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Background info",
+      articleThesis: "Overall thesis",
+      atomicClaims: [
+        {
+          id: "AC_01",
+          statement: "Entity A increased metric X by 50% in 2024",
+          category: "factual",
+          centrality: "high",
+          harmPotential: "medium",
+          isCentral: true,
+          claimDirection: "supports_thesis",
+          keyEntities: ["Entity A"],
+          checkWorthiness: "high",
+          specificityScore: 0.85,
+          groundingQuality: "strong",
+          expectedEvidenceProfile: {
+            methodologies: ["data analysis"],
+            expectedMetrics: ["metric X"],
+            expectedSourceTypes: ["peer_reviewed_study"],
+          },
+        },
+      ],
+    };
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue(pass2Fixture);
+
+    await runPass2(
+      "test input",
+      [],
+      mockPipelineConfig,
+      "2026-02-17",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      {
+        ran: true,
+        enabled: true,
+        mode: "binding",
+        success: true,
+        anchors: [
+          {
+            text: "final",
+            inputSpan: "final",
+            type: "modal_illocutionary",
+            rationale: "Finality changes the proposition.",
+            truthConditionShiftIfRemoved: "The claim becomes weaker.",
+          },
+        ],
+      },
+    );
+
+    const appendixCalls = mockLoadSection.mock.calls.filter(([, section]) => section === "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX");
+    expect(appendixCalls).toHaveLength(1);
+    expect(appendixCalls[0][2]).toMatchObject({
+      salienceBindingContextJson: expect.stringContaining('"mode": "binding"'),
+    });
+
+    const firstCall = mockGenerateText.mock.calls[0][0];
+    expect(firstCall.messages[0].content).toContain("section:CLAIM_EXTRACTION_PASS2");
+    expect(firstCall.messages[0].content).toContain("section:CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX");
+  });
+
   it("should preserve thesisRelevance from Pass 2 output", async () => {
     const pass2Fixture = {
       impliedClaim: "Entity A achieved metric X",
@@ -8310,6 +8421,117 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       anchors: [],
     });
     expect(state.llmCalls).toBe(3);
+  });
+
+  it("should load the binding-mode contract appendix when salience binding is active", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: true, mode: "binding" },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            anchors: [
+              {
+                text: "final",
+                inputSpan: "final",
+                type: "modal_illocutionary",
+                rationale: "Finality changes the proposition.",
+                truthConditionShiftIfRemoved: "The claim becomes weaker.",
+              },
+            ],
+          };
+        case 3:
+          return makePass2(1, {
+            inputClassification: "single_atomic_claim",
+            statementPrefix: "final",
+          });
+        case 4:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "contract preserved",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 5:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The claim is final.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    await extractClaims(state);
+
+    const appendixCalls = mockLoadSection.mock.calls.filter(([, section]) => section === "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+    expect(appendixCalls).toHaveLength(1);
+    expect(appendixCalls[0][2]).toMatchObject({
+      salienceBindingContextJson: expect.stringContaining('"mode": "binding"'),
+    });
   });
 
 

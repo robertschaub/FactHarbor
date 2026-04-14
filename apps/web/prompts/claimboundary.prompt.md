@@ -19,11 +19,14 @@ variables:
   - impliedClaim
   - articleThesis
   - atomicClaimsJson
+  - salienceBindingContextJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_SALIENCE_COMMITMENT"
   - "CLAIM_EXTRACTION_PASS2"
+  - "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_VALIDATION"
+  - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
   - "RELEVANCE_CLASSIFICATION"
@@ -364,6 +367,26 @@ Notes:
 
 ---
 
+## CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX
+
+This appendix applies only when Phase 7b binding mode is enabled. In audit mode, it is not loaded.
+
+The upstream salience stage has already precommitted the input's distinguishing meaning aspects. Treat that precommitted set as a binding structural constraint on decomposition.
+
+Precommitted salience context:
+```json
+${salienceBindingContextJson}
+```
+
+Binding-mode rules:
+- When `mode` is `"binding"` and `success` is `true`, the provided `anchors` are authoritative for this extraction step. Do not silently replace them with a different anchor inventory.
+- Preserve the provided anchors in the extracted claim set using the input's original language and verbatim anchor text.
+- If an anchor materially modifies the thesis-defining proposition, at least one thesis-direct atomic claim must carry that anchor text verbatim in its `statement`.
+- Keep the existing meaning-preservation scaffold from the base prompt. The precommitted anchors constrain decomposition; they do not authorize new claims, new entities, or evidence-derived narrowing.
+- If the precommitted `anchors` array is empty, do not invent replacement anchors. Proceed with the base extraction rules only.
+
+---
+
 ## CLAIM_CONTRACT_VALIDATION
 
 You are a claim-contract validator. Your task is to check whether extracted atomic claims still preserve the ORIGINAL MEANING of the user's input.
@@ -510,6 +533,26 @@ Field constraints:
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
 - If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
+
+---
+
+## CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX
+
+This appendix applies only when Phase 7b binding mode is enabled. In audit mode, it is not loaded.
+
+The upstream salience stage has already precommitted the anchor set that binding-mode extraction was required to preserve. In this mode, you are auditing against that precommitted set rather than discovering a new one.
+
+Precommitted salience context:
+```json
+${salienceBindingContextJson}
+```
+
+Binding-mode audit rules:
+- Audit anchor preservation against the provided `anchors` list only. Do not introduce a different anchor that is not present in that list.
+- When you populate `truthConditionAnchor`, choose the single most decisive anchor from the provided precommitted list for the user's thesis. Do not discover an anchor outside that list.
+- Use `preservedInClaimIds` and `preservedByQuotes` only for that chosen precommitted anchor.
+- If the provided `anchors` list is empty, do not invent a replacement anchor. In that case, report no truth-condition anchor unless the base prompt independently requires one from the empty input, which it normally should not.
+- Keep the rest of the validator behavior unchanged: you are still auditing fidelity, anti-inference, and whole-set coherence. Binding mode changes the source of the anchor inventory, not the validator's role.
 
 ---
 

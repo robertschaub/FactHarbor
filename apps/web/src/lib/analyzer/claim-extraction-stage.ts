@@ -238,9 +238,10 @@ export async function extractClaims(
   state.llmCalls++;
 
   // ------------------------------------------------------------------
-  // Phase 7 E2: salience-commitment stage (log-only).
+  // Phase 7 E2: salience-commitment stage.
   // Runs after Pass 1 and before preliminary search so the anchors can be
-  // referenced during later measurement. Does NOT yet constrain Pass 2.
+  // referenced during later measurement. Audit mode remains observational;
+  // binding mode carries the same anchor set forward into Pass 2 / contract audit.
   // ------------------------------------------------------------------
   const salienceConfig = calcConfig.salienceCommitment ?? { enabled: true, mode: "audit" as const };
   const salienceEnabled = salienceConfig.enabled ?? true;
@@ -295,6 +296,8 @@ export async function extractClaims(
     undefined,
     pass1.inferredGeography,
     pass1.detectedLanguage,
+    undefined,
+    salienceCommitment,
   );
   state.llmCalls++;
 
@@ -322,6 +325,7 @@ export async function extractClaims(
       pass2.articleThesis ?? "",
       pass2.inputClassification ?? "single_atomic_claim",
       pipelineConfig,
+      salienceCommitment,
     );
     state.llmCalls++;
 
@@ -410,6 +414,7 @@ export async function extractClaims(
           pass1.inferredGeography,
           pass1.detectedLanguage,
           "context_refinement",
+          salienceCommitment,
         );
         state.llmCalls++;
 
@@ -426,6 +431,7 @@ export async function extractClaims(
             retryPass2.articleThesis ?? "",
             retryPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
+            salienceCommitment,
           );
           state.llmCalls++;
         } catch {
@@ -509,6 +515,7 @@ export async function extractClaims(
               activePass2.articleThesis ?? "",
               activePass2.inputClassification ?? "single_atomic_claim",
               pipelineConfig,
+              salienceCommitment,
             );
 
             if (repairValidationResult) {
@@ -649,6 +656,8 @@ export async function extractClaims(
           guidance,
           pass1.inferredGeography,
           pass1.detectedLanguage,
+          undefined,
+          salienceCommitment,
         );
         state.llmCalls++;
 
@@ -755,6 +764,8 @@ export async function extractClaims(
         multiEventGuidance,
         pass1.inferredGeography,
         pass1.detectedLanguage,
+        undefined,
+        salienceCommitment,
       );
       state.llmCalls++;
 
@@ -833,6 +844,7 @@ export async function extractClaims(
         bestPass2.articleThesis ?? "",
         bestPass2.inputClassification ?? "single_atomic_claim",
         pipelineConfig,
+        salienceCommitment,
       );
       state.llmCalls++;
 
@@ -852,6 +864,7 @@ export async function extractClaims(
           bestPass2.articleThesis ?? "",
           bestPass2.inputClassification ?? "single_atomic_claim",
           pipelineConfig,
+          salienceCommitment,
         );
         state.llmCalls++;
       }
@@ -1038,15 +1051,14 @@ export async function runPass1(
  * test. Uses the `understand` tier (Haiku today) — this is an interpretive
  * step, not verdict reasoning.
  *
- * **Log-only in this iteration.** The emitted anchors are written to
+ * In audit mode, the emitted anchors are written to
  * `understanding.salienceCommitment` for auditability and measurement.
- * Pass 2 does NOT yet consume them as a binding constraint; that is the
- * Phase 7b Shape B promotion, gated on this measurement.
+ * In binding mode, the same emitted set becomes the precommitted anchor
+ * inventory for downstream Pass 2 / contract-audit prompts.
  *
- * Non-fatal: returns undefined on any error. Pipeline continues with the
- * existing V5 in-prompt scaffold as the only salience-preservation
- * mechanism, preserving current behavior if this stage is disabled or
- * fails.
+ * Non-fatal: the stage still returns structured status on any error. The
+ * pipeline continues with the existing V5 in-prompt scaffold if this stage
+ * is disabled or fails.
  */
 export async function runSalienceCommitment(
   inputText: string,
@@ -1822,6 +1834,8 @@ async function runContractRepair(
 /**
  * Pass 2: Evidence-grounded claim extraction using Sonnet.
  * Uses preliminary evidence to produce specific, research-ready atomic claims.
+ * In binding mode, appends a precommitted salience-anchor appendix while
+ * leaving audit mode on the unchanged baseline prompt.
  */
 export async function runPass2(
   inputText: string,
@@ -1833,6 +1847,7 @@ export async function runPass2(
   inferredGeography?: string | null,
   detectedLanguage?: string,
   modelTaskOverride?: ModelTask,
+  salienceBinding?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
 ): Promise<z.infer<typeof Pass2OutputSchema>> {
   const buildPreliminaryEvidencePayload = (items: PreliminaryEvidenceItem[]): string =>
     JSON.stringify(
@@ -1848,6 +1863,18 @@ export async function runPass2(
       null,
       2,
     );
+
+  const bindingModeActive = salienceBinding?.mode === "binding";
+  const salienceBindingContextJson = JSON.stringify(
+    {
+      enabled: salienceBinding?.enabled ?? false,
+      mode: salienceBinding?.mode ?? "audit",
+      success: salienceBinding?.success ?? false,
+      anchors: salienceBinding?.anchors ?? [],
+    },
+    null,
+    2,
+  );
 
   const renderedWithEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
     currentDate,
@@ -1870,6 +1897,17 @@ export async function runPass2(
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
     inferredGeography: inferredGeography ?? "not geographically specific",
   }) ?? renderedWithEvidence;
+
+  let pass2BindingAppendix = "";
+  if (bindingModeActive) {
+    const bindingAppendix = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX", {
+      salienceBindingContextJson,
+    });
+    if (!bindingAppendix) {
+      throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX prompt section");
+    }
+    pass2BindingAppendix = `\n\n${bindingAppendix.content}`;
+  }
 
   // Rec-A: Pass 2 is extraction/understanding, not verdict reasoning.
   // Using "extract_evidence" routes to Haiku (budget) and makes UCM modelExtractEvidence
@@ -1945,8 +1983,8 @@ export async function runPass2(
       }
       const userContent = guidanceParts.join("\n\n");
       const activeSystemPrompt = retryWithoutPreliminaryEvidence
-        ? renderedWithoutEvidence.content
-        : renderedWithEvidence.content;
+        ? renderedWithoutEvidence.content + pass2BindingAppendix
+        : renderedWithEvidence.content + pass2BindingAppendix;
 
       attemptResult = await generateText({
         model: model.model,
@@ -2097,8 +2135,8 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                 {
                   role: "system" as const,
                   content: retryWithoutPreliminaryEvidence
-                    ? renderedWithoutEvidence.content
-                    : renderedWithEvidence.content,
+                    ? renderedWithoutEvidence.content + pass2BindingAppendix
+                    : renderedWithEvidence.content + pass2BindingAppendix,
                   providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
                 },
                 { role: "user" as const, content: fallbackUserContent },
@@ -2435,7 +2473,9 @@ function areClaimSetsEquivalent(left: AtomicClaim[] | undefined, right: AtomicCl
 /**
  * Validate extracted claims against the original input's claim contract.
  * Uses an LLM call to detect proxy drift where claims substitute a narrower
- * predicate for the user's original evaluative meaning.
+ * predicate for the user's original evaluative meaning. In binding mode,
+ * the validator audits against the precommitted salience anchor set rather
+ * than discovering a fresh anchor inventory.
  *
  * Returns undefined on any failure — the caller treats undefined as fail-open (accept claims).
  */
@@ -2446,12 +2486,24 @@ async function validateClaimContract(
   articleThesis: string,
   inputClassification: string,
   pipelineConfig: PipelineConfig,
+  salienceBinding?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
 ): Promise<ClaimContractValidationResult | undefined> {
   if (claims.length === 0) return undefined;
 
   const model = getModelForTask("context_refinement", undefined, pipelineConfig);
   const expectedClaimIds = new Set(claims.map((c) => c.id));
   const llmCallStartedAt = Date.now();
+  const bindingModeActive = salienceBinding?.mode === "binding";
+  const salienceBindingContextJson = JSON.stringify(
+    {
+      enabled: salienceBinding?.enabled ?? false,
+      mode: salienceBinding?.mode ?? "audit",
+      success: salienceBinding?.success ?? false,
+      anchors: salienceBinding?.anchors ?? [],
+    },
+    null,
+    2,
+  );
 
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
@@ -2499,12 +2551,37 @@ async function validateClaimContract(
       return undefined;
     }
 
+    let contractBindingAppendix = "";
+    if (bindingModeActive) {
+      const bindingAppendix = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX", {
+        salienceBindingContextJson,
+      });
+      if (!bindingAppendix) {
+        recordLLMCall({
+          taskType: "other",
+          provider: model.provider,
+          modelName: model.modelName,
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+          durationMs: Date.now() - llmCallStartedAt,
+          success: false,
+          schemaCompliant: false,
+          retries: 0,
+          errorMessage: "Claim contract validation binding appendix could not be loaded",
+          timestamp: new Date(),
+        });
+        return undefined;
+      }
+      contractBindingAppendix = `\n\n${bindingAppendix.content}`;
+    }
+
     const result = await generateText({
       model: model.model,
       messages: [
         {
           role: "system",
-          content: rendered.content,
+          content: rendered.content + contractBindingAppendix,
           providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
         },
         {
