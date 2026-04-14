@@ -290,10 +290,11 @@ export async function extractClaims(
   // or if validation returns no usable structured result.
   // ------------------------------------------------------------------
   let activePass2 = pass2;
+  let stageAttribution: "initial" | "retry" | "repair" = "initial";
   const contractValidationEnabled = calcConfig.claimContractValidation?.enabled ?? true;
   const contractMaxRetries = calcConfig.claimContractValidation?.maxRetries ?? 1;
   // Observability: capture contract validation outcome for stored result
-  let contractValidationSummary: ContractValidationSummary | undefined;
+  let contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"] = undefined;
   let lastContractValidatedClaims: AtomicClaim[] | undefined;
 
   if (contractValidationEnabled) {
@@ -320,6 +321,7 @@ export async function extractClaims(
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       anchorRetryReason = evaluatedContract.anchorRetryReason;
       contractValidationSummary = evaluatedContract.summary;
+      contractValidationSummary.stageAttribution = stageAttribution;
 
       // Override the contract result's flag for the retry decision below
       if (evaluatedContract.effectiveRePromptRequired) {
@@ -329,13 +331,6 @@ export async function extractClaims(
         }
       }
     } else {
-      // Fix 3 extended (2026-04-10): do NOT stamp preservesContract=true on a
-      // path that explicitly could not verify success. Prior behavior was a
-      // silent fail-open that, when the retry also failed to revalidate,
-      // produced an unverified "lottery win" report. Mark as degraded and
-      // let the retry path recover if it can; if the retry also fails to
-      // revalidate, this summary carries forward and the Wave 1A safeguard
-      // terminates the run.
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       contractValidationSummary = {
         ran: true,
@@ -343,6 +338,7 @@ export async function extractClaims(
         rePromptRequired: false,
         failureMode: "validator_unavailable",
         summary: "revalidation_unavailable: initial contract validation LLM call returned no usable result",
+        stageAttribution,
       };
     }
 
@@ -366,19 +362,6 @@ export async function extractClaims(
         ? ` The extracted claims omitted a truth-condition-bearing modifier from the input: "${anchorText}". This modifier changes the proposition's truth conditions. The primary direct claim must fuse this modifier with the action it modifies; do not externalize it into a supporting sub-claim.`
         : "";
 
-      // Track 1 (Rev B): align validator-unavailable fallback guidance with the
-      // fusion-first wording used on the normal anchor-retry path. The previous
-      // fallback wording was weaker than contractGuidance below and produced
-      // inconsistent retry behavior on the validator-unavailable branch.
-      const fallbackGuidance = !contractResult
-        ? `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
-          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
-          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
-          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
-          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
-          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
-        : "";
-
       const contractGuidance = contractResult
         ? `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
           `${contractResult.inputAssessment.summary}. ` +
@@ -388,7 +371,12 @@ export async function extractClaims(
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
           `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
-        : fallbackGuidance;
+        : `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
+          `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
+          `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
+          `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
+          `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
+          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`;
 
       console.info(
         contractResult
@@ -398,11 +386,6 @@ export async function extractClaims(
 
       try {
         state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 24);
-        // C6 (Phase 5): escalate only the contract-failure retry to the
-        // standard tier (Sonnet today). `context_refinement` resolves to
-        // `config.modelVerdict` and is semantically closer to claim-shape
-        // repair than `verdict`. The first-attempt Pass 2 call (and its
-        // internal retry loop) continues on Haiku via `extract_evidence`.
         const retryPass2 = await runPass2(
           state.originalInput,
           preliminaryEvidence,
@@ -444,24 +427,20 @@ export async function extractClaims(
 
         if (evaluatedRetryContract && !evaluatedRetryContract.effectiveRePromptRequired) {
           activePass2 = retryPass2;
+          stageAttribution = "retry";
           lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
           contractValidationSummary = evaluatedRetryContract.summary;
+          contractValidationSummary.stageAttribution = stageAttribution;
           console.info("[Stage1] Claim contract retry validated cleanly; using retry Pass 2.");
         } else if (!retryContractResult && !contractResult) {
-          // Both initial and retry contract validation calls returned no
-          // usable result. Use the conservative retry output as the active
-          // claim set, but the contractValidationSummary from the initial
-          // call (set to revalidation_unavailable / preservesContract=false
-          // above) is NOT overwritten here. It carries forward and the
-          // Wave 1A safeguard terminates the run as damaged.
           activePass2 = retryPass2;
+          stageAttribution = "retry";
           lastContractValidatedClaims = retryPass2.atomicClaims as unknown as AtomicClaim[];
           console.warn("[Stage1] Claim contract retry could not be re-validated either; using conservative retry output but contract state remains degraded.");
         } else {
           console.info("[Stage1] Claim contract retry did not validate cleanly; keeping original Pass 2.");
         }
       } catch (retryErr) {
-        // Retry failure is non-fatal — keep original Pass 2 output
         console.warn("[Stage1] Claim contract retry failed (non-fatal):", retryErr);
       }
     } else if (contractResult) {
@@ -469,12 +448,6 @@ export async function extractClaims(
         `[Stage1] Claim contract validation passed: ${contractResult.inputAssessment.summary}`
       );
     }
-    // If contractResult is undefined AND the retry did not replace it, the
-    // contractValidationSummary was marked revalidation_unavailable /
-    // preservesContract=false above (see Fix 3 extended at line 294). That
-    // state carries forward and the Wave 1A safeguard in
-    // claimboundary-pipeline.ts terminates the run as damaged. No silent
-    // fail-open path remains here.
 
     // ------------------------------------------------------------------
     // C11b (Phase 5): anchor-gated targeted repair pass.
@@ -483,9 +456,7 @@ export async function extractClaims(
     // in any claim's statement, the retry has a deterministic modifier-omission
     // failure. Fire one narrow-scope LLM call to insert the anchor verbatim
     // into the thesis-direct claim, then let final revalidate authorize the
-    // repaired set. Structural token-presence check is legal under AGENTS.md:
-    // the anchor originates from the LLM's own structured output and the
-    // comparison is substring equality (plumbing), not semantic classification.
+    // repaired set.
     // ------------------------------------------------------------------
     const repairPassEnabled = calcConfig.claimContractValidation?.repairPassEnabled ?? true;
     if (repairPassEnabled && contractValidationSummary) {
@@ -493,10 +464,12 @@ export async function extractClaims(
       const anchorText = anchor?.anchorText?.trim();
       const anchorPresentInInput = anchor?.presentInInput === true;
       const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+      
+      // C17 [BLOCKER FIX]: use case-insensitive check to avoid morphology-based false positives.
       const anchorMissing =
         !!anchorText &&
         anchorPresentInInput &&
-        !currentClaims.some((c) => typeof c.statement === "string" && c.statement.includes(anchorText));
+        !currentClaims.some((c) => typeof c.statement === "string" && c.statement.toLowerCase().includes(anchorText.toLowerCase()));
 
       if (anchorMissing && anchorText) {
         state.onEvent?.(`Repairing claim set to carry anchor "${anchorText}" verbatim...`, 25);
@@ -512,11 +485,34 @@ export async function extractClaims(
           );
           if (repairedPass2) {
             state.llmCalls++;
-            activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
-            lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
-            console.info(
-              `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${anchorText}" fused.`
+            
+            // C17 [BLOCKER FIX]: mandatory re-validation refresh after repair.
+            // Decoupled from Gate 1 to ensure structural and semantic correctness.
+            const repairValidationResult = await validateClaimContract(
+              repairedPass2.atomicClaims as unknown as AtomicClaim[],
+              state.originalInput,
+              activePass2.impliedClaim ?? "",
+              activePass2.articleThesis ?? "",
+              activePass2.inputClassification ?? "single_atomic_claim",
+              pipelineConfig,
             );
+
+            if (repairValidationResult) {
+              const evaluatedRepair = evaluateClaimContractValidation(
+                repairValidationResult,
+                repairedPass2.atomicClaims as unknown as AtomicClaim[],
+              );
+              activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
+              stageAttribution = "repair";
+              lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
+              contractValidationSummary = evaluatedRepair.summary;
+              contractValidationSummary.stageAttribution = stageAttribution;
+              console.info(
+                `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${anchorText}" fused and validated.`
+              );
+            } else {
+              console.warn("[Stage1] Contract repair could not be re-validated; keeping pre-repair set.");
+            }
           } else {
             console.warn("[Stage1] Contract repair returned no usable output; keeping retry Pass 2.");
           }
@@ -1046,16 +1042,33 @@ export async function runSalienceCommitment(
   inputText: string,
   pipelineConfig: PipelineConfig,
   state: Pick<CBResearchState, "onEvent"> | undefined,
-): Promise<z.infer<typeof SalienceOutputSchema> | undefined> {
+): Promise<CBClaimUnderstanding["salienceCommitment"]> {
+  const enabled = pipelineConfig.salienceCommitment?.enabled !== false;
+  if (!enabled) {
+    return {
+      ran: false,
+      enabled: false,
+      success: false,
+      anchors: [],
+    };
+  }
+
   const model = getModelForTask("understand", undefined, pipelineConfig);
   state?.onEvent?.(`LLM call: salience commitment — ${model.modelName}`, -1);
 
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_SALIENCE_COMMITMENT", {
     analysisInput: inputText,
   });
+
   if (!rendered) {
     console.warn("[Stage1] CLAIM_SALIENCE_COMMITMENT prompt section not found; skipping.");
-    return undefined;
+    return {
+      ran: true,
+      enabled: true,
+      success: false,
+      errorMessage: "CLAIM_SALIENCE_COMMITMENT prompt section not found",
+      anchors: [],
+    };
   }
 
   const llmCallStartedAt = Date.now();
@@ -1093,19 +1106,30 @@ export async function runSalienceCommitment(
         errorMessage: "Salience commitment returned no structured output",
         timestamp: new Date(),
       });
-      return undefined;
+      return {
+        ran: true,
+        enabled: true,
+        success: false,
+        errorMessage: "Salience commitment returned no structured output",
+        anchors: [],
+      };
     }
 
     const validated = SalienceOutputSchema.parse(parsed);
 
     // Structural sanity: filter out anchors whose `text` is not actually a
-    // substring of the input. This is structural plumbing (no semantic
-    // judgment) and matches the AGENTS.md rules for anchor handling.
-    const cleaned = {
-      anchors: (validated.anchors ?? []).filter(
-        (a) => typeof a.text === "string" && a.text.length > 0 && inputText.includes(a.text),
-      ),
-    };
+    // substring of the input. Matches the AGENTS.md rules for anchor handling.
+    // C17: use case-insensitive check to avoid trivial case-mismatch failures.
+    const anchors = (validated.anchors ?? [])
+      .filter((a) => typeof a.text === "string" && a.text.length > 0)
+      .filter((a) => inputText.toLowerCase().includes(a.text.toLowerCase()))
+      .map((a) => ({
+        text: a.text,
+        inputSpan: a.inputSpan,
+        type: a.type,
+        rationale: a.rationale,
+        truthConditionShiftIfRemoved: a.truthConditionShiftIfRemoved,
+      }));
 
     recordLLMCall({
       taskType: "understand",
@@ -1120,10 +1144,23 @@ export async function runSalienceCommitment(
       retries: 0,
       timestamp: new Date(),
     });
-    return cleaned;
+
+    return {
+      ran: true,
+      enabled: true,
+      success: true,
+      anchors,
+    };
   } catch (error) {
-    console.warn("[Stage1] Salience commitment failed (non-fatal):", error instanceof Error ? error.message : String(error));
-    return undefined;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn("[Stage1] Salience commitment failed (non-fatal):", errorMessage);
+    return {
+      ran: true,
+      enabled: true,
+      success: false,
+      errorMessage,
+      anchors: [],
+    };
   }
 }
 
@@ -1683,67 +1720,86 @@ async function runContractRepair(
   const model = getModelForTask("context_refinement", undefined, pipelineConfig);
   state?.onEvent?.(`LLM call: contract repair — ${model.modelName}`, -1);
 
-  const claimsJson = JSON.stringify(claims, null, 2);
+  const llmCallStartedAt = Date.now();
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_REPAIR", {
+      analysisInput: inputText,
+      anchorText,
+      impliedClaim,
+      articleThesis,
+      atomicClaimsJson: JSON.stringify(
+        claims.map((c) => ({
+          id: c.id,
+          statement: c.statement,
+          category: c.category,
+          thesisRelevance: c.thesisRelevance ?? "direct",
+        })),
+        null,
+        2,
+      ),
+    });
 
-  const systemPrompt =
-    `You are performing a targeted repair of an atomic-claim decomposition. ` +
-    `A truth-condition-bearing modifier from the user's original input is missing from every claim ` +
-    `in the current set. Your only job is to output the SAME claim set, but with the anchor modifier ` +
-    `fused verbatim into the one thesis-direct claim that best carries the input's core proposition.\n\n` +
-    `Rules:\n` +
-    `- Do NOT add or remove claims. The input claim set and the output claim set must have the same ids and count.\n` +
-    `- Do NOT rename ids, change categories, add new predicates, or introduce content from outside the input text.\n` +
-    `- Do NOT translate, paraphrase, or restate the anchor in different legal or normative terminology.\n` +
-    `- The anchor text must appear as a literal substring of exactly one claim's \`statement\` — the thesis-direct one.\n` +
-    `- Fuse the anchor with the action it modifies in the input; do not append it as a disconnected adverbial tag.\n` +
-    `- Preserve all other wording in every claim unchanged unless a minimal edit is necessary to carry the anchor.`;
+    if (!rendered) {
+      console.warn("[Stage1] CLAIM_CONTRACT_REPAIR prompt section not found; skipping.");
+      return undefined;
+    }
 
-  const userPrompt =
-    `Original input:\n\`\`\`\n${inputText}\n\`\`\`\n\n` +
-    `Implied claim: ${impliedClaim}\n` +
-    `Article thesis: ${articleThesis}\n\n` +
-    `Missing anchor (must appear verbatim in exactly one thesis-direct claim's statement): "${anchorText}"\n\n` +
-    `Current claim set (repair these — keep ids and count identical):\n\`\`\`json\n${claimsJson}\n\`\`\`\n\n` +
-    `Output the full Pass2 JSON object with the same structure as the input claim set, ` +
-    `preserving impliedClaim and articleThesis exactly, with the anchor fused into one thesis-direct claim.`;
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user" as const,
+          content: `Repair the claim set to include the anchor "${anchorText}".`,
+        },
+      ],
+      temperature: 0,
+      output: Output.object({ schema: Pass2OutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
 
-  const result = await generateText({
-    model: model.model,
-    messages: [
-      {
-        role: "system",
-        content: systemPrompt,
-        providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-      },
-      {
-        role: "user" as const,
-        content: userPrompt,
-      },
-    ],
-    temperature: 0,
-    output: Output.object({ schema: Pass2OutputSchema }),
-    providerOptions: getStructuredOutputProviderOptions(
-      pipelineConfig.llmProvider ?? "anthropic",
-    ),
-  });
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) return undefined;
 
-  const parsed = extractStructuredOutput(result);
-  if (!parsed) return undefined;
+    const repaired = Pass2OutputSchema.parse(parsed);
 
-  const repaired = Pass2OutputSchema.parse(parsed);
+    // Structural post-check: anchor must actually be present as substring in
+    // at least one claim now. If the LLM ignored the instruction, bail out so
+    // we keep the pre-repair state rather than shipping a silent-failure retry.
+    // C17 [BLOCKER FIX]: use case-insensitive check to avoid morphology-based false positives.
+    const anchorLanded = repaired.atomicClaims.some(
+      (c) => typeof c.statement === "string" && c.statement.toLowerCase().includes(anchorText.toLowerCase()),
+    );
+    if (!anchorLanded) {
+      console.warn(`[Stage1] Contract repair output still missing anchor "${anchorText}" (case-insensitive check); discarding.`);
+      return undefined;
+    }
 
-  // Structural post-check: anchor must actually be present as substring in
-  // at least one claim now. If the LLM ignored the instruction, bail out so
-  // we keep the pre-repair state rather than shipping a silent-failure retry.
-  const anchorLanded = repaired.atomicClaims.some(
-    (c) => typeof c.statement === "string" && c.statement.includes(anchorText),
-  );
-  if (!anchorLanded) {
-    console.warn(`[Stage1] Contract repair output still missing anchor "${anchorText}"; discarding.`);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return repaired;
+  } catch (error) {
+    console.warn("[Stage1] Contract repair LLM call failed (non-fatal):", error instanceof Error ? error.message : String(error));
     return undefined;
   }
-
-  return repaired;
 }
 
 /**
@@ -2339,6 +2395,7 @@ export function evaluateClaimContractValidation(
           presentInInput: anchor.presentInInput,
           anchorText: anchor.anchorText,
           preservedInClaimIds: anchor.preservedInClaimIds ?? [],
+          preservedByQuotes: anchor.preservedByQuotes ?? [],
           validPreservedIds,
         },
       } : {}),

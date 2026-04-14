@@ -1189,6 +1189,9 @@ export interface CBClaimUnderstanding {
    */
   salienceCommitment?: {
     ran: boolean;
+    enabled: boolean;
+    success: boolean;
+    errorMessage?: string;
     anchors: Array<{
       text: string;
       inputSpan: string;
@@ -1204,6 +1207,11 @@ export interface CBClaimUnderstanding {
     rePromptRequired: boolean;
     summary: string;
     /**
+     * Phase 7: which recovery stage produced the final accepted claim set.
+     * Helps distinguish raw extraction quality from recovery-mediated success.
+     */
+    stageAttribution?: "initial" | "retry" | "repair";
+    /**
      * C9 (Phase 5): diagnostic discriminant for Phase B reporting.
      * Absent when the contract is preserved (success). Set to "contract_violated"
      * when the validator returned a usable result that flagged drift, and to
@@ -1218,6 +1226,11 @@ export interface CBClaimUnderstanding {
       anchorText: string;
       preservedInClaimIds: string[];
       validPreservedIds: string[];
+      /**
+       * Phase 7: exact quoted proof from the claims that the validator
+       * accepted as preserving the anchor. Stored for auditability.
+       */
+      preservedByQuotes?: string[];
     };
   };
 }
