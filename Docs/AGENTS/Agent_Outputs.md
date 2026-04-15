@@ -7,6 +7,26 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Rerun After Review Follow-up -- [Standard] [open-items: yes]
+**For next agent:** The fresh approved-input rerun is complete and still shows no stored refinement activation. Job `6aa4dc3e2c2d46f99fe83544b214c546` finished `SUCCEEDED` with focus counts `preliminary=2`, `main=3`, `contradiction=3`, `refinement=0`; `claimAcquisitionLedger.AC_01` has only `main` and `contradiction` iterations with empty `laneReason`. Compared with earlier current-code run `141cfe945d8540caaddb970d271317f2`, this rerun also regressed in persisted official-source breadth: 13 sources instead of 24 and no 2025 SEM archive page.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Rerun_After_Review_Followup.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Review Follow-up -- [Standard] [open-items: yes]
+**For next agent:** The review follow-up is now landed. The prompt explicitly maps `expectedSourceTypes` to retrieval lanes, refinement metadata omission now warns at runtime, refinement writes separate claim-acquisition telemetry via `laneReason`, and the focused Stage 2 guard-case tests were expanded. Focused tests and full web build both passed after a small build-only `NonNullable<...>` typing fix in `research-orchestrator.ts`.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Review_Followup.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Regression Check -- [Standard] [open-items: yes]
+**For next agent:** Two live runs were completed for the approved asylum input after landing the Stage 2 refinement slice. Result: partial retrieval improvement only. Baseline remained `0/6` exact 2025 commentary-PDF hits; current runs are `0/2` exact PDF hits, `1/2` persisted 2025 archive-page hits, and `0/2` `refinement` query activations. The implementation also needed a small compatibility fix: `research-orchestrator.ts` now initializes `researchedIterationsByClaim` defensively, and `generateResearchQueries(...)` only emits retrieval metadata when the LLM actually returns it.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Regression_Check.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Implementation -- [Standard] [open-items: yes]
+**For next agent:** The low-risk retrieval slice is now implemented in Stage 2. Query generation returns `retrievalLane`/`freshnessWindow`, the orchestrator can spend one bounded first-pass `refinement` query when only seeded or secondary coverage exists for metric-bearing primary-evidence claims, and freshness-sensitive searches can bypass stale cache entries. Targeted Vitest coverage and `npm -w apps/web run build` both passed.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Implementation.md
+
+---
 ### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Asylum 235000 Evidence Gap Investigation -- [Standard] [open-items: yes]
 **For next agent:** The recent `235 000` asylum-family runs are missing the SEM 2025 commentary PDF upstream of verdicting. The target job `7333cb1f1ee6472b9c782e94e4aa7b0e` and the five newest comparators never include `stat-jahr-2025-kommentar...` in `resultJson.sources`, even though the SEM 2025 archive page explicitly links it. Current diagnosis: broad query generation + 8-result search budget + top-5 fetch cap + occasional 7-day cached search results steer the pipeline toward NZZ, press releases, generic SEM landing pages, and older PDFs instead of the direct annual-total source.
 → Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Asylum_235000_Evidence_Gap_Investigation.md
