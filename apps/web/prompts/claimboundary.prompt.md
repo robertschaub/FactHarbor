@@ -1,8 +1,8 @@
 ---
-version: "1.0.0"
+version: "1.0.1"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-02-16T12:00:00Z"
+lastModified: "2026-04-15T06:30:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -19,6 +19,7 @@ variables:
   - impliedClaim
   - articleThesis
   - atomicClaimsJson
+  - anchorText
   - salienceBindingContextJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
@@ -27,6 +28,7 @@ requiredSections:
   - "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
+  - "CLAIM_CONTRACT_REPAIR"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
   - "RELEVANCE_CLASSIFICATION"
@@ -126,7 +128,7 @@ Worked example of the sibling test (method only, not a template): for an input s
 
 ### Aspect categories (for classification)
 
-Assign one of: `agent` · `action_predicate` · `temporal` · `causal` · `scope` · `quantification` · `modal_illocutionary` · `attribution` · `other`. Generic examples (do not copy): modal_illocutionary ≈ possible vs certain, obligatory vs permitted; quantification ≈ all vs some, at least vs at most; attribution ≈ what X said vs what actually happened. Do not rely on any example; infer from the input.
+Assign one of: `agent` · `action_predicate` · `temporal` · `causal` · `scope` · `quantification` · `modal_illocutionary` · `attribution` · `other`. Generic examples (do not copy): action_predicate ≈ decided vs discussed, approved vs reviewed; modal_illocutionary ≈ possible vs certain, obligatory vs permitted, legally operative vs merely enacted, final/irrevocable vs provisional; quantification ≈ all vs some, at least vs at most; attribution ≈ what X said vs what actually happened. Do not rely on any example; infer from the input.
 
 ### Rules
 
@@ -134,6 +136,8 @@ Assign one of: `agent` · `action_predicate` · `temporal` · `causal` · `scope
 - `inputSpan` is the same verbatim substring; duplicated for downstream consumers that index by span.
 - **Do not hallucinate anchors.** If the input is a plain factual assertion with no distinguishing meaning aspect beyond the bare agent-action-object, return `anchors: []`. Empty is the correct answer for inputs that lack truth-condition-bearing structure.
 - **Referential metadata** (specific dates, named entities, numeric identifiers) is an anchor only if the proposition depends on that specific referent — e.g. "the vote of 12 March" where the date is constitutive, not merely descriptive. Otherwise exclude.
+- **Finality, binding-effect, and completion-status qualifiers** are distinguishing anchors when removing them would change what evidence answers the user's thesis. Classify these under `modal_illocutionary` unless the distinction is the action/predicate itself (for example, decided vs discussed belongs under `action_predicate`).
+- Emit only aspects whose omission would materially change the thesis-direct proposition downstream extraction must preserve.
 - Keep `rationale` to one sentence. Keep `truthConditionShiftIfRemoved` to one sentence.
 - Operate in the input's own language. Do not translate anchors.
 
@@ -253,7 +257,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
   - Source/timing metadata ("According to a 2024 report")
   - Peripheral context-setting claims
   - Claims about the text's structure or rhetoric
-- **No inferred normative claims (CRITICAL):** Do NOT extract claims about legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance unless the input TEXT ITSELF explicitly makes that assertion using those concepts. If the input states a factual sequence of events (e.g., "A happened before B"), extract the factual chronology — do NOT add a claim that this sequence "violates", "complies with", or "contravenes" any legal, constitutional, or procedural standard unless those words appear in the input. The verification pipeline will surface normative context through evidence in Stage 2 and assess it in Stage 4; normative implications must NOT be injected at the claim extraction stage. Test: "Does the input text itself use words like 'violates', 'unconstitutional', 'illegal', or equivalent?" If no — do not extract a normative claim.
+- **No inferred normative claims (CRITICAL):** Do NOT extract claims about legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance unless the input TEXT ITSELF explicitly makes that assertion using those concepts. If the input states a factual sequence of events (e.g., "A happened before B"), extract the factual chronology — do NOT add a claim that this sequence "violates", "complies with", or "contravenes" any legal, constitutional, or procedural standard unless those words appear in the input. Example of the prohibited inference: if the input says "Entity A did X before Entity B decided Y", extract the chronology only. Do NOT add that the sequence was illegal, invalid, or procedurally improper unless the input itself says so. The verification pipeline will surface normative context through evidence in Stage 2 and assess it in Stage 4; normative implications must NOT be injected at the claim extraction stage. Test: "Does the input text itself use words like 'violates', 'unconstitutional', 'illegal', or equivalent?" If no — do not extract a normative claim.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Each claim must be independently verifiable — do not create claims that only make sense in the context of other claims.
 - Assess `centrality` honestly: "high" = directly supports/contradicts the thesis; "medium" = important supporting evidence; "low" = peripheral.
@@ -379,11 +383,14 @@ ${salienceBindingContextJson}
 ```
 
 Binding-mode rules:
-- When `mode` is `"binding"` and `success` is `true`, the provided `anchors` are authoritative for this extraction step. Do not silently replace them with a different anchor inventory.
+- When `mode` is `"binding"` and `success` is `true`, the provided `anchors` are the sole precommitted anchor inventory for this extraction step. Do not silently replace them with a different anchor inventory.
+- When `mode` is `"binding"` and `success` is `false`, binding authority is unavailable. Ignore the provided `anchors` list and follow the base extraction prompt unchanged.
+- When `mode` is `"binding"` and `success` is `true` but the provided `anchors` array is empty, do not invent replacement anchors. Proceed with the base extraction rules only.
 - Preserve the provided anchors in the extracted claim set using the input's original language and verbatim anchor text.
 - If an anchor materially modifies the thesis-defining proposition, at least one thesis-direct atomic claim must carry that anchor text verbatim in its `statement`.
+- When multiple precommitted anchors are provided, the anchor that most directly modifies the thesis-defining action takes priority. This is the same tiebreaker as the base truth-condition-bearing modifier rule: prefer the anchor whose predicate fuses the modifier with the input's original action over an anchor that stands alone or only describes an effect.
+- Fuse the priority anchor verbatim into the primary thesis-direct claim's statement. Preserve other anchors where naturally possible, but they do not override the primary fusion requirement.
 - Keep the existing meaning-preservation scaffold from the base prompt. The precommitted anchors constrain decomposition; they do not authorize new claims, new entities, or evidence-derived narrowing.
-- If the precommitted `anchors` array is empty, do not invent replacement anchors. Proceed with the base extraction rules only.
 
 ---
 
@@ -451,7 +458,7 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
    If the input asks about a direct factual property, state, or event, extracted claims must stay within the same domain as the input. Claims about public perception, belief prevalence, media discourse, societal interpretation, or public opinion about the topic are representational drift — they change the subject from the factual question to a sociological one. Flag `rePromptRequired: true` if any extracted claim introduces a representational/prevalence dimension that the user did not ask about. This applies regardless of input classification.
 
 11. **Truth-condition-bearing modifier audit (MANDATORY).**
-    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct: tangential or contextual claims do NOT count as anchor carriers, even if they happen to contain wording that resembles the modifier. **Anchor tiebreaker:** when multiple thesis-direct claims are candidate anchors, prefer the one whose predicate fuses the modifier with the input's original action; a claim about the modifier alone or its effect does NOT qualify as the anchor carrier. **Verbatim-presence guard (MANDATORY):** if the anchor modifier appears as a literal substring in any claim's `statement`, you MUST treat that claim as an anchor carrier — do NOT report the anchor as "omitted from all thesis-direct claims" or claim it is missing. If the only such claim is a near-verbatim restatement of the input, treat it as the thesis-direct anchor carrier.
+    First determine whether the input contains a modifier, qualifier, or predicate component whose removal would change what evidence is needed to answer the user's thesis. If such a modifier exists, at least one **thesis-direct** atomic claim must preserve it. A claim set fails validation if all thesis-direct atomic claims omit that anchored proposition and retain only prerequisite, chronological, procedural, or background claims. Use the provided per-claim `thesisRelevance` field to identify which claims qualify as thesis-direct. Only claims whose `thesisRelevance` is `"direct"` qualify as anchor carriers; tangential or contextual claims do NOT preserve the contract, even if they contain similar wording. **Anchor tiebreaker:** when multiple thesis-direct claims are candidate anchors, prefer the one whose predicate fuses the modifier with the input's original action; a claim about the modifier alone or its effect does NOT qualify as the primary anchor carrier. **Verbatim-presence guard (MANDATORY):** if the anchor modifier appears as a literal substring in any thesis-direct claim's `statement`, you MUST treat that claim as an anchor carrier — do NOT report the anchor as "omitted from all thesis-direct claims" or claim it is missing. If the only literal carrier is a near-verbatim thesis-direct restatement of the input, treat it as the anchor carrier.
 
 12. **Anti-inference audit (MANDATORY).**
     Check whether any atomic claim adds legality, constitutionality, democratic legitimacy, procedural validity, or normative compliance that is not explicitly asserted in the input. If so, the extraction fails validation and must be retried. **Verbatim-input guard (MANDATORY):** a claim cannot be "adding" normative language that is not in the input when the claim's `statement` is a literal substring of the input text (or equals it). A verbatim or near-verbatim quotation of the user's own wording is by definition NOT an inferred addition — do NOT flag such a claim as normative injection. **Input-vocabulary guard (MANDATORY):** this rule targets *injected* normative content — vocabulary (e.g. "illegal", "unconstitutional", "binding") that the extractor added without a basis in the input text. When the allegedly injected normative/legal word is itself present in the input text (even if used in a different syntactic role, e.g. adverbial in the input vs. attributive in the claim), do NOT treat the claim as normative injection. Reframing an input-authored term into a different syntactic role within the same claim set is a paraphrase concern governed by rules 9/10, not an injection; flag at most as `proxyDriftSeverity: minor` in that claim's entry and do NOT set `rePromptRequired: true` on the anti-inference channel for this reason alone.
@@ -548,10 +555,12 @@ ${salienceBindingContextJson}
 ```
 
 Binding-mode audit rules:
-- Audit anchor preservation against the provided `anchors` list only. Do not introduce a different anchor that is not present in that list.
-- When you populate `truthConditionAnchor`, choose the single most decisive anchor from the provided precommitted list for the user's thesis. Do not discover an anchor outside that list.
+- When `mode` is `"binding"` and `success` is `true`, audit anchor preservation against the provided `anchors` list only. Treat that list as the sole precommitted anchor inventory for this validation step.
+- When `mode` is `"binding"` and `success` is `false`, authoritative precommitment did not succeed. Fall back to the base validator behavior for anchor discovery and audit; do not treat binding mode alone as proof that a particular anchor exists.
+- When `mode` is `"binding"` and `success` is `true` but the provided `anchors` list is empty, do not invent a replacement anchor. In that state, report no truth-condition anchor unless another base rule independently requires one, which it normally should not.
+- When you populate `truthConditionAnchor` from a successful precommitted list, choose the single most decisive thesis-direct anchor from that list. Do not discover an anchor outside that list.
+- Tiebreaker: prefer the thesis-direct anchor whose predicate fuses the modifier with the input's original action. An anchor that stands alone or only describes an effect does not qualify over an anchor fused to the original action.
 - Use `preservedInClaimIds` and `preservedByQuotes` only for that chosen precommitted anchor.
-- If the provided `anchors` list is empty, do not invent a replacement anchor. In that case, report no truth-condition anchor unless the base prompt independently requires one from the empty input, which it normally should not.
 - Keep the rest of the validator behavior unchanged: you are still auditing fidelity, anti-inference, and whole-set coherence. Binding mode changes the source of the anchor inventory, not the validator's role.
 
 ---

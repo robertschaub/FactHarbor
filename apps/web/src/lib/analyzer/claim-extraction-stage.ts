@@ -599,6 +599,10 @@ export async function extractClaims(
     state.originalInput,
   );
   state.llmCalls++;
+  gate1Result = pruneGate1FidelityDriftFromContractApprovedSet(
+    gate1Result,
+    contractValidationSummary,
+  );
   let bestPass2 = activePass2;
 
   // ------------------------------------------------------------------
@@ -2298,12 +2302,79 @@ export interface ClaimContractValidationResult {
   antiInferenceCheck?: z.infer<typeof ClaimContractAntiInferenceSchema>;
 }
 
+type Gate1ValidationResult = {
+  stats: CBClaimUnderstanding["gate1Stats"];
+  filteredClaims: AtomicClaim[];
+  preFilterClaims?: AtomicClaim[];
+  gate1Reasoning?: Array<{
+    claimId: string;
+    passedOpinion: boolean;
+    passedSpecificity: boolean;
+    passedFidelity: boolean;
+    reasoning: string;
+  }>;
+  rescuedThesisDirect?: string[];
+};
+
 type ContractValidationSummary = NonNullable<CBClaimUnderstanding["contractValidationSummary"]>;
 
 export interface EvaluatedClaimContractValidation {
   summary: ContractValidationSummary;
   effectiveRePromptRequired: boolean;
   anchorRetryReason?: string;
+}
+
+function pruneGate1FidelityDriftFromContractApprovedSet(
+  gate1Result: Gate1ValidationResult,
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+): Gate1ValidationResult {
+  if (!contractValidationSummary?.preservesContract || contractValidationSummary.rePromptRequired) {
+    return gate1Result;
+  }
+
+  const anchorCarrierIds = contractValidationSummary.truthConditionAnchor?.validPreservedIds ?? [];
+  if (anchorCarrierIds.length === 0 || !gate1Result.gate1Reasoning?.length) {
+    return gate1Result;
+  }
+
+  const failedFidelityIds = new Set(
+    gate1Result.gate1Reasoning
+      .filter((claim) => !claim.passedFidelity)
+      .map((claim) => claim.claimId),
+  );
+  if (failedFidelityIds.size === 0) {
+    return gate1Result;
+  }
+
+  const anchorCarrierIdSet = new Set(anchorCarrierIds);
+  const prunedClaimIds = gate1Result.filteredClaims
+    .filter((claim) => failedFidelityIds.has(claim.id) && !anchorCarrierIdSet.has(claim.id))
+    .map((claim) => claim.id);
+  if (prunedClaimIds.length === 0) {
+    return gate1Result;
+  }
+
+  const prunedClaimIdSet = new Set(prunedClaimIds);
+  const filteredClaims = gate1Result.filteredClaims.filter((claim) => !prunedClaimIdSet.has(claim.id));
+  if (filteredClaims.length === 0) {
+    return gate1Result;
+  }
+
+  console.info(
+    `[Stage1] Gate 1: pruned ${prunedClaimIds.length} fidelity-failed non-anchor claim(s) ` +
+    `from contract-approved set. Anchor carriers kept=[${anchorCarrierIds.join(",")}], ` +
+    `pruned=[${prunedClaimIds.join(",")}].`,
+  );
+
+  return {
+    ...gate1Result,
+    filteredClaims,
+    stats: {
+      ...gate1Result.stats,
+      filteredCount: gate1Result.stats.totalClaims - filteredClaims.length,
+      overallPass: filteredClaims.length > 0,
+    },
+  };
 }
 
 function normalizeClaimContractValidationResult(
@@ -2692,7 +2763,7 @@ export async function runGate1Validation(
   pipelineConfig: PipelineConfig,
   currentDate: string,
   analysisInput = "",
-): Promise<{ stats: CBClaimUnderstanding["gate1Stats"]; filteredClaims: AtomicClaim[]; preFilterClaims?: AtomicClaim[]; gate1Reasoning?: Array<{ claimId: string; passedOpinion: boolean; passedSpecificity: boolean; passedFidelity: boolean; reasoning: string }>; rescuedThesisDirect?: string[] }> {
+): Promise<Gate1ValidationResult> {
   if (claims.length === 0) {
     return {
       stats: {

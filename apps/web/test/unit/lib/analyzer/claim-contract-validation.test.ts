@@ -518,6 +518,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     anchorText?: string;
     preservedInClaimIds?: string[];
     preservedByQuotes?: string[];
+    antiInferenceCheck?: ClaimContractValidationResult["antiInferenceCheck"];
   } = {}): ClaimContractValidationResult => ({
     inputAssessment: {
       preservesOriginalClaimContract: overrides.preservesOriginalClaimContract ?? true,
@@ -533,6 +534,7 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
         preservedByQuotes: overrides.preservedByQuotes ?? [],
       }
       : undefined,
+    ...(overrides.antiInferenceCheck ? { antiInferenceCheck: overrides.antiInferenceCheck } : {}),
   });
 
   it("accepts valid provenance: cited ID exists and quote is a real substring", () => {
@@ -843,6 +845,36 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     expect(evaluated.summary.preservesContract).toBe(true);
     expect(evaluated.summary.truthConditionAnchor?.validPreservedIds).toEqual(["AC_01"]);
   });
+
+  it("rejects normative/legal injection even when anchor provenance is otherwise clean", () => {
+    const claims = [makeDirectClaim("AC_01", "The council signed the binding treaty.")];
+    const result = makeResult({
+      anchorText: "binding",
+      preservedInClaimIds: ["AC_01"],
+      preservedByQuotes: ["binding"],
+      antiInferenceCheck: {
+        normativeClaimInjected: true,
+        injectedClaimIds: ["AC_01"],
+        reasoning: "Added a legal/normative qualifier not present in the input.",
+      },
+      claims: [{
+        claimId: "AC_01",
+        preservesEvaluativeMeaning: true,
+        usesNeutralDimensionQualifier: true,
+        proxyDriftSeverity: "none",
+        recommendedAction: "keep",
+        reasoning: "anchor preserved",
+      }],
+    });
+
+    const evaluated = evaluateClaimContractValidation(result, claims);
+
+    expect(evaluated.summary.preservesContract).toBe(false);
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.summary.failureMode).toBe("contract_violated");
+    expect(evaluated.anchorRetryReason).toContain("normative_injection");
+    expect(evaluated.anchorRetryReason).toContain("AC_01");
+  });
 });
 
 // ============================================================================
@@ -914,6 +946,15 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
       unresolved,
       `Unresolved variables in CLAIM_CONTRACT_VALIDATION: ${unresolved.join(", ")}.`,
     ).toEqual([]);
+  });
+
+  it("locks in truth-condition and anti-inference output requirements", () => {
+    const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+    expect(section).not.toBeNull();
+    expect(section).toContain('"truthConditionAnchor"');
+    expect(section).toContain('"antiInferenceCheck"');
+    expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
+    expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
   });
 });
 
@@ -1031,12 +1072,14 @@ describe("PR 1: validator-unavailable fallback guidance wording", () => {
       "shared predicate or modifier applies across multiple actors",
     ];
 
-    // Look for the fallbackGuidance variable definition and ensure each
-    // canonical phrase appears between its definition and the next blank-line
-    // marker. We use a slice anchored on the variable name.
-    const fallbackStart = source.indexOf("const fallbackGuidance");
-    expect(fallbackStart, "fallbackGuidance variable not found").toBeGreaterThan(-1);
-    const fallbackEnd = source.indexOf("\n\n", fallbackStart);
+    // The code now uses an inline ternary branch inside contractGuidance
+    // rather than a separate fallbackGuidance variable. Anchor on the
+    // validator-unavailable literal and inspect that branch directly.
+    const fallbackStart = source.indexOf(
+      "CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result.",
+    );
+    expect(fallbackStart, "validator-unavailable fallback guidance literal not found").toBeGreaterThan(-1);
+    const fallbackEnd = source.indexOf("console.info(", fallbackStart);
     const fallbackBlock = source.slice(fallbackStart, fallbackEnd === -1 ? undefined : fallbackEnd);
 
     for (const phrase of canonicalPhrases) {
@@ -1138,7 +1181,7 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     // and NOT a substring of any claim statement.
     expect(source).toContain("repairPassEnabled");
     expect(source).toContain("presentInInput === true");
-    expect(source).toMatch(/statement\.includes\(anchorText\)/);
+    expect(source).toMatch(/statement\.toLowerCase\(\)\.includes\(anchorText\.toLowerCase\(\)\)/);
 
     // Repair output must carry the anchor verbatim — post-check discards
     // silent-failure responses. This is what converts the stochastic

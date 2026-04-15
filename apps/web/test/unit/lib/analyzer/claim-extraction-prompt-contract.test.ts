@@ -97,5 +97,54 @@ describe("Stage-1 prompt contract", () => {
       expect(rendered).not.toContain("{{");
       expect(rendered).not.toContain("}}");
     });
+
+    it("locks in the narrow repair constraints", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_REPAIR");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Verbatim Fusion");
+      expect(section).toContain("Do not change any existing claim `id`");
+      expect(section).toContain("Return the same number of claims you received");
+      expect(section).toContain('thesisRelevance` is `"direct"`');
+      expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
+      expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
+    });
+  });
+
+  describe("CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX", () => {
+    const vars: Record<string, string> = {
+      salienceBindingContextJson: JSON.stringify(
+        {
+          enabled: true,
+          mode: "binding",
+          success: true,
+          anchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+            { text: "signed", type: "action_predicate" },
+          ],
+        },
+        null,
+        2,
+      ),
+    };
+
+    it("section exists and resolves the binding context payload", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+      expect(section, "Section ## CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX not found").not.toBeNull();
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, vars);
+      expect(
+        unresolved,
+        `Unresolved variables in CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX: ${unresolved.join(", ")}`,
+      ).toEqual([]);
+    });
+
+    it("locks in the thesis-direct tiebreaker and no-discovery rule", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+      expect(section).not.toBeNull();
+      expect(section).toContain("single most decisive thesis-direct anchor");
+      expect(section).toContain("Do not discover an anchor outside that list");
+      expect(section).toContain('`success` is `false`');
+      expect(section).toContain("Fall back to the base validator behavior");
+    });
   });
 });

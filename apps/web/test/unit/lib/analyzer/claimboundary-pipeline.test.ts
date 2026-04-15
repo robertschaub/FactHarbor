@@ -8065,6 +8065,184 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
   });
 
+  it("should prune Gate 1 fidelity-failed non-anchor claims from a contract-approved set", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 1 },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: false },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(3, { inputClassification: "multi_assertion_input", statementPrefix: "Treaty" }),
+            atomicClaims: [
+              createAtomicClaim({
+                id: "AC_01",
+                statement: "The treaty was final before Parliament and the people decided.",
+                thesisRelevance: "direct",
+              }),
+              createAtomicClaim({
+                id: "AC_02",
+                statement: "The treaty was signed on 2 March 2026 before Parliament voted.",
+                thesisRelevance: "direct",
+              }),
+              createAtomicClaim({
+                id: "AC_03",
+                statement: "The treaty was subject to an optional referendum before the people voted.",
+                thesisRelevance: "direct",
+              }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "AC_01 preserves the full contract; AC_02 and AC_03 add narrower evidence-derived specifics.",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor carrier",
+              },
+              {
+                claimId: "AC_02",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "mild",
+                recommendedAction: "keep",
+                reasoning: "extra chronology detail",
+              },
+              {
+                claimId: "AC_03",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "mild",
+                recommendedAction: "keep",
+                reasoning: "extra procedure detail",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final before Parliament and the people decided",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final before Parliament and the people decided"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "verbatim carrier" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "adds date not in input" },
+              { claimId: "AC_03", passedOpinion: true, passedSpecificity: true, passedFidelity: false, reasoning: "adds referendum type not in input" },
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "Final accepted claim still preserves the contract.",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final before Parliament and the people decided",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final before Parliament and the people decided"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The treaty was final before Parliament and the people decided.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01"]);
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "initial",
+      summary: "Final accepted claim still preserves the contract.",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "final before Parliament and the people decided",
+        preservedInClaimIds: ["AC_01"],
+        validPreservedIds: ["AC_01"],
+      },
+    });
+    expect(llmCallIndex).toBe(5);
+    expect(state.warnings.filter((w: any) => w.type === "low_claim_count")).toHaveLength(0);
+  });
+
   it("should refresh contractValidationSummary when a later reprompt changes the final accepted claims", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
