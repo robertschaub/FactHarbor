@@ -19,6 +19,12 @@ import {
 } from "@/lib/analyzer/grounding-check";
 import type { ClaimVerdict, EvidenceItem } from "@/lib/analyzer/types";
 
+const mockModelInfo = {
+  model: "mock-model",
+  provider: "anthropic",
+  modelName: "claude-haiku-4-5-20251001",
+};
+
 // Mock the AI SDK generateText
 vi.mock("ai", () => ({
   generateText: vi.fn(),
@@ -26,11 +32,13 @@ vi.mock("ai", () => ({
 
 // Mock getModelForTask
 vi.mock("@/lib/analyzer/llm", () => ({
-  getModelForTask: vi.fn(() => ({
-    model: "mock-model",
-    taskId: "extract_evidence",
-    tierId: "haiku",
-  })),
+  getModelForTask: vi.fn(() => mockModelInfo),
+  getPromptCachingOptions: vi.fn((provider?: string) => {
+    if (!provider || provider === "anthropic" || provider === "claude") {
+      return { anthropic: { cacheControl: { type: "ephemeral" } } };
+    }
+    return undefined;
+  }),
 }));
 
 // Mock prompt-loader to return a simple rendered prompt
@@ -77,6 +85,16 @@ describe("extractKeyTerms", () => {
     mockLLMTerms([["solar", "panels", "efficiency", "2024"]]);
     const terms = await extractKeyTerms("Solar panels reached 25% efficiency in 2024");
     expect(terms).toEqual(["solar", "panels", "efficiency", "2024"]);
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            role: "user",
+            providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+          }),
+        ],
+      }),
+    );
   });
 
   it("filters non-string values from LLM response", async () => {
@@ -154,6 +172,16 @@ describe("checkVerdictGrounding", () => {
     const detail = result.verdictDetails[0];
     expect(detail.ratio).toBe(0.85);
     expect(detail.hasCitedEvidence).toBe(true);
+    expect(mockGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            role: "user",
+            providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+          }),
+        ],
+      }),
+    );
   });
 
   it("returns ratio 0 when reasoning has no cited evidence (no LLM call)", async () => {

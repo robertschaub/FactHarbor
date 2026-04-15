@@ -96,10 +96,10 @@ unValidationCheckWithRetry, alidateDirectionOnly, and ttemptDirectionRepair.
 
 ### 2026-03-30 | Lead Architect | Claude Code (Opus 4.6) | Article Adjudication: Hybrid Clamp vs LLM-Led Review
 **Task:** Evaluate whether the ±10pp truth clamp and confidence ceiling in Stage 5 article adjudication violate the LLM Intelligence mandate.
-**Files touched:** `Docs/WIP/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Files touched:** `Docs/ARCHIVE/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
 **Key decisions:** (1) Confidence ceiling (adjusted ≤ deterministic) is a valid structural invariant — "unresolved claims add uncertainty, never remove it." Keep. (2) ±10pp truth clamp is a semantic analytical constraint — it limits how the LLM interprets the impact of unresolved claims. Violates AGENTS.md LLM Intelligence mandate. Remove. (3) Schema validation (0-100), `Number.isFinite` guard, and deterministic fallback are structural plumbing. Keep. (4) Prompt should soften "±10pp" to "adjust conservatively" — soft guidance, not hard bound.
 **Decision:** `Pure LLM article adjudication justified` — Option B (remove truth clamp, keep confidence ceiling). ~4 lines code, ~2 lines prompt. 2 tests rewrite, 2 new tests.
-**For next agent:** Full review at `Docs/WIP/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`. Code change in `aggregation-stage.ts:232-236`. Prompt change in `claimboundary.prompt.md:1366`. Prompt change requires human approval.
+**For next agent:** Full review at `Docs/ARCHIVE/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md`. Code change in `aggregation-stage.ts:232-236`. Prompt change in `claimboundary.prompt.md:1366`. Prompt change requires human approval.
 
 ---
 

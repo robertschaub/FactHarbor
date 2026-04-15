@@ -181,7 +181,7 @@ The next agent should produce **two** docs, not zero and not five:
 
 1. **E1 status note**
    Suggested filename:
-   `Docs/WIP/2026-04-14_Phase7_E1_Status_Note.md`
+   `Docs/ARCHIVE/2026-04-14_Phase7_E1_Status_Note.md`
 
    Purpose:
    - record that E1 V5 landed

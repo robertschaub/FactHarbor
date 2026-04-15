@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-06
-**Status**: Consolidation #10 complete. 28 purely historical files archived. 39 active files remain.
+**Last Updated**: 2026-04-15
+**Status**: Consolidation #11 complete. 4 additional historical/supporting files archived. 79 active markdown docs remain.
 
 ---
 
@@ -23,7 +23,6 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ### Policies and quality governance
 - [2026-03-25_EVD1_Acceptable_Variance_Policy.md](2026-03-25_EVD1_Acceptable_Variance_Policy.md) — **APPROVED** Alpha-phase variance governance policy
 - [2026-03-30_Report_Quality_Evolution_Deep_Analysis.md](2026-03-30_Report_Quality_Evolution_Deep_Analysis.md) — comprehensive 100-job quality evolution across 12 families (Mar 25-30)
-- [2026-04-01_Post_Rollback_Validation_Report.md](2026-04-01_Post_Rollback_Validation_Report.md) — 17-run post-rollback validation confirming baseline stability (Apr 1)
 
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)
@@ -34,6 +33,10 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Active Engineering / Quality Tracks
 
 ### Currently active
+- [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter
+- [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — current Phase 7 problem framing and readiness assessment
+- [2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md](2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md) — current Phase 7 code/prompt issue inventory
+- [2026-04-14_Phase7_E2_Measurement.md](2026-04-14_Phase7_E2_Measurement.md) — current E2 measurement note and decision boundary
 - [2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md](2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md) — active plan for boundary-concentration stabilization and verdict-grounding containment
 - [2026-04-05_Current_vs_Previous_Build_Report_Comparison.md](2026-04-05_Current_vs_Previous_Build_Report_Comparison.md) — strict 5-input build-over-build and current local-vs-deployed comparison for deploy gating
 - [2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md](2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md) — consolidated local/deployed cohort comparison, root causes, and Stage 5 fix ranking for Cross-Boundary Tensions
@@ -46,7 +49,6 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ### Implemented — kept as architectural reference
 - [2026-03-29_1bfb_Direction_Integrity_Architect_Review.md](2026-03-29_1bfb_Direction_Integrity_Architect_Review.md) — citation-carriage fix (`e1f2c551`). Direction validator remeasurement still pending.
 - [2026-03-29_2705_e407_Root_Fix_Architect_Review.md](2026-03-29_2705_e407_Root_Fix_Architect_Review.md) — assessable-claims path (`cc362d64`). Implemented.
-- [2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md](2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md) — **IMPLEMENTED**. ±10pp truth clamp removed, confidence ceiling kept.
 - [2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md](2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md) — claim-local verdict scoping (`17da5b84`). Stage 1 proxy decomposition follow-up still open.
 - [2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md](2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md) — FLOOD-1 shipped. Fix 3 (same-source consolidation) deferred.
 
@@ -116,6 +118,8 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 - `2026-03-18_Refactoring_Plan_Code_Cleanup_arch.md`
 - `Pipeline_Speed_Cost_Optimization_Plan_2026-03-19_arch.md`
 - `2026-03-19_Report_Quality_Evolution_Investigation_arch.md`
+- `2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`
+- `2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`
 - `Report_Quality_Criteria_Scorecard_2026-03-12_arch.md`
 - `2026-03-03_Wikipedia_SemanticScholar_Integration_Concept_arch.md`
 - `API_Cost_Reduction_Strategy_2026-02-13_arch.md`
@@ -130,6 +134,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |
 | 2026-04-04 | **#10** | 28 historical/completed files archived (investigations, decided debates, implemented reviews, subagent reports) | 38 |
 | 2026-04-04 | **#9** | 9 completed WIP files archived | 66 |
 | 2026-03-24 | Knowledge move | 3 docs reclassified to `Docs/Knowledge` | 19 |

@@ -13,7 +13,7 @@
 
 - [Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](../../WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md)
 - [Docs/WIP/2026-04-14_Phase7_E2_Measurement.md](../../WIP/2026-04-14_Phase7_E2_Measurement.md)
-- [Docs/WIP/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md](../../WIP/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md)
+- [Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md](../../ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md)
 - [Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md](../../Investigations/2026-04-10_Claim_Contract_Run_Review.md)
 
 ### Current-build jobs checked directly

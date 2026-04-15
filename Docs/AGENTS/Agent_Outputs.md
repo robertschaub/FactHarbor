@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-15 | Lead Architect + Senior Developer + Code Reviewer | GitHub Copilot (GPT-5.4) | Phase 7b Charter Debate Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Review-board pass converged on approve-with-changes. The Phase 7b charter remains valid, but it was tightened to reflect current repo state and reviewer concerns: the slice is now explicitly prompt-and-focused-test, `success=false` handling is framed as tighten-and-verify rather than missing-from-zero, and runtime appendix-loading changes remain a separate debated follow-up unless focused tests prove them necessary.
+→ Docs/AGENTS/Handoffs/2026-04-15_Review_Board_Phase7b_Charter_Debate_Consolidation.md
+
+---
 ### 2026-04-15 | Code Reviewer | Codex (GPT-5) | Skeptical Review Of Proposed Prompt Fixes -- [Standard] [open-items: yes]
 **For next agent:** The April 14/15 prompt-fix proposals are mostly governance-safe, but `ISSUE-14` as written assumes nonexistent output/runtime state; `ISSUE-06`, `ISSUE-07`, and `ISSUE-18` are not prompt-only; and any Opus/model-tier escalation would hit shared task routes unless a new salience-specific task key is introduced.
 → Docs/AGENTS/Handoffs/2026-04-15_Code_Reviewer_Prompt_Fixes_Skeptical_Review.md
@@ -26,6 +31,16 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 → Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Prompt_Audit_Validation_Review.md
 
 ---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Prompt Caching Debate Consolidation -- [Standard] [open-items: yes]
+**For next agent:** The Anthropic caching proposal was consolidated into a phased recommendation: do not touch claimboundary-pipeline.ts, patch the two uncached grounding-check calls if implementation is desired, and defer any broad prompt-boundary refactor unless measured Anthropic cost telemetry justifies it. Main technical finding: the core stages already use getPromptCachingOptions(), but cache payoff is muted because dynamic job payload is rendered into system prompts.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Prompt_Caching_Debate_Consolidation.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Grounding Prompt Caching Implementation And Review -- [Standard] [open-items: yes]
+**For next agent:** The narrow grounding-check caching patch is now implemented and verified. `grounding-check.ts` uses `getPromptCachingOptions()` on both LLM calls, the grounding-check unit tests were updated to cover the new `providerOptions` path, `npm -w apps/web run build` passed, and the targeted grounding-check Vitest file passed. Final review found no regression in the caching change; only pre-existing grounding-check issues remain.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Grounding_Prompt_Caching_Implementation_And_Review.md
+
+---
 ### 2026-04-14 | LLM Expert | Claude Sonnet 4.6 (Cowork) | Full Codebase Prompt Audit — 18 Issues, 4 Phase 7b Blockers Identified -- [Significant] [open-items: yes]
 **For next agent:** All 5 prompt files and all inline prompt content were reviewed. 18 issues found across 7 categories. 4 are Phase 7b / Shape B pre-launch blockers: (1) CONTRACT_VALIDATION literal-substring rule must be tightened to only accept thesis-direct claims as anchor carriers (ISSUE-01); (2) PASS2_BINDING_APPENDIX needs salience-failure-mode handling defined (ISSUE-14); (3) VALIDATION_BINDING_APPENDIX needs an override notice so the base anchor-discovery rules don't compete with the precommitted anchor list (ISSUE-15); (4) SALIENCE_COMMITMENT anchor definition should be aligned with the validator's truth-condition test (ISSUE-02). High-value non-blocker: inline FACT_CHECK_CONTEXT and retry guidance text should be moved into the prompt system (ISSUE-06). IMPORTANT: do NOT touch CLAIM_SALIENCE_COMMITMENT or CLAIM_EXTRACTION_PASS2 before the next E2 measurement batch closes.
 → Docs/AGENTS/Handoffs/2026-04-14_LLM_Expert_Prompt_Review_and_Improvement_Proposals.md
@@ -33,32 +48,32 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Final Reviewer Constraints Folded Into Plan -- [Standard] [open-items: yes]
 **For next agent:** A final external reviewer agreed with the Shape B direction but required stricter slice-1 constraints. `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` now reflects that Shape B is a go only with explicit mode separation, full salience persistence, durable recovery attribution, validator precedence cleanup, and typed anchor mapping in the first implementation slice.
-→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_final_reviewer_constraints_folded_into_plan.md
 
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Docs Corrected For Shape B Start Signal -- [Standard] [open-items: yes]
 **For next agent:** The Phase 7 docs were corrected to separate three things clearly: (1) the first deep review’s still-valid architectural reasoning, (2) the blockers materially fixed in `61815f41`, and (3) the remaining honesty gap that the current E2 note is not a locally reproduced committed-build statistical closeout. Current architect position: proceed to Phase 7b / Shape B behind a feature flag, but do not overstate the current measurement note.
-→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_docs_corrected_for_shape_b_start_signal.md
 
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Working Baseline Consolidated Through Step 4 -- [Standard] [open-items: yes]
 **For next agent:** `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` was rewritten into a shorter Phase 7 working baseline for humans and agents. It now carries the durable Step 1 summary, Step 2 root-cause summary, Step 3 root fixes/specification, and Step 4 implementation/verification plan. Code/prompt-specific detail remains in `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`. Next step is the hardened-surface E2 measurement report.
-→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_working_baseline_consolidated_through_step_4.md
 
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Code / Prompt Deep Review And Debate Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Use `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md` as the current code/prompt review note for Phase 7. It consolidates direct code inspection plus a two-reviewer debate and concludes that E2 is still worth measuring, but only as an anchor-recognition audit unless the measurement surface is tightened.
-→ Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_code_prompt_deep_review_debate_consolidation.md
 
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Step 2 Issues / Root Causes Consolidation -- [Standard] [open-items: yes]
 **For next agent:** `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` now contains both Step 1 and Step 2. The summary tables were rewritten after two reviewer-agent challenges: explicit `Pain/Need/Expectation`, explicit provenance, explicit confidence/caveat, plus Step 2 root-cause tables separating proven causes from hypotheses. Next step is Step 3: root fixes and specification.
-→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_step_2_issues_root_causes_consolidation.md
 
 ---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Step 1 Pains / Issues / Needs Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Use `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the Step 1 source of truth. It consolidates current HEAD job evidence, direct user statements preserved in docs, and the earlier Bundesrat expectation trail (`094e88fc`, `0afb2d88`, `b843fe70`) while explicitly separating proven facts from inference. Next step is Step 2: root causes and specification ambiguities.
-→ Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
+→ Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_step_1_pains_issues_needs_consolidation.md
 
 ---
 ### 2026-04-13 | LLM Expert | Claude Code (Opus 4.6) | Trim root AI-instruction files -- [Significant] [open-items: yes]
@@ -877,6 +892,18 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 
 ---
 
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Delegated Review And Consolidated Plan -- [Standard] [open-items: yes]
+**For next agent:** The delegated review split the work into three tracks: prompt rollout/verification (UCM-active prompt state matters more than file state), narrow test hygiene/additions, and a separate salience-routing design slice. Do not blend the salience model-tier question into the prompt patch; it needs dedicated task/config plumbing if pursued.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Delegated_Review_And_Plan.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Prompt Issue Review Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Current repo already had the April 14 P0 repair-pass fix; this follow-up consolidated the newer prompt issue report, landed the safe prompt-only slice in `apps/web/prompts/claimboundary.prompt.md`, and rejected the salience-tier proposal as under-scoped. Next work, if any, should split into prompt-governance cleanup vs. dedicated salience routing/UCM design rather than mixing them.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Prompt_Issue_Review_Consolidation.md
+
+---
+
 ### 2026-04-01 | Senior Developer | Codex (GPT-5) | Stage 1 Narrow Hardening Implementation -- [Standard] [open-items: yes]
 **For next agent:** Treat this as a narrow Stage-1 patch on top of the Apr 1 rollback baseline. If continuing, run live SRG/SRF/Plastik validation first; do not expand this into a broader Stage-1 package. If needed later, clean up the noisy mock sequencing in the two...
 → Docs/AGENTS/Handoffs/2026-04-01_senior_developer_stage_1_narrow_hardening_implementation.md
@@ -887,6 +914,12 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 **For next agent:** `ba150b4d` consolidated the Phase 7 docs; this follow-up slice hardens the runtime surface for Shape B. `salienceCommitment` now has explicit `audit` vs `binding` mode in config/defaults, the full salience status is persisted on success and disabled paths, and final contract-summary refresh preserves `stageAttribution`. Next step is to wire binding-mode anchors into Pass 2/validator behavior behind the new mode flag without removing the existing V5 scaffold.
 Warnings: Current E2 remains audit-only at runtime; binding mode is config-visible and persisted, but not yet consumed by Pass 2. Do not claim Shape B is active until the next slice lands. `npm -w apps/web run build` reseeded prompt/config storage as part of postbuild; that is expected.
 Learnings: The persisted interface being optional masked a local runtime type hole; using `NonNullable<CBClaimUnderstanding["salienceCommitment"]>` in Stage 1 keeps compile-time expectations honest. Stage attribution after final revalidation must be preserved explicitly because the refreshed summary replaces the prior object.
+
+---
+
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Salience Model-Tier Design Review -- [Standard] [open-items: yes]
+**For next agent:** Salience is already a dedicated Stage 1 call, but it still borrows the shared `understand` lane. Recommended next step is a dedicated UCM-backed salience task/model key in pipeline config, defaulted to the current budget behavior, while keeping `salienceCommitment.enabled/mode` in calculation config. Check `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/llm.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/pipeline.default.json`, `apps/web/configs/calculation.default.json`, plus admin/calibration surfaces if the new lane must be visible.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Salience_Model_Tier_Design_Review.md
 
 ---
 
@@ -914,3 +947,66 @@ Learnings: Positive-path coverage on a binding-only branch was not enough; audit
 **For next agent:** Stopped the first bounded binding-mode verification attempt after confirming a real P0: `CLAIM_CONTRACT_REPAIR` had been broken since `61815f41` because the prompt file section header was not loader-compatible, it used legacy `{{...}}` placeholders instead of `${...}`, and the runtime was still expecting a full `Pass2OutputSchema` even though the repair prompt is a narrow claim-set editor. Fixed all three together: the prompt section now loads, the variables render, and the runtime accepts a narrow repair output (`atomicClaims` only) while merging it back into the existing Pass 2 envelope.
 Warnings: The five binding-mode verification jobs submitted for the corrected corpus were cancelled and deleted after the bug was confirmed. Active calculation config was reverted back to the pre-run audit hash before the fix landed. Do not resume binding-mode verification until this commit is in place on the running stack.
 Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A real-file prompt contract test now guards `CLAIM_CONTRACT_REPAIR` so malformed section headers and stale placeholder syntax fail at `npm test` cost instead of surfacing only during live runs.
+
+---
+
+### 2026-04-15 | Unassigned | Codex (GPT-5) | ClaimBoundary Prompt UCM Propagation Review -- [Standard] [open-items: yes]
+**For next agent:** Runtime prompt loading is DB-first. `claimboundary.prompt.md` changed to `1.0.1`, but local `apps/web/config.db` still shows active `prompt/claimboundary` at `seed-v1.0.0` / `system-seed`. Next step is per-environment verification of active prompt metadata, then CLI reseed for system-seeded envs and manual compare/import/activate for admin-managed envs. Avoid the Admin “Load from File” flow if you want to preserve future auto-refresh semantics.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_ClaimBoundary_Prompt_UCM_Propagation_Review.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Narrow Claim Contract Test Cleanup -- [Standard] [open-items: yes]
+**For next agent:** The stale `claim-contract-validation.test.ts` expectations are now aligned to the current Stage 1 source shape (`contractGuidance` inline fallback branch; case-insensitive anchor repair gate), and the narrow prompt/runtime regressions for `truthConditionAnchor` plus `antiInferenceCheck` are covered. The next step is live runtime verification of the reseeded prompt, not more unit-test churn.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Narrow_Claim_Contract_Test_Cleanup.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Live Prompt Runtime Verification -- [Standard] [open-items: yes]
+**For next agent:** Local live verification succeeded. Probe job `00f9ad972d854b24b2de5d292ed9ab20` is enough to inspect prompt usage and later report output. The job-specific `claimboundary` snapshot already proves runtime activation of hash `f17e326e48536f4acc71de296ee5e22d3aa883cb3d07d5829f2bfa2486883bc9`; if you continue, inspect this same job rather than creating another prompt probe.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Live_Prompt_Runtime_Verification.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Job Review On Prompt Effectiveness -- [Standard] [open-items: yes]
+**For next agent:** Real job review says the prompt fixes should stay: the latest treaty runs on prompt hash `f17e326e...` clearly repaired the `rechtskräftig` / chronology anchor failure. But there is still a separate Stage 1 bug: Gate 1 flags extra claims as fidelity-failed and the pipeline keeps them anyway, which can still distort downstream verdicts. If continuing, start from `claim-extraction-stage.ts:2817-2825` and the two jobs `85843ef4f98144f2afa7a088b9371dd9` / `0a533220d8a24bc2ae6335c96a013352`.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Job_Review_On_Prompt_Effectiveness.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Submitted Job Effectiveness Review -- [Standard] [open-items: yes]
+**For next agent:** Existing user-submitted jobs confirm the prompt fixes should stay: the treaty runs on `f17e326e...` repaired the old `rechtskräftig`/chronology failure. The new narrow Stage 1 pruning patch is also still the right change, but it has not yet been exercised by a qualifying live current-build job; only tests and old-job pathology support it so far. The Bolsonaro and plastic jobs are controls on the old prompt hash and do not argue for rollback.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Submitted_Job_Effectiveness_Review.md
+
+---
+
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | New Report Investigation -- [Standard] [open-items: yes]
+**For next agent:** The new live treaty reports finally exercised the current Stage 1 pruning patch. Both still used prompt hash `f17e326e...`, but the newer worktree hash `+b95e6294` reduced accepted Stage 1 claims from 3 to 1 and removed the inflated extra claim verdicts. Keep the prompt fixes and the pruning patch. The remaining gap is only observability: persisted `gate1Stats.filteredCount` does not currently reveal that pruning happened.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_New_Report_Investigation.md
+
+---
+
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Daily Bug Scan Metrics Pricing Fix -- [Standard] [open-items: yes]
+**For next agent:** Scanned the last 24h commits and found one concrete regression from `e7be34b4d614e65a9941629061d70e2e5dd83815`: `apps/web/src/lib/analyzer/model-resolver.ts` now emits `claude-sonnet-4-6`, but `apps/web/src/lib/analyzer/metrics.ts` lacked a matching pricing entry and undercounted estimated cost via the generic fallback. Fixed by adding `claude-sonnet-4-6` pricing and a regression test in `apps/web/test/unit/lib/analyzer/metrics.test.ts`. The Phase 7 prompt/claim-extraction tests I sampled passed; remaining recent changes are in a dirty worktree, so treat other possible issues as unconfirmed until isolated from local WIP.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Daily_Bug_Scan_Metrics_Pricing_Fix.md
+
+---
+
+### 2026-04-15 | Unassigned | Codex (GPT-5) | WIP Archive Cleanup -- [Standard] [open-items: yes]
+**For next agent:** Archived four high-confidence historical/supporting docs out of `Docs/WIP` and rewired the live references. The current README now reflects the active Phase 7 forward path better, but this was intentionally not a full archive sweep. If you continue, review mixed-status WIP files one at a time rather than batch-moving older plans.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_WIP_Archive_Cleanup.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Agent Outputs Crosslink Normalization -- [Standard] [open-items: yes]
+**For next agent:** Normalized the last six active Phase 7 rows that still pointed directly at `Docs/WIP/...`. `Docs/AGENTS/Agent_Outputs.md` now uses canonical handoff links for those rows. The only remaining mixed references are narrative body mentions, mainly in the archived March index, not active arrow-link targets.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Agent_Outputs_Crosslink_Normalization.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | WIP Section Archive Cleanup -- [Standard] [open-items: yes]
+**For next agent:** Moved clearly obsolete Phase 7 review/planning sections out of active WIP docs into two new `_arch` companions. The active Phase 7 deep review and working baseline now keep only still-live forward-looking guidance; fixed `61815f41` blocker detail lives in `Docs/ARCHIVE/2026-04-14_Phase7_*_arch.md`.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_WIP_Section_Archive_Cleanup.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Status And Backlog Refresh -- [Standard] [open-items: yes]
+**For next agent:** Rebased `Current_Status.md` and `Backlog.md` from the stale April 7/9 baseline to the actual April 15 repo state. Phase 7 is now the explicit active workstream; April 14–15 shipped work is captured; and the next canonical backlog items are the next bounded Shape B slice, Phase 7 observability/prompt rollout, and dedicated salience routing.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Status_And_Backlog_Refresh.md

@@ -12,7 +12,7 @@
 
 import { generateText } from "ai";
 import type { ClaimVerdict, EvidenceItem } from "./types";
-import { getModelForTask } from "./llm";
+import { getModelForTask, getPromptCachingOptions } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "../config-schemas";
 
@@ -90,7 +90,11 @@ async function extractKeyTermsBatch(reasonings: string[], pipelineConfig?: Pipel
 
     const result = await generateText({
       model: modelInfo.model,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{
+        role: "user",
+        content: prompt,
+        providerOptions: getPromptCachingOptions(modelInfo.provider),
+      }],
       temperature: pipelineConfig?.groundingCheckTemperature ?? DEFAULT_PIPELINE_CONFIG.groundingCheckTemperature ?? 0.1,
     });
 
@@ -187,7 +191,11 @@ async function adjudicateGroundingBatch(
 
     const result = await generateText({
       model: modelInfo.model,
-      messages: [{ role: "user", content: rendered.content }],
+      messages: [{
+        role: "user",
+        content: rendered.content,
+        providerOptions: getPromptCachingOptions(modelInfo.provider),
+      }],
       temperature: pipelineConfig?.groundingCheckTemperature ?? DEFAULT_PIPELINE_CONFIG.groundingCheckTemperature ?? 0.1,
     });
 

@@ -243,6 +243,12 @@ After completing a task, if you discovered something that would help future agen
 
 **Files:** `AGENTS.md`, `CLAUDE.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/AGENTS/Policies/Tool_Strengths.md`, `Docs/AGENTS/Policies/xWiki_Reading.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`
 
+### 2026-04-15 — Prompt caching ROI depends more on prompt shape than on cache flags
+**Role:** LLM Expert  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** useful-pattern
+**Learning:** In the current ClaimBoundary runtime, Anthropic prompt caching is already wired correctly through `getPromptCachingOptions()` in the main stage calls, so a proposal to "add cache breakpoints" can be directionally right but operationally redundant. The real limiter on cache payoff is prompt shape: many system prompts inline dynamic job payload (`analysisInput`, claims, evidence, verdict inputs), which collapses cache reuse across calls even though cache metadata is present. Before proposing more cache flags, first ask whether the static instructions and dynamic payload are separated cleanly enough for prompt reuse to matter.
+**Files:** `apps/web/src/lib/analyzer/llm.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`
+
 ## Product Strategist
 
 _(No entries yet)_

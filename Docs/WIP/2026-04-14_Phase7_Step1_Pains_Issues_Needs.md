@@ -14,6 +14,7 @@ This is the Phase 7 source-of-truth working baseline.
 - Use **Section 3** for Step 2: issues and root causes.
 - Use **Section 4** for Step 3: root fixes and specification.
 - Use the companion code/prompt review when the question is about implementation details, retry/repair semantics, or prompt architecture.
+- Fixed-blocker detail that is no longer forward-looking lives in `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
 
 What this document intentionally does **not** do:
 
@@ -48,7 +49,7 @@ What this document intentionally does **not** do:
 ### Primary supporting sources
 
 - `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md`
-- `Docs/WIP/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
+- `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
 - `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md`
 
 ## 2. Step 1: Pains, Needs, And Expectations
@@ -58,9 +59,9 @@ What this document intentionally does **not** do:
 | Scope | Category | Statement | Acceptance / operating rule | Provenance | Confidence | Main source(s) |
 |---|---|---|---|---|---|---|
 | Phase 7 overall | Pain | Phase 5/6 did not solve the aggregate R2 problem. | Do not claim aggregate R2 improvement on current evidence. | Directly documented | High | `2026-04-13_C16_R2_Combined_Replay_Analysis.md`; `2026-04-13_Phase7_Salience_First_Charter.md` |
-| Phase 7 overall | Pain | Current `main` still shows mixed salience-preservation behavior across the intended corpus. | Treat current HEAD as unresolved, not stabilized. | Observed + documented | High | local `Jobs`; `2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
-| Phase 7 overall | Pain | The biggest current gap is measurement / decision debt. | No further Phase 7 architecture claims without a review-honest measurement record. | Directly documented | High | `2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
-| Phase 7 overall | Need | Freeze prompt/stage drift long enough to measure current HEAD. | Measure before adding new Phase 7 interventions. | Directly documented | High | `2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
+| Phase 7 overall | Pain | Current `main` still shows mixed salience-preservation behavior across the intended corpus. | Treat current HEAD as unresolved, not stabilized. | Observed + documented | High | local `Jobs`; `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
+| Phase 7 overall | Pain | The biggest current gap is measurement / decision debt. | No further Phase 7 architecture claims without a review-honest measurement record. | Directly documented | High | `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
+| Phase 7 overall | Need | Freeze prompt/stage drift long enough to measure current HEAD. | Measure before adding new Phase 7 interventions. | Directly documented | High | `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` |
 | Phase 7 overall | Need | Keep exact-input and exact-cohort discipline. | Match byte-identical `inputValue`; do not mix variants or cherry-pick windows. | Directly documented | High | `2026-04-13_C16_R2_Combined_Replay_Analysis.md` |
 | Phase 7 overall | Expectation | Phase 7 should solve a generic meaning-preservation problem, not a single-token patch. | Judge on a fixed corpus and explicit thresholds, not narrative optimism. | Directly documented + user-stated in docs | High | `2026-04-13_Phase7_Salience_First_Charter.md` |
 | Phase 7 overall | Expectation | Positive inputs should expose salient qualifiers; negative controls should stay empty or near-empty. | Precision metric must explicitly define whether bare subject/action anchors are acceptable. | Directly documented but still underspecified | Medium | `2026-04-13_Phase7_Salience_First_Charter.md` |
@@ -161,14 +162,12 @@ This means:
 
 | Fix area | Root fix | Why this fix exists | Type | Priority | Proof obligation |
 |---|---|---|---|---|---|
-| Measurement surface | always refresh `contractValidationSummary` after any successful repair before persistence | final stored summary must describe the final stored claim set, not a pre-repair state | code / observability | P0 | stored summary changes when repair changed the active claim set |
 | Measurement surface | persist salience-stage outcome structurally for all paths: `ran`, `enabled`, `success`, `error?`, `anchors` | E2 measurement cannot distinguish skipped vs failed vs zero-anchor success today | code / schema | P0 | job record can distinguish all four cases |
-| Measurement surface | persist validator quote-level proof (`preservedByQuotes`) alongside IDs | audit claims about anchor preservation need traceable proof, not only claim IDs | code / schema | P0 | stored record includes exact quoted preservation evidence when validator approved |
-| Prompt governance | move `runContractRepair` prompt text out of inline TypeScript and into `claimboundary.prompt.md` as a dedicated prompt section | Stage 1 contract should live in one reviewable prompt system, not half in code | prompt / code hygiene | P1 | no inline repair prompt remains in `claim-extraction-stage.ts` |
-| Prompt/runtime alignment | explicitly reconcile the validator prompt’s literal-anchor rule with runtime directness filtering | current prompt and runtime contracts are not perfectly aligned | prompt + code/spec | P1 | prompt text and runtime rule describe the same acceptance condition |
 | Measurement protocol | the E2 report must split outcomes into raw Pass 2, post-retry, post-repair, and final accepted | final job success alone is too confounded | measurement spec | P0 | every measured run is attributable by stage |
 | Metric wording | define negative-control precision precisely, including whether bare subject/action anchors are allowed | current precision language is still ambiguous | measurement spec | P0 | reviewer can classify every control run without interpretation drift |
 | Type contract | narrow persisted salience anchor `type` to the same enum family as the generation schema | current schema/types split weakens compile-time trust | code / type contract | P2 | invalid categories cannot silently flow into downstream consumers |
+
+Rows for already-addressed stale-summary refresh, quote persistence, repair-prompt governance, and validator precedence cleanup were moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
 
 ### 4.3 Phase 7 specification after Step 3
 
@@ -233,14 +232,7 @@ Implement in two bounded tracks.
 
 ### 5.2 Completed hardening and cleanup
 
-The following items are no longer planning items; they are completed in `61815f41`:
-
-| Change | Files / scope | Why now | Rollback | Verification |
-|---|---|---|---|---|
-| Expand salience-stage status contract in code/types | `claim-extraction-stage.ts`; `types.ts` | establish a richer contract for success/failure state | revert `61815f41` | targeted unit/integration verification |
-| Force post-repair contract revalidation before persistence | `claim-extraction-stage.ts` | prevent stale pre-repair summaries | revert `61815f41` | repair-path verification |
-| Persist `preservedByQuotes` and add `stageAttribution` to the contract surface | `claim-extraction-stage.ts`; `types.ts` | add auditability and recovery attribution hooks | revert `61815f41` | JSON/result inspection |
-| Move repair prompt into prompt system | `claimboundary.prompt.md`; `claim-extraction-stage.ts` | unify Stage 1 contract governance | revert `61815f41` | prompt-load verification |
+Completed `61815f41` hardening detail was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md` so this active baseline keeps only still-live forward-looking planning.
 
 ### 5.3 Phase 7b implementation track
 
@@ -252,9 +244,10 @@ The following items are no longer planning items; they are completed in `61815f4
 | Add binding salience input to Pass 2 | Stage 1 extraction + prompt contract | Pass 2 receives E2 anchors explicitly | unit/integration tests on structured prompt payload |
 | Require claim-to-anchor preservation mapping | Pass 2 output schema + prompt | each thesis-direct claim can point to preserved anchor(s) | schema tests + golden examples |
 | Pivot validator from discovery to audit | contract validator prompt + evaluation path | validator checks preservation against pre-committed anchors | targeted validator tests |
-| Resolve thesis-direct vs literal-substring precedence explicitly | validator prompt + evaluation logic | no ambiguity once anchor mapping is authoritative | focused validator tests |
 | Tighten anchor typing end-to-end | schema + persisted type | binding anchor contract is typed, not loose-string | build/type tests |
 | Run bounded verification set | focused canaries, not necessarily another full expensive corpus first | implementation sanity before broader validation | targeted scenario checks on R2a/R2b and one control |
+
+The resolved thesis-direct vs literal-substring precedence step was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md`.
 
 ### 5.4 Empirical closeout hygiene track
 
@@ -299,4 +292,4 @@ Before or during Phase 7b implementation, all of the following should remain tru
 
 ## 6. Next Document
 
-The next useful document should be the **Phase 7b / Shape B implementation charter**.
+The next useful document should be the **next bounded Phase 7b status / implementation note after the prompt-blocker charter and follow-up fixes**, not another restart of the original charter itself.

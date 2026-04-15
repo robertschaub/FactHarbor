@@ -3,7 +3,7 @@
 **Date:** 2026-04-14
 **Status:** Historical supporting note
 **Commit:** `7e0fd20a` (initial), `ff08a0db` (V5)
-**Source:** Consolidated from `Docs/WIP/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` and commit history.
+**Source:** Consolidated from `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md` and commit history.
 
 ## Status Note
 

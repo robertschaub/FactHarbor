@@ -1,0 +1,12 @@
+---
+### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Job Review On Prompt Effectiveness
+**Task:** Review the user-submitted local jobs after the prompt/runtime changes and determine whether the changes were effective, should be kept, or should be modified.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Job_Review_On_Prompt_Effectiveness.md`; `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Judged effectiveness from real local job outputs, not synthetic probes. Compared old-vs-new treaty runs by prompt hash and runtime provenance, then used recent asylum runs as a control. Conclusion: keep the prompt fixes because they materially repaired the `rechtskräftig` / chronology anchor failure, but do not stop here — a separate Stage 1 acceptance issue is still letting Gate-1-failed fidelity drift survive into downstream verdicting.
+**Open items:** Follow-up slice needed for Stage 1 claim acceptance. Current code in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` treats Gate 1 fidelity as telemetry-only (`2817-2825`, `2872-2874`), so evidence-derived subclaims can survive even when Gate 1 flags them. That issue is orthogonal to the prompt repairs and still needs a targeted design/fix.
+**Warnings:** Causality is mixed at the full-report level because prompt hash and executed runtime commit both changed between some runs. The strongest evidence for the prompt fixes comes from Stage 1 summaries/claims, not from raw verdict percentage alone. The recent asylum runs show that report-level variance still exists with the same prompt hash and same extracted claim, so do not attribute general verdict volatility to the prompt patch.
+**For next agent:** Key evidence:
+- `85843ef4f98144f2afa7a088b9371dd9` and `0a533220d8a24bc2ae6335c96a013352` used prompt hash `f17e326e48536f4acc71de296ee5e22d3aa883cb3d07d5829f2bfa2486883bc9` with `salienceCommitment.mode = "binding"` and show the repaired anchor behavior.
+- `8e983f08f2794f20990b76d3d003fc2e` / `d08d573be40641ba848025767b17d84f` used older prompt hash `5f77ae085dee6b85f835fe87bd375f5e796c07b7728a8ff1eb25dd6155782966` and exhibit the earlier failure modes (`normative_injection`, contract violation, `UNVERIFIED` collapse).
+- The remaining defect is visible in `85843...` and `0a533...`: `understanding.gate1Reasoning` marks extra claims `passedFidelity = false`, but `understanding.atomicClaims` still keeps them because fidelity is telemetry-only in `claim-extraction-stage.ts:2817-2825`.
+**Learnings:** No.

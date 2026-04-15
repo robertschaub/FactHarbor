@@ -21,12 +21,15 @@ What remains valuable from this document:
 - the architectural distinction between **anchor recognition** and **binding extraction**
 - the warning that retry/repair can confound job-level interpretation
 - the rationale for why Shape B exists at all
+- the still-live measurement and architectural findings below
 
 What should **not** be treated as latest-state blockers anymore:
 
 - missing repair prompt governance
 - missing quote persistence
 - stale-summary risk in the exact pre-`61815f41` form described here
+
+Detailed pre-hardening analysis for those now-fixed blockers was moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`.
 
 ## Scope
 
@@ -37,7 +40,7 @@ Reviewed:
 - `apps/web/src/lib/analyzer/types.ts`
 - `apps/web/src/lib/config-schemas.ts`
 - `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md`
-- `Docs/WIP/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
+- `Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md`
 - `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md`
 
 Reviewer debate participants:
@@ -131,9 +134,7 @@ Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/
 
 ### 3. Proven: post-repair contract observability can go stale
 
-After `runContractRepair`, the code mutates `activePass2`, but the persisted `contractValidationSummary` is only refreshed if the final accepted claim set is not equivalent to the last validated claim set. If repair changes the set and Gate 1 later preserves it as-is, the summary can still describe the pre-repair validation state.
-
-Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts:515), [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts:804)
+Detailed pre-`61815f41` stale-summary analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 4. Proven: the prompt contract and the runtime contract are not perfectly aligned
 
@@ -160,26 +161,11 @@ Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/
 
 ### 6. Proven: traceability is lost between validator output and persisted summary
 
-The validator prompt requires exact quoted proof for anchor preservation. The structured output includes `preservedByQuotes`. But the persisted summary drops those quotes and stores only:
-
-- `anchorText`
-- `preservedInClaimIds`
-- `validPreservedIds`
-
-That weakens auditability for the E2 batch and for later replay analysis.
-
-Source: [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:390), [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:477), [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts:2337), [types.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/types.ts:1216)
+Detailed pre-fix `preservedByQuotes` analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 7. Proven: part of the extraction architecture is still hidden in inline prompt text
 
-`runContractRepair` uses a long inline system prompt and user prompt embedded directly in TypeScript instead of the prompt file system. This splits the extraction contract across:
-
-- `claimboundary.prompt.md`
-- inline strings in `claim-extraction-stage.ts`
-
-That makes review harder and increases drift risk.
-
-Source: [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts:1688)
+Detailed inline-prompt governance analysis moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`. Keep this issue historical, not forward-looking.
 
 ### 8. Hypothesis: Shape B is still plausible, but the evidence threshold should be stricter than “E2 found anchors”
 
@@ -216,10 +202,11 @@ Without that split, Phase 7 will keep mixing:
 
 ### What should be fixed before using E2 as architecture-moving evidence
 
-1. Refresh or recompute `contractValidationSummary` after repair so the stored summary matches the stored final claim set.
-2. Persist salience-stage outcome structurally even on failure or disabled paths.
-3. Persist quote-level anchor proof if the validator approved preservation.
-4. Move the contract-repair prompt into the prompt system so the Stage 1 contract lives in one reviewable place.
+Now-fixed stale-summary / quote-persistence / repair-prompt-governance items were moved to `Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md`.
+
+Still-live forward-looking item:
+
+1. Persist salience-stage outcome structurally even on failure or disabled paths.
 
 ## Bottom Line
 
