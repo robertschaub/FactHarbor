@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Fresh Live Verification -- [Standard] [open-items: yes]
+**For next agent:** Fresh approved-input rerun `ad4c0c1ba8bc4094849d2e3e9e0b1ef9` completed `SUCCEEDED` on commit `6bfffbba` with `LEANING-TRUE | 60 | 60`, source count back to `24`, and focus counts `preliminary=2`, `main=3`, `contradiction=3`, `contrarian=2`, `refinement=0`. `claimAcquisitionLedger.AC_01` still has no refinement entry and all `laneReason` values are empty, so the live refinement branch still did not activate; the 2025 SEM archive page/PDF are also still absent.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Fresh_Live_Verification.md
+
+---
 ### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Rerun After Review Follow-up -- [Standard] [open-items: yes]
 **For next agent:** The fresh approved-input rerun is complete and still shows no stored refinement activation. Job `6aa4dc3e2c2d46f99fe83544b214c546` finished `SUCCEEDED` with focus counts `preliminary=2`, `main=3`, `contradiction=3`, `refinement=0`; `claimAcquisitionLedger.AC_01` has only `main` and `contradiction` iterations with empty `laneReason`. Compared with earlier current-code run `141cfe945d8540caaddb970d271317f2`, this rerun also regressed in persisted official-source breadth: 13 sources instead of 24 and no 2025 SEM archive page.
 → Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Rerun_After_Review_Followup.md
