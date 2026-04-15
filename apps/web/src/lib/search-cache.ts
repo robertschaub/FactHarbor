@@ -169,6 +169,19 @@ export async function getCachedSearchResults(
       return null;
     }
 
+    const freshnessOverrideDays = options.cacheTtlDaysOverride;
+    if (typeof freshnessOverrideDays === "number" && freshnessOverrideDays >= 0) {
+      const ageMs = Date.now() - new Date(row.cached_at).getTime();
+      const maxAgeMs = freshnessOverrideDays * 24 * 60 * 60 * 1000;
+      if (ageMs > maxAgeMs) {
+        console.log(
+          `[Search-Cache] Freshness MISS for query "${options.query.substring(0, 50)}..." ` +
+          `(age: ${Math.round(ageMs / 3600000)}h > override: ${freshnessOverrideDays}d)`,
+        );
+        return null;
+      }
+    }
+
     // Parse JSON fields
     const results = JSON.parse(row.results_json) as WebSearchResult[];
     const domainWhitelist = row.domain_whitelist ? JSON.parse(row.domain_whitelist) : null;
@@ -214,7 +227,7 @@ export async function cacheSearchResults(
   cacheConfig?: { enabled?: boolean; ttlDays?: number },
 ): Promise<void> {
   const enabled = cacheConfig?.enabled ?? SEARCH_CACHE_CONFIG.enabled;
-  const ttlDays = cacheConfig?.ttlDays ?? SEARCH_CACHE_CONFIG.cacheTtlDays;
+  const ttlDays = options.cacheTtlDaysOverride ?? cacheConfig?.ttlDays ?? SEARCH_CACHE_CONFIG.cacheTtlDays;
 
   if (!enabled) {
     return;
@@ -250,7 +263,7 @@ export async function cacheSearchResults(
     }
 
     console.log(
-      `[Search-Cache] ✅ Cached ${results.length} results for query "${options.query.substring(0, 50)}..." (provider: ${provider}, TTL: ${SEARCH_CACHE_CONFIG.cacheTtlDays}d)`,
+      `[Search-Cache] ✅ Cached ${results.length} results for query "${options.query.substring(0, 50)}..." (provider: ${provider}, TTL: ${ttlDays}d)`,
     );
   } catch (err) {
     console.error("[Search-Cache] Error writing cache:", err);

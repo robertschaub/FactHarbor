@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { 
-  getModelForTask, 
-  getPromptCachingOptions, 
-  getStructuredOutputProviderOptions, 
-  extractStructuredOutput 
+import {
+  getModelForTask,
+  getPromptCachingOptions,
+  getStructuredOutputProviderOptions,
+  extractStructuredOutput
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { recordLLMCall } from "./metrics-integration";
@@ -13,12 +13,36 @@ import {
   formatPromptRelevantGeographies,
   normalizeRelevantGeographies,
 } from "./jurisdiction-context";
-import { 
-  AtomicClaim, 
-  CBClaimUnderstanding, 
-  EvidenceItem 
+import {
+  AtomicClaim,
+  CBClaimUnderstanding,
+  EvidenceItem
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
+
+export type ResearchQueryRetrievalLane = "primary_direct" | "navigational" | "secondary_context";
+export type ResearchQueryFreshnessWindow = "none" | "w" | "m" | "y";
+
+export interface GeneratedResearchQuery {
+  query: string;
+  rationale: string;
+  retrievalLane?: ResearchQueryRetrievalLane;
+  freshnessWindow?: ResearchQueryFreshnessWindow;
+}
+
+function buildGeneratedResearchQuery(
+  query: string,
+  rationale: string,
+  retrievalLane?: ResearchQueryRetrievalLane,
+  freshnessWindow?: ResearchQueryFreshnessWindow,
+): GeneratedResearchQuery {
+  return {
+    query,
+    rationale,
+    ...(retrievalLane !== undefined ? { retrievalLane } : {}),
+    ...(freshnessWindow !== undefined ? { freshnessWindow } : {}),
+  };
+}
 
 // ============================================================================
 // SCHEMAS
@@ -29,8 +53,31 @@ export const GenerateQueriesOutputSchema = z.object({
     query: z.string(),
     rationale: z.string(),
     variantType: z.enum(["supporting", "refuting"]).optional(),
+    retrievalLane: z.enum(["primary_direct", "navigational", "secondary_context"]).optional(),
+    freshnessWindow: z.enum(["none", "w", "m", "y"]).optional(),
   })),
 });
+
+function warnOnMissingRefinementMetadata(
+  iterationType: "main" | "contradiction" | "contrarian" | "refinement",
+  queries: z.infer<typeof GenerateQueriesOutputSchema>["queries"],
+): void {
+  if (iterationType !== "refinement") {
+    return;
+  }
+
+  const missingAnyMetadataCount = queries.filter(
+    (query) => query.retrievalLane === undefined || query.freshnessWindow === undefined,
+  ).length;
+  if (missingAnyMetadataCount === 0) {
+    return;
+  }
+
+  console.warn(
+    `[Stage2] Refinement query metadata missing for ${missingAnyMetadataCount}/${queries.length} generated queries; ` +
+    `routing/freshness fallbacks may suppress or weaken the refinement pass.`,
+  );
+}
 
 // ============================================================================
 // STAGE 2: QUERY GENERATION
@@ -42,14 +89,14 @@ export const GenerateQueriesOutputSchema = z.object({
  */
 export async function generateResearchQueries(
   claim: AtomicClaim,
-  iterationType: "main" | "contradiction" | "contrarian",
+  iterationType: "main" | "contradiction" | "contrarian" | "refinement",
   existingEvidence: EvidenceItem[],
   pipelineConfig: PipelineConfig,
   currentDate: string,
   distinctEvents: CBClaimUnderstanding["distinctEvents"] = [],
   remainingQueryBudget?: number,
   searchGeo?: { language?: string; geography?: string | null; geographies?: string[] | null },
-): Promise<Array<{ query: string; rationale: string }>> {
+): Promise<GeneratedResearchQuery[]> {
   const maxQueriesPerCall = pipelineConfig.researchMaxQueriesPerIteration ?? 3;
   const maxQueries = Math.max(0, Math.min(maxQueriesPerCall, remainingQueryBudget ?? maxQueriesPerCall));
   if (maxQueries === 0) {
@@ -98,7 +145,13 @@ export async function generateResearchQueries(
   });
   if (!rendered) {
     // Fallback: use claim statement directly
-    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
+    const fallbackQueries: GeneratedResearchQuery[] = [{
+      query: claim.statement.slice(0, 80),
+      rationale: "fallback",
+      retrievalLane: "secondary_context",
+      freshnessWindow: "none",
+    }];
+    return fallbackQueries.slice(0, maxQueries);
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
@@ -142,15 +195,24 @@ export async function generateResearchQueries(
         errorMessage: "Stage 2 query generation returned no structured output",
         timestamp: new Date(),
       });
-      return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
+      const fallbackQueries: GeneratedResearchQuery[] = [{
+        query: claim.statement.slice(0, 80),
+        rationale: "fallback",
+        retrievalLane: "secondary_context",
+        freshnessWindow: "none",
+      }];
+      return fallbackQueries.slice(0, maxQueries);
     }
 
     const validated = GenerateQueriesOutputSchema.parse(parsed);
-    let finalQueries: Array<{ query: string; rationale: string }>;
+  warnOnMissingRefinementMetadata(iterationType, validated.queries);
+    let finalQueries: GeneratedResearchQuery[];
     if (queryStrategyMode !== "pro_con") {
       finalQueries = validated.queries
         .slice(0, maxQueries)
-        .map(({ query, rationale }) => ({ query, rationale }));
+        .map(({ query, rationale, retrievalLane, freshnessWindow }) =>
+          buildGeneratedResearchQuery(query, rationale, retrievalLane, freshnessWindow),
+        );
     } else {
       const supportingQueries = validated.queries.filter((query) => query.variantType === "supporting");
       const refutingQueries = validated.queries.filter((query) => query.variantType === "refuting");
@@ -158,30 +220,41 @@ export async function generateResearchQueries(
         (query) => query.variantType !== "supporting" && query.variantType !== "refuting",
       );
 
-      const merged: Array<{ query: string; rationale: string }> = [];
+      const merged: GeneratedResearchQuery[] = [];
       const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
       for (let i = 0; i < maxVariantLength; i++) {
         if (supportingQueries[i]) {
-          merged.push({
-            query: supportingQueries[i].query,
-            rationale: supportingQueries[i].rationale,
-          });
+          merged.push(buildGeneratedResearchQuery(
+            supportingQueries[i].query,
+            supportingQueries[i].rationale,
+            supportingQueries[i].retrievalLane,
+            supportingQueries[i].freshnessWindow,
+          ));
         }
         if (refutingQueries[i]) {
-          merged.push({
-            query: refutingQueries[i].query,
-            rationale: refutingQueries[i].rationale,
-          });
+          merged.push(buildGeneratedResearchQuery(
+            refutingQueries[i].query,
+            refutingQueries[i].rationale,
+            refutingQueries[i].retrievalLane,
+            refutingQueries[i].freshnessWindow,
+          ));
         }
       }
 
       for (const unlabeled of unlabeledQueries) {
-        merged.push({ query: unlabeled.query, rationale: unlabeled.rationale });
+        merged.push(buildGeneratedResearchQuery(
+          unlabeled.query,
+          unlabeled.rationale,
+          unlabeled.retrievalLane,
+          unlabeled.freshnessWindow,
+        ));
       }
 
       const normalized = merged.length > 0
         ? merged
-        : validated.queries.map(({ query, rationale }) => ({ query, rationale }));
+        : validated.queries.map(({ query, rationale, retrievalLane, freshnessWindow }) =>
+          buildGeneratedResearchQuery(query, rationale, retrievalLane, freshnessWindow),
+        );
 
       finalQueries = normalized.slice(0, maxQueries);
     }
@@ -218,6 +291,12 @@ export async function generateResearchQueries(
       timestamp: new Date(),
     });
     console.warn("[Stage2] Query generation failed, using fallback:", err);
-    return [{ query: claim.statement.slice(0, 80), rationale: "fallback" }].slice(0, maxQueries);
+    const fallbackQueries: GeneratedResearchQuery[] = [{
+      query: claim.statement.slice(0, 80),
+      rationale: "fallback",
+      retrievalLane: "secondary_context",
+      freshnessWindow: "none",
+    }];
+    return fallbackQueries.slice(0, maxQueries);
   }
 }

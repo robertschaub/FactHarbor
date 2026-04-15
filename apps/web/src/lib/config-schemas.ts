@@ -592,6 +592,12 @@ export const PipelineConfigSchema = z.object({
     .describe("When true, Stage 2 sufficiency also requires source-type/domain diversity (matching D5 thresholds from CalcConfig). Claims with enough items but insufficient diversity will trigger additional research iterations. Default: false (experimental)."),
   preliminaryEvidenceLlmRemapEnabled: z.boolean().optional()
     .describe("When true, unresolved seeded preliminary evidence items (those with semantic slug claim IDs that failed numeric remap) are sent to a single batched Haiku call to determine correct AC_* claim mappings before Stage 2 seeding. Only fires when >1 final claims exist. Fail-open. Default: false."),
+  primarySourceRefinementEnabled: z.boolean().optional()
+    .describe("Enable a one-time bounded first-iteration refinement pass for claims that expect metric-bearing primary evidence but only secondary/contextual coverage is found. Default: true."),
+  primarySourceRefinementMaxQueries: z.number().int().min(0).max(3).optional()
+    .describe("Maximum refinement queries spent in the bounded primary-source refinement pass (default: 1)."),
+  freshQueryCacheTtlDays: z.number().int().min(1).max(7).optional()
+    .describe("Cache freshness cap in days for freshness-sensitive Stage 2 queries (default: 1). Shorter than the general search cache TTL."),
 
   // Stage 3: Clustering
   maxClaimBoundaries: z.number().int().min(2).max(10).optional()
@@ -906,6 +912,15 @@ export const PipelineConfigSchema = z.object({
   if (data.perClaimQueryBudget === undefined) {
     data.perClaimQueryBudget = 8;
   }
+  if (data.primarySourceRefinementEnabled === undefined) {
+    data.primarySourceRefinementEnabled = true;
+  }
+  if (data.primarySourceRefinementMaxQueries === undefined) {
+    data.primarySourceRefinementMaxQueries = 1;
+  }
+  if (data.freshQueryCacheTtlDays === undefined) {
+    data.freshQueryCacheTtlDays = 1;
+  }
 
   // ClaimBoundary Stage 3 defaults
   if (data.maxClaimBoundaries === undefined) {
@@ -1113,6 +1128,9 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   verdictDirectionPolicy: "retry_once_then_safe_downgrade",
   queryStrategyMode: "pro_con",
   perClaimQueryBudget: 8,
+  primarySourceRefinementEnabled: true,
+  primarySourceRefinementMaxQueries: 1,
+  freshQueryCacheTtlDays: 1,
   boundaryClusteringTemperature: 0.05,
 
   // Gap-driven research (Pipeline Phase 1)

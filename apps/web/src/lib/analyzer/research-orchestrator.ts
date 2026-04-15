@@ -1,10 +1,10 @@
-import { 
-  AtomicClaim, 
-  CBResearchState, 
+import {
+  AtomicClaim,
+  CBResearchState,
   ClaimAcquisitionDirectionCounts,
   ClaimAcquisitionIterationEntry,
   ClaimAcquisitionLedgerEntry,
-  EvidenceItem, 
+  EvidenceItem,
   FetchedSource,
   EvidenceScope,
 } from "./types";
@@ -24,15 +24,15 @@ import {
   classifySourceFetchFailure,
 } from "./pipeline-utils";
 import { debugLog } from "./debug";
-import { 
-  prefetchSourceReliability, 
-  getTrackRecordData 
+import {
+  prefetchSourceReliability,
+  getTrackRecordData
 } from "./source-reliability";
-import { 
-  searchWebWithProvider 
+import {
+  searchWebWithProvider
 } from "@/lib/web-search";
-import { 
-  recordFailure as recordSearchFailure 
+import {
+  recordFailure as recordSearchFailure
 } from "@/lib/search-circuit-breaker";
 import {
   getModelForTask,
@@ -47,7 +47,7 @@ import { loadAndRenderSection } from "./prompt-loader";
 import { getClaimRelevantGeographies } from "./jurisdiction-context";
 
 // Import sibling stage modules
-import { generateResearchQueries } from "./research-query-stage";
+import { generateResearchQueries, type GeneratedResearchQuery } from "./research-query-stage";
 import { fetchSources, reconcileEvidenceSourceIds } from "./research-acquisition-stage";
 import {
   classifyRelevance,
@@ -88,6 +88,102 @@ function incrementDirectionCounts(
   } else {
     counts.neutral++;
   }
+}
+
+const QUERY_LANE_PRIORITY: Record<NonNullable<GeneratedResearchQuery["retrievalLane"]>, number> = {
+  primary_direct: 0,
+  navigational: 1,
+  secondary_context: 2,
+};
+
+const PRIMARY_SOURCE_REFINEMENT_TYPES = new Set<NonNullable<EvidenceItem["sourceType"]>>([
+  "government_report",
+  "legal_document",
+  "peer_reviewed_study",
+  "fact_check_report",
+  "organization_report",
+]);
+
+function sortGeneratedResearchQueries(
+  queries: GeneratedResearchQuery[],
+): GeneratedResearchQuery[] {
+  return [...queries].sort(
+    (left, right) =>
+      QUERY_LANE_PRIORITY[left.retrievalLane ?? "secondary_context"]
+      - QUERY_LANE_PRIORITY[right.retrievalLane ?? "secondary_context"],
+  );
+}
+
+function hasExplicitRetrievalMetadata(query: GeneratedResearchQuery): boolean {
+  return query.retrievalLane !== undefined || query.freshnessWindow !== undefined;
+}
+
+function createClaimIterationTelemetryEntry(
+  iteration: number,
+  iterationType: ClaimAcquisitionIterationEntry["iterationType"],
+  generatedQueries: string[],
+  laneReason?: string,
+): ClaimAcquisitionIterationEntry {
+  return {
+    iteration,
+    iterationType,
+    languageLane: "primary",
+    generatedQueries,
+    searchResults: 0,
+    relevanceAccepted: 0,
+    sourcesFetched: 0,
+    rawEvidenceItems: 0,
+    admittedEvidenceItems: 0,
+    directionCounts: createEmptyDirectionCounts(),
+    losses: {
+      relevanceRejected: 0,
+      fetchRejected: 0,
+      sourcesWithoutEvidence: 0,
+      probativeFilteredOut: 0,
+      perSourceCapDroppedNew: 0,
+      perSourceCapEvictedExisting: 0,
+    },
+    laneReason,
+  };
+}
+
+function getPrimarySourceRefinementTargetTypes(
+  claim: AtomicClaim,
+): Set<NonNullable<EvidenceItem["sourceType"]>> {
+  return new Set(
+    (claim.expectedEvidenceProfile?.expectedSourceTypes ?? []).filter((sourceType) =>
+      PRIMARY_SOURCE_REFINEMENT_TYPES.has(sourceType),
+    ),
+  );
+}
+
+function hasNonSeededPrimarySourceCoverage(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+): boolean {
+  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+  if (candidateTypes.size === 0) return false;
+
+  return evidenceItems.some((item) =>
+    !item.isSeeded
+    && item.relevantClaimIds?.includes(claim.id)
+    && !!item.sourceType
+    && candidateTypes.has(item.sourceType),
+  );
+}
+
+function claimNeedsPrimarySourceRefinement(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+): boolean {
+  const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
+  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+
+  if (expectedMetrics.length === 0 || candidateTypes.size === 0) {
+    return false;
+  }
+
+  return !hasNonSeededPrimarySourceCoverage(claim, evidenceItems);
 }
 
 export function countClaimLocalDirections(
@@ -208,6 +304,7 @@ export async function researchEvidence(
   state: CBResearchState,
   jobId?: string
 ): Promise<void> {
+  state.researchedIterationsByClaim ??= {};
   const effectiveJobId = jobId ?? state.jobId;
   const [pipelineResult, searchResult, calcResult] = await Promise.all([
     loadPipelineConfig("default", effectiveJobId),
@@ -507,7 +604,7 @@ export async function researchEvidence(
     state.warnings.push({
       type: "no_successful_sources",
       severity: acquisitionFailed ? "error" : "warning",
-      message: acquisitionFailed 
+      message: acquisitionFailed
         ? `Search queries were executed but zero sources were successfully fetched — acquisition failed.`
         : "No sources were found for these claims — verdict is based on zero evidence.",
       details: { searchQueries: totalSearches, totalEvidence },
@@ -856,6 +953,8 @@ export async function runResearchIteration(
     console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
     return;
   }
+  state.researchedIterationsByClaim ??= {};
+  const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
   const evidenceCountBeforeIteration = state.evidenceItems.length;
   const searchQueryCountBeforeIteration = state.searchQueries.length;
   const iterationIndex = state.mainIterationsUsed + state.contradictionIterationsUsed;
@@ -865,7 +964,7 @@ export async function runResearchIteration(
   );
 
   // 1. Generate search queries via LLM (Haiku)
-  const queries = await generateResearchQueries(
+  const queries = sortGeneratedResearchQueries(await generateResearchQueries(
     targetClaim,
     iterationType,
     state.evidenceItems,
@@ -878,243 +977,313 @@ export async function runResearchIteration(
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
       geographies: claimRelevantGeographies,
     },
-  );
+  ));
   state.llmCalls++;
   const generatedQueryCount = queries.length;
-  const iterationTelemetry: ClaimAcquisitionIterationEntry = {
-    iteration: iterationIndex,
+  const iterationTelemetry = createClaimIterationTelemetryEntry(
+    iterationIndex,
     iterationType,
-    languageLane: "primary",
-    generatedQueries: queries.map((query) => query.query),
-    searchResults: 0,
-    relevanceAccepted: 0,
-    sourcesFetched: 0,
-    rawEvidenceItems: 0,
-    admittedEvidenceItems: 0,
-    directionCounts: createEmptyDirectionCounts(),
-    losses: {
-      relevanceRejected: 0,
-      fetchRejected: 0,
-      sourcesWithoutEvidence: 0,
-      probativeFilteredOut: 0,
-      perSourceCapDroppedNew: 0,
-      perSourceCapEvictedExisting: 0,
-    },
+    queries.map((query) => query.query),
+  );
+
+  const executeGeneratedQueries = async (
+    generatedQueries: GeneratedResearchQuery[],
+    focus: "main" | "contradiction" | "contrarian" | "refinement",
+    telemetry: ClaimAcquisitionIterationEntry,
+  ): Promise<void> => {
+    for (const queryObj of generatedQueries) {
+      if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
+        console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}" during ${focus} iteration.`);
+        break;
+      }
+
+      try {
+        const dateRestrict = queryObj.freshnessWindow && queryObj.freshnessWindow !== "none"
+          ? queryObj.freshnessWindow
+          : undefined;
+        const cacheTtlDaysOverride = dateRestrict
+          ? (pipelineConfig.freshQueryCacheTtlDays ?? 1)
+          : undefined;
+
+        // 2. Web search — no geo/language params sent to search providers.
+        // Query generation prompt handles language; search stays unfiltered.
+        // detectedLanguage is threaded for language-aware supplementary providers (Wikipedia).
+        const response = await searchWebWithProvider({
+          query: queryObj.query,
+          maxResults: maxSourcesPerIteration,
+          config: searchConfig,
+          detectedLanguage: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
+          dateRestrict,
+          cacheTtlDaysOverride,
+        });
+
+        state.searchQueries.push({
+          query: queryObj.query,
+          iteration: iterationIndex,
+          focus,
+          resultsCount: response.results.length,
+          timestamp: new Date().toISOString(),
+          searchProvider: response.providersUsed.join(", "),
+          language: state.languageIntent?.inputLanguage ?? state.understanding?.detectedLanguage,
+          languageLane: "primary",
+        });
+        if (response.results.length > 0) {
+          const eventPrefix = focus === "refinement" ? "Refinement search" : "Search";
+          state.onEvent?.(`${eventPrefix}: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
+        }
+
+        // Capture search provider errors as warnings AND report to circuit breaker
+        if (response.errors && response.errors.length > 0) {
+          for (const provErr of response.errors) {
+            // Record failure to per-provider circuit breaker for operator visibility
+            if (provErr.provider) {
+              recordSearchFailure(provErr.provider, provErr.message);
+            }
+
+            upsertSearchProviderWarning(state, {
+              provider: provErr.provider,
+              status: provErr.status,
+              message: provErr.message,
+              query: queryObj.query,
+              stage: "research_search",
+            });
+            // Emit to live events log so the user sees the error during the run
+            state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
+          }
+        }
+
+        if (response.results.length === 0) continue;
+        telemetry.searchResults += response.results.length;
+
+        // 3. Relevance classification via LLM (Haiku, batched)
+        const relevantSources = await classifyRelevance(
+          targetClaim,
+          response.results,
+          pipelineConfig,
+          currentDate,
+          state.understanding?.inferredGeography ?? null,
+          claimRelevantGeographies,
+        );
+        state.llmCalls++;
+        telemetry.relevanceAccepted += relevantSources.length;
+        telemetry.losses.relevanceRejected += Math.max(
+          response.results.length - relevantSources.length,
+          0,
+        );
+
+        if (relevantSources.length === 0) continue;
+
+        // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
+        const { selectTopSources } = await import("./pipeline-utils");
+        const topN = pipelineConfig.relevanceTopNFetch ?? 5;
+        const selectedForFetch = selectTopSources(relevantSources, topN);
+        debugLog(`[Stage2] Fetching top ${selectedForFetch.length} of ${relevantSources.length} relevant sources (topN=${topN})`, selectedForFetch.map((s) => ({
+          url: s.url.slice(0, 100),
+          score: s.relevanceScore,
+          rank: s.originalRank,
+        })));
+        const fetchedSources = await fetchSources(
+          selectedForFetch,
+          queryObj.query,
+          state,
+          pipelineConfig,
+        );
+        telemetry.sourcesFetched += fetchedSources.length;
+        telemetry.losses.fetchRejected += Math.max(
+          relevantSources.length - fetchedSources.length,
+          0,
+        );
+
+        if (fetchedSources.length === 0) continue;
+
+        // 5. Reliability prefetch — DEFERRED to batch after research loop (perf fix)
+        // SR data is only needed in Stage 4 (verdict) and Stage 5 (aggregation),
+        // not during research iteration decisions. Deferring saves 15-25s per new domain.
+
+        // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
+        const rawEvidence = await extractResearchEvidence(
+          targetClaim,
+          fetchedSources,
+          pipelineConfig,
+          currentDate,
+        );
+        state.llmCalls++;
+        iterationTelemetry.rawEvidenceItems += rawEvidence.length;
+        const extractedSourceUrls = new Set(
+          rawEvidence
+            .map((item) => item.sourceUrl)
+            .filter((url): url is string => Boolean(url)),
+        );
+        telemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
+          (source) => !extractedSourceUrls.has(source.url),
+        ).length;
+
+        // 7. EvidenceScope validation (deterministic)
+        for (const item of rawEvidence) {
+          item.scopeQuality = assessScopeQuality(item);
+        }
+
+        // 8. Derivative validation (§8.2 step 9)
+        const allFetchedUrls = new Set(state.sources.map((s) => s.url));
+        for (const item of rawEvidence) {
+          if (item.isDerivative && item.derivedFromSourceUrl) {
+            if (!allFetchedUrls.has(item.derivedFromSourceUrl)) {
+              item.derivativeClaimUnverified = true;
+            }
+          }
+        }
+
+        // 9. Evidence filter (deterministic safety net)
+        const { kept } = filterByProbativeValue(rawEvidence);
+        telemetry.losses.probativeFilteredOut += Math.max(
+          rawEvidence.length - kept.length,
+          0,
+        );
+
+        // 10. Tag search strategy and add to state
+        if (iterationType === "contrarian") {
+          for (const item of kept) {
+            item.searchStrategy = "contrarian";
+          }
+        } else if (iterationType === "contradiction") {
+          for (const item of kept) {
+            item.searchStrategy = "contradiction";
+          }
+        }
+
+        // 11. Per-source evidence cap (Fix 2 — single-source flooding mitigation)
+        // Reselects best-N across existing+new by probativeValue, evicting weaker
+        // existing items when a stronger new item arrives from the same source.
+        const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
+        const { kept: cappedItems, capped: cappedCount, evictedIds } = applyPerSourceCap(
+          kept, state.evidenceItems, maxPerSource,
+        );
+        if (cappedCount > 0 || evictedIds.length > 0) {
+          debugLog(
+            `[Stage2] Per-source cap: kept ${cappedItems.length}/${kept.length} new, ` +
+            `dropped ${cappedCount} new, evicted ${evictedIds.length} existing (max ${maxPerSource}/source).`,
+          );
+          state.warnings?.push({
+            type: "per_source_evidence_cap",
+            severity: "info",
+            message: `Per-source cap (max ${maxPerSource}): kept ${cappedItems.length}/${kept.length} new, ` +
+              `dropped ${cappedCount}, evicted ${evictedIds.length} existing.`,
+            details: { maxPerSource, keptNew: cappedItems.length, totalNew: kept.length, droppedNew: cappedCount, evictedExisting: evictedIds.length },
+          });
+        }
+        telemetry.losses.perSourceCapDroppedNew += cappedCount;
+        telemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
+        if (evictedIds.length > 0) {
+          const evictedSet = new Set(evictedIds);
+          state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
+        }
+        state.evidenceItems.push(...cappedItems);
+        const claimLocalCappedItems = cappedItems.filter(
+          (item) => item.relevantClaimIds?.includes(targetClaim.id),
+        );
+        telemetry.admittedEvidenceItems += claimLocalCappedItems.length;
+        for (const item of claimLocalCappedItems) {
+          incrementDirectionCounts(telemetry.directionCounts, item.claimDirection);
+        }
+
+        // Track contradiction/contrarian sources
+        if (iterationType === "contradiction" || iterationType === "contrarian") {
+          state.contradictionSourcesFound += fetchedSources.length;
+        }
+      } catch (err) {
+        console.warn(`[Stage2] Research iteration failed for query "${queryObj.query}":`, err);
+
+        // Surface LLM provider errors as warnings (once per error type)
+        const errMsg = err instanceof Error ? err.message : String(err);
+        // Check status code first (AI SDK and provider error objects expose .status or .statusCode),
+        // then fall back to message string matching for providers that surface the code in the message.
+        const statusCode = (err as any)?.status ?? (err as any)?.statusCode;
+        const isLlmError = (typeof statusCode === "number" && (statusCode === 429 || statusCode === 503 || statusCode === 529)) ||
+          errMsg.includes("rate limit") || errMsg.includes("rate_limit") ||
+          errMsg.includes("quota") || errMsg.includes("credit") ||
+          errMsg.includes("overloaded") ||
+          errMsg.includes("status 503") || errMsg.includes("503 Service");
+        if (isLlmError) {
+          const alreadyWarned = state.warnings.some((w) => w.type === "llm_provider_error");
+          if (!alreadyWarned) {
+            state.warnings.push({
+              type: "llm_provider_error",
+              severity: "error",
+              message: `LLM provider error during research: ${errMsg.slice(0, 200)}`,
+              details: { query: queryObj.query },
+            });
+          }
+        }
+      }
+    }
   };
 
-  for (const queryObj of queries) {
-    if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
-      console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}" during ${iterationType} iteration.`);
-      break;
+  await executeGeneratedQueries(queries, iterationType, iterationTelemetry);
+  recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
+
+  const refinementBudget = Math.min(
+    pipelineConfig.primarySourceRefinementMaxQueries ?? 1,
+    getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig),
+  );
+  const refinementNeeded = claimNeedsPrimarySourceRefinement(targetClaim, state.evidenceItems);
+  const hasMainQueryMetadata = queries.some(hasExplicitRetrievalMetadata);
+  if (
+    iterationType === "main"
+    && priorMainIterationsForClaim === 0
+    && (pipelineConfig.primarySourceRefinementEnabled ?? true)
+    && refinementBudget > 0
+    && refinementNeeded
+  ) {
+    if (!hasMainQueryMetadata) {
+      console.warn(
+        `[Stage2] Primary-source refinement skipped for claim "${targetClaim.id}" because main queries lacked ` +
+        `retrieval metadata. Strengthen query metadata adherence before relying on refinement metrics.`,
+      );
+    } else {
+    state.onEvent?.("Refining direct-source discovery...", -1);
+    const refinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
+      targetClaim,
+      "refinement",
+      state.evidenceItems,
+      pipelineConfig,
+      currentDate,
+      state.understanding?.distinctEvents ?? [],
+      refinementBudget,
+      {
+        language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
+        geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
+        geographies: claimRelevantGeographies,
+      },
+    ));
+    state.llmCalls++;
+
+    const prioritizedRefinementQueries = refinementPlan.filter(
+      (query) => query.retrievalLane !== "secondary_context",
+    );
+    const selectedRefinementQueries = (
+      prioritizedRefinementQueries.length > 0
+        ? prioritizedRefinementQueries
+        : refinementPlan
+    ).slice(0, refinementBudget);
+
+    if (selectedRefinementQueries.length > 0) {
+      const refinementTelemetry = createClaimIterationTelemetryEntry(
+        iterationIndex,
+        "main",
+        selectedRefinementQueries.map((query) => query.query),
+        "primary_source_refinement:triggered",
+      );
+      await executeGeneratedQueries(selectedRefinementQueries, "refinement", refinementTelemetry);
+      const recoveredPrimaryCoverage = hasNonSeededPrimarySourceCoverage(targetClaim, state.evidenceItems);
+      refinementTelemetry.laneReason = recoveredPrimaryCoverage
+        ? "primary_source_refinement:recovered_non_seeded_primary_coverage"
+        : "primary_source_refinement:no_new_primary_coverage";
+      recordClaimIterationTelemetry(state, targetClaim.id, refinementTelemetry);
+      debugLog(
+        `[Stage2] Primary-source refinement ${recoveredPrimaryCoverage ? "recovered" : "did not recover"} ` +
+        `non-seeded primary coverage for claim ${targetClaim.id}.`,
+      );
     }
-
-    try {
-      // 2. Web search — no geo/language params sent to search providers.
-      // Query generation prompt handles language; search stays unfiltered.
-      // detectedLanguage is threaded for language-aware supplementary providers (Wikipedia).
-      const response = await searchWebWithProvider({
-        query: queryObj.query,
-        maxResults: maxSourcesPerIteration,
-        config: searchConfig,
-        detectedLanguage: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
-      });
-
-      state.searchQueries.push({
-        query: queryObj.query,
-        iteration: iterationIndex,
-        focus: iterationType,
-        resultsCount: response.results.length,
-        timestamp: new Date().toISOString(),
-        searchProvider: response.providersUsed.join(", "),
-        language: state.languageIntent?.inputLanguage ?? state.understanding?.detectedLanguage,
-        languageLane: "primary",
-      });
-      if (response.results.length > 0) {
-        state.onEvent?.(`Search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
-      }
-
-      // Capture search provider errors as warnings AND report to circuit breaker
-      if (response.errors && response.errors.length > 0) {
-        for (const provErr of response.errors) {
-          // Record failure to per-provider circuit breaker for operator visibility
-          if (provErr.provider) {
-            recordSearchFailure(provErr.provider, provErr.message);
-          }
-
-          upsertSearchProviderWarning(state, {
-            provider: provErr.provider,
-            status: provErr.status,
-            message: provErr.message,
-            query: queryObj.query,
-            stage: "research_search",
-          });
-          // Emit to live events log so the user sees the error during the run
-          state.onEvent?.(`Search provider "${provErr.provider}" error: ${provErr.message}`, 0);
-        }
-      }
-
-      if (response.results.length === 0) continue;
-      iterationTelemetry.searchResults += response.results.length;
-
-      // 3. Relevance classification via LLM (Haiku, batched)
-      const relevantSources = await classifyRelevance(
-        targetClaim,
-        response.results,
-        pipelineConfig,
-        currentDate,
-        state.understanding?.inferredGeography ?? null,
-        claimRelevantGeographies,
-      );
-      state.llmCalls++;
-      iterationTelemetry.relevanceAccepted += relevantSources.length;
-      iterationTelemetry.losses.relevanceRejected += Math.max(
-        response.results.length - relevantSources.length,
-        0,
-      );
-
-      if (relevantSources.length === 0) continue;
-
-      // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
-      const { selectTopSources } = await import("./pipeline-utils");
-      const topN = pipelineConfig.relevanceTopNFetch ?? 5;
-      const selectedForFetch = selectTopSources(relevantSources, topN);
-      debugLog(`[Stage2] Fetching top ${selectedForFetch.length} of ${relevantSources.length} relevant sources (topN=${topN})`, selectedForFetch.map((s) => ({
-        url: s.url.slice(0, 100),
-        score: s.relevanceScore,
-        rank: s.originalRank,
-      })));
-      const fetchedSources = await fetchSources(
-        selectedForFetch,
-        queryObj.query,
-        state,
-        pipelineConfig,
-      );
-      iterationTelemetry.sourcesFetched += fetchedSources.length;
-      iterationTelemetry.losses.fetchRejected += Math.max(
-        relevantSources.length - fetchedSources.length,
-        0,
-      );
-
-      if (fetchedSources.length === 0) continue;
-
-      // 5. Reliability prefetch — DEFERRED to batch after research loop (perf fix)
-      // SR data is only needed in Stage 4 (verdict) and Stage 5 (aggregation),
-      // not during research iteration decisions. Deferring saves 15-25s per new domain.
-
-      // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
-      const rawEvidence = await extractResearchEvidence(
-        targetClaim,
-        fetchedSources,
-        pipelineConfig,
-        currentDate,
-      );
-      state.llmCalls++;
-      iterationTelemetry.rawEvidenceItems += rawEvidence.length;
-      const extractedSourceUrls = new Set(
-        rawEvidence
-          .map((item) => item.sourceUrl)
-          .filter((url): url is string => Boolean(url)),
-      );
-      iterationTelemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
-        (source) => !extractedSourceUrls.has(source.url),
-      ).length;
-
-      // 7. EvidenceScope validation (deterministic)
-      for (const item of rawEvidence) {
-        item.scopeQuality = assessScopeQuality(item);
-      }
-
-      // 8. Derivative validation (§8.2 step 9)
-      const allFetchedUrls = new Set(state.sources.map((s) => s.url));
-      for (const item of rawEvidence) {
-        if (item.isDerivative && item.derivedFromSourceUrl) {
-          if (!allFetchedUrls.has(item.derivedFromSourceUrl)) {
-            item.derivativeClaimUnverified = true;
-          }
-        }
-      }
-
-      // 9. Evidence filter (deterministic safety net)
-      const { kept } = filterByProbativeValue(rawEvidence);
-      iterationTelemetry.losses.probativeFilteredOut += Math.max(
-        rawEvidence.length - kept.length,
-        0,
-      );
-
-      // 10. Tag search strategy and add to state
-      if (iterationType === "contrarian") {
-        for (const item of kept) {
-          item.searchStrategy = "contrarian";
-        }
-      } else if (iterationType === "contradiction") {
-        for (const item of kept) {
-          item.searchStrategy = "contradiction";
-        }
-      }
-
-      // 11. Per-source evidence cap (Fix 2 — single-source flooding mitigation)
-      // Reselects best-N across existing+new by probativeValue, evicting weaker
-      // existing items when a stronger new item arrives from the same source.
-      const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
-      const { kept: cappedItems, capped: cappedCount, evictedIds } = applyPerSourceCap(
-        kept, state.evidenceItems, maxPerSource,
-      );
-      if (cappedCount > 0 || evictedIds.length > 0) {
-        debugLog(
-          `[Stage2] Per-source cap: kept ${cappedItems.length}/${kept.length} new, ` +
-          `dropped ${cappedCount} new, evicted ${evictedIds.length} existing (max ${maxPerSource}/source).`,
-        );
-        state.warnings?.push({
-          type: "per_source_evidence_cap",
-          severity: "info",
-          message: `Per-source cap (max ${maxPerSource}): kept ${cappedItems.length}/${kept.length} new, ` +
-            `dropped ${cappedCount}, evicted ${evictedIds.length} existing.`,
-          details: { maxPerSource, keptNew: cappedItems.length, totalNew: kept.length, droppedNew: cappedCount, evictedExisting: evictedIds.length },
-        });
-      }
-      iterationTelemetry.losses.perSourceCapDroppedNew += cappedCount;
-      iterationTelemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
-      if (evictedIds.length > 0) {
-        const evictedSet = new Set(evictedIds);
-        state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
-      }
-      state.evidenceItems.push(...cappedItems);
-      const claimLocalCappedItems = cappedItems.filter(
-        (item) => item.relevantClaimIds?.includes(targetClaim.id),
-      );
-      iterationTelemetry.admittedEvidenceItems += claimLocalCappedItems.length;
-      for (const item of claimLocalCappedItems) {
-        incrementDirectionCounts(iterationTelemetry.directionCounts, item.claimDirection);
-      }
-
-      // Track contradiction/contrarian sources
-      if (iterationType === "contradiction" || iterationType === "contrarian") {
-        state.contradictionSourcesFound += fetchedSources.length;
-      }
-    } catch (err) {
-      console.warn(`[Stage2] Research iteration failed for query "${queryObj.query}":`, err);
-
-      // Surface LLM provider errors as warnings (once per error type)
-      const errMsg = err instanceof Error ? err.message : String(err);
-      // Check status code first (AI SDK and provider error objects expose .status or .statusCode),
-      // then fall back to message string matching for providers that surface the code in the message.
-      const statusCode = (err as any)?.status ?? (err as any)?.statusCode;
-      const isLlmError = (typeof statusCode === "number" && (statusCode === 429 || statusCode === 503 || statusCode === 529)) ||
-        errMsg.includes("rate limit") || errMsg.includes("rate_limit") ||
-        errMsg.includes("quota") || errMsg.includes("credit") ||
-        errMsg.includes("overloaded") ||
-        errMsg.includes("status 503") || errMsg.includes("503 Service");
-      if (isLlmError) {
-        const alreadyWarned = state.warnings.some((w) => w.type === "llm_provider_error");
-        if (!alreadyWarned) {
-          state.warnings.push({
-            type: "llm_provider_error",
-            severity: "error",
-            message: `LLM provider error during research: ${errMsg.slice(0, 200)}`,
-            details: { query: queryObj.query },
-          });
-        }
-      }
     }
   }
 
@@ -1124,8 +1293,6 @@ export async function runResearchIteration(
       `[Pipeline] D5 contrarian: claim ${targetClaim.id} -> ${generatedQueryCount} queries generated, ${newItems} new items`,
     );
   }
-
-  recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
 
   // Supplementary English lane: check if THIS iteration's primary-language yield is below scarcity thresholds
   const thisIterationQueries = state.searchQueries.slice(searchQueryCountBeforeIteration);

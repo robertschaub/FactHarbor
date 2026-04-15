@@ -23,6 +23,8 @@ export type WebSearchOptions = {
   domainBlacklist?: string[];
   /** Date restriction: "y" (past year), "m" (past month), "w" (past week), or undefined (no restriction) */
   dateRestrict?: "y" | "m" | "w";
+  /** Optional per-query cache freshness cap in days. Shorter than the global cache TTL for freshness-sensitive searches. */
+  cacheTtlDaysOverride?: number;
   timeoutMs?: number;
   config?: SearchConfig;
   /** BCP-47 language code detected from claim input (e.g., "de", "fr"). Threaded to language-aware supplementary providers like Wikipedia. */
@@ -237,7 +239,7 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
   const cached = await getCachedSearchResults(options, cacheConfig);
   if (cached) {
     console.log(`[Search] 🎯 Cache HIT - returning ${cached.results.length} cached results from ${cached.provider}`);
-    
+
     // Record cached search
     recordSearchQuery({
       query: options.query,
@@ -429,7 +431,7 @@ async function runExplicitProviderSearch(params: {
 
     // Valid response (even with 0 results) counts as success for circuit breaker health
     recordSuccess(provider.name, cbConfig);
-    
+
     await cacheSearchResults(options, results, provider.name, cacheConfig);
 
     return { results, providersUsed, ...(errors.length > 0 ? { errors } : {}) };

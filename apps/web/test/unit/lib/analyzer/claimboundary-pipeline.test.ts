@@ -3201,6 +3201,38 @@ describe("Stage 2: generateResearchQueries", () => {
     expect(result).toHaveLength(1);
     expect(result[0].rationale).toBe("fallback");
   });
+
+  it("warns when refinement queries omit retrieval metadata", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        queries: [
+          { query: "official source archive", rationale: "refinement" },
+        ],
+      });
+
+      const result = await generateResearchQueries(
+        claim,
+        "refinement",
+        [],
+        mockPipelineConfig,
+        "2026-02-17",
+      );
+
+      expect(result).toEqual([
+        { query: "official source archive", rationale: "refinement" },
+      ]);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Refinement query metadata missing"),
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
 });
 
 // classifyRelevance tests moved to research-extraction-stage.test.ts

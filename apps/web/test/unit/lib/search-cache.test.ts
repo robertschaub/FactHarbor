@@ -3,7 +3,7 @@
  *
  * Validates cache hit/miss, TTL expiration, and key generation.
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   getCachedSearchResults,
   cacheSearchResults,
@@ -175,6 +175,27 @@ describe("Search Cache", () => {
     // Retrieve with enabled=false should return null (override wins)
     const cached = await getCachedSearchResults(options, { enabled: false, ttlDays: 7 });
     expect(cached).toBeNull();
+  });
+
+  it("should ignore cached entries older than cacheTtlDaysOverride", async () => {
+    vi.useFakeTimers();
+    try {
+      const options: WebSearchOptions = { query: "freshness test", maxResults: 5 };
+      const results: WebSearchResult[] = [{ url: "https://fresh.com", title: "Fresh", snippet: null }];
+
+      vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+      await cacheSearchResults(options, results, "SerpAPI", TEST_CACHE_CONFIG);
+
+      vi.setSystemTime(new Date("2026-01-03T00:00:00Z"));
+      const cached = await getCachedSearchResults(
+        { ...options, cacheTtlDaysOverride: 1 },
+        TEST_CACHE_CONFIG,
+      );
+
+      expect(cached).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
 });

@@ -625,7 +625,10 @@ You are a search query generation engine. Your task is to create targeted web se
 
 ### Task
 
-Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries optimized for finding evidence that would verify or refute the claim.
+Given a claim and its `expectedEvidenceProfile`, generate 2-3 search queries optimized for finding evidence that would verify or refute the claim.
+Each query must also declare:
+- `retrievalLane`: whether the query is targeting a likely direct primary source, a navigational/source-native entry point, or broader secondary context
+- `freshnessWindow`: whether this query should prefer recent results (`w`, `m`, `y`) or has no special freshness requirement (`none`)
 
 ### Rules
 
@@ -638,6 +641,20 @@ Given a claim and its `expectedEvidenceProfile`, generate 2–3 search queries o
   - Generate two explicit query variants for the claim: supporting-evidence intent and refuting-evidence intent.
   - Return at least one `supporting` query and at least one `refuting` query.
   - Each query object must include `variantType` with value `supporting` or `refuting`.
+- `retrievalLane` values:
+  - `primary_direct`: aimed at the likely direct primary source or primary publication carrying the decisive evidence
+  - `navigational`: aimed at the source-native archive, overview, publisher navigation path, or source family that should lead to the decisive primary source
+  - `secondary_context`: aimed at broader contextual or secondary reporting
+  - For refinement: if `expectedEvidenceProfile.expectedSourceTypes` points to a decisive primary source itself (for example `government_report`, `legal_document`, `peer_reviewed_study`, `fact_check_report`, or `organization_report`), prefer `primary_direct`; if the best first step is the publisher's archive, overview, or index page, prefer `navigational`.
+- `freshnessWindow` values:
+  - `none`: no special freshness requirement
+  - `w`, `m`, `y`: prefer past week, month, or year respectively
+- When `iterationType` is `refinement`:
+  - Generate the smallest set of queries needed to discover a direct primary source or its source-native navigation path.
+  - Prefer `primary_direct` and `navigational` lanes over `secondary_context`.
+  - Use a non-`none` `freshnessWindow` when the claim appears to depend on current, newly published, or freshness-sensitive primary material.
+  - If the expected evidence is historical, archival, or already time-bounded to a past period, use `freshnessWindow: none` unless recent publication timing is itself part of what must be verified.
+  - Avoid broad media-summary phrasing unless no better direct-source path is plausible.
 - Avoid overly broad queries — target specific evidence types.
 - Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
 - Keep queries concise (3–8 words typical).
@@ -664,7 +681,7 @@ ${distinctEvents}
 ```
 ${iterationType}
 ```
-(One of: "main", "contradiction", "contrarian")
+(One of: "main", "contradiction", "contrarian", "refinement")
 
 **Evidence already found for this claim:**
 ```
@@ -705,7 +722,9 @@ Return a JSON object:
     {
       "query": "string — search query",
       "rationale": "string — what evidence type this targets",
-      "variantType": "supporting | refuting (required when queryStrategyMode is pro_con; omit in legacy mode)"
+      "variantType": "supporting | refuting (required when queryStrategyMode is pro_con; omit in legacy mode)",
+      "retrievalLane": "primary_direct | navigational | secondary_context",
+      "freshnessWindow": "none | w | m | y"
     }
   ]
 }
