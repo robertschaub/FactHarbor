@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-15 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -20,6 +20,19 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 - **EvidenceScope** = Per-evidence source metadata. NEVER call "context".
 - **EvidenceItem** = Extracted evidence. NEVER call "fact" in new code.
 - **No hardcoded keywords** in code/prompts. Generic for ANY topic.
+
+## Captain-Defined Analysis Inputs
+
+- Do not invent, paraphrase, translate, or substitute analysis inputs.
+- Use Captain-defined wording exactly. If a needed input is missing, ask Captain before proceeding.
+- Current approved inputs:
+	- `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
+	- `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
+	- `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+	- `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+	- `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
+	- `Using hydrogen for cars is more efficient than using electricity`
+	- `Plastic recycling is pointless`
 
 ## Commands
 

@@ -110,6 +110,39 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX", () => {
+    const vars: Record<string, string> = {
+      salienceBindingContextJson: JSON.stringify(
+        {
+          enabled: true,
+          mode: "binding",
+          success: false,
+          anchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+          ],
+        },
+        null,
+        2,
+      ),
+    };
+
+    it("locks in the success=false fallback semantics", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX");
+      expect(section, "Section ## CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX not found").not.toBeNull();
+      if (!section) return;
+
+      const { unresolved } = renderWithVars(section, vars);
+      expect(
+        unresolved,
+        `Unresolved variables in CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX: ${unresolved.join(", ")}`,
+      ).toEqual([]);
+
+      expect(section).toContain("binding authority is unavailable");
+      expect(section).toContain("Ignore the provided `anchors` list and follow the base extraction prompt unchanged");
+      expect(section).toContain("provided `anchors` array is empty");
+    });
+  });
+
   describe("CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX", () => {
     const vars: Record<string, string> = {
       salienceBindingContextJson: JSON.stringify(

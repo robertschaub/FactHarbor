@@ -103,6 +103,19 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
 - "Was X fair?" must yield same analysis as "X was fair" (tolerance ≤4%)
 - Input phrasing must NOT affect analysis depth or structure
 
+### Captain-Defined Analysis Inputs
+- **Do not invent analysis inputs.** For planning, validation, benchmark runs, live analysis, documentation, or review packets, agents MUST use only analysis inputs explicitly defined by Captain.
+- **Do not paraphrase, translate, normalize, or synthesize substitute inputs.** Use the Captain-defined wording exactly as provided unless Captain explicitly replaces or extends the list.
+- **If the needed analysis input is not on the approved list, stop and ask Captain** to define or approve it before proceeding.
+- **Current Captain-defined analysis inputs:**
+    - `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
+    - `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
+    - `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+    - `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+    - `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
+    - `Using hydrogen for cars is more efficient than using electricity`
+    - `Plastic recycling is pointless`
+
 ### Pipeline Integrity
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
@@ -271,6 +284,26 @@ All agents MUST follow the Exchange Protocol on non-trivial task completion. Ful
 2. **Role activation** ("As \<Role\>"): look up role in alias table → read `Docs/AGENTS/Roles/<RoleName>.md` → scan `Role_Learnings.md` → acknowledge → stay in role.
 3. **On completion**: write output per tier — Trivial = chat only, Standard = append to `Docs/AGENTS/Agent_Outputs.md`, Significant = new file in `Docs/AGENTS/Handoffs/`. Role handoffs require at least Standard + `Warnings` + `Learnings`.
 4. **Append, don't overwrite** `Agent_Outputs.md`. `Docs/WIP/` is NEVER for completion outputs.
+
+---
+
+## Named Workflows
+
+Documented workflows for recurring tasks. **Claude Code** users invoke them as slash commands. **All other tools** (Gemini, GPT, Copilot, Cline, etc.) read the file directly and follow its instructions — the content is plain markdown.
+
+| Slash command | Workflow file | When to use |
+|---|---|---|
+| `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |
+| `/audit` | `.claude/skills/audit/SKILL.md` | Full prompt + code quality audit; pre-release or after major changes |
+| `/validate` | `.claude/skills/validate/SKILL.md` | Post-change validation on benchmark families (runs real jobs — use deliberately) |
+| `/handoff` | `.claude/skills/handoff/SKILL.md` | Generate a handoff document at end of any significant task |
+| `/debug` | `.claude/skills/debug/SKILL.md` | Analyze `debug-analyzer.log` + test results; standard post-change check |
+| `/explain-code` | `.claude/skills/explain-code/SKILL.md` | Explain how code works — uses analogies, mermaid diagrams, and step-by-step walkthroughs |
+| `/prompt-diagnosis` | `.claude/skills/prompt-diagnosis/SKILL.md` | RAG-augmented diagnosis of prompting deficiencies; correlates failures with runtime prompt hashes plus execution commit context |
+| `/docs-update` | `.claude/skills/docs-update/SKILL.md` | Update-first cleanup for living docs across `Docs/`, with archive handling only for clearly obsolete material |
+| `/wip-update` | `.claude/skills/wip-update/SKILL.md` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP material |
+
+For non-Claude tools: read the relevant `.claude/skills/<name>/SKILL.md` and execute the procedure described. Ignore the YAML frontmatter.
 
 ---
 

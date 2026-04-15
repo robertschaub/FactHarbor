@@ -1,6 +1,6 @@
 ---
 name: factharbor-agent
-description: Specialized agent for handling role activation, task completion logging, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, or needing to follow FactHarbor's Senior Engineer engineering standards.
+description: Specialized agent for handling role activation, task completion logging, shared workflow-skill discovery, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, or needing to follow FactHarbor's Senior Engineer engineering standards.
 ---
 
 # FactHarbor Agent
@@ -22,6 +22,28 @@ This skill ensures that Gemini CLI follows the FactHarbor development lifecycle 
 - **Engineering Standard**: All analysis-affecting logic MUST use LLM intelligence (no regex/heuristics).
 - **Architecture Reference**: Follow patterns in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
 - **Multilingual Support**: Ensure analysis handles non-English inputs correctly.
+
+### Shared Workflow Skills
+
+Gemini can use the shared FactHarbor workflow library stored under `.claude/skills/`. These
+files are the canonical workflow definitions shared across Claude, Codex/GPT, and Gemini.
+
+Available workflows:
+- `pipeline` → `.claude/skills/pipeline/SKILL.md`
+- `audit` → `.claude/skills/audit/SKILL.md`
+- `validate` → `.claude/skills/validate/SKILL.md`
+- `handoff` → `.claude/skills/handoff/SKILL.md`
+- `debug` → `.claude/skills/debug/SKILL.md`
+- `explain-code` → `.claude/skills/explain-code/SKILL.md`
+- `prompt-diagnosis` → `.claude/skills/prompt-diagnosis/SKILL.md`
+- `docs-update` → `.claude/skills/docs-update/SKILL.md`
+- `wip-update` → `.claude/skills/wip-update/SKILL.md`
+
+Usage:
+1. Read the corresponding `.claude/skills/<name>/SKILL.md`.
+2. Ignore the YAML frontmatter at the top.
+3. Follow the numbered workflow steps as plain markdown instructions.
+4. Prefer PowerShell-compatible commands in this Windows repository.
 
 ### 3. Completing a Task
 - **Trivial (<3 mins)**: No logging required.

@@ -7,6 +7,46 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Asylum 235000 Evidence Gap Investigation -- [Standard] [open-items: yes]
+**For next agent:** The recent `235 000` asylum-family runs are missing the SEM 2025 commentary PDF upstream of verdicting. The target job `7333cb1f1ee6472b9c782e94e4aa7b0e` and the five newest comparators never include `stat-jahr-2025-kommentar...` in `resultJson.sources`, even though the SEM 2025 archive page explicitly links it. Current diagnosis: broad query generation + 8-result search budget + top-5 fetch cap + occasional 7-day cached search results steer the pipeline toward NZZ, press releases, generic SEM landing pages, and older PDFs instead of the direct annual-total source.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Asylum_235000_Evidence_Gap_Investigation.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Validator-Side Success-False Fallback Test -- [Standard] [open-items: no]
+**For next agent:** The last missing Phase 7b `success=false` verification seam is now covered. `claimboundary-pipeline.test.ts` includes a validator-side behavioral test proving that binding mode with `success=false` still falls back to base validator behavior while passing the failed-binding context into `CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX`.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Validator_Side_Success_False_Fallback_Test.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | LLM Prompt System Explanation -- [Standard] [open-items: yes]
+**For next agent:** The prompt-system walkthrough now exists as `Docs/WIP/2026-04-15_LLM_Prompt_System_Explanation.md`. It includes the high-level DB-first/UCM flow, ClaimBoundary runtime section loading, provenance path, and the current SR/inverse-check exceptions.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_LLM_Prompt_System_Explanation.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Phase 7b Success-False Coverage And Two Canaries -- [Standard] [open-items: yes]
+**For next agent:** The minimal `success=false` verification slice is now executed: a Pass 2 prompt-contract assertion and a Pass 2 runtime-plumbing test were added, focused Stage 1 tests passed (`390 passed | 1 skipped`), prompt reseeding/build passed, and the two Captain-approved Bundesrat canaries both succeeded on the current commit.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Success_False_Coverage_And_Two_Canaries.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Prompt System Architecture Issues Report -- [Standard] [open-items: yes]
+**For next agent:** The prompt-system findings are now written up in `Docs/WIP/2026-04-15_Prompt_System_Architecture_Issues_Report.md` and linked from backlog item `PROMPT-ARCH-1`. Core issue: ClaimBoundary is UCM-backed and coherent, but SR core evaluation, the inverse-check micro-prompt, and the stale `text-analysis` profile/docs still do not follow one truthful prompt-governance model.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Prompt_System_Architecture_Issues_Report.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Explain Code LLM Prompts -- [Standard] [open-items: yes]
+**For next agent:** Prompt architecture explanation is now grounded in the live runtime path. ClaimBoundary and the input-policy gate are DB-first/UCM-backed via `config-loader` and `prompt-loader`, but source reliability still uses `sr-eval-prompts.ts` for core evaluation and `paired-job-audit.ts` still reads its inverse-check prompt directly from disk.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Explain_Code_LLM_Prompts.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Captain-Defined Analysis Inputs Rule -- [Standard] [open-items: yes]
+**For next agent:** `AGENTS.md` now explicitly forbids inventing or paraphrasing analysis inputs and lists the current Captain-approved inputs. `.github/copilot-instructions.md` was synced to carry the same rule for Copilot workspace guidance.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Captain_Defined_Analysis_Inputs_Rule.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Phase 7b Overlap Check And Plan Rebase -- [Standard] [open-items: yes]
+**For next agent:** The prompt-only slice described in the April 15 charter is already landed in the live prompt file. Current local verification passed for `claim-extraction-prompt-contract.test.ts`, `claim-contract-validation.test.ts`, and `claimboundary-pipeline.test.ts` (3 files, 389 tests passed, 1 skipped). The charter was rebased: do not reopen the prompt edits; remaining work is optional `success=false` coverage tightening plus prompt reseed and minimum canary spot-checks if fresh live validation is desired.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Overlap_Check_And_Plan_Rebase.md
+
+---
 ### 2026-04-15 | Lead Architect + Senior Developer + Code Reviewer | GitHub Copilot (GPT-5.4) | Phase 7b Charter Debate Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Review-board pass converged on approve-with-changes. The Phase 7b charter remains valid, but it was tightened to reflect current repo state and reviewer concerns: the slice is now explicitly prompt-and-focused-test, `success=false` handling is framed as tighten-and-verify rather than missing-from-zero, and runtime appendix-loading changes remain a separate debated follow-up unless focused tests prove them necessary.
 → Docs/AGENTS/Handoffs/2026-04-15_Review_Board_Phase7b_Charter_Debate_Consolidation.md
@@ -1010,3 +1050,28 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-15 | Unassigned | Codex (GPT-5) | Status And Backlog Refresh -- [Standard] [open-items: yes]
 **For next agent:** Rebased `Current_Status.md` and `Backlog.md` from the stale April 7/9 baseline to the actual April 15 repo state. Phase 7 is now the explicit active workstream; April 14–15 shipped work is captured; and the next canonical backlog items are the next bounded Shape B slice, Phase 7 observability/prompt rollout, and dedicated salience routing.
 → Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Status_And_Backlog_Refresh.md
+
+---
+### 2026-04-15 | Lead Architect + LLM Expert | Codex (GPT-5) | Prompt Diagnosis Skill Review -- [Standard] [open-items: yes]
+**For next agent:** Review found the skill is useful but currently overclaims prompt exactness, is not runnable as written in PowerShell, uses a wrong confidence threshold for current report JSONs, and should anchor on `promptContentHash` / UCM blobs rather than only `executedWebGitCommitHash`.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Review.md
+
+---
+### 2026-04-15 | Lead Architect + LLM Expert | Codex (GPT-5) | Prompt Diagnosis Skill Rewrite -- [Standard] [open-items: yes]
+**For next agent:** The skill and companion docs are now rewritten around runtime prompt-hash provenance, PowerShell-compatible execution, current `test-output/` artifact patterns, and stricter register-update rules. Main file: `.claude/skills/prompt-diagnosis/SKILL.md`.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Rewrite.md
+
+---
+### 2026-04-15 | Lead Architect + LLM Expert | Codex (GPT-5) | Prompt Diagnosis 7333cb1f -- [Standard] [open-items: yes]
+**For next agent:** Job `7333cb1f1ee6472b9c782e94e4aa7b0e` is not a prompt-drift or prompt-schema-failure case. Exact runtime blob `f17e326e...` matches the active `claimboundary` prompt, while the stronger explanation is retrieval caps/cache (`maxSourcesPerIteration=8`, `relevanceTopNFetch=5`, `7d` search cache). One secondary `P2` query-generation gap remains in `apps/web/prompts/claimboundary.prompt.md` for current aggregate-total claims, but I intentionally did not add it to the prompt issue register yet.
+→ Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_7333cb1f.md
+
+---
+### 2026-04-15 | Unassigned | Codex (GPT-5) | Skill Cross-Tool Availability -- [Standard] [open-items: no]
+**For next agent:** Shared workflow discovery is now aligned across Codex/GPT and Gemini. `AGENTS.md` and `GEMINI.md` list all nine `.claude/skills/*` workflows, the reviewed `docs-update` and `wip-update` skills are PowerShell/cross-tool friendly, and `.gemini/skills/factharbor-agent/SKILL.md` plus `factharbor-agent.skill` now point Gemini at the shared workflow library.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Skill_Cross_Tool_Availability.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Primary-Source Discovery Refinement Design -- [Standard] [open-items: yes]
+**For next agent:** Implement a bounded Stage-2 refinement lane, not a parallel retrieval subsystem. Start with `apps/web/src/lib/analyzer/types.ts`, `claim-extraction-stage.ts`, `research-query-stage.ts`, `research-orchestrator.ts`, `research-extraction-stage.ts`, `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/config-schemas.ts`, and `apps/web/prompts/claimboundary.prompt.md`. The key idea is LLM-derived retrieval intent + query lanes + coverage assessment + fresh-query cache policy, all generic and UCM-backed.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Primary_Source_Discovery_Refinement_Design.md

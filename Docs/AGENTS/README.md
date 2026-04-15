@@ -59,8 +59,8 @@ All tool configs reference `/AGENTS.md` as the single source of truth. Most are 
 
 | Tool | Config Location | Notes |
 |------|----------------|-------|
-| Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md` |
-| Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly — no separate config needed |
+| Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md`; mirrors the shared Named Workflows table |
+| Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly; use its Named Workflows table for shared skills |
 | Claude Code | `/CLAUDE.md` | Auto-loaded into system prompt alongside `AGENTS.md` |
 | GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code |
 | Cursor | `/.cursor/rules/*.mdc` | Glob-scoped rules, auto-attached per file type |

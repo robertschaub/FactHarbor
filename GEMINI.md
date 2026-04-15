@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-15 -->
 
 # GEMINI.md
 
@@ -32,3 +32,18 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
+
+## Named Workflows
+Documented procedures for recurring tasks. Read the file and follow its instructions (ignore YAML frontmatter).
+
+| Task | Workflow file |
+|---|---|
+| Deep pipeline analysis | `.claude/skills/pipeline/SKILL.md` |
+| Full quality audit | `.claude/skills/audit/SKILL.md` |
+| Post-change validation | `.claude/skills/validate/SKILL.md` |
+| Generate handoff document | `.claude/skills/handoff/SKILL.md` |
+| Debug log + test analysis | `.claude/skills/debug/SKILL.md` |
+| Explain code | `.claude/skills/explain-code/SKILL.md` |
+| Prompt deficiency diagnosis | `.claude/skills/prompt-diagnosis/SKILL.md` |
+| Docs cleanup and update | `.claude/skills/docs-update/SKILL.md` |
+| WIP consolidation and backlog sync | `.claude/skills/wip-update/SKILL.md` |

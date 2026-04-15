@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-04-15
-**Status**: Consolidation #11 complete. 4 additional historical/supporting files archived. 79 active markdown docs remain.
+**Status**: Consolidation #11 complete. 4 additional historical/supporting files archived. 81 active markdown docs remain.
 
 ---
 
@@ -81,6 +81,8 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ### Infrastructure / optimization
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md) — residual WS-5/6/7
+- [2026-04-15_LLM_Prompt_System_Explanation.md](2026-04-15_LLM_Prompt_System_Explanation.md) — diagrams and walkthrough of the live prompt architecture, provenance path, and current exceptions
+- [2026-04-15_Prompt_System_Architecture_Issues_Report.md](2026-04-15_Prompt_System_Architecture_Issues_Report.md) — prompt-governance/runtime inconsistency report (SR prompt path, inverse-check micro-prompt, stale text-analysis profile/docs)
 - [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — residual P1-A, P2-*, P3-*
 - [Infrastructure_and_Config_fwd.md](Infrastructure_and_Config_fwd.md)
 - [LLM_Allocation_and_Cost_fwd.md](LLM_Allocation_and_Cost_fwd.md)

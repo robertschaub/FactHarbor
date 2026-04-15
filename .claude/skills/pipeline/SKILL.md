@@ -1,0 +1,31 @@
+---
+name: pipeline
+description: Deep analysis of the FactHarbor CB pipeline. Use for debugging, architecture decisions, evidence quality issues, or reviewing changes that span multiple pipeline stages.
+allowed-tools: Read Glob Grep Bash
+---
+
+ultrathink
+
+Analyze the FactHarbor ClaimAssessmentBoundary pipeline for: $ARGUMENTS
+
+**Before forming any conclusion**, read every file relevant to the concern. Key files by area:
+
+| Area | Files |
+|------|-------|
+| Orchestration / data flow | `claimboundary-pipeline.ts`, `research-orchestrator.ts` |
+| Claim extraction | `claim-extraction-stage.ts` |
+| Query generation | `research-query-stage.ts` |
+| Source acquisition | `research-acquisition-stage.ts` |
+| Evidence extraction | `research-extraction-stage.ts` |
+| Evidence filtering | `evidence-filter.ts` |
+| Boundary clustering | `boundary-clustering-stage.ts` |
+| Verdict generation | `verdict-generation-stage.ts` |
+| Aggregation | `aggregation-stage.ts` |
+| Types / contracts | `types.ts`, `pipeline-utils.ts` |
+
+All files are under `apps/web/src/lib/analyzer/`.
+
+Apply AGENTS.md rules throughout:
+- No deterministic text-analysis logic — LLM intelligence for any meaning decision
+- No hardcoded keywords or domain-specific logic
+- Read fully before editing — do not propose changes based on partial reads
