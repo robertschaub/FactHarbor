@@ -139,6 +139,7 @@ const VERDICT_NARRATIVE_VARS: Record<string, string> = {
   evidenceSummary: '{"totalItems":80,"sourceCount":34,"boundaryCount":6,"directionBalance":{"supports":35,"contradicts":12,"neutral":33},"perClaim":[{"claimId":"AC_01","evidenceCount":43}]}',
   claimVerdicts: '[{"claimId":"AC_01","truthPercentage":72,"verdict":"MOSTLY-TRUE","confidence":75,"reasoning":"Test reasoning...","boundaryFindings":[{"boundaryId":"CB_01","boundaryName":"Test","evidenceDirection":"supports","evidenceCount":20}]}]',
   claimBoundaries: '[{"id":"CB_01","name":"Test boundary","description":"Test description","evidenceCount":20}]',
+  methodologyHighlights: '[{"label":"Named methodology A","count":12,"origins":["boundary_name","evidence_methodology"]}]',
   coverageMatrix: '{"claims":["AC_01"],"boundaries":["CB_01"],"counts":[[20]]}',
   evidenceCount: "80",
 };

@@ -5675,6 +5675,66 @@ describe("Stage 5: generateVerdictNarrative", () => {
     expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "VERDICT_NARRATIVE", expect.any(Object));
   });
 
+  it("should pass dominant methodology highlights into the narrative prompt variables", async () => {
+    const narrativeOutput = {
+      headline: "Analysis shows moderate support",
+      evidenceBaseSummary: "5 items, 3 sources",
+      keyFinding: "Evidence generally supports the claim.",
+      limitations: "Limited temporal scope.",
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: JSON.stringify(narrativeOutput) } as any);
+    mockExtractOutput.mockReturnValue(narrativeOutput);
+
+    const boundaries = [
+      createClaimAssessmentBoundary({
+        name: "Well-to-Wheel / Full Supply Chain Energy Efficiency Analysis",
+        methodology: "Comparative full-supply-chain energy accounting",
+        evidenceCount: 6,
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        evidenceScope: {
+          name: "Scope A",
+          methodology: "Well-to-Tank energy accounting",
+          temporal: "2020-2025",
+          boundaries: "Hydrogen production and transport stages",
+        },
+      }),
+      createEvidenceItem({
+        id: "EV_02",
+        evidenceScope: {
+          name: "Scope B",
+          methodology: "Well-to-Tank energy accounting",
+          temporal: "2020-2025",
+          boundaries: "Hydrogen production and transport stages",
+        },
+      }),
+    ];
+    const matrix = buildCoverageMatrix(
+      [createAtomicClaim()],
+      boundaries,
+      evidence,
+    );
+
+    await generateVerdictNarrative(
+      8,
+      "FALSE",
+      88,
+      [createCBClaimVerdict({ verdict: "FALSE", truthPercentage: 8, confidence: 88 })],
+      boundaries,
+      matrix,
+      evidence,
+      {} as any,
+    );
+
+    const loadVars = mockLoadSection.mock.calls.at(-1)?.[2] as Record<string, string> | undefined;
+    expect(loadVars?.methodologyHighlights).toContain("Well-to-Wheel / Full Supply Chain Energy Efficiency Analysis");
+    expect(loadVars?.methodologyHighlights).toContain("Well-to-Tank energy accounting");
+  });
+
   it("should include boundaryDisagreements when present", async () => {
     const narrativeOutput = {
       headline: "Mixed findings",

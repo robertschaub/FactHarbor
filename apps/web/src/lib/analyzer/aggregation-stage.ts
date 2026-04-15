@@ -46,6 +46,62 @@ import { loadAndRenderSection } from "./prompt-loader";
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
 import { recordLLMCall } from "./metrics-integration";
 
+type NarrativeMethodologyHighlight = {
+  label: string;
+  count: number;
+  origins: string[];
+};
+
+function normalizeNarrativeHighlightLabel(value?: string | null): string | null {
+  if (typeof value !== "string") return null;
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length < 8) return null;
+  return normalized;
+}
+
+function buildNarrativeMethodologyHighlights(
+  boundaries: ClaimAssessmentBoundary[],
+  evidence: EvidenceItem[],
+): NarrativeMethodologyHighlight[] {
+  const highlights = new Map<string, { label: string; count: number; origins: Set<string> }>();
+
+  const addHighlight = (label: string | null, origin: string, weight = 1): void => {
+    if (!label) return;
+    const key = label.toLowerCase();
+    const existing = highlights.get(key);
+    if (existing) {
+      existing.count += weight;
+      existing.origins.add(origin);
+      return;
+    }
+    highlights.set(key, {
+      label,
+      count: weight,
+      origins: new Set([origin]),
+    });
+  };
+
+  for (const boundary of boundaries) {
+    const weight = Math.max(1, boundary.evidenceCount || 1);
+    addHighlight(normalizeNarrativeHighlightLabel(boundary.name), "boundary_name", weight);
+    addHighlight(normalizeNarrativeHighlightLabel(boundary.methodology), "boundary_methodology", weight);
+  }
+
+  for (const item of evidence) {
+    addHighlight(normalizeNarrativeHighlightLabel(item.evidenceScope?.methodology), "evidence_methodology");
+    addHighlight(normalizeNarrativeHighlightLabel(item.evidenceScope?.boundaries), "evidence_boundaries");
+  }
+
+  return Array.from(highlights.values())
+    .map((entry) => ({
+      label: entry.label,
+      count: entry.count,
+      origins: Array.from(entry.origins).sort(),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.length - b.label.length)
+    .slice(0, 8);
+}
+
 /**
  * Stage 5: Produce the overall assessment by weighted aggregation.
  */
@@ -771,6 +827,7 @@ export async function generateVerdictNarrative(
   reportLanguage?: string,
 ): Promise<VerdictNarrative> {
   const currentDate = new Date().toISOString().split("T")[0];
+  const methodologyHighlights = buildNarrativeMethodologyHighlights(boundaries, evidence);
 
   // Build the two previously-stale template variables that VERDICT_NARRATIVE expects.
   // These were never wired since the original module extraction (6e347f09).
@@ -839,6 +896,7 @@ export async function generateVerdictNarrative(
       null,
       2,
     ),
+    methodologyHighlights: JSON.stringify(methodologyHighlights, null, 2),
     coverageMatrix: JSON.stringify({
       claims: coverageMatrix.claims,
       boundaries: coverageMatrix.boundaries,

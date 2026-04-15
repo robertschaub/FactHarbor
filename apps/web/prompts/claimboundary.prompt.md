@@ -1584,6 +1584,7 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 - `headline`: One sentence capturing the overall finding.
 - `evidenceBaseSummary`: Quantitative summary — e.g., "14 evidence items from 9 sources across 3 analytical perspectives."
 - `keyFinding`: The main synthesis in 2–3 sentences. What does the evidence show? This is the "so what." If the underlying facts are true but the overall framing or conclusion of the input is misleading, explicitly state this mismatch here.
+- If `methodologyHighlights` contains dominant named frameworks, system-boundary labels, or measurement conventions that materially explain the result, mention the most important ones explicitly in `keyFinding` or `limitations` instead of referring only to "the evidence" generically.
 - `boundaryDisagreements`: Only include when boundaries produce **materially different directional conclusions** for the same claim — i.e., one boundary's evidence supports the claim while another's contradicts it, and both have enough evidence to matter. Omit this field entirely if there is only one boundary, if boundaries agree in direction, or if differences are minor (e.g., different evidence counts but same direction). Do NOT include:
   - Methodology asymmetries (different research methods reaching similar conclusions)
   - Thin or singleton boundaries with few evidence items — note these in `limitations` instead
@@ -1607,6 +1608,11 @@ ${aggregation}
 **ClaimBoundaries:**
 ```
 ${claimBoundaries}
+```
+
+**Methodology Highlights:**
+```
+${methodologyHighlights}
 ```
 
 **Evidence Summary:**
