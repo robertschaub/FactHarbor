@@ -1,7 +1,10 @@
 {
   "env": {
-    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1"
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "high",
+    "MAX_THINKING_TOKENS": "63999"
   },
+  "showThinkingSummaries": true,
   "permissions": {
     "allow": [
       "Bash(git log:*)"

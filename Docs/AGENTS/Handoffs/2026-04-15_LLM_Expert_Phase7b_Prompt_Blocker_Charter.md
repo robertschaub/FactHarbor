@@ -1,0 +1,8 @@
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Phase 7b Prompt-Blocker Charter
+**Task:** Convert the validated prompt-review findings into a concrete execution charter for the first bounded Phase 7b slice.
+**Files touched:** Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md; Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Prompt_Blocker_Charter.md; Docs/AGENTS/Agent_Outputs.md
+**Key decisions:** Chose the safer path requested by the user: keep the April 15 review note as the review artifact and create a separate WIP execution charter. Scoped the first Phase 7b slice to three prompt-only blockers only: validator thesis-direct precedence, binding-mode `success=false` semantics, and binding-validator anchor-source exclusivity. Explicitly deferred salience prompt changes, main Pass 2 prompt changes, and inline fact-check framing externalization.
+**Open items:** Implement the charter in `apps/web/prompts/claimboundary.prompt.md`, add focused Stage 1 prompt-contract tests, reseed prompts, and run safe verification. Decide after that whether the next slice should add claim-to-anchor mapping or pause for a narrow post-change verification packet.
+**Warnings:** The charter deliberately does not resolve all validated prompt issues. It is a blocker-removal slice, not full Shape B completion. Current-build evidence is still supportive rather than reproduced statistical closure.
+**For next agent:** Start from Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md. Touch only the three in-scope prompt sections unless a focused test proves a smaller adjacent change is unavoidable. Keep the salience and main Pass 2 freeze intact.
+**Learnings:** no

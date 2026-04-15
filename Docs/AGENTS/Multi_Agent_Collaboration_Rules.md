@@ -612,7 +612,7 @@ API endpoint, configuration parameter, or pipeline stage:
 
 > **Note:** These are organized by capability tier, not specific model versions, to avoid staleness as models evolve.
 
-### 6.1 High-Capability Models (e.g., Claude Opus, GPT-o3, Gemini 2.0 Pro)
+### 6.1 High-Capability Models (e.g., Claude Opus 4.6, GPT-o3, Gemini 2.0 Pro)
 
 **Strengths:** Deep reasoning, complex analysis, nuanced understanding, large context
 **Best For:** Architecture decisions, complex investigations, quality gates, trade-off analysis
@@ -620,8 +620,9 @@ API endpoint, configuration parameter, or pipeline stage:
 - Reserve for high-stakes decisions and ambiguous problem spaces
 - Excellent for multi-step planning and code review
 - Good at finding edge cases in implementations
+- Claude Code: only tier that supports `CLAUDE_CODE_EFFORT_LEVEL=max`
 
-### 6.2 Mid-Tier Models (e.g., Claude Sonnet, GPT-4.1, Gemini 2.0 Flash)
+### 6.2 Mid-Tier Models (e.g., Claude Sonnet 4.6, GPT-4.1, Gemini 2.0 Flash)
 
 **Strengths:** Balanced cost/capability, good reasoning, fast iteration
 **Best For:** Standard reviews, documentation, routine implementation, iterative review cycles
@@ -629,8 +630,9 @@ API endpoint, configuration parameter, or pipeline stage:
 - Well-suited for following structured protocols
 - Efficient for documentation tasks
 - Good default for most development work
+- Claude Code default for this project (`CLAUDE_CODE_EFFORT_LEVEL=high` set in settings)
 
-### 6.3 Lightweight Models (e.g., Claude Haiku, GPT-4.1 mini, Kimi K2, Gemini 1.5 Flash)
+### 6.3 Lightweight Models (e.g., Claude Haiku 4.5, GPT-4.1 mini, Kimi K2, Gemini 1.5 Flash)
 
 **Strengths:** Fast, cost-effective, good for bulk operations
 **Best For:** Fast iterations, autonomous workflows (Cline), bulk operations, extract/understand tasks

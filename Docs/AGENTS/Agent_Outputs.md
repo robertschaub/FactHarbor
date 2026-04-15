@@ -7,6 +7,30 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-15 | Code Reviewer | Codex (GPT-5) | Skeptical Review Of Proposed Prompt Fixes -- [Standard] [open-items: yes]
+**For next agent:** The April 14/15 prompt-fix proposals are mostly governance-safe, but `ISSUE-14` as written assumes nonexistent output/runtime state; `ISSUE-06`, `ISSUE-07`, and `ISSUE-18` are not prompt-only; and any Opus/model-tier escalation would hit shared task routes unless a new salience-specific task key is introduced.
+→ Docs/AGENTS/Handoffs/2026-04-15_Code_Reviewer_Prompt_Fixes_Skeptical_Review.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Phase 7b Prompt-Blocker Charter -- [Standard] [open-items: yes]
+**For next agent:** A new WIP execution charter now exists for the first bounded Phase 7b slice. It keeps the review note intact and scopes implementation to the three prompt-only blockers already validated on current code and current-build jobs: thesis-direct precedence in the validator, explicit `success=false` handling in both binding appendices, and explicit single-source anchor audit in the binding validator.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Prompt_Blocker_Charter.md
+
+### 2026-04-15 | LLM Expert | Codex (GPT-5) | Phase 7 Prompt-Quality Issue Investigation -- [Standard] [open-items: yes]
+**For next agent:** Static review confirms four live areas: rule-11 thesis-direct/verbatim mismatch, missing `success=false` semantics in both binding appendices, binding-validator override ambiguity, and real-but-deferred salience-definition drift. Salience model tiering is not an accidental miswire; it is intentionally on `getModelForTask("understand")` and should only change via an explicit config/task decision.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7_Prompt_Quality_Issue_Investigation.md
+
+---
+### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Prompt Audit Validation Review -- [Standard] [open-items: yes]
+**For next agent:** The 2026-04-14 prompt audit was revalidated against the live prompt/runtime. ISSUE-01, ISSUE-14, ISSUE-15, and ISSUE-06 are confirmed exactly where reported. ISSUE-02 is also real but should stay deferred under the current E2 freeze because it touches CLAIM_SALIENCE_COMMITMENT. Highest-value next move is prompt-only work in apps/web/prompts/claimboundary.prompt.md plus focused tests for binding mode with salience success false.
+→ Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Prompt_Audit_Validation_Review.md
+
+---
+### 2026-04-14 | LLM Expert | Claude Sonnet 4.6 (Cowork) | Full Codebase Prompt Audit — 18 Issues, 4 Phase 7b Blockers Identified -- [Significant] [open-items: yes]
+**For next agent:** All 5 prompt files and all inline prompt content were reviewed. 18 issues found across 7 categories. 4 are Phase 7b / Shape B pre-launch blockers: (1) CONTRACT_VALIDATION literal-substring rule must be tightened to only accept thesis-direct claims as anchor carriers (ISSUE-01); (2) PASS2_BINDING_APPENDIX needs salience-failure-mode handling defined (ISSUE-14); (3) VALIDATION_BINDING_APPENDIX needs an override notice so the base anchor-discovery rules don't compete with the precommitted anchor list (ISSUE-15); (4) SALIENCE_COMMITMENT anchor definition should be aligned with the validator's truth-condition test (ISSUE-02). High-value non-blocker: inline FACT_CHECK_CONTEXT and retry guidance text should be moved into the prompt system (ISSUE-06). IMPORTANT: do NOT touch CLAIM_SALIENCE_COMMITMENT or CLAIM_EXTRACTION_PASS2 before the next E2 measurement batch closes.
+→ Docs/AGENTS/Handoffs/2026-04-14_LLM_Expert_Prompt_Review_and_Improvement_Proposals.md
+
+---
 ### 2026-04-14 | Lead Developer + Lead Architect | Codex (GPT-5) | Phase 7 Final Reviewer Constraints Folded Into Plan -- [Standard] [open-items: yes]
 **For next agent:** A final external reviewer agreed with the Shape B direction but required stricter slice-1 constraints. `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` now reflects that Shape B is a go only with explicit mode separation, full salience persistence, durable recovery attribution, validator precedence cleanup, and typed anchor mapping in the first implementation slice.
 → Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md
@@ -863,6 +887,12 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 **For next agent:** `ba150b4d` consolidated the Phase 7 docs; this follow-up slice hardens the runtime surface for Shape B. `salienceCommitment` now has explicit `audit` vs `binding` mode in config/defaults, the full salience status is persisted on success and disabled paths, and final contract-summary refresh preserves `stageAttribution`. Next step is to wire binding-mode anchors into Pass 2/validator behavior behind the new mode flag without removing the existing V5 scaffold.
 Warnings: Current E2 remains audit-only at runtime; binding mode is config-visible and persisted, but not yet consumed by Pass 2. Do not claim Shape B is active until the next slice lands. `npm -w apps/web run build` reseeded prompt/config storage as part of postbuild; that is expected.
 Learnings: The persisted interface being optional masked a local runtime type hole; using `NonNullable<CBClaimUnderstanding["salienceCommitment"]>` in Stage 1 keeps compile-time expectations honest. Stage attribution after final revalidation must be preserved explicitly because the refreshed summary replaces the prior object.
+
+---
+
+### 2026-04-15 | Unassigned | Codex (GPT-5) | CLAIM_CONTRACT_REPAIR P0 Investigation -- [Standard] [open-items: yes]
+**For next agent:** Current repo state does not match the old P0 report anymore. `CLAIM_CONTRACT_REPAIR` exists with a loader-compatible header, `${...}` variables, and a narrow `atomicClaims` repair schema. There is still no section-level fallback prompt if repair loading/rendering fails, but an unresolved contract violation now propagates through `contractValidationSummary` and can terminate early as `report_damaged` instead of silently shipping an invalid analysis. Check `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/prompt-loader.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, and `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
+→ Docs/AGENTS/Handoffs/2026-04-15_Unassigned_CLAIM_CONTRACT_REPAIR_P0_investigation.md
 
 ---
 

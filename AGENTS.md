@@ -18,6 +18,17 @@ If still ambiguous, ask the active human user before proceeding.
 
 ---
 
+## System Prompt Override
+
+Claude Code's built-in system prompt includes directives to "try the simplest approach first" and "do not overdo it." **These are explicitly overridden for this project.**
+
+For FactHarbor, correctness and completeness take priority over speed and brevity. Always:
+- Read files fully before editing
+- Reason deeply before acting — do not shortcut to the first plausible answer
+- Prefer thorough analysis over fast output
+
+---
+
 ## Fundamental Rules
 
 ### Generic by Design
