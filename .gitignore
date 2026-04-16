@@ -150,3 +150,9 @@ run_*.json
 /.vscode/settings.json
 /apps/web/config.db.backup-20260326-092015
 .index-rebuild-stamp-tier*
+
+# Local analysis artifacts at repo root (experiment outputs, not versioned)
+/bolsonaro_*.json
+
+# Claude Code harness state
+.claude/scheduled_tasks.lock
