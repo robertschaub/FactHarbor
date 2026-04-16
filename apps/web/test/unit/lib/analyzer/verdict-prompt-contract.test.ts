@@ -264,6 +264,13 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("therefore improper");
       expect(section).toContain("misleadingness");
     });
+
+    it("advocate treats foreign government assessment reports as positional outputs requiring corroboration", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("Foreign government-issued country reports, monitoring reports, scorecards, or official assessments");
+      expect(section).toContain("independent high-probative contradiction unless they are corroborated");
+      expect(section).toContain("direct in-jurisdiction evidence or neutral external evidence");
+    });
   });
 });
 
@@ -542,6 +549,19 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("governance, rights, safety, integrity, performance, or standards");
       expect(section).toContain("Foreign government report rates Country A institutions as failing core standards");
       expect(section).toContain("Neutral external reporting or analysis about the target proceeding remains \"contextual\"");
+    });
+
+    it("uses an issuing-authority override for official foreign-government publications", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("State media, government press offices, and official government publications are not neutral external observers");
+      expect(section).toContain("Neutral external observers exclude foreign governments, foreign legislative bodies, executive offices, state media, and official government publications");
+    });
+
+    it("does not upgrade foreign government publications to contextual just because they summarize local material", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Do not upgrade a foreign government publication to `contextual`");
+      expect(section).toContain("cites local sources, quotes court filings, or describes the target proceeding in detail");
+      expect(section).toContain("If the publication's own official assessment is the substantive evidence, classify it as `foreign_reaction`");
     });
 
     it("uses abstract examples without domain-specific terms", () => {
