@@ -3522,10 +3522,10 @@ describe("Stage 2: runResearchIteration", () => {
 
     await runResearchIteration(claim, "main", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state);
 
-    // Should have tracked search query
-    expect(state.searchQueries).toHaveLength(1);
-    // Should have called LLM 3 times (queries, relevance, extraction)
-    expect(state.llmCalls).toBe(3);
+    // Default metric-bearing fixtures now trigger one refinement pass.
+    expect(state.searchQueries).toHaveLength(2);
+    expect(state.searchQueries.map((query: any) => query.focus)).toEqual(["main", "refinement"]);
+    expect(state.llmCalls).toBe(5);
     // Should have fetched source
     expect(state.sources).toHaveLength(1);
     // Should have added evidence (if it passes filter)
