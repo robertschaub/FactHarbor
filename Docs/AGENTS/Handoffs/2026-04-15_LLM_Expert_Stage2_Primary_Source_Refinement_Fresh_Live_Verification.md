@@ -46,3 +46,4 @@
 1. Inspect live `GENERATE_QUERIES` outputs for `ad4c0c...` versus `141cfe...` to confirm whether `retrievalLane` and `freshnessWindow` are missing, malformed, or stripped before orchestration.
 2. If metadata omission is confirmed, tighten structured-output adherence at the query-generation boundary instead of adding deterministic retrieval heuristics.
 3. Re-measure the same approved asylum input only after that prompt/output enforcement change lands.
+

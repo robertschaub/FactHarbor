@@ -33,3 +33,4 @@
 **Next:**
 1. Stage and commit these review fixes if you want them recorded in history.
 2. If desired, add a dedicated small Stage 5 unit-test seam later for methodology-highlight normalization.
+
