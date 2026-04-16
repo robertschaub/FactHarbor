@@ -636,11 +636,11 @@ Each query must also declare:
 - **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}` and relevant geographies `${relevantGeographies}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
 - When `expectedEvidenceProfile` implies a current stock, total, ranking, or administrative count that should come from official or institutional sources, include at least one query aimed at the latest source-native archive, overview, or statistics landing page and at least one query aimed at the decisive current figure itself. Prefer publisher-native phrasing over broad topical summary wording.
-- When the latest official figure is published through archive entries, periodic bulletins, recurring releases, downloadable PDFs, spreadsheets, or tables, prefer queries that target the artifact carrying the number itself rather than only the overview page.
+- When the decisive figure is published in a source-native data artifact or update stream rather than in summary prose, prefer queries that target the artifact carrying the figure itself instead of only the overview or landing page.
 - When the claim uses a source-native institutional label, administrative category, or official umbrella phrase for the target population or metric, preserve that exact source-language wording in at least one official-source query. Do NOT paraphrase it into a looser topical synonym if the exact phrase is likely how the publisher names the figure.
-- When the claim is explicitly about the present or current state (for example: current, currently, now, today, aktuell, derzeit, zurzeit, en ce moment), do NOT anchor the primary-direct query on a stale annual or historical report if a newer regularly updated page, recurring publication, archive entry, or current-statistics path is plausibly available. Start with the newest source-native current page, release, table, or archive entry first.
+- When the claim is explicitly about the present or current state (for example: current, currently, now, today, aktuell, derzeit, zurzeit, en ce moment), prioritize the newest source-native route intended to reflect the current state before falling back to historical or retrospective summaries.
 - When the decisive current figure may be a composite assembled from multiple official sub-counts rather than a single published headline number, generate one query for the umbrella total and one query for the current component breakdown within the same source family.
-- If existing evidence already surfaces adjacent official numbers (for example interim counts, component metrics, periodic summaries, or broad demographic context) but not the decisive stock or total implied by `expectedEvidenceProfile`, tighten the next queries toward the missing current total or missing component counts instead of repeating the same broad official category.
+- If existing evidence already provides nearby or partial quantitative context but not the decisive figure implied by `expectedEvidenceProfile`, tighten the next queries toward the missing total, threshold, or components instead of repeating the same broad source family.
 - `queryStrategyMode = "legacy"`:
   - Keep legacy behavior: generate 2-3 general-purpose queries for the claim.
   - Include at least one query targeting potential contradictions or counterevidence.
@@ -701,13 +701,13 @@ When existing evidence is available, use it to **identify gaps**, not to confirm
 - Do NOT avoid a direction entirely just because it already has some coverage — seek better-quality or more authoritative sources for all directions.
 - When `existingEvidenceSummary` is `"none"` (first iteration), ignore this section and rely on `expectedEvidenceProfile` and `distinctEvents` only.
 
-**Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events, proceedings, or time-bounded episodes related to the same claim, you MUST distribute query coverage across those events rather than collapsing onto only the most prominent one. For each iteration:
+**Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events or time-bounded episodes related to the same claim, you MUST distribute query coverage across those events rather than collapsing onto only the most prominent one. For each iteration:
 - Generate at least one query that explicitly targets a **different** event cluster than the most prominent one in the current evidence pool.
-- Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal focus and proceeding focus.
+- Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal and event focus.
 - Do NOT rely solely on the merged claim statement or `expectedEvidenceProfile`, which may already reflect a skewed single-event evidence pool.
 - Staying generic: use only terminology from the claim and `distinctEvents` metadata — do NOT introduce external domain knowledge or hardcoded entity names.
 
-Example pattern (abstract): if `distinctEvents` contains "Entity A event 1 (2022)" and "Entity A event 2 (2024)", generate one query targeting event 1 and one targeting event 2, not just a general query about Entity A.
+Example pattern (abstract): if `distinctEvents` contains multiple separately named events, generate one query for each event rather than a single merged topical query.
 
 When `distinctEvents` is empty or contains only one event, default to the normal query strategy from `expectedEvidenceProfile`.
 
