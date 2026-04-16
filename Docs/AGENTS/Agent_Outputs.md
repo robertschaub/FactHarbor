@@ -7,6 +7,61 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-16 | Lead Developer + LLM Expert | Claude (Opus 4.7, 1M) | Report-Review Skill Systematic Review and Improvements -- [Significant] [open-items: yes]
+**For next agent:** `/report-review` hardened end-to-end. Added Phase 3h (systemic/concurrency-induced failure detection — would have caught the 2026-04-16 Bundesrat/Plastic collapse as infrastructure, not regression), Phase 3i (historical regression analysis — finds prior-better runs of the same input, identifies the change window, classifies rollback feasibility as SAFE-FULL / PARTIAL / MODIFICATION / NOT-ROLLBACKABLE), structural-rubric columns on every Phase 4 panel + Regression-Rollback Reviewer + verbatim sub-agent brief template (anti self-eval bias per LLM Expert learning), `data-update` / `partial-rollback` / `full-rollback` / `modification` mechanisms in Phase 5, `--full`/`--dry-run` output modes, and tightened Phase 8 auto-write with 5-check reviewer and near-duplicate detection. Fixed Phase 1 field-name bugs (`claimBoundaries` not `boundaries`; `verdict` not `verdictLabel` on `claimVerdicts`). Still open: isolated reruns of Bundesrat-rechtskräftig + Plastic-en; two unrelated unit-test-drift failures in `npm test`; prompt rollout reseed pending.
+→ Docs/AGENTS/Handoffs/2026-04-16_Lead_Developer_LLM_Expert_Report_Review_Skill_Improvements.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Report Review Skill Review And Expectation Alignment -- [Standard] [open-items: yes]
+**For next agent:** `/report-review` now has its concrete schema/config gaps closed: the Phase 1 SQL example uses `JobId`, slug scoping prefers exact matches with unique-prefix fallback only, the dead `MEMORY.md` reference is gone, `plastic-en` replaces the inconsistent `plastik-en` slug, and the missing WWII asylum benchmark input is now present in `AGENTS.md` and `.github/copilot-instructions.md`.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Report_Review_Skill_Review_And_Expectation_Alignment.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Benchmark Report Quality Status Matrix -- [Standard] [open-items: yes]
+**For next agent:** A new WIP doc now captures the current solved / partly solved / unresolved judgment for the Captain’s eight benchmark inputs, grounded in current live jobs and recent fixes. The highest-value remaining reruns are the exact WWII-comparison asylum variant, the Portuguese Bolsonaro variant on the final strongest backstop, and one fresh current-stack asylum `235 000` rerun with source inspection.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Bolsonaro Foreign Assessment Backstop Verification -- [Standard] [open-items: yes]
+**For next agent:** The stronger backstop is verified live. Prompt hash `af6ebf88...` removed all cited `state.gov` / U.S.-like evidence from Bolsonaro rerun `ec9840ff97994392a7ea9784beb5d79a`; compared with `a3ef...`, cited `state.gov` ids dropped from `7` to `0`. Residual risk: four uncited `state.gov`-domain items still survive in the evidence pool, so inspect source attribution if contamination reappears.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Bolsonaro Foreign Assessment Leak Diagnosis And Applicability Prompt Fix -- [Standard] [open-items: yes]
+**For next agent:** The old contamination fix is still present; the current leak was seeded-evidence applicability misclassification, not prompt rollout drift. Bad job `b48440718d3e4f428de5fbef8c2a45b3` cited seeded `state.gov` items `EV_021` and `EV_022` against `AC_01` and `AC_02`. `APPLICABILITY_ASSESSMENT` now explicitly keeps foreign government fair-trial/human-rights assessments as `foreign_reaction`, the prompt DB was reseeded to hash `3cacb809...`, focused tests are green, and verification rerun `d763f9507de4430681a471447b12d0fe` is still running.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Leak_Diagnosis_And_Applicability_Prompt_Fix.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Analyzer Review Follow-up And Safe Suite Green -- [Standard] [open-items: yes]
+**For next agent:** Addressed the two concrete review blockers by updating `llm-routing.test.ts` to Anthropic Sonnet 4.6 and `claimboundary-pipeline.test.ts` to expect the legitimate Stage 2 refinement pass (`main` + `refinement`, 5 mocked LLM calls). `npm test` is now green (`83 passed`, `1684 passed | 1 skipped`). Live Bundesrat rerun `b92201bb47454f7498a1919c4a82c567` completed `SUCCEEDED` with `MIXED | 48 | 72` and Gate 4 passed. I did **not** revert `24b26016`; on the current evidence that is a cleanup/scope decision, not a defect fix.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Analyzer_Review_Followup_And_Safe_Suite_Green.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 1 Repair Anchor Selection And Live Bundesrat Rerun -- [Standard] [open-items: yes]
+**For next agent:** Stage 1 now has a salience-backed `selectRepairAnchorText(...)` helper and focused tests/build checks passed. Fresh live Bundesrat rerun `b92201bb47454f7498a1919c4a82c567` no longer dies at `UNVERIFIED 50/0`: SSE shows it clearing Pass 2, contract validation/repair, Gate 1, and entering Stage 2 research. The remaining nuance is that the live repair event still logs the broad clause anchor, so inspect the completed job’s final claim shape before deciding whether more Stage 1 tightening is needed.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage1_Repair_Anchor_Selection_And_Live_Bundesrat_Rerun.md
+
+---
+### 2026-04-16 | Unassigned | Codex (GPT-5) | Daily Bug Scan State Recheck -- [Standard] [open-items: yes]
+**For next agent:** No new git-level changes were visible on this rerun. `npm test` is still green, and the only remaining concrete issue is unchanged prompt/UCM drift: active `prompt/claimboundary` hash `977aaac7...` vs current file hash `db42b6c7...`.
+→ Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_State_Recheck.md
+
+---
+### 2026-04-16 | Unassigned | Codex (GPT-5) | Daily Bug Scan Prompt Propagation Drift -- [Standard] [open-items: yes]
+**For next agent:** Code/tests are green, but local runtime prompt state is stale: `apps/web/config.db` still has active `prompt/claimboundary` hash `977aaac7...` from `2026-04-16T15:43:12.915Z`, while the current `claimboundary.prompt.md` file hashes to `db42b6c7...` after later prompt commits. Reseed/build is required before local runs will use the new prompt text.
+→ Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Prompt_Propagation_Drift.md
+
+---
+### 2026-04-16 | Unassigned | Codex (GPT-5) | Daily Bug Scan Rerun After Analyzer Changes -- [Standard] [open-items: yes]
+**For next agent:** The new Stage 1 anchor-selection patch (`24b26016`) passed its focused tests; the safe suite is still blocked only by the same two stale tests as before: Anthropic default-model drift in `llm-routing.test.ts:30` and pre-refinement search-count expectations in `claimboundary-pipeline.test.ts:3526`.
+→ Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Rerun_After_Analyzer_Changes.md
+
+---
+### 2026-04-16 | Unassigned | Codex (GPT-5) | Daily Bug Scan Analyzer Test Drift -- [Standard] [open-items: yes]
+**For next agent:** Safe verification is currently blocked by two stale unit tests, not a confirmed new runtime bug: `llm-routing.test.ts:30` still expects Anthropic Sonnet 4.5 while `model-resolver.ts` now resolves Sonnet 4.6 by default, and `claimboundary-pipeline.test.ts:3526` still expects one Stage-2 search query even though `runResearchIteration(...)` now performs a legitimate refinement pass for the default metric-bearing fixture.
+→ Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Analyzer_Test_Drift.md
+
+---
 ### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Refinement Gate Restoration And Test Realignment -- [Standard] [open-items: yes]
 **For next agent:** `claimNeedsPrimarySourceRefinement(...)` now matches the immediate pre-`308d00cf` gate again: no refinement when `expectedMetrics` is empty, the asylum-only fallback helper is gone, and the focused refinement + Stage 1 contract tests plus `tsc --noEmit` all passed. The next step is the live rerun of the three previously `UNVERIFIED` jobs.
 → Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Refinement_Gate_Restoration_And_Test_Realignment.md
