@@ -209,7 +209,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 - First, classify the original input. **Before applying the four classification types below, check for the Plurality override:**
   - **Plurality override (check FIRST):** If the input's **own wording** explicitly names multiple distinct instances, proceedings, events, or subjects using a plurality marker (e.g., "various", "multiple", "several", "different", "the X proceedings", "each of the Y cases"), classify as `multi_assertion_input` regardless of whether the input is in question form. The plurality is user-stated, not evidence-derived — the input is asking about a collection, not a single instance. Decompose into one atomic claim per explicitly named or clearly implied distinct instance, applying the same per-instance atomicity as for single-instance inputs. Do NOT apply this rule when plurality is vague or implicit — only when the input's wording itself clearly names or enumerates the distinct instances.
   - **single_atomic_claim**: one assertion with a clear, unambiguous factual meaning pointing to one verifiable dimension. This includes direct factual-property or factual-state questions/assertions — questions about whether an entity has a literal physical property, whether an event happened, whether a measurable state of affairs is the case, or whether something exists. These have one dominant factual answer and should NOT be expanded into belief prevalence, public perception, discourse, or societal interpretation dimensions. Examples of the pattern: "Is [entity] [physical property]?", "Did [event] happen?", "Does [entity] exist?", "Has [entity] [measurable state]?"
-  - **ambiguous_single_claim**: one assertion whose key predicate is inherently ambiguous — it can be independently true or false along multiple distinct factual dimensions (e.g., technical, economic, environmental, statistical). Classify as ambiguous ONLY when the predicate itself invites multiple independently verifiable readings from the wording alone — if the question has one dominant factual answer (even if that answer is contested), use `single_atomic_claim`. Questions about literal real-world properties or states are NOT ambiguous just because people disagree about the answer or because the topic has a societal dimension. This classification is reserved for predicates like "work", "useful", "harmful", "fair" — where the word itself has multiple distinct measurable meanings.
+  - **ambiguous_single_claim**: one assertion whose key predicate is inherently ambiguous — it can be independently true or false along multiple distinct factual dimensions (e.g., technical, economic, environmental, statistical). Classify as ambiguous ONLY when the predicate itself invites multiple independently verifiable readings from the wording alone — if the question has one dominant factual answer (even if that answer is contested), use `single_atomic_claim`. Questions about literal real-world properties or states are NOT ambiguous just because people disagree about the answer or because the topic has a societal dimension. This classification is reserved for predicates like "work", "useful", "harmful", "fair", or comparative predicates like "more efficient" when the wording leaves multiple independently verifiable measurement windows or system boundaries unresolved.
   - **multi_assertion_input**: multiple distinct verifiable assertions.
 - If the input is a **single_atomic_claim**:
   - Keep `impliedClaim` and `articleThesis` semantically equivalent to the input.
@@ -218,6 +218,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 - If the input is an **ambiguous_single_claim**:
   - Keep `impliedClaim` and `articleThesis` semantically equivalent to the original input (same wording/scope as single_atomic_claim — do NOT narrow to one interpretation).
   - Identify the distinct factual dimensions along which the assertion's key predicate can be independently verified. These dimensions must be inherent in the input wording — they are the different ways a reasonable reader would interpret the claim, NOT dimensions discovered from preliminary evidence.
+  - For comparative efficiency, optimization, or resource-use predicates, treat distinct measurement windows or system boundaries as separate dimensions when those windows could produce different factual answers (for example, full-pathway vs. use-phase-only vs. operational convenience). Preserve the original comparative predicate in each dimension claim; vary only the dimension qualifier.
   - Extract one atomic claim per distinct interpretation dimension. The number of claims depends on the atomicity guidance below: at "Very relaxed"/"Relaxed" levels, merge dimensions aggressively (target 1-2 claims); at "Moderate" or above, keep dimensions separate (target 2-3 claims). Each claim restates the original assertion narrowed to one specific dimension. When the number must be reduced, prioritize dimensions that are most independently verifiable with distinct evidence types.
   - All interpretation-dimension claims must have `centrality: "high"` (they are all direct interpretations of the user's statement) and `claimDirection: "supports_thesis"`.
   - For each extracted claim, classify `thesisRelevance` relative to the user's original thesis:
@@ -634,6 +635,12 @@ Each query must also declare:
 
 - **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}` and relevant geographies `${relevantGeographies}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
+- When `expectedEvidenceProfile` implies a current stock, total, ranking, or administrative count that should come from official or institutional sources, include at least one query aimed at the latest source-native archive, overview, or statistics landing page and at least one query aimed at the decisive current figure itself. Prefer publisher-native phrasing over broad topical summary wording.
+- When the latest official figure is published through archive entries, monthly bulletins, downloadable PDFs, spreadsheets, or tables, prefer queries that target the artifact carrying the number itself rather than only the overview page.
+- When the claim uses a source-native institutional label, administrative category, or official umbrella phrase for the target population or metric, preserve that exact source-language wording in at least one official-source query. Do NOT paraphrase it into a looser topical synonym if the exact phrase is likely how the publisher names the figure.
+- When the claim is explicitly about the present or current state (for example: current, currently, now, today, aktuell, derzeit, zurzeit, en ce moment), do NOT anchor the primary-direct query on a stale annual or historical report if a newer rolling, monthly, archive-entry, or current-statistics path is plausibly available. Start with the newest source-native current page, bulletin, table, or archive entry first.
+- When the decisive current figure may be a composite assembled from multiple official sub-counts rather than a single published headline number, generate one query for the umbrella total and one query for the current component breakdown within the same source family.
+- If existing evidence already surfaces adjacent official numbers (for example flows, applications, yearly summaries, or broad demographic context) but not the decisive stock or total implied by `expectedEvidenceProfile`, tighten the next queries toward the missing current total or missing component counts instead of repeating the same broad official category.
 - `queryStrategyMode = "legacy"`:
   - Keep legacy behavior: generate 2-3 general-purpose queries for the claim.
   - Include at least one query targeting potential contradictions or counterevidence.
@@ -654,6 +661,7 @@ Each query must also declare:
   - Prefer `primary_direct` and `navigational` lanes over `secondary_context`.
   - Use a non-`none` `freshnessWindow` when the claim appears to depend on current, newly published, or freshness-sensitive primary material.
   - If the expected evidence is historical, archival, or already time-bounded to a past period, use `freshnessWindow: none` unless recent publication timing is itself part of what must be verified.
+  - If current official evidence is still incomplete, target the newest source-native page or artifact that can close the missing metric gap rather than repeating an older annual-summary query.
   - Avoid broad media-summary phrasing unless no better direct-source path is plausible.
 - Avoid overly broad queries — target specific evidence types.
 - Do not hardcode entity names, keywords, or domain-specific terms unless they appear in the claim itself.
@@ -838,6 +846,12 @@ Given a claim and source content, extract evidence items with full metadata incl
 - **EvidenceScope is MANDATORY**: Every item must have `methodology` and `temporal` fields populated. Geographic/system boundaries if applicable. Include `analyticalDimension` when the evidence targets a distinct measurable property.
 - **analyticalDimension**: What specific property or metric this evidence measures. This captures WHAT is being measured, distinct from methodology (HOW it is measured). For example, if a claim has multiple verifiable dimensions (e.g., Property A and Property B), evidence about Property A should have a different `analyticalDimension` than evidence about Property B. Use short, descriptive labels in the source's language, preferably terminology already present in the source text itself. If the evidence is broad, background, or does not isolate a distinct measurable property, omit `analyticalDimension` rather than inventing a generic label.
 - **Implementation note**: `analyticalDimension` remains optional in the runtime schema. Omit it when the evidence is general rather than property-specific.
+- When the source uses established stage labels, framework labels, or acronyms to define the measured window, preserve that wording in `methodology`, `boundaries`, or `analyticalDimension` instead of flattening it into a generic efficiency or technical-description label.
+- When the evidence isolates one segment of a larger pipeline or system, encode that segment distinction explicitly in `boundaries` and, when appropriate, `analyticalDimension` so later clustering can separate stage-local evidence from full-pathway evidence.
+- When the source states a quantified finding, stock, total, threshold, or count that matters to the claim, the `statement` MUST preserve the exact numeric value(s) and the source's stated timepoint. Do not replace a present number with a generic paraphrase, a blank slot, or an unquantified summary.
+- When an official or institutional source gives the target population using a source-native umbrella label (for example an administrative category or official population name), preserve that label and its numeric figure together in the `statement` whenever the figure is decisive for the claim.
+- If a current official total is expressed through a headline number plus sub-counts, extract the headline total as its own evidence item when present, and extract any decisive component figures as separate items with their own exact numbers and timepoints.
+- If the relevant figure appears in a table cell, bullet list, chart label, or short statistical sentence rather than a narrative paragraph, still extract it with the literal number. Treat table-style numeric reporting as first-class evidence, not background.
 - **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
@@ -1021,6 +1035,8 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 **Non-congruent (separate) when:**
 - Fundamentally different methodologies that measure different things
 - Different `analyticalDimension` values — evidence measuring different properties belongs in separate boundaries even when methodology is similar
+- One scope is qualitative/descriptive background while another is a quantitative comparative measurement or formal evaluation
+- Scopes use different stage windows or system-boundary windows (for example full-pathway, upstream-only, use-phase-only, round-trip, lifecycle) and that distinction can change the conclusion
 - Evidence reaches contradictory conclusions BECAUSE of methodological differences
 - Different normalization/denomination that makes direct comparison misleading
 - Different analytical frameworks applied to the same subject
@@ -1049,6 +1065,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 - **Scopes disagree but NOT because of methodology**: **Merge** — the contradiction is factual, not methodological. The boundary should show internal disagreement via low `internalCoherence`.
 - **Incomplete scope data**: Still cluster using whatever scope data exists. Low-quality scopes are clustered by source type and temporal proximity as secondary signals.
 - **Mega-cluster (>80% of scopes in one group)**: When a single cluster would contain more than 80% of all scopes, check whether `analyticalDimension` values within that cluster point to genuinely different properties being measured. If so, split along dimension boundaries. A single mega-boundary is valid only when the scopes truly measure the same property — not simply because they share a methodology family.
+- **Do not bury framework labels:** If established framework labels, stage labels, or acronyms already appear in scope text and they distinguish analytically different windows, preserve them in boundary naming and keep those windows separate rather than hiding them inside a generic mixed boundary.
 
 ### Rules
 
@@ -1056,6 +1073,7 @@ Also consider `additionalDimensions` when assessing scope compatibility. Dimensi
 - Do not hardcode any domain-specific keywords, entity names, or categories.
 - Provide a congruence rationale for every merge/separation decision.
 - Boundary names should be descriptive of the methodology/approach, not of the topic.
+- When scope text already provides established framework labels or acronyms for the analytical window, preserve those labels in `name` and especially `shortName` instead of replacing them with a generic label.
 
 ### Input
 
