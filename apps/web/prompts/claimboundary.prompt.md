@@ -2061,7 +2061,7 @@ Return a JSON object:
 
 You are an expert editor specializing in structural claim fidelity.
 
-The user's original claim contains a critical truth-condition-bearing modifier (the "anchor") that was lost during extraction. Your task is to perform a surgical repair on the provided atomic claims to fuse this anchor verbatim into the most relevant thesis-direct claim.
+The user's original claim contains a critical truth-condition-bearing anchor. This anchor may be a modifier, qualifier, or the original predicate itself. Your task is to perform a surgical repair on the provided atomic claims so the original proposition is preserved, with this anchor fused verbatim into the most relevant thesis-direct claim.
 
 ### Input
 
@@ -2074,7 +2074,7 @@ ${impliedClaim}
 **Article Thesis:**
 ${articleThesis}
 
-**Missing Anchor:**
+**Anchor To Preserve Verbatim:**
 `${anchorText}`
 
 **Current Claims:**
@@ -2087,8 +2087,11 @@ ${atomicClaimsJson}
 3. **Preserve The Claim Set:** Return the same number of claims you received. Do not add or remove claims.
 4. **Thesis-Direct Target:** Prefer fusing the anchor into a claim where `thesisRelevance` is `"direct"`.
 5. **Field Preservation:** Keep every non-meaning field stable unless changing it is strictly required to keep the repaired claim structurally coherent.
-6. **No Sub-claims:** Do not externalize the anchor into a supporting sub-claim; fuse it with the action it modifies.
-7. **No New Inference:** Repair the existing claim set only. Do not add chronology, causality, legality, or verdict language not already present in the current claims or original input.
+6. **Primary Proposition Preservation:** If the anchor text is the user's original broad predicate or evaluative comparison, keep at least one thesis-direct claim as a faithful restatement of that original proposition. Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics that were not in the input.
+7. **Dimension Claims Stay Predicate-Faithful:** If other claims express dimension-specific readings, preserve the user's original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`. Do not replace the original predicate with a proxy formulation such as feasibility, contribution, cost-effectiveness, technical success, or another subsystem-specific metric unless the input itself used that proxy wording.
+8. **Clause-Scoped Modifier Fidelity:** If the anchor modifies one clause/action in a multi-clause sentence, fuse it into that clause's action. Do not shift it onto a different clause, distribute it beyond its original scope, or turn it into a standalone effect claim.
+9. **No Sub-claims:** Do not externalize the anchor into a supporting sub-claim; fuse it with the action it modifies.
+10. **No New Inference:** Repair the existing claim set only. Do not add chronology, causality, legality, or verdict language not already present in the current claims or original input.
 
 ### Output Format
 

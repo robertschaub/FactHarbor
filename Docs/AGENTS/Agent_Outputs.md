@@ -7,6 +7,16 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Asylum Refinement Regression Fix -- [Standard] [open-items: yes]
+**For next agent:** The asylum regression was traced to the new first-pass Stage 2 refinement branch, not to Stage 4 thresholds. `claimNeedsPrimarySourceRefinement(...)` now skips redundant refinement when a metric-bearing claim already has rich non-seeded institutional numeric coverage, and the focused `primary-source-refinement.test.ts` file passed with a new asylum-style regression case.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Asylum_Refinement_Regression_Fix.md
+
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 1 Contract Repair Prompt Hardening -- [Standard] [open-items: yes]
+**For next agent:** `CLAIM_CONTRACT_REPAIR` now treats the anchor as possibly the original predicate itself, requires one thesis-direct non-proxy restatement, and keeps dimension claims predicate-faithful. Focused repair tests passed, but the hydrogen/Bundesrat regressions still need fresh live reruns and the broader Stage 1 suite still shows one unrelated Stage 2 query-count failure at `claimboundary-pipeline.test.ts:3526`.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage1_Contract_Repair_Prompt_Hardening.md
+
+---
 ### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Review Fixes -- [Standard] [open-items: yes]
 **For next agent:** The handed-over review findings were addressed on the current tree: refinement telemetry now records `rawEvidenceItems` and `iterationType` on the correct refinement entry, source-type-only claims can trigger refinement without `expectedMetrics`, WTT/WTW/LCA survive narrative highlighting, and the targeted Stage 2 + Stage 5 safe tests passed.
 → Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage2_Review_Fixes.md

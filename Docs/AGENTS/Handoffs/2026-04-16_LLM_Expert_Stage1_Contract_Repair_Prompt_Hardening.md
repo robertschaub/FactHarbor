@@ -1,0 +1,9 @@
+---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 1 Contract Repair Prompt Hardening
+**Task:** Tighten Stage 1 claim-contract repair after the reported hydrogen and `rechtskräftig` regressions were traced to Stage 1 `report_damaged` early aborts rather than the recent Stage 2 telemetry fix.
+**Files touched:** `apps/web/prompts/claimboundary.prompt.md`; `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`.
+**Key decisions:** Hardened `CLAIM_CONTRACT_REPAIR` instead of weakening the runtime early-abort guard. The repair prompt now treats the anchor as possibly being the original predicate itself, requires one thesis-direct faithful restatement without proxy narrowing, keeps dimension-specific claims predicate-faithful via neutral qualifiers, and preserves clause-scoped modifier placement. Added prompt-contract assertions to lock those rules in.
+**Open items:** Re-run the live hydrogen and Bundesrat jobs to confirm Stage 1 no longer exits through `report_damaged`. The asylum `UNVERIFIED` case remains a separate later-stage issue and was not changed here.
+**Warnings:** A broader run of `claimboundary-pipeline.test.ts` still reports one unrelated Stage 2 test failure at `test/unit/lib/analyzer/claimboundary-pipeline.test.ts:3526` (`state.searchQueries` expected length `1`, got `2`). The focused repair-path tests passed.
+**For next agent:** If the fresh live reruns still fail, inspect the concrete `CLAIM_CONTRACT_REPAIR` outputs first. The runtime seam in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` was intentionally left unchanged, and the Stage 1 early-abort path in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` is still operating as designed.
+**Learnings:** no — this slice stayed prompt-only; no role-learning update was needed.

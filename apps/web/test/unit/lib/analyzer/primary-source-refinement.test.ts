@@ -594,6 +594,107 @@ describe("primary-source refinement", () => {
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
 
+  it("does not run refinement when metric-rich institutional coverage already exists without target primary typing", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "More than 235000 people are currently in the asylum system",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "total persons in the asylum system",
+          "total recognized refugees",
+          "total provisionally admitted persons",
+          "current reference date",
+        ],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_existing_1",
+          statement: "At the end of 2024, 65500 recognized refugees were living in Switzerland.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/institutional-1",
+          sourceTitle: "Institutional 1",
+          sourceExcerpt: "recognized refugees",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "organization_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "institutional migration statistics",
+            temporal: "2024",
+          },
+        },
+        {
+          id: "EV_existing_2",
+          statement: "At the end of 2024, 42900 provisionally admitted people were living in Switzerland.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/institutional-2",
+          sourceTitle: "Institutional 2",
+          sourceExcerpt: "provisionally admitted",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "organization_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "institutional migration statistics",
+            temporal: "2024",
+          },
+        },
+        {
+          id: "EV_existing_3",
+          statement: "At the end of 2025, temporary protection status covered 71762 people in Switzerland.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/institutional-3",
+          sourceTitle: "Institutional 3",
+          sourceExcerpt: "temporary protection",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "organization_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "institutional migration statistics",
+            temporal: "2025",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+  });
+
   it("does not repeat refinement when the claim already had a prior main iteration", async () => {
     const claim = {
       id: "AC_01",

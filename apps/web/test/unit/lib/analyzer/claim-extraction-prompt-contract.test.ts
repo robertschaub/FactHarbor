@@ -101,10 +101,17 @@ describe("Stage-1 prompt contract", () => {
     it("locks in the narrow repair constraints", () => {
       const section = extractSection(promptContent, "CLAIM_CONTRACT_REPAIR");
       expect(section).not.toBeNull();
+      expect(section).toContain("truth-condition-bearing anchor");
+      expect(section).toContain("the original predicate itself");
       expect(section).toContain("Verbatim Fusion");
       expect(section).toContain("Do not change any existing claim `id`");
       expect(section).toContain("Return the same number of claims you received");
       expect(section).toContain('thesisRelevance` is `"direct"`');
+      expect(section).toContain("faithful restatement of that original proposition");
+      expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
+      expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
+      expect(section).toContain("Do not replace the original predicate with a proxy formulation");
+      expect(section).toContain("Do not shift it onto a different clause");
       expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
       expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
     });
