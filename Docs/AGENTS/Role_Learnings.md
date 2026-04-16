@@ -249,6 +249,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** In the current ClaimBoundary runtime, Anthropic prompt caching is already wired correctly through `getPromptCachingOptions()` in the main stage calls, so a proposal to "add cache breakpoints" can be directionally right but operationally redundant. The real limiter on cache payoff is prompt shape: many system prompts inline dynamic job payload (`analysisInput`, claims, evidence, verdict inputs), which collapses cache reuse across calls even though cache metadata is present. Before proposing more cache flags, first ask whether the static instructions and dynamic payload are separated cleanly enough for prompt reuse to matter.
 **Files:** `apps/web/src/lib/analyzer/llm.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/verdict-generation-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`
 
+### 2026-04-16 — Structural rubric before subjective evaluation in multi-agent debate skills
+**Role:** LLM Expert  **Agent/Tool:** Claude Code (Opus 4.7, 1M)
+**Category:** useful-pattern
+**Learning:** When a skill spawns LLM sub-agents to evaluate other LLM-generated output (e.g., `/report-review` Phase 4 panels assessing verdicts, reasoning traces, warnings), every panel's brief MUST lead with structural checks (count-based, schema-based, citation-graph checks) that cite observed values before any subjective evaluation. Structural checks are cheap, deterministic, and self-anchoring — they pin the panel to evidence before vibes can take over. This is the operational form of the existing "LLM self-eval bias" learning: the mitigation isn't "don't use LLMs to eval LLMs", it's "force them to count first". Example structural checks that work well: "does `verdictReason` reference any evidence ID NOT in `supportingEvidenceIds ∪ contradictingEvidenceIds`?" for reasoning review; "is each warning `type` registered in `warning-display.ts`?" for severity review. Key design move: put structural checks in a dedicated column of the panel map table, not buried in panel prose — this makes them impossible to skip. Pair with a strict return-format spec (`[STRUCTURAL] [FINDING] [FIX] [NEW]` line prefixes) so the main thread can parse panel output by regex and flag panels that skipped the structural step.
+**Files:** `.claude/skills/report-review/SKILL.md` (Phase 4 panel map and sub-agent brief template)
+
 ## Product Strategist
 
 _(No entries yet)_

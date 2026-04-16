@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-15 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-16 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -29,6 +29,7 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 	- `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
 	- `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
 	- `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+	- `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
 	- `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
 	- `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
 	- `Using hydrogen for cars is more efficient than using electricity`

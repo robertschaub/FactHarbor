@@ -1,0 +1,163 @@
+{
+  "_schemaVersion": "1.0.0",
+  "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md. Update this file after each significant rerun wave — it is the authoritative source; the WIP doc is the narrative source. Fields null = no verified expectation yet.",
+  "_lastUpdated": "2026-04-16",
+  "_sourceHandoffs": [
+    "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
+    "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
+    "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage1_Repair_Anchor_Selection_And_Live_Bundesrat_Rerun.md",
+    "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Hydrogen_Boundary_And_Asylum_Refinement_Followup.md"
+  ],
+  "noiseTolerancePct": 8,
+  "_noiseNote": "Run-to-run variance on truthPercentage for a given input is typically ≤8%. Differences within this band are noise, not regression.",
+  "families": [
+    {
+      "slug": "bundesrat-rechtskraftig",
+      "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "language": "de",
+      "expectedVerdictLabels": ["MIXED", "LEANING-TRUE", "LEANING-FALSE"],
+      "truthPercentageBand": { "min": 35, "max": 60 },
+      "confidenceBand": { "min": 55, "max": 85 },
+      "minBoundaryCount": 2,
+      "qualityStatus": "SOLVED-MAIN-BLOCKER",
+      "qualityStatusNote": "Stage 1 contract/anchor failure fixed. Semantic polish on rechtskräftig anchor may still vary across runs.",
+      "latestVerifiedJobId": "b92201bb47454f7498a1919c4a82c567",
+      "latestObserved": { "verdictLabel": "MIXED", "truthPercentage": 48, "confidence": 72 },
+      "_failed_rerun_2026-04-16": "Rerun 4177998a at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls. Root cause: Stage 2 evidence extraction timed out (467 Fix3 LLM timeouts logged that day; 5 jobs submitted concurrently). NOT treated as a regression — needs isolated single-job rerun to confirm qualityStatus.",
+      "knownOpenIssues": [
+        "semantic precision on rechtskräftig anchor — claim shape still slightly variable",
+        "failed isolated-rerun needed: 2026-04-16 concurrent-submission collapse not yet ruled in/out as regression"
+      ]
+    },
+    {
+      "slug": "bundesrat-simple",
+      "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+      "language": "de",
+      "expectedVerdictLabels": ["MIXED", "LEANING-TRUE", "LEANING-FALSE"],
+      "truthPercentageBand": { "min": 35, "max": 60 },
+      "confidenceBand": { "min": 55, "max": 85 },
+      "minBoundaryCount": 2,
+      "qualityStatus": "PROBABLY-SOLVED",
+      "qualityStatusNote": "No fresh direct live rerun on current tree. Inferred from rechtskräftig variant success — same fix set applies.",
+      "latestVerifiedJobId": null,
+      "latestObserved": null,
+      "knownOpenIssues": []
+    },
+    {
+      "slug": "asylum-235000-de",
+      "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+      "language": "de",
+      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
+      "truthPercentageBand": { "min": 55, "max": 75 },
+      "confidenceBand": { "min": 40, "max": 70 },
+      "minBoundaryCount": 1,
+      "qualityStatus": "IMPROVED-NOT-CLOSED",
+      "qualityStatusNote": "Recovers to sane verdict range on current tree. Strongest desired behavior — consistent retrieval of one clean official SEM aggregate total — is still inconsistent. Can regress to UNVERIFIED 57/40 under refinement path.",
+      "latestVerifiedJobId": "e5becebed30b4f6089035c47f28beaf6",
+      "latestObserved": { "verdictLabel": "MOSTLY-TRUE", "truthPercentage": 78, "confidence": 68 },
+      "_note_rerun_2026-04-16": "Rerun e5becebe at HEAD 35a22fba returned MOSTLY-TRUE 78/68. Truth 78 is 3 pts above band max 75 — within 8-pt noise tolerance. Band held; no adjustment needed. Higher confidence (68) is a positive signal.",
+      "knownOpenIssues": [
+        "inconsistent retrieval of direct official SEM aggregate total from primary Swiss source family",
+        "can still regress to UNVERIFIED 57/40 with refinement path changes"
+      ]
+    },
+    {
+      "slug": "asylum-wwii-de",
+      "inputValue": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.",
+      "language": "de",
+      "expectedVerdictLabels": null,
+      "truthPercentageBand": null,
+      "confidenceBand": null,
+      "minBoundaryCount": null,
+      "qualityStatus": "UNVERIFIED-ON-CURRENT-STACK",
+      "qualityStatusNote": "No direct current-stack rerun exists. Historical-comparison dimension adds complexity beyond base asylum-count family. Highest-value next rerun in the matrix.",
+      "latestVerifiedJobId": null,
+      "latestObserved": null,
+      "knownOpenIssues": [
+        "no current-stack verification at all — historical-comparison dimension unvalidated"
+      ]
+    },
+    {
+      "slug": "bolsonaro-en",
+      "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+      "language": "en",
+      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
+      "truthPercentageBand": { "min": 55, "max": 75 },
+      "confidenceBand": { "min": 45, "max": 65 },
+      "minBoundaryCount": 3,
+      "qualityStatus": "SOLVED-VISIBLE-CONTAMINATION",
+      "qualityStatusNote": "U.S. government (state.gov) citation contamination fixed on the stronger backstop (ec9840ff). Intermediate fix run still ended MIXED 50.5/54 with visible contamination. Residual uncited state.gov items may remain in evidence pool.",
+      "latestVerifiedJobId": "ec9840ff97994392a7ea9784beb5d79a",
+      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 64.2, "confidence": 50 },
+      "_note_rerun_2026-04-16": "Rerun da3580fe (PT variant, not EN) confirmed LEANING-TRUE 58/61 at HEAD 35a22fba — see bolsonaro-pt entry for EN twin confirmation.",
+      "knownOpenIssues": [
+        "residual uncited state.gov-domain items still in evidence pool (not cited in final report but present in intermediary evidence set)"
+      ]
+    },
+    {
+      "slug": "bolsonaro-pt",
+      "inputValue": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+      "language": "pt",
+      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
+      "truthPercentageBand": { "min": 50, "max": 75 },
+      "confidenceBand": { "min": 40, "max": 65 },
+      "minBoundaryCount": 3,
+      "qualityStatus": "CONFIRMED-ON-CURRENT-HEAD",
+      "qualityStatusNote": "Direct rerun da3580fe at HEAD 35a22fba confirms LEANING-TRUE 58.2/61. Inferential status converted to confirmed. Language-agnostic fixes transferred correctly from EN variant.",
+      "latestVerifiedJobId": "da3580fe3fbd4ee5b3c6c7280fc4c09f",
+      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 58.2, "confidence": 61 },
+      "knownOpenIssues": []
+    },
+    {
+      "slug": "hydrogen-en",
+      "inputValue": "Using hydrogen for cars is more efficient than using electricity",
+      "language": "en",
+      "expectedVerdictLabels": ["FALSE", "MOSTLY-FALSE"],
+      "truthPercentageBand": { "min": 5, "max": 25 },
+      "confidenceBand": { "min": 65, "max": 85 },
+      "minBoundaryCount": 2,
+      "qualityStatus": "SOLVED",
+      "qualityStatusNote": "TTW/WTW conflation fixed. Report now correctly exposes distinct full-pathway and tank-to-wheel claims/boundaries. Cleanup territory — no active firefighting needed.",
+      "latestVerifiedJobId": "db144edda1dc45ddbdadf61fd6c9256e",
+      "latestObserved": { "verdictLabel": "FALSE", "truthPercentage": 12, "confidence": 82 },
+      "knownOpenIssues": []
+    },
+    {
+      "slug": "plastic-en",
+      "inputValue": "Plastic recycling is pointless",
+      "language": "en",
+      "expectedVerdictLabels": ["MOSTLY-FALSE", "FALSE", "MIXED"],
+      "truthPercentageBand": { "min": 10, "max": 35 },
+      "confidenceBand": { "min": 55, "max": 80 },
+      "minBoundaryCount": 2,
+      "qualityStatus": "PARSE-FAILURE-FIXED",
+      "qualityStatusNote": "Stage 4 advocate parse-failure fixed; no longer forces report into fallback UNVERIFIED states. Broader evidence/aggregation variance remains. Useful as stress test but not proof of total stability.",
+      "latestVerifiedJobId": "a97ec59eeb5e43c69ae8d7583eecfcb3",
+      "latestObserved": { "verdictLabel": "MOSTLY-FALSE", "truthPercentage": 21, "confidence": 71 },
+      "_failed_rerun_2026-04-16": "Rerun 89c8f2ec at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls, plus 4 preliminary_fetch source_fetch_failure (info). Root cause same as Bundesrat: Stage 2 LLM timeout under concurrent load. NOT confirmed as a Stage 4 parse regression — needs isolated rerun.",
+      "knownOpenIssues": [
+        "evidence aggregation variance across runs",
+        "not a reliable family for asserting total report-quality stability",
+        "failed isolated-rerun needed: 2026-04-16 concurrent-submission collapse not yet ruled in/out as regression"
+      ]
+    }
+  ],
+  "highPriorityReruns": [
+    {
+      "slug": "bundesrat-rechtskraftig",
+      "reason": "2026-04-16 concurrent-submission rerun collapsed to UNVERIFIED 50/0 (zero evidence, LLM timeout). Isolated single-job rerun needed to confirm SOLVED-MAIN-BLOCKER status."
+    },
+    {
+      "slug": "plastic-en",
+      "reason": "2026-04-16 concurrent-submission rerun collapsed to UNVERIFIED 50/0 (zero evidence, LLM timeout). Isolated single-job rerun needed to confirm PARSE-FAILURE-FIXED status."
+    },
+    {
+      "slug": "asylum-wwii-de",
+      "reason": "No current-stack evidence at all; historical-comparison dimension not covered by base asylum-count family"
+    },
+    {
+      "slug": "asylum-235000-de",
+      "reason": "2026-04-16 rerun MOSTLY-TRUE 78/68 is positive but slightly above band — isolated rerun with source inspection confirms whether official SEM aggregate is now consistently surfaced"
+    }
+  ]
+}
