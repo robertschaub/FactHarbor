@@ -267,7 +267,7 @@ describe("Stage-4 prompt contract", () => {
 
     it("advocate treats foreign government assessment reports as positional outputs requiring corroboration", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
-      expect(section).toContain("Foreign government-issued country reports, monitoring reports, scorecards, or official assessments");
+      expect(section).toContain("Foreign government-issued assessments, rankings, monitoring reports, or official evaluations");
       expect(section).toContain("independent high-probative contradiction unless they are corroborated");
       expect(section).toContain("direct in-jurisdiction evidence or neutral external evidence");
     });
@@ -546,7 +546,7 @@ describe("Stage-2 prompt contract", () => {
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
-      expect(section).toContain("governance, rights, safety, integrity, performance, or standards");
+      expect(section).toContain("neutral or standards-based analysis");
       expect(section).toContain("Foreign government report rates Country A institutions as failing core standards");
       expect(section).toContain("Neutral external reporting or analysis about the target proceeding remains \"contextual\"");
     });

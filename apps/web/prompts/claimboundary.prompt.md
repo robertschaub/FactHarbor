@@ -289,11 +289,11 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 - Temporal episodes of the same phenomenon (e.g., "2022 trial" and "2024 appeal").
 
 **Exclude:**
-- Foreign government reactions, sanctions, or statements about the claim's jurisdiction. These are third-party responses, not events within the claim's scope.
+- Foreign government reactions, official actions, or statements about the claim's jurisdiction. These are third-party responses, not events within the claim's scope.
 - International media coverage or foreign political commentary.
 - Events that are consequences or ripple effects of the claim's subject in other jurisdictions.
 
-**Test:** For each proposed event, ask: "Did this event occur within the claim's jurisdiction/system?" If a claim is about Country A's courts, only proceedings in Country A's courts qualify. Country B's sanctions against Country A are NOT a distinct event — they are a foreign reaction.
+**Test:** For each proposed event, ask: "Did this event occur within the claim's jurisdiction/system?" If a claim is about Country A's courts, only proceedings in Country A's courts qualify. Country B's official actions against Country A are NOT a distinct event — they are a foreign reaction.
 
 When unsure, err on the side of exclusion. Fewer, jurisdiction-accurate events produce better evidence than many events that dilute the search across foreign reactions.
 When `${inferredGeography}` is set, treat it as the claim's jurisdiction anchor.
@@ -767,10 +767,10 @@ A result is **not relevant** if:
 - **Jurisdiction applicability**: When the claim concerns a specific jurisdiction (legal system, country, institution, geographic entity), assess whether the search result contains evidence FROM WITHIN that jurisdiction or about that jurisdiction's own actions/data.
   - **direct**: Evidence produced by institutions, courts, agencies, or researchers within the claim's jurisdiction. Score normally.
   - **contextual**: Evidence about the jurisdiction from neutral external observers (international NGOs, academic comparative studies, foreign media reporting on the jurisdiction's events). Score normally but note as external.
-  - **foreign_reaction**: Evidence produced by foreign governments, foreign legislative bodies, or foreign executive actions ABOUT the claim's jurisdiction (sanctions, diplomatic statements, foreign legislative resolutions, or foreign government-issued assessment reports). These are political reactions, not evidence about the claim's substance. Score at most 0.3.
+  - **foreign_reaction**: Evidence produced by foreign governments or their legislative or executive bodies about the claim's jurisdiction, including official actions, resolutions, or formal assessments. These are political reactions, not evidence about the claim's substance. Score at most 0.3.
   - **Key distinction — classify by evidence substance, not publisher nationality:**
-    - Foreign news coverage of domestic events in the claim's jurisdiction (court proceedings, sentencing, agency actions, locally produced data) is "contextual." Example: BBC article titled "Country A sentences leader to 27 years" → contextual (foreign media, domestic court event).
-    - Foreign news coverage whose substantive evidence is a foreign government action or official assessment about the jurisdiction (sanctions, executive orders, diplomatic statements, foreign legislative resolutions, or government-issued assessment reports) is "foreign_reaction." Example: Reuters article titled "Foreign government announces restrictive measures toward Country A over domestic events" → foreign_reaction (the substance is the foreign government's own action).
+    - Foreign news coverage of domestic events in the claim's jurisdiction (court proceedings, sentencing, agency actions, locally produced data) is "contextual." Example: foreign-media article titled "Country A court rules on senior official" → contextual (foreign media, domestic court event).
+    - Foreign news coverage whose substantive evidence is a foreign government's own action or formal assessment about the jurisdiction is "foreign_reaction."
     - State media, government press offices, and official government publications are not "neutral external observers" — classify by the issuing authority.
     - Infer category from the likely substantive evidence in the result's title/snippet, not merely the publisher's nationality or the page wrapper.
   - When `${relevantGeographies}` lists multiple jurisdictions, treat all listed jurisdictions as valid anchors for the claim. Evidence from any listed jurisdiction is not "foreign" solely because it differs from `${inferredGeography}`.
@@ -1154,7 +1154,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - **Distinguish factual findings from institutional positions:**
   - When weighing evidence, distinguish between a source's **factual outputs** (research data, statistical publications, investigations, compliance reports, legal analyses, field measurements) and its **positional outputs** (executive orders, diplomatic statements, sanctions, press releases, political declarations). Factual outputs derive probative value from their methodology and data quality. Positional outputs represent institutional stances — weigh them primarily as indicators of that institution's position, not as independent evidence for or against factual claims.
   - When a non-party entity's positional output (e.g., an external actor's official statement about another institution's internal processes) is the only evidence in a boundary contradicting the claim, assess whether it provides factual counter-evidence or merely expresses political disagreement. Political disagreement alone does not constitute factual contradiction.
-  - Foreign government-issued country reports, monitoring reports, scorecards, or official assessments about another jurisdiction remain positional outputs even when they summarize procedures, rights conditions, governance, integrity, safety, or institutional performance. Do not treat them as independent high-probative contradiction unless they are corroborated by direct in-jurisdiction evidence or neutral external evidence about the target proceeding/event/actor.
+  - Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain positional outputs even when framed as neutral or standards-based analysis. Do not treat them as independent high-probative contradiction unless they are corroborated by direct in-jurisdiction evidence or neutral external evidence about the target proceeding/event/actor.
 - **Source concentration and track-record awareness (MANDATORY when sourcePortfolioByClaim is provided):**
   - Consult the per-claim Source Portfolio (keyed by claim ID) to identify evidence concentration FOR EACH CLAIM independently. When multiple evidence items originate from the same source, they represent ONE analytical perspective, not independent observations. Weight them collectively, not individually.
   - Use `trackRecordScore` (0.0–1.0, where 1.0 = highest reliability) to calibrate how much weight a source's evidence carries. A low track-record score (below 0.5) means the source has lower established reliability — its evidence items should carry proportionally less weight than items from higher-reliability sources, even if individually rated as high probativeValue.
@@ -1907,7 +1907,7 @@ For each evidence item, determine whether it was produced by actors within the c
   - Evidence from neutral external observers (international academic studies, NGO reports, comparative legal analyses). Neutral external observers exclude foreign governments, foreign legislative bodies, executive offices, state media, and official government publications.
   - **Comparator/precedent evidence**: findings about a different proceeding, case, actor, or event — even if it involves the same institution, court system, or jurisdiction. Prior cases involving different parties, historical investigations of different actors, and institutional pattern evidence from a different context are contextual, not direct.
   - A finding about a different party in the same court is `"contextual"`, not `"direct"`.
-- **foreign_reaction**: Evidence produced by foreign governments, foreign legislative bodies, or foreign executive actions ABOUT the claim's jurisdiction. Sanctions, diplomatic statements, foreign legislative resolutions, or foreign government-issued assessment reports. These are political reactions, not evidence about the claim's substance.
+- **foreign_reaction**: Evidence produced by foreign governments or their legislative or executive bodies about the claim's jurisdiction, including official actions, resolutions, or formal assessments. These are political reactions, not evidence about the claim's substance.
 
 ### Rules
 
@@ -1918,9 +1918,9 @@ For each evidence item, determine whether it was produced by actors within the c
 - International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the target proceeding; otherwise "contextual."
 - Foreign media reporting on the target proceeding's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
 - State media, government press offices, and official government publications are not neutral external observers — classify by the issuing authority.
-- Foreign government-issued country reports, monitoring reports, scorecards, or official assessments about another jurisdiction remain `foreign_reaction` even when they summarize court events, procedural concerns, rights conditions, institutional performance, governance, integrity, or standards.
+- Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain `foreign_reaction` even when they summarize local events, procedures, or institutional conditions.
 - Do not upgrade a foreign government publication to `contextual` merely because it cites local sources, quotes court filings, or describes the target proceeding in detail. If the publication's own official assessment is the substantive evidence, classify it as `foreign_reaction`.
-- Foreign government assessments, scorecards, monitoring reports, or official evaluations about the jurisdiction remain "foreign_reaction" even when framed as substantive analysis of governance, rights, safety, integrity, performance, or standards. Example: "Foreign government report rates Country A institutions as failing core standards" -> `foreign_reaction`.
+- Foreign government assessments, rankings, monitoring reports, or official evaluations about the jurisdiction remain "foreign_reaction" even when framed as neutral or standards-based analysis. Positive example: "Foreign government report rates Country A institutions as failing core standards" -> `foreign_reaction`. Negative example (contrast): "Foreign academic study rates Country A institutions as failing core standards" -> `contextual` (the issuing authority is a foreign academic institution, not a foreign government).
 - Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
 - Neutral external reporting or analysis about the target proceeding remains "contextual" unless the substantive evidence is the foreign government's own action or official assessment.
 
