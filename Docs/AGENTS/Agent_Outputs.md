@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Hydrogen Boundary And Asylum Refinement Followup -- [Standard] [open-items: yes]
+**For next agent:** Hydrogen is now structurally separated into TTW/WTW on the live submitted run `a2e57bbb...`; asylum retrieval is improved through canonicalized source types and stricter primary-source refinement, but the queued live rerun `bc825742...` still needs confirmation and a future generic table-extraction step may be needed for one direct official aggregate total.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Hydrogen_Boundary_And_Asylum_Refinement_Followup.md
+
+---
 ### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Primary-Source Refinement Fresh Live Verification -- [Standard] [open-items: yes]
 **For next agent:** Fresh approved-input rerun `ad4c0c1ba8bc4094849d2e3e9e0b1ef9` completed `SUCCEEDED` on commit `6bfffbba` with `LEANING-TRUE | 60 | 60`, source count back to `24`, and focus counts `preliminary=2`, `main=3`, `contradiction=3`, `contrarian=2`, `refinement=0`. `claimAcquisitionLedger.AC_01` still has no refinement entry and all `laneReason` values are empty, so the live refinement branch still did not activate; the 2025 SEM archive page/PDF are also still absent.
 → Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Fresh_Live_Verification.md
