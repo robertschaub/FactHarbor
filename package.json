@@ -20,7 +20,11 @@
     "promptfoo:list": "node scripts/promptfoo-sr.js --list",
     "promptfoo:view": "node scripts/promptfoo-sr.js --view",
     "validate:run": "node scripts/validation/extract-validation-summary.js",
-    "validate:compare": "node scripts/validation/compare-batches.js"
+    "validate:compare": "node scripts/validation/compare-batches.js",
+    "index": "node scripts/build-index.mjs",
+    "index:tier1": "node scripts/build-index.mjs --tier=1",
+    "index:tier2": "node scripts/build-index.mjs --tier=2",
+    "install-hooks": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
     "next": "16.1.6",

@@ -13,6 +13,7 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, renameSync, existsSync, appendFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -139,6 +140,17 @@ if (existsSync(archiveOutputsFile)) {
     if (brokenCount > 0) {
         console.warn(`WARN: archive still contains ${brokenCount} Docs/AGENTS/Handoffs/${month}- reference(s)`);
     }
+}
+
+// Rebuild handoff index so agents see the updated corpus immediately
+try {
+    const indexScript = join(REPO_ROOT, 'scripts/build-index.mjs');
+    if (existsSync(indexScript)) {
+        execSync('node scripts/build-index.mjs --tier=2', { cwd: REPO_ROOT, stdio: 'pipe' });
+        console.log('Rebuilt handoff-index.json');
+    }
+} catch (e) {
+    console.warn('WARN: could not rebuild handoff index:', e.message);
 }
 
 console.log('\nDone.');

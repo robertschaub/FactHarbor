@@ -212,6 +212,19 @@ After all individual files are processed, update these three documents:
 
 ---
 
+## Step 5b — Rebuild agent indexes
+
+After all archiving and status document updates are complete, rebuild the handoff index
+so agents in subsequent sessions see the current corpus:
+
+```
+node scripts/build-index.mjs --tier=2
+```
+
+If `scripts/build-index.mjs` does not exist yet, skip this step and note it in the report.
+
+---
+
 ## Step 6 — Report to user
 
 ```

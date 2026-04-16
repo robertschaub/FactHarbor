@@ -40,14 +40,16 @@ Complexity: simple
 
 ### Captain's Assignment Checklist
 
-Agents self-serve context from `Docs/AGENTS/Agent_Outputs.md` and `Docs/AGENTS/Handoffs/` (per Agent Exchange Protocol in AGENTS.md). The Captain only needs to provide what agents **cannot** find themselves:
+Agents self-serve context from `Docs/AGENTS/Agent_Outputs.md`, the handoff index, and `Docs/AGENTS/Handoffs/` (per Agent Exchange Protocol in AGENTS.md). The Captain only needs to provide what agents **cannot** find themselves:
 
 | Complexity | Captain Provides | Agent Self-Serves |
 |------------|-----------------|-------------------|
-| **Simple** | Role + instruction | Recent outputs, role learnings |
-| **Moderate** | + Area (if ambiguous) | + Previous agent's outputs, WIP docs |
-| **Complex** | + Constraints + acceptance criteria | + Full handoff chain, related WIP docs |
-| **Investigation** | + Observed symptoms + expected vs actual | + All spoke files, hub document |
+| **Simple** | Role + instruction | Recent outputs, role learnings, index lookup |
+| **Moderate** | + Area (if ambiguous) | + Previous agent's outputs, WIP docs, index lookup |
+| **Complex** | + Constraints + acceptance criteria | + Full handoff chain, related WIP docs, index lookup |
+| **Investigation** | + Observed symptoms + expected vs actual | + All spoke files, hub document, index lookup |
+
+**Index lookup** (all complexity levels): Before reading handoffs by filename, query `Docs/AGENTS/index/handoff-index.json` — filter by `role` and `topics` to get the 3–5 most relevant files directly. Saves ~3,000 tokens vs listing the full directory. If the file does not exist, fall back to scanning `Docs/AGENTS/Handoffs/` directly.
 
 **Minimal dispatch examples:**
 ```

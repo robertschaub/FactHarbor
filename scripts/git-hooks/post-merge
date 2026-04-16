@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# post-merge — full index rebuild after git pull / merge.
+# Covers handoff and pipeline changes pulled from remote.
+# Install: cp scripts/git-hooks/post-merge .git/hooks/post-merge && chmod +x .git/hooks/post-merge
+# Or run: npm run install-hooks
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+INDEX_SCRIPT="$REPO_ROOT/scripts/build-index.mjs"
+
+[ -f "$INDEX_SCRIPT" ] || exit 0
+
+node "$INDEX_SCRIPT" 2>/dev/null || true
+
+exit 0

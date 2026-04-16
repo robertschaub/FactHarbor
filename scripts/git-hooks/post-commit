@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# post-commit — rebuild agent indexes for files changed in this commit.
+# Install: cp scripts/git-hooks/post-commit .git/hooks/post-commit && chmod +x .git/hooks/post-commit
+# Or run: npm run install-hooks
+
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+INDEX_SCRIPT="$REPO_ROOT/scripts/build-index.mjs"
+
+[ -f "$INDEX_SCRIPT" ] || exit 0
+
+CHANGED=$(git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null || true)
+
+if echo "$CHANGED" | grep -q "Docs/AGENTS/Handoffs/"; then
+  node "$INDEX_SCRIPT" --tier=2 2>/dev/null || true
+fi
+
+if echo "$CHANGED" | grep -q "apps/web/src/lib/analyzer/"; then
+  node "$INDEX_SCRIPT" --tier=1 2>/dev/null || true
+fi
+
+exit 0

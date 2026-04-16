@@ -111,6 +111,7 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
     - `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`
     - `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`
     - `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`
+    - `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
     - `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
     - `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
     - `Using hydrogen for cars is more efficient than using electricity`
@@ -280,10 +281,24 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 All agents MUST follow the Exchange Protocol on non-trivial task completion. Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md` (task fit check, role activation + alias table, Agent Exchange Protocol with three modes, output tiers, unified template, incoming-role checklist, archival thresholds, Consolidate WIP pointer).
 
 **Quick summary (do not skip the full file):**
-1. **Before starting a task**: assess whether current agent/tool and role+model tier fit — recommend a better fit if not.
+1. **Before starting a task**: assess role/model-tier fit. Then **query `Docs/AGENTS/index/handoff-index.json`** (filter by `role` + `topics`) to find relevant prior work — read only the matched files, not the full directory.
 2. **Role activation** ("As \<Role\>"): look up role in alias table → read `Docs/AGENTS/Roles/<RoleName>.md` → scan `Role_Learnings.md` → acknowledge → stay in role.
 3. **On completion**: write output per tier — Trivial = chat only, Standard = append to `Docs/AGENTS/Agent_Outputs.md`, Significant = new file in `Docs/AGENTS/Handoffs/`. Role handoffs require at least Standard + `Warnings` + `Learnings`.
 4. **Append, don't overwrite** `Agent_Outputs.md`. `Docs/WIP/` is NEVER for completion outputs.
+
+## Generated indexes (do not edit manually)
+
+Auto-rebuilt by PostToolUse hooks and workflow scripts. Run `npm run index` for a full rebuild.
+
+| Index | File | Use for |
+|-------|------|---------|
+| All handoffs — searchable by role + topic | `Docs/AGENTS/index/handoff-index.json` | Finding relevant prior work without scanning 193+ filenames. **Agent task history ONLY — NEVER query for source code locations; use grep for that.** |
+| Pipeline stage → file → function | `Docs/AGENTS/index/stage-map.json` | Locating which file implements a given stage |
+| LLM task → model tier | `Docs/AGENTS/index/stage-manifest.json` | Model tier lookups without grepping code |
+
+If these files do not exist yet, run `npm run index` to seed them.
+
+**After bulk Bash file operations** (mv, rm, git checkout, git pull) that touch `Docs/AGENTS/Handoffs/` or `apps/web/src/lib/analyzer/`, run `npm run index` manually — PostToolUse hooks do not fire for Bash commands.
 
 ---
 
@@ -300,6 +315,7 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 | `/debug` | `.claude/skills/debug/SKILL.md` | Analyze `debug-analyzer.log` + test results; standard post-change check |
 | `/explain-code` | `.claude/skills/explain-code/SKILL.md` | Explain how code works — uses analogies, mermaid diagrams, and step-by-step walkthroughs |
 | `/prompt-diagnosis` | `.claude/skills/prompt-diagnosis/SKILL.md` | RAG-augmented diagnosis of prompting deficiencies; correlates failures with runtime prompt hashes plus execution commit context |
+| `/report-review` | `.claude/skills/report-review/SKILL.md` | Holistic job-report analysis: expectation deltas vs. `benchmark-expectations.json`, evidence health, boundary sanity, verdict reasoning, warning severity. Multi-agent debate, AGENTS.md-compliant fix proposals. Scopes to HEAD by default or to specific jobs/commit/family. |
 | `/docs-update` | `.claude/skills/docs-update/SKILL.md` | Update-first cleanup for living docs across `Docs/`, with archive handling only for clearly obsolete material |
 | `/wip-update` | `.claude/skills/wip-update/SKILL.md` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP material |
 

@@ -1,0 +1,4036 @@
+{
+  "generatedAt": "2026-04-16T20:01:39.628Z",
+  "count": 195,
+  "entries": [
+    {
+      "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
+      "date": "2026-04-01",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "ai",
+        "agent",
+        "tooling",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Investigate whether additional AI agent tools/frameworks would benefit the FactHarbor development workflow."
+    },
+    {
+      "file": "2026-04-01_LLM_Expert_Multilingual_Output_Search_Developer_Checklist.md",
+      "date": "2026-04-01",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "multilingual",
+        "output",
+        "search",
+        "developer",
+        "checklist"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Developer_Checklist.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with this checklist, then cross-check the approved architecture in `Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Investigation.md` and `Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md`."
+    },
+    {
+      "file": "2026-04-01_LLM_Expert_Multilingual_Output_Search_Policy_Proposal.md",
+      "date": "2026-04-01",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "multilingual",
+        "output",
+        "search",
+        "policy",
+        "proposal"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Investigation.md",
+        "Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Report_Lead_Architect_Subagent.md",
+        "Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Report_Senior_Developer_Subagent.md",
+        "Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Report_Code_Reviewer_Subagent.md",
+        "Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Policy_Proposal.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Investigation.md` and `Docs/WIP/2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md`. Key code anchors are `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claim"
+    },
+    {
+      "file": "2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md",
+      "date": "2026-04-01",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "multilingual",
+        "output",
+        "search",
+        "review",
+        "validation",
+        "status"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-01_LLM_Expert_Multilingual_Output_Search_Review_Validation_Status.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat this document as the current multilingual validation gate. The important question is no longer whether the implementation is structurally sound; it is whether enabling the EN lane improves multilingual coverage without reintroducing verdict-direction regressions."
+    },
+    {
+      "file": "2026-04-01_lead_architect_clean_replay_of_fff7a508_rollback.md",
+      "date": "2026-04-01",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "clean",
+        "replay",
+        "of",
+        "fff7a508",
+        "rollback"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md",
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "Current branch state is the clean rollback target. If you need the abandoned mixed state for comparison, it is preserved on `backup/2026-04-01-pre-stage1-reset`. Later unrelated fixes remain in history unless separately reverted. The next useful step is a final `npm -w apps/web run build` on the set"
+    },
+    {
+      "file": "2026-04-01_lead_architect_stage_1_narrow_hardening_architect_review.md",
+      "date": "2026-04-01",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "stage",
+        "1",
+        "narrow",
+        "hardening",
+        "architect",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "Read Docs/WIP/2026-04-01_Stage1_Narrow_Hardening_Architect_Review.md and implement both changes simultaneously in claim-extraction-stage.ts."
+    },
+    {
+      "file": "2026-04-01_lead_architect_stage_1_narrow_hardening_code_review.md",
+      "date": "2026-04-01",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "stage",
+        "1",
+        "narrow",
+        "hardening",
+        "code",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "The repository is clean. Proceed to the next item since the narrow hardening has officially merged into the post-rollback baseline."
+    },
+    {
+      "file": "2026-04-01_senior_developer_multilingual_output_search_policy_proposal.md",
+      "date": "2026-04-01",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "multilingual",
+        "output",
+        "search",
+        "policy",
+        "proposal"
+      ],
+      "files_touched": [
+        "types.ts",
+        "claimboundary-pipeline.ts",
+        "verdict-stage.ts",
+        "verdict-generation-stage.ts",
+        "aggregation-stage.ts",
+        "research-orchestrator.ts",
+        "claimboundary.prompt.md"
+      ],
+      "summary": "reportLanguage is now a first-class cross-stage contract. Non-English inputs should produce German/French/etc report text on the next live run. English supplementary retrieval is metadata-ready but the decision logic (when to add EN lane) is not yet implemented."
+    },
+    {
+      "file": "2026-04-01_senior_developer_post_rollback_live_validation_17_runs.md",
+      "date": "2026-04-01",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "post",
+        "rollback",
+        "live",
+        "validation",
+        "17",
+        "runs"
+      ],
+      "files_touched": [
+        "Docs/ARCHIVE/2026-04-01_Post_Rollback_Validation_Report.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Full report at `Docs/ARCHIVE/2026-04-01_Post_Rollback_Validation_Report.md`. The reverted features (evidence-separability, distinctEvents granularity) were directionally right but had two sub-problems: contract validation fail-open (SRG) and candidate selection preferring bad merges (Plastik). A rev"
+    },
+    {
+      "file": "2026-04-01_senior_developer_stage_1_narrow_hardening_implementation.md",
+      "date": "2026-04-01",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage",
+        "1",
+        "narrow",
+        "hardening",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat this as a narrow Stage-1 patch on top of the Apr 1 rollback baseline. If continuing, run live SRG/SRF/Plastik validation first; do not expand this into a broader Stage-1 package. If needed later, clean up the noisy mock sequencing in the two new retry tests, but do not change production logic "
+    },
+    {
+      "file": "2026-04-02_investigator_funding_section_editorial_pass.md",
+      "date": "2026-04-02",
+      "roles": [
+        "investigator"
+      ],
+      "topics": [
+        "funding",
+        "section",
+        "editorial",
+        "pass"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you continue editing the same section, protect the current separation between `Funding Opportunities`, `Funding Precedents`, and `Community Funding`. The section is now easier to scan; additional expansion will quickly make it too dense unless something else is cut."
+    },
+    {
+      "file": "2026-04-02_investigator_funding_section_expansion_and_reframe.md",
+      "date": "2026-04-02",
+      "roles": [
+        "investigator"
+      ],
+      "topics": [
+        "funding",
+        "section",
+        "expansion",
+        "and",
+        "reframe"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Relevant section now lives in `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki` around the `3. FUNDING OPPORTUNITIES` block. If continuing, the highest-value follow-up is editorial tightening, not more list expansion: trim weak rows, add verification timesta"
+    },
+    {
+      "file": "2026-04-02_investigator_plastik_de_stage_4_prompt_contract_parse_failur.md",
+      "date": "2026-04-02",
+      "roles": [
+        "investigator"
+      ],
+      "topics": [
+        "plastik",
+        "de",
+        "stage",
+        "4",
+        "prompt",
+        "contract",
+        "parse",
+        "failur"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Inspect [claimboundary.prompt.md](C:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md#L879), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L580), [verdict-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts#L717), [verdict-generation-stage."
+    },
+    {
+      "file": "2026-04-02_investigator_plastik_stage_4_runtime_artifact_failure_review.md",
+      "date": "2026-04-02",
+      "roles": [
+        "investigator"
+      ],
+      "topics": [
+        "plastik",
+        "stage",
+        "4",
+        "runtime",
+        "artifact",
+        "failure",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Most relevant runtime anchors are the DB rows/events/metrics for `b4678284c7e042f986211a5311aaa828`, `d460554f6b9549008a1f6e00c542b508`, `a695d0bc0fb745a2a6ebeccc0f8ec206`, `0ee67d3d3285418a813ed0dcf8ab06a4`, `d64adbaf52eb4953ba1bea596015a52d`, `721b4afe3c2b4ac48c6a4d5a2770f97a`, `87f82137692e42b2b5"
+    },
+    {
+      "file": "2026-04-02_lead_architect_german_plastik_stage_4_parse_failure_reassess.md",
+      "date": "2026-04-02",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "german",
+        "plastik",
+        "stage",
+        "4",
+        "parse",
+        "failure",
+        "reassess"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Anchor evidence: failing jobs `d460554f6b9549008a1f6e00c542b508`, `f279d6d32ccf49fb9d4843cee487e9bb`, `b4678284c7e042f986211a5311aaa828`; successful comparators `a695d0bc0fb745a2a6ebeccc0f8ec206`, `0ee67d3d3285418a813ed0dcf8ab06a4`, `513e99539b3b4c8ca63daeca96b6e92b`. Relevant files: `apps/web/src/l"
+    },
+    {
+      "file": "2026-04-02_lead_architect_german_plastik_variability_split_diagnosis.md",
+      "date": "2026-04-02",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "german",
+        "plastik",
+        "variability",
+        "split",
+        "diagnosis"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Anchor jobs for comparison: `974a754643d747c78de620558f26dd32`, `c86a3e4bb02349e3b316ea8e7dff095c`, `bc7f2cafc8fb4ea09267e18cf2a5f409`, `22c950cba66c4f18bfc280466c8f57d2`. Inspect `resultJson.searchQueries`, `resultJson.sources`, `resultJson.claimBoundaries`, and `AnalysisMetrics.MetricsJson` verdic"
+    },
+    {
+      "file": "2026-04-02_lead_architect_stage_4_payload_simplification.md",
+      "date": "2026-04-02",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "stage",
+        "4",
+        "payload",
+        "simplification"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Verify advocate `promptTokens`, `schemaCompliant`, retry firing, and final verdict/confidence on the live reruns. If parse failures persist after this simplification, the next investigation should focus on remaining Stage-4 output-shape failure artifacts rather than Stage 1."
+    },
+    {
+      "file": "2026-04-02_senior_developer_german_plastik_reproduction_reset_rubric_co.md",
+      "date": "2026-04-02",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "german",
+        "plastik",
+        "reproduction",
+        "reset",
+        "rubric",
+        "co"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/aggregation-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with one fresh single German Plastik run on current code after the last build/reseed. Check `/api/fh/metrics/{jobId}` with `X-Admin-Key` for `taskType='verdict' AND schemaCompliant=false`. If `EXPLANATION_QUALITY_RUBRIC` still shows `${narrative}`, the running web service did not pick up the l"
+    },
+    {
+      "file": "2026-04-02_senior_developer_metrics_api_admin_key_enforcement.md",
+      "date": "2026-04-02",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "metrics",
+        "api",
+        "admin",
+        "key",
+        "enforcement"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/MetricsController.cs",
+        "AuthHelper",
+        "IsAdminKeyValid",
+        "POST",
+        "GET {jobId}",
+        "GET summary",
+        "GET quality-health",
+        "DELETE cleanup"
+      ],
+      "summary": "The metrics API is now admin-only. If you add new metrics endpoints, follow the same pattern: `if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized(...)`."
+    },
+    {
+      "file": "2026-04-02_senior_developer_restore_local_runner_serial_mode_for_debugg.md",
+      "date": "2026-04-02",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "restore",
+        "local",
+        "runner",
+        "serial",
+        "mode",
+        "for",
+        "debugg"
+      ],
+      "files_touched": [
+        "apps/web/.env.local",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Assume the currently running local web stack is serial (`FH_RUNNER_MAX_CONCURRENCY=1`). Do not interpret improvements from the next Plastik runs as proof that the underlying concurrency issue is fixed globally; they only remove one local confound. If you need to revisit the rationale for `3`, start "
+    },
+    {
+      "file": "2026-04-02_senior_developer_stage_4_parse_failure_diagnostic_artifact_c.md",
+      "date": "2026-04-02",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage",
+        "4",
+        "parse",
+        "failure",
+        "diagnostic",
+        "artifact",
+        "c"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/metrics.ts",
+        "ParseFailureArtifact",
+        "LLMCallMetric",
+        "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+        "recordLLMCall",
+        "apps/web/test/unit/lib/analyzer/verdict-parse-artifact.test.ts"
+      ],
+      "summary": "After the next failing Plastik run, inspect the artifacts via `GET /api/fh/metrics/{jobId}` and search for `parseFailureArtifact` in the `llmCalls` array. The `rawPrefix` and `rawSuffix` should reveal whether the failure is trailing commentary, incomplete brackets, duplicated JSON segments, or anoth"
+    },
+    {
+      "file": "2026-04-03_product_strategist_cooperation_opportunities_strategy_rewrit.md",
+      "date": "2026-04-03",
+      "roles": [
+        "product_strategist"
+      ],
+      "topics": [
+        "cooperation",
+        "opportunities",
+        "strategy",
+        "rewrit"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Cooperation Opportunities` as the decision page and keep detailed partner/funder background in the funding presentation, academic cooperation presentation, and `Docs/Knowledge`. If new partner evidence arrives, update the short tables and sequence rather than re-expanding the page into a land"
+    },
+    {
+      "file": "2026-04-03_senior_developer_add_supplementary_provider_usage_recommenda.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "add",
+        "supplementary",
+        "provider",
+        "usage",
+        "recommenda"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md",
+        "Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If implementation proceeds, preserve the distinction now documented in WIP: Wikipedia is the bounded default-on supplementary source; Semantic Scholar and Google Fact Check remain targeted optional discovery providers until their deeper integration path is reopened."
+    },
+    {
+      "file": "2026-04-03_senior_developer_fix_false_orphan_requeue_on_local_runner.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "false",
+        "orphan",
+        "requeue",
+        "on",
+        "local",
+        "runner"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/test/unit/lib/drain-runner-pause.integration.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with one fresh local job, not a batch. If a new duplicate run appears, inspect `JobEvents` first. `Done -> Re-queued after application restart (previous execution lost)` should now be much harder to reproduce locally. If you ever see that sequence again, check whether the live per-job `updated"
+    },
+    {
+      "file": "2026-04-03_senior_developer_fix_misleading_repeated_phase_blocks_in_job.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "misleading",
+        "repeated",
+        "phase",
+        "blocks",
+        "in",
+        "job"
+      ],
+      "files_touched": [
+        "apps/web/src/app/jobs/[id]/lib/event-display.ts",
+        "apps/web/test/unit/app/jobs/event-display.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If the user still reports \"restart-like\" visuals, query the specific job in `factharbor.db` before touching runner code. Count `Runner started`, `Re-queued after application restart%`, and `Job interrupted by server restart.%` for that job. If those are `1/0/0`, the issue is presentation, not execut"
+    },
+    {
+      "file": "2026-04-03_senior_developer_fix_stage_4_advocate_parse_failure_from_une.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "stage",
+        "4",
+        "advocate",
+        "parse",
+        "failure",
+        "from",
+        "une"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/json.ts",
+        "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+        "apps/web/test/unit/lib/analyzer/json.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If another `VERDICT_ADVOCATE` parse failure appears, fetch `/api/fh/metrics/{jobId}` with `X-Admin-Key` and check `parseFailureArtifact.recoveriesAttempted`. New quote-family failures should now show `inner_quote_repair` in the attempted chain and should usually recover before retry. If failures con"
+    },
+    {
+      "file": "2026-04-03_senior_developer_implement_bounded_default_on_wikipedia_supp.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "implement",
+        "bounded",
+        "default",
+        "on",
+        "wikipedia",
+        "supp"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/web-search.ts",
+        "apps/web/src/lib/search-wikipedia.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/search.default.json",
+        "apps/web/src/app/admin/config/page.tsx",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/web-search.test.ts",
+        "apps/web/test/unit/lib/search-wikipedia.test.ts",
+        "Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md",
+        "Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Validate serially on German Plastik, English Plastik, and one stable control. Check whether Wikipedia contributes bounded additional domains without flooding and whether disabling `search.providers.wikipedia.enabled` cleanly restores the pre-change posture."
+    },
+    {
+      "file": "2026-04-03_senior_developer_refresh_wikipedia_wip_scope_and_add_narrow.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "refresh",
+        "wikipedia",
+        "wip",
+        "scope",
+        "and",
+        "add",
+        "narrow"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md",
+        "Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, not from the archived large architecture doc. Keep the reopening narrow: no reference extraction, no Semantic Scholar redesign, no special aggregation heuristics. Validate in serial runs with Wikipedia `fallback_only` versu"
+    },
+    {
+      "file": "2026-04-03_senior_developer_wikipedia_supplementary_completion.md",
+      "date": "2026-04-03",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "wikipedia",
+        "supplementary",
+        "completion"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/search.default.json",
+        "apps/web/src/lib/web-search.ts",
+        "apps/web/src/lib/search-wikipedia.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/app/admin/config/page.tsx",
+        "apps/web/test/unit/lib/web-search.test.ts",
+        "apps/web/test/unit/lib/search-wikipedia.test.ts",
+        "Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md"
+      ],
+      "summary": "Feature is complete. If deeper Wikipedia-specific behavior is desired (reference extraction, provider-specific query variants), see `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md` §2-3."
+    },
+    {
+      "file": "2026-04-04_agents_supervisor_close_agent_rules_cleanup_documentation_ga.md",
+      "date": "2026-04-04",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "close",
+        "agent",
+        "rules",
+        "cleanup",
+        "documentation",
+        "ga"
+      ],
+      "files_touched": [
+        "Docs/ARCHIVE/Agent_Rules_Cleanup_Plan_2026-03-17.md",
+        "Docs/ARCHIVE/Role_Learnings_Curation_Report_2026-03-17.md",
+        "Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If governance-history docs are referenced in future reviews, use `Docs/ARCHIVE/2026-04-04_Agent_Rules_Cleanup_Closure_Summary.md` first, then the archived plan/report for underlying rationale."
+    },
+    {
+      "file": "2026-04-04_code_reviewer_documentation_currency_check_for_solution_and.md",
+      "date": "2026-04-04",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "documentation",
+        "currency",
+        "check",
+        "for",
+        "solution",
+        "and"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If asked to update docs, start with `Docs/WIP/2026-03-26_Plastik_UNVERIFIED_Solution_Proposal.md`, `Docs/WIP/README.md`, `Docs/STATUS/Current_Status.md`, and `Docs/STATUS/Backlog.md`. Preserve the historical analysis, but add a clear outcome/superseded banner rather than rewriting the investigation "
+    },
+    {
+      "file": "2026-04-04_lead_architect_source_provenance_tracking_design.md",
+      "date": "2026-04-04",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "source",
+        "provenance",
+        "tracking",
+        "design"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md",
+        "Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/xwiki-pages/.../Alpha Roadmap/WebHome.xwiki",
+        "Docs/xwiki-pages/.../Quality and Trust/WebHome.xwiki"
+      ],
+      "summary": "Read `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` for the full design. Start with Phase 1 (section 4, \"Phase 1 — Provenance Extraction + Telemetry\"). Key integration points: `research-extraction-stage.ts` (extraction schema), `verdict-stage.ts:214` (`buildSourcePortfolioByClaim`), `typ"
+    },
+    {
+      "file": "2026-04-04_llm_expert_refresh_stale_retrieval_docs.md",
+      "date": "2026-04-04",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "refresh",
+        "stale",
+        "retrieval",
+        "docs"
+      ],
+      "files_touched": [
+        "Docs/Specification/Multi_Source_Evidence_Retrieval.md",
+        "Docs/WIP/2026-03-26_Next_Workstream_Decision.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the current retrieval planning sources as `Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md`, `Docs/WIP/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md`, `Docs/STATUS/Backlog.md`, and `Docs/STATUS/Current_Status.md`. Only expand edits beyond these if asked for a broad"
+    },
+    {
+      "file": "2026-04-04_llm_expert_retrieval_documentation_currency_check.md",
+      "date": "2026-04-04",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "retrieval",
+        "documentation",
+        "currency",
+        "check"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If asked to refresh docs, focus first on `Docs/Specification/Multi_Source_Evidence_Retrieval.md` and `Docs/WIP/2026-03-26_Next_Workstream_Decision.md`. Preserve the current April docs as the canonical retrieval planning sources unless newer design decisions supersede them."
+    },
+    {
+      "file": "2026-04-04_product_strategist_funding_presentation_rewrite.md",
+      "date": "2026-04-04",
+      "roles": [
+        "product_strategist"
+      ],
+      "topics": [
+        "funding",
+        "presentation",
+        "rewrite"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Keep this page short and donor/partner-facing. Detailed partner sequencing, funder timing, and internal readiness notes belong in `Cooperation Opportunities`, `Academic Cooperation`, `Docs/Knowledge`, and `Docs/WIP`, not back in this presentation."
+    },
+    {
+      "file": "2026-04-04_product_strategist_sync_internal_cooperation_plan_and_knowle.md",
+      "date": "2026-04-04",
+      "roles": [
+        "product_strategist"
+      ],
+      "topics": [
+        "sync",
+        "internal",
+        "cooperation",
+        "plan",
+        "and",
+        "knowle"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki",
+        "Docs/Knowledge/EXECUTIVE_SUMMARY.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If another doc still says `Full Fact` is the immediate `#1` cooperation target or `NLnet` is already closed as of April 2026, treat that as stale unless it is clearly marked as historical background. The current internal source of truth is `Cooperation Opportunities/WebHome.xwiki`."
+    },
+    {
+      "file": "2026-04-04_product_strategist_tighten_funding_presentation_around_immed.md",
+      "date": "2026-04-04",
+      "roles": [
+        "product_strategist"
+      ],
+      "topics": [
+        "tighten",
+        "funding",
+        "presentation",
+        "around",
+        "immed"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you expand this work, keep this page donor-facing and concise. Put detailed opportunity tracking, eligibility nuance, and call calendars on `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki`. If you need the evidence behind the wording, start with `Docs/Kn"
+    },
+    {
+      "file": "2026-04-04_senior_developer_apply_sonnet_review_to_boundary_grounding_p.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "apply",
+        "sonnet",
+        "review",
+        "to",
+        "boundary",
+        "grounding",
+        "p"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the revised ordering in the WIP plan: `validation gate -> Track A root-cause stabilization + Track B grounding containment in parallel`. Do not revert to a strictly sequential order unless new evidence disproves the independent grounding failure mode."
+    },
+    {
+      "file": "2026-04-04_senior_developer_assess_whether_latest_deployment_caused_obs.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "assess",
+        "whether",
+        "latest",
+        "deployment",
+        "caused",
+        "obs"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If asked whether to revert the Wikipedia supplementary deployment, the best current answer is no. The current priority should remain Stage 2/3 retrieval-boundary stabilization plus narrow verdict-grounding containment, while local execution stability is repaired separately."
+    },
+    {
+      "file": "2026-04-04_senior_developer_audit_provenance_documentation_currency.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "audit",
+        "provenance",
+        "documentation",
+        "currency"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If asked to make the docs current, update `Docs/WIP/README.md` under future proposals, add a short “historical review input, not the active plan” note for `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md`, and optionally clean minor drifting counts in the design doc without changing its t"
+    },
+    {
+      "file": "2026-04-04_senior_developer_boundary_concentration_vs_grounding_priorit.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "boundary",
+        "concentration",
+        "vs",
+        "grounding",
+        "priorit"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md`. Review whether the ordering is right: validation gate first, Stage 2/3 root-cause track second, grounding containment third. If approved, the first concrete validation target should be same-commit serial Bol"
+    },
+    {
+      "file": "2026-04-04_senior_developer_check_boundary_grounding_documentation_curr.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "check",
+        "boundary",
+        "grounding",
+        "documentation",
+        "curr"
+      ],
+      "files_touched": [
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as current. Use `Docs/WIP/README.md` as the discovery entry point; it now points to the plan. Do not infer from older `Agent_Outputs` entries that grounding is still sequentially deferred."
+    },
+    {
+      "file": "2026-04-04_senior_developer_compare_newest_local_and_deployed_quality_j.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "compare",
+        "newest",
+        "local",
+        "and",
+        "deployed",
+        "quality",
+        "j"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as updated. If asked what to fix next, the best answer is still: stabilize local execution enough to satisfy the validation gate, then pursue Stage 2/3 retrieval-boundary stabilization and verdict-grounding contai"
+    },
+    {
+      "file": "2026-04-04_senior_developer_complete_same_commit_local_validation_gate.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "complete",
+        "same",
+        "commit",
+        "local",
+        "validation",
+        "gate"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the three same-commit jobs above as the current local baseline. Treat `verdict_grounding_issue` as the most clearly reproduced local defect on the current build. Treat earlier local mega-boundary outliers as historical/noisy signals unless they reappear under a fresh same-commit gate. Read the n"
+    },
+    {
+      "file": "2026-04-04_senior_developer_document_local_vs_deployed_grounding_canary.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "document",
+        "local",
+        "vs",
+        "deployed",
+        "grounding",
+        "canary"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the new section 6 in `Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md` as the current source of truth for the local/deployed status split. The next operational step is a fresh production rerun of the same claim and a quick provenance check on the new job hash."
+    },
+    {
+      "file": "2026-04-04_senior_developer_execute_first_local_same_commit_validation.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "execute",
+        "first",
+        "local",
+        "same",
+        "commit",
+        "validation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Resume from the WIP plan’s new execution-status section. Restore Anthropic credits first, then rerun the exact same local canary matrix from a cleared-cache starting point: Bolsonaro EN, Plastik DE, `Ist die Erde rund?`, then the warm pass. Only after that should the gate be considered complete."
+    },
+    {
+      "file": "2026-04-04_senior_developer_fix_comparative_geography_evidence_starvati.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "comparative",
+        "geography",
+        "evidence",
+        "starvati"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/jurisdiction-context.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/research-query-stage.ts",
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "After deployment or local queue drain, re-run the exact Swiss-vs-Germany claim and confirm that AC_02 now receives Germany evidence, the `evidence_applicability_filter` warning drops or disappears, and the article no longer collapses to `UNVERIFIED 50/0`. Safe verification already passed: `npm test`"
+    },
+    {
+      "file": "2026-04-04_senior_developer_investigate_executed_web_commit_hash_confus.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "investigate",
+        "executed",
+        "web",
+        "commit",
+        "hash",
+        "confus"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If the team wants to repair this, the right fix is not \"make the hash more stable\" globally. It is to add a second, analysis-scoped execution fingerprint for validation use, while keeping the existing visible hash for whole-repo build provenance. In the meantime, avoid committing unrelated repo chan"
+    },
+    {
+      "file": "2026-04-04_senior_developer_make_commit_hash_live_and_visible_across_ap.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "make",
+        "commit",
+        "hash",
+        "live",
+        "and",
+        "visible",
+        "across",
+        "ap"
+      ],
+      "files_touched": [
+        "apps/api/Helpers/AppBuildInfo.cs",
+        "apps/api/Program.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/VersionController.cs",
+        "Docs/AGENTS/Procedures/Live_Validation_Hygiene.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Local verification succeeded with both endpoints reporting the same live build id: `http://localhost:5000/version` and `http://localhost:3000/api/version` now return `git_sha = 5f666979...+469a7968`. Use this patch as the current provenance baseline; if the team wants validation-grade analyzer prove"
+    },
+    {
+      "file": "2026-04-04_senior_developer_make_job_api_commit_hash_live_per_new_commi.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "make",
+        "job",
+        "api",
+        "commit",
+        "hash",
+        "live",
+        "per",
+        "new",
+        "commi"
+      ],
+      "files_touched": [
+        "apps/api/Helpers/AppBuildInfo.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/VersionController.cs",
+        "apps/api/Program.cs",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Verify production picks this up after the next deploy/restart by checking `/version` and one freshly created job. If future validation needs analyzer-only provenance, add a second scoped fingerprint rather than changing this whole-repo build id again."
+    },
+    {
+      "file": "2026-04-04_senior_developer_priority_debate_on_verdict_grounding_vs_ret.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "priority",
+        "debate",
+        "on",
+        "verdict",
+        "grounding",
+        "vs",
+        "ret"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/src/lib/analyzer/warning-display.ts`, `apps/web/src/components/FallbackReport.tsx`, `apps/web/src/lib/config-schemas.ts`, `Docs/STATUS/Current_Status.md`, and `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`. Frame the"
+    },
+    {
+      "file": "2026-04-04_senior_developer_refresh_provenance_doc_labels_and_index.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "refresh",
+        "provenance",
+        "doc",
+        "labels",
+        "and",
+        "index"
+      ],
+      "files_touched": [
+        "Docs/WIP/README.md",
+        "Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md",
+        "Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` as the current plan and `Docs/WIP/2026-04-04_Source_Provenance_GPT_Review_Prompt.md` as review history only."
+    },
+    {
+      "file": "2026-04-04_senior_developer_refresh_status_and_xwiki_planning_docs.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "refresh",
+        "status",
+        "and",
+        "xwiki",
+        "planning",
+        "docs"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Planning/Alpha Roadmap/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Quality and Trust/WebHome.xwiki",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Docs/STATUS/Current_Status.md`, `Docs/STATUS/Backlog.md`, and the two updated xWiki pages as the refreshed top-level references. If further doc cleanup is requested, next targets should be older deep-dive/spec pages rather than these entry-point summaries."
+    },
+    {
+      "file": "2026-04-04_senior_developer_resume_validation_batch_after_credit_restor.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "resume",
+        "validation",
+        "batch",
+        "after",
+        "credit",
+        "restor"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the WIP doc’s new rerun-status sections. The next step is not more analytical comparison; it is stabilizing the local run environment so a serial batch can execute on one fixed build/commit. Once that is achieved, rerun the same canary set again."
+    },
+    {
+      "file": "2026-04-04_senior_developer_scope_grounding_validation_to_claim_local_c.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "scope",
+        "grounding",
+        "validation",
+        "to",
+        "claim",
+        "local",
+        "c"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-stage.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Re-run the Swiss-vs-Germany local success case (`c3a19e4ca612445a8e32cb330da604f8`) or a fresh equivalent and inspect whether the prior `S_015/S_016`-style warning is gone. If any grounding warning remains, compare it against the new three-tier rule before changing severity/policy."
+    },
+    {
+      "file": "2026-04-04_senior_developer_source_provenance_tracking_design_review.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "source",
+        "provenance",
+        "tracking",
+        "design",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/research-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/analyzer/verdict-stage.ts`, `apps/web/prompts/claimboundary.prompt.md`,"
+    },
+    {
+      "file": "2026-04-04_senior_developer_wip_consolidation_9.md",
+      "date": "2026-04-04",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "wip",
+        "consolidation",
+        "9"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/WIP/README.md",
+        "Docs/ARCHIVE/README_ARCHIVE.md",
+        "Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md",
+        "Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md",
+        "Docs/WIP/2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md",
+        "Docs/WIP/2026-03-26_Next_Workstream_Decision.md",
+        "Docs/WIP/2026-03-29_1bfb_Direction_Integrity_Architect_Review.md",
+        "Docs/ARCHIVE/2026-03-26_Bolsonaro_Seeded_Preliminary_Evidence_Mapping_Review.md",
+        "Docs/ARCHIVE/2026-03-26_Seeded_Evidence_Mapping_Fix_Investigation.md",
+        "Docs/ARCHIVE/2026-03-26_Seeded_Evidence_LLM_Remap_Proposal.md",
+        "Docs/ARCHIVE/2026-03-26_Seeded_Evidence_Mapping_Fix_Proposal_Rev2.md",
+        "Docs/ARCHIVE/2026-03-27_Seeded_Evidence_Remap_Promotion_Gate_Parked.md",
+        "Docs/ARCHIVE/2026-03-27_Direction_Validator_False_Positive_Investigation.md",
+        "Docs/ARCHIVE/2026-03-29_b8e6_8640_Claim_Decomposition_Architect_Review.md",
+        "Docs/ARCHIVE/2026-03-31_Source_Fetch_Failure_Reduction_Plan.md",
+        "Docs/ARCHIVE/2026-04-03_Wikipedia_Supplementary_Completion_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the archived remap/direction/fetch/Wikipedia docs as historical records under `Docs/ARCHIVE/`. Treat `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md` and `Docs/WIP/2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` as partially-done living records. If another consol"
+    },
+    {
+      "file": "2026-04-05_Senior_Developer_Grounding_Alias_Fix_Validation.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "grounding",
+        "alias",
+        "fix",
+        "validation"
+      ],
+      "files_touched": [],
+      "summary": "Grounding Alias Fix — Investigation, Implementation, and Validation"
+    },
+    {
+      "file": "2026-04-05_llm_expert_review_keep_or_revert_decision_for_07cb2e0d.md",
+      "date": "2026-04-05",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "review",
+        "keep",
+        "or",
+        "revert",
+        "decision",
+        "for",
+        "07cb2e0d"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you need to resolve the remaining uncertainty efficiently, run one controlled same-input multi-jurisdiction A/B canary with this line toggled and compare only the generated queries plus first-iteration retrieval coverage per listed jurisdiction. Swiss-vs-Germany and Bolsonaro EN are the best curr"
+    },
+    {
+      "file": "2026-04-05_senior_developer_add_traffic_light_status_to_wip_comparison.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "add",
+        "traffic",
+        "light",
+        "status",
+        "to",
+        "wip",
+        "comparison"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If this note is migrated into status docs, preserve both the legend and the separation between build-over-build and current local-vs-deployed sections."
+    },
+    {
+      "file": "2026-04-05_senior_developer_align_challenger_and_grounding_prompts_with.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "align",
+        "challenger",
+        "and",
+        "grounding",
+        "prompts",
+        "with"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The prompt contract tests now explicitly cover challenger prose and the defensive legacy wording in grounding validation. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm test`, and `npm -w apps/web run build`."
+    },
+    {
+      "file": "2026-04-05_senior_developer_bolsonaro_en_plastik_de_local_quality_inves.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "bolsonaro",
+        "en",
+        "plastik",
+        "de",
+        "local",
+        "quality",
+        "inves"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-05_Bolsonaro_Plastik_Local_Quality_Investigation.md",
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-stage.test.ts"
+      ],
+      "summary": "Fix is committed (`cbb364ec`). Next step is rerunning local Bolsonaro EN and Plastik DE canaries to validate. If grounding warnings disappear and verdicts are stable, Plastik is deployment-ready; Bolsonaro needs the retrieval-depth check."
+    },
+    {
+      "file": "2026-04-05_senior_developer_check_whether_older_ahead_of_deploy_commits.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "check",
+        "whether",
+        "older",
+        "ahead",
+        "of",
+        "deploy",
+        "commits"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The main conclusion is negative attribution: none of the older commits ahead of deployed currently has evidence of causing the local quality decline. If further causality work is needed, investigate later commits (`81e7ddc4`, `07cb2e0d`) only where they plausibly affect the family, and otherwise foc"
+    },
+    {
+      "file": "2026-04-05_senior_developer_fix_residual_grounding_noise_source_backfil.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "residual",
+        "grounding",
+        "noise",
+        "source",
+        "backfil"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with fresh local canaries on the current branch before any deploy decision. Watch especially for the prior `isdglobal.org` empty-`sourceId` pattern and the Plastik AC_02 reasoning/array mismatch family. Verification passed: `npm -w apps/web exec vitest run test/unit/lib/analyzer/verdict-stage."
+    },
+    {
+      "file": "2026-04-05_senior_developer_make_wip_comparison_colors_visible_in_plain.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "make",
+        "wip",
+        "comparison",
+        "colors",
+        "visible",
+        "in",
+        "plain"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you need real colored boxes later, this will need xWiki macros or HTML/CSS in a different rendering context rather than plain markdown tables."
+    },
+    {
+      "file": "2026-04-05_senior_developer_post_review_fixes_3_items.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "post",
+        "review",
+        "fixes",
+        "3",
+        "items"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/api/Helpers/AppBuildInfo.cs",
+        "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+        "apps/web/test/unit/lib/analyzer/en-supplementary-lane-geography.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-parse-artifact.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
+      ],
+      "summary": "All three fixes are self-contained. No follow-up work needed unless validation runs reveal regression."
+    },
+    {
+      "file": "2026-04-05_senior_developer_refine_grounding_validator_prompt_for_remai.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "refine",
+        "grounding",
+        "validator",
+        "prompt",
+        "for",
+        "remai"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "After prompt rollout, re-run the Swiss-vs-Germany canary and one of the previously affected production claims (`38d576...` or `d0c115...` family) and compare the warning text against the three false-positive buckets documented in WIP section 5.10. Verification already passed: `npm -w apps/web exec v"
+    },
+    {
+      "file": "2026-04-05_senior_developer_reframe_batch_as_build_over_build_compariso.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "reframe",
+        "batch",
+        "as",
+        "build",
+        "over",
+        "build",
+        "compariso"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Local current-build batch: Earth `78496147`, Plastik `345d6487`, Bolsonaro `52fcb624`, Swiss/DE `e65b9591`, Meta `039b1056`. Deployed current-build batch: Earth `3e1253cb`, Plastik `80bbcc3d`, Bolsonaro `eb02cd2e`, Swiss/DE `9042bb73`, Meta `3f00ba80`. Main comparative takeaways: local Meta improved"
+    },
+    {
+      "file": "2026-04-05_senior_developer_replace_citation_repair_with_single_citatio.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "replace",
+        "citation",
+        "repair",
+        "with",
+        "single",
+        "citatio"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Fresh local canaries on prompt hash `79f7e76fa9c624f8256464739b2eb73d9b0ab065f9462190b8e7aa0e50ee1bd4` succeeded: `51751fbc88bb4489a9955f4baf011945` (Meta) finished `TRUE 92/85` with no `verdict_grounding_issue`; `c4a4c60612ff48f0a3dbb8da764fb0ab` (Plastik) finished `MIXED 51/62` with no `verdict_gr"
+    },
+    {
+      "file": "2026-04-05_senior_developer_run_5_input_local_vs_deployed_quality_gate.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "run",
+        "5",
+        "input",
+        "local",
+        "vs",
+        "deployed",
+        "quality",
+        "gate"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Batch job IDs were local `7849614707f941a4822120a8c32976a4`, `345d6487f2344923b0eeeb3b7ce1ca4d`, `52fcb6244a0145a999d9a5279b019912`, `e65b95916b594a90bfe72f31b04304cd`, `039b105677a54ccdbc7ef0e5da9c03d2`; deployed `3e1253cb79a44389b86d0c47ab734f13`, `80bbcc3dd89447d18bac16f1f5b84a96`, `eb02cd2e535a4"
+    },
+    {
+      "file": "2026-04-05_senior_developer_sufficiencyminmainiterations_experiment_ac.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "sufficiencyminmainiterations",
+        "experiment",
+        "ac"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-05_Bolsonaro_Sufficiency_Min_Main_Iterations_Experiment.md"
+      ],
+      "summary": "AC_02 check confirms genuine source scarcity, not starvation. AC_02 gets zero seeded items in both local AND deployed. Its 14 vs 21 item gap is proportional to iteration count (4 vs 6), driven by Stage 1 event-count variance (5 vs 7 distinct events). AC_02's sources have zero overlap with siblings —"
+    },
+    {
+      "file": "2026-04-05_senior_developer_update_status_docs_after_grounding_root_fix.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "update",
+        "status",
+        "docs",
+        "after",
+        "grounding",
+        "root",
+        "fix"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/WIP/2026-04-04_Boundary_Concentration_and_Grounding_Stabilization_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If these doc updates are committed, keep `GRND-1` in MONITOR status until the first 7+ runs and deployed validation are reviewed. The next substantive plan/doc changes should likely focus on the Stage 2/3 boundary-concentration track."
+    },
+    {
+      "file": "2026-04-05_senior_developer_write_wip_build_comparison_note.md",
+      "date": "2026-04-05",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "write",
+        "wip",
+        "build",
+        "comparison",
+        "note"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the WIP note as the canonical comparison reference for this batch instead of rephrasing from memory. It already contains the exact current job IDs and the comparator caveats."
+    },
+    {
+      "file": "2026-04-06_generalist_local_current_commit_tension_investigation.md",
+      "date": "2026-04-06",
+      "roles": [
+        "generalist"
+      ],
+      "topics": [
+        "local",
+        "current",
+        "commit",
+        "tension",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Anchor jobs: current `bf502af1`, `02891ccb`, `f712efca`, `ff198492`; comparisons `7d2b91b5`, `da3f0cea`, `e65b9591`, `c4a4c606`, `345d6487`, `da1180ed`, `5e93d734`, `52fcb624`, `703c261d`. Key references are the optional concise `boundaryDisagreements` contract in `apps/web/prompts/claimboundary.pro"
+    },
+    {
+      "file": "2026-04-06_research_cross_boundary_tension_analysis_all_deployed_jobs.md",
+      "date": "2026-04-06",
+      "roles": [
+        "research"
+      ],
+      "topics": [
+        "cross",
+        "boundary",
+        "tension",
+        "analysis",
+        "all",
+        "deployed",
+        "jobs"
+      ],
+      "files_touched": [
+        "C:/tmp/tension_analysis_report.txt"
+      ],
+      "summary": "See Section 4 of the report below for the comparison finding. Short version: average tensions are higher on the current commit (2.00 vs 0.44), but this is almost certainly topic-driven rather than a pipeline regression — the previous commit's 9 jobs included many simple/factual queries (Meta exit, E"
+    },
+    {
+      "file": "2026-04-06_senior_developer_close_stage_5_fix_2_as_deferred_and_propose.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "close",
+        "stage",
+        "5",
+        "fix",
+        "2",
+        "as",
+        "deferred",
+        "and",
+        "propose"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md",
+        "Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md",
+        "Docs/WIP/README.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md`. The active question is no longer narrative calibration; it is how to instrument and improve Stage 2/3 claim-level evidence quality without reopening rejected heuristics or broad redesign."
+    },
+    {
+      "file": "2026-04-06_senior_developer_compare_live_deployed_2ec54047_jobs_vs_b778.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "compare",
+        "live",
+        "deployed",
+        "2ec54047",
+        "jobs",
+        "vs",
+        "b778"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you need higher confidence on `2ec54047`, submit fresh deployed reruns for the Apr 5 baseline families (`Plastik`, `Bolsonaro EN`, `Earth`, `Meta`, `Swiss vs Germany`) and compare against the `b7783872` batch already documented in `Docs/WIP/2026-04-05_Current_vs_Previous_Build_Report_Comparison.m"
+    },
+    {
+      "file": "2026-04-06_senior_developer_consolidate_current_vs_previous_deployment.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "consolidate",
+        "current",
+        "vs",
+        "previous",
+        "deployment"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md`. The three supporting debate threads already concluded: deployed current jobs do show more visible tensions; local current jobs do not show a comparable general rise; and the key code-level fixes"
+    },
+    {
+      "file": "2026-04-06_senior_developer_cross_boundary_tension_investigation.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "cross",
+        "boundary",
+        "tension",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md"
+      ],
+      "summary": "Fix 1: `aggregation-stage.ts:388` — add `aggregation` and `evidenceSummary` variables. Fix 2: `verdict-stage.ts:1022` — either have reconciler return updated boundaryFindings, or derive post-reconciliation boundary summary. Fix 3: tighten VERDICT_NARRATIVE prompt to classify methodology/singleton ca"
+    },
+    {
+      "file": "2026-04-06_senior_developer_investigate_current_wikipedia_integration_s.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "investigate",
+        "current",
+        "wikipedia",
+        "integration",
+        "s"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Source of truth is the live code, not the older concept doc. Start with `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-wikipedia.ts`, `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/research-acquisiti"
+    },
+    {
+      "file": "2026-04-06_senior_developer_review_stage_5_tension_fix_follow_ups_and_u.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "review",
+        "stage",
+        "5",
+        "tension",
+        "fix",
+        "follow",
+        "ups",
+        "and",
+        "u"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md",
+        "Docs/WIP/2026-04-06_Cross_Boundary_Tension_Investigation.md",
+        "Docs/WIP/README.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The docs now consistently point to `08220154` + `2acc4545` as the shipped Stage-5 first-pass cleanup. Start measurement from the two WIP files dated 2026-04-06 and the new `NARR-1` backlog entry."
+    },
+    {
+      "file": "2026-04-06_senior_developer_trace_cross_boundary_tensions_code_path_and.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "trace",
+        "cross",
+        "boundary",
+        "tensions",
+        "code",
+        "path",
+        "and"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Highest-leverage fixes are: align the Stage 5 prompt contract with actual variables and add a Stage 5 prompt-contract test; stop using stale advocate `boundaryFindings` for final narrative generation by either recomputing them after reconciliation or having reconciliation output updated per-boundary"
+    },
+    {
+      "file": "2026-04-06_senior_developer_upq_1_cross_review_resequenced_phase_a_soun.md",
+      "date": "2026-04-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "upq",
+        "1",
+        "cross",
+        "review",
+        "resequenced",
+        "phase",
+        "a",
+        "soun"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Required plan change: `generateResearchQueries()` must filter `existingEvidence` to items where `relevantClaimIds.includes(claim.id)` before building the summary. This is a one-liner but critical for correctness. Full review text is in the chat response above."
+    },
+    {
+      "file": "2026-04-07_lead_architect_cross_review_addendum_for_hidden_deployed_bun.md",
+      "date": "2026-04-07",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "cross",
+        "review",
+        "addendum",
+        "for",
+        "hidden",
+        "deployed",
+        "bun"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md",
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The updated cross-review now reflects the correct combined position: public-visible strict range remains `21` local / `6` deployed, but the deployed analytical record for the Bundesrat family is larger because of the hidden addendum. Use that split consistently."
+    },
+    {
+      "file": "2026-04-07_lead_architect_cross_review_f1a372bf_to_head_job_quality_inv.md",
+      "date": "2026-04-07",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "cross",
+        "review",
+        "f1a372bf",
+        "to",
+        "head",
+        "job",
+        "quality",
+        "inv"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md",
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Cross_Review.md`. The main corrections to preserve are: do not cite 39/74 as the strict post-baseline range; do not treat deployed `f1a372bf` as a runtime delta commit; do not frame Plastik as a same-baseline local-vs-deployed test; and do"
+    },
+    {
+      "file": "2026-04-07_senior_developer_compare_upq_1_a_2_local_canaries_against_de.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "compare",
+        "upq",
+        "1",
+        "a",
+        "2",
+        "local",
+        "canaries",
+        "against",
+        "de"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md",
+        "Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md",
+        "Docs/WIP/README.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` as the current source of truth. The deployed comparators referenced in this pass are `8ec681050e844becb4ec616eb426731e` (Swiss), `2cf4682c5c914834ac5a58b318c3fc0e` (Plastik), `eb02cd2e535a4556a2bc3c29868412a0` (older-runtime Bolsonaro EN)"
+    },
+    {
+      "file": "2026-04-07_senior_developer_diagnose_local_vs_deployed_swiss_eu_treaty.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "diagnose",
+        "local",
+        "vs",
+        "deployed",
+        "swiss",
+        "eu",
+        "treaty"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Focus on Stage 4 prompt/contract calibration, not Stage 2 query tuning. Best root fix is: truthPercentage must stay anchored to the explicit proposition; omitted-context or \"normal procedure\" arguments should affect `misleadingness`, `limitations`, or at most confidence unless the stronger implicati"
+    },
+    {
+      "file": "2026-04-07_senior_developer_f1a372bf_to_head_investigation_final_with_b.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "f1a372bf",
+        "to",
+        "head",
+        "investigation",
+        "final",
+        "with",
+        "b"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md"
+      ],
+      "summary": "Full investigation with all findings: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. The three Bundesrat critical findings are documented with exact job IDs, per-claim evidence, and root-cause analysis. The fix targets are: (1) `apps/web/prompts/claimboundary.prompt.md` CLAIM_E"
+    },
+    {
+      "file": "2026-04-07_senior_developer_f1a372bf_to_head_job_quality_investigation.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "f1a372bf",
+        "to",
+        "head",
+        "job",
+        "quality",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md"
+      ],
+      "summary": "Full investigation: `Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md`. Priority: Phase C > deploy Phase B > grounding monitoring."
+    },
+    {
+      "file": "2026-04-07_senior_developer_implement_upq_1_phase_a_2_claim_level_acqui.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "implement",
+        "upq",
+        "1",
+        "phase",
+        "a",
+        "2",
+        "claim",
+        "level",
+        "acqui"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/test/unit/lib/analyzer/research-orchestrator.test.ts",
+        "apps/web/test/integration/claimboundary-integration.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The main analysis surface is now `resultJson.claimAcquisitionLedger`. The most relevant code paths are `runResearchIteration()` and `maybeRunSupplementaryEnglishLane()` in `research-orchestrator.ts`, the post-research applicability filter in `claimboundary-pipeline.ts`, and the new helper tests in `"
+    },
+    {
+      "file": "2026-04-07_senior_developer_upq_1_phase_a_2_telemetry_canary_measuremen.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "upq",
+        "1",
+        "phase",
+        "a",
+        "2",
+        "telemetry",
+        "canary",
+        "measuremen"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md"
+      ],
+      "summary": "The ledger data is in `resultJson.claimAcquisitionLedger`. Key fields: `seededEvidenceItems`, `iterations[].admittedEvidenceItems`, `iterations[].directionCounts`, `finalEvidenceItems`, `finalDirectionCounts`, `maxBoundaryShare`. Full analysis: `Docs/WIP/2026-04-07_UPQ1_Phase_A2_Canary_Measurement.m"
+    },
+    {
+      "file": "2026-04-07_senior_developer_upq_1_phase_b_canary_measurement_helps.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "upq",
+        "1",
+        "phase",
+        "b",
+        "canary",
+        "measurement",
+        "helps"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md"
+      ],
+      "summary": "Phase B is validated and should be kept. The ledger proves the forced iterations are productive. Next target: Stage 3 clustering behavior with larger evidence pools. Full data: `Docs/WIP/2026-04-07_UPQ1_Phase_B_Canary_Measurement.md`."
+    },
+    {
+      "file": "2026-04-07_senior_developer_upq_1_phase_b_per_claim_researched_iteratio.md",
+      "date": "2026-04-07",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "upq",
+        "1",
+        "phase",
+        "b",
+        "per",
+        "claim",
+        "researched",
+        "iteratio"
+      ],
+      "files_touched": [
+        "types.ts",
+        "researchedIterationsByClaim",
+        "research-orchestrator.ts",
+        "allClaimsSufficient",
+        "claimboundary-pipeline.ts",
+        "config-schemas.ts",
+        "pipeline.default.json",
+        "claimboundary-pipeline.test.ts"
+      ],
+      "summary": "The fix targets the exact pattern from Phase A-2 ledger: Plastik AC_01 had 41 seeded/0 researched. After this change, AC_01 must receive at least 1 targeted iteration. The `claimAcquisitionLedger` will show whether the forced iteration produces useful evidence or is a zero-yield pass."
+    },
+    {
+      "file": "2026-04-08_Lead_Architect_Dominant_Claim_Aggregation_Investigation.md",
+      "date": "2026-04-08",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "dominant",
+        "claim",
+        "aggregation",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Dominant_Claim_Aggregation_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement a conservative dominance-assessment step after per-claim verdict generation, persist its output for auditability, and feed it into both aggregation and article-level narrative/adjudication. Validate on the Swiss treaty family plus non-dominant controls before promotion."
+    },
+    {
+      "file": "2026-04-08_Lead_Architect_LLM_Expert_Dominant_Claim_Debate_Consolidation.md",
+      "date": "2026-04-08",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "dominant",
+        "claim",
+        "debate",
+        "consolidation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_LLM_Expert_Dominant_Claim_Debate_Consolidation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Reuse the existing investigation handoff `Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Dominant_Claim_Aggregation_Investigation.md`, but treat this file as the current decision record. Validate against Swiss target `11a8f75c...`, Swiss sibling `67a3d07d...`, hydrogen `a0c5e51e...`, plastic control"
+    },
+    {
+      "file": "2026-04-08_Lead_Architect_Quality_Plan_Hardening_Review.md",
+      "date": "2026-04-08",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "quality",
+        "plan",
+        "hardening",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-08_Lead_Architect_Quality_Plan_Hardening_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement 1a with dynamic corrective guidance built from structured validator output, not generic prose alone. Quote the missing anchor span from the input when available."
+    },
+    {
+      "file": "2026-04-08_code_reviewer_post_approval_low_finding_cleanup.md",
+      "date": "2026-04-08",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "post",
+        "approval",
+        "low",
+        "finding",
+        "cleanup"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "This cleanup is naming/formatting only; behavior was verified unchanged with the focused verdict-stage tests and a successful web build."
+    },
+    {
+      "file": "2026-04-08_lead_architect_code_review_blockers_resolved.md",
+      "date": "2026-04-08",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "code",
+        "review",
+        "blockers",
+        "resolved"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/lib/analyzer/aggregation-stage.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/calculation.default.json"
+      ],
+      "summary": "If further review follows, validate the new aggregation baseline with fresh jobs rather than stale stored results. The semantic contracts restored here are covered by targeted tests in `verdict-stage.test.ts` and `claimboundary-pipeline.test.ts`."
+    },
+    {
+      "file": "2026-04-08_lead_architect_llm_expert_dominant_claim_aggregation_follow.md",
+      "date": "2026-04-08",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "dominant",
+        "claim",
+        "aggregation",
+        "follow"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Reuse the existing handoff as the main architecture note, but carry forward these extra validation anchors: Swiss target `11a8f75c...`, Swiss sibling override `67a3d07d...`, hydrogen `a0c5e51e...`, and plastic control `70a3963c...`."
+    },
+    {
+      "file": "2026-04-08_llm_expert_fix_1_prompt_strengthening_for_proposition_anchor.md",
+      "date": "2026-04-08",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "fix",
+        "1",
+        "prompt",
+        "strengthening",
+        "for",
+        "proposition",
+        "anchor"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "Measure against the same Fix 1 invariants: modifier preserved in direct claims, no normative injection on chronology-only variants, stable direction on the anchored claim, zero validator hallucinations."
+    },
+    {
+      "file": "2026-04-08_senior_developer_complete_quality_assessment_revised_per_llm.md",
+      "date": "2026-04-08",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "complete",
+        "quality",
+        "assessment",
+        "revised",
+        "per",
+        "llm"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md"
+      ],
+      "summary": "The schema fix target is `claim-extraction-stage.ts:1655` — add `truthConditionAnchor` and `antiInferenceCheck` to `ClaimContractOutputSchema`, then wire the retry logic to read them. Full plan: `Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md`."
+    },
+    {
+      "file": "2026-04-08_senior_developer_f1a372bf_to_head_consolidated_investigation.md",
+      "date": "2026-04-08",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "f1a372bf",
+        "to",
+        "head",
+        "consolidated",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-07_f1a372bf_to_HEAD_Consolidated_Investigation.md"
+      ],
+      "summary": "The consolidated document supersedes both the primary investigation and the cross-review for decision-making. Source docs remain as audit trail. Priority 1 fix target: `apps/web/prompts/claimboundary.prompt.md` CLAIM_EXTRACTION_PASS2 section."
+    },
+    {
+      "file": "2026-04-08_senior_developer_fix_1_strengthened_measurement_modifier_pre.md",
+      "date": "2026-04-08",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "fix",
+        "1",
+        "strengthened",
+        "measurement",
+        "modifier",
+        "pre"
+      ],
+      "files_touched": [],
+      "summary": "Full measurement data in this entry. The decision is: revert the strengthening, keep the first Fix 1 (which had anti-inference working + 1/3 preservation), and consider whether a code-level structural check is needed for modifier preservation."
+    },
+    {
+      "file": "2026-04-09_LLM_Expert_Bolsonaro_Evidence_Mix_Regression_Investigation.md",
+      "date": "2026-04-09",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "bolsonaro",
+        "evidence",
+        "mix",
+        "regression",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-09 | LLM Expert | Claude Code (Opus 4.6) | Bolsonaro Evidence-Mix Regression Investigation"
+    },
+    {
+      "file": "2026-04-09_Lead_Architect_LLM_Expert_Dominant_Claim_Implementation_Plan_RevA.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "dominant",
+        "claim",
+        "implementation",
+        "plan",
+        "reva"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-09_Lead_Architect_LLM_Expert_Dominant_Claim_Implementation_Plan_RevA.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use this file as the new review artifact. The older April 8 handoffs remain historical context, but this document supersedes them on implementation order and review criteria."
+    },
+    {
+      "file": "2026-04-09_Lead_Architect_LLM_Expert_Option_G_Review_Request.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "option",
+        "g",
+        "review",
+        "request"
+      ],
+      "files_touched": [],
+      "summary": "Review Request: Option G — Direction-Conflict LLM Adjudication"
+    },
+    {
+      "file": "2026-04-09_lead_architect_deterministic_analysis_hotspots_review.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "deterministic",
+        "analysis",
+        "hotspots",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-09_Deterministic_Analysis_Hotspots_Review.md",
+        "Docs/STATUS/Backlog.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-09_Deterministic_Analysis_Hotspots_Review.md`. If this work is picked up, prioritize Stage 1 anchor preservation and Stage 4 direction rescue before lower-severity routing/quality labels."
+    },
+    {
+      "file": "2026-04-09_lead_architect_llm_expert_option_g_review_incorporation.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "option",
+        "g",
+        "review",
+        "incorporation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md"
+      ],
+      "summary": "Full reviewed design at `Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md`. Section 7 has the review findings table. Section 8 has the migration path. Start with Phase 1 (tests + types + config)."
+    },
+    {
+      "file": "2026-04-09_lead_architect_llm_expert_stage_5_llm_led_article_adjudicati.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "stage",
+        "5",
+        "llm",
+        "led",
+        "article",
+        "adjudicati"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md"
+      ],
+      "summary": "Full design at `Docs/WIP/2026-04-09_LLM_Led_Article_Adjudication_Redesign.md`. Option G is section 5. Review questions below in the GPT Lead Architect review request."
+    },
+    {
+      "file": "2026-04-09_lead_architect_review_option_g_llm_led_article_adjudication.md",
+      "date": "2026-04-09",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "review",
+        "option",
+        "g",
+        "llm",
+        "led",
+        "article",
+        "adjudication"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If implementing Option G, refine the conflict predicate before coding: use verdict bands or a minimum margin/confidence rule so borderline mixed claims do not trigger adjudication. Prefer a single cap of `30` on the conflict path unless live validation proves it is too loose. Keep narrative explanat"
+    },
+    {
+      "file": "2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation.md",
+      "date": "2026-04-10",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "quality",
+        "prompt",
+        "and",
+        "behavior",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "Start at F1, F2, and F3 below. Then NP1 + NP2 are the smallest combined change that fixes the user's primary complaint without adding new prompt scar tissue."
+    },
+    {
+      "file": "2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation_Empirical_Addendum.md",
+      "date": "2026-04-10",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "quality",
+        "prompt",
+        "and",
+        "behavior",
+        "investigation",
+        "empirical",
+        "addendum"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation_Empirical_Addendum.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Read this addendum together with `Docs/AGENTS/Handoffs/2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation.md`. Where they conflict, prefer this addendum on the ranking of F1/F2/F3 and on the withdrawal of the Gate-1 anchor-exemption idea."
+    },
+    {
+      "file": "2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "report",
+        "quality",
+        "implementation",
+        "plan",
+        "revb"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Report_Quality_Implementation_Plan_RevB.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use this as the implementation source of truth. The Lead Developer review has already been incorporated here; the preceding investigation and review handoffs remain evidence, not plan."
+    },
+    {
+      "file": "2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect",
+        "senior_developer"
+      ],
+      "topics": [
+        "senior",
+        "developer",
+        "current",
+        "state",
+        "report",
+        "quality",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Highest-priority action remains P0: Stage-1 final-claim contract enforcement. Start from the verified evidence in Sections 1-3 below, not from older speculative reports. After that, fix report honesty in the coverage matrix and only then pursue broader cleanup/removal work."
+    },
+    {
+      "file": "2026-04-10_Lead_Architect_Senior_Developer_Implementation_Refresh_Review.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect",
+        "senior_developer"
+      ],
+      "topics": [
+        "senior",
+        "developer",
+        "implementation",
+        "refresh",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_Lead_Architect_Senior_Developer_Implementation_Refresh_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from this handoff plus `2026-04-10_Lead_Architect_Senior_Developer_Current_State_Report_Quality_Investigation.md` and `2026-04-10_LLM_Expert_Report_Quality_Prompt_And_Behavior_Investigation_Empirical_Addendum.md`. Highest-value next actions are: add contract-validator directness context, close"
+    },
+    {
+      "file": "2026-04-10_Lead_Architect_Senior_Developer_Overarching_Report_Quality_Investigation.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "senior",
+        "developer",
+        "overarching",
+        "report",
+        "quality",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-10 | Lead Architect + Senior Developer | Codex (GPT-5) | Overarching Report Quality Investigation"
+    },
+    {
+      "file": "2026-04-10_Lead_Architect_Senior_Developer_Report_Quality_Deep_Investigation.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "senior",
+        "developer",
+        "report",
+        "quality",
+        "deep",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "Use this file as the review-ready source of truth. Treat Wave 1A/1B/1C and the two adjacent integrity fixes as implemented baseline, then focus on empirical validation, remaining `distinctEvents` confirmation, UI matrix honesty, and broader stabilization."
+    },
+    {
+      "file": "2026-04-10_Report_Quality_Consolidated_Review_Plan.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect",
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "consolidated",
+        "review",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Consolidated_Review_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start here for review and implementation sequencing. Use this document as the review-ready plan. Use the referenced handoffs only for supporting detail or raw evidence."
+    },
+    {
+      "file": "2026-04-10_Report_Quality_Multi_Agent_Review_Board.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect",
+        "senior_developer",
+        "llm_expert",
+        "adversarial_reviewer"
+      ],
+      "topics": [
+        "multi",
+        "agent",
+        "review",
+        "board"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Multi_Agent_Review_Board.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use this file as the latest review-board source of truth. Fall back to `2026-04-10_Report_Quality_Consolidated_Review_Plan.md` and the April 10 handoffs only for supporting evidence or detailed rationale."
+    },
+    {
+      "file": "2026-04-10_Senior_Developer_Option_G_Validation_Report.md",
+      "date": "2026-04-10",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "option",
+        "g",
+        "validation",
+        "report"
+      ],
+      "files_touched": [],
+      "summary": "This report is the evidence base for promotion review."
+    },
+    {
+      "file": "2026-04-10_lead_architect_architect_review_recheck_against_current_sour.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "architect",
+        "review",
+        "recheck",
+        "against",
+        "current",
+        "sour"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the architect review as substantively accurate. The strongest remaining gaps are report-honesty in the matrix and missing directness context in contract validation, not a re-opened silent fail-open bug."
+    },
+    {
+      "file": "2026-04-10_lead_architect_llm_expert_claim_clarification_gate_design_fo.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "claim",
+        "clarification",
+        "gate",
+        "design",
+        "fo"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-10_Claim_Clarification_Gate_Design.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Lead Developer should read `Docs/WIP/2026-04-10_Claim_Clarification_Gate_Design.md` end-to-end, focus on §6 (pipeline orchestration), §5 (data model), §7 (API surface), and §16 (file list). Produce a Phase 1 implementation plan starting with the shared analyzability helper and the Pass 2 schema addi"
+    },
+    {
+      "file": "2026-04-10_lead_architect_seven_run_contract_failure_review.md",
+      "date": "2026-04-10",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "seven",
+        "run",
+        "contract",
+        "failure",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/Investigations/2026-04-10_Claim_Contract_Run_Review.md`. The key implementation target is the whole-anchor substring requirement inside `evaluateClaimContractValidation(...)`, which is over-rejecting coordinated actor decompositions."
+    },
+    {
+      "file": "2026-04-11_lead_architect_llm_expert_phase_2_gate_g2_rev_4_approved_exe.md",
+      "date": "2026-04-11",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "phase",
+        "2",
+        "gate",
+        "g2",
+        "rev",
+        "4",
+        "approved",
+        "exe"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-11_Phase2_Gate_G2_Replay_Plan.md",
+        "Docs/WIP/2026-04-11_Phase2_Per_Input_Expectations.md",
+        "Docs/WIP/2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md",
+        "_Captain_Deputy_Review.md",
+        "Docs/WIP/2026-04-11_Phase2_Gate_G2_Rev3_LLM_Expert_Review.md",
+        "_Rev3_Captain_Deputy_Review.md",
+        "Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "(me, this session or next):** Phase 2 execution begins immediately after the commit sequence lands. If the replay results land cleanly (no stop-rule triggers, no quota issues, statistically separable deltas per per-input criteria), Phase 3 Change Impact Ledger is the next step. If results are ambigu"
+    },
+    {
+      "file": "2026-04-11_lead_architect_llm_expert_report_quality_restoration_master.md",
+      "date": "2026-04-11",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "report",
+        "quality",
+        "restoration",
+        "master"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-11_Report_Quality_Restoration_Master_Plan.md",
+        "Docs/WIP/2026-04-11_Prior_Investigations_Index.md",
+        "Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "(me, next turn):** Wait for Gate G1 answers from the user. Once received: begin Phase 2 (Historical Baseline Map) by (1) inventorying validation artefacts in `apps/web/test/output/` and `test-output/validation/`, (2) building the run-to-commit map, (3) presenting the 3 candidate historical-best comm"
+    },
+    {
+      "file": "2026-04-11_lead_developer_claim_clarification_gate_design_review.md",
+      "date": "2026-04-11",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "claim",
+        "clarification",
+        "gate",
+        "design",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start Phase 1 with low-risk, unit-testable seams: add `clarificationAssessment` to Pass 2 schema + prompt contract tests, add `isClaimAnalyzable` as a pure helper with parity tests against current Gate 1 outcomes, then add `evaluateClarificationGate` behind `clarificationGate.enabled=false` with no "
+    },
+    {
+      "file": "2026-04-13_LLM_Expert_Root_Instruction_File_Trim.md",
+      "date": "2026-04-13",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "root",
+        "instruction",
+        "file",
+        "trim"
+      ],
+      "files_touched": [
+        "AGENTS.md"
+      ],
+      "summary": "If extending the handoff protocol, edit `Docs/AGENTS/Policies/Handoff_Protocol.md` directly — AGENTS.md contains only a 5-line stub."
+    },
+    {
+      "file": "2026-04-13_lead_architect_llm_expert_c16_combined_replay_review.md",
+      "date": "2026-04-13",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "c16",
+        "combined",
+        "replay",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_c16_combined_replay_review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-13_C16_R2_Combined_Replay_Analysis.md` lines 11-16, 22-45, and 60-69. Re-query `apps/api/factharbor.db` `Jobs` rows for the locked string `Der Bundesrat unterschreibt den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`, then update the doc's "
+    },
+    {
+      "file": "2026-04-13_lead_architect_llm_expert_c16_replay_review_round2.md",
+      "date": "2026-04-13",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "c16",
+        "replay",
+        "review",
+        "round2"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_c16_replay_review_round2.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If updating the doc, change the narrative claim at line 66 to match the partition logic already used at lines 74-81. Keep `d5a7dc33` classified as `validator_unavailable`, not anchor loss, unless the class definitions are explicitly rewritten."
+    },
+    {
+      "file": "2026-04-13_lead_architect_llm_expert_phase7_salience_first_charter_review.md",
+      "date": "2026-04-13",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "phase7",
+        "salience",
+        "first",
+        "charter",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-13_lead_architect_llm_expert_phase7_salience_first_charter_review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Fix `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md` lines 37-39 and 80-83 / 65-69 before starting E1. Current code reference: `apps/web/src/lib/analyzer/claim-extraction-stage.ts` lines 96-120 defines the full Pass 2 schema; no reasoning field exists today."
+    },
+    {
+      "file": "2026-04-14_LLM_Expert_Prompt_Review_and_Improvement_Proposals.md",
+      "date": "2026-04-14",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "review",
+        "and",
+        "improvement",
+        "proposals"
+      ],
+      "files_touched": [],
+      "summary": "LLM Expert — Prompt Review and Improvement Proposals"
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_current_work_and_plan_takeover.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "current",
+        "work",
+        "and",
+        "plan",
+        "takeover"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_current_work_and_plan_takeover.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the repo as \"Phase 7 E2 landed, measurement pending.\" Key references: `Docs/WIP/2026-04-13_Phase7_Salience_First_Charter.md`, commits `ff08a0db` and `731f14ec`, and code in `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/anal"
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_code_prompt_deep_review_debate_consolidation.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "code",
+        "prompt",
+        "deep",
+        "review",
+        "debate",
+        "consolidation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md` when the question is implementation detail, prompt architecture, retry/repair semantics, or measurement-surface honesty."
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_docs_corrected_for_shape_b_start_signal.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "docs",
+        "corrected",
+        "for",
+        "shape",
+        "b",
+        "start",
+        "signal"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` and preserve the three-way separation between historical reasoning, fixed blockers, and remaining uncertainty."
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_final_reviewer_constraints_folded_into_plan.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "final",
+        "reviewer",
+        "constraints",
+        "folded",
+        "into",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the active baseline, but carry the reviewer constraints as mandatory slice-1 scope boundaries."
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_step_1_pains_issues_needs_consolidation.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "step",
+        "1",
+        "pains",
+        "issues",
+        "needs",
+        "consolidation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the Step 1 source of truth until later consolidations supersede it."
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_step_2_issues_root_causes_consolidation.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "step",
+        "2",
+        "issues",
+        "root",
+        "causes",
+        "consolidation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the Step 1 + Step 2 reference, then advance to Step 3 without re-litigating already-proven root causes."
+    },
+    {
+      "file": "2026-04-14_lead_developer_lead_architect_phase_7_working_baseline_consolidated_through_step_4.md",
+      "date": "2026-04-14",
+      "roles": [
+        "lead_developer",
+        "lead_architect"
+      ],
+      "topics": [
+        "lead",
+        "architect",
+        "phase",
+        "7",
+        "working",
+        "baseline",
+        "consolidated",
+        "through",
+        "step",
+        "4"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md` as the current working baseline and `Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md` as the implementation-detail companion."
+    },
+    {
+      "file": "2026-04-15_Code_Reviewer_Prompt_Fixes_Skeptical_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "prompt",
+        "fixes",
+        "skeptical",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Code_Reviewer_Prompt_Fixes_Skeptical_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the April 14/15 prompt-review docs plus the live runtime anchors in `claim-extraction-stage.ts`. Highest-signal references are the proposed wordings at `2026-04-14_LLM_Expert_Prompt_Review_and_Improvement_Proposals.md:184-208`, `:225-239`, `:253-264`, `:404-416`, `:427-434`, and `:467-473"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Asylum_235000_Evidence_Gap_Investigation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "asylum",
+        "235000",
+        "evidence",
+        "gap",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Asylum_235000_Evidence_Gap_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Reproduce from job `7333cb1f1ee6472b9c782e94e4aa7b0e`, then compare `eb7de9adfef6476ca66b68a50faa8178`, `9e8033b9b1ed4990b355f34437d97abc`, `95d5c3ee235845228f04777e42ecd158`, and `9dc205aa6b5142b380bcd27ad51ca4f4`. High-signal code anchors are `apps/web/src/lib/analyzer/research-query-stage.ts`, `a"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Captain_Defined_Analysis_Inputs_Rule.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "captain",
+        "defined",
+        "analysis",
+        "inputs",
+        "rule"
+      ],
+      "files_touched": [
+        "AGENTS.md",
+        ".github/copilot-instructions.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Captain_Defined_Analysis_Inputs_Rule.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `AGENTS.md` as the source of truth for approved analysis inputs. Use the exact Captain-defined wording only; do not invent alternate phrasings for planning, validation, documentation, or live runs."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Grounding_Prompt_Caching_Implementation_And_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "grounding",
+        "prompt",
+        "caching",
+        "implementation",
+        "and",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "If asked to continue on grounding quality, start from the three pre-existing review findings in `grounding-check.ts`: truncation of long context, loose JSON response validation, and the `ratio = 1` treatment for empty reasoning."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Phase7_Prompt_Quality_Issue_Investigation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "phase7",
+        "prompt",
+        "quality",
+        "issue",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "Primary anchors are [claimboundary.prompt.md](c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:113), [claimboundary.prompt.md](c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:370), [claimboundary.prompt.md](c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:454), [claimb"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Phase7b_Overlap_Check_And_Plan_Rebase.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "phase7b",
+        "overlap",
+        "check",
+        "and",
+        "plan",
+        "rebase"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Overlap_Check_And_Plan_Rebase.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the rebased charter, not the earlier implementation wording. Treat Fix A and Fix C as already landed. Treat Fix B as prompt-landed but optionally deserving narrower `success=false` behavioral coverage if you want extra confidence before fresh canary validation."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Phase7b_Prompt_Blocker_Charter.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "phase7b",
+        "prompt",
+        "blocker",
+        "charter"
+      ],
+      "files_touched": [],
+      "summary": "Start from Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md. Touch only the three in-scope prompt sections unless a focused test proves a smaller adjacent change is unavoidable. Keep the salience and main Pass 2 freeze intact."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Phase7b_Success_False_Coverage_And_Two_Canaries.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "phase7b",
+        "success",
+        "false",
+        "coverage",
+        "and",
+        "two",
+        "canaries"
+      ],
+      "files_touched": [
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Phase7b_Success_False_Coverage_And_Two_Canaries.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The new coverage lives at `claim-extraction-prompt-contract.test.ts:129` and `claimboundary-pipeline.test.ts:1135`. Local verification artifacts from this run: `npm -w apps/web run test -- test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts test/unit/lib/analyzer/claim-contract-validatio"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Primary_Source_Discovery_Refinement_Design.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "primary",
+        "source",
+        "discovery",
+        "refinement",
+        "design"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Primary_Source_Discovery_Refinement_Design.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the empirical investigation in `Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Asylum_235000_Evidence_Gap_Investigation.md`, then implement this design in the following order: `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyz"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Prompt_Audit_Validation_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "audit",
+        "validation",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "Start with apps/web/prompts/claimboundary.prompt.md rule 11 and both binding appendices, then confirm behavior against apps/web/src/lib/analyzer/claim-extraction-stage.ts evaluateClaimContractValidation(...) and the appendix-loading branches. The most actionable references are: prompt rule 11 litera"
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Prompt_Caching_Debate_Consolidation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "caching",
+        "debate",
+        "consolidation"
+      ],
+      "files_touched": [],
+      "summary": "Start from the current cache helper in `apps/web/src/lib/analyzer/llm.ts` and the uncached grounding calls in `apps/web/src/lib/analyzer/grounding-check.ts`."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Fresh_Live_Verification.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "primary",
+        "source",
+        "refinement",
+        "fresh",
+        "live",
+        "verification"
+      ],
+      "files_touched": [],
+      "summary": "Fresh verification result: job `ad4c0c1ba8bc4094849d2e3e9e0b1ef9` completed `SUCCEEDED` on commit `6bfffbba4750e74639a44a0266721b223172af1e` with verdict `LEANING-TRUE | 60 | 60`, source count `24`, and focus counts `preliminary=2`, `main=3`, `contradiction=3`, `contrarian=2`, `refinement=0`."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Implementation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "primary",
+        "source",
+        "refinement",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "Start from the low-risk slice now landed in Stage 2, not the full earlier design. The key seams are `GeneratedResearchQuery` metadata in `research-query-stage.ts`, the first-iteration refinement block in `research-orchestrator.ts`, and cache freshness enforcement in `search-cache.ts`."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Regression_Check.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "primary",
+        "source",
+        "refinement",
+        "regression",
+        "check"
+      ],
+      "files_touched": [],
+      "summary": "The strongest measured conclusion is: partial improvement, not full fix. Baseline was `0/6` exact PDF hits and `0/6` 2025 archive-page hits. Current measured runs are `0/2` exact PDF hits, `1/2` persisted 2025 archive-page hits, and `0/2` refinement-query hits."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Rerun_After_Review_Followup.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "primary",
+        "source",
+        "refinement",
+        "rerun",
+        "after",
+        "review",
+        "followup"
+      ],
+      "files_touched": [],
+      "summary": "The strongest current conclusion is: the review follow-up did **not** produce observable live refinement activation on the approved asylum input. The stored result for `6aa4dc3e2c2d46f99fe83544b214c546` still has only `preliminary/main/contradiction` focus counts and no refinement telemetry entry."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Stage2_Primary_Source_Refinement_Review_Followup.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "primary",
+        "source",
+        "refinement",
+        "review",
+        "followup"
+      ],
+      "files_touched": [],
+      "summary": "If you re-run the approved asylum measurement, inspect `claimAcquisitionLedger[claimId].iterations` for the new `primary_source_refinement:*` `laneReason` values alongside `searchQueries.focus === \"refinement\"`."
+    },
+    {
+      "file": "2026-04-15_LLM_Expert_Validator_Side_Success_False_Fallback_Test.md",
+      "date": "2026-04-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "validator",
+        "side",
+        "success",
+        "false",
+        "fallback",
+        "test"
+      ],
+      "files_touched": [
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Validator_Side_Success_False_Fallback_Test.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The new behavioral check lives in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts` near the existing binding-validator appendix tests. Focused Stage 1 verification now passes with `391 passed | 1 skipped` using `npm -w apps/web run test -- test/unit/lib/analyzer/claim-extraction-prom"
+    },
+    {
+      "file": "2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_7333cb1f.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "prompt",
+        "diagnosis",
+        "7333cb1f"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_7333cb1f.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "High-signal refs are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:63), [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:105), [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:628), [cla"
+    },
+    {
+      "file": "2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "prompt",
+        "diagnosis",
+        "skill",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Primary anchors for this review are `.claude/skills/prompt-diagnosis/SKILL.md`, `Docs/ARCHITECTURE/Prompt_Architecture.md`, `apps/web/src/lib/config-loader.ts`, `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/internal-runner-queue.ts`, and `Docs/AGENTS/Handoffs/2026-04-04_se"
+    },
+    {
+      "file": "2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Rewrite.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "prompt",
+        "diagnosis",
+        "skill",
+        "rewrite"
+      ],
+      "files_touched": [
+        ".claude/skills/prompt-diagnosis/SKILL.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "AGENTS.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Architect_LLM_Expert_Prompt_Diagnosis_Skill_Rewrite.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `.claude/skills/prompt-diagnosis/SKILL.md`. The companion summaries in `Docs/DEVELOPMENT/Claude_Code_Skills.md` and `AGENTS.md` are now aligned to the new provenance model. Verification performed: repo-wide grep confirmed the stale \"commit-exact\" wording is gone from the active skill docs"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Delegated_Review_And_Plan.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "delegated",
+        "review",
+        "and",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Delegated_Review_And_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Recommended order is: (1) prompt rollout verification per environment via `/api/admin/config/prompt/claimboundary`, (2) explicit reseed/import+activate based on `createdBy`, then one fresh job verification through `/api/fh/jobs/:id/prompts?pipeline=claimboundary&content=true`; (3) test cleanup/addit"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Job_Review_On_Prompt_Effectiveness.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "job",
+        "review",
+        "on",
+        "prompt",
+        "effectiveness"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Job_Review_On_Prompt_Effectiveness.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Key evidence:"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Live_Prompt_Runtime_Verification.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "live",
+        "prompt",
+        "runtime",
+        "verification"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Live_Prompt_Runtime_Verification.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Verified live runtime prompt activation. Probe job `00f9ad972d854b24b2de5d292ed9ab20` loaded `claimboundary` hash `f17e326e48536f4acc71de296ee5e22d3aa883cb3d07d5829f2bfa2486883bc9` at `2026-04-15 06:49:25 UTC`. The job-specific prompt snapshot contains the expected updated content: `## CLAIM_CONTRAC"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Narrow_Claim_Contract_Test_Cleanup.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "narrow",
+        "claim",
+        "contract",
+        "test",
+        "cleanup"
+      ],
+      "files_touched": [
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts"
+      ],
+      "summary": "The narrow analyzer suite is green with the current prompt/source shape: run `npm -w apps/web test -- test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/prompt-frontmatter-drift.test.ts` if you need to recon"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_New_Report_Investigation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "new",
+        "report",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Prompt_Issue_Review_Consolidation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "prompt",
+        "issue",
+        "review",
+        "consolidation"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "Treat the accepted slice as prompt-only and already landed in `apps/web/prompts/claimboundary.prompt.md`. If continuing, separate three buckets cleanly: (1) landed prompt fixes, (2) deferred routing/config work for salience tiering, (3) separate prompt-governance cleanup moving inline Stage-1 guidan"
+    },
+    {
+      "file": "2026-04-15_Lead_Developer_LLM_Expert_Submitted_Job_Effectiveness_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "submitted",
+        "job",
+        "effectiveness",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-15_Review_Board_Phase7b_Charter_Debate_Consolidation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "lead_architect",
+        "senior_developer",
+        "code_reviewer"
+      ],
+      "topics": [
+        "phase7b",
+        "charter",
+        "debate",
+        "consolidation"
+      ],
+      "files_touched": [],
+      "summary": "Treat Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md as the revised source of truth. Implement only the three agreed prompt blockers plus the required focused tests. Do not pull in salience prompt rewrites, main Pass 2 rewrites, or runtime appendix-loading changes unless a focu"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Agent_Outputs_Crosslink_Normalization.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "agent",
+        "outputs",
+        "crosslink",
+        "normalization"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_final_reviewer_constraints_folded_into_plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_docs_corrected_for_shape_b_start_signal.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_working_baseline_consolidated_through_step_4.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_code_prompt_deep_review_debate_consolidation.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_step_2_issues_root_causes_consolidation.md",
+        "Docs/AGENTS/Handoffs/2026-04-14_lead_developer_lead_architect_phase_7_step_1_pains_issues_needs_consolidation.md"
+      ],
+      "summary": "Treat `Docs/AGENTS/Agent_Outputs.md` as canonical again for active rows; if you continue cleanup, focus on narrative body references separately from arrow-link targets."
+    },
+    {
+      "file": "2026-04-15_Unassigned_CLAIM_CONTRACT_REPAIR_P0_investigation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim",
+        "contract",
+        "repair",
+        "p0",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_CLAIM_CONTRACT_REPAIR_P0_investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The 2026-04-14 P0 report in `Docs/AGENTS/Agent_Outputs.md` appears stale relative to the current codebase. Key refs: `apps/web/prompts/claimboundary.prompt.md` section header/body around line 2008, `apps/web/src/lib/analyzer/prompt-loader.ts` section parser/renderer around lines 602 and 765, `apps/w"
+    },
+    {
+      "file": "2026-04-15_Unassigned_ClaimBoundary_Prompt_UCM_Propagation_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claimboundary",
+        "prompt",
+        "ucm",
+        "propagation",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_ClaimBoundary_Prompt_UCM_Propagation_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Check `apps/web/prompts/claimboundary.prompt.md`, `apps/web/src/lib/config-loader.ts`, `apps/web/src/lib/config-storage.ts`, `apps/web/src/lib/analyzer/prompt-loader.ts`, `apps/web/scripts/reseed-all-prompts.ts`, `apps/web/src/app/api/admin/config/[type]/[profile]/reseed/route.ts`, `apps/web/src/app"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Daily_Bug_Scan_Metrics_Pricing_Fix.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "metrics",
+        "pricing",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/metrics.ts",
+        "apps/web/test/unit/lib/analyzer/metrics.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Daily_Bug_Scan_Metrics_Pricing_Fix.md"
+      ],
+      "summary": "If continuing the daily scan, start after `c7a5ed7839e4e380fcb74812935fe94ca09dd2f4`. Re-run `npm -w apps/web exec vitest run test/unit/lib/analyzer/metrics.test.ts` plus any targeted tests for newly touched commit surfaces. Keep distinguishing committed regressions from the current dirty worktree."
+    },
+    {
+      "file": "2026-04-15_Unassigned_Explain_Code_LLM_Prompts.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "explain",
+        "code",
+        "llm",
+        "prompts"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Explain_Code_LLM_Prompts.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If continuing this area, inspect [prompt-loader.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/prompt-loader.ts:656), [config-loader.ts](/c:/DEV/FactHarbor/apps/web/src/lib/config-loader.ts:442), [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md:1), [claim-extra"
+    },
+    {
+      "file": "2026-04-15_Unassigned_LLM_Prompt_System_Explanation.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "llm",
+        "prompt",
+        "system",
+        "explanation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-15_LLM_Prompt_System_Explanation.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_LLM_Prompt_System_Explanation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [2026-04-15_LLM_Prompt_System_Explanation.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-15_LLM_Prompt_System_Explanation.md:1). If you need the companion issue inventory, pair it with [2026-04-15_Prompt_System_Architecture_Issues_Report.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-15_Prompt_System_A"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Prompt_System_Architecture_Issues_Report.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "prompt",
+        "system",
+        "architecture",
+        "issues",
+        "report"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-15_Prompt_System_Architecture_Issues_Report.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Prompt_System_Architecture_Issues_Report.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [2026-04-15_Prompt_System_Architecture_Issues_Report.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-15_Prompt_System_Architecture_Issues_Report.md:1) and backlog row `PROMPT-ARCH-1` in [Backlog.md](/c:/DEV/FactHarbor/Docs/STATUS/Backlog.md:453). If implementing, inspect [sr-eval-engine.ts](/c:/D"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Salience_Model_Tier_Design_Review.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "salience",
+        "model",
+        "tier",
+        "design",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Salience_Model_Tier_Design_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Primary code refs are `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (`runSalienceCommitment`, Pass 2, Gate 1), `apps/web/src/lib/analyzer/llm.ts` (task-to-model routing), `apps/web/src/lib/config-schemas.ts` + `apps/web/configs/pipeline.default.json` (pipeline model knobs), and `apps/web/con"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Skill_Cross_Tool_Availability.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "skill",
+        "cross",
+        "tool",
+        "availability"
+      ],
+      "files_touched": [
+        ".claude/skills/docs-update/SKILL.md",
+        ".claude/skills/wip-update/SKILL.md",
+        "AGENTS.md",
+        "GEMINI.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "factharbor-agent.skill",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "Docs/AGENTS/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Skill_Cross_Tool_Availability.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "When adding another shared workflow, update four discovery surfaces together: `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md`. If the Gemini helper skill changes, refresh `factharbor-agent.skill` so the packaged artifact stays aligne"
+    },
+    {
+      "file": "2026-04-15_Unassigned_Status_And_Backlog_Refresh.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "status",
+        "and",
+        "backlog",
+        "refresh"
+      ],
+      "files_touched": [
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Status_And_Backlog_Refresh.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you continue documentation cleanup, the next highest-value doc target is `Docs/WIP/2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md`: it now needs a post-implementation status update rather than another pre-implementation framing pass. For engineering work, follow the refreshed backlog"
+    },
+    {
+      "file": "2026-04-15_Unassigned_WIP_Archive_Cleanup.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "wip",
+        "archive",
+        "cleanup"
+      ],
+      "files_touched": [
+        "Docs/ARCHIVE/2026-03-30_Article_Adjudication_Hybrid_vs_LLM_Review.md",
+        "Docs/ARCHIVE/2026-04-01_Post_Rollback_Validation_Report.md",
+        "Docs/ARCHIVE/2026-04-14_Phase7_E1_Status_Note.md",
+        "Docs/ARCHIVE/2026-04-14_Phase7_Status_and_E2_Measurement_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md",
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/AGENTS/Handoffs/2026-04-01_senior_developer_post_rollback_live_validation_17_runs.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Prompt_Audit_Validation_Review.md",
+        "Docs/ARCHIVE/Agent_Outputs_2026-03.md"
+      ],
+      "summary": "If continuing the WIP cleanup, start from mixed-status docs rather than obvious whole-file historical notes. Good next review candidates are files that explicitly say \"historical baseline\", \"implemented but kept as reference\", or \"partially done\" but are still listed in `Docs/WIP/README.md`. Preserv"
+    },
+    {
+      "file": "2026-04-15_Unassigned_WIP_Section_Archive_Cleanup.md",
+      "date": "2026-04-15",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "wip",
+        "section",
+        "archive",
+        "cleanup"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md",
+        "Docs/WIP/2026-04-14_Phase7_Step1_Pains_Issues_Needs.md",
+        "Docs/WIP/README.md",
+        "Docs/ARCHIVE/2026-04-14_Phase7_Code_and_Prompt_Deep_Review_arch.md",
+        "Docs/ARCHIVE/2026-04-14_Phase7_Step1_Pains_Issues_Needs_arch.md",
+        "Docs/AGENTS/Handoffs/2026-04-15_Unassigned_WIP_Section_Archive_Cleanup.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the new `_arch` companions as the place for fixed Phase 7 blocker history. If you continue cleanup, the next likely candidate is the now-executed Phase 7b prompt-blocker charter."
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Analyzer_Review_Followup_And_Safe_Suite_Green.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "analyzer",
+        "review",
+        "followup",
+        "and",
+        "safe",
+        "suite",
+        "green"
+      ],
+      "files_touched": [
+        "apps/web/test/unit/lib/analyzer/llm-routing.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Analyzer_Review_Followup_And_Safe_Suite_Green.md"
+      ],
+      "summary": "Start from `apps/web/test/unit/lib/analyzer/llm-routing.test.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, and live job `b92201bb47454f7498a1919c4a82c567` if you need the current review baseline. Safe verification on this tree is now green: `npm test` => `83 passed`, `1684 p"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Asylum_Refinement_Regression_Fix.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "asylum",
+        "refinement",
+        "regression",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts"
+      ],
+      "summary": "The key evidence for the regression is in the two stored local jobs: `bc82574223574bb087f47276e0496907` had no refinement iteration and finished `LEANING-TRUE 62/55`; `2f8cab5595cc42f0b94615b524a51c84` added one refinement iteration with `laneReason=primary_source_refinement:recovered_non_seeded_pri"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "benchmark",
+        "report",
+        "quality",
+        "status",
+        "matrix"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md` as the current benchmark-status reference before proposing new quality priorities."
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "bolsonaro",
+        "foreign",
+        "assessment",
+        "backstop",
+        "verification"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "If you continue hardening this area, start with the surviving `state.gov` items on job `ec9840ff97994392a7ea9784beb5d79a` (`EV_1776349873152`, `EV_1776349873153`, `EV_1776349873155`, `EV_1776349873156`) and inspect whether their source URLs were mis-attributed during fetch/extraction."
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Leak_Diagnosis_And_Applicability_Prompt_Fix.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "bolsonaro",
+        "foreign",
+        "assessment",
+        "leak",
+        "diagnosis",
+        "and",
+        "applicability",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "First check job `d763f9507de4430681a471447b12d0fe`. If it succeeds, compare its `resultJson.meta.promptContentHash` against `3cacb809...` and inspect whether any evidence from `https://www.state.gov/reports/2024-country-reports-on-human-rights-practices/brazil` survives and is cited in `claimVerdict"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Hydrogen_Boundary_And_Asylum_Refinement_Followup.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "hydrogen",
+        "boundary",
+        "and",
+        "asylum",
+        "refinement",
+        "followup"
+      ],
+      "files_touched": [],
+      "summary": "If the queued asylum job finishes, inspect whether it now uses the improved refinement path to pull the better official-source mix already seen in direct analyzer runs."
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Refinement_Gate_Restoration_And_Test_Realignment.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "refinement",
+        "gate",
+        "restoration",
+        "and",
+        "test",
+        "realignment"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts"
+      ],
+      "summary": "Verification completed locally with `npm -w apps/web test -- test/unit/lib/analyzer/primary-source-refinement.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts` and `npm -w apps/web exec tsc --noEmit`. Both succeeded. No references to `hasInstitutionalNumericCoverageFallback` r"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Report_Review_Skill_Review_And_Expectation_Alignment.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "skill",
+        "review",
+        "and",
+        "expectation",
+        "alignment"
+      ],
+      "files_touched": [
+        ".claude/skills/report-review/SKILL.md"
+      ],
+      "summary": "If `/report-review` is exercised soon, verify that the new exact-slug behavior feels ergonomic enough; if users still guess the wrong family names, consider adding explicit alias support in `benchmark-expectations.json` rather than reintroducing loose matching."
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Stage1_Contract_Repair_Prompt_Hardening.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage1",
+        "contract",
+        "repair",
+        "prompt",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts"
+      ],
+      "summary": "If the fresh live reruns still fail, inspect the concrete `CLAIM_CONTRACT_REPAIR` outputs first. The runtime seam in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` was intentionally left unchanged, and the Stage 1 early-abort path in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` is st"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Stage1_Repair_Anchor_Selection_And_Live_Bundesrat_Rerun.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage1",
+        "repair",
+        "anchor",
+        "selection",
+        "and",
+        "live",
+        "bundesrat",
+        "rerun"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/repair-anchor-selection.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage1_Repair_Anchor_Selection_And_Live_Bundesrat_Rerun.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with live job `b92201bb47454f7498a1919c4a82c567`. First read its final `resultJson.understanding.atomicClaims`, `contractValidationSummary`, and verdict once complete. If the final result is healthy, the immediate `UNVERIFIED 50/0` regression is resolved. If the final Stage 1 claim shape is st"
+    },
+    {
+      "file": "2026-04-16_LLM_Expert_Stage2_Review_Fixes.md",
+      "date": "2026-04-16",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "review",
+        "fixes"
+      ],
+      "files_touched": [],
+      "summary": "If this work is to be published, the next step is just staging these five files and creating a follow-up commit; targeted safe tests already passed."
+    },
+    {
+      "file": "2026-04-16_Lead_Developer_LLM_Expert_Report_Review_Skill_Improvements.md",
+      "date": "2026-04-16",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "report",
+        "review",
+        "skill",
+        "improvements"
+      ],
+      "files_touched": [
+        ".claude/skills/report-review/SKILL.md"
+      ],
+      "summary": "**First test of the improved skill:** run `/report-review` (concise mode) against the current HEAD with the two failed reruns from 2026-04-16 either still in scope or replaced with isolated-rerun data. Expected behavior: Phase 3h files `INFRASTRUCTURE-CONCURRENCY` against Bundesrat + Plastic; Phase "
+    },
+    {
+      "file": "2026-04-16_Unassigned_Daily_Bug_Scan_Analyzer_Test_Drift.md",
+      "date": "2026-04-16",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "analyzer",
+        "test",
+        "drift"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Analyzer_Test_Drift.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/test/unit/lib/analyzer/llm-routing.test.ts:30`, `apps/web/src/lib/analyzer/model-resolver.ts:38`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:3526`, and `apps/web/src/lib/analyzer/research-orchestrator.ts:1312`. Reproduction commands already run successfully:"
+    },
+    {
+      "file": "2026-04-16_Unassigned_Daily_Bug_Scan_Prompt_Propagation_Drift.md",
+      "date": "2026-04-16",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "prompt",
+        "propagation",
+        "drift"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Prompt_Propagation_Drift.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Reproduce with `npm test` (currently green), then inspect prompt activation via `config_active` + `config_blobs` for `config_type='prompt'` and `profile_key='claimboundary'`. The exact mismatch on this machine is active hash `977aaac7...` vs current file SHA-256 `db42b6c7...`. Relevant files: `apps/"
+    },
+    {
+      "file": "2026-04-16_Unassigned_Daily_Bug_Scan_Rerun_After_Analyzer_Changes.md",
+      "date": "2026-04-16",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "rerun",
+        "after",
+        "analyzer",
+        "changes"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_Rerun_After_Analyzer_Changes.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you continue, start from `apps/web/test/unit/lib/analyzer/llm-routing.test.ts:30`, `apps/web/src/lib/analyzer/model-resolver.ts:38`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:3526`, and `apps/web/src/lib/analyzer/research-orchestrator.ts:1312`. Fresh verification run on this"
+    },
+    {
+      "file": "2026-04-16_Unassigned_Daily_Bug_Scan_State_Recheck.md",
+      "date": "2026-04-16",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "state",
+        "recheck"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-16_Unassigned_Daily_Bug_Scan_State_Recheck.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "There is no new git-level change to review relative to the prior scan. If asked again, check whether the active prompt hash changed from `977aaac7...` and whether `activated_utc` moved past the 17:25–17:51 prompt commits. `npm test` is still green; only the local prompt/UCM activation issue remains."
+    },
+    {
+      "file": "2026-04-16_lead_architect_agent_indexing_system_implementation.md",
+      "date": "2026-04-16",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "indexing",
+        "agents",
+        "handoff_index",
+        "stage_map",
+        "mcp",
+        "automation",
+        "adoption"
+      ],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "scripts/hooks/rebuild-index-on-change.cjs",
+        "scripts/git-hooks/post-commit",
+        "scripts/git-hooks/post-merge",
+        ".claude/settings.json",
+        ".claude/skills/handoff/SKILL.md",
+        ".claude/skills/wip-update/SKILL.md",
+        ".claude/skills/docs-update/SKILL.md",
+        ".claude/skills/report-review/SKILL.md",
+        "AGENTS.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        "Docs/AGENTS/Multi_Agent_Meta_Prompt.md",
+        "Docs/AGENTS/index/stage-manifest.json",
+        "Docs/AGENTS/index/stage-map.json",
+        "Docs/AGENTS/index/handoff-index.json",
+        "Docs/WIP/2026-04-16_Agent_Indexing_System_Design.md",
+        "package.json",
+        "scripts/monthly-prune-handoffs.mjs"
+      ],
+      "summary": "Agent Indexing System — Implementation Complete"
+    }
+  ]
+}

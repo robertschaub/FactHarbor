@@ -128,7 +128,8 @@ Field requirements by mode:
 When you are the **incoming** role (receiving a handoff or starting a role mid-project), **self-serve context before asking the Captain**:
 
 1. Read `Docs/AGENTS/Agent_Outputs.md` — find the most recent entries relevant to your task
-2. Read any referenced files in `Docs/AGENTS/Handoffs/`
+2. **Query `Docs/AGENTS/index/handoff-index.json`** — filter by `role` and `topics` to find prior handoffs related to your task; read the matched files. (If the file does not exist yet, fall back to step 2b.)
+   - 2b. *(fallback)* Scan filenames in `Docs/AGENTS/Handoffs/` directly
 3. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
 4. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
 5. Check `Docs/WIP/` for active task documents related to the current work

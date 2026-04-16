@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-04-16T19:21:03.352Z",
+  "tasks": {
+    "understand": {
+      "tier": "budget",
+      "models": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4.1-mini",
+        "google": "gemini-2.5-flash"
+      }
+    },
+    "extract_evidence": {
+      "tier": "budget",
+      "models": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4.1-mini",
+        "google": "gemini-2.5-flash"
+      }
+    },
+    "context_refinement": {
+      "tier": "standard",
+      "models": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4.1",
+        "google": "gemini-2.5-pro"
+      }
+    },
+    "verdict": {
+      "tier": "premium",
+      "models": {
+        "anthropic": "claude-sonnet-4-5-20250929",
+        "openai": "gpt-4.1",
+        "google": "gemini-2.5-pro"
+      }
+    },
+    "supplemental": {
+      "tier": "standard",
+      "models": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4.1",
+        "google": "gemini-2.5-pro"
+      }
+    },
+    "summary": {
+      "tier": "standard",
+      "models": {
+        "anthropic": "claude-haiku-4-5-20251001",
+        "openai": "gpt-4.1",
+        "google": "gemini-2.5-pro"
+      }
+    }
+  }
+}

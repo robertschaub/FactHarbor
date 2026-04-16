@@ -596,6 +596,25 @@ After all groups are complete, update the two status documents:
 
 ---
 
+## Step 4b — Rebuild agent indexes
+
+After all Track A and Track B operations are complete, rebuild the agent indexes
+so subsequent sessions see the current document corpus:
+
+```
+node scripts/build-index.mjs --tier=2
+```
+
+If any `apps/web/src/lib/analyzer/` files were updated during Track A, also run:
+
+```
+node scripts/build-index.mjs --tier=1
+```
+
+If `scripts/build-index.mjs` does not exist yet, skip and note it in the report.
+
+---
+
 ## Step 5 — Report
 
 ```

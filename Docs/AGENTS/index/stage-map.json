@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-04-16T19:21:03.352Z",
+  "stages": {
+    "aggregation": {
+      "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
+      "functions": [
+        "aggregateAssessment",
+        "computeTriangulationScore",
+        "computeDerivativeFactor",
+        "hasDirectionConflict",
+        "generateVerdictNarrative",
+        "evaluateTigerScore",
+        "buildQualityGates",
+        "checkExplanationStructure",
+        "evaluateExplanationRubric"
+      ]
+    },
+    "boundary_clustering": {
+      "file": "apps/web/src/lib/analyzer/boundary-clustering-stage.ts",
+      "functions": [
+        "clusterBoundaries",
+        "scopeFingerprint",
+        "collectUniqueScopes",
+        "runLLMClustering",
+        "createFallbackBoundary",
+        "assignEvidenceToBoundaries",
+        "boundaryJaccardSimilarity",
+        "mergeClosestBoundaries",
+        "buildCoverageMatrix"
+      ]
+    },
+    "claim_extraction": {
+      "file": "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+      "functions": [
+        "extractClaims",
+        "getAtomicityGuidance",
+        "runPass1",
+        "runSalienceCommitment",
+        "runPreliminarySearch",
+        "upsertSearchProviderWarning",
+        "generateSearchQueries",
+        "runPass2",
+        "filterByCentrality",
+        "evaluateClaimContractValidation",
+        "selectRepairAnchorText",
+        "runGate1Validation"
+      ]
+    },
+    "research_acquisition": {
+      "file": "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+      "functions": [
+        "humanizeErrorType",
+        "extractDomain",
+        "computeBatchDelays",
+        "fetchSources",
+        "reconcileEvidenceSourceIds"
+      ]
+    },
+    "research_extraction": {
+      "file": "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+      "functions": [
+        "classifyRelevance",
+        "extractResearchEvidence",
+        "assessEvidenceApplicability",
+        "assessScopeQuality",
+        "assessEvidenceBalance",
+        "applyPerSourceCap"
+      ]
+    },
+    "research_query": {
+      "file": "apps/web/src/lib/analyzer/research-query-stage.ts",
+      "functions": [
+        "generateResearchQueries"
+      ]
+    },
+    "verdict_generation": {
+      "file": "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+      "functions": [
+        "generateVerdicts",
+        "buildVerdictStageConfig",
+        "createProductionLLMCall",
+        "checkDebateTierDiversity",
+        "checkDebateProviderCredentials"
+      ]
+    },
+    "verdict": {
+      "file": "apps/web/src/lib/analyzer/verdict-stage.ts",
+      "functions": [
+        "buildSourcePortfolio",
+        "buildSourcePortfolioByClaim",
+        "runVerdictStage",
+        "advocateVerdict",
+        "selfConsistencyCheck",
+        "adversarialChallenge",
+        "reconcileVerdicts",
+        "validateVerdicts",
+        "isVerdictDirectionPlausible",
+        "getClaimLocalEvidence",
+        "stripPhantomEvidenceIds",
+        "runStructuralConsistencyCheck",
+        "enforceHarmConfidenceFloor",
+        "confidenceToTier",
+        "classifyConfidence",
+        "computeTruthPercentageRange",
+        "getSpreadMultiplier",
+        "applySpreadAdjustment",
+        "validateChallengeEvidence",
+        "enforceBaselessChallengePolicy"
+      ]
+    }
+  }
+}
