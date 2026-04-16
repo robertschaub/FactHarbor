@@ -537,6 +537,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("different case/actor");
     });
 
+    it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("governance, rights, safety, integrity, performance, or standards");
+      expect(section).toContain("Foreign government report rates Country A institutions as failing core standards");
+      expect(section).toContain("Neutral external reporting or analysis about the target proceeding remains \"contextual\"");
+    });
+
     it("uses abstract examples without domain-specific terms", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       const forbiddenTerms = [

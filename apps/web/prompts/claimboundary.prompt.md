@@ -1916,7 +1916,9 @@ For each evidence item, determine whether it was produced by actors within the c
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
 - International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the target proceeding; otherwise "contextual."
 - Foreign media reporting on the target proceeding's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
+- Foreign government assessments, scorecards, monitoring reports, or official evaluations about the jurisdiction remain "foreign_reaction" even when framed as substantive analysis of governance, rights, safety, integrity, performance, or standards. Example: "Foreign government report rates Country A institutions as failing core standards" -> `foreign_reaction`.
 - Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
+- Neutral external reporting or analysis about the target proceeding remains "contextual" unless the substantive evidence is the foreign government's own action or official assessment.
 
 ### Input
 
