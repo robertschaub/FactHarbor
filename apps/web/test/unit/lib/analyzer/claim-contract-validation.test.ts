@@ -1181,7 +1181,8 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     // and NOT a substring of any claim statement.
     expect(source).toContain("repairPassEnabled");
     expect(source).toContain("presentInInput === true");
-    expect(source).toMatch(/statement\.toLowerCase\(\)\.includes\(anchorText\.toLowerCase\(\)\)/);
+    expect(source).toContain("selectRepairAnchorText(");
+    expect(source).toContain("claimSetContainsAnchorText(");
 
     // Repair output must carry the anchor verbatim — post-check discards
     // silent-failure responses. This is what converts the stochastic

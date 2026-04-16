@@ -494,22 +494,31 @@ export async function extractClaims(
     const repairPassEnabled = calcConfig.claimContractValidation?.repairPassEnabled ?? true;
     if (repairPassEnabled && contractValidationSummary) {
       const anchor = contractValidationSummary.truthConditionAnchor;
-      const anchorText = anchor?.anchorText?.trim();
       const anchorPresentInInput = anchor?.presentInInput === true;
       const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
+      const repairAnchorText = selectRepairAnchorText(
+        contractValidationSummary,
+        currentClaims,
+        salienceCommitment,
+      );
 
-      // C17 [BLOCKER FIX]: use case-insensitive check to avoid morphology-based false positives.
       const anchorMissing =
-        !!anchorText &&
+        !!repairAnchorText &&
         anchorPresentInInput &&
-        !currentClaims.some((c) => typeof c.statement === "string" && c.statement.toLowerCase().includes(anchorText.toLowerCase()));
+        !claimSetContainsAnchorText(currentClaims, repairAnchorText);
 
-      if (anchorMissing && anchorText) {
-        state.onEvent?.(`Repairing claim set to carry anchor "${anchorText}" verbatim...`, 25);
+      if (anchorMissing && repairAnchorText) {
+        if (anchor?.anchorText?.trim() && anchor.anchorText.trim() !== repairAnchorText) {
+          console.info(
+            `[Stage1] Narrowed repair anchor from "${anchor.anchorText.trim()}" to salience-backed span "${repairAnchorText}" before contract repair.`,
+          );
+        }
+
+        state.onEvent?.(`Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`, 25);
         try {
           const repairedPass2 = await runContractRepair(
             currentClaims,
-            anchorText,
+            repairAnchorText,
             state.originalInput,
             activePass2.impliedClaim ?? "",
             activePass2.articleThesis ?? "",
@@ -542,7 +551,7 @@ export async function extractClaims(
               contractValidationSummary = evaluatedRepair.summary;
               contractValidationSummary.stageAttribution = stageAttribution;
               console.info(
-                `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${anchorText}" fused and validated.`
+                `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${repairAnchorText}" fused and validated.`
               );
             } else {
               console.warn("[Stage1] Contract repair could not be re-validated; keeping pre-repair set.");
@@ -1816,9 +1825,7 @@ async function runContractRepair(
     // at least one claim now. If the LLM ignored the instruction, bail out so
     // we keep the pre-repair state rather than shipping a silent-failure retry.
     // C17 [BLOCKER FIX]: use case-insensitive check to avoid morphology-based false positives.
-    const anchorLanded = repaired.atomicClaims.some(
-      (c) => typeof c.statement === "string" && c.statement.toLowerCase().includes(anchorText.toLowerCase()),
-    );
+    const anchorLanded = claimSetContainsAnchorText(repaired.atomicClaims, anchorText);
     if (!anchorLanded) {
       console.warn(`[Stage1] Contract repair output still missing anchor "${anchorText}" (case-insensitive check); discarding.`);
       return undefined;
@@ -2549,6 +2556,60 @@ function areClaimSetsEquivalent(left: AtomicClaim[] | undefined, right: AtomicCl
     const rightClaim = right[index];
     return rightClaim && claim.id === rightClaim.id && claim.statement === rightClaim.statement;
   });
+}
+
+function claimSetContainsAnchorText(
+  claims: Array<{ statement?: string | null }>,
+  anchorText: string,
+): boolean {
+  const normalizedAnchor = anchorText.trim().toLowerCase();
+  if (!normalizedAnchor) return false;
+
+  return claims.some(
+    (claim) => typeof claim.statement === "string" && claim.statement.toLowerCase().includes(normalizedAnchor),
+  );
+}
+
+export function selectRepairAnchorText(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+  claims: Array<{ statement?: string | null }>,
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): string | undefined {
+  const anchor = contractValidationSummary?.truthConditionAnchor;
+  const anchorText = anchor?.anchorText?.trim();
+
+  if (!anchorText || anchor?.presentInInput !== true) {
+    return undefined;
+  }
+
+  if (claimSetContainsAnchorText(claims, anchorText)) {
+    return anchorText;
+  }
+
+  const salienceAnchors = salienceCommitment?.success
+    ? salienceCommitment.anchors ?? []
+    : [];
+
+  if (salienceAnchors.length === 0) {
+    return anchorText;
+  }
+
+  const normalizedAnchor = anchorText.toLowerCase();
+  const narrowedCandidates = salienceAnchors
+    .map((salienceAnchor) => salienceAnchor.text.trim())
+    .filter((text) => text.length > 0)
+    .filter((text) => text.toLowerCase() !== normalizedAnchor)
+    .filter((text) => normalizedAnchor.includes(text.toLowerCase()))
+    .filter((text, index, items) =>
+      items.findIndex((candidate) => candidate.toLowerCase() === text.toLowerCase()) === index,
+    )
+    .filter((text) => !claimSetContainsAnchorText(claims, text));
+
+  if (narrowedCandidates.length === 1) {
+    return narrowedCandidates[0];
+  }
+
+  return anchorText;
 }
 
 /**
