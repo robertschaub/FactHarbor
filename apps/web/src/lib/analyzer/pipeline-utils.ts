@@ -138,6 +138,10 @@ export function extractDomain(sourceUrl?: string): string | null {
 export function mapSourceType(sourceType?: string): SourceType {
   if (!sourceType) return "other";
   const normalized = sourceType.toLowerCase().replace(/[_\s-]+/g, "_");
+  const fuzzy = sourceType
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
   const validTypes: Record<string, SourceType> = {
     peer_reviewed_study: "peer_reviewed_study",
     fact_check_report: "fact_check_report",
@@ -148,7 +152,43 @@ export function mapSourceType(sourceType?: string): SourceType {
     expert_statement: "expert_statement",
     organization_report: "organization_report",
   };
-  return validTypes[normalized] ?? "other";
+  if (validTypes[normalized]) {
+    return validTypes[normalized];
+  }
+
+  if (/(fact[\s_-]*check|debunk|verification report)/.test(fuzzy)) {
+    return "fact_check_report";
+  }
+
+  if (/(peer[\s_-]*review|systematic review|meta[\s_-]*analysis|journal|scientific study|scientific paper|clinical trial|cohort study)/.test(fuzzy)) {
+    return "peer_reviewed_study";
+  }
+
+  if (/(legal|law|statute|regulation|ordinance|constitution|court|tribunal|judg|case law|decree|fedlex)/.test(fuzzy)) {
+    return "legal_document";
+  }
+
+  if (/(government|official|ministry|department|agency|bureau|administration|administrative|federal|state secretariat|secretariat|public authority|registry|register|statistics office|statistical office|national statistics|migration statistics|census|statistik|statistique|statistica|estadistica|verwaltung)/.test(fuzzy)) {
+    return "government_report";
+  }
+
+  if (/(expert|professor|researcher|scientist|specialist|economist|analyst)/.test(fuzzy)) {
+    return "expert_statement";
+  }
+
+  if (/(organisation|organization|ngo|nonprofit|non-profit|association|foundation|institute|think tank|observatory|watch|commission|report)/.test(fuzzy)) {
+    return "organization_report";
+  }
+
+  if (/(newswire|press agency|press release|official statement|briefing|transcript|wire service)/.test(fuzzy)) {
+    return "news_primary";
+  }
+
+  if (/(newspaper|news|magazine|media|broadcast|article)/.test(fuzzy)) {
+    return "news_secondary";
+  }
+
+  return "other";
 }
 
 export function normalizeExtractedSourceType(sourceType?: string): SourceType | undefined {

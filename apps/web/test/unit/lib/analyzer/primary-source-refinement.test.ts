@@ -305,6 +305,236 @@ describe("primary-source refinement", () => {
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
   });
 
+  it("still triggers refinement when descriptive source labels mask incomplete quantitative primary coverage", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "More than 235000 people are currently in the asylum system",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "total recognized refugees",
+          "total provisionally admitted persons",
+          "total persons with temporary protection",
+          "sum of all persons in the asylum system",
+        ],
+        expectedSourceTypes: ["official national migration statistics"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_existing",
+          statement: "In 2024, 27740 asylum applications were filed.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/existing-official",
+          sourceTitle: "Existing official",
+          sourceExcerpt: "existing",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official migration statistics",
+            temporal: "2024",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
+  it("still triggers refinement when only two of several quantitative primary metrics are covered", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "More than 235000 people are currently in the asylum system",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "total persons in the asylum system",
+          "total asylum applicants",
+          "total recognized refugees",
+          "total provisionally admitted persons",
+          "total persons with temporary protection",
+        ],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_existing_1",
+          statement: "In 2024, 27740 asylum applications were filed.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/official-applications",
+          sourceTitle: "Official applications",
+          sourceExcerpt: "applications",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official migration statistics",
+            temporal: "2024",
+          },
+        },
+        {
+          id: "EV_existing_2",
+          statement: "At the end of 2025, temporary protection status covered 71762 people.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/official-protection",
+          sourceTitle: "Official protection",
+          sourceExcerpt: "protection",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official migration statistics",
+            temporal: "2025",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
+  it("still triggers refinement when three expected primary metrics only have two covered", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "More than 235000 people are currently in the asylum system",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "current total persons in the asylum system",
+          "status breakdown by asylum category",
+          "distribution by canton",
+        ],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_existing_1",
+          statement: "The official statistics document the current stock in the asylum system.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/official-stock",
+          sourceTitle: "Official stock",
+          sourceExcerpt: "stock",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official migration statistics",
+            temporal: "2024",
+          },
+        },
+        {
+          id: "EV_existing_2",
+          statement: "The official statistics provide a status breakdown by asylum category at year end 2024.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/official-status-breakdown",
+          sourceTitle: "Official status breakdown",
+          sourceExcerpt: "status breakdown",
+          claimDirection: "contextual",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official migration statistics",
+            temporal: "2024",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
   it("does not repeat refinement when the claim already had a prior main iteration", async () => {
     const claim = {
       id: "AC_01",
@@ -360,7 +590,7 @@ describe("primary-source refinement", () => {
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
   });
 
-  it("does not trigger refinement when main queries lack explicit metadata", async () => {
+  it("still triggers refinement when main queries lack explicit metadata", async () => {
     mockGenerateResearchQueries.mockImplementation((_claim: unknown, iterationType: string) => {
       if (iterationType === "refinement") {
         return Promise.resolve([
@@ -429,9 +659,10 @@ describe("primary-source refinement", () => {
       state,
     );
 
-    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
-    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
-    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
 
   it("does not trigger refinement when the remaining refinement budget is zero", async () => {

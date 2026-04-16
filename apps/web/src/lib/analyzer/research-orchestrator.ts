@@ -151,10 +151,90 @@ function getPrimarySourceRefinementTargetTypes(
   claim: AtomicClaim,
 ): Set<NonNullable<EvidenceItem["sourceType"]>> {
   return new Set(
-    (claim.expectedEvidenceProfile?.expectedSourceTypes ?? []).filter((sourceType) =>
-      PRIMARY_SOURCE_REFINEMENT_TYPES.has(sourceType),
-    ),
+    (claim.expectedEvidenceProfile?.expectedSourceTypes ?? [])
+      .map((sourceType) => mapSourceType(sourceType))
+      .filter((sourceType) => PRIMARY_SOURCE_REFINEMENT_TYPES.has(sourceType)),
   );
+}
+
+function hasExplicitNumericSignal(text?: string): boolean {
+  return typeof text === "string" && /\d/.test(text);
+}
+
+function normalizeMetricText(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeMetricText(text: string): string[] {
+  return normalizeMetricText(text)
+    .split(" ")
+    .filter((token) => token.length >= 4);
+}
+
+function buildEvidenceMetricText(item: EvidenceItem): string {
+  return [
+    item.statement,
+    item.evidenceScope?.analyticalDimension,
+    item.evidenceScope?.methodology,
+    item.evidenceScope?.boundaries,
+    item.evidenceScope?.temporal,
+  ]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(" ");
+}
+
+function countCoveredExpectedMetrics(
+  expectedMetrics: string[],
+  evidenceTexts: string[],
+): number {
+  return expectedMetrics.filter((metric) => {
+    const metricTokens = Array.from(new Set(tokenizeMetricText(metric)));
+    if (metricTokens.length === 0) return false;
+
+    const minimumOverlap = Math.min(2, metricTokens.length);
+    return evidenceTexts.some((text) => {
+      const normalizedEvidence = normalizeMetricText(text);
+      const overlap = metricTokens.filter((token) => normalizedEvidence.includes(token)).length;
+      return overlap >= minimumOverlap;
+    });
+  }).length;
+}
+
+function getRequiredPrimaryMetricCoverage(expectedMetrics: string[]): number {
+  return Math.min(expectedMetrics.length, 3);
+}
+
+function hasConcretePrimaryMetricCoverage(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+): boolean {
+  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+  if (candidateTypes.size === 0) return false;
+
+  const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
+  if (expectedMetrics.length === 0) return false;
+
+  const evidenceTexts = evidenceItems
+    .filter((item) =>
+      !item.isSeeded
+      && item.relevantClaimIds?.includes(claim.id)
+      && !!item.sourceType
+      && candidateTypes.has(item.sourceType),
+    )
+    .map((item) => buildEvidenceMetricText(item))
+    .filter((text) => hasExplicitNumericSignal(text));
+
+  if (evidenceTexts.length === 0) return false;
+
+  const coveredMetrics = countCoveredExpectedMetrics(expectedMetrics, evidenceTexts);
+  const requiredCoverage = getRequiredPrimaryMetricCoverage(expectedMetrics);
+  return coveredMetrics >= requiredCoverage;
 }
 
 function hasNonSeededPrimarySourceCoverage(
@@ -183,7 +263,15 @@ function claimNeedsPrimarySourceRefinement(
     return false;
   }
 
-  return !hasNonSeededPrimarySourceCoverage(claim, evidenceItems);
+  if (!hasNonSeededPrimarySourceCoverage(claim, evidenceItems)) {
+    return true;
+  }
+
+  if (hasExplicitNumericSignal(claim.statement)) {
+    return !hasConcretePrimaryMetricCoverage(claim, evidenceItems);
+  }
+
+  return false;
 }
 
 export function countClaimLocalDirections(
@@ -1236,10 +1324,10 @@ export async function runResearchIteration(
   ) {
     if (!hasMainQueryMetadata) {
       console.warn(
-        `[Stage2] Primary-source refinement skipped for claim "${targetClaim.id}" because main queries lacked ` +
-        `retrieval metadata. Strengthen query metadata adherence before relying on refinement metrics.`,
+        `[Stage2] Main queries for claim "${targetClaim.id}" lacked retrieval metadata; ` +
+        `attempting primary-source refinement anyway using refinement-plan metadata and fallback ordering.`,
       );
-    } else {
+    }
     state.onEvent?.("Refining direct-source discovery...", -1);
     const refinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
       targetClaim,
@@ -1256,6 +1344,13 @@ export async function runResearchIteration(
       },
     ));
     state.llmCalls++;
+
+    if (!refinementPlan.some(hasExplicitRetrievalMetadata)) {
+      console.warn(
+        `[Stage2] Refinement queries for claim "${targetClaim.id}" also lacked retrieval metadata; ` +
+        `continuing with fallback ordering because skipping the refinement pass can hide recoverable primary sources.`,
+      );
+    }
 
     const prioritizedRefinementQueries = refinementPlan.filter(
       (query) => query.retrievalLane !== "secondary_context",
@@ -1283,7 +1378,6 @@ export async function runResearchIteration(
         `[Stage2] Primary-source refinement ${recoveredPrimaryCoverage ? "recovered" : "did not recover"} ` +
         `non-seeded primary coverage for claim ${targetClaim.id}.`,
       );
-    }
     }
   }
 

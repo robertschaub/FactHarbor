@@ -85,7 +85,13 @@ const Pass2AtomicClaimSchema = z.object({
   expectedEvidenceProfile: z.object({
     methodologies: z.array(z.string()).catch([]),
     expectedMetrics: z.array(z.string()).catch([]),
-    expectedSourceTypes: z.array(z.string()).catch([]),
+    expectedSourceTypes: z.array(z.string())
+      .transform((values) =>
+        values
+          .map((value) => normalizeExtractedSourceType(value))
+          .filter((value): value is SourceType => typeof value === "string"),
+      )
+      .catch([]),
   }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [] }),
 });
 
@@ -491,7 +497,7 @@ export async function extractClaims(
       const anchorText = anchor?.anchorText?.trim();
       const anchorPresentInInput = anchor?.presentInInput === true;
       const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
-      
+
       // C17 [BLOCKER FIX]: use case-insensitive check to avoid morphology-based false positives.
       const anchorMissing =
         !!anchorText &&
@@ -512,7 +518,7 @@ export async function extractClaims(
           );
           if (repairedPass2) {
             state.llmCalls++;
-            
+
             // C17 [BLOCKER FIX]: mandatory re-validation refresh after repair.
             // Decoupled from Gate 1 to ensure structural and semantic correctness.
             const repairValidationResult = await validateClaimContract(
@@ -1726,7 +1732,13 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
         const profile = normalized.expectedEvidenceProfile as Record<string, unknown>;
         if (!Array.isArray(profile.methodologies)) profile.methodologies = [];
         if (!Array.isArray(profile.expectedMetrics)) profile.expectedMetrics = [];
-        if (!Array.isArray(profile.expectedSourceTypes)) profile.expectedSourceTypes = [];
+        if (!Array.isArray(profile.expectedSourceTypes)) {
+          profile.expectedSourceTypes = [];
+        } else {
+          profile.expectedSourceTypes = (profile.expectedSourceTypes as unknown[])
+            .map((value) => normalizeExtractedSourceType(typeof value === "string" ? value : undefined))
+            .filter((value): value is SourceType => typeof value === "string");
+        }
       }
 
       return normalized;
