@@ -55,7 +55,7 @@ type NarrativeMethodologyHighlight = {
 function normalizeNarrativeHighlightLabel(value?: string | null): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length < 8) return null;
+  if (normalized.length < 3) return null;
   return normalized;
 }
 

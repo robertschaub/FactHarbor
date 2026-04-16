@@ -30,20 +30,6 @@ export interface GeneratedResearchQuery {
   freshnessWindow?: ResearchQueryFreshnessWindow;
 }
 
-function buildGeneratedResearchQuery(
-  query: string,
-  rationale: string,
-  retrievalLane?: ResearchQueryRetrievalLane,
-  freshnessWindow?: ResearchQueryFreshnessWindow,
-): GeneratedResearchQuery {
-  return {
-    query,
-    rationale,
-    ...(retrievalLane !== undefined ? { retrievalLane } : {}),
-    ...(freshnessWindow !== undefined ? { freshnessWindow } : {}),
-  };
-}
-
 // ============================================================================
 // SCHEMAS
 // ============================================================================
@@ -205,14 +191,17 @@ export async function generateResearchQueries(
     }
 
     const validated = GenerateQueriesOutputSchema.parse(parsed);
-  warnOnMissingRefinementMetadata(iterationType, validated.queries);
+    warnOnMissingRefinementMetadata(iterationType, validated.queries);
     let finalQueries: GeneratedResearchQuery[];
     if (queryStrategyMode !== "pro_con") {
       finalQueries = validated.queries
         .slice(0, maxQueries)
-        .map(({ query, rationale, retrievalLane, freshnessWindow }) =>
-          buildGeneratedResearchQuery(query, rationale, retrievalLane, freshnessWindow),
-        );
+        .map(({ query, rationale, retrievalLane, freshnessWindow }) => ({
+          query,
+          rationale,
+          ...(retrievalLane !== undefined ? { retrievalLane } : {}),
+          ...(freshnessWindow !== undefined ? { freshnessWindow } : {}),
+        }));
     } else {
       const supportingQueries = validated.queries.filter((query) => query.variantType === "supporting");
       const refutingQueries = validated.queries.filter((query) => query.variantType === "refuting");
@@ -224,37 +213,40 @@ export async function generateResearchQueries(
       const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
       for (let i = 0; i < maxVariantLength; i++) {
         if (supportingQueries[i]) {
-          merged.push(buildGeneratedResearchQuery(
-            supportingQueries[i].query,
-            supportingQueries[i].rationale,
-            supportingQueries[i].retrievalLane,
-            supportingQueries[i].freshnessWindow,
-          ));
+          merged.push({
+            query: supportingQueries[i].query,
+            rationale: supportingQueries[i].rationale,
+            ...(supportingQueries[i].retrievalLane !== undefined ? { retrievalLane: supportingQueries[i].retrievalLane } : {}),
+            ...(supportingQueries[i].freshnessWindow !== undefined ? { freshnessWindow: supportingQueries[i].freshnessWindow } : {}),
+          });
         }
         if (refutingQueries[i]) {
-          merged.push(buildGeneratedResearchQuery(
-            refutingQueries[i].query,
-            refutingQueries[i].rationale,
-            refutingQueries[i].retrievalLane,
-            refutingQueries[i].freshnessWindow,
-          ));
+          merged.push({
+            query: refutingQueries[i].query,
+            rationale: refutingQueries[i].rationale,
+            ...(refutingQueries[i].retrievalLane !== undefined ? { retrievalLane: refutingQueries[i].retrievalLane } : {}),
+            ...(refutingQueries[i].freshnessWindow !== undefined ? { freshnessWindow: refutingQueries[i].freshnessWindow } : {}),
+          });
         }
       }
 
       for (const unlabeled of unlabeledQueries) {
-        merged.push(buildGeneratedResearchQuery(
-          unlabeled.query,
-          unlabeled.rationale,
-          unlabeled.retrievalLane,
-          unlabeled.freshnessWindow,
-        ));
+        merged.push({
+          query: unlabeled.query,
+          rationale: unlabeled.rationale,
+          ...(unlabeled.retrievalLane !== undefined ? { retrievalLane: unlabeled.retrievalLane } : {}),
+          ...(unlabeled.freshnessWindow !== undefined ? { freshnessWindow: unlabeled.freshnessWindow } : {}),
+        });
       }
 
       const normalized = merged.length > 0
         ? merged
-        : validated.queries.map(({ query, rationale, retrievalLane, freshnessWindow }) =>
-          buildGeneratedResearchQuery(query, rationale, retrievalLane, freshnessWindow),
-        );
+        : validated.queries.map(({ query, rationale, retrievalLane, freshnessWindow }) => ({
+          query,
+          rationale,
+          ...(retrievalLane !== undefined ? { retrievalLane } : {}),
+          ...(freshnessWindow !== undefined ? { freshnessWindow } : {}),
+        }));
 
       finalQueries = normalized.slice(0, maxQueries);
     }

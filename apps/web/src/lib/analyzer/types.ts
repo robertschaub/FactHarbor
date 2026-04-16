@@ -354,7 +354,7 @@ export interface ClaimAcquisitionIterationLosses {
 
 export interface ClaimAcquisitionIterationEntry {
   iteration: number;
-  iterationType: "main" | "contradiction" | "contrarian";
+  iterationType: "main" | "contradiction" | "contrarian" | "refinement";
   languageLane: "primary" | "supplementary_en";
   generatedQueries: string[];
   searchResults: number;

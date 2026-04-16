@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Stage 2 Review Fixes -- [Standard] [open-items: yes]
+**For next agent:** The handed-over review findings were addressed on the current tree: refinement telemetry now records `rawEvidenceItems` and `iterationType` on the correct refinement entry, source-type-only claims can trigger refinement without `expectedMetrics`, WTT/WTW/LCA survive narrative highlighting, and the targeted Stage 2 + Stage 5 safe tests passed.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Stage2_Review_Fixes.md
+
+---
 ### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Hydrogen Boundary And Asylum Refinement Followup -- [Standard] [open-items: yes]
 **For next agent:** Hydrogen is now structurally separated into TTW/WTW on the live submitted run `a2e57bbb...`; asylum retrieval is improved through canonicalized source types and stricter primary-source refinement, but the queued live rerun `bc825742...` still needs confirmation and a future generic table-extraction step may be needed for one direct official aggregate total.
 → Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Hydrogen_Boundary_And_Asylum_Refinement_Followup.md

@@ -246,9 +246,68 @@ describe("primary-source refinement", () => {
     );
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
     expect(state.claimAcquisitionLedger.AC_01.iterations).toHaveLength(2);
+    expect(state.claimAcquisitionLedger.AC_01.iterations[0].iterationType).toBe("main");
+    expect(state.claimAcquisitionLedger.AC_01.iterations[0].rawEvidenceItems).toBe(1);
+    expect(state.claimAcquisitionLedger.AC_01.iterations[1].iterationType).toBe("refinement");
+    expect(state.claimAcquisitionLedger.AC_01.iterations[1].rawEvidenceItems).toBe(1);
     expect(state.claimAcquisitionLedger.AC_01.iterations[1].laneReason).toBe(
       "primary_source_refinement:recovered_non_seeded_primary_coverage",
     );
+  });
+
+  it("triggers refinement when primary source types are expected even without expected metrics", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "current official total claim",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_seeded",
+          statement: "seeded official",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/seeded",
+          sourceTitle: "Seeded",
+          sourceExcerpt: "seeded",
+          claimDirection: "supports",
+          probativeValue: "medium",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: true,
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
 
   it("does not run refinement when non-seeded primary coverage already exists", async () => {

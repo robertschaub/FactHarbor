@@ -259,12 +259,16 @@ function claimNeedsPrimarySourceRefinement(
   const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
   const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
 
-  if (expectedMetrics.length === 0 || candidateTypes.size === 0) {
+  if (candidateTypes.size === 0) {
     return false;
   }
 
   if (!hasNonSeededPrimarySourceCoverage(claim, evidenceItems)) {
     return true;
+  }
+
+  if (expectedMetrics.length === 0) {
+    return false;
   }
 
   if (hasExplicitNumericSignal(claim.statement)) {
@@ -1196,7 +1200,7 @@ export async function runResearchIteration(
           currentDate,
         );
         state.llmCalls++;
-        iterationTelemetry.rawEvidenceItems += rawEvidence.length;
+        telemetry.rawEvidenceItems += rawEvidence.length;
         const extractedSourceUrls = new Set(
           rawEvidence
             .map((item) => item.sourceUrl)
@@ -1364,7 +1368,7 @@ export async function runResearchIteration(
     if (selectedRefinementQueries.length > 0) {
       const refinementTelemetry = createClaimIterationTelemetryEntry(
         iterationIndex,
-        "main",
+        "refinement",
         selectedRefinementQueries.map((query) => query.query),
         "primary_source_refinement:triggered",
       );
