@@ -237,34 +237,6 @@ function hasConcretePrimaryMetricCoverage(
   return coveredMetrics >= requiredCoverage;
 }
 
-function hasInstitutionalNumericCoverageFallback(
-  claim: AtomicClaim,
-  evidenceItems: EvidenceItem[],
-): boolean {
-  const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
-  if (expectedMetrics.length === 0) return false;
-
-  const claimLocalInstitutionalItems = evidenceItems.filter((item) =>
-    !item.isSeeded
-    && item.relevantClaimIds?.includes(claim.id)
-    && !!item.sourceType
-    && PRIMARY_SOURCE_REFINEMENT_TYPES.has(item.sourceType)
-    && hasExplicitNumericSignal(buildEvidenceMetricText(item)),
-  );
-
-  if (claimLocalInstitutionalItems.length === 0) return false;
-
-  const requiredEvidenceCount = Math.min(expectedMetrics.length, 3);
-  const distinctSourceCount = new Set(
-    claimLocalInstitutionalItems
-      .map((item) => item.sourceUrl)
-      .filter((url): url is string => typeof url === "string" && url.length > 0),
-  ).size;
-
-  return claimLocalInstitutionalItems.length >= requiredEvidenceCount
-    && distinctSourceCount >= Math.min(requiredEvidenceCount, 2);
-}
-
 function hasNonSeededPrimarySourceCoverage(
   claim: AtomicClaim,
   evidenceItems: EvidenceItem[],
@@ -287,22 +259,12 @@ function claimNeedsPrimarySourceRefinement(
   const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
   const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
 
-  if (candidateTypes.size === 0) {
+  if (expectedMetrics.length === 0 || candidateTypes.size === 0) {
     return false;
   }
 
   if (!hasNonSeededPrimarySourceCoverage(claim, evidenceItems)) {
-    // If the main iteration already gathered a rich institutional numeric evidence
-    // base, a further primary-source refinement pass is usually redundant and can
-    // crowd out the broader evidence mix with duplicate direct-source queries.
-    if (hasInstitutionalNumericCoverageFallback(claim, evidenceItems)) {
-      return false;
-    }
     return true;
-  }
-
-  if (expectedMetrics.length === 0) {
-    return false;
   }
 
   if (hasExplicitNumericSignal(claim.statement)) {

@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Refinement Gate Restoration And Test Realignment -- [Standard] [open-items: yes]
+**For next agent:** `claimNeedsPrimarySourceRefinement(...)` now matches the immediate pre-`308d00cf` gate again: no refinement when `expectedMetrics` is empty, the asylum-only fallback helper is gone, and the focused refinement + Stage 1 contract tests plus `tsc --noEmit` all passed. The next step is the live rerun of the three previously `UNVERIFIED` jobs.
+→ Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Refinement_Gate_Restoration_And_Test_Realignment.md
+
+---
 ### 2026-04-16 | LLM Expert | GitHub Copilot (GPT-5.4) | Asylum Refinement Regression Fix -- [Standard] [open-items: yes]
 **For next agent:** The asylum regression was traced to the new first-pass Stage 2 refinement branch, not to Stage 4 thresholds. `claimNeedsPrimarySourceRefinement(...)` now skips redundant refinement when a metric-bearing claim already has rich non-seeded institutional numeric coverage, and the focused `primary-source-refinement.test.ts` file passed with a new asylum-style regression case.
 → Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Asylum_Refinement_Regression_Fix.md
