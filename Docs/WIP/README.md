@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-15
-**Status**: Consolidation #11 complete. 4 additional historical/supporting files archived. 81 active markdown docs remain.
+**Last Updated**: 2026-04-16
+**Status**: Consolidation #11 complete. 4 additional historical/supporting files archived. 84 active markdown docs remain.
 
 ---
 
@@ -33,6 +33,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Active Engineering / Quality Tracks
 
 ### Currently active
+- [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — current benchmark-family status matrix after the April 16 fix wave, with solved / partly solved / unresolved judgments and highest-value rerun recommendations
 - [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter
 - [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — current Phase 7 problem framing and readiness assessment
 - [2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md](2026-04-14_Phase7_Code_and_Prompt_Deep_Review.md) — current Phase 7 code/prompt issue inventory
