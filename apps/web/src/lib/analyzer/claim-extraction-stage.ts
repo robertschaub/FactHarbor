@@ -578,7 +578,7 @@ export async function extractClaims(
     base + Math.floor(state.originalInput.length / charsPerClaim),
   );
 
-  const protectedRepairAnchorCarrierIds = shouldProtectRepairAnchorCarriers(contractValidationSummary)
+  const protectedAnchorCarrierIds = shouldProtectValidatedAnchorCarriers(contractValidationSummary)
     ? contractValidationSummary?.truthConditionAnchor?.validPreservedIds ?? []
     : [];
 
@@ -586,7 +586,7 @@ export async function extractClaims(
     activePass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
     effectiveMax,
-    protectedRepairAnchorCarrierIds,
+    protectedAnchorCarrierIds,
   );
 
   // ------------------------------------------------------------------
@@ -2267,16 +2267,24 @@ export function filterByCentrality(
   // Filter by centrality threshold
   const allowed = threshold === "high" ? new Set(["high"]) : new Set(["high", "medium"]);
   const requiredClaimIdSet = new Set(requiredClaimIds);
+  const compareEntries = (
+    left: { claim: AtomicClaim; index: number },
+    right: { claim: AtomicClaim; index: number },
+  ): number => {
+    const priorityDiff = getCentralityPriority(left.claim.centrality) - getCentralityPriority(right.claim.centrality);
+    if (priorityDiff !== 0) return priorityDiff;
+
+    const requiredDiff = Number(requiredClaimIdSet.has(right.claim.id)) - Number(requiredClaimIdSet.has(left.claim.id));
+    if (requiredDiff !== 0) return requiredDiff;
+
+    return left.index - right.index;
+  };
   const filtered = claims
     .map((claim, index) => ({ claim, index }))
     .filter(({ claim }) => allowed.has(claim.centrality) || requiredClaimIdSet.has(claim.id));
 
   // Sort: high centrality first, then medium
-  filtered.sort((a, b) => {
-    const priorityDiff = getCentralityPriority(a.claim.centrality) - getCentralityPriority(b.claim.centrality);
-    if (priorityDiff !== 0) return priorityDiff;
-    return a.index - b.index;
-  });
+  filtered.sort(compareEntries);
 
   const selected = filtered.slice(0, maxClaims);
 
@@ -2314,11 +2322,7 @@ export function filterByCentrality(
 
   const seenClaimIds = new Set<string>();
   return selected
-    .sort((a, b) => {
-      const priorityDiff = getCentralityPriority(a.claim.centrality) - getCentralityPriority(b.claim.centrality);
-      if (priorityDiff !== 0) return priorityDiff;
-      return a.index - b.index;
-    })
+    .sort(compareEntries)
     .filter((entry) => {
       if (seenClaimIds.has(entry.claim.id)) {
         return false;
@@ -2435,7 +2439,7 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
 
   let filteredClaims = gate1Result.filteredClaims;
 
-  if (shouldProtectRepairAnchorCarriers(contractValidationSummary)) {
+  if (shouldProtectValidatedAnchorCarriers(contractValidationSummary)) {
     const preFilterClaims = gate1Result.preFilterClaims ?? gate1Result.filteredClaims;
     const filteredClaimIdSet = new Set(filteredClaims.map((claim) => claim.id));
     const missingAnchorCarrierIds = anchorCarrierIds.filter((claimId) => !filteredClaimIdSet.has(claimId));
@@ -2456,7 +2460,7 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
           );
 
         console.info(
-          `[Stage1] Gate 1: restored ${restoredClaims.length} repair-approved anchor carrier claim(s) ` +
+          `[Stage1] Gate 1: restored ${restoredClaims.length} contract-approved anchor carrier claim(s) ` +
           `after structural filtering. restored=[${restoredClaims.map((claim) => claim.id).join(",")}].`,
         );
       }
@@ -2499,11 +2503,12 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
   return updateGate1Result(filteredClaims);
 }
 
-function shouldProtectRepairAnchorCarriers(
+export function shouldProtectValidatedAnchorCarriers(
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
 ): boolean {
+  const stageAttribution = contractValidationSummary?.stageAttribution;
   return (
-    contractValidationSummary?.stageAttribution === "repair"
+    (stageAttribution === "retry" || stageAttribution === "repair")
     && contractValidationSummary?.preservesContract === true
     && contractValidationSummary?.rePromptRequired === false
   );

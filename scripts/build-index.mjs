@@ -70,6 +70,9 @@ function buildStageManifest() {
   for (const [, task, tier] of mappingBlock.matchAll(/(\w+)\s*:\s*'(\w+)'/g)) {
     taskTiers[task] = tier;
   }
+  if (Object.keys(taskTiers).length === 0) {
+    console.warn('WARN: DEFAULT_TASK_TIER_MAPPING extraction produced no task tiers');
+  }
 
   // Extract model IDs per provider per tier
   const providers = {
@@ -91,6 +94,9 @@ function buildStageManifest() {
       );
       if (idMatch) modelIds[provider][tierName] = idMatch[1];
     }
+    if (Object.keys(modelIds[provider]).length === 0) {
+      console.warn(`WARN: ${varName} extraction produced no model IDs for provider ${provider}`);
+    }
   }
 
   const tasks = {};
@@ -104,6 +110,15 @@ function buildStageManifest() {
   }
 
   return { generatedAt, tasks };
+}
+
+function buildStageManifestSafely() {
+  try {
+    return buildStageManifest();
+  } catch (error) {
+    console.warn(`WARN: stage-manifest.json skipped: ${error instanceof Error ? error.message : String(error)}`);
+    return { generatedAt, tasks: {} };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +141,15 @@ function buildStageMap() {
   }
 
   return { generatedAt, stages };
+}
+
+function buildStageMapSafely() {
+  try {
+    return buildStageMap();
+  } catch (error) {
+    console.warn(`WARN: stage-map.json skipped: ${error instanceof Error ? error.message : String(error)}`);
+    return { generatedAt, stages: {} };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -252,11 +276,11 @@ function buildHandoffIndex() {
 // Main
 // ---------------------------------------------------------------------------
 if (RUN1) {
-  const manifest = buildStageManifest();
+  const manifest = buildStageManifestSafely();
   writeAtomic(join(INDEX_DIR, 'stage-manifest.json'), manifest);
   console.log(`stage-manifest.json  ${Object.keys(manifest.tasks).length} tasks`);
 
-  const stageMap = buildStageMap();
+  const stageMap = buildStageMapSafely();
   writeAtomic(join(INDEX_DIR, 'stage-map.json'), stageMap);
   console.log(`stage-map.json       ${Object.keys(stageMap.stages).length} stages`);
 }

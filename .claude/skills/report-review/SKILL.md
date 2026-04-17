@@ -136,8 +136,10 @@ Selecting `ExecutedWebGitCommitHash` and `PromptContentHash` lets Phase 0's comm
 **Note:** `analysisIssueCode` / `analysisIssueMessage` are NOT Jobs table columns — they are response-shape fields computed from `resultJson.analysisWarnings[*]` by `JobsController.cs` at read time. Extract them from the parsed `ResultJson`, not from the SQL result.
 
 **1b. `test-output/` artifacts** — validation batches, phase runs, loose result JSONs:
-```bash
-ls -t test-output/ | head -20
+```powershell
+Get-ChildItem test-output -Directory |
+  Sort-Object LastWriteTimeUtc -Descending |
+  Select-Object -First 20 -ExpandProperty Name
 ```
 Read the newest 2–4 directories; for each, read up to 5 job JSONs (first 2, last 2, plus one outlier by `verdictLabel` or `confidence`).
 

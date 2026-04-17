@@ -23,8 +23,7 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, error: "Invalid job ID" }, { status: 400 });
   }
 
-  const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}/events`;
-  // Always forward client IP so the API can rate-limit by real IP (not proxy IP).
+  const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}/events/history`;
   const upstreamHeaders: Record<string, string> = {};
   upstreamHeaders["x-forwarded-for"] = getClientIp(request);
   const forwardedProto = request.headers.get("x-forwarded-proto");
@@ -40,12 +39,14 @@ export async function GET(request: Request, context: RouteContext) {
     headers: upstreamHeaders,
   });
 
-  return new NextResponse(res.body, {
-    status: res.status,
-    headers: {
-      "Content-Type": res.headers.get("content-type") ?? "text/event-stream",
-      "Cache-Control": "no-cache",
-      "Connection": "keep-alive"
-    }
-  });
+  if (!res.ok) {
+    const text = await res.text();
+    return new NextResponse(text, {
+      status: res.status,
+      headers: { "Content-Type": res.headers.get("content-type") ?? "application/json" },
+    });
+  }
+
+  const data = await res.json();
+  return NextResponse.json(data);
 }

@@ -1,4 +1,7 @@
-"""Analyze the just-completed /validate job against Phase 3 dimensions."""
+"""Analyze the just-completed /validate job against Phase 3 dimensions.
+
+TEMP SCRIPT. Delete or promote by 2026-05-01 once /validate workflow checks are folded into a maintained tool.
+"""
 import json, os, sys, urllib.request
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 

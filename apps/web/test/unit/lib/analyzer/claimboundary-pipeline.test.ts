@@ -20,6 +20,7 @@ import {
   runGate1Validation,
   runPreliminarySearch,
   seedEvidenceFromPreliminarySearch,
+  shouldProtectValidatedAnchorCarriers,
   wouldResolveExistingRemap,
   remapUnresolvedSeededEvidence,
   reconcileEvidenceSourceIds,
@@ -721,9 +722,64 @@ describe("filterByCentrality", () => {
     expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_04"]);
   });
 
+  it("should keep required claims ahead of non-required peers within the same centrality tier", () => {
+    const claims = makeClaims(["high", "high", "high", "high"]);
+    const result = filterByCentrality(claims, "high", 3, ["AC_04"]);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_04", "AC_01", "AC_02"]);
+  });
+
   it("should return empty array for empty input", () => {
     const result = filterByCentrality([], "medium", 10);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe("shouldProtectValidatedAnchorCarriers", () => {
+  it("protects only clean retry or repair outputs", () => {
+    expect(shouldProtectValidatedAnchorCarriers({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "clean retry",
+      stageAttribution: "retry",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_04"],
+        preservedByQuotes: [],
+        validPreservedIds: ["AC_04"],
+      },
+    })).toBe(true);
+
+    expect(shouldProtectValidatedAnchorCarriers({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: true,
+      summary: "retry still failed",
+      stageAttribution: "retry",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_04"],
+        preservedByQuotes: [],
+        validPreservedIds: ["AC_04"],
+      },
+    })).toBe(false);
+
+    expect(shouldProtectValidatedAnchorCarriers({
+      ran: true,
+      preservesContract: false,
+      rePromptRequired: false,
+      summary: "repair drifted",
+      stageAttribution: "repair",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_04"],
+        preservedByQuotes: [],
+        validPreservedIds: ["AC_04"],
+      },
+    })).toBe(false);
   });
 });
 
@@ -8234,6 +8290,179 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       },
     });
     expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
+  });
+
+  it("should keep retry-approved anchor carriers through centrality capping and Gate 1 filtering", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "high", maxAtomicClaims: 3 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: true },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(3, { inputClassification: "single_atomic_claim", statementPrefix: "Bundesrat" }),
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "Der Bundesrat unterschrieb den EU-Vertrag vor dem Parlament.", centrality: "high" }),
+              createAtomicClaim({ id: "AC_02", statement: "Der Bundesrat unterschrieb den EU-Vertrag vor dem Volk.", centrality: "high" }),
+              createAtomicClaim({ id: "AC_03", statement: "Der Bundesrat unterzeichnete das Paket mit zusätzlichen Verfahrensdetails.", centrality: "high" }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "missing rechtskräftig anchor",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+              { claimId: "AC_03", preservesEvaluativeMeaning: false, usesNeutralDimensionQualifier: false, proxyDriftSeverity: "material", recommendedAction: "retry", reasoning: "anchor missing" },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            ...makePass2(4, { inputClassification: "single_atomic_claim", statementPrefix: "Bundesrat" }),
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "Der Bundesrat unterschrieb den EU-Vertrag vor dem Parlament.", centrality: "high", specificityScore: 0.9 }),
+              createAtomicClaim({ id: "AC_02", statement: "Der Bundesrat unterschrieb den EU-Vertrag vor dem Volk.", centrality: "high", specificityScore: 0.9 }),
+              createAtomicClaim({ id: "AC_03", statement: "Der Bundesrat unterzeichnete das Paket mit zusätzlichen Verfahrensdetails.", centrality: "high", specificityScore: 0.9 }),
+              createAtomicClaim({ id: "AC_04", statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig.", centrality: "low", specificityScore: 0.2 }),
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "retry preserved contract",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "extra detail" },
+              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor restored" },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig",
+              preservedInClaimIds: ["AC_04"],
+              preservedByQuotes: ["rechtskräftig"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: true, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_04", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "anchor carrier is narrower but still required" },
+            ],
+          };
+        case 7:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "final accepted claims still preserve the retried anchor",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "mild", recommendedAction: "keep", reasoning: "timing preserved" },
+              { claimId: "AC_04", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "anchor preserved" },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig",
+              preservedInClaimIds: ["AC_04"],
+              preservedByQuotes: ["rechtskräftig"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_04"]);
+    expect(result.atomicClaims.find((claim) => claim.id === "AC_04")?.statement).toContain("rechtskräftig");
+    expect(llmCallIndex).toBe(7);
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "retry",
+      summary: "final accepted claims still preserve the retried anchor",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_04"],
+        validPreservedIds: ["AC_04"],
+      },
+    });
   });
 
   it("should prune Gate 1 fidelity-failed non-anchor claims from a contract-approved set", async () => {

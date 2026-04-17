@@ -548,6 +548,9 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("neutral or standards-based analysis");
       expect(section).toContain("Foreign government report rates Country A institutions as failing core standards");
+      expect(section).toContain("Foreign academic study rates Country A institutions as failing core standards");
+      expect(section).toContain("Negative example (contrast)");
+      expect(section).toContain("-> `contextual`");
       expect(section).toContain("Neutral external reporting or analysis about the target proceeding remains \"contextual\"");
     });
 

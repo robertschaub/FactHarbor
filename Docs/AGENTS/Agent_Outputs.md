@@ -7,6 +7,17 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-17 | Lead Developer | GitHub Copilot (GPT-5.4) | Follow-up Review Fixes For Read Gating And Script Hardening -- [Significant] [open-items: no]
+**For next agent:** Follow-up review blockers are closed. Job detail plus both event read paths now validate `jobId`, treat hidden jobs as admin-only, and the Next.js event proxies forward `X-Admin-Key` for admin reads. Stage 1 regression coverage now includes direct retry-failure protection assertions, protected carriers sort ahead of same-tier peers under the centrality cap, and the retry-preservation loop asserts a bounded 7-call path. Tooling hardening landed too: `install-hooks.mjs` backs up differing hooks before overwrite, `build-index.mjs` degrades safely on Tier 1 read failures, hook indexer failures append to `.git/hooks/factharbor-index.log`, the quality-drift scanner now parses typed object blocks without the old broad regex, temp validation scripts carry delete-by notes, and `CLAUDE.md` documents the `bypassPermissions` rationale. Verified with targeted Vitest (`416 passed | 1 skipped`), `npm -w apps/web run build`, `dotnet build apps/api/FactHarbor.Api.csproj -o temp/verify-api-build-review2`, and the touched Node maintenance scripts.
+→ Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Followup_Review_Fixes_For_Read_Gating_And_Script_Hardening.md
+
+---
+### 2026-04-17 | Lead Developer | GitHub Copilot (GPT-5.4) | Code Review Fixes For Events And Retry Anchor Preservation -- [Significant] [open-items: no]
+**For next agent:** Terminal `/jobs/[id]` pages now hydrate the Events tab through `/api/fh/jobs/[id]/events/history` instead of relying on SSE replay, Stage 1 now protects valid anchor carriers for both retry- and repair-approved sets via `shouldProtectValidatedAnchorCarriers(...)`, the VS Code `build` task is repaired and lock-safe via `dotnet msbuild ... /t:Compile`, and `restart-clean.ps1` now clears stale API listeners so route-level browser checks hit current code. Verified live on completed job `ff97448210f8475faf6bf0c2eba921d4`: `/events/history` fetched once, `EventSource` opened zero times, and the Events tab rendered 55 entries.
+→ Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Code_Review_Fixes_For_Events_And_Retry_Anchor_Preservation.md
+
+
+---
 ### 2026-04-17 | Lead Developer | Codex (GPT-5) | Asylum 235000 Prompt Generalization Follow-up -- [Standard] [open-items: yes]
 **For next agent:** After user review, the new prompt rules were generalized away from asylum/current-administrative wording and reframed as a generic source-native compositional-evidence pattern: decisive propositions may be established either by one headline figure or by aligned component figures within one analytical window. Prompt storage was reseeded again from `d25a32e5...` to `e1403475...`; the focused prompt-contract suite still passes. No new live rerun was required for this wording-only generalization.
 → Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Asylum_235000_Report_Review_Prompt_Stability_Fix.md

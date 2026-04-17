@@ -90,6 +90,18 @@ type Job = {
 
 type EventItem = { id: number; tsUtc: string; level: string; message: string };
 
+function mergeEventsById(existing: EventItem[], incoming: EventItem[]): EventItem[] {
+  const merged = new Map<number, EventItem>();
+  for (const item of existing) {
+    merged.set(item.id, item);
+  }
+  for (const item of incoming) {
+    merged.set(item.id, item);
+  }
+  // History replay and live SSE can overlap briefly; de-dupe by event id and keep monotonic order.
+  return Array.from(merged.values()).sort((left, right) => left.id - right.id);
+}
+
 // ============================================================================
 // 7-POINT TRUTH SCALE - Color & Display System
 // ============================================================================
@@ -670,6 +682,10 @@ export default function JobPage() {
     }
   }, []);
 
+  useEffect(() => {
+    setEvents([]);
+  }, [jobId]);
+
   // Auto-select Events tab when job is still running on first load,
   // and switch to Report when it completes (if user hasn't navigated away).
   const prevStatusRef = useRef<string | null>(null);
@@ -907,6 +923,32 @@ export default function JobPage() {
   }, [jobId, pollIntervalMs, isVisible]);
 
   useEffect(() => {
+    if (!jobId || !isVisible) return;
+
+    let alive = true;
+
+    const loadEventHistory = async () => {
+      const res = await fetch(`/api/fh/jobs/${jobId}/events/history`, {
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        return;
+      }
+
+      const data = (await res.json()) as EventItem[];
+      if (alive) {
+        setEvents((prev) => mergeEventsById(prev, data));
+      }
+    };
+
+    loadEventHistory().catch(() => {
+      // Event history is best-effort; keep the rest of the page usable.
+    });
+
+    return () => { alive = false; };
+  }, [jobId, isVisible]);
+
+  useEffect(() => {
     if (!jobId || !isVisible || !job?.status) return;
     const isTerminalStatus = ["SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"].includes(job.status);
     if (isTerminalStatus) return;
@@ -915,10 +957,7 @@ export default function JobPage() {
     es.onmessage = (evt) => {
       try {
         const item = JSON.parse(evt.data) as EventItem;
-        setEvents((prev) => {
-          const exists = prev.some((p) => p.id === item.id);
-          return exists ? prev : [...prev, item].sort((a, b) => a.id - b.id);
-        });
+        setEvents((prev) => mergeEventsById(prev, [item]));
       } catch {}
     };
     es.onerror = () => {

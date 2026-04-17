@@ -6,7 +6,7 @@
  * where the platform supports it (POSIX chmod; no-op on Windows).
  */
 
-import { copyFileSync, chmodSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { copyFileSync, chmodSync, existsSync, readFileSync, readdirSync, renameSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,6 +24,17 @@ const hooks = readdirSync(SRC).filter(f => !f.startsWith('.'));
 for (const name of hooks) {
   const from = join(SRC, name);
   const to   = join(DST, name);
+
+  if (existsSync(to)) {
+    const existing = readFileSync(to, 'utf8');
+    const incoming = readFileSync(from, 'utf8');
+    if (existing !== incoming) {
+      const backupPath = `${to}.pre-factharbor-${Date.now()}.bak`;
+      renameSync(to, backupPath);
+      console.warn(`backed up  ${name} -> ${backupPath}`);
+    }
+  }
+
   copyFileSync(from, to);
   try { chmodSync(to, 0o755); } catch { /* Windows — chmod not meaningful */ }
   console.log(`installed  ${name}`);

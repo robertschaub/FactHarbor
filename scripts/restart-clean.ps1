@@ -41,6 +41,53 @@ function Stop-Gracefully([string]$label, $cimProcesses) {
     }
 }
 
+function Get-ConfiguredPorts([string]$urls, [int[]]$fallbackPorts) {
+    $ports = @()
+    foreach ($rawUrl in ($urls -split ';' | Where-Object { $_ -match '^https?://' })) {
+        try {
+            $uri = [Uri]$rawUrl
+            $port = if ($uri.IsDefaultPort) {
+                if ($uri.Scheme -eq 'https') { 443 } else { 80 }
+            } else {
+                $uri.Port
+            }
+            if ($port -and $ports -notcontains $port) {
+                $ports += $port
+            }
+        } catch {
+            Write-Host "  Could not parse URL '$rawUrl' while determining listener ports." -ForegroundColor Yellow
+        }
+    }
+
+    if ($ports.Count -gt 0) {
+        return $ports
+    }
+
+    return $fallbackPorts
+}
+
+function Stop-ListeningProcesses([int[]]$ports, [string]$label) {
+    foreach ($port in $ports) {
+        Write-Host "Checking for processes using $label port $port..."
+        $connections = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+        if ($connections) {
+            foreach ($conn in ($connections | Select-Object -Unique OwningProcess)) {
+                $procId = $conn.OwningProcess
+                try {
+                    $proc = Get-Process -Id $procId -ErrorAction Stop
+                    Write-Host ("Killing process on port {0}: PID {1} ({2})" -f $port, $procId, $proc.ProcessName) -ForegroundColor Yellow
+                    Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
+                } catch {
+                    Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
+                }
+            }
+        } else {
+            Write-Host "No process listening on port $port."
+        }
+        Write-Host ""
+    }
+}
+
 Write-Host "Stopping existing services (graceful)..."
 $apiShells = Get-CimInstance Win32_Process | Where-Object {
     $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\api" -and $_.CommandLine -match "dotnet watch run"
@@ -53,24 +100,9 @@ Stop-Gracefully -label "API" -cimProcesses $apiShells
 Stop-Gracefully -label "Web" -cimProcesses $webShells
 Write-Host ""
 
-# Ensure nothing is still holding the Next.js dev port (node.exe can outlive the shell).
-Write-Host "Checking for processes using port $WebPort..."
-$webPortConnections = Get-NetTCPConnection -LocalPort $WebPort -State Listen -ErrorAction SilentlyContinue
-if ($webPortConnections) {
-    foreach ($conn in $webPortConnections) {
-        $procId = $conn.OwningProcess
-        try {
-            $proc = Get-Process -Id $procId -ErrorAction Stop
-            Write-Host ("Killing process on port {0}: PID {1} ({2})" -f $WebPort, $procId, $proc.ProcessName) -ForegroundColor Yellow
-            Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue
-        } catch {
-            Write-Host "  Could not kill PID $procId : $($_.Exception.Message)" -ForegroundColor Red
-        }
-    }
-} else {
-    Write-Host "No process listening on port $WebPort."
-}
-Write-Host ""
+$apiPorts = Get-ConfiguredPorts -urls $ApiUrls -fallbackPorts @(5000)
+Stop-ListeningProcesses -ports $apiPorts -label "API"
+Stop-ListeningProcesses -ports @($WebPort) -label "Web"
 
 Write-Host "Starting API and Web services..."
 

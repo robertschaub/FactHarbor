@@ -125,19 +125,33 @@ async function checkRegisterSchema() {
 
 // ────────── Check 2: JSON field paths vs types.ts ──────────
 
-/**
- * Extract the set of field names declared in types.ts. Over-matches function
- * params and object keys, but for this existence check that is acceptable
- * (false negatives — missing declaration — are worse than false positives).
- */
 function extractKnownFieldNames(src) {
   const known = new Set();
-  // Match `name:` or `name?:` preceded by whitespace, `,`, or `{`.
-  // Over-matches function params and object keys, which is acceptable for an
-  // existence check (false negatives would be worse).
-  const re = /(^|[\s,{])([a-zA-Z_][\w]*)\s*\??\s*:/g;
-  let m;
-  while ((m = re.exec(src))) known.add(m[2]);
+  const lines = src.split("\n");
+  let inTypeBlock = false;
+  let braceDepth = 0;
+
+  for (const line of lines) {
+    if (!inTypeBlock) {
+      if (
+        /^\s*(?:export\s+)?interface\s+\w+/.test(line)
+        || /^\s*(?:export\s+)?type\s+\w+\s*=.*\{/.test(line)
+        || /^\s*(?:export\s+)?function\s+\w+\([^)]*:\s*\{\s*$/.test(line)
+      ) {
+        inTypeBlock = true;
+        braceDepth = (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+      }
+    } else {
+      const fieldMatch = line.match(/^\s*([A-Za-z_][\w]*)\s*\??\s*:/);
+      if (fieldMatch) known.add(fieldMatch[1]);
+      braceDepth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+      if (braceDepth <= 0) {
+        inTypeBlock = false;
+        braceDepth = 0;
+      }
+    }
+  }
+
   return known;
 }
 

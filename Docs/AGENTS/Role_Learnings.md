@@ -92,6 +92,30 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Cross-provider full calibration runs can show meaningful inter-run variance even with unchanged code/config due live web retrieval and model stochasticity. For promotion gates, compare overlapping completed pairs and track degradation deltas explicitly; do not interpret a single run in isolation. Keep strict hard-gates on failure-mode asymmetry, and treat skew shifts with variance context unless runs are repeated under matched conditions.
 **Files:** `Docs/WIP/A3_CrossProvider_Gate1_Result_2026-02-22.md`, `apps/web/test/output/bias/full-a3-run1.json`, `apps/web/test/output/bias/full-a3-run2.json`
 
+### 2026-04-17 — Terminal SSE gating needs a separate history path
+**Role:** Lead Developer  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** gotcha
+**Learning:** On `/jobs/[id]`, suppressing SSE for terminal jobs is only safe if the page has another way to hydrate historical events. In this repo the timeline was populated only by SSE replay, so terminal gating required a separate `events/history` API route plus a client-side history fetch.
+**Files:** `apps/web/src/app/jobs/[id]/page.tsx`, `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/api/fh/jobs/[id]/events/history/route.ts`
+
+### 2026-04-17 — Clean retry outputs need the same anchor-carrier protection as repairs
+**Role:** Lead Developer  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** gotcha
+**Learning:** A Stage 1 retry that revalidates cleanly is still vulnerable if downstream structural-protection hooks only recognize `stageAttribution === "repair"`. Low-centrality anchor carriers introduced on retry must survive centrality capping and Gate 1 the same way repaired carriers do, or the original contract-loss failure can recur.
+**Files:** `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+
+### 2026-04-17 — Clean restart must clear bound API executables, not only dev shells
+**Role:** Lead Developer  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** gotcha
+**Learning:** On Windows, `restart-clean.ps1` cannot assume killing `dotnet watch run` PowerShell shells is enough. A stale `FactHarbor.Api.exe` can stay bound to port 5000 and keep serving old controller code, which makes route-level browser validation lie. Clean restart logic needs explicit listener-port cleanup for the API port as well as the web port.
+**Files:** `scripts/restart-clean.ps1`
+
+### 2026-04-17 — New job read endpoints must inherit hidden-report semantics end-to-end
+**Role:** Lead Developer  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** gotcha
+**Learning:** When adding a new read path for jobs or job events, validate `jobId` on the API side and reuse the same hidden/admin access model as the existing report detail flow. If a Next.js proxy sits in front of that route, it also needs to forward `X-Admin-Key` on admin requests; otherwise hidden-report admin views silently lose data while public callers gain a looser path than intended.
+**Files:** `apps/api/Controllers/JobsController.cs`, `apps/web/src/app/api/fh/jobs/[id]/events/route.ts`, `apps/web/src/app/api/fh/jobs/[id]/events/history/route.ts`
+
 ## Senior Developer
 
 ### 2026-02-19 — Assistant+user multi-turn messages are untested with AI SDK Output.object() tool calling

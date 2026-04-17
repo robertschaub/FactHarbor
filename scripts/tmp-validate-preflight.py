@@ -1,4 +1,7 @@
-"""Temp pre-flight script for /validate bundesrat-rechtskraftig. Read-only."""
+"""Temp pre-flight script for /validate bundesrat-rechtskraftig. Read-only.
+
+TEMP SCRIPT. Delete or promote by 2026-05-01 once /validate workflow checks are folded into a maintained tool.
+"""
 import json, hashlib, os, sys
 from sqlite3 import connect
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")

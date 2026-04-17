@@ -82,6 +82,35 @@ describe("selectRepairAnchorText", () => {
     expect(repairAnchor).toBe("rechtskräftig bevor Volk und Parlament darüber entschieden haben");
   });
 
+  it("keeps the validator anchor when overlapping salience spans leave multiple narrowed candidates", () => {
+    const claims = [
+      {
+        statement: "Der Bundesrat unterschrieb den EU-Vertrag",
+      },
+    ];
+
+    const repairAnchor = selectRepairAnchorText(
+      makeContractSummary("rechtskräftig bevor Volk und Parlament darüber entschieden haben"),
+      claims,
+      {
+        ...bundesratSalience,
+        anchors: [
+          bundesratSalience.anchors[0],
+          {
+            text: "rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+            inputSpan: "rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+            type: "temporal",
+            rationale: "Combined predicate remains salient",
+            truthConditionShiftIfRemoved: "The legal-finality and sequence predicate would both disappear.",
+          },
+          bundesratSalience.anchors[1],
+        ],
+      },
+    );
+
+    expect(repairAnchor).toBe("rechtskräftig bevor Volk und Parlament darüber entschieden haben");
+  });
+
   it("returns the validator anchor unchanged when salience narrowing is unavailable", () => {
     const claims = [
       {

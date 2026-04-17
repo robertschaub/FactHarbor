@@ -6,8 +6,9 @@
             "command": "dotnet",
             "type": "process",
             "args": [
-                "build",
-                "${workspaceFolder}/apps/api/apps.api.sln",
+                "msbuild",
+                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
+                "/t:Compile",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -19,7 +20,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/apps/api/apps.api.sln",
+                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
@@ -33,7 +34,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/apps/api/apps.api.sln"
+                "${workspaceFolder}/apps/api/FactHarbor.Api.csproj"
             ],
             "problemMatcher": "$msCompile"
         },

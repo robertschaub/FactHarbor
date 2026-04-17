@@ -8,9 +8,11 @@ set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 INDEX_SCRIPT="$REPO_ROOT/scripts/build-index.mjs"
+LOG_FILE="$REPO_ROOT/.git/hooks/factharbor-index.log"
 
 [ -f "$INDEX_SCRIPT" ] || exit 0
 
-node "$INDEX_SCRIPT" 2>/dev/null || true
+printf '[%s] post-merge: build-index full rebuild\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$LOG_FILE"
+node "$INDEX_SCRIPT" >> "$LOG_FILE" 2>&1 || printf '[%s] post-merge: build-index failed\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$LOG_FILE"
 
 exit 0

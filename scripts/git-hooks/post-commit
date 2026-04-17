@@ -7,17 +7,22 @@ set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 INDEX_SCRIPT="$REPO_ROOT/scripts/build-index.mjs"
+LOG_FILE="$REPO_ROOT/.git/hooks/factharbor-index.log"
 
 [ -f "$INDEX_SCRIPT" ] || exit 0
+
+log_failure() {
+  printf '[%s] %s\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$1" >> "$LOG_FILE"
+}
 
 CHANGED=$(git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null || true)
 
 if echo "$CHANGED" | grep -q "Docs/AGENTS/Handoffs/"; then
-  node "$INDEX_SCRIPT" --tier=2 2>/dev/null || true
+  node "$INDEX_SCRIPT" --tier=2 >> "$LOG_FILE" 2>&1 || log_failure "post-commit: build-index --tier=2 failed"
 fi
 
 if echo "$CHANGED" | grep -q "apps/web/src/lib/analyzer/"; then
-  node "$INDEX_SCRIPT" --tier=1 2>/dev/null || true
+  node "$INDEX_SCRIPT" --tier=1 >> "$LOG_FILE" 2>&1 || log_failure "post-commit: build-index --tier=1 failed"
 fi
 
 exit 0

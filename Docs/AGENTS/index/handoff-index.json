@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T11:29:34.577Z",
-  "count": 199,
+  "generatedAt": "2026-04-17T13:13:45.762Z",
+  "count": 201,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4052,6 +4052,72 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Lead Developer Handoff"
+    },
+    {
+      "file": "2026-04-17_Lead_Developer_Code_Review_Fixes_For_Events_And_Retry_Anchor_Preservation.md",
+      "date": "2026-04-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "code-review",
+        "jobs-page",
+        "events-history",
+        "stage1",
+        "retry-anchor",
+        "windows"
+      ],
+      "files_touched": [
+        ".vscode/tasks.json",
+        "apps/api/Controllers/JobsController.cs",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/app/api/fh/jobs/[id]/events/history/route.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "scripts/restart-clean.ps1",
+        ".claude/skills/report-review/SKILL.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "The workspace `build` task in `.vscode/tasks.json` now succeeds while the API is running by using the MSBuild `Compile` target against `apps/api/FactHarbor.Api.csproj`. Runtime proof used completed job `ff97448210f8475faf6bf0c2eba921d4`: direct API call to `/v1/jobs/{jobId}/events/history` returned "
+    },
+    {
+      "file": "2026-04-17_Lead_Developer_Followup_Review_Fixes_For_Read_Gating_And_Script_Hardening.md",
+      "date": "2026-04-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "followup",
+        "review",
+        "fixes",
+        "for",
+        "read",
+        "gating",
+        "and",
+        "script",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/JobsController.cs",
+        "apps/web/src/app/api/fh/jobs/[id]/events/route.ts",
+        "apps/web/src/app/api/fh/jobs/[id]/events/history/route.ts",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/web/test/unit/lib/analyzer/repair-anchor-selection.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "scripts/install-hooks.mjs",
+        "scripts/build-index.mjs",
+        "scripts/validate-quality-expectations-drift.mjs",
+        "scripts/git-hooks/post-commit",
+        "scripts/git-hooks/post-merge",
+        "scripts/tmp-validate-analyze.py",
+        "scripts/tmp-validate-preflight.py",
+        "CLAUDE.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "If another reviewer questions the `/events/history` authz fix, the actual rule implemented is not “admin-only events”; it is “same public-read semantics as report detail, with hidden reports admin-only.” That preserves the public completed-job timeline while removing the looser direct read path that"
     },
     {
       "file": "2026-04-17_Senior_Developer_LLM_Expert_Bundesrat_Live_Rerun_And_Jobs_Page_SSE_Gating.md",

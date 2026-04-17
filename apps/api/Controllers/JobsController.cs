@@ -92,8 +92,12 @@ public sealed class JobsController : ControllerBase
     [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> Get(string jobId)
     {
-        var j = await _jobs.GetJobAsync(jobId);
-        if (j is null) return NotFound();
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+        var readableJob = await ResolveReadableJobAsync(jobId, isAdmin);
+        if (readableJob.error is not null)
+            return readableJob.error;
+
+        var j = readableJob.job!;
 
         object? resultObj = null;
         if (!string.IsNullOrWhiteSpace(j.ResultJson))
@@ -101,7 +105,6 @@ public sealed class JobsController : ControllerBase
             try { resultObj = JsonSerializer.Deserialize<object>(j.ResultJson); } catch { }
         }
 
-        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
         var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
         var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
 
@@ -249,9 +252,44 @@ public sealed class JobsController : ControllerBase
         }
     }
 
+    [HttpGet("{jobId}/events/history")]
+    [EnableRateLimiting("ReadPerIp")]
+    public async Task<IActionResult> EventHistory(string jobId)
+    {
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+        var readableJob = await ResolveReadableJobAsync(jobId, isAdmin);
+        if (readableJob.error is not null)
+            return readableJob.error;
+
+        var existing = await _db.JobEvents
+            .Where(e => e.JobId == readableJob.job!.JobId)
+            .OrderBy(e => e.Id)
+            .ToListAsync();
+
+        return Ok(existing.Select(e => new
+        {
+            id = e.Id,
+            tsUtc = e.TsUtc.ToString("o"),
+            level = e.Level,
+            message = e.Message
+        }));
+    }
+
     [HttpGet("{jobId}/events")]
     public async Task EventsSse(string jobId)
     {
+        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
+        var readableJob = await ResolveReadableJobAsync(jobId, isAdmin);
+        if (readableJob.error is not null)
+        {
+            Response.StatusCode = readableJob.statusCode;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(readableJob.payload);
+            return;
+        }
+
+        var readableJobId = readableJob.job!.JobId;
+
         Response.Headers.Append("Content-Type", "text/event-stream");
         Response.Headers.Append("Cache-Control", "no-cache");
         Response.Headers.Append("Connection", "keep-alive");
@@ -261,7 +299,7 @@ public sealed class JobsController : ControllerBase
         long lastId = 0;
 
         // Replay existing events
-        var existing = await _db.JobEvents.Where(e => e.JobId == jobId).OrderBy(e => e.Id).ToListAsync();
+        var existing = await _db.JobEvents.Where(e => e.JobId == readableJobId).OrderBy(e => e.Id).ToListAsync();
         foreach (var e in existing)
         {
             lastId = e.Id;
@@ -282,7 +320,7 @@ public sealed class JobsController : ControllerBase
                 break;
             }
             var next = await _db.JobEvents
-                .Where(e => e.JobId == jobId && e.Id > lastId)
+                .Where(e => e.JobId == readableJobId && e.Id > lastId)
                 .OrderBy(e => e.Id)
                 .ToListAsync();
 
@@ -299,6 +337,31 @@ public sealed class JobsController : ControllerBase
             var payload = JsonSerializer.Serialize(new { id = e.Id, tsUtc = e.TsUtc.ToString("o"), level = e.Level, message = e.Message });
             await Response.WriteAsync($"data: {payload}\n\n");
         }
+    }
+
+    private async Task<(JobEntity? job, IActionResult? error, int statusCode, object? payload)> ResolveReadableJobAsync(string jobId, bool isAdmin)
+    {
+        if (!IsValidJobId(jobId))
+        {
+            var payload = new { error = "Invalid job ID" };
+            return (null, BadRequest(payload), 400, payload);
+        }
+
+        var job = await _jobs.GetJobAsync(jobId);
+        if (job is null)
+        {
+            var payload = new { error = "Job not found" };
+            return (null, NotFound(payload), 404, payload);
+        }
+
+        // Report detail + event reads are public for non-hidden jobs; hidden jobs stay admin-only.
+        if (job.IsHidden && !isAdmin)
+        {
+            var payload = new { error = "Job not found" };
+            return (null, NotFound(payload), 404, payload);
+        }
+
+        return (job, null, 200, null);
     }
 
     private static (string? code, string? message) ExtractPrimaryAnalysisIssue(string? resultJson)
@@ -367,5 +430,13 @@ public sealed class JobsController : ControllerBase
             return null;
 
         return trimmed;
+    }
+
+    private static bool IsValidJobId(string jobId)
+    {
+        if (string.IsNullOrWhiteSpace(jobId) || jobId.Length > 128)
+            return false;
+
+        return jobId.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_');
     }
 }
