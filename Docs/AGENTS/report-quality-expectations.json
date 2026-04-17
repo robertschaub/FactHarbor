@@ -1,0 +1,466 @@
+{
+  "_schemaVersion": "1.0.0",
+  "_purpose": "Machine-readable quality expectations for /report-review. The skill describes HOW to run the checks (phase flow, debate, fixes); this file describes WHAT to check. Update this file when the canonical quality criteria change — the skill will pick up new Q-codes automatically via its dimensionMap traversal.",
+  "_lastUpdated": "2026-04-16",
+  "_sourceDocs": [
+    "Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md",
+    "Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md",
+    "AGENTS.md (Fundamental Rules, Report Quality & Event Communication)",
+    "Docs/AGENTS/Role_Learnings.md (LLM Expert entries on self-eval bias and deterministic adjudication)"
+  ],
+  "_qCodeProvenance": {
+    "Q-HF*, Q-S1.*, Q-EV*, Q-V*, Q-ST*, Q-AH*": "Canonical_Quality_Criteria.md — authoritative",
+    "Q-BE*": "Coined here for benchmark-expectations-band checks not in the canonical doc",
+    "Q-IN*": "Coined here for input-integrity checks",
+    "Q-WS*": "Coined here for warning-severity checks (maps to AGENTS.md §Report Quality & Event Communication)",
+    "Q-INF*": "Coined here for infrastructure-reality checks (3h concurrency/timeout/rollout/fallback)",
+    "Q-REG*": "Coined here for historical-regression checks (3i)",
+    "Q-SYS*": "Coined here for 3g cross-report systemic tagging"
+  },
+  "_qCodePrefixLegend": {
+    "HF": "Hard-failure floor — runtime integrity, evidence citation minimum, confidence publication floor",
+    "S1": "Stage 1 claim quality — multi-event coverage, truth-condition preservation, opinion contestation immunity",
+    "EV": "Evidence quality — source diversity, per-claim research completeness, probative-value balance, language match",
+    "V":  "Verdict quality — direction alignment, truth-vs-misleadingness separation, evidence-backed contestation, reason citation",
+    "ST": "Stability — truth-spread, confidence-tier, claim-set Jaccard, evidence-mix, cross-linguistic, classification",
+    "BE": "Benchmark-expectation check — per-family bands from benchmark-expectations.json",
+    "IN": "Input integrity — canonical wording match",
+    "WS": "Warning severity — matches verdict impact, registered types",
+    "INF": "Infrastructure — concurrency collapse, timeout pressure, model fallback, prompt rollout drift",
+    "REG": "Regression — prior-better run detection and rollback classification",
+    "SYS": "Cross-report systemic pattern (3g tag; inherits Q-code from contributing dimension)",
+    "AH": "Architecture hygiene — not in /report-review scope (see notIncludedInSkill); handled by /audit"
+  },
+  "_annotationDependency": "Some Q-codes (Q-S1.1, Q-S1.3, Q-V6, Q-ST5) require per-family annotations in Docs/AGENTS/benchmark-expectations.json (e.g., anchorTokens, minDistinctEvents, trueButMisleading, crossLanguageVariantOf). 'Absent' means: the key is missing from the family object OR the value is exactly null OR (for array-typed annotations) the array has length 0. Empty arrays = skip silently = NOT a failure. For cross-family annotations (e.g., crossLanguageVariantOf), if the referenced slug is not in the current scope, skip silently (the cross-language pair cannot be evaluated from one side alone).",
+
+  "checks": {
+    "Q-HF1": {
+      "name": "Runtime integrity floor",
+      "category": "hard-failure-floor",
+      "severity": "PHASE-BLOCKER",
+      "source": "Canonical_Quality_Criteria.md §Hard Failure Floors",
+      "description": "The job reached SUCCEEDED without hard-failure warnings. If this fails, later semantic checks are moot.",
+      "structuralCheck": "status == 'SUCCEEDED' AND no analysisWarnings[*].type in ['analysis_generation_failed','llm_provider_error','report_damaged']",
+      "onFail": "Stop Phase 3 for this report. File as INFRASTRUCTURE (or 3h if concurrency is the underlying cause). Do not run semantic quality checks on a broken report.",
+      "status": "active"
+    },
+    "Q-HF4": {
+      "name": "Evidence citation minimum",
+      "category": "hard-failure-floor",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Hard Failure Floors + xwiki:17-19",
+      "description": "Every published verdict cites at least one supporting or contradicting evidence item. A verdict with empty citedEvidenceIds is not a verdict — it is a guess.",
+      "structuralCheck": "for every claimVerdicts[i]: (supportingEvidenceIds.length + contradictingEvidenceIds.length) > 0",
+      "onFail": "Flag HIGH finding under pre-3a gate. Often co-occurs with Q-HF1 (report_damaged); if Q-HF1 passed but Q-HF4 fails, investigate verdict-generation stage.",
+      "status": "active"
+    },
+    "Q-HF6": {
+      "name": "Confidence publication floor",
+      "category": "hard-failure-floor",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Hard Failure Floors + xwiki:21-30",
+      "description": "Reports with confidence < 40 should not publish. This is a presentation contract, not an analysis check — but the skill surfaces violations because they signal upstream quality issues.",
+      "structuralCheck": "status == 'SUCCEEDED' AND confidence < 40 → violation. (A SUCCEEDED job is considered publishable-state for this check; publication is a downstream concern the report-review skill does not observe directly.)",
+      "onFail": "File MEDIUM finding post-3a. Root cause is usually insufficient evidence (pre-3a gate Q-HF4 likely also flagged) or clustering collapse (3d).",
+      "status": "active"
+    },
+
+    "Q-S1.1": {
+      "name": "Multi-event claim coverage",
+      "category": "stage1-claim-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Stage 1",
+      "description": "Multi-event inputs produce multiple claims. Each genuinely distinct event appears as a separate AtomicClaim.",
+      "structuralCheck": "claimCount >= family.minDistinctEvents (from benchmark-expectations.json family annotation)",
+      "annotationRequired": "families[slug].minDistinctEvents",
+      "onFail": "Flag HIGH finding in dimension 3d. If the family has no minDistinctEvents annotation, skip this check — do not fail on missing annotation.",
+      "status": "active"
+    },
+    "Q-S1.3": {
+      "name": "Truth-condition preservation",
+      "category": "stage1-claim-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Stage 1 + 2026-04-08 Issue 2",
+      "description": "Strong user predicates (truth-condition-bearing modifiers) survive extraction intact. An anchor word the user typed must remain in the primary claim text, not be demoted to a side-claim or dropped.",
+      "structuralCheck": "for each token in family.anchorTokens: token appears verbatim in claimVerdicts[0].claimText OR in the top-ranked boundary's primary claim. claimVerdicts[i>0] hosting the anchor is NOT a pass.",
+      "annotationRequired": "families[slug].anchorTokens (array of strings; order-insensitive)",
+      "onFail": "Flag HIGH finding in dimension 3b (input integrity extension). Skip if annotation absent.",
+      "status": "active"
+    },
+    "Q-S1.6": {
+      "name": "Opinion-contestation immunity",
+      "category": "stage1-claim-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Stage 1 + AGENTS.md §Pipeline Integrity",
+      "description": "Baseless political or opinion challenges must not produce new claims or adjust the verdict. A verdictAdjusted=true event triggered by factualBasis=opinion is a contract violation.",
+      "structuralCheck": "Partially observable from ResultJson alone — same schema constraint as Q-V7. `factualBasis` lives on `KeyFactor` (types.ts:281-295), NOT on `ChallengeResponse` (types.ts:1075-1081). Two tiers: (1) STRUCTURAL PROXY — for each claimVerdicts[i], flag SPECULATIVE if any challengeResponses[j].verdictAdjusted == true AND the corresponding reasoning text frames the contestation as opinion/political/unsupported without citing counter-evidence in supportingEvidenceIds ∪ contradictingEvidenceIds. (2) FULL CHECK — requires pre-persisted KeyFactor records + the aggregation-stage.ts contestationWeights application; escalate to /audit via Phase 7f when the structural proxy fires. Do NOT claim CONFIRMED from ResultJson observation alone.",
+      "onFail": "Flag HIGH finding in 3e. Root cause is typically aggregation weighting or challenger-prompt drift. Overlaps with Q-V7.",
+      "status": "active"
+    },
+
+    "Q-EV5": {
+      "name": "Source diversity",
+      "category": "evidence-quality",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Evidence + xwiki:17-19",
+      "description": "When the corpus permits, multiple distinct source types contribute evidence. A narrow source-type mix (e.g., all news_primary, no peer_reviewed_study for a scientific claim) is a quality signal.",
+      "structuralCheck": "distinct(evidenceItems[*].sourceType) >= 3 OR (evidenceBalance.total < 10 AND distinct >= 2)",
+      "onFail": "Flag MEDIUM finding in 3c. Cross-reference family.knownOpenIssues before filing — some families have documented narrow-corpus situations.",
+      "status": "active"
+    },
+    "Q-EV6": {
+      "name": "Per-claim research completeness",
+      "category": "evidence-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Evidence + RC-A/RC-B/Issue 4",
+      "description": "Stage 2 must research each claim before the sufficiency gate fires. Seeded evidence from Stage 1 alone is not research completeness.",
+      "structuralCheck": "Derive researched-evidence per claim: for each claimVerdicts[i], count evidenceItems where the claim's id appears in the evidence item's linkage (either claimBoundaryId maps to a boundary containing the claim, OR the item is in claimVerdicts[i].supportingEvidenceIds ∪ contradictingEvidenceIds) AND the evidence item was NOT seeded from Stage 1 (i.e., has a sources[].searchQuery populated). Flag any claim where this count is 0. If meta exposes researchedEvidenceCount directly, prefer it.",
+      "onFail": "Flag HIGH finding in 3c. Often co-occurs with isDegenerate. If only some claims fail, the sufficiency gate fired prematurely for those specific claims.",
+      "status": "active"
+    },
+    "Q-EV_LANGUAGE": {
+      "name": "Evidence language matches intent",
+      "category": "evidence-quality",
+      "severity": "MEDIUM",
+      "source": "Skill-internal + project_geo_search.md",
+      "description": "Evidence language matches languageIntent.retrievalLanguages. Foreign-jurisdiction evidence on a jurisdiction-specific claim is a known contamination pattern.",
+      "structuralCheck": "Let primaryLanguage = languageIntent.retrievalLanguages[] where lane == 'primary' (take first). Let foreignEvidenceCount = count of evidenceItems where sourceLanguage is set AND sourceLanguage != primaryLanguage. Flag iff foreignEvidenceCount / evidenceBalance.total > 0.25 (more than a quarter of evidence from a non-primary lane).",
+      "onFail": "Flag MEDIUM in 3c. Cross-reference family.knownOpenIssues for foreign-contamination history.",
+      "status": "active"
+    },
+    "Q-EV_PROBATIVE": {
+      "name": "Probative value not low-dominated",
+      "category": "evidence-quality",
+      "severity": "MEDIUM",
+      "source": "Skill-internal",
+      "description": "probativeValue mix is not overwhelmingly low. If >60% of evidence items are low-probative, verdict confidence should reflect that.",
+      "structuralCheck": "count(evidenceItems where probativeValue == 'low') / evidenceBalance.total <= 0.6",
+      "onFail": "Flag MEDIUM in 3c. Paired with confidence check: if low-dominated AND confidence > 60, flag the calibration mismatch.",
+      "status": "active"
+    },
+    "Q-EV_DIRECTION_BALANCE": {
+      "name": "claimDirection balance matches isSkewed",
+      "category": "evidence-quality",
+      "severity": "LOW",
+      "source": "Skill-internal",
+      "description": "evidenceBalance.isSkewed reflects the true supporting/contradicting ratio. Internal-consistency check.",
+      "structuralCheck": "evidenceBalance.isSkewed == (max(supporting, contradicting) / (supporting + contradicting) > 0.7)",
+      "onFail": "Flag LOW in 3c. Usually a reporting glitch, not an analysis failure.",
+      "status": "active"
+    },
+
+    "Q-V1": {
+      "name": "Verdict-vs-evidence direction alignment",
+      "category": "verdict-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Verdict",
+      "description": "If more than 60% of cited evidence supports direction X, the verdict label must align with X — unless the verdict is explicitly marked isContested with reasoned engagement of the counter-evidence.",
+      "structuralCheck": "for each claimVerdicts[i]: let supporting = supportingEvidenceIds.length, contradicting = contradictingEvidenceIds.length; if supporting/(supporting+contradicting) > 0.6 AND verdict indicates FALSE/MOSTLY-FALSE → violation UNLESS isContested == true AND reasoning cites counter-evidence. Symmetric for the other direction.",
+      "onFail": "Flag HIGH in 3e. The Verdict Reasoning Reviewer panel also checks this structurally.",
+      "status": "active"
+    },
+    "Q-V6": {
+      "name": "Truth-vs-misleadingness separation",
+      "category": "verdict-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Verdict + Issue 3",
+      "description": "A factually true claim must not be scored FALSE because its framing is misleading. Misleadingness belongs in a separate field, not in the truth verdict.",
+      "structuralCheck": "if family.trueButMisleading == true: verdictLabel must NOT be 'FALSE' or 'MOSTLY-FALSE'. Misleadingness signals (if present in the schema) should appear in a non-verdict field.",
+      "annotationRequired": "families[slug].trueButMisleading (boolean)",
+      "onFail": "Flag HIGH in 3e. Skip if annotation absent.",
+      "status": "active"
+    },
+    "Q-V7": {
+      "name": "Evidence-backed contestation only",
+      "category": "verdict-quality",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Verdict + AGENTS.md §Pipeline Integrity",
+      "description": "Only evidence-backed counter-arguments may reduce truth% or confidence. Opinion-class challenges (factualBasis=opinion) are classified as 'doubted' and must not move the verdict.",
+      "structuralCheck": "Partially observable from ResultJson alone. The canonical signal (`factualBasis == 'opinion'` on a KeyFactor) lives on `KeyFactor` (types.ts:281-295) and is NOT persisted on `ChallengeResponse` (types.ts:1075-1081). The check therefore runs in two tiers: (1) STRUCTURAL PROXY — for each claimVerdicts[i], if any challengeResponses[j].verdictAdjusted == true AND the claimVerdicts[i].reasoning text cites opinion/political/unsupported-challenge language without a corresponding counter-evidence citation in supportingEvidenceIds ∪ contradictingEvidenceIds, flag SPECULATIVE. (2) FULL CHECK — requires reading the aggregation-stage.ts contestationWeights application and the pre-persisted KeyFactor records; escalate to /audit via Phase 7f when the structural proxy fires. Do NOT claim CONFIRMED on this check from ResultJson observation alone.",
+      "onFail": "Flag HIGH in 3e. Root cause is usually aggregation weighting in aggregation-stage.ts contestationWeights — structural fix, not prompt fix. Overlaps with Q-S1.6.",
+      "status": "active"
+    },
+    "Q-V_REASON_CITATION": {
+      "name": "Verdict reason citations are in-set",
+      "category": "verdict-quality",
+      "severity": "HIGH",
+      "source": "Skill-internal",
+      "description": "Every evidence ID referenced in verdictReason or reasoning appears in supportingEvidenceIds ∪ contradictingEvidenceIds for that verdict. A reason citing an evidence ID the verdict did not consider is a hallucination.",
+      "structuralCheck": "for each claimVerdicts[i]: parse evidence IDs from verdictReason and reasoning; verify every ID is in supportingEvidenceIds ∪ contradictingEvidenceIds",
+      "onFail": "Flag HIGH in 3e. Verdict Reasoning Reviewer panel runs this as its primary structural check.",
+      "status": "active"
+    },
+    "Q-V_LABEL_DIRECTION": {
+      "name": "Verdict label direction matches truthPercentage",
+      "category": "verdict-quality",
+      "severity": "HIGH",
+      "source": "Skill-internal + truth-scale.ts",
+      "description": "Verdict label band and truthPercentage agree. FALSE with truth=75 or TRUE with truth=20 is a contract violation.",
+      "structuralCheck": "truthPercentage falls within the band defined by verdict label (per apps/web/src/lib/analyzer/truth-scale.ts). Use the 7-point scale boundaries.",
+      "onFail": "Flag HIGH in 3e.",
+      "status": "active"
+    },
+
+    "Q-ST1": {
+      "name": "Truth-percentage spread across identical reruns",
+      "category": "stability",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Stability",
+      "description": "Repeated runs of the same input produce truth% within a small spread. Run-to-run variance reflects model stochasticity, not instability of the pipeline's judgment.",
+      "structuralCheck": "for a stability group (≥2 reports, same InputValue, same commit ideally): max(truthPct) - min(truthPct) <= 15 (good) OR <= 20 (acceptable). Use noiseTolerancePct from benchmark-expectations.json as the acceptable threshold.",
+      "requiresMultipleRuns": true,
+      "onFail": "Flag MEDIUM in 3j stability analysis.",
+      "status": "active"
+    },
+    "Q-ST2": {
+      "name": "Confidence tier stability",
+      "category": "stability",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Stability",
+      "description": "Confidence tier changes at most once across repeated runs.",
+      "structuralCheck": "for a stability group: count of distinct confidence tiers (HIGH/MEDIUM/LOW — derived via apps/web/src/lib/analyzer/confidence-calibration.ts bands) <= 2",
+      "requiresMultipleRuns": true,
+      "onFail": "Flag MEDIUM in 3j.",
+      "status": "active"
+    },
+    "Q-ST3": {
+      "name": "Claim-set similarity across reruns",
+      "category": "stability",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Stability",
+      "description": "Repeated runs produce similar claim sets. Pairwise Jaccard across runs ≥ 0.6 (structural check: normalize claims to lowercase, strip punctuation, compute set-level overlap).",
+      "structuralCheck": "for a stability group: pairwise Jaccard similarity of claim statements >= 0.6",
+      "requiresMultipleRuns": true,
+      "onFail": "Flag MEDIUM in 3j.",
+      "status": "active"
+    },
+    "Q-ST4": {
+      "name": "Evidence-mix stability",
+      "category": "stability",
+      "severity": "LOW",
+      "source": "Canonical_Quality_Criteria.md §Stability",
+      "description": "Evidence direction-ratio and source-type distribution are directionally consistent across reruns.",
+      "structuralCheck": "for a stability group: max pairwise delta in (supporting/total, contradicting/total, neutral/total) <= 0.2",
+      "requiresMultipleRuns": true,
+      "onFail": "Flag LOW in 3j.",
+      "status": "active"
+    },
+    "Q-ST5": {
+      "name": "Cross-linguistic verdict stability",
+      "category": "stability",
+      "severity": "HIGH",
+      "source": "Canonical_Quality_Criteria.md §Stability + NEUTRALITY-1",
+      "description": "The same semantic claim across languages (when benchmark-expectations.json pairs slugs as cross-language variants) yields directionally equivalent verdicts. Truth% spread across language pairs ≤ 30pp.",
+      "structuralCheck": "for each family pair declared as cross-language variants (e.g., bolsonaro-en and bolsonaro-pt): max truthPct delta <= 30pp AND verdict directions are on the same side of the 50% midpoint OR both are MIXED",
+      "requiresMultipleRuns": "cross-family",
+      "annotationRequired": "families[slug].crossLanguageVariantOf (string slug reference)",
+      "onFail": "Flag HIGH in 3j.",
+      "status": "active"
+    },
+    "Q-ST6": {
+      "name": "Stage 1 classification stability",
+      "category": "stability",
+      "severity": "MEDIUM",
+      "source": "Canonical_Quality_Criteria.md §Stability",
+      "description": "Same input must not oscillate between single_atomic_claim and ambiguous_single_claim classifications.",
+      "structuralCheck": "for a stability group: inputClassification (from understanding.classification or equivalent) is the same across >=90% of runs",
+      "requiresMultipleRuns": true,
+      "onFail": "Flag MEDIUM in 3j.",
+      "status": "active"
+    },
+
+    "Q-BE1": {
+      "name": "Verdict label within expected set",
+      "category": "benchmark-expectation",
+      "severity": "HIGH",
+      "source": "Skill-internal + benchmark-expectations.json",
+      "description": "Observed verdictLabel appears in family.expectedVerdictLabels.",
+      "structuralCheck": "verdictLabel in family.expectedVerdictLabels (skip if null)",
+      "onFail": "Flag in 3a unless family is STALE (staleness gate) or has qualityStatus IMPROVED-NOT-CLOSED/INFERENTIAL.",
+      "status": "active"
+    },
+    "Q-BE2": {
+      "name": "truthPercentage within expected band",
+      "category": "benchmark-expectation",
+      "severity": "HIGH",
+      "source": "Skill-internal + benchmark-expectations.json",
+      "description": "Observed truthPercentage is within truthPercentageBand expanded by noiseTolerancePct.",
+      "structuralCheck": "family.truthPercentageBand.min - noiseTolerancePct <= truthPercentage <= family.truthPercentageBand.max + noiseTolerancePct",
+      "onFail": "Flag in 3a unless family is STALE.",
+      "status": "active"
+    },
+    "Q-BE3": {
+      "name": "confidence within expected band",
+      "category": "benchmark-expectation",
+      "severity": "MEDIUM",
+      "source": "Skill-internal + benchmark-expectations.json",
+      "description": "Observed confidence is within confidenceBand expanded by noiseTolerancePct.",
+      "structuralCheck": "family.confidenceBand.min - noiseTolerancePct <= confidence <= family.confidenceBand.max + noiseTolerancePct",
+      "onFail": "Flag in 3a unless family is STALE.",
+      "status": "active"
+    },
+    "Q-BE4": {
+      "name": "boundaryCount meets minimum",
+      "category": "benchmark-expectation",
+      "severity": "MEDIUM",
+      "source": "Skill-internal + benchmark-expectations.json",
+      "description": "Observed boundaryCount is at least family.minBoundaryCount.",
+      "structuralCheck": "meta.boundaryCount >= family.minBoundaryCount (skip if null)",
+      "onFail": "Flag in 3a (or 3d if clustering was expected to fragment more).",
+      "status": "active"
+    },
+
+    "Q-IN1": {
+      "name": "Input value matches canonical wording",
+      "category": "input-integrity",
+      "severity": "HIGH",
+      "source": "AGENTS.md §Captain-Defined Analysis Inputs",
+      "description": "Job's inputValue exactly matches the canonical wording for this family. Paraphrase, translation, normalization, or truncation is a violation.",
+      "structuralCheck": "job.inputValue == family.inputValue (byte-exact)",
+      "onFail": "Flag HIGH in 3b. If paraphrase is intentional (experimental variant), Captain should add it as a new family.",
+      "status": "active"
+    },
+
+    "Q-WS1": {
+      "name": "Warning severity matches verdict impact",
+      "category": "warning-severity",
+      "severity": "MEDIUM",
+      "source": "AGENTS.md §Report Quality & Event Communication",
+      "description": "Severity reflects whether the warning's underlying event would change the verdict. warning+ only for verdict-impacting events; info/silent for recovered fallbacks.",
+      "structuralCheck": "for each analysisWarnings[i]: severity >= 'warning' implies the event has verdict-impact potential per the AGENTS.md severity table. Recovered fallbacks (e.g. search-provider fallback succeeded) must be info or silent.",
+      "onFail": "Flag MEDIUM in 3f. Warning Severity Reviewer panel handles this.",
+      "status": "active"
+    },
+    "Q-WS2": {
+      "name": "Warning types registered",
+      "category": "warning-severity",
+      "severity": "LOW",
+      "source": "AGENTS.md §Report Quality & Event Communication",
+      "description": "Every warning.type appears in warning-display.ts registry. Unregistered types are schema drift.",
+      "structuralCheck": "for each analysisWarnings[i].type: type is present in warning-display.ts",
+      "onFail": "Flag LOW in 3f as P4 schema-drift finding.",
+      "status": "active"
+    },
+
+    "Q-INF_CONCURRENCY": {
+      "name": "Concurrency-induced collapse",
+      "category": "infrastructure",
+      "severity": "HIGH",
+      "source": "Skill-internal (Phase 3h)",
+      "description": "Two or more reports with evidenceBalance.total == 0, llmCalls < 20, submitted within 5 seconds of each other — concurrency-induced evidence-extraction failure, not a regression.",
+      "structuralCheck": "see Phase 3h",
+      "onFail": "File as INFRASTRUCTURE-CONCURRENCY. Mechanism: workflow-gate (serialize) or env-var change (FH_RUNNER_MAX_CONCURRENCY).",
+      "status": "active"
+    },
+    "Q-INF_TIMEOUT_PRESSURE": {
+      "name": "LLM timeout pressure",
+      "category": "infrastructure",
+      "severity": "MEDIUM",
+      "source": "Skill-internal (Phase 3h)",
+      "description": "debug-analyzer.log shows >50 timeout events on the day a degenerate report ran.",
+      "structuralCheck": "Run `grep -cE \"Fix3.*ERROR|LLM timeout|TPM.*fallback|429\" apps/web/debug-analyzer.log`, filtered to log entries within the execution date of any scoped isDegenerate report. Flag at 50+ matches (weight toward infrastructure); flag at 200+/day as a Phase 6 meta-recommendation. If the log is missing or rotated, record `LLM-timeout rate: unknown — log missing` in Phase 7a and skip this check.",
+      "onFail": "Weight findings toward infrastructure, not regression. >200/day is a meta-recommendation.",
+      "status": "active"
+    },
+    "Q-INF_MODEL_FALLBACK": {
+      "name": "Silent model fallback",
+      "category": "infrastructure",
+      "severity": "MEDIUM",
+      "source": "Skill-internal (Phase 3h)",
+      "description": "meta.runtimeRoleModels[verdict or reconciler].fallbackUsed == true — the verdict came from the fallback model, not the configured one.",
+      "structuralCheck": "meta.runtimeRoleModels[*].fallbackUsed",
+      "onFail": "Note in report block; quality baseline shifts.",
+      "status": "active"
+    },
+    "Q-INF_PROMPT_ROLLOUT_DRIFT": {
+      "name": "Prompt rollout drift",
+      "category": "infrastructure",
+      "severity": "HIGH",
+      "source": "Skill-internal (Phase 3h) + feedback_deploy_config_state.md",
+      "description": "Active prompt hash in config.db doesn't match any in-scope report's promptContentHash AND activated_utc predates HEAD's prompt commits.",
+      "structuralCheck": "see Phase 3h",
+      "onFail": "Flag PROMPT-ROLLOUT-DRIFT. Fix is prompt-rollout (reseed), never a prompt edit.",
+      "status": "active"
+    },
+
+    "Q-REG1": {
+      "name": "Historical regression detection",
+      "category": "regression",
+      "severity": "HIGH",
+      "source": "Skill-internal (Phase 3i)",
+      "description": "A prior run of the same input scored better than the current. The gap must be explained by a specific commit in the change window.",
+      "structuralCheck": "see Phase 3i bench-score rubric",
+      "onFail": "Run full Phase 3i sub-steps (find prior runs, score, identify commit window, prompt-blob diff, bisection guidance, rollback feasibility).",
+      "status": "active"
+    },
+
+    "Q-SYS1": {
+      "name": "Cross-report systemic tagging",
+      "category": "cross-report-systemic",
+      "severity": "INHERITED",
+      "source": "Skill-internal (Phase 3g)",
+      "description": "3g does not run its own structural check; it re-tags findings as SYSTEMIC when 2+ reports share a finding. The emitted SYSTEMIC finding inherits its `qCode` from the cluster's primary (see algorithm). Use `rootCauseId` to link the per-report findings; use `contributingQCodes` to track multi-qCode clusters.",
+      "structuralCheck": "Cluster findings across reports on the pair (qCode, rootCauseId). (a) Cluster with ≥2 reports, all members sharing one qCode → emit one SYSTEMIC finding with that qCode and the shared rootCauseId. (b) Cluster with ≥2 reports, members sharing rootCauseId but differing on qCode (e.g., Q-V1 + Q-V_REASON_CITATION on the same reasoning defect) → emit one SYSTEMIC finding with the highest-severity contributing qCode as primary; on severity tie, use lexicographic ordering of the qCode strings; populate `contributingQCodes` with the full distinct set. (c) Findings that don't cluster remain REPORT-SPECIFIC.",
+      "onFail": "n/a — 3g is a tagging/reclassification pass, not a primary check. The SYSTEMIC tag routes the finding to Phase 4.",
+      "status": "active"
+    }
+  },
+
+  "dimensionMap": {
+    "pre-3a": ["Q-HF1", "Q-HF4"],
+    "3a": ["Q-BE1", "Q-BE2", "Q-BE3", "Q-BE4"],
+    "post-3a": ["Q-HF6"],
+    "3b": ["Q-IN1", "Q-S1.3"],
+    "3c": ["Q-EV5", "Q-EV6", "Q-EV_LANGUAGE", "Q-EV_PROBATIVE", "Q-EV_DIRECTION_BALANCE"],
+    "3d": ["Q-S1.1", "Q-BE4"],
+    "3e": ["Q-V1", "Q-V6", "Q-V7", "Q-S1.6", "Q-V_REASON_CITATION", "Q-V_LABEL_DIRECTION"],
+    "3f": ["Q-WS1", "Q-WS2"],
+    "3g": ["Q-SYS1"],
+    "3h": ["Q-INF_CONCURRENCY", "Q-INF_TIMEOUT_PRESSURE", "Q-INF_MODEL_FALLBACK", "Q-INF_PROMPT_ROLLOUT_DRIFT"],
+    "3i": ["Q-REG1"],
+    "3j": ["Q-ST1", "Q-ST2", "Q-ST3", "Q-ST4", "Q-ST5", "Q-ST6"]
+  },
+
+  "notIncludedInSkill": {
+    "Q-AH1": {
+      "reason": "Code-audit scope — belongs to /audit, not /report-review. The skill analyzes job outputs; /audit reads the codebase for deterministic semantic-adjudication patterns.",
+      "alternative": "Escalate to /audit via Phase 7f if 3h or 3e findings suggest deterministic logic is interfering."
+    },
+    "Q-AH2": {
+      "reason": "Code-audit scope — belongs to /audit.",
+      "alternative": "Escalate to /audit."
+    },
+    "Q-EV3": {
+      "reason": "Inherently subjective (institution/methodology-specific names). Covered by Phase 4 Evidence & Boundary Reviewer's subjective column after structural checks pass.",
+      "alternative": "Phase 4 panel handles this."
+    },
+    "Q-S1.2": {
+      "reason": "Facet stability — subsumed by Q-ST3 (claim-set similarity) and Q-ST6 (classification stability).",
+      "alternative": "Q-ST3 + Q-ST6."
+    },
+    "Q-S1.4": {
+      "reason": "claimDirection correctness is a regression-test-set concern, not a single-job check. Belongs to /validate with known-direction fixtures.",
+      "alternative": "Escalate to /validate."
+    },
+    "Q-S1.5": {
+      "reason": "specificity/non-duplication requires a per-family specificity annotation we don't yet have.",
+      "alternative": "Future annotation in benchmark-expectations.json; then add as Q-check."
+    },
+    "Q-S1.7": {
+      "reason": "Prompt-rule-coherence audit — /audit scope.",
+      "alternative": "Escalate to /audit."
+    },
+    "Q-EV8": {
+      "reason": "Source-reliability weighting is applied internally by evidence-filter.ts; the skill observes outcomes, not the SR weight application. A drift in SR weighting would surface as evidence-health anomalies in 3c.",
+      "alternative": "If 3c finds source-type mix anomalies, /pipeline can investigate SR weighting."
+    }
+  },
+
+  "pendingAnnotationsInBenchmarkExpectations": {
+    "_note": "These family-level annotations are needed for the annotation-dependent Q-codes to activate. Add them to families[slug] in Docs/AGENTS/benchmark-expectations.json as the data becomes available — the skill will then start running those checks automatically.",
+    "anchorTokens": "Q-S1.3 — array of truth-condition-bearing tokens the user typed that must survive extraction (e.g., ['rechtskräftig'] for bundesrat-rechtskraftig)",
+    "minDistinctEvents": "Q-S1.1 — integer, minimum number of distinct atomic claims expected (e.g., 3 for bundesrat-rechtskraftig: treaty signed, popular vote pending, parliament vote pending)",
+    "trueButMisleading": "Q-V6 — boolean, true if the family is factually true but framed misleadingly; verdict must not be FALSE",
+    "crossLanguageVariantOf": "Q-ST5 — string slug of the cross-language pair (e.g., bolsonaro-pt.crossLanguageVariantOf = 'bolsonaro-en')"
+  }
+}

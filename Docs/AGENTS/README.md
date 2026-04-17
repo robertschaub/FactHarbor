@@ -71,8 +71,13 @@ All tool configs reference `/AGENTS.md` as the single source of truth. Most are 
 
 ## Tooling & Reference
 
+The first three rows form the **quality-expectations triad** consumed by `/report-review`: the MD is Captain's human-readable narrative (intent, rationale, open status); the two JSONs are the machine-readable runtime (per-family bands + Q-code catalog). When MD prose and JSON values disagree on a band, the JSON wins and the MD is updated to match.
+
 | Document | Purpose |
 |----------|---------|
+| [Captain_Quality_Expectations.md](Captain_Quality_Expectations.md) | Human-readable summary of current Captain benchmark and generic quality expectations |
+| [benchmark-expectations.json](benchmark-expectations.json) | Machine-readable expected bands and status for the 8 approved benchmark families |
+| [report-quality-expectations.json](report-quality-expectations.json) | Machine-readable cross-input Q-code quality criteria used by `/report-review` |
 | [GlobalMasterKnowledge_for_xWiki.md](GlobalMasterKnowledge_for_xWiki.md) | Core rules and document handling for xWiki work |
 | [InitializeFHchat_for_xWiki.md](InitializeFHchat_for_xWiki.md) | Chat initialization prompt for xWiki-focused sessions |
 | [Mermaid_ERD_Quick_Reference.md](Mermaid_ERD_Quick_Reference.md) | Syntax reference for Mermaid diagrams in documentation |

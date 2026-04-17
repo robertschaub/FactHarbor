@@ -21,6 +21,7 @@
     "promptfoo:view": "node scripts/promptfoo-sr.js --view",
     "validate:run": "node scripts/validation/extract-validation-summary.js",
     "validate:compare": "node scripts/validation/compare-batches.js",
+    "validate:quality-drift": "node scripts/validate-quality-expectations-drift.mjs",
     "index": "node scripts/build-index.mjs",
     "index:tier1": "node scripts/build-index.mjs --tier=1",
     "index:tier2": "node scripts/build-index.mjs --tier=2",
