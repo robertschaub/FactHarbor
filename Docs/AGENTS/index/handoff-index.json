@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T18:54:23.190Z",
-  "count": 203,
+  "generatedAt": "2026-04-17T20:08:27.186Z",
+  "count": 205,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4196,6 +4196,48 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from `apps/web/prompts/claimboundary.prompt.md`, `apps/web/config.db`, and the Apr 16 bug scan handoffs. To verify prompt state, compare `config_active.active_hash` against the prompt file SHA-256 for `config_type='prompt' AND profile_key='claimboundary'`. The current modified analyzer path (`"
+    },
+    {
+      "file": "2026-04-17_Unassigned_MT5C_Contract_Approved_Skip_Fix.md",
+      "date": "2026-04-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "mt5c",
+        "contract",
+        "approved",
+        "skip",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-17_Unassigned_MT5C_Contract_Approved_Skip_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/analyzer/claim-extraction-stage.ts:775-783` and `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts:9891`. If you want runtime confirmation, rerun the exact Captain-defined Bundesrat input and compare its Stage 1 event sequence against prior failed jobs `d816"
+    },
+    {
+      "file": "2026-04-17_Unassigned_Report_Review_d816e2e8_Stage1_Multi_Event_Reprompt.md",
+      "date": "2026-04-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "d816e2e8",
+        "stage1",
+        "multi",
+        "event",
+        "reprompt"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Report_Review_d816e2e8_Stage1_Multi_Event_Reprompt.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/analyzer/claim-extraction-stage.ts:647-649` and `:775-839`, then compare event traces for jobs `d816e2e8abf14fa6a0c5f63a20e9b4a8`, `1d9d9389c98249c59bed17d4633a52cc`, and `0f3696d026df4baa90bbf4820e152076`. If fixing forward, the likely change is to make `MT-5(C)` honor "
     },
     {
       "file": "2026-04-17_senior_developer_llm_expert_bundesrat_repair_anchor_carrier_fix.md",

@@ -1143,6 +1143,16 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-15_Lead_Developer_LLM_Expert_Live_Prompt_Runtime_Verification.md
 
 ---
+### 2026-04-17 | Unassigned | Codex (GPT-5) | MT5C Contract-Approved Skip Fix -- [Standard] [open-items: yes]
+**For next agent:** `claim-extraction-stage.ts` now extends the existing sacred-set rule into `MT-5(C)`: if a 1-claim post-Gate-1 set is already contract-approved, the multi-event reprompt is skipped instead of regenerating it. Regression coverage lives at `claimboundary-pipeline.test.ts:9891` and proves the branch stops after the initial contract validation + Gate 1 path.
+→ Docs/AGENTS/Handoffs/2026-04-17_Unassigned_MT5C_Contract_Approved_Skip_Fix.md
+
+---
+### 2026-04-17 | Unassigned | Codex (GPT-5) | Report Review d816e2e8 Stage1 Multi-Event Reprompt -- [Standard] [open-items: yes]
+**For next agent:** Job `d816e2e8abf14fa6a0c5f63a20e9b4a8` is a real benchmark miss for `bundesrat-rechtskraftig`, but the strongest cause is not Stage 2 or concurrency. Compare `claim-extraction-stage.ts:647-649` vs `:775-839`: the generic reprompt loop protects contract-approved sets, while `MT-5(C)` can still reprompt a repaired 1-claim set and destroy the preserved `rechtskräftig` anchor. Evidence anchor jobs: failed `d816e2e8...`, failed `1d9d9389...`, healthy `0f3696d0...`.
+→ Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Report_Review_d816e2e8_Stage1_Multi_Event_Reprompt.md
+
+---
 
 ### 2026-04-15 | Lead Developer + LLM Expert | Codex (GPT-5) | Job Review On Prompt Effectiveness -- [Standard] [open-items: yes]
 **For next agent:** Real job review says the prompt fixes should stay: the latest treaty runs on prompt hash `f17e326e...` clearly repaired the `rechtskräftig` / chronology anchor failure. But there is still a separate Stage 1 bug: Gate 1 flags extra claims as fidelity-failed and the pipeline keeps them anyway, which can still distort downstream verdicts. If continuing, start from `claim-extraction-stage.ts:2817-2825` and the two jobs `85843ef4f98144f2afa7a088b9371dd9` / `0a533220d8a24bc2ae6335c96a013352`.
