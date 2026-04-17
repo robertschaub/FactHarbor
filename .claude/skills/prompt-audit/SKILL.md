@@ -59,7 +59,7 @@ For each in-scope prompt, evaluate each criterion. Record one of `PASS` / `CONCE
 - No deterministic decision trees about text meaning
 
 **R2. Efficiency** (token budget and cache hygiene)
-- Estimate tokens (char count ÷ 4). Flag anything > 8000 as `CONCERN`, > 12000 as `FAIL`
+- Estimate tokens (char count ÷ 4). For this static skill only, use > 8000 as `CONCERN` and > 12000 as `FAIL` as audit bands, not analyzer-runtime tunables
 - Flag redundant "remember to..." / "don't forget..." repetitions
 - Flag unused context sections not referenced by any instruction
 - Stable prefix (rules, schema, examples first; dynamic content last) to maximize cache hits

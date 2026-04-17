@@ -276,6 +276,7 @@ public sealed class JobsController : ControllerBase
     }
 
     [HttpGet("{jobId}/events")]
+    [EnableRateLimiting("ReadPerIp")]
     public async Task EventsSse(string jobId)
     {
         var isAdmin = AuthHelper.IsAdminKeyValid(Request);

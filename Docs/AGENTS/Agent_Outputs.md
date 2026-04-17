@@ -1178,6 +1178,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md
 
 ---
+### 2026-04-17 | Senior Developer | Codex (GPT-5) | Search Cache Review Followups -- [Standard] [open-items: yes]
+**For next agent:** `search-cache.ts` now fingerprints against `DEFAULT_SEARCH_CONFIG` defaults instead of duplicated inline fallback values, and `search-cache.test.ts` now covers provider, `detectedLanguage`, and implicit-vs-explicit default equivalence. `JobsController.EventsSse` also now has `[EnableRateLimiting("ReadPerIp")]`. Remaining review leftovers are the historical commit-subject issue, the self-healing orphaned cache rows, and the older Stage 1 carry-forwards in `claim-extraction-stage.ts`.
+→ Docs/AGENTS/Handoffs/2026-04-17_Senior_Developer_Search_Cache_Review_Followups.md
+
+---
 ### 2026-04-15 | Unassigned | Codex (GPT-5) | Agent Outputs Crosslink Normalization -- [Standard] [open-items: yes]
 **For next agent:** Normalized the last six active Phase 7 rows that still pointed directly at `Docs/WIP/...`. `Docs/AGENTS/Agent_Outputs.md` now uses canonical handoff links for those rows. The only remaining mixed references are narrative body mentions, mainly in the archived March index, not active arrow-link targets.
 → Docs/AGENTS/Handoffs/2026-04-15_Unassigned_Agent_Outputs_Crosslink_Normalization.md

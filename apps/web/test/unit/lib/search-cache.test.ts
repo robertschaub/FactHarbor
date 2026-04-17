@@ -171,6 +171,86 @@ describe("Search Cache", () => {
     expect(cached2!.results[0].url).toBe("https://fresh.example");
   });
 
+  it("should differentiate cache keys by detectedLanguage", async () => {
+    const sharedQuery = { query: "same", maxResults: 5 };
+    const options1: WebSearchOptions = { ...sharedQuery, detectedLanguage: "de" };
+    const options2: WebSearchOptions = { ...sharedQuery, detectedLanguage: "pt" };
+
+    await cacheSearchResults(
+      options1,
+      [{ url: "https://german.example", title: "German", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+    await cacheSearchResults(
+      options2,
+      [{ url: "https://portuguese.example", title: "Portuguese", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+
+    const cached1 = await getCachedSearchResults(options1, TEST_CACHE_CONFIG);
+    const cached2 = await getCachedSearchResults(options2, TEST_CACHE_CONFIG);
+
+    expect(cached1!.results[0].url).toBe("https://german.example");
+    expect(cached2!.results[0].url).toBe("https://portuguese.example");
+  });
+
+  it("should differentiate cache keys by configured provider policy", async () => {
+    const sharedQuery = { query: "same", maxResults: 5 };
+    const options1: WebSearchOptions = {
+      ...sharedQuery,
+      config: { ...DEFAULT_SEARCH_CONFIG, provider: "serper" },
+    };
+    const options2: WebSearchOptions = {
+      ...sharedQuery,
+      config: { ...DEFAULT_SEARCH_CONFIG, provider: "google-cse" },
+    };
+
+    await cacheSearchResults(
+      options1,
+      [{ url: "https://serper.example", title: "Serper", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+    await cacheSearchResults(
+      options2,
+      [{ url: "https://google.example", title: "Google", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+
+    const cached1 = await getCachedSearchResults(options1, TEST_CACHE_CONFIG);
+    const cached2 = await getCachedSearchResults(options2, TEST_CACHE_CONFIG);
+
+    expect(cached1!.results[0].url).toBe("https://serper.example");
+    expect(cached2!.results[0].url).toBe("https://google.example");
+  });
+
+  it("should treat omitted execution policy fields as DEFAULT_SEARCH_CONFIG defaults", async () => {
+    const implicitDefaults: WebSearchOptions = { query: "same", maxResults: 5 };
+    const explicitDefaults: WebSearchOptions = {
+      query: "same",
+      maxResults: 5,
+      claimFreshnessRequirement: "none",
+      detectedLanguage: "",
+      config: {
+        ...DEFAULT_SEARCH_CONFIG,
+        supplementaryProviders: { ...DEFAULT_SEARCH_CONFIG.supplementaryProviders },
+      },
+    };
+
+    await cacheSearchResults(
+      implicitDefaults,
+      [{ url: "https://defaults.example", title: "Defaults", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+
+    const cached = await getCachedSearchResults(explicitDefaults, TEST_CACHE_CONFIG);
+    expect(cached!.results[0].url).toBe("https://defaults.example");
+  });
+
   it("should return cache stats", async () => {
     const options: WebSearchOptions = { query: "test", maxResults: 5 };
     await cacheSearchResults(options, [{ url: "https://a.com", title: "A", snippet: null }], "SerpAPI", TEST_CACHE_CONFIG);

@@ -122,11 +122,16 @@ async function getDb(): Promise<Database> {
 
 function getExecutionPolicyFingerprint(options: WebSearchOptions): string {
   const config = options.config ?? DEFAULT_SEARCH_CONFIG;
+  const defaultSupplementaryProviders = DEFAULT_SEARCH_CONFIG.supplementaryProviders;
+  if (!defaultSupplementaryProviders) {
+    throw new Error("DEFAULT_SEARCH_CONFIG.supplementaryProviders must be defined");
+  }
+  const supplementaryProviders = config.supplementaryProviders ?? defaultSupplementaryProviders;
   return JSON.stringify({
     provider: config.provider.toLowerCase(),
-    autoMode: config.autoMode ?? "accumulate",
-    supplementaryMode: config.supplementaryProviders?.mode ?? "always_if_enabled",
-    supplementaryMaxResultsPerProvider: config.supplementaryProviders?.maxResultsPerProvider ?? 3,
+    autoMode: config.autoMode ?? DEFAULT_SEARCH_CONFIG.autoMode,
+    supplementaryMode: supplementaryProviders.mode,
+    supplementaryMaxResultsPerProvider: supplementaryProviders.maxResultsPerProvider,
     detectedLanguage: options.detectedLanguage ?? "",
     claimFreshnessRequirement: options.claimFreshnessRequirement ?? "none",
   });

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T13:50:10.310Z",
-  "count": 202,
+  "generatedAt": "2026-04-17T18:35:57.174Z",
+  "count": 203,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4155,6 +4155,27 @@
         "apps/web/src/app/jobs/[id]/page.tsx"
       ],
       "summary": "Senior Developer + LLM Expert Handoff"
+    },
+    {
+      "file": "2026-04-17_Senior_Developer_Search_Cache_Review_Followups.md",
+      "date": "2026-04-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "search",
+        "cache",
+        "review",
+        "followups"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/search-cache.ts",
+        "apps/web/test/unit/lib/search-cache.test.ts",
+        ".claude/skills/prompt-audit/SKILL.md",
+        ".claude/settings.json",
+        "apps/api/Controllers/JobsController.cs"
+      ],
+      "summary": "If you continue the review backlog, the next concrete code area is `apps/web/src/lib/analyzer/claim-extraction-stage.ts` around the retry-path `filterByCentrality(...)` calls and the freshness-contract relabel path. If the orphaned cache rows matter operationally, handle that as a deploy/cache-clear"
     },
     {
       "file": "2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md",
