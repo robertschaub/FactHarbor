@@ -4,7 +4,7 @@
  * SQLite-based cache for web search results.
  * Stores search results with TTL-based expiration to reduce API quota usage.
  *
- * Cache Key: hash(query + maxResults + dateRestrict + domainFilters)
+ * Cache Key: hash(query + maxResults + dateRestrict + domainFilters + executionPolicy)
  *
  * @module search-cache
  */
@@ -13,6 +13,7 @@ import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
 import path from "path";
 import crypto from "crypto";
+import { DEFAULT_SEARCH_CONFIG } from "./config-schemas";
 import type { WebSearchOptions, WebSearchResult } from "./web-search";
 
 // ============================================================================
@@ -119,9 +120,22 @@ async function getDb(): Promise<Database> {
 // CACHE KEY GENERATION
 // ============================================================================
 
+function getExecutionPolicyFingerprint(options: WebSearchOptions): string {
+  const config = options.config ?? DEFAULT_SEARCH_CONFIG;
+  return JSON.stringify({
+    provider: config.provider.toLowerCase(),
+    autoMode: config.autoMode ?? "accumulate",
+    supplementaryMode: config.supplementaryProviders?.mode ?? "always_if_enabled",
+    supplementaryMaxResultsPerProvider: config.supplementaryProviders?.maxResultsPerProvider ?? 3,
+    detectedLanguage: options.detectedLanguage ?? "",
+    claimFreshnessRequirement: options.claimFreshnessRequirement ?? "none",
+  });
+}
+
 /**
  * Generate deterministic cache key from search options.
- * Key includes query, maxResults, dateRestrict, and domain filters.
+ * Key includes query, maxResults, dateRestrict, domain filters, and
+ * execution-policy inputs that can change the returned result set.
  */
 export function generateCacheKey(options: WebSearchOptions): string {
   const parts = [
@@ -130,6 +144,7 @@ export function generateCacheKey(options: WebSearchOptions): string {
     options.dateRestrict || "",
     JSON.stringify((options.domainWhitelist || []).sort()),
     JSON.stringify((options.domainBlacklist || []).sort()),
+    getExecutionPolicyFingerprint(options),
   ];
   return crypto.createHash("sha256").update(parts.join("|")).digest("hex");
 }

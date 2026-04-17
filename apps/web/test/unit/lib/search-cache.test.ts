@@ -132,6 +132,45 @@ describe("Search Cache", () => {
     expect(cached2!.results[0].url).toBe("https://other.com");
   });
 
+  it("should differentiate cache keys by freshness-aware supplementary policy", async () => {
+    const sharedQuery = { query: "same", maxResults: 5 };
+    const options1: WebSearchOptions = {
+      ...sharedQuery,
+      claimFreshnessRequirement: "none",
+      config: {
+        ...DEFAULT_SEARCH_CONFIG,
+        supplementaryProviders: { mode: "always_if_enabled", maxResultsPerProvider: 3 },
+      },
+    };
+    const options2: WebSearchOptions = {
+      ...sharedQuery,
+      claimFreshnessRequirement: "current_snapshot",
+      config: {
+        ...DEFAULT_SEARCH_CONFIG,
+        supplementaryProviders: { mode: "demote_on_freshness", maxResultsPerProvider: 3 },
+      },
+    };
+
+    await cacheSearchResults(
+      options1,
+      [{ url: "https://always.example", title: "Always", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+    await cacheSearchResults(
+      options2,
+      [{ url: "https://fresh.example", title: "Fresh", snippet: null }],
+      "SerpAPI",
+      TEST_CACHE_CONFIG,
+    );
+
+    const cached1 = await getCachedSearchResults(options1, TEST_CACHE_CONFIG);
+    const cached2 = await getCachedSearchResults(options2, TEST_CACHE_CONFIG);
+
+    expect(cached1!.results[0].url).toBe("https://always.example");
+    expect(cached2!.results[0].url).toBe("https://fresh.example");
+  });
+
   it("should return cache stats", async () => {
     const options: WebSearchOptions = { query: "test", maxResults: 5 };
     await cacheSearchResults(options, [{ url: "https://a.com", title: "A", snippet: null }], "SerpAPI", TEST_CACHE_CONFIG);
