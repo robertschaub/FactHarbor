@@ -9888,6 +9888,124 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(llmCallIndex).toBe(9);
   });
 
+  it("MT-5(C): should NOT trigger when a 1-claim set is already contract-approved", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 2 },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: true },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2WithEvents(1, 2),
+            inputClassification: "single_atomic_claim",
+            atomicClaims: [
+              createAtomicClaim({
+                id: "AC_01",
+                statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+                centrality: "high",
+                specificityScore: 0.9,
+              }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "initial single-claim set preserves the contract",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["rechtskräftig bevor Volk und Parlament darüber entschieden haben"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex} — MT-5(C) should not reprompt a contract-approved single-claim set`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.atomicClaims[0].statement).toContain("rechtskräftig");
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "initial",
+      summary: "initial single-claim set preserves the contract",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+        preservedInClaimIds: ["AC_01"],
+        validPreservedIds: ["AC_01"],
+      },
+    });
+    expect(llmCallIndex).toBe(4);
+  });
+
   it("MT-5(C): should NOT trigger when distinctEvents >= 2 and claims >= 2", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");

@@ -775,6 +775,16 @@ export async function extractClaims(
   if (
     distinctEventCount >= 2 &&
     gate1Result.filteredClaims.length === 1 &&
+    maxRepromptAttempts > 0 &&
+    currentSetIsContractApproved
+  ) {
+    console.info(
+      `[Stage1] MT-5(C): ${distinctEventCount} distinct events detected but the surviving ` +
+      `1-claim set is contract-approved (C14 applied to MT-5(C)). Skipping multi-event reprompt.`
+    );
+  } else if (
+    distinctEventCount >= 2 &&
+    gate1Result.filteredClaims.length === 1 &&
     maxRepromptAttempts > 0
   ) {
     console.info(
