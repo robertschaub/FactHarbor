@@ -87,7 +87,11 @@ if [ -n "$TAG" ]; then
     git checkout "$TAG"
 else
     log "Pulling latest from main..."
-    git pull
+    # Explicit branch + ff-only: recovers from detached HEAD left by a prior
+    # tag deploy, and refuses silent merges if the VPS ever diverges.
+    git fetch origin
+    git checkout main
+    git pull --ff-only origin main
 fi
 ok "Code updated: $(git log --oneline -1)"
 
