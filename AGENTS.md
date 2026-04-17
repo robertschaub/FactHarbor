@@ -310,6 +310,7 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 |---|---|---|
 | `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |
 | `/audit` | `.claude/skills/audit/SKILL.md` | Full prompt + code quality audit; pre-release or after major changes |
+| `/prompt-audit` | `.claude/skills/prompt-audit/SKILL.md` | Static prompt-only audit against a 9-criterion rubric (rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, failure-mode coverage); linter-style, no runs, no writes |
 | `/validate` | `.claude/skills/validate/SKILL.md` | Post-change validation on benchmark families (runs real jobs — use deliberately) |
 | `/handoff` | `.claude/skills/handoff/SKILL.md` | Generate a handoff document at end of any significant task |
 | `/debug` | `.claude/skills/debug/SKILL.md` | Analyze `debug-analyzer.log` + test results; standard post-change check |
