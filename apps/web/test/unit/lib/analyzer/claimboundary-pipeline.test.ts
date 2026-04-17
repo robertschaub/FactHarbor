@@ -81,6 +81,7 @@ import type {
   EvidenceScope,
 } from "@/lib/analyzer/types";
 import { createUnverifiedFallbackVerdict } from "@/lib/analyzer/pipeline-utils";
+import { Pass2AtomicClaimSchema } from "@/lib/analyzer/claim-extraction-stage";
 
 // ============================================================================
 // TEST DATA FACTORIES — CB types only (§22.3.2)
@@ -623,6 +624,59 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
       expect(resultJson.truthPercentageRange).toEqual({ min: 35, max: 49 });
       expect(resultJson.articleAdjudication).toEqual(assessment.articleAdjudication);
       expect(resultJson.adjudicationPath).toEqual(assessment.adjudicationPath);
+    });
+
+    it("preserves claim freshnessRequirement in the serialized understanding artifact", () => {
+      const claims = [createAtomicClaim({ id: "AC_01", freshnessRequirement: "current_snapshot" })];
+      const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+      const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+      const assessment: OverallAssessment = {
+        truthPercentage: 65,
+        verdict: "LEANING-TRUE",
+        confidence: 58,
+        verdictNarrative: createVerdictNarrative(),
+        hasMultipleBoundaries: false,
+        claimBoundaries: boundaries,
+        claimVerdicts: [createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 65, confidence: 58 })],
+        coverageMatrix,
+        qualityGates: {
+          passed: true,
+          gate1Stats: { total: 1, passed: 1, filtered: 0, centralKept: 1 },
+          gate4Stats: { total: 1, publishable: 1, highConfidence: 0, mediumConfidence: 1, lowConfidence: 0, insufficient: 0, centralKept: 0 },
+          summary: { totalEvidenceItems: 0, totalSources: 0, searchesPerformed: 0, contradictionSearchPerformed: false },
+        },
+      };
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input: { inputType: "text", inputValue: "Entity A currently has metric X." },
+        state: {
+          languageIntent: null,
+          understanding: { atomicClaims: claims } as any,
+          evidenceItems: [],
+          sources: [],
+          searchQueries: [],
+          claimAcquisitionLedger: {},
+          warnings: [],
+          llmCalls: 1,
+          mainIterationsUsed: 1,
+          contradictionIterationsUsed: 0,
+          contradictionSourcesFound: 0,
+        },
+        llmProvider: "anthropic",
+        verdictModelName: "mock-verdict",
+        understandModelName: "mock-understand",
+        extractModelName: "mock-extract",
+        runtimeModelsUsed: new Set(["mock-understand", "mock-verdict"]),
+        runtimeRoleModels: {},
+        searchProvider: "mock-search",
+        searchProviders: "mock-search",
+        evidenceBalance: { supporting: 0, contradicting: 0, neutral: 0, total: 0, balanceRatio: 0.5, isSkewed: false },
+        promptContentHash: "__PROMPT__",
+        boundaryCount: boundaries.length,
+      });
+
+      expect(resultJson.understanding?.atomicClaims?.[0]?.freshnessRequirement).toBe("current_snapshot");
     });
   });
 });
@@ -3295,6 +3349,39 @@ describe("Stage 2: generateResearchQueries", () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+
+  it("ensures current_snapshot claims retain at least one fresh primary-or-navigational query", async () => {
+    const claim = createAtomicClaim({
+      id: "AC_01",
+      statement: "Entity A currently reports metric X",
+      freshnessRequirement: "current_snapshot",
+    });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A metric X", rationale: "generic coverage", retrievalLane: "secondary_context", freshnessWindow: "none" },
+        { query: "entity A official update", rationale: "source route" },
+      ],
+    });
+
+    const result = await generateResearchQueries(
+      claim,
+      "main",
+      [],
+      mockPipelineConfig,
+      "2026-02-17",
+    );
+
+    expect(
+      result.some(
+        (query) =>
+          (query.retrievalLane === "primary_direct" || query.retrievalLane === "navigational")
+          && (query.freshnessWindow === "w" || query.freshnessWindow === "m"),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -7325,6 +7412,53 @@ describe("B-6: verifiability annotation", () => {
     });
     expect(evaluativeHighVerifiability.category).toBe("evaluative");
     expect(evaluativeHighVerifiability.verifiability).toBe("high");
+  });
+
+  it("should accept absence of freshnessRequirement in Pass2AtomicClaimSchema for backward compatibility", () => {
+    const parsed = Pass2AtomicClaimSchema.parse({
+      id: "AC_01",
+      statement: "Entity A has metric X",
+      category: "factual",
+      centrality: "high",
+      harmPotential: "medium",
+      isCentral: true,
+      claimDirection: "supports_thesis",
+      keyEntities: ["Entity A"],
+      checkWorthiness: "high",
+      specificityScore: 0.8,
+      groundingQuality: "strong",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [],
+        expectedSourceTypes: [],
+      },
+    });
+
+    expect(parsed.freshnessRequirement).toBeUndefined();
+  });
+
+  it("should reject invalid freshnessRequirement enum values in Pass2AtomicClaimSchema", () => {
+    const parsed = Pass2AtomicClaimSchema.safeParse({
+      id: "AC_01",
+      statement: "Entity A has metric X",
+      category: "factual",
+      freshnessRequirement: "immediate",
+      centrality: "high",
+      harmPotential: "medium",
+      isCentral: true,
+      claimDirection: "supports_thesis",
+      keyEntities: ["Entity A"],
+      checkWorthiness: "high",
+      specificityScore: 0.8,
+      groundingQuality: "strong",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [],
+        expectedSourceTypes: [],
+      },
+    });
+
+    expect(parsed.success).toBe(false);
   });
 });
 

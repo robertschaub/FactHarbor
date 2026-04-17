@@ -51,6 +51,7 @@ export function assertValidTruthPercentage(
 
 export type InputType = "claim" | "question" | "article";
 export type ClaimRole = "attribution" | "source" | "timing" | "core" | "unknown";
+export type ClaimFreshnessRequirement = "none" | "recent" | "current_snapshot";
 
 /**
  * Confidence-tier minimum thresholds (0-100 scale).
@@ -356,6 +357,7 @@ export interface ClaimAcquisitionIterationEntry {
   iteration: number;
   iterationType: "main" | "contradiction" | "contrarian" | "refinement";
   languageLane: "primary" | "supplementary_en";
+  freshnessRequirement?: ClaimFreshnessRequirement;
   generatedQueries: string[];
   searchResults: number;
   relevanceAccepted: number;
@@ -828,6 +830,11 @@ export interface AtomicClaim {
   /** Fact-checkability assessment: can evidence resolve this claim? Independent of category.
    *  Added by B-6 when claimAnnotationMode includes "verifiability". Optional for backward compat. */
   verifiability?: "high" | "medium" | "low" | "none";
+  /** Claim-level freshness contract extracted in Stage 1.
+   *  "current_snapshot" = decisive evidence should reflect the current state,
+   *  "recent" = recency matters but not at the same strictness,
+   *  "none" = no special freshness requirement. Optional for backward compat. */
+  freshnessRequirement?: ClaimFreshnessRequirement;
   centrality: "high" | "medium"; // Only central claims survive
   harmPotential: "critical" | "high" | "medium" | "low";
   isCentral: true;               // Always true (filtered)

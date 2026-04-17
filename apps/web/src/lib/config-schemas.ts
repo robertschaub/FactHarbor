@@ -142,8 +142,8 @@ export const SearchConfigSchema = z.object({
 
   // Generic supplementary-provider orchestration policy
   supplementaryProviders: z.object({
-    mode: z.enum(["fallback_only", "always_if_enabled"])
-      .describe("When supplementary providers run: 'fallback_only' = only when primary providers return zero results (current behavior); 'always_if_enabled' = run bounded supplementary search even when primary search succeeded."),
+    mode: z.enum(["fallback_only", "always_if_enabled", "demote_on_freshness"])
+      .describe("When supplementary providers run: 'fallback_only' = only when primary providers return zero results; 'always_if_enabled' = run bounded supplementary search even when primary search succeeded; 'demote_on_freshness' = run supplementaries after primary search, but reduce their footprint for freshness-sensitive current-snapshot claims."),
     maxResultsPerProvider: z.number().int().min(1).max(10)
       .describe("Max results each supplementary provider may return per search call (default: 3). Keeps supplementary evidence bounded."),
   }).optional().describe("Controls when and how supplementary providers (Wikipedia, Semantic Scholar, Google Fact Check) participate in search."),

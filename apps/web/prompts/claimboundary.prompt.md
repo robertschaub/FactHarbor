@@ -188,6 +188,13 @@ If `verifiability` assessment is requested (via configuration), also assess how 
 - **"low"**: The claim is difficult to check — it involves predictions, subjective assessments, or evidence that is unlikely to be publicly available.
 - **"none"**: The claim is a pure value judgment, preference, or unfalsifiable statement that no evidence can resolve.
 
+Also assess whether the claim carries an explicit freshness contract using `freshnessRequirement`:
+- **"current_snapshot"**: The decisive evidence should reflect the current state, live total, active ranking, present administrative situation, or another up-to-date institutional snapshot.
+- **"recent"**: Recency matters, but the claim does not require the very latest snapshot. Recent publication or updated evidence is still materially preferable to old background coverage.
+- **"none"**: The claim has no special freshness requirement beyond normal evidentiary fit.
+- Use the claim's actual meaning, not only cue words. A claim may require a current snapshot even when phrased declaratively rather than with explicit words like "currently" or "now".
+- This field is a claim-level contract for downstream research and verdicting. Set it conservatively and keep it generic.
+
 ### Mandatory pre-decomposition meaning analysis (do this FIRST, before applying the rules)
 
 Before producing any atomic claims, reason step-by-step about what the input is asserting — at the level of **meaning**, not surface words. This reasoning is **internal** — do NOT emit it as a field. Use it to constrain the decomposition that follows.
@@ -336,6 +343,7 @@ Return a JSON object:
       "statement": "string — specific, research-ready verifiable assertion",
       "category": "factual | evaluative | procedural",
       "verifiability": "high | medium | low | none",
+      "freshnessRequirement": "none | recent | current_snapshot",
       "centrality": "high | medium | low",
       "harmPotential": "critical | high | medium | low",
       "isCentral": true,
@@ -633,10 +641,14 @@ Each query must also declare:
 - `retrievalLane`: whether the query is targeting a likely direct primary source, a navigational/source-native entry point, or broader secondary context
 - `freshnessWindow`: whether this query should prefer recent results (`w`, `m`, `y`) or has no special freshness requirement (`none`)
 
+Treat `${freshnessRequirement}` as the authoritative claim-level freshness contract from Stage 1.
+
 ### Rules
 
 - **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}` and relevant geographies `${relevantGeographies}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
+- If `${freshnessRequirement}` is `current_snapshot`, at least one query must target a source-native or official route with `retrievalLane = primary_direct` or `navigational` and `freshnessWindow = w` or `m`.
+- If `${freshnessRequirement}` is `recent`, prefer at least one query with `freshnessWindow = w` or `m` unless the decisive evidence is clearly archival or fixed to a past period.
 - When `expectedEvidenceProfile` implies a current stock, total, ranking, or administrative count that should come from official or institutional sources, include at least one query aimed at the latest source-native archive, overview, or statistics landing page and at least one query aimed at the decisive current figure itself. Prefer publisher-native phrasing over broad topical summary wording.
 - When the decisive figure is published in a source-native data artifact or update stream rather than in summary prose, prefer queries that target the artifact carrying the figure itself instead of only the overview or landing page.
 - When the claim uses a source-native institutional label, administrative category, or official umbrella phrase for the target population or metric, preserve that exact source-language wording in at least one official-source query. Do NOT paraphrase it into a looser topical synonym if the exact phrase is likely how the publisher names the figure.
@@ -682,6 +694,11 @@ ${claim}
 **Expected Evidence Profile:**
 ```
 ${expectedEvidenceProfile}
+```
+
+**Freshness Requirement:**
+```
+${freshnessRequirement}
 ```
 
 **Distinct Events:**
@@ -756,6 +773,7 @@ A result is **relevant** if:
 - It appears to contain evidence that would verify, refute, or contextualize the claim.
 - The methodology, metrics, or source type match the claim's `expectedEvidenceProfile`.
 - The content is substantive (not just tangentially mentioning keywords).
+- When `${freshnessRequirement}` is `current_snapshot` or `recent`, the result is plausibly time-appropriate for that contract.
 
 A result is **not relevant** if:
 - It only mentions keywords without addressing the claim's substance.
@@ -785,12 +803,19 @@ A result is **not relevant** if:
   - **Comparator/precedent**: The result primarily covers a different proceeding, event, or actor — even if it involves the same institution, jurisdiction, or subject area. These may provide useful background but are not direct evidence about the target claim. Score at most **0.5** and set `jurisdictionMatch` to `"contextual"`.
   - A source reporting on a prior case involving a different party in the same court is comparator, not target-specific.
   - A source reporting on the target proceeding itself, even if it also mentions prior cases, is target-specific.
+- **Freshness fit**: When `${freshnessRequirement}` is `current_snapshot`, prefer results that appear likely to expose current official, source-native, or recently updated material over evergreen explainers or stale retrospectives. Older background material may still be contextual, but it should not outrank fresher decisive routes solely because it mentions the same topic.
+- When `${freshnessRequirement}` is `recent`, score recent authoritative or source-native results more favorably than older background summaries when both appear otherwise relevant.
 
 ### Input
 
 **Claim:**
 ```
 ${claim}
+```
+
+**Freshness Requirement:**
+```
+${freshnessRequirement}
 ```
 
 **Inferred Geography:**
@@ -1157,6 +1182,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - When boundaries provide conflicting evidence, the verdict should reflect the conflict rather than averaging it away. Explain the disagreement.
 - When a claim's decisive proposition can be established by multiple aligned component figures from the same authoritative source family and analytical window, assess whether those components jointly establish the umbrella quantity, threshold comparison, or decisive bound. Do NOT default to `UNVERIFIED` solely because the source did not print the final synthesis as one headline number.
 - Natural concentration in the authoritative source family can be expected when one publisher or record system is the primary keeper of the decisive evidence. Do not treat that concentration by itself as a reason to discount factual accuracy when the evidence is current or otherwise time-appropriate, internally coherent, and not countered by stronger conflicting evidence.
+- When an AtomicClaim carries `freshnessRequirement = "current_snapshot"` or `"recent"`, explicitly assess whether the evidence base is time-appropriate for that contract. Prefer current or recent authoritative evidence in your weighting. If the evidence base is materially stale for the claim's required freshness, reflect that in `confidence` and `reasoning` rather than silently treating age-mismatched background evidence as fully decisive.
 - `isContested`: true ONLY when there is documented counter-evidence (not mere doubt or absence of evidence).
 - **Distinguish factual findings from institutional positions:**
   - When weighing evidence, distinguish between a source's **factual outputs** (research data, statistical publications, investigations, compliance reports, legal analyses, field measurements) and its **positional outputs** (executive orders, diplomatic statements, sanctions, press releases, political declarations). Factual outputs derive probative value from their methodology and data quality. Positional outputs represent institutional stances — weigh them primarily as indicators of that institution's position, not as independent evidence for or against factual claims.

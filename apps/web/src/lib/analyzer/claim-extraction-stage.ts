@@ -62,16 +62,20 @@ const Pass1OutputSchema = z.object({
   inferredGeography: z.string().nullable().catch(null),
 });
 
-// Pass2AtomicClaimSchema: All non-essential fields use .catch(default) to prevent
+// Pass2AtomicClaimSchema: Most non-essential fields use .catch(default) to prevent
 // "No object generated" errors from the AI SDK when the LLM outputs wrong enum casing,
 // missing fields, or type mismatches. The .catch() provides sensible defaults while
 // the JSON schema sent to the LLM still shows correct enum values.
+// freshnessRequirement is intentionally strict-optional: absence is allowed for
+// backward compatibility, but invalid enum values must fail validation so the
+// claim-level freshness contract remains auditable.
 // See: Docs/WIP/LLM_Expert_Review_Schema_Validation.md
-const Pass2AtomicClaimSchema = z.object({
+export const Pass2AtomicClaimSchema = z.object({
   id: z.string().catch(""),
   statement: z.string().catch(""),
   category: z.enum(["factual", "evaluative", "procedural"]).catch("factual"),
   verifiability: z.enum(["high", "medium", "low", "none"]).optional().catch(undefined),
+  freshnessRequirement: z.enum(["none", "recent", "current_snapshot"]).optional(),
   centrality: z.enum(["high", "medium", "low"]).catch("low"),
   harmPotential: z.enum(["critical", "high", "medium", "low"]).catch("low"),
   isCentral: z.boolean().catch(false),
@@ -1702,6 +1706,7 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
       const enumFields = [
         "category", "centrality", "harmPotential", "claimDirection",
         "thesisRelevance", "checkWorthiness", "groundingQuality",
+        "freshnessRequirement",
       ];
       for (const field of enumFields) {
         if (typeof normalized[field] === "string") {

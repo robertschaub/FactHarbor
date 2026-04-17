@@ -116,7 +116,7 @@ interface SearchConfig {
   domainBlacklist: string[];
   providers?: Record<string, any>;
   supplementaryProviders?: {
-    mode: "fallback_only" | "always_if_enabled";
+    mode: "fallback_only" | "always_if_enabled" | "demote_on_freshness";
     maxResultsPerProvider: number;
   };
 }
@@ -550,12 +550,13 @@ function SearchConfigForm({
               ...config,
               supplementaryProviders: {
                 ...(config.supplementaryProviders ?? { mode: "always_if_enabled", maxResultsPerProvider: 3 }),
-                mode: e.target.value as "fallback_only" | "always_if_enabled",
+                mode: e.target.value as "fallback_only" | "always_if_enabled" | "demote_on_freshness",
               },
             })}
           >
             <option value="fallback_only">Fallback only (run when primary returns 0 results)</option>
             <option value="always_if_enabled">Always if enabled (run alongside primary)</option>
+            <option value="demote_on_freshness">Demote on freshness (keep supplementaries last and tightly bounded for current-snapshot claims)</option>
           </select>
         </div>
 

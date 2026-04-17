@@ -214,6 +214,33 @@ describe("Research Extraction Stage", () => {
       expect(renderCall![2]).toMatchObject({ inferredGeography: "null" });
     });
 
+    it("should pass claim freshnessRequirement to the prompt template", async () => {
+      const claim = createClaim({
+        statement: "Test",
+        freshnessRequirement: "current_snapshot",
+      });
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        relevantSources: [
+          { url: "https://example.com/1", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+        ],
+      });
+
+      await classifyRelevance(
+        claim,
+        [{ url: "https://example.com/1", title: "T", snippet: "s" }],
+        mockConfig,
+        "2026-03-23",
+      );
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "RELEVANCE_CLASSIFICATION",
+      );
+      expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({ freshnessRequirement: "current_snapshot" });
+    });
+
     it("should respect foreignJurisdictionRelevanceCap from UCM config", async () => {
       const claim = createClaim({ statement: "Country A" });
       const searchResults = [

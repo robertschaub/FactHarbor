@@ -250,6 +250,32 @@ describe("searchWebWithProvider", () => {
       );
     });
 
+    it("demote_on_freshness: bounds supplementary providers to 1 result and keeps them after primary search for current_snapshot claims", async () => {
+      mockSearchGoogleCse.mockResolvedValue([
+        { url: "https://example.com/1", title: "Primary", snippet: "s" },
+      ]);
+      mockSearchWikipedia.mockResolvedValue([
+        { url: "https://en.wikipedia.org/wiki/Test", title: "Wiki", snippet: "wiki" },
+      ]);
+
+      await searchWebWithProvider({
+        query: "test",
+        maxResults: 5,
+        claimFreshnessRequirement: "current_snapshot",
+        config: {
+          ...baseConfig,
+          supplementaryProviders: { mode: "demote_on_freshness", maxResultsPerProvider: 3 },
+        },
+      });
+
+      expect(mockSearchWikipedia).toHaveBeenCalledWith(
+        expect.objectContaining({ maxResults: 1 }),
+      );
+      expect(mockSearchGoogleCse.mock.invocationCallOrder[0]).toBeLessThan(
+        mockSearchWikipedia.mock.invocationCallOrder[0],
+      );
+    });
+
     it("Wikipedia disabled: no Wikipedia call regardless of mode", async () => {
       mockSearchGoogleCse.mockResolvedValue([]);
 

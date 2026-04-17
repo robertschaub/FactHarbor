@@ -113,6 +113,7 @@ export async function classifyRelevance(
   const rendered = await loadAndRenderSection("claimboundary", "RELEVANCE_CLASSIFICATION", {
     currentDate,
     claim: claim.statement,
+    freshnessRequirement: claim.freshnessRequirement ?? "none",
     inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
     relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     searchResults: JSON.stringify(

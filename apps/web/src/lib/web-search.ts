@@ -9,6 +9,7 @@ import {
   recordFailure,
 } from "./search-circuit-breaker";
 import { recordSearchQuery } from "./analyzer/metrics-integration";
+import type { ClaimFreshnessRequirement } from "./analyzer/types";
 
 export type WebSearchResult = {
   url: string;
@@ -29,6 +30,8 @@ export type WebSearchOptions = {
   config?: SearchConfig;
   /** BCP-47 language code detected from claim input (e.g., "de", "fr"). Threaded to language-aware supplementary providers like Wikipedia. */
   detectedLanguage?: string;
+  /** Claim-level freshness contract from Stage 1. Used only for execution policy, never semantic inference. */
+  claimFreshnessRequirement?: ClaimFreshnessRequirement;
 };
 
 export type SearchProviderErrorInfo = {
@@ -317,13 +320,20 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
     // Controlled by UCM supplementaryProviders.mode:
     //   "fallback_only"      → only when primary providers returned zero results (legacy behavior)
     //   "always_if_enabled"  → run bounded supplementary providers even when primary search succeeded
+    //   "demote_on_freshness"→ keep supplementaries available, but reduce their footprint for current-snapshot claims
     const suppPolicy = config.supplementaryProviders;
     const suppMode = suppPolicy?.mode ?? "always_if_enabled";
-    const suppMaxPerProvider = suppPolicy?.maxResultsPerProvider ?? 3;
+    const demoteSupplementaries = shouldDemoteSupplementaryProviders(options, suppMode);
+    const effectiveSuppMode = suppMode === "demote_on_freshness"
+      ? "always_if_enabled"
+      : suppMode;
+    const suppMaxPerProvider = demoteSupplementaries
+      ? 1
+      : (suppPolicy?.maxResultsPerProvider ?? 3);
     const shouldRunSupplementaryProviders =
       primaryProviderKey !== "auto"                       // explicit provider mode: always run supplementaries
-      || suppMode === "always_if_enabled"                 // UCM policy: always run
-      || (suppMode === "fallback_only" && results.length === 0); // fallback: only when primary returned nothing
+      || effectiveSuppMode === "always_if_enabled"        // UCM policy: always run
+      || (effectiveSuppMode === "fallback_only" && results.length === 0); // fallback: only when primary returned nothing
 
     const supplementaryKeys: SearchProviderKey[] = ["wikipedia", "semantic-scholar", "google-factcheck"];
     for (const suppKey of supplementaryKeys) {
@@ -338,7 +348,10 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
         continue;
       }
 
-      console.log(`[Search] Executing supplementary provider: ${def.explicitLabel} (mode: ${suppMode}, max: ${suppMaxPerProvider})`);
+      console.log(
+        `[Search] Executing supplementary provider: ${def.explicitLabel} ` +
+        `(mode: ${suppMode}, effective max: ${suppMaxPerProvider})`,
+      );
       providersUsed.push(def.name);
       try {
         // Thread detected language into supplementary options for language-aware providers (Wikipedia)
@@ -395,6 +408,13 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
  */
 function isSupplementaryProvider(key: string): boolean {
   return ["wikipedia", "semantic-scholar", "google-factcheck"].includes(key);
+}
+
+function shouldDemoteSupplementaryProviders(
+  options: WebSearchOptions,
+  mode: "fallback_only" | "always_if_enabled" | "demote_on_freshness",
+): boolean {
+  return mode === "demote_on_freshness" && options.claimFreshnessRequirement === "current_snapshot";
 }
 
 type SearchCacheSettings = {

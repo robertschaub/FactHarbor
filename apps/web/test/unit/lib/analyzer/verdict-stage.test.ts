@@ -512,6 +512,27 @@ describe("reportLanguage propagation (Proposal 2)", () => {
     expect(capturedPayload.reportLanguage).toBe("de");
   });
 
+  it("should preserve freshnessRequirement on atomicClaims sent to VERDICT_ADVOCATE", async () => {
+    const claims = [createAtomicClaim({ freshnessRequirement: "current_snapshot" })];
+    const evidence = [createEvidenceItem({ id: "EV_01" })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let capturedPayload: any = null;
+    const mockLLM = vi.fn(async (key: string, payload: any) => {
+      if (key === "VERDICT_ADVOCATE") {
+        capturedPayload = payload;
+        return [advocateResponse()];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    expect(capturedPayload).toBeDefined();
+    expect(capturedPayload.atomicClaims?.[0]?.freshnessRequirement).toBe("current_snapshot");
+  });
+
   it("should NOT include reportLanguage in payload when not set on config", async () => {
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem({ id: "EV_01" })];

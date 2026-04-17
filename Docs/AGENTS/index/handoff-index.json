@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T13:13:45.762Z",
-  "count": 201,
+  "generatedAt": "2026-04-17T13:50:10.310Z",
+  "count": 202,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4087,15 +4087,12 @@
         "lead_developer"
       ],
       "topics": [
-        "followup",
-        "review",
-        "fixes",
-        "for",
-        "read",
-        "gating",
-        "and",
-        "script",
-        "hardening"
+        "code-review",
+        "api-read-access",
+        "hidden-jobs",
+        "stage1",
+        "scripts",
+        "hooks"
       ],
       "files_touched": [
         "apps/api/Controllers/JobsController.cs",
@@ -4118,6 +4115,24 @@
         "Docs/AGENTS/Role_Learnings.md"
       ],
       "summary": "If another reviewer questions the `/events/history` authz fix, the actual rule implemented is not “admin-only events”; it is “same public-read semantics as report detail, with hidden reports admin-only.” That preserves the public completed-job timeline while removing the looser direct read path that"
+    },
+    {
+      "file": "2026-04-17_Lead_Developer_Freshness_Contract_And_Lane_Aware_Retrieval_Slice.md",
+      "date": "2026-04-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "freshness",
+        "contract",
+        "and",
+        "lane",
+        "aware",
+        "retrieval",
+        "slice"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-17 | Lead Developer | Codex (GPT-5) | Freshness Contract And Lane-Aware Retrieval Slice"
     },
     {
       "file": "2026-04-17_Senior_Developer_LLM_Expert_Bundesrat_Live_Rerun_And_Jobs_Page_SSE_Gating.md",

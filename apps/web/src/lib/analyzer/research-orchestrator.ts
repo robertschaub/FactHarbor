@@ -1,6 +1,7 @@
 import {
   AtomicClaim,
   CBResearchState,
+  ClaimFreshnessRequirement,
   ClaimAcquisitionDirectionCounts,
   ClaimAcquisitionIterationEntry,
   ClaimAcquisitionLedgerEntry,
@@ -122,12 +123,14 @@ function createClaimIterationTelemetryEntry(
   iteration: number,
   iterationType: ClaimAcquisitionIterationEntry["iterationType"],
   generatedQueries: string[],
+  freshnessRequirement?: ClaimFreshnessRequirement,
   laneReason?: string,
 ): ClaimAcquisitionIterationEntry {
   return {
     iteration,
     iterationType,
     languageLane: "primary",
+    freshnessRequirement,
     generatedQueries,
     searchResults: 0,
     relevanceAccepted: 0,
@@ -1072,6 +1075,7 @@ export async function runResearchIteration(
     iterationIndex,
     iterationType,
     queries.map((query) => query.query),
+    targetClaim.freshnessRequirement,
   );
 
   const executeGeneratedQueries = async (
@@ -1101,6 +1105,7 @@ export async function runResearchIteration(
           maxResults: maxSourcesPerIteration,
           config: searchConfig,
           detectedLanguage: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
+          claimFreshnessRequirement: targetClaim.freshnessRequirement,
           dateRestrict,
           cacheTtlDaysOverride,
         });
@@ -1366,6 +1371,7 @@ export async function runResearchIteration(
         iterationIndex,
         "refinement",
         selectedRefinementQueries.map((query) => query.query),
+        targetClaim.freshnessRequirement,
         "primary_source_refinement:triggered",
       );
       await executeGeneratedQueries(selectedRefinementQueries, "refinement", refinementTelemetry);
@@ -1479,6 +1485,7 @@ export async function maybeRunSupplementaryEnglishLane(
     iteration: iterationIndex,
     iterationType: iterationType as "main" | "contradiction" | "contrarian",
     languageLane: "supplementary_en",
+    freshnessRequirement: targetClaim.freshnessRequirement,
     generatedQueries: enQueries.map((query) => query.query),
     searchResults: 0,
     relevanceAccepted: 0,
@@ -1504,6 +1511,7 @@ export async function maybeRunSupplementaryEnglishLane(
       maxResults: searchConfig.maxSourcesPerIteration ?? 5,
       config: searchConfig,
       detectedLanguage: "en", // EN lane forces English for language-aware supplementary providers
+      claimFreshnessRequirement: targetClaim.freshnessRequirement,
     });
 
     state.searchQueries.push({

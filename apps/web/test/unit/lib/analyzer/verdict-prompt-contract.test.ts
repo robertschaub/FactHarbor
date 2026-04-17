@@ -76,7 +76,7 @@ function renderWithVars(
 
 /** advocate (verdict-stage.ts:591-602) + self-consistency (verdict-stage.ts:719-729) */
 const ADVOCATE_VARS: Record<string, string> = {
-  atomicClaims: '[{"id":"AC_01","statement":"Test claim"}]',
+  atomicClaims: '[{"id":"AC_01","statement":"Test claim","freshnessRequirement":"current_snapshot"}]',
   evidenceItems: '[{"id":"EV_01","statement":"Test evidence"}]',
   claimBoundaries: '[{"id":"CB_01","name":"Test boundary"}]',
   coverageMatrix: '{"claims":["AC_01"],"boundaries":["CB_01"],"counts":[[5]]}',
@@ -199,7 +199,7 @@ describe("Stage-4 prompt contract", () => {
   describe("input serialization", () => {
     it("JSON.stringify produces valid JSON for representative structured inputs", () => {
       const structuredInput = {
-        atomicClaims: [{ id: "AC_01", statement: "Test" }],
+        atomicClaims: [{ id: "AC_01", statement: "Test", freshnessRequirement: "current_snapshot" }],
         evidenceItems: [{ id: "EV_01", statement: "Evidence" }],
         claimBoundaries: [{ id: "CB_01", name: "Boundary" }],
         coverageMatrix: { claims: ["AC_01"], boundaries: ["CB_01"], counts: [[3]] },
@@ -220,6 +220,8 @@ describe("Stage-4 prompt contract", () => {
           expect(() => JSON.parse(value), `Key "${key}" is not valid JSON: ${value}`).not.toThrow();
         }
       }
+
+      expect(stringified.atomicClaims).toContain('"freshnessRequirement":"current_snapshot"');
     });
   });
 
@@ -371,6 +373,7 @@ describe("Stage-5 ARTICLE_ADJUDICATION prompt contract", () => {
 const GENERATE_QUERIES_VARS: Record<string, string> = {
   currentDate: "2026-04-06",
   claim: "Test claim about policy compliance",
+  freshnessRequirement: "current_snapshot",
   expectedEvidenceProfile: '{"sourceTypes":["government_report","news_primary"]}',
   distinctEvents: '[{"name":"Event A","date":"2025-06-01","description":"First event"}]',
   iterationType: "main",
@@ -421,6 +424,7 @@ describe("Stage-2 prompt contract", () => {
   const RELEVANCE_CLASSIFICATION_VARS: Record<string, string> = {
     currentDate: "2026-04-06",
     claim: "Entity A complied with procedural law during proceeding B",
+    freshnessRequirement: "current_snapshot",
     inferredGeography: "BR",
     relevantGeographies: '["BR"]',
     searchResults: '[{"url":"https://example.com/article","title":"Test Article","snippet":"Relevant snippet"}]',

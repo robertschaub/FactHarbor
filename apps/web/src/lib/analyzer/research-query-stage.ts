@@ -15,6 +15,7 @@ import {
 } from "./jurisdiction-context";
 import {
   AtomicClaim,
+  ClaimFreshnessRequirement,
   CBClaimUnderstanding,
   EvidenceItem
 } from "./types";
@@ -43,6 +44,66 @@ export const GenerateQueriesOutputSchema = z.object({
     freshnessWindow: z.enum(["none", "w", "m", "y"]).optional(),
   })),
 });
+
+function getFallbackQueryMetadata(
+  freshnessRequirement: ClaimFreshnessRequirement | undefined,
+): Pick<GeneratedResearchQuery, "retrievalLane" | "freshnessWindow"> {
+  if (freshnessRequirement === "current_snapshot") {
+    return { retrievalLane: "navigational", freshnessWindow: "w" };
+  }
+  if (freshnessRequirement === "recent") {
+    return { retrievalLane: "secondary_context", freshnessWindow: "m" };
+  }
+  return { retrievalLane: "secondary_context", freshnessWindow: "none" };
+}
+
+function enforceFreshnessContract(
+  claim: AtomicClaim,
+  queries: GeneratedResearchQuery[],
+): GeneratedResearchQuery[] {
+  if (queries.length === 0) {
+    return queries;
+  }
+
+  const freshnessRequirement = claim.freshnessRequirement;
+  if (!freshnessRequirement || freshnessRequirement === "none") {
+    return queries;
+  }
+
+  const normalized = queries.map((query) => ({ ...query }));
+
+  if (freshnessRequirement === "recent") {
+    const hasRecentQuery = normalized.some(
+      (query) => query.freshnessWindow === "w" || query.freshnessWindow === "m",
+    );
+    if (!hasRecentQuery) {
+      normalized[0].freshnessWindow = "m";
+    }
+    return normalized;
+  }
+
+  const hasCurrentSnapshotQuery = normalized.some(
+    (query) =>
+      (query.retrievalLane === "primary_direct" || query.retrievalLane === "navigational")
+      && (query.freshnessWindow === "w" || query.freshnessWindow === "m"),
+  );
+  if (hasCurrentSnapshotQuery) {
+    return normalized;
+  }
+
+  const targetIndex = normalized.findIndex(
+    (query) => query.retrievalLane === "primary_direct" || query.retrievalLane === "navigational",
+  );
+  const queryToAdjust = normalized[targetIndex >= 0 ? targetIndex : 0];
+  if (queryToAdjust.retrievalLane !== "primary_direct" && queryToAdjust.retrievalLane !== "navigational") {
+    queryToAdjust.retrievalLane = "navigational";
+  }
+  if (queryToAdjust.freshnessWindow !== "w" && queryToAdjust.freshnessWindow !== "m") {
+    queryToAdjust.freshnessWindow = "w";
+  }
+
+  return normalized;
+}
 
 function warnOnMissingRefinementMetadata(
   iterationType: "main" | "contradiction" | "contrarian" | "refinement",
@@ -120,6 +181,7 @@ export async function generateResearchQueries(
   const rendered = await loadAndRenderSection("claimboundary", "GENERATE_QUERIES", {
     currentDate,
     claim: claim.statement,
+    freshnessRequirement: claim.freshnessRequirement ?? "none",
     expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}),
     distinctEvents: JSON.stringify(distinctEvents),
     iterationType,
@@ -131,11 +193,11 @@ export async function generateResearchQueries(
   });
   if (!rendered) {
     // Fallback: use claim statement directly
+    const fallbackMetadata = getFallbackQueryMetadata(claim.freshnessRequirement);
     const fallbackQueries: GeneratedResearchQuery[] = [{
       query: claim.statement.slice(0, 80),
       rationale: "fallback",
-      retrievalLane: "secondary_context",
-      freshnessWindow: "none",
+      ...fallbackMetadata,
     }];
     return fallbackQueries.slice(0, maxQueries);
   }
@@ -251,6 +313,8 @@ export async function generateResearchQueries(
       finalQueries = normalized.slice(0, maxQueries);
     }
 
+    finalQueries = enforceFreshnessContract(claim, finalQueries);
+
     recordLLMCall({
       taskType: "research",
       provider: model.provider,
@@ -283,11 +347,11 @@ export async function generateResearchQueries(
       timestamp: new Date(),
     });
     console.warn("[Stage2] Query generation failed, using fallback:", err);
+    const fallbackMetadata = getFallbackQueryMetadata(claim.freshnessRequirement);
     const fallbackQueries: GeneratedResearchQuery[] = [{
       query: claim.statement.slice(0, 80),
       rationale: "fallback",
-      retrievalLane: "secondary_context",
-      freshnessWindow: "none",
+      ...fallbackMetadata,
     }];
     return fallbackQueries.slice(0, maxQueries);
   }
