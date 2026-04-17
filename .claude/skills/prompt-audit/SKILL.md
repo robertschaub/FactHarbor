@@ -1,7 +1,7 @@
 ---
 name: prompt-audit
 description: Static quality audit of LLM prompts in apps/web/prompts/. Scores each prompt against a 9-criterion rubric (rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, failure-mode coverage) and proposes AGENTS.md-compliant fixes. Static linter-style analysis — no runtime data, no job runs, no file writes. Complements /audit (broader prompt+code) and /prompt-diagnosis (runtime provenance).
-allowed-tools: Read Glob Grep
+allowed-tools: Read Glob Grep Bash
 ---
 
 Audit prompts for: $ARGUMENTS
@@ -32,12 +32,18 @@ A proposed prompt edit that trips any of these is rejected with its rule number 
 
 ## Phase 0 — Orient
 
+Capture provenance:
+
+```bash
+git rev-parse --short HEAD
+```
+
 Load once, reused by every criterion check:
 - `AGENTS.md` §Fundamental Rules + §Analysis Prompt Rules + §Terminology + §Captain-Defined Analysis Inputs
 - `apps/web/src/lib/analyzer/types.ts` (needed for R8 schema alignment)
 
 Resolve scope from `$ARGUMENTS`. Record:
-- `HEAD-SHA` (short, for provenance in output header)
+- `HEAD-SHA` (7-char short hash from above, for provenance in output header)
 - `SCOPE` (list of in-scope prompt files)
 
 ---
