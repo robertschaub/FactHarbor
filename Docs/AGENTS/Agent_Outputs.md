@@ -7,6 +7,16 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-17 | Lead Developer | Codex (GPT-5) | Asylum 235000 Prompt Generalization Follow-up -- [Standard] [open-items: yes]
+**For next agent:** After user review, the new prompt rules were generalized away from asylum/current-administrative wording and reframed as a generic source-native compositional-evidence pattern: decisive propositions may be established either by one headline figure or by aligned component figures within one analytical window. Prompt storage was reseeded again from `d25a32e5...` to `e1403475...`; the focused prompt-contract suite still passes. No new live rerun was required for this wording-only generalization.
+→ Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Asylum_235000_Report_Review_Prompt_Stability_Fix.md
+
+---
+### 2026-04-17 | Lead Developer | Codex (GPT-5) | Asylum 235000 Report Review Prompt Stability Fix -- [Significant] [open-items: yes]
+**For next agent:** Investigated bad job `09ce888778764cda9ddd53e06a68983a` (`UNVERIFIED | 47 | 32`) for the approved asylum input and confirmed it was a prompt-behavior stability failure, not prompt-rollout drift and not a Stage 5 aggregation bug. `claimboundary.prompt.md` is now hardened for current official aggregate claims: stronger `expectedEvidenceProfile`, umbrella-preserving queries, first-class extraction of same-timepoint partition counts, and verdict/narrative rules that allow compositional support instead of treating "no printed headline total" as automatic `UNVERIFIED`. Prompt storage was reseeded from `977aaac7...` to `d25a32e5...`; focused prompt tests and web build passed; fresh live rerun `93e4056f082047a69eb158a6b7aea243` finished `LEANING-TRUE | 68 | 47`.
+→ Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Asylum_235000_Report_Review_Prompt_Stability_Fix.md
+
+---
 ### 2026-04-16 | Lead Developer + LLM Expert | Claude (Opus 4.7, 1M) | Report-Review Skill Systematic Review and Improvements -- [Significant] [open-items: yes]
 **For next agent:** `/report-review` hardened end-to-end across four amendments: (1) initial systematic review (~17 edits, Phase 3i regression analysis); (2) 5-panel internal debate (17 more fixes, structural rubrics, sub-agent brief template); (3) cross-model GPT-5.4 review (7 more fixes — selector-validation gate, rule-9 self-contradiction, FH_RUNNER_MAX_CONCURRENCY env-var fix, Phase 8 HEAD-level overlap gate removed, role filter broadened); (4) quality-expectations extraction — new `Docs/AGENTS/report-quality-expectations.json` (31 Q-code checks + dimensionMap) referenced by skill, 12 new canonical Q-codes accepted (HF1/HF4/HF6 pre/post-gates; S1.1/S1.3/S1.6, EV5/EV6, V1/V6/V7, new Phase 3j stability with ST1–ST6). Still open: isolated reruns of Bundesrat-rechtskräftig + Plastic-en; annotation-dependent Q-codes (anchorTokens, minDistinctEvents, trueButMisleading, crossLanguageVariantOf) are inert until benchmark-expectations families gain those fields; two unrelated unit-test-drift failures; prompt rollout reseed pending; Phase 8 propose-only mode deferred per GPT review.
 → Docs/AGENTS/Handoffs/2026-04-16_Lead_Developer_LLM_Expert_Report_Review_Skill_Improvements.md

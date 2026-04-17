@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T11:04:30.356Z",
-  "count": 198,
+  "generatedAt": "2026-04-17T11:29:34.577Z",
+  "count": 199,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4031,6 +4031,27 @@
         "scripts/monthly-prune-handoffs.mjs"
       ],
       "summary": "Agent Indexing System — Implementation Complete"
+    },
+    {
+      "file": "2026-04-17_Lead_Developer_Asylum_235000_Report_Review_Prompt_Stability_Fix.md",
+      "date": "2026-04-17",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "report-review",
+        "asylum-235000-de",
+        "prompt",
+        "current-official-totals",
+        "verdict",
+        "query-generation"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Asylum_235000_Report_Review_Prompt_Stability_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Lead Developer Handoff"
     },
     {
       "file": "2026-04-17_Senior_Developer_LLM_Expert_Bundesrat_Live_Rerun_And_Jobs_Page_SSE_Gating.md",
