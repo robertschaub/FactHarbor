@@ -907,7 +907,10 @@ export default function JobPage() {
   }, [jobId, pollIntervalMs, isVisible]);
 
   useEffect(() => {
-    if (!jobId || !isVisible) return;
+    if (!jobId || !isVisible || !job?.status) return;
+    const isTerminalStatus = ["SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"].includes(job.status);
+    if (isTerminalStatus) return;
+
     const es = new EventSource(`/api/fh/jobs/${jobId}/events`);
     es.onmessage = (evt) => {
       try {
@@ -922,7 +925,7 @@ export default function JobPage() {
       // Silently handle SSE errors
     };
     return () => es.close();
-  }, [jobId, isVisible]);
+  }, [jobId, isVisible, job?.status]);
 
   const report = job?.reportMarkdown ?? "";
   const reportSections = useMemo(() => {
@@ -2275,7 +2278,7 @@ function TIGERScorePanel({ tigerScore }: { tigerScore?: TIGERScore }) {
         <h3 className={styles.tigerTitle}>
           <span>🐅</span> TIGERScore Holistic Evaluation
         </h3>
-        <div 
+        <div
           className={styles.tigerOverallBadge}
           style={{ backgroundColor: overallColor.bg, color: overallColor.text }}
         >
@@ -3578,7 +3581,7 @@ function ClaimCard({
           </Badge>
         )}
       </div>
-      
+
       {claim.misleadingness && claim.misleadingness !== "not_misleading" && (
         <div className={styles.misleadingnessInline}>
           <div className={styles.misleadingnessLabel}>

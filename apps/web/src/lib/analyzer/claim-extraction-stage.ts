@@ -578,10 +578,15 @@ export async function extractClaims(
     base + Math.floor(state.originalInput.length / charsPerClaim),
   );
 
+  const protectedRepairAnchorCarrierIds = shouldProtectRepairAnchorCarriers(contractValidationSummary)
+    ? contractValidationSummary?.truthConditionAnchor?.validPreservedIds ?? []
+    : [];
+
   const filteredClaims = filterByCentrality(
     activePass2.atomicClaims as unknown as AtomicClaim[],
     centralityThreshold,
     effectiveMax,
+    protectedRepairAnchorCarrierIds,
   );
 
   // ------------------------------------------------------------------
@@ -2242,24 +2247,86 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
  * @param maxClaims - Maximum number of claims to keep
  * @returns Filtered atomic claims
  */
+function getCentralityPriority(centrality?: string): number {
+  switch (centrality) {
+    case "high":
+      return 0;
+    case "medium":
+      return 1;
+    default:
+      return 2;
+  }
+}
+
 export function filterByCentrality(
   claims: AtomicClaim[],
   threshold: "high" | "medium",
   maxClaims: number,
+  requiredClaimIds: string[] = [],
 ): AtomicClaim[] {
   // Filter by centrality threshold
-  const allowed = threshold === "high" ? ["high"] : ["high", "medium"];
-  const filtered = claims.filter((c) => allowed.includes(c.centrality));
+  const allowed = threshold === "high" ? new Set(["high"]) : new Set(["high", "medium"]);
+  const requiredClaimIdSet = new Set(requiredClaimIds);
+  const filtered = claims
+    .map((claim, index) => ({ claim, index }))
+    .filter(({ claim }) => allowed.has(claim.centrality) || requiredClaimIdSet.has(claim.id));
 
   // Sort: high centrality first, then medium
   filtered.sort((a, b) => {
-    if (a.centrality === "high" && b.centrality !== "high") return -1;
-    if (a.centrality !== "high" && b.centrality === "high") return 1;
-    return 0;
+    const priorityDiff = getCentralityPriority(a.claim.centrality) - getCentralityPriority(b.claim.centrality);
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.index - b.index;
   });
 
-  // Cap at max
-  return filtered.slice(0, maxClaims);
+  const selected = filtered.slice(0, maxClaims);
+
+  if (requiredClaimIdSet.size > 0) {
+    for (const requiredClaimId of requiredClaimIds) {
+      if (selected.some((entry) => entry.claim.id === requiredClaimId)) {
+        continue;
+      }
+
+      const requiredEntry = filtered.find((entry) => entry.claim.id === requiredClaimId);
+      if (!requiredEntry) {
+        continue;
+      }
+
+      if (selected.length < maxClaims) {
+        selected.push(requiredEntry);
+        continue;
+      }
+
+      let replacementIndex = -1;
+      for (let index = selected.length - 1; index >= 0; index--) {
+        if (!requiredClaimIdSet.has(selected[index].claim.id)) {
+          replacementIndex = index;
+          break;
+        }
+      }
+
+      if (replacementIndex === -1) {
+        continue;
+      }
+
+      selected[replacementIndex] = requiredEntry;
+    }
+  }
+
+  const seenClaimIds = new Set<string>();
+  return selected
+    .sort((a, b) => {
+      const priorityDiff = getCentralityPriority(a.claim.centrality) - getCentralityPriority(b.claim.centrality);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.index - b.index;
+    })
+    .filter((entry) => {
+      if (seenClaimIds.has(entry.claim.id)) {
+        return false;
+      }
+      seenClaimIds.add(entry.claim.id);
+      return true;
+    })
+    .map((entry) => entry.claim);
 }
 
 // ============================================================================
@@ -2352,8 +2419,52 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
   }
 
   const anchorCarrierIds = contractValidationSummary.truthConditionAnchor?.validPreservedIds ?? [];
-  if (anchorCarrierIds.length === 0 || !gate1Result.gate1Reasoning?.length) {
+  if (anchorCarrierIds.length === 0) {
     return gate1Result;
+  }
+
+  const updateGate1Result = (nextFilteredClaims: AtomicClaim[]): Gate1ValidationResult => ({
+    ...gate1Result,
+    filteredClaims: nextFilteredClaims,
+    stats: {
+      ...gate1Result.stats,
+      filteredCount: gate1Result.stats.totalClaims - nextFilteredClaims.length,
+      overallPass: nextFilteredClaims.length > 0,
+    },
+  });
+
+  let filteredClaims = gate1Result.filteredClaims;
+
+  if (shouldProtectRepairAnchorCarriers(contractValidationSummary)) {
+    const preFilterClaims = gate1Result.preFilterClaims ?? gate1Result.filteredClaims;
+    const filteredClaimIdSet = new Set(filteredClaims.map((claim) => claim.id));
+    const missingAnchorCarrierIds = anchorCarrierIds.filter((claimId) => !filteredClaimIdSet.has(claimId));
+
+    if (missingAnchorCarrierIds.length > 0 && preFilterClaims.length > 0) {
+      const claimById = new Map(preFilterClaims.map((claim) => [claim.id, claim] as const));
+      const preFilterOrder = new Map(preFilterClaims.map((claim, index) => [claim.id, index] as const));
+      const restoredClaims = missingAnchorCarrierIds
+        .map((claimId) => claimById.get(claimId))
+        .filter((claim): claim is AtomicClaim => Boolean(claim));
+
+      if (restoredClaims.length > 0) {
+        filteredClaims = [...filteredClaims, ...restoredClaims]
+          .filter((claim, index, items) => items.findIndex((candidate) => candidate.id === claim.id) === index)
+          .sort((left, right) =>
+            (preFilterOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER)
+            - (preFilterOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+          );
+
+        console.info(
+          `[Stage1] Gate 1: restored ${restoredClaims.length} repair-approved anchor carrier claim(s) ` +
+          `after structural filtering. restored=[${restoredClaims.map((claim) => claim.id).join(",")}].`,
+        );
+      }
+    }
+  }
+
+  if (!gate1Result.gate1Reasoning?.length) {
+    return filteredClaims === gate1Result.filteredClaims ? gate1Result : updateGate1Result(filteredClaims);
   }
 
   const failedFidelityIds = new Set(
@@ -2362,19 +2473,19 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
       .map((claim) => claim.claimId),
   );
   if (failedFidelityIds.size === 0) {
-    return gate1Result;
+    return filteredClaims === gate1Result.filteredClaims ? gate1Result : updateGate1Result(filteredClaims);
   }
 
   const anchorCarrierIdSet = new Set(anchorCarrierIds);
-  const prunedClaimIds = gate1Result.filteredClaims
+  const prunedClaimIds = filteredClaims
     .filter((claim) => failedFidelityIds.has(claim.id) && !anchorCarrierIdSet.has(claim.id))
     .map((claim) => claim.id);
   if (prunedClaimIds.length === 0) {
-    return gate1Result;
+    return filteredClaims === gate1Result.filteredClaims ? gate1Result : updateGate1Result(filteredClaims);
   }
 
   const prunedClaimIdSet = new Set(prunedClaimIds);
-  const filteredClaims = gate1Result.filteredClaims.filter((claim) => !prunedClaimIdSet.has(claim.id));
+  filteredClaims = filteredClaims.filter((claim) => !prunedClaimIdSet.has(claim.id));
   if (filteredClaims.length === 0) {
     return gate1Result;
   }
@@ -2385,15 +2496,17 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
     `pruned=[${prunedClaimIds.join(",")}].`,
   );
 
-  return {
-    ...gate1Result,
-    filteredClaims,
-    stats: {
-      ...gate1Result.stats,
-      filteredCount: gate1Result.stats.totalClaims - filteredClaims.length,
-      overallPass: filteredClaims.length > 0,
-    },
-  };
+  return updateGate1Result(filteredClaims);
+}
+
+function shouldProtectRepairAnchorCarriers(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+): boolean {
+  return (
+    contractValidationSummary?.stageAttribution === "repair"
+    && contractValidationSummary?.preservesContract === true
+    && contractValidationSummary?.rePromptRequired === false
+  );
 }
 
 function normalizeClaimContractValidationResult(
