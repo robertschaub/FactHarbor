@@ -564,7 +564,7 @@ Examples of what belongs here (pick only those that actually apply — no specul
 ## Phase 7 — Output format
 
 **Output mode** (determined from `$ARGUMENTS` and scope size):
-- Default: **concise** — emit 7a, 7c top-10 findings, 7d top-5 fixes, 7f escalation hints, 7g Captain escalations whenever any fire, AND 7h Proposed learnings whenever any fire. 7g and 7h are never suppressed by concise mode — Captain-decision-required unresolved states and Captain-approval-required write proposals are blocking or actionable signals and must be visible regardless of verbosity setting.
+- Default: **concise** — emit 7a, 7c top-10 findings, 7d.1 audit (MANDATORY, full table and AUDIT-CERT line), 7d.2 top-5 accepted fixes, 7d.3 rejected fixes (if any), 7f escalation hints, 7g Captain escalations whenever any fire, AND 7h Proposed learnings whenever any fire. 7d.1, 7g, and 7h are never suppressed by concise mode — 7d.1 is a compliance certification that must be visible so Captain can verify the audit happened; Captain-decision-required unresolved states and Captain-approval-required write proposals are blocking or actionable signals and must be visible regardless of verbosity setting.
 - `$ARGUMENTS` contains `--full` OR scope has more than 5 reports → **full** — emit every subsection.
 - `$ARGUMENTS` contains `--dry-run` → emit 7a (scope summary) plus a "would analyze" list describing which dimensions and panels would activate, then STOP. No Phase 4 spawn, no fix proposals, no Phase 8 writes. (7g is moot under `--dry-run` since escalations fire during real execution, not planning.)
 
@@ -605,8 +605,38 @@ F## | Type | Dim | Severity | Confidence | Survived debate? | Cross-ref
 Include a `Rejected findings` row for any finding that was dropped during debate — label it with the reason. This is telemetry, not apology.
 
 ### 7d. Proposed fixes
+
+**7d.1. Rejected-mechanisms self-audit (MANDATORY — emit BEFORE fix blocks)**
+
+Before ANY fix block is emitted, emit this audit table verbatim, with one row per candidate fix (including `rootCauseId`-grouped secondaries). A violation in any row moves that fix to `7d.3 Rejected fixes` with its rule number.
+
+**Anti-rationalization note:** framings like *"this isn't really a keyword, it's a semantic cue"*, *"in this specific case the qualifier is necessary"*, *"hardcoding this one term is unavoidable for this claim"*, or *"it's just surfacing what the LLM already sees"* DO NOT exempt a fix from §Phase 5 Rejected mechanisms. If your justification starts with *"in this specific case"*, *"but this one is different"*, or *"technically it's not X, it's Y"*, treat that as a compliance signal — not permission. The rules bind every proposal regardless of perceived necessity; a proposal that trips any rule is rejected even if you can argue the underlying concern is real.
+
+Rules (abbrev — full text in §Non-negotiable constraints):
+- **R1** Generic by Design · **R2** No deterministic text analysis · **R3** No string-match tests
+- **R4** No verdict manipulation · **R5** Strings only in prompts/search · **R6** UCM for tunables
+- **R7** Multilingual robustness
+
+```
+| F## | Mechanism | Change (<=15w) | R1 | R2 | R3 | R4 | R5 | R6 | R7 |
+|-----|-----------|----------------|----|----|----|----|----|----|----|
+| F01 | ...       | ...            | N  | N  | N  | N  | N  | N  | Y  |
+```
+
+Marking convention — for R1–R6: `Y` = VIOLATES rule (reject), `N` = compliant. For R7: `Y` = works multilingually, `N` = English/single-language only (reject). Any `Y` in R1–R6 OR any `N` in R7 forces move to Rejected fixes.
+
+**Mandatory certification line after the table (exact string — the main thread parses it):**
+```
+AUDIT-CERT: every accepted fix is N for R1-R6 and Y for R7. Violators moved to 7d.3 Rejected fixes.
+```
+
+Cannot certify truthfully? → compliance deadlock. Escalate via 7g Category C. Do NOT emit a fix that fails the audit, and do NOT soften the audit by reclassifying the violation (e.g., "this keyword isn't really domain-specific"). If every candidate for a real finding violates at least one rule, that is itself the Category C signal — Captain decides.
+
+**7d.2. Accepted fixes**
+
 Phase 5 blocks in order.
 
+**7d.3. Rejected fixes (policy violations)**
 ```
 Rejected fixes (policy violations):
   <any fix that was dropped + rule number violated>
@@ -634,7 +664,7 @@ Phase 7f points Captain at follow-up skills (`/audit`, `/prompt-diagnosis`, `/va
 
 - **A. Debate deadlock with no compliant resolution.** Phase 4 reconciliation leaves a material finding with no surviving compliant proposal: ≥2 panels CONFIRM the finding, Devil's Advocate rebuts every proposed fix with a concrete regression risk, and no alternative mechanism satisfies the rule 1–10 constraint gate. Ordinary Devil's Advocate rebuttal that results in downgrade or drop is NOT this category — that is the normal reconciliation path under SKILL.md §Phase 4 "Debate reconciliation".
 - **B. Pre-condition UNKNOWN.** The pre-condition gate (rule 10) returned UNKNOWN for drift state because scope contained no recoverable `meta.promptContentHash` values for Phase 3h to compare against the active hash. The skill cannot execute a reseed or `/validate` safely until Captain confirms rollout state.
-- **C. Compliance deadlock.** A real finding has no mechanism that passes the rule 1–10 constraint gate, whether detected during Phase 5 fix composition or during the Self-check destructive-action sweep (late catch). Every proposed fix violates at least one of rules 1–10, and no alternative exists within the skill's allowed mechanism set.
+- **C. Compliance deadlock.** A real finding has no mechanism that passes the rule 1–10 constraint gate, whether detected during Phase 5 fix composition, at the 7d.1 Rejected-mechanisms self-audit (pre-emission catch), or during the Self-check destructive-action sweep (late catch). Every proposed fix violates at least one of rules 1–10, and no alternative exists within the skill's allowed mechanism set. A 7d.1 audit that cannot emit `AUDIT-CERT` truthfully for any candidate MUST escalate here rather than weakening the audit or softening a violation.
 - **E. Multi-validate resolution needed.** A single `/validate` executed this invocation produced ambiguous results (typically a Phase 3i midpoint-bisection that splits the window), and resolving the finding requires a second `/validate` in a later invocation. Rule 10 caps `/validate` at one per invocation, so this is a hard stop inside the current run. "Could use more data in general" is NOT this category — that belongs in 7f.
 - **G. Cross-skill ordering affects validity.** A finding requires follow-up by ≥2 skills AND the order materially affects whether the subsequent skills' conclusions are valid AND the skill cannot determine the correct order from in-scope evidence. If the skill can name the order (e.g., "run `/audit` first, then `/prompt-diagnosis`"), it belongs in 7f — escalate to 7g only when the order is genuinely undetermined.
 - **H. Unclassifiable systemic pattern.** Multiple reports show a consistent pattern that does not fit any known Q-code, infrastructure pattern, or regression signature. The skill cannot name the failure class; Captain either needs to add a new Q-code (route to `/audit` + `report-quality-expectations.json` update) or identify the pattern.
