@@ -226,6 +226,11 @@ Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handof
 → Docs/AGENTS/Handoffs/2026-04-13_LLM_Expert_Root_Instruction_File_Trim.md
 
 ---
+### 2026-04-17 | Senior Developer + LLM Expert | GitHub Copilot (GPT-5.4) | Bundesrat Live Rerun And Jobs Page SSE Gating -- [Significant] [open-items: yes]
+**For next agent:** The dominant Bundesrat hard-failure mode is fixed end-to-end: Stage 1 repair-approved anchor carriers are preserved, the `/jobs/[id]` page now waits for `job.status` and only subscribes to SSE for active jobs, and fresh local rerun `a2642a8d42ac4149a5fef7d10529a777` completed `SUCCEEDED` with a full report (`LEANING-TRUE | 71 | 79`, 43 evidence items, 5 boundaries). Remaining open question is calibration, not collapse.
+→ Docs/AGENTS/Handoffs/2026-04-17_Senior_Developer_LLM_Expert_Bundesrat_Live_Rerun_And_Jobs_Page_SSE_Gating.md
+
+---
 
 ### 2026-04-11 | Lead Architect + LLM Expert | Claude Opus 4.6 (1M) | Phase 2 Gate G2 Rev 4 Approved — Execution Beginning -- [Standard] [open-items: yes]
 **For next agent:** Phase 2 execution begins immediately after the commit sequence lands. If the replay results land cleanly (no stop-rule triggers, no quota issues, statistically separable deltas per per-input criteria), Phase 3 Change Impact Ledger is the next step...
@@ -1140,6 +1145,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-15 | Unassigned | Codex (GPT-5) | WIP Archive Cleanup -- [Standard] [open-items: yes]
 **For next agent:** Archived four high-confidence historical/supporting docs out of `Docs/WIP` and rewired the live references. The current README now reflects the active Phase 7 forward path better, but this was intentionally not a full archive sweep. If you continue, review mixed-status WIP files one at a time rather than batch-moving older plans.
 → Docs/AGENTS/Handoffs/2026-04-15_Unassigned_WIP_Archive_Cleanup.md
+
+---
+### 2026-04-17 | Unassigned | Codex (GPT-5) | Daily Bug Scan Prompt Drift Persists -- [Standard] [open-items: yes]
+**For next agent:** Safe verification is green again on this tree (`npm test` passed twice cleanly), and the new Stage 1 repair-anchor coverage also passed. The only reproducible current bug-scan finding is still local `claimboundary` prompt activation drift: active UCM hash `977aaac7...` vs current file hash `db42b6c7...` in `apps/web/prompts/claimboundary.prompt.md`.
+→ Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md
 
 ---
 ### 2026-04-15 | Unassigned | Codex (GPT-5) | Agent Outputs Crosslink Normalization -- [Standard] [open-items: yes]
