@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T05:23:29.306Z",
-  "count": 195,
+  "generatedAt": "2026-04-17T11:04:30.356Z",
+  "count": 198,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4031,6 +4031,66 @@
         "scripts/monthly-prune-handoffs.mjs"
       ],
       "summary": "Agent Indexing System — Implementation Complete"
+    },
+    {
+      "file": "2026-04-17_Senior_Developer_LLM_Expert_Bundesrat_Live_Rerun_And_Jobs_Page_SSE_Gating.md",
+      "date": "2026-04-17",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "bundesrat",
+        "live-rerun",
+        "jobs-page",
+        "sse",
+        "stage1",
+        "repair-anchor"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/web/src/app/jobs/[id]/page.tsx"
+      ],
+      "summary": "Senior Developer + LLM Expert Handoff"
+    },
+    {
+      "file": "2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md",
+      "date": "2026-04-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "prompt",
+        "drift",
+        "persists"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `apps/web/prompts/claimboundary.prompt.md`, `apps/web/config.db`, and the Apr 16 bug scan handoffs. To verify prompt state, compare `config_active.active_hash` against the prompt file SHA-256 for `config_type='prompt' AND profile_key='claimboundary'`. The current modified analyzer path (`"
+    },
+    {
+      "file": "2026-04-17_senior_developer_llm_expert_bundesrat_repair_anchor_carrier_fix.md",
+      "date": "2026-04-17",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "llm",
+        "expert",
+        "bundesrat",
+        "repair",
+        "anchor",
+        "carrier",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Senior Developer + LLM Expert Handoff"
     }
   ]
 }
