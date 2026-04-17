@@ -4,7 +4,7 @@
   },
   "showThinkingSummaries": true,
   "permissions": {
-    "defaultMode": "acceptEdits",
+    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(git log:*)",
       "Bash(npm test)",
