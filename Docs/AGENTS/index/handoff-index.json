@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-17T20:08:41.273Z",
-  "count": 205,
+  "generatedAt": "2026-04-18T06:11:43.875Z",
+  "count": 207,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4178,6 +4178,33 @@
       "summary": "If you continue the review backlog, the next concrete code area is `apps/web/src/lib/analyzer/claim-extraction-stage.ts` around the retry-path `filterByCentrality(...)` calls and the freshness-contract relabel path. If the orphaned cache rows matter operationally, handle that as a deploy/cache-clear"
     },
     {
+      "file": "2026-04-17_Unassigned_Asylum_WWII_Report_Review_Retrieval_And_Verdict_Gap.md",
+      "date": "2026-04-17",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "asylum",
+        "wwii",
+        "report",
+        "review",
+        "retrieval",
+        "and",
+        "verdict",
+        "gap"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/retrieval.ts",
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts",
+        "apps/web/test/unit/lib/retrieval.test.ts"
+      ],
+      "summary": "Start from live jobs in this order: original bad job `82e4db1397f44a6d98c19ff9dbfd7161`; intermediate retrieval-fix job `2c1ea4ae05a240828d83a835d7a4feee`; current best pre-prompt-constraint job `f74597c548e84c0db9dad158e17da05e`; latest prompt-constrained job `23d05e2f16d9493d9a2a37a215d9813c`. The"
+    },
+    {
       "file": "2026-04-17_Unassigned_Daily_Bug_Scan_Prompt_Drift_Persists.md",
       "date": "2026-04-17",
       "roles": [
@@ -4256,6 +4283,30 @@
       ],
       "files_touched": [],
       "summary": "Senior Developer + LLM Expert Handoff"
+    },
+    {
+      "file": "2026-04-18_Senior_Developer_Asylum_WWII_Stage4_Comparator_Reconstruction_Prompt_Fix.md",
+      "date": "2026-04-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "asylum",
+        "wwii",
+        "stage4",
+        "comparator",
+        "reconstruction",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Stage4_Comparator_Reconstruction_Prompt_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "Start with stored job `23d05e2f16d9493d9a2a37a215d9813c`. Its `claimVerdicts` show the exact failure mode: `CV_AC_01` is already `MOSTLY-TRUE`, while `CV_AC_02` is dragged down by a hand-built lower historical comparator from selected subgroups and assumed simultaneity. The new prompt text is in [cl"
     }
   ]
 }

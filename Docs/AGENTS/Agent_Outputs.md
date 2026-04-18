@@ -1231,3 +1231,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-15 | LLM Expert | GitHub Copilot (GPT-5.4) | Primary-Source Discovery Refinement Design -- [Standard] [open-items: yes]
 **For next agent:** Implement a bounded Stage-2 refinement lane, not a parallel retrieval subsystem. Start with `apps/web/src/lib/analyzer/types.ts`, `claim-extraction-stage.ts`, `research-query-stage.ts`, `research-orchestrator.ts`, `research-extraction-stage.ts`, `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/search-cache.ts`, `apps/web/src/lib/config-schemas.ts`, and `apps/web/prompts/claimboundary.prompt.md`. The key idea is LLM-derived retrieval intent + query lanes + coverage assessment + fresh-query cache policy, all generic and UCM-backed.
 → Docs/AGENTS/Handoffs/2026-04-15_LLM_Expert_Primary_Source_Discovery_Refinement_Design.md
+
+---
+### 2026-04-17 | Unassigned | Codex (GPT-5) | Asylum WWII Report Review Retrieval And Verdict Gap -- [Standard] [open-items: yes]
+**For next agent:** Retrieval is materially fixed for the asylum/WWII report-review input: Stage 2 now reaches the official SEM 2025 commentary PDF and extracts `235.057 Personen aus dem Asylbereich` on later live runs, but the aggregate article still stops at `LEANING-FALSE` because the historical-comparison subclaim (`CV_AC_02`) keeps treating the WWII comparator as methodologically incompatible. Start from jobs `f74597c548e84c0db9dad158e17da05e` and `23d05e2f16d9493d9a2a37a215d9813c`, plus [apps/web/src/lib/retrieval.ts](/c:/DEV/FactHarbor/apps/web/src/lib/retrieval.ts), [research-acquisition-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/research-acquisition-stage.ts), and [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md).
+→ Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Asylum_WWII_Report_Review_Retrieval_And_Verdict_Gap.md
+
+---
+### 2026-04-18 | Senior Developer | Codex (GPT-5) | Asylum WWII Stage4 Comparator Reconstruction Prompt Fix -- [Standard] [open-items: yes]
+**For next agent:** `23d05e2f16d9493d9a2a37a215d9813c` already proves the remaining blocker is Stage 4 reasoning, not missing comparison structure in Stage 1: `AC_02` exists, but `CV_AC_02` is dragged down by a hand-built lower historical comparator from selected subgroups and assumed simultaneity. The prompt now blocks that pattern in Stage 4 and keeps it in confidence/misleadingness territory instead. Validate next on the approved asylum/WWII input with the reseeded prompt hash from the latest build and only revisit Stage 1 claim-merging if `CV_AC_02` still underperforms.
+→ Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Stage4_Comparator_Reconstruction_Prompt_Fix.md

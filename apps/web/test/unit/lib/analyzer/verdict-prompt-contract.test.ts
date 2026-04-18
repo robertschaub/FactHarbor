@@ -273,6 +273,36 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("independent high-probative contradiction unless they are corroborated");
       expect(section).toContain("direct in-jurisdiction evidence or neutral external evidence");
     });
+
+    it("advocate keeps broad public-language totals anchored to umbrella metrics instead of narrow subsets", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("broad public-language wording");
+      expect(section).toContain("closest authoritative umbrella measurement");
+      expect(section).toContain("A smaller subset count does not by itself falsify a broader public-language total");
+      expect(section).toContain("numeric proximity");
+      expect(section).toContain("Do not demand perfect label symmetry");
+      expect(section).toContain("do NOT speculate a much lower point-in-time comparator");
+      expect(section).toContain("Unsupported reconstructed endpoint counts");
+      expect(section).toContain("stricter synchronized-stock, endpoint-only, or same-method comparator test");
+      expect(section).toContain("hand-built lower comparator");
+      expect(section).toContain("selected subcategories");
+      expect(section).toContain("such arithmetic may justify uncertainty but not a strong truth downgrade");
+    });
+
+    it("reconciliation preserves approximate-comparison handling for broad public-language claims", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("broad public-language population claim");
+      expect(section).toContain("closest authoritative umbrella totals first");
+      expect(section).toContain("materially close in magnitude");
+      expect(section).toContain("labels are not perfectly identical");
+      expect(section).toContain("stock-versus-period asymmetry");
+      expect(section).toContain("inventing an uncited lower endpoint comparator");
+      expect(section).toContain("Reject or heavily discount challenges");
+      expect(section).toContain("same-method comparator");
+      expect(section).toContain("hand-built lower comparator");
+      expect(section).toContain("selected subgroups");
+      expect(section).toContain("Do not let such unsupported arithmetic drive a strong truth downgrade");
+    });
   });
 });
 
@@ -418,6 +448,17 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("identify gaps");
       expect(section).toContain("under-represented");
     });
+
+    it("query generation preserves public-language and source-native umbrella coverage", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("broad public-language population label");
+      expect(section).toContain("public-language wording");
+      expect(section).toContain("source-native umbrella wording");
+      expect(section).toContain("Do NOT let all official queries collapse onto a narrower formal subcategory");
+      expect(section).toContain("Retrieve the decisive current total and the comparator total directly");
+      expect(section).toContain("recurring official statistics series or update stream");
+      expect(section).toContain("Avoid institution-plus-topic-only official queries");
+    });
   });
 
   /** Stage 2 relevance classification (research-extraction-stage.ts:113-123) */
@@ -441,6 +482,13 @@ describe("Stage-2 prompt contract", () => {
       if (!section) return;
       const { unresolved } = renderWithVars(section, RELEVANCE_CLASSIFICATION_VARS);
       expect(unresolved, `Unresolved: ${unresolved.join(", ")}`).toEqual([]);
+    });
+
+    it("downranks root homepages for precise current official totals", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section).toContain("generic institution homepages are at most borderline relevant");
+      expect(section).toContain("statistics archive, series overview, or direct artifact route");
+      expect(section).toContain("partial flow metrics");
     });
   });
 
@@ -504,6 +552,16 @@ describe("Stage-2 prompt contract", () => {
       for (const term of forbiddenTerms) {
         expect(section, `EXTRACT_EVIDENCE must not contain domain-specific term "${term}"`).not.toContain(term);
       }
+    });
+
+    it("broad public-language totals do not let narrow official subsets auto-contradict", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("broader or more formal source-native umbrella label");
+      expect(section).toContain("narrower official subcategory or legal-status subset is NOT automatic contradiction");
+      expect(section).toContain("scope-clarifying treatment");
+      expect(section).toContain("closest authoritative measures");
+      expect(section).toContain("flow or process metrics");
+      expect(section).toContain("current stock, standing population, or inventory");
     });
   });
 

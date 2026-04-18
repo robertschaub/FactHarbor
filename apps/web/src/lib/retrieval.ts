@@ -14,6 +14,7 @@ import { lookup } from "dns/promises";
 import * as os from "os";
 import * as path from "path";
 import { Worker } from "worker_threads";
+import { getFamilyDomain } from "@/lib/domain-utils";
 
 // Default timeout for PDF parsing (ms)
 const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
@@ -21,6 +22,14 @@ const DEFAULT_PDF_PARSE_TIMEOUT_MS = 60000;
 // Maximum response body size to buffer (10 MB). Enforced both via Content-Length pre-check
 // and streaming cumulative-byte checks for chunked responses without Content-Length.
 const MAX_RESPONSE_SIZE_BYTES = 10 * 1024 * 1024;
+
+export interface ExtractedUrlContent {
+  text: string;
+  title: string;
+  contentType: string;
+  discoveredDocumentUrls?: string[];
+  discoveredFollowUpUrls?: string[];
+}
 
 /**
  * Returns true if the hostname resolves to a private, loopback, link-local, or
@@ -392,6 +401,193 @@ function isPdfUrl(url: string, contentType?: string): boolean {
   return urlLower.endsWith(".pdf") || urlLower.includes(".pdf?");
 }
 
+function extractYearScore(value: string): number {
+  const matches = value.match(/\b(?:19|20)\d{2}\b/g);
+  if (!matches) return 0;
+  return Math.max(...matches.map((match) => Number.parseInt(match, 10)));
+}
+
+/**
+ * Discover linked PDF artifacts from an already-fetched HTML page.
+ * Restricting follow-ups to the same family domain keeps navigation bounded
+ * while still allowing common publisher asset hosts (for example sibling CDN/CMS hosts).
+ */
+export function extractSameFamilyPdfUrlsFromHtml(html: string, pageUrl: string): string[] {
+  let page: URL;
+  try {
+    page = new URL(pageUrl);
+  } catch {
+    return [];
+  }
+
+  const pageFamilyDomain = getFamilyDomain(page.hostname);
+  const $ = cheerio.load(html);
+  const discovered = new Set<string>();
+
+  $("a[href]").each((_, element) => {
+    const href = $(element).attr("href");
+    if (!href) return;
+
+    let resolved: URL;
+    try {
+      resolved = new URL(href, page);
+    } catch {
+      return;
+    }
+
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return;
+    if (!isPdfUrl(resolved.href)) return;
+    if (resolved.href === page.href) return;
+    if (getFamilyDomain(resolved.hostname) !== pageFamilyDomain) return;
+
+    discovered.add(resolved.toString());
+  });
+
+  return Array.from(discovered).sort((left, right) => {
+    const yearDelta = extractYearScore(right) - extractYearScore(left);
+    if (yearDelta !== 0) return yearDelta;
+    const pathDelta = right.split("/").length - left.split("/").length;
+    if (pathDelta !== 0) return pathDelta;
+    return left.localeCompare(right);
+  });
+}
+
+function normalizeDiscoveryUrl(resolved: URL): string {
+  resolved.hash = "";
+  return resolved.toString();
+}
+
+function resolveSameFamilyUrl(rawUrl: string, pageUrl: string): string | null {
+  let page: URL;
+  try {
+    page = new URL(pageUrl);
+  } catch {
+    return null;
+  }
+
+  let resolved: URL;
+  try {
+    resolved = new URL(rawUrl, page);
+  } catch {
+    return null;
+  }
+
+  if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return null;
+  if (getFamilyDomain(resolved.hostname) !== getFamilyDomain(page.hostname)) return null;
+
+  const normalized = normalizeDiscoveryUrl(resolved);
+  if (normalized === normalizeDiscoveryUrl(page)) return null;
+  return normalized;
+}
+
+function extractSameFamilyFeedUrlsFromHtml(html: string, pageUrl: string): string[] {
+  const $ = cheerio.load(html);
+  const discovered = new Set<string>();
+  const ordered: string[] = [];
+
+  $("[data-url]").each((_, element) => {
+    const dataUrl = $(element).attr("data-url");
+    if (!dataUrl) return;
+    const resolved = resolveSameFamilyUrl(dataUrl, pageUrl);
+    if (!resolved || isPdfUrl(resolved)) return;
+
+    let parsed: URL;
+    try {
+      parsed = new URL(resolved);
+    } catch {
+      return;
+    }
+
+    if (parsed.pathname.endsWith("/par.html")) return;
+    if (discovered.has(resolved)) return;
+    discovered.add(resolved);
+    ordered.push(resolved);
+  });
+
+  return ordered.sort((left, right) => {
+    const leftDepth = left.split("/").length;
+    const rightDepth = right.split("/").length;
+    if (rightDepth !== leftDepth) return rightDepth - leftDepth;
+    return left.localeCompare(right);
+  });
+}
+
+function extractSameFamilyListingUrlsFromHtml(html: string, pageUrl: string): string[] {
+  let page: URL;
+  try {
+    page = new URL(pageUrl);
+  } catch {
+    return [];
+  }
+
+  if (!page.pathname.endsWith(".entries.html")) return [];
+
+  const $ = cheerio.load(html);
+  const discovered = new Set<string>();
+  const ordered: string[] = [];
+
+  $("a[href]").each((_, element) => {
+    const href = $(element).attr("href");
+    if (!href) return;
+    const resolved = resolveSameFamilyUrl(href, pageUrl);
+    if (!resolved || isPdfUrl(resolved) || discovered.has(resolved)) return;
+    discovered.add(resolved);
+    ordered.push(resolved);
+  });
+
+  return ordered;
+}
+
+export function extractSameFamilyFollowUpUrlsFromHtml(html: string, pageUrl: string): string[] {
+  const merged = [
+    ...extractSameFamilyFeedUrlsFromHtml(html, pageUrl),
+    ...extractSameFamilyListingUrlsFromHtml(html, pageUrl),
+    ...extractSameFamilyPdfUrlsFromHtml(html, pageUrl),
+  ];
+
+  const seen = new Set<string>();
+  return merged.filter((url) => {
+    if (seen.has(url)) return false;
+    seen.add(url);
+    return true;
+  });
+}
+
+export function buildDistributedExcerpt(
+  text: string,
+  maxLength: number,
+  segmentCount = 4,
+): string {
+  if (text.length <= maxLength) return text;
+  if (maxLength <= 0) return "";
+
+  const separator = "\n\n[...] \n\n";
+  const boundedSegmentCount = Math.max(2, segmentCount);
+  const availableLength = maxLength - separator.length * (boundedSegmentCount - 1);
+  if (availableLength <= boundedSegmentCount * 400) {
+    return text.slice(0, maxLength);
+  }
+
+  const segmentLength = Math.floor(availableLength / boundedSegmentCount);
+  const starts: number[] = [];
+  for (let index = 0; index < boundedSegmentCount; index++) {
+    if (index === 0) {
+      starts.push(0);
+      continue;
+    }
+    if (index === boundedSegmentCount - 1) {
+      starts.push(Math.max(0, text.length - segmentLength));
+      continue;
+    }
+    const ratio = index / (boundedSegmentCount - 1);
+    starts.push(Math.floor((text.length - segmentLength) * ratio));
+  }
+
+  const normalizedStarts = starts.filter((start, index) => index === 0 || start > starts[index - 1]);
+  const segments = normalizedStarts.map((start) => text.slice(start, start + segmentLength).trim());
+  return segments.join(separator).slice(0, maxLength);
+}
+
 /**
  * Extract text from HTML
  */
@@ -492,7 +688,7 @@ export async function extractTextFromUrl(
     maxLength?: number;
     pdfParseTimeoutMs?: number;
   } = {}
-): Promise<{ text: string; title: string; contentType: string }> {
+): Promise<ExtractedUrlContent> {
   const { timeoutMs = 30000, maxLength = 50000, pdfParseTimeoutMs = DEFAULT_PDF_PARSE_TIMEOUT_MS } = options;
 
   // SSRF: validate URL before any network access
@@ -561,7 +757,7 @@ export async function extractTextFromUrl(
       console.log("[Retrieval] PDF extraction complete. Title:", title, "Text length:", text.length);
 
       return {
-        text: text.slice(0, maxLength),
+        text: buildDistributedExcerpt(text, maxLength),
         title,
         contentType: "application/pdf",
       };
@@ -580,11 +776,14 @@ export async function extractTextFromUrl(
     
     // Extract text
     const text = extractTextFromHtml(html);
+    const discoveredDocumentUrls = extractSameFamilyPdfUrlsFromHtml(html, response.url || url);
     
     return {
       text: text.slice(0, maxLength),
       title,
       contentType: contentType.split(";")[0] || "text/html",
+      discoveredDocumentUrls,
+      discoveredFollowUpUrls: extractSameFamilyFollowUpUrlsFromHtml(html, response.url || url),
     };
     
   } finally {

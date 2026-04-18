@@ -187,4 +187,19 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Fall back to the base validator behavior");
     });
   });
+
+  describe("broad public-language total handling", () => {
+    it("claim extraction keeps comparison profiles bilateral and anchored to umbrella quantities", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      expect(section).not.toBeNull();
+      expect(section).toContain("freshest decisive side");
+      expect(section).toContain("compares two quantities, populations, or rates");
+      expect(section).toContain("Do NOT collapse a comparative claim to only one side of the comparison");
+      expect(section).toContain("broad public-language label");
+      expect(section).toContain("closest authoritative source-native umbrella quantity");
+      expect(section).toContain("Do NOT silently redefine the claim to the narrowest official subset");
+      expect(section).toContain("recurring official statistics series");
+      expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
+    });
+  });
 });

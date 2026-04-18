@@ -178,6 +178,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Do not assume `apps/web/config.db` can tell you which pipeline/search/calc config a current ClaimBoundary job used. In the live runner path, `runClaimBoundaryAnalysis()` loads config with `loadPipelineConfig("default")` / `loadSearchConfig("default")` / `loadCalcConfig("default")` and never passes `jobId`, so `config_usage` is not recorded for those jobs. `job_config_snapshots` can also look populated while being stale and unrelated to the current API DB. For March 2026 quality investigations, you have to combine active-config history, git history, and result content instead of relying on those audit tables.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/lib/config-loader.ts`, `apps/web/config.db`
 
+### 2026-04-18 — Unsupported comparator arithmetic needs an explicit Stage 4 prompt ban
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** useful-pattern
+**Learning:** For colloquial current-vs-historical comparison claims, a generic instruction like "do not speculate" is often too weak. If the prompt does not explicitly forbid hand-built lower comparators from selected subgroups plus assumed overlap/attrition/duration, Stage 4 can still convert that arithmetic into decisive contradiction. The reliable fix is to state that unsupported reconstructions may reduce confidence or raise misleadingness, but must not drive a strong truth downgrade unless the source itself transparently endorses the reconstruction for the same comparison target.
+**Files:** `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

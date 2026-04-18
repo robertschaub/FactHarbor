@@ -8,6 +8,9 @@ import {
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
 
+const MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE = 3;
+const MAX_DISCOVERY_DEPTH = 3;
+
 // ============================================================================
 // STAGE 2: ACQUISITION (SEARCH & FETCH)
 // ============================================================================
@@ -77,6 +80,7 @@ export async function fetchSources(
   state: CBResearchState,
   pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
+  type FetchCandidate = { url: string; relevanceScore?: number; depth: number };
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
   const failedUrls: string[] = [];
@@ -99,111 +103,159 @@ export async function fetchSources(
   const domainFailureCounts = new Map<string, number>();
 
   // Filter out already-fetched URLs
-  const toFetch = relevantSources.filter(
-    (source) => !state.sources.some((s) => s.url === source.url),
-  );
+  const toFetch: FetchCandidate[] = relevantSources
+    .filter((source) => !state.sources.some((s) => s.url === source.url))
+    .map((source) => ({ ...source, depth: 0 }));
+  const queuedUrls = new Set<string>([
+    ...state.sources.map((source) => source.url),
+    ...toFetch.map((source) => source.url),
+  ]);
+  let discoveredFollowUpCount = 0;
+
+  function queueDiscoveredFollowUps(
+    urls: string[] | undefined,
+    parentDepth: number,
+    nextFrontier: FetchCandidate[],
+  ): void {
+    if (!urls || urls.length === 0) return;
+    if (parentDepth >= MAX_DISCOVERY_DEPTH) return;
+
+    let queuedForParent = 0;
+    for (const url of urls) {
+      if (queuedForParent >= MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE) break;
+      if (queuedUrls.has(url)) continue;
+      queuedUrls.add(url);
+      nextFrontier.push({ url, depth: parentDepth + 1 });
+      discoveredFollowUpCount++;
+      queuedForParent++;
+    }
+  }
 
   // Parallel fetch with configurable concurrency limit
   const fetchConcurrency = pipelineConfig?.parallelExtractionLimit ?? 3;
-  for (let i = 0; i < toFetch.length; i += fetchConcurrency) {
-    const batch = toFetch.slice(i, i + fetchConcurrency);
-    // Stagger same-domain requests to avoid burst-loading the same server.
-    const delays = computeBatchDelays(batch.map((s) => s.url), sameDomainDelayMs);
-    const results = await Promise.all(
-      batch.map(async (source, idx) => {
-        if (delays[idx] > 0) await new Promise<void>((r) => setTimeout(r, delays[idx]));
-        // Domain short-circuit: check if this domain has already been blocked enough times.
-        // Best-effort — concurrent in-flight requests may not be skipped, but delayed
-        // siblings and later batches within this call will be.
-        if (domainSkipThreshold > 0) {
+
+  const runFetchPass = async (
+    candidates: FetchCandidate[],
+  ): Promise<FetchCandidate[]> => {
+    const nextFrontier: FetchCandidate[] = [];
+    for (let i = 0; i < candidates.length; i += fetchConcurrency) {
+      const batch = candidates.slice(i, i + fetchConcurrency);
+      // Stagger same-domain requests to avoid burst-loading the same server.
+      const delays = computeBatchDelays(batch.map((s) => s.url), sameDomainDelayMs);
+      const results = await Promise.all(
+        batch.map(async (source, idx) => {
+          if (delays[idx] > 0) await new Promise<void>((r) => setTimeout(r, delays[idx]));
+          // Domain short-circuit: check if this domain has already been blocked enough times.
+          // Best-effort — concurrent in-flight requests may not be skipped, but delayed
+          // siblings and later batches within this call will be.
+          if (domainSkipThreshold > 0) {
+            const domain = extractDomain(source.url);
+            const failures = domainFailureCounts.get(domain) ?? 0;
+            if (failures >= domainSkipThreshold) {
+              debugLog(`[Acquisition] Skipping ${source.url} — domain ${domain} blocked (${failures} consecutive 401/403)`);
+              fetchSkippedByDomainShortCircuit++;
+              return { source, content: null, ok: false as const, error: new Error(`domain_short_circuited: ${domain}`), skipped: true as const };
+            }
+          }
+
+          fetchAttempted++;
           const domain = extractDomain(source.url);
-          const failures = domainFailureCounts.get(domain) ?? 0;
-          if (failures >= domainSkipThreshold) {
-            debugLog(`[Acquisition] Skipping ${source.url} — domain ${domain} blocked (${failures} consecutive 401/403)`);
-            fetchSkippedByDomainShortCircuit++;
-            return { source, content: null, ok: false as const, error: new Error(`domain_short_circuited: ${domain}`), skipped: true as const };
-          }
-        }
-
-        fetchAttempted++;
-        const domain = extractDomain(source.url);
-        // First attempt
-        try {
-          const content = await extractTextFromUrl(source.url, {
-            timeoutMs: fetchTimeoutMs,
-            maxLength: extractionMaxLength,
-          });
-          updateDomainBlockingStreak(domainFailureCounts, domain, "success");
-          return { source, content, ok: true as const };
-        } catch (firstError: unknown) {
-          // Retry once on transient errors (timeout / network / server-side 5xx).
-          // Deterministic failures (401/403/404) are not retried — they won't resolve.
-          const classified = classifySourceFetchFailure(firstError);
-          if (["timeout", "network", "http_5xx"].includes(classified.type)) {
-            if (retryDelayMs > 0) {
-              await new Promise<void>((r) => setTimeout(r, retryDelayMs));
+          // First attempt
+          try {
+            const content = await extractTextFromUrl(source.url, {
+              timeoutMs: fetchTimeoutMs,
+              maxLength: extractionMaxLength,
+            });
+            updateDomainBlockingStreak(domainFailureCounts, domain, "success");
+            return { source, content, ok: true as const };
+          } catch (firstError: unknown) {
+            // Retry once on transient errors (timeout / network / server-side 5xx).
+            // Deterministic failures (401/403/404) are not retried — they won't resolve.
+            const classified = classifySourceFetchFailure(firstError);
+            if (["timeout", "network", "http_5xx"].includes(classified.type)) {
+              if (retryDelayMs > 0) {
+                await new Promise<void>((r) => setTimeout(r, retryDelayMs));
+              }
+              try {
+                const content = await extractTextFromUrl(source.url, {
+                  // Retry timeout: always >= first attempt, cap at schema max (60 s).
+                  timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
+                  maxLength: extractionMaxLength,
+                });
+                updateDomainBlockingStreak(domainFailureCounts, domain, "success");
+                return { source, content, ok: true as const };
+              } catch (retryError: unknown) {
+                const retryClassified = classifySourceFetchFailure(retryError);
+                updateDomainBlockingStreak(domainFailureCounts, domain, retryClassified.type);
+                return { source, content: null, ok: false as const, error: retryError };
+              }
             }
-            try {
-              const content = await extractTextFromUrl(source.url, {
-                // Retry timeout: always >= first attempt, cap at schema max (60 s).
-                timeoutMs: Math.max(fetchTimeoutMs, Math.min(Math.round(fetchTimeoutMs * 1.5), 60000)),
-                maxLength: extractionMaxLength,
-              });
-              updateDomainBlockingStreak(domainFailureCounts, domain, "success");
-              return { source, content, ok: true as const };
-            } catch (retryError: unknown) {
-              const retryClassified = classifySourceFetchFailure(retryError);
-              updateDomainBlockingStreak(domainFailureCounts, domain, retryClassified.type);
-              return { source, content: null, ok: false as const, error: retryError };
-            }
+            updateDomainBlockingStreak(domainFailureCounts, domain, classified.type);
+            return { source, content: null, ok: false as const, error: firstError };
           }
-          updateDomainBlockingStreak(domainFailureCounts, domain, classified.type);
-          return { source, content: null, ok: false as const, error: firstError };
-        }
-      }),
-    );
+        }),
+      );
 
-    for (const result of results) {
-      if (!result.ok || !result.content) {
-        // Skipped items (domain short-circuit) don't count as fetch attempts or failures
-        if ("skipped" in result && result.skipped) continue;
-        fetchFailed++;
-        const classified = classifySourceFetchFailure(result.error);
-        fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
-        if (!failedUrls.includes(result.source.url)) {
-          failedUrls.push(result.source.url);
+      for (const result of results) {
+        if (!result.ok || !result.content) {
+          // Skipped items (domain short-circuit) don't count as fetch attempts or failures
+          if ("skipped" in result && result.skipped) continue;
+          fetchFailed++;
+          const classified = classifySourceFetchFailure(result.error);
+          fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
+          if (!failedUrls.includes(result.source.url)) {
+            failedUrls.push(result.source.url);
+          }
+          if (fetchErrorSamples.length < 10) {
+            fetchErrorSamples.push({
+              url: result.source.url,
+              type: classified.type,
+              status: classified.status,
+              message: classified.message.slice(0, 240),
+            });
+          }
+          continue;
         }
-        if (fetchErrorSamples.length < 10) {
-          fetchErrorSamples.push({
-            url: result.source.url,
-            type: classified.type,
-            status: classified.status,
-            message: classified.message.slice(0, 240),
-          });
-        }
-        continue;
+        if (result.content.text.length < minContentLength) continue;
+
+        const fetchedSource: FetchedSource = {
+          id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
+          url: result.source.url,
+          title: result.content.title || result.source.url,
+          trackRecordScore: null, // Backfilled after SR prefetch (Step 4)
+          fullText: result.content.text,
+          fetchedAt: new Date().toISOString(),
+          category: result.content.contentType || "text/html",
+          fetchSuccess: true,
+          searchQuery,
+        };
+        state.sources.push(fetchedSource);
+
+        fetched.push({
+          url: result.source.url,
+          title: result.content.title || result.source.url,
+          text: result.content.text.slice(0, 8000), // Cap for prompt size
+        });
+
+        queueDiscoveredFollowUps(
+          result.content.discoveredFollowUpUrls ?? result.content.discoveredDocumentUrls,
+          result.source.depth,
+          nextFrontier,
+        );
       }
-      if (result.content.text.length < minContentLength) continue; 
-
-      const fetchedSource: FetchedSource = {
-        id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
-        url: result.source.url,
-        title: result.content.title || result.source.url,
-        trackRecordScore: null, // Backfilled after SR prefetch (Step 4)
-        fullText: result.content.text,
-        fetchedAt: new Date().toISOString(),
-        category: result.content.contentType || "text/html",
-        fetchSuccess: true,
-        searchQuery,
-      };
-      state.sources.push(fetchedSource);
-
-      fetched.push({
-        url: result.source.url,
-        title: result.content.title || result.source.url,
-        text: result.content.text.slice(0, 8000), // Cap for prompt size
-      });
     }
+
+    return nextFrontier;
+  };
+
+  let frontier = toFetch;
+  while (frontier.length > 0) {
+    const nextFrontier = await runFetchPass(frontier);
+    frontier = nextFrontier;
+  }
+
+  if (discoveredFollowUpCount > 0) {
+    debugLog(`[Acquisition] Followed ${discoveredFollowUpCount} same-family artifact/feed URL(s) discovered from relevant HTML pages`);
   }
 
   if (fetchFailed > 0 && fetchAttempted > 0) {

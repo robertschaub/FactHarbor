@@ -392,5 +392,46 @@ describe("research-acquisition-stage", () => {
       expect(fetchWarning!.message).toContain("paywall/blocked");
       expect(fetchWarning!.message).toContain("dead link");
     });
+
+    it("should follow discovered linked PDFs from already-relevant HTML pages", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        if (url === "https://www.news.admin.ch/de/newnsb/example") {
+          return {
+            text: "Release content ".repeat(20),
+            title: "Release page",
+            contentType: "text/html",
+            discoveredDocumentUrls: [
+              "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+              "https://cms.news.admin.ch/dam/de/sem/07sVT8irIz1g/2025-12-grafiken-asylstatistik-d.pdf",
+            ],
+          };
+        }
+
+        return {
+          text: "PDF content ".repeat(20),
+          title: url.split("/").pop() ?? "pdf",
+          contentType: "application/pdf",
+        };
+      });
+
+      const state = createMinimalState();
+      const result = await fetchSources(
+        [{ url: "https://www.news.admin.ch/de/newnsb/example" }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual([
+        "https://www.news.admin.ch/de/newnsb/example",
+        "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+        "https://cms.news.admin.ch/dam/de/sem/07sVT8irIz1g/2025-12-grafiken-asylstatistik-d.pdf",
+      ]);
+      expect(result.map((source) => source.url)).toEqual(attemptedUrls);
+      expect(state.sources.map((source) => source.url)).toEqual(attemptedUrls);
+    });
   });
 });
