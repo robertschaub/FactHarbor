@@ -1251,3 +1251,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-18 | Unassigned | Codex (GPT-5) | Current Official Data Discovery Prioritization -- [Standard] [open-items: yes]
 **For next agent:** Stage 2 acquisition now gives capped same-family follow-up slots to direct document/data artifacts before feed/listing hops, so the newest official source-native files are less likely to be dropped behind navigation pages. Main anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and the new regression in `apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts`. Verify next with an exact-input live rerun of the asylum/WWII claim and compare against jobs `25dea04fb0da4ab5ad12fd5dbf76896a` and `23d05e2f16d9493d9a2a37a215d9813c`.
 → Docs/AGENTS/Handoffs/2026-04-18_Unassigned_Current_Official_Data_Discovery_Prioritization.md
+
+---
+### 2026-04-18 | Unassigned | Codex (GPT-5) | Discovered Document Gate Bridge -- [Standard] [open-items: yes]
+**For next agent:** Stage 2 acquisition now preserves one top-priority same-family document artifact per already-relevant parent even when the discovered-item classifier omits it. The classifier still gates the remaining discovered URLs; only the first prioritized document inherits the parent relevance score as a fetch-time bridge. Main anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and the new regression in `apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts`. Validate next with a fresh exact-input asylum/WWII rerun and compare against miss `25dea04fb0da4ab5ad12fd5dbf76896a`.
+→ Docs/AGENTS/Handoffs/2026-04-18_Unassigned_Discovered_Document_Gate_Bridge.md

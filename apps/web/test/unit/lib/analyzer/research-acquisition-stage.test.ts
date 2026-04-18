@@ -493,6 +493,70 @@ describe("research-acquisition-stage", () => {
       );
     });
 
+    it("should preserve the top discovered document artifact when the classifier omits it", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        if (url === "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html") {
+          return {
+            text: "Landing page ".repeat(20),
+            title: "Asylstatistik landing page",
+            contentType: "text/html",
+            discoveredFollowUpUrls: [
+              "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+              "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+            ],
+          };
+        }
+
+        return {
+          text: "Fetched content ".repeat(20),
+          title: url.split("/").pop() ?? "artifact",
+          contentType: url.includes(".pdf") ? "application/pdf" : "text/html",
+        };
+      });
+
+      const classifyDiscoveredSources = vi.fn(async () => [
+        {
+          url: "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+          relevanceScore: 0.81,
+          originalRank: 0,
+        },
+      ]);
+
+      const state = createMinimalState();
+      await fetchSources(
+        [{
+          url: "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html",
+          relevanceScore: 0.87,
+        }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+        { classifyDiscoveredSources },
+      );
+
+      expect(classifyDiscoveredSources).toHaveBeenCalledTimes(1);
+      expect(attemptedUrls).toEqual([
+        "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html",
+        "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+        "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+      ]);
+      expect(state.sources).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            url: "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+            relevanceScore: 0.87,
+          }),
+          expect.objectContaining({
+            url: "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+            relevanceScore: 0.81,
+          }),
+        ]),
+      );
+    });
+
     it("should prioritize discovered document artifacts before feed hops when follow-ups are capped", async () => {
       const { extractTextFromUrl } = await import("@/lib/retrieval");
       const attemptedUrls: string[] = [];

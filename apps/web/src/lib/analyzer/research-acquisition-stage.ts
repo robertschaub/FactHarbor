@@ -143,6 +143,7 @@ export async function fetchSources(
     title: string;
     snippet?: string | null;
     parentUrl: string;
+    pendingRank: number;
   };
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
@@ -207,6 +208,7 @@ export async function fetchSources(
     parentDepth: number,
     parentUrl: string,
     parentTitle: string | undefined,
+    parentRelevanceScore: number | undefined,
     pendingDiscovered: PendingDiscoveredCandidate[],
     pendingUrls: Set<string>,
   ): void {
@@ -226,8 +228,10 @@ export async function fetchSources(
         url,
         title: formatDiscoveredSourceTitle(url),
         snippet: formatDiscoveredSourceSnippet(parentTitle, parentUrl),
+        relevanceScore: parentRelevanceScore,
         depth: parentDepth + 1,
         parentUrl,
+        pendingRank: pendingDiscovered.length,
       });
       queuedForParent++;
     }
@@ -347,6 +351,7 @@ export async function fetchSources(
           result.source.depth,
           result.source.url,
           result.content.title || result.source.url,
+          result.source.relevanceScore,
           pendingDiscovered,
           pendingDiscoveredUrls,
         );
@@ -383,6 +388,16 @@ export async function fetchSources(
     const classifiedByUrl = new Map(
       classifiedDiscovered.map((candidate) => [candidate.url, candidate] as const),
     );
+    // URL-derived titles/snippets are often too weak for the first discovered document
+    // in an otherwise already-relevant same-family source path. Preserve that top-priority
+    // artifact per parent so fetch-time extraction can inspect the real content.
+    const guaranteedDocumentByParent = new Map<string, string>();
+    for (const candidate of pendingDiscovered) {
+      if (!isDocumentLikeDiscoveredUrl(candidate.url)) continue;
+      if (!guaranteedDocumentByParent.has(candidate.parentUrl)) {
+        guaranteedDocumentByParent.set(candidate.parentUrl, candidate.url);
+      }
+    }
     const discoveredByParent = new Map<
       string,
       Array<{ url: string; relevanceScore: number; originalRank: number; depth: number }>
@@ -390,13 +405,14 @@ export async function fetchSources(
 
     for (const candidate of pendingDiscovered) {
       const classified = classifiedByUrl.get(candidate.url);
-      if (!classified) continue;
+      const isGuaranteedDocument = guaranteedDocumentByParent.get(candidate.parentUrl) === candidate.url;
+      if (!classified && !isGuaranteedDocument) continue;
 
       const existing = discoveredByParent.get(candidate.parentUrl) ?? [];
       existing.push({
         url: candidate.url,
-        relevanceScore: classified.relevanceScore,
-        originalRank: classified.originalRank,
+        relevanceScore: classified?.relevanceScore ?? candidate.relevanceScore ?? 0.5,
+        originalRank: classified?.originalRank ?? candidate.pendingRank,
         depth: candidate.depth,
       });
       discoveredByParent.set(candidate.parentUrl, existing);
