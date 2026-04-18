@@ -492,5 +492,49 @@ describe("research-acquisition-stage", () => {
         ]),
       );
     });
+
+    it("should prioritize discovered document artifacts before feed hops when follow-ups are capped", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        if (url === "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html") {
+          return {
+            text: "Landing page ".repeat(20),
+            title: "Asylstatistik landing page",
+            contentType: "text/html",
+            discoveredFollowUpUrls: [
+              "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+              "https://news.admin.ch/de/newnsb/example-one",
+              "https://news.admin.ch/de/newnsb/example-two",
+              "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+            ],
+          };
+        }
+
+        return {
+          text: "Fetched content ".repeat(20),
+          title: url.split("/").pop() ?? "artifact",
+          contentType: url.includes(".pdf") ? "application/pdf" : "text/html",
+        };
+      });
+
+      const state = createMinimalState();
+      await fetchSources(
+        [{ url: "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html" }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual([
+        "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik.html",
+        "https://cms.news.admin.ch/dam/de/sem/B7QVyAXUTwju/stat-jahr-2025-kommentar-d.pdf",
+        "https://www.sem.admin.ch/sem/de/home/publiservice/statistik/asylstatistik/_jcr_content/par/rel_0001/items/262/tabpar/nsbnewslist.entries.html",
+        "https://news.admin.ch/de/newnsb/example-one",
+      ]);
+      expect(attemptedUrls).not.toContain("https://news.admin.ch/de/newnsb/example-two");
+      expect(state.sources.map((source) => source.url)).toEqual(attemptedUrls);
+    });
   });
 });

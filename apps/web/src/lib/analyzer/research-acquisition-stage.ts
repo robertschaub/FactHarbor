@@ -29,6 +29,45 @@ interface FetchSourcesOptions {
   ) => Promise<DiscoveredSourceClassificationResult[]>;
 }
 
+function isDocumentLikeDiscoveredUrl(url: string): boolean {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return pathname.endsWith(".pdf")
+      || pathname.includes(".pdf.")
+      || pathname.endsWith(".csv")
+      || pathname.endsWith(".json")
+      || pathname.endsWith(".xml")
+      || pathname.endsWith(".xls")
+      || pathname.endsWith(".xlsx");
+  } catch {
+    const normalized = url.toLowerCase();
+    return normalized.endsWith(".pdf")
+      || normalized.includes(".pdf.")
+      || normalized.endsWith(".csv")
+      || normalized.endsWith(".json")
+      || normalized.endsWith(".xml")
+      || normalized.endsWith(".xls")
+      || normalized.endsWith(".xlsx");
+  }
+}
+
+function prioritizeDiscoveredFollowUps(urls: string[]): string[] {
+  if (urls.length <= 1) return urls;
+
+  const documentUrls: string[] = [];
+  const navigationUrls: string[] = [];
+
+  for (const url of urls) {
+    if (isDocumentLikeDiscoveredUrl(url)) {
+      documentUrls.push(url);
+      continue;
+    }
+    navigationUrls.push(url);
+  }
+
+  return [...documentUrls, ...navigationUrls];
+}
+
 // ============================================================================
 // STAGE 2: ACQUISITION (SEARCH & FETCH)
 // ============================================================================
@@ -174,8 +213,12 @@ export async function fetchSources(
     if (!urls || urls.length === 0) return;
     if (parentDepth >= MAX_DISCOVERY_DEPTH) return;
 
+    // The per-parent discovery frontier is capped before LLM relevance scoring.
+    // Prefer direct document/data artifacts first so the freshest official source-native
+    // evidence is not dropped behind feed/listing hops that can be explored later.
+    const prioritizedUrls = prioritizeDiscoveredFollowUps(urls);
     let queuedForParent = 0;
-    for (const url of urls) {
+    for (const url of prioritizedUrls) {
       if (queuedForParent >= MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE) break;
       if (queuedUrls.has(url) || pendingUrls.has(url)) continue;
       pendingUrls.add(url);
