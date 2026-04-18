@@ -198,6 +198,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("broad public-language label");
       expect(section).toContain("closest authoritative source-native umbrella quantity");
       expect(section).toContain("Do NOT silently redefine the claim to the narrowest official subset");
+      expect(section).toContain("current-versus-historical or current-versus-reference comparison");
+      expect(section).toContain("broadest authoritative current-side quantity");
       expect(section).toContain("recurring official statistics series");
       expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
     });

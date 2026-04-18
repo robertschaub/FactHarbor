@@ -455,6 +455,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("public-language wording");
       expect(section).toContain("source-native umbrella wording");
       expect(section).toContain("Do NOT let all official queries collapse onto a narrower formal subcategory");
+      expect(section).toContain("current-versus-historical or current-versus-reference comparison claims");
+      expect(section).toContain("broadest authoritative umbrella total");
       expect(section).toContain("Retrieve the decisive current total and the comparator total directly");
       expect(section).toContain("recurring official statistics series or update stream");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
