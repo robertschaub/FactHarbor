@@ -549,6 +549,7 @@ export interface FetchedSource {
   category: string;
   fetchSuccess: boolean;
   searchQuery?: string;
+  relevanceScore?: number | null;
 }
 
 // ============================================================================

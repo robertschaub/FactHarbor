@@ -1,6 +1,6 @@
 import { extractTextFromUrl } from "@/lib/retrieval";
 import { debugLog } from "./debug";
-import { classifySourceFetchFailure } from "./pipeline-utils";
+import { classifySourceFetchFailure, selectTopSources } from "./pipeline-utils";
 import { 
   CBResearchState, 
   FetchedSource, 
@@ -10,6 +10,24 @@ import { PipelineConfig } from "@/lib/config-schemas";
 
 const MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE = 3;
 const MAX_DISCOVERY_DEPTH = 3;
+
+interface DiscoveredSourceCandidate {
+  url: string;
+  title: string;
+  snippet?: string | null;
+}
+
+interface DiscoveredSourceClassificationResult {
+  url: string;
+  relevanceScore: number;
+  originalRank: number;
+}
+
+interface FetchSourcesOptions {
+  classifyDiscoveredSources?: (
+    discoveredSources: DiscoveredSourceCandidate[],
+  ) => Promise<DiscoveredSourceClassificationResult[]>;
+}
 
 // ============================================================================
 // STAGE 2: ACQUISITION (SEARCH & FETCH)
@@ -79,8 +97,14 @@ export async function fetchSources(
   searchQuery: string,
   state: CBResearchState,
   pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
+  options?: FetchSourcesOptions,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   type FetchCandidate = { url: string; relevanceScore?: number; depth: number };
+  type PendingDiscoveredCandidate = FetchCandidate & {
+    title: string;
+    snippet?: string | null;
+    parentUrl: string;
+  };
   const fetched: Array<{ url: string; title: string; text: string }> = [];
   const fetchErrorByType: Record<string, number> = {};
   const failedUrls: string[] = [];
@@ -88,6 +112,7 @@ export async function fetchSources(
   let fetchAttempted = 0;
   let fetchFailed = 0;
   let fetchSkippedByDomainShortCircuit = 0;
+  let discoveredFollowUpRejected = 0;
 
   // Configurable timeout — default 20 s (was 12 s). Legal/government sources load slowly.
   const fetchTimeoutMs = pipelineConfig?.sourceFetchTimeoutMs ?? 20000;
@@ -112,10 +137,39 @@ export async function fetchSources(
   ]);
   let discoveredFollowUpCount = 0;
 
-  function queueDiscoveredFollowUps(
+  function formatDiscoveredSourceTitle(url: string): string {
+    try {
+      const parsed = new URL(url);
+      const leaf = parsed.pathname.split("/").filter(Boolean).pop() ?? parsed.hostname;
+      const decodedLeaf = decodeURIComponent(leaf);
+      const normalized = decodedLeaf
+        .replace(/\.[a-z0-9]+$/i, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      return normalized || parsed.hostname;
+    } catch {
+      return url;
+    }
+  }
+
+  function formatDiscoveredSourceSnippet(
+    parentTitle: string | undefined,
+    parentUrl: string,
+  ): string {
+    const parentLabel = parentTitle && parentTitle.trim().length > 0
+      ? parentTitle.trim()
+      : parentUrl;
+    return `Discovered from already relevant same-family page: ${parentLabel}`;
+  }
+
+  function collectDiscoveredFollowUps(
     urls: string[] | undefined,
     parentDepth: number,
-    nextFrontier: FetchCandidate[],
+    parentUrl: string,
+    parentTitle: string | undefined,
+    pendingDiscovered: PendingDiscoveredCandidate[],
+    pendingUrls: Set<string>,
   ): void {
     if (!urls || urls.length === 0) return;
     if (parentDepth >= MAX_DISCOVERY_DEPTH) return;
@@ -123,10 +177,15 @@ export async function fetchSources(
     let queuedForParent = 0;
     for (const url of urls) {
       if (queuedForParent >= MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE) break;
-      if (queuedUrls.has(url)) continue;
-      queuedUrls.add(url);
-      nextFrontier.push({ url, depth: parentDepth + 1 });
-      discoveredFollowUpCount++;
+      if (queuedUrls.has(url) || pendingUrls.has(url)) continue;
+      pendingUrls.add(url);
+      pendingDiscovered.push({
+        url,
+        title: formatDiscoveredSourceTitle(url),
+        snippet: formatDiscoveredSourceSnippet(parentTitle, parentUrl),
+        depth: parentDepth + 1,
+        parentUrl,
+      });
       queuedForParent++;
     }
   }
@@ -138,6 +197,8 @@ export async function fetchSources(
     candidates: FetchCandidate[],
   ): Promise<FetchCandidate[]> => {
     const nextFrontier: FetchCandidate[] = [];
+    const pendingDiscovered: PendingDiscoveredCandidate[] = [];
+    const pendingDiscoveredUrls = new Set<string>();
     for (let i = 0; i < candidates.length; i += fetchConcurrency) {
       const batch = candidates.slice(i, i + fetchConcurrency);
       // Stagger same-domain requests to avoid burst-loading the same server.
@@ -228,6 +289,7 @@ export async function fetchSources(
           category: result.content.contentType || "text/html",
           fetchSuccess: true,
           searchQuery,
+          relevanceScore: result.source.relevanceScore ?? null,
         };
         state.sources.push(fetchedSource);
 
@@ -237,13 +299,89 @@ export async function fetchSources(
           text: result.content.text.slice(0, 8000), // Cap for prompt size
         });
 
-        queueDiscoveredFollowUps(
+        collectDiscoveredFollowUps(
           result.content.discoveredFollowUpUrls ?? result.content.discoveredDocumentUrls,
           result.source.depth,
-          nextFrontier,
+          result.source.url,
+          result.content.title || result.source.url,
+          pendingDiscovered,
+          pendingDiscoveredUrls,
         );
       }
     }
+
+    if (pendingDiscovered.length === 0) {
+      return nextFrontier;
+    }
+
+    const classifiedDiscovered = options?.classifyDiscoveredSources
+      ? await options.classifyDiscoveredSources(
+        pendingDiscovered.map((candidate) => ({
+          url: candidate.url,
+          title: candidate.title,
+          snippet: candidate.snippet,
+        })),
+      )
+      : null;
+
+    if (!classifiedDiscovered) {
+      for (const candidate of pendingDiscovered) {
+        if (queuedUrls.has(candidate.url)) continue;
+        queuedUrls.add(candidate.url);
+        nextFrontier.push({
+          url: candidate.url,
+          depth: candidate.depth,
+        });
+        discoveredFollowUpCount++;
+      }
+      return nextFrontier;
+    }
+
+    const classifiedByUrl = new Map(
+      classifiedDiscovered.map((candidate) => [candidate.url, candidate] as const),
+    );
+    const discoveredByParent = new Map<
+      string,
+      Array<{ url: string; relevanceScore: number; originalRank: number; depth: number }>
+    >();
+
+    for (const candidate of pendingDiscovered) {
+      const classified = classifiedByUrl.get(candidate.url);
+      if (!classified) continue;
+
+      const existing = discoveredByParent.get(candidate.parentUrl) ?? [];
+      existing.push({
+        url: candidate.url,
+        relevanceScore: classified.relevanceScore,
+        originalRank: classified.originalRank,
+        depth: candidate.depth,
+      });
+      discoveredByParent.set(candidate.parentUrl, existing);
+    }
+
+    let acceptedDiscoveredCount = 0;
+    for (const discoveredGroup of discoveredByParent.values()) {
+      const selectedDiscovered = selectTopSources(
+        discoveredGroup,
+        MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE,
+      );
+      for (const candidate of selectedDiscovered) {
+        if (queuedUrls.has(candidate.url)) continue;
+        queuedUrls.add(candidate.url);
+        nextFrontier.push({
+          url: candidate.url,
+          relevanceScore: candidate.relevanceScore,
+          depth: candidate.depth,
+        });
+        discoveredFollowUpCount++;
+        acceptedDiscoveredCount++;
+      }
+    }
+
+    discoveredFollowUpRejected += Math.max(
+      pendingDiscovered.length - acceptedDiscoveredCount,
+      0,
+    );
 
     return nextFrontier;
   };
@@ -256,6 +394,9 @@ export async function fetchSources(
 
   if (discoveredFollowUpCount > 0) {
     debugLog(`[Acquisition] Followed ${discoveredFollowUpCount} same-family artifact/feed URL(s) discovered from relevant HTML pages`);
+  }
+  if (discoveredFollowUpRejected > 0) {
+    debugLog(`[Acquisition] Relevance gate rejected ${discoveredFollowUpRejected} discovered same-family follow-up URL(s) before fetch`);
   }
 
   if (fetchFailed > 0 && fetchAttempted > 0) {

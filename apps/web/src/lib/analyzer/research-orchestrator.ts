@@ -1180,6 +1180,20 @@ export async function runResearchIteration(
           queryObj.query,
           state,
           pipelineConfig,
+          {
+            classifyDiscoveredSources: async (discoveredSources) => {
+              const discoveredRelevant = await classifyRelevance(
+                targetClaim,
+                discoveredSources,
+                pipelineConfig,
+                currentDate,
+                state.understanding?.inferredGeography ?? null,
+                claimRelevantGeographies,
+              );
+              state.llmCalls++;
+              return discoveredRelevant;
+            },
+          },
         );
         telemetry.sourcesFetched += fetchedSources.length;
         telemetry.losses.fetchRejected += Math.max(
@@ -1569,7 +1583,26 @@ export async function maybeRunSupplementaryEnglishLane(
       0,
     );
 
-    const fetchedSources = await fetchSources(relevantSources, enQuery.query, state, pipelineConfig);
+    const fetchedSources = await fetchSources(
+      relevantSources,
+      enQuery.query,
+      state,
+      pipelineConfig,
+      {
+        classifyDiscoveredSources: async (discoveredSources) => {
+          const discoveredRelevant = await classifyRelevance(
+            targetClaim,
+            discoveredSources,
+            pipelineConfig,
+            currentDate,
+            state.understanding?.inferredGeography ?? null,
+            enLaneRelevantGeographies,
+          );
+          state.llmCalls++;
+          return discoveredRelevant;
+        },
+      },
+    );
     enTelemetry.sourcesFetched += fetchedSources.length;
     enTelemetry.losses.fetchRejected += Math.max(
       relevantSources.length - fetchedSources.length,
