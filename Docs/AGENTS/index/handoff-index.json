@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-18T11:08:37.713Z",
-  "count": 208,
+  "generatedAt": "2026-04-18T22:02:29.725Z",
+  "count": 212,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4285,6 +4285,27 @@
       "summary": "Senior Developer + LLM Expert Handoff"
     },
     {
+      "file": "2026-04-18_LLM_Expert_Report_Review_Skill_Prompt_Debate_And_Provenance_Review.md",
+      "date": "2026-04-18",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "skill",
+        "prompt",
+        "debate",
+        "and",
+        "provenance",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-18_LLM_Expert_Report_Review_Skill_Prompt_Debate_And_Provenance_Review.md"
+      ],
+      "summary": "If Captain wants the skill tightened, make this a short three-role debate: LLM Expert for Phase 4/prompt logic, Senior Developer for Windows submission/provenance handling, and Lead Architect for the drift-gate contract. The fixes are small, but they cross prompt, runtime provenance, and workflow bo"
+    },
+    {
       "file": "2026-04-18_Senior_Developer_Asylum_WWII_Discovered_Followup_Relevance_Gating.md",
       "date": "2026-04-18",
       "roles": [
@@ -4309,6 +4330,27 @@
       "summary": "The key code anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` around `collectDiscoveredFollowUps(...)`, the new `classifyDiscoveredSources` option, and the persisted `relevanceScore` on `FetchedSource`; plus `apps/web/src/lib/analyzer/research-orchestrator.ts` where both fetch c"
     },
     {
+      "file": "2026-04-18_Senior_Developer_Asylum_WWII_Post_Gating_Live_Rerun.md",
+      "date": "2026-04-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "asylum",
+        "wwii",
+        "post",
+        "gating",
+        "live",
+        "rerun"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Post_Gating_Live_Rerun.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "Compare valid rerun `25dea04fb0da4ab5ad12fd5dbf76896a` against pre-gating/golden-path job `23d05e2f16d9493d9a2a37a215d9813c`. The important deltas are: `25dea...` merged to one claim (`AC_01` only), generated 11 queries instead of 13, fetched `https://www.sem.admin.ch/sem/de/home/publiservice/statis"
+    },
+    {
       "file": "2026-04-18_Senior_Developer_Asylum_WWII_Stage4_Comparator_Reconstruction_Prompt_Fix.md",
       "date": "2026-04-18",
       "roles": [
@@ -4331,6 +4373,43 @@
         "Docs/AGENTS/Role_Learnings.md"
       ],
       "summary": "Start with stored job `23d05e2f16d9493d9a2a37a215d9813c`. Its `claimVerdicts` show the exact failure mode: `CV_AC_01` is already `MOSTLY-TRUE`, while `CV_AC_02` is dragged down by a hand-built lower historical comparator from selected subgroups and assumed simultaneity. The new prompt text is in [cl"
+    },
+    {
+      "file": "2026-04-18_Unassigned_Current_Official_Data_Discovery_Prioritization.md",
+      "date": "2026-04-18",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "current",
+        "official",
+        "data",
+        "discovery",
+        "prioritization"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts"
+      ],
+      "summary": "Start with [research-acquisition-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/research-acquisition-stage.ts) around `collectDiscoveredFollowUps(...)` and the new regression in [research-acquisition-stage.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/research-acquisition-stage"
+    },
+    {
+      "file": "2026-04-18_Unassigned_Discovered_Document_Gate_Bridge.md",
+      "date": "2026-04-18",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "discovered",
+        "document",
+        "gate",
+        "bridge"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts"
+      ],
+      "summary": "Start with [research-acquisition-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/research-acquisition-stage.ts) around the guaranteed-document logic after `classifiedByUrl`, plus the new regression in [research-acquisition-stage.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/rese"
     }
   ]
 }

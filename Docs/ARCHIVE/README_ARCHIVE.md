@@ -2,7 +2,78 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-04-04 (WIP Consolidation #9)
+**Last Updated**: 2026-04-18 (WIP Consolidation #12)
+
+---
+
+### WIP Consolidation #12 (2026-04-18)
+
+**Description**: Major consolidation of the Phase 7 / Report Quality Restoration track. Archived completed investigations, executed phase plans, historical review artefacts, superseded proposals, and one-off event prep documents. Forward-looking items extracted to Backlog where not already tracked.
+
+**WIP files archived** (46):
+
+| File | Reason |
+|------|--------|
+| `2026-04-05_Bolsonaro_Plastik_Local_Quality_Investigation.md` | DONE — Fix 1 committed (`cbb364ec`), Fix 2 judged unnecessary, Fix 3 closed |
+| `2026-04-05_Bolsonaro_Sufficiency_Min_Main_Iterations_Experiment.md` | DONE — experiment showed no effect (MT-3 already dominates), deploy recommendation issued |
+| `2026-04-05_Current_vs_Previous_Build_Report_Comparison.md` | HISTORICAL — point-in-time build comparison; both builds superseded |
+| `2026-04-06_Cross_Boundary_Tension_Investigation.md` | DONE — Fix 1+3 shipped (`08220154`, `2acc4545`), Fix 2 deferred, next track redirected to UPQ-1 |
+| `2026-04-06_Cross_Boundary_Tensions_Current_vs_Previous_Deployment_Investigation.md` | DONE — complementary investigation; same fix 1+3 shipped conclusion |
+| `2026-04-06_Demo_Script_Catherine_Gilbert.md` | HISTORICAL — call prep for past event (8 Apr 2026) |
+| `2026-04-06_Glossar_Catherine_Gilbert.md` | HISTORICAL — terminology reference for past Catherine Gilbert call |
+| `2026-04-06_UPQ1_Consolidated_Architecture_Review.md` | HISTORICAL — pre-implementation architecture review; decisions executed in Phase A/B canaries |
+| `2026-04-06_UPQ1_Phase_A1_Canary_Measurement.md` | HISTORICAL — closed measurement record; Phase A-2 acted on its conclusion |
+| `2026-04-07_UPQ1_Phase_A2_Canary_Measurement.md` | HISTORICAL — closed measurement record; Phase B acted on its conclusion |
+| `2026-04-07_f1a372bf_to_HEAD_Job_Quality_Investigation.md` | HISTORICAL — uncorrected primary investigation; superseded by Consolidated Investigation doc |
+| `2026-04-08_Complete_Quality_Assessment_and_Plan.md` | HISTORICAL — Apr 8 quality diagnosis; all priorities executed or superseded by Phase 2-7 track |
+| `2026-04-08_Proposition_Anchoring_Fix_Plan.md` | HISTORICAL — proposition anchoring plan; superseded by Phase 2 replay findings (F4 root cause) |
+| `2026-04-09_LLM_Led_Article_Adjudication_Redesign.md` | DONE — Option G implemented (`d5ded98f`), validated by Phase 2 replay, confirmed HELPED/KEEP |
+| `2026-04-11_Canonical_Quality_Criteria.md` | DONE — Phase 1 deliverable; criteria consumed by Phase 2 measurement framework |
+| `2026-04-11_Phase2_Gate_G2_Captain_Deputy_Review.md` | HISTORICAL — review artefact; all recommendations incorporated into Rev 4 |
+| `2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md` | HISTORICAL — review artefact; all 4 required modifications applied to Rev 4 |
+| `2026-04-11_Phase2_Gate_G2_Replay_Plan.md` | DONE — Rev 4 approved and executed; Phase 2 concluded with F4 finding |
+| `2026-04-11_Phase2_Gate_G2_Rev3_Captain_Deputy_Review.md` | HISTORICAL — review-of-Rev-3; all findings incorporated into Rev 4 |
+| `2026-04-11_Phase2_Gate_G2_Rev3_LLM_Expert_Review.md` | HISTORICAL — review-of-Rev-3; all 8 required fixes applied in Rev 4 |
+| `2026-04-11_Phase2_Per_Input_Expectations.md` | DONE — per-input acceptance criteria consumed by Rev 4 replay plan |
+| `2026-04-11_Phase2_Replay_Input_Set.md` | DONE — locked input-set reference; 5/10 used in Phase 2, remainder deferred |
+| `2026-04-11_Prior_Investigations_Index.md` | DONE — Phase 1 inventory artefact; loose ends tracked in later-phase docs |
+| `2026-04-12_Phase2_Results_Report.md` | DONE — Phase 2 complete; F4 finding locked, fed Phase 3 |
+| `2026-04-12_Phase3_Change_Impact_Ledger_and_Phase4_Plan.md` | DONE — Phase 4 commits all landed; 2 deferred investigation flags extracted |
+| `2026-04-12_Phase5_Implementation_Plan_Final.md` | DONE — Phase 5+6 (C6-C16) closed; 1645 tests pass; 3 low-priority deferred items extracted |
+| `2026-04-13_C16_R2_Combined_Replay_Analysis.md` | DONE — corrected baseline locked; data fed Phase 7 charter |
+| `2026-04-14_Phase7_E2_Measurement.md` | HISTORICAL — explicitly not a reproduced closeout; forward work redirected to Phase 7b charter |
+| `2026-04-15_LLM_Prompt_System_Explanation.md` | HISTORICAL — reference/explanatory doc; issues forwarded to companion Issues Report |
+| `2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` | HISTORICAL — 100-job quality snapshot (Mar 25-30); all identified issues tracked in dedicated docs |
+| `2026-03-31_DistinctEvents_Event_Granularity_Architect_Review.md` | SUPERSEDED — distinctEvents fix REVERTED; recommendations no longer actionable |
+| `2026-04-01_Stage1_Narrow_Hardening_Architect_Review.md` | DONE — both approved changes (fallback removal, re-validation guard) shipped |
+| `2026-04-02_Call_Prep_Catherine_Gilbert.md` | HISTORICAL — prep for past dpa call (8 Apr 2026) |
+| `2026-04-04_Source_Provenance_GPT_Review_Prompt.md` | HISTORICAL — preserved pre-revision proposal; superseded by companion tracking design |
+| `2026-03-22_Plastik_Phase2_v3_Architecture_Brief.md` | HISTORICAL — parked architecture brief; explicitly says "do not implement now" |
+| `2026-03-24_Draft_Email_Cieliebak.md` | HISTORICAL — email sent 2026-03-25; completed outreach action |
+| `2026-03-24_Review_Prompt_Cooperation_Presentation.md` | HISTORICAL — one-time review prompt template; task complete |
+| `2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` | SUPERSEDED — predates QLT-2; all phases executed and tracked in current status docs |
+| `2026-03-29_b8e6_8640_cd4501_Claim_Decomposition_Architect_Review.md` | SUPERSEDED — fix REVERTED (caused Plastik/SRG regressions); analysis preserved for future reference |
+| `2026-03-30_Flat_Earth_False_Ambiguity_Reviewer_Notes.md` | DONE — fix review-approved; the Flat Earth control family is GREEN in EVD-1 |
+| `2026-03-29_1bfb_Direction_Integrity_Architect_Review.md` | DONE — citation-carriage fix shipped (`e1f2c551`); direction integrity in MONITOR mode |
+| `2026-03-29_2705_e407_Root_Fix_Architect_Review.md` | DONE — assessable-claims path shipped (`03387283`); PIPE-INT-1 closed |
+| `2026-03-27_Bolsonaro_efc5e66f_Single_Source_Flooding_Investigation.md` | DONE — FLOOD-1 Fix 1+2 shipped; Fix 3 (deferred) tracked in backlog |
+| `2026-03-24_Generic_Report_Quality_Signals_Scorecard.md` | DONE — stable reusable rubric; no implementation items |
+| `2026-03-25_EVD1_Acceptable_Variance_Policy.md` | DONE — APPROVED operative Alpha-phase governance policy; revisit before Beta |
+| `Report_Quality_Criteria_Scorecard_2026-03-12.md` | DONE — stable rubric-only document; historical benchmark tables already archived |
+| `MCP_Adoption_Investigation_2026-03-30.md` | ABANDONED — investigation shell completely empty; zero participant reports or consolidated output |
+| `2026-04-13_Three_Lane_Restart_Comparison_Experiment_Plan.md` | SUPERSEDED — Captain directive (Apr 13) closed the restart-vs-HEAD question; Phase 7 committed to linear HEAD iteration; Stage A1 never executed |
+
+---
+
+### WIP Consolidation #11 (2026-04-15)
+
+4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review).
+
+---
+
+### WIP Consolidation #10 (2026-04-04)
+
+28 historical/completed files archived (investigations, decided debates, implemented reviews, subagent reports).
 
 ---
 
