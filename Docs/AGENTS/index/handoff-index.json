@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-18T06:21:32.435Z",
-  "count": 207,
+  "generatedAt": "2026-04-18T11:08:37.713Z",
+  "count": 208,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4283,6 +4283,30 @@
       ],
       "files_touched": [],
       "summary": "Senior Developer + LLM Expert Handoff"
+    },
+    {
+      "file": "2026-04-18_Senior_Developer_Asylum_WWII_Discovered_Followup_Relevance_Gating.md",
+      "date": "2026-04-18",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "asylum",
+        "wwii",
+        "discovered",
+        "followup",
+        "relevance",
+        "gating"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Discovered_Followup_Relevance_Gating.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The key code anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` around `collectDiscoveredFollowUps(...)`, the new `classifyDiscoveredSources` option, and the persisted `relevanceScore` on `FetchedSource`; plus `apps/web/src/lib/analyzer/research-orchestrator.ts` where both fetch c"
     },
     {
       "file": "2026-04-18_Senior_Developer_Asylum_WWII_Stage4_Comparator_Reconstruction_Prompt_Fix.md",
