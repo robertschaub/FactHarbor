@@ -106,6 +106,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Verbatim Fusion");
       expect(section).toContain("Do not change any existing claim `id`");
       expect(section).toContain("return the same number of claims you received");
+      expect(section).toContain("duplicate or near-duplicate");
+      expect(section).toContain("Do NOT merge away coordinated-branch claims");
+      expect(section).toContain("preserve the shared anchor in each");
       expect(section).toContain('thesisRelevance` is `"direct"`');
       expect(section).toContain("faithful restatement of that original proposition");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
@@ -252,9 +255,17 @@ describe("Stage-1 prompt contract", () => {
 
       expect(pass1).toContain("rest of a comparison class");
       expect(pass1).toContain("Do NOT use this label");
+      expect(pass1).toContain("Coordinated branch rule");
+      expect(pass1).toContain("independently verifiable propositions");
+      expect(pass1).toContain("preserve the shared anchor");
+      expect(pass1).toContain("Do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass1).toContain("Decomposition integrity");
       expect(pass1).toContain("proper sub-assertion");
       expect(pass1).toContain("whole-input restatement");
+      expect(pass2).toContain("Coordinated branch rule");
+      expect(pass2).toContain("independently verifiable propositions");
+      expect(pass2).toContain("preserve the shared anchor");
+      expect(pass2).toContain("Do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("rest of a comparison class");
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
       expect(pass2).toContain("proper sub-assertion");

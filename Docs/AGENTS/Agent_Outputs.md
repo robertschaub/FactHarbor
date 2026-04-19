@@ -1417,3 +1417,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Compound Subject Decomposition Prompt Fix -- [Standard] [open-items: yes]
 **For next agent:** `claimboundary.prompt.md` now explicitly forbids splitting a compound subject/object that shares one joint temporal or conditional anchor, and its contract-repair section now allows redundant sub-claims to be merged away instead of forcing a broken fixed-count output. The focused Stage-1 prompt contract test passed. This was committed only; restart the stack before using it for clean commit-linked job runs.
 → Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Compound_Subject_Decomposition_Prompt_Fix.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Coordinated Branch Atomicity Prompt Fix -- [Standard] [open-items: yes]
+**For next agent:** The previous compound-anchor exception over-corrected and could force a non-atomic single claim for coordinated temporal inputs like `... bevor Volk und Parlament ...`. `claimboundary.prompt.md` now uses a `Coordinated branch rule`: split only into independently verifiable branches, preserve the shared anchor in each branch, never keep the whole unsplit sentence alongside them, and do not merge those branches back together during repair. The focused prompt-contract test passed; runtime confirmation still depends on the queued clean Bundesrat rerun after restart.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Coordinated_Branch_Atomicity_Prompt_Fix.md
