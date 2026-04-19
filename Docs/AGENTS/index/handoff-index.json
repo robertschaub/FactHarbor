@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-19T12:19:48.386Z",
-  "count": 225,
+  "generatedAt": "2026-04-19T13:41:16.504Z",
+  "count": 228,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4477,6 +4477,26 @@
       "summary": "Wrapper Index-First Alignment"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Atomicity_Decomposition_Integrity_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "atomicity",
+        "decomposition",
+        "integrity",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Atomicity_Decomposition_Integrity_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) in `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, and `CLAIM_CONTRACT_VALIDATION`, plus [claim-extraction-prompt-contract.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/claim-extractio"
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -4530,6 +4550,52 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Current anchors are `apps/web/prompts/claimboundary.prompt.md:72-73` and `:222-223` for the final semantic exclusivity + ordering guard, and `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts:208-231` for the focused contract assertions. Verification passed via `npm -w apps/we"
+    },
+    {
+      "file": "2026-04-19_LLM_Expert_Prompt_Diagnosis_4c5218a2_CH_DE_Fact_Checking.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "diagnosis",
+        "4c5218a2",
+        "ch",
+        "de",
+        "fact",
+        "checking"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Prompt_Diagnosis_4c5218a2_CH_DE_Fact_Checking.md",
+        "Docs/AGENTS/Prompt_Issue_Register.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Primary anchors for the live prompt issue are `apps/web/prompts/claimboundary.prompt.md:1399-1414` (`VERDICT_RECONCILIATION`) and `apps/web/prompts/claimboundary.prompt.md:1484-1507` (`VERDICT_GROUNDING_VALIDATION`). Primary runtime/code anchors are `apps/web/src/lib/analyzer/research-orchestrator.t"
+    },
+    {
+      "file": "2026-04-19_LLM_Expert_Prompt_Diagnosis_Fix_4c5218a2_Comparative_Ecosystem_Grounding.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "diagnosis",
+        "fix",
+        "4c5218a2",
+        "comparative",
+        "ecosystem",
+        "grounding"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Prompt_Issue_Register.md",
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Prompt_Diagnosis_Fix_4c5218a2_Comparative_Ecosystem_Grounding.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you need runtime confirmation, first get approval to rerun the exact input. Then inspect whether the claim verdict stays in `UNVERIFIED` when one side remains proxy/context-only and whether `verdict_grounding_issue` stops firing on claim-local uncited evidence. If the first issue persists, move t"
     },
     {
       "file": "2026-04-19_Unassigned_Broad_Current_Total_Comparison_Prompt_Fix.md",

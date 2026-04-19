@@ -205,31 +205,30 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
-  describe("exclusivity decomposition guard", () => {
-    it("defines the override semantically and avoids forcing exactly-two or order-splitting", () => {
+  describe("decomposition integrity guard", () => {
+    it("forbids whole-input carry-through when a comparison sentence is decomposed", () => {
       const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
       const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      const contract = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
 
       expect(pass1).not.toBeNull();
       expect(pass2).not.toBeNull();
+      expect(contract).not.toBeNull();
 
-      expect(pass1).toContain("Exclusivity/uniqueness override");
-      expect(pass1).toContain("Ordering-rank guard");
-      expect(pass1).toContain("subject-specific proposition");
-      expect(pass1).toContain("relevant comparison class");
-      expect(pass1).toContain("Extract at least those two claims");
-      expect(pass1).toContain("Do not force exactly two claims");
-      expect(pass1).toContain("Do not create extra claims merely because verification requires multiple evidence routes");
-      expect(pass1).toContain("After excluding this override, classify the input under the normal rules");
-      expect(pass2).toContain("Exclusivity/uniqueness override");
-      expect(pass2).toContain("Ordering-rank guard");
-      expect(pass2).toContain("subject-specific proposition");
-      expect(pass2).toContain("relevant comparison class");
-      expect(pass2).toContain("Extract at least those two claims");
-      expect(pass2).toContain("Do not force exactly two claims");
-      expect(pass2).toContain("Do not create extra claims merely because verification requires multiple evidence routes");
-      expect(pass2).toContain("After excluding this override, classify the input under the normal rules below");
-      expect(pass2).not.toContain("treat it as `single_atomic_claim`");
+      expect(pass1).toContain("rest of a comparison class");
+      expect(pass1).toContain("Do NOT use this label");
+      expect(pass1).toContain("Decomposition integrity");
+      expect(pass1).toContain("proper sub-assertion");
+      expect(pass1).toContain("whole-input restatement");
+      expect(pass2).toContain("rest of a comparison class");
+      expect(pass2).toContain("Decomposition integrity (MANDATORY)");
+      expect(pass2).toContain("proper sub-assertion");
+      expect(pass2).toContain("whole-input restatement");
+      expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
+      expect(contract).toContain("whole-input carry-through");
+      expect(contract).toContain("semantically subsuming another returned claim");
+      expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
+      expect(contract).toContain("whole proposition plus one of its parts");
     });
   });
 });

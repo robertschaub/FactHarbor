@@ -253,6 +253,14 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Defensive legacy rule for challenge references");
     });
 
+    it("grounding validator accepts uncited but claim-local reasoning references", () => {
+      const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
+      expect(section).toContain("claim-local context (`evidencePool`, `sourcePortfolio`, `boundaryIds`, or `challengeContext`)");
+      expect(section).toContain("`citedEvidenceRegistry` is the authoritative check for the verdict's directional citation arrays only");
+      expect(section).toContain("Validate in this order");
+      expect(section).toContain("Do NOT flag an evidence ID solely because it appears in reasoning but not in `citedEvidenceRegistry`");
+    });
+
     it("advocate contains scope-of-truth rule preventing semantic drift", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
       expect(section).toContain("Scope-of-truth rule");
@@ -265,6 +273,14 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Scope-of-truth rule");
       expect(section).toContain("therefore improper");
       expect(section).toContain("misleadingness");
+    });
+
+    it("reconciliation requires per-side direct ecosystem evidence before resolving comparative institutional claims", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Per-side direct-evidence sufficiency for comparative ecosystems");
+      expect(section).toContain("assess each side's direct ecosystem evidence separately");
+      expect(section).toContain("do NOT resolve the comparison above the `UNVERIFIED` band");
+      expect(section).toContain("Silence or omission is probative only when the source's declared scope is to enumerate or structurally describe the target ecosystem");
     });
 
     it("advocate treats foreign government assessment reports as positional outputs requiring corroboration", () => {
