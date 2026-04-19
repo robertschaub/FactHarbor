@@ -275,11 +275,14 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("misleadingness");
     });
 
-    it("reconciliation requires per-side direct ecosystem evidence before resolving comparative institutional claims", () => {
+    it("reconciliation blocks one-sided proxy wins but allows close-ecosystem convergence", () => {
       const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
-      expect(section).toContain("Per-side direct-evidence sufficiency for comparative ecosystems");
-      expect(section).toContain("assess each side's direct ecosystem evidence separately");
+      expect(section).toContain("Per-side ecosystem evidence sufficiency and close-ecosystem convergence");
+      expect(section).toContain("assess each side's ecosystem evidence separately");
       expect(section).toContain("do NOT resolve the comparison above the `UNVERIFIED` band");
+      expect(section).toContain("Do NOT force `UNVERIFIED` solely because no single formal registry, audit, or umbrella report exists");
+      expect(section).toContain("multiple convergent close-ecosystem sources");
+      expect(section).toContain("A single organization page, one platform-specific implementation, or one case study is not enough by itself");
       expect(section).toContain("Silence or omission is probative only when the source's declared scope is to enumerate or structurally describe the target ecosystem");
     });
 
@@ -477,6 +480,15 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("recurring official statistics series or update stream");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
     });
+
+    it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("side-specific query coverage to the strongest institutional existence signals on BOTH sides");
+      expect(section).toContain("at least one returned query for EACH compared side must explicitly target an enumerative ecosystem route");
+      expect(section).toContain("participant/member/certification list");
+      expect(section).toContain("network or association roster");
+      expect(section).toContain("weaker side toward enumerative ecosystem routes");
+    });
   });
 
   /** Stage 2 relevance classification (research-extraction-stage.ts:113-123) */
@@ -580,6 +592,15 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("closest authoritative measures");
       expect(section).toContain("flow or process metrics");
       expect(section).toContain("current stock, standing population, or inventory");
+    });
+
+    it("institutional-ecosystem extraction allows convergent actor and network pages to evidence ecosystem existence", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("do NOT demote evidence");
+      expect(section).toContain("one actor or one umbrella network page");
+      expect(section).toContain("multiple source-native pages collectively enumerate named actors");
+      expect(section).toContain("network affiliations");
+      expect(section).toContain("broader ecosystem");
     });
   });
 
