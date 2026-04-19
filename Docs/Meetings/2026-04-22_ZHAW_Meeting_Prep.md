@@ -1,6 +1,6 @@
 # Meeting-Vorbereitung — ZHAW CAI / NLP-Gruppe
 
-**Datum:** Dienstag, 21. April 2026, 10:15-11:00 Uhr  
+**Datum:** Dienstag, 22. April 2026  
 **Ort:** ZHAW Winterthur (vor Ort)  
 **Teilnehmende:**
 - Patrick Giedemann (Doktorand, CAI / NLP) — Hauptkontakt
