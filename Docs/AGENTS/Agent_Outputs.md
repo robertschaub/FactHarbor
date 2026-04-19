@@ -1248,6 +1248,16 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Discovered_Followup_Relevance_Gating.md
 
 ---
+### 2026-04-18 | Senior Developer | Codex (GPT-5) | Asylum WWII Post-Gating Live Rerun -- [Standard] [open-items: yes]
+**For next agent:** Valid exact-input rerun is job `25dea04fb0da4ab5ad12fd5dbf76896a` on commit `7b9dec65d4dcab86a0314fec4ac559f9e5abdae8`. It finished `MIXED 45/65`, merged to one claim, and did **not** reach the SEM 2025 commentary PDF. Compare it against `23d05e2f16d9493d9a2a37a215d9813c` before changing Stage 4 again. The main unresolved question is whether the new discovery gate over-rejected same-family follow-ups or whether the changed Stage 1/query shape never re-opened the prior golden path. Ignore job `d87c15b0ffba42b7a21520fd9cb331e7`; it was submitted through a PowerShell path that corrupted `Flüchtlinge`.
+→ Docs/AGENTS/Handoffs/2026-04-18_Senior_Developer_Asylum_WWII_Post_Gating_Live_Rerun.md
+
+---
+### 2026-04-18 | LLM Expert | Codex (GPT-5) | Report-Review Skill Prompt Debate And Provenance Review -- [Standard] [open-items: yes]
+**For next agent:** `/report-review` is structurally strong in Phase 4, but three skill-level gaps remain: (1) autonomous `/validate` still verifies intended input, not persisted `job.inputValue`, so a transport-encoding corruption can be treated as valid evidence; (2) the prompt-rollout drift gate is stricter than necessary because it does not use the repo's existing canonical prompt hash path to compare current files to `config.db.active_hash`; (3) panel context omits provenance/language state, so panels can analyze an invalid live run without seeing that it failed exact-input integrity. If Captain wants this tightened, patch the skill with LLM Expert + Senior Developer + Lead Architect lenses, then re-use `/report-review` on fresh multilingual live reruns.
+→ Docs/AGENTS/Handoffs/2026-04-18_LLM_Expert_Report_Review_Skill_Prompt_Debate_And_Provenance_Review.md
+
+---
 ### 2026-04-18 | Unassigned | Codex (GPT-5) | Current Official Data Discovery Prioritization -- [Standard] [open-items: yes]
 **For next agent:** Stage 2 acquisition now gives capped same-family follow-up slots to direct document/data artifacts before feed/listing hops, so the newest official source-native files are less likely to be dropped behind navigation pages. Main anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and the new regression in `apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts`. Verify next with an exact-input live rerun of the asylum/WWII claim and compare against jobs `25dea04fb0da4ab5ad12fd5dbf76896a` and `23d05e2f16d9493d9a2a37a215d9813c`.
 → Docs/AGENTS/Handoffs/2026-04-18_Unassigned_Current_Official_Data_Discovery_Prioritization.md
@@ -1256,7 +1266,23 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-18 | Unassigned | Codex (GPT-5) | Discovered Document Gate Bridge -- [Standard] [open-items: yes]
 **For next agent:** Stage 2 acquisition now preserves one top-priority same-family document artifact per already-relevant parent even when the discovered-item classifier omits it. The classifier still gates the remaining discovered URLs; only the first prioritized document inherits the parent relevance score as a fetch-time bridge. Main anchors are `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and the new regression in `apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts`. Validate next with a fresh exact-input asylum/WWII rerun and compare against miss `25dea04fb0da4ab5ad12fd5dbf76896a`.
 → Docs/AGENTS/Handoffs/2026-04-18_Unassigned_Discovered_Document_Gate_Bridge.md
+
 ---
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Broad Current Total Comparison Prompt Fix -- [Standard] [open-items: yes]
 **For next agent:** Stage 1 and Stage 2 prompt contracts now keep a broad public-language current-versus-historical comparison anchored to the broadest authoritative current-side umbrella total instead of letting all official queries collapse onto a narrower formal subset. Main anchors are `apps/web/prompts/claimboundary.prompt.md`, `claim-extraction-prompt-contract.test.ts`, and `verdict-prompt-contract.test.ts`. Validate next with a fresh exact-input rerun of `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.` and compare against jobs `c9b04f5b74d645dea5f24459869a22ad` and `d1045764077f4012a4a4aa9463fc106b`.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Broad_Current_Total_Comparison_Prompt_Fix.md
+
+---
+### 2026-04-19 | Code Reviewer | Codex (GPT-5) | Indexing Recommendation Accuracy Review -- [Standard] [open-items: no]
+**For next agent:** Review outcome: the recommendation is directionally right that Phase 2 MCP would improve adoption, but several premises are overstated. `AGENTS.md`, `Handoff_Protocol.md`, `Multi_Agent_Meta_Prompt.md`, and `report-review/SKILL.md` already instruct index-first usage; `docs-update`, `wip-update`, and `handoff` skills maintain the system; `build-index.mjs` is 255 lines and `handoff-index.json` is 213 entries today. Keep automation; if follow-up is wanted, add a query surface or MCP without claiming repo-wide ~0% bypass.
+→ Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Recommendation_Accuracy_Review.md
+
+---
+### 2026-04-19 | Code Reviewer | Codex (GPT-5) | Indexing Improvement Options Debate -- [Standard] [open-items: no]
+**For next agent:** Ranked the next-step options for a `Claude + GPT/Codex first, Gemini second` workflow after a three-position debate. Conclusion: best immediate step is wrapper/skill alignment around one concrete index-first path; best target architecture is a shared query core with CLI first and optional Claude MCP second. MCP-only is too tool-skewed; CLI-only is too optional; minimum-change-only is cheap but may plateau.
+→ Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Improvement_Options_Debate.md
+
+---
+### 2026-04-19 | Code Reviewer | Codex (GPT-5) | Wrapper Index-First Alignment -- [Standard] [open-items: no]
+**For next agent:** Implemented the approved wrapper-only fix. `GEMINI.md`, `.github/copilot-instructions.md`, `.clinerules/00-factharbor-rules.md`, and `.cursor/rules/factharbor-core.mdc` now all point agents to `Docs/AGENTS/index/handoff-index.json`, `stage-map.json`, and `stage-manifest.json` before scanning `Docs/AGENTS/Handoffs/` by filename, while preserving the rule that code locations still use grep/search.
+→ Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md

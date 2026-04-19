@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-15 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
 
 # GEMINI.md
 
@@ -32,6 +32,19 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
+
+## Index-First Lookup
+
+Before scanning `Docs/AGENTS/Handoffs/` by filename, query the generated indexes under
+`Docs/AGENTS/index/`:
+
+- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
+- `stage-map.json` — locate which analyzer stage file owns a behavior
+- `stage-manifest.json` — look up model-tier mappings without grepping code
+
+`handoff-index.json` is for agent task history only. For source code locations, use
+normal code search/grep. If the indexes are missing, run `npm run index` once or fall
+back to direct file scanning.
 
 ## Named Workflows
 Documented procedures for recurring tasks. Read the file and follow its instructions (ignore YAML frontmatter).

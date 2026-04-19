@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-18T22:02:29.725Z",
-  "count": 212,
+  "generatedAt": "2026-04-19T05:26:31.226Z",
+  "count": 216,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4410,6 +4410,92 @@
         "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts"
       ],
       "summary": "Start with [research-acquisition-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/research-acquisition-stage.ts) around the guaranteed-document logic after `classifiedByUrl`, plus the new regression in [research-acquisition-stage.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/rese"
+    },
+    {
+      "file": "2026-04-19_Code_Reviewer_Indexing_Improvement_Options_Debate.md",
+      "date": "2026-04-19",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "indexing",
+        "debate",
+        "recommendation",
+        "mcp",
+        "cli",
+        "wrappers",
+        "adoption"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Improvement_Options_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Indexing Improvement Options Debate"
+    },
+    {
+      "file": "2026-04-19_Code_Reviewer_Indexing_Recommendation_Accuracy_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "indexing",
+        "review",
+        "recommendation",
+        "handoff_index",
+        "mcp",
+        "automation",
+        "adoption"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Recommendation_Accuracy_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Indexing Recommendation Accuracy Review"
+    },
+    {
+      "file": "2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md",
+      "date": "2026-04-19",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "indexing",
+        "wrappers",
+        "adoption",
+        "documentation",
+        "alignment"
+      ],
+      "files_touched": [
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        ".clinerules/00-factharbor-rules.md",
+        ".cursor/rules/factharbor-core.mdc",
+        "Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Wrapper Index-First Alignment"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Broad_Current_Total_Comparison_Prompt_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "broad",
+        "current",
+        "total",
+        "comparison",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts"
+      ],
+      "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) at the `expectedEvidenceProfile` rules and `GENERATE_QUERIES` section, plus the updated contract assertions in [claim-extraction-prompt-contract.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyz"
     }
   ]
 }

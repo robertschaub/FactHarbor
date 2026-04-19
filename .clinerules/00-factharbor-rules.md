@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-03-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
 
 # FactHarbor — Cline Rules
 
@@ -67,6 +67,17 @@ On task completion, write output so other agents can pick up your work:
 Template and full rules: `/AGENTS.md` § Agent Exchange Protocol.
 
 When **starting** a task, read `Docs/AGENTS/Agent_Outputs.md` first for recent context from other agents.
+
+Then use the generated indexes in `Docs/AGENTS/index/` before scanning
+`Docs/AGENTS/Handoffs/` by filename:
+
+- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
+- `stage-map.json` — locate which analyzer stage file owns a behavior
+- `stage-manifest.json` — look up model-tier mappings without grepping code
+
+`handoff-index.json` is for agent task history only. For source code locations, use
+normal code search/grep. If the indexes are missing, run `npm run index` once or fall
+back to direct file scanning.
 
 ## Agent Handoff
 

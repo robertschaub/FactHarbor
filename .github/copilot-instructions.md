@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-16 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -48,6 +48,19 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 ## Roles
 
 When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
+
+## Index-First Lookup
+
+Before scanning `Docs/AGENTS/Handoffs/` by filename, query the generated indexes under
+`Docs/AGENTS/index/`:
+
+- `handoff-index.json` — filter by `role` and `topics` to find relevant prior work
+- `stage-map.json` — locate which analyzer stage file owns a behavior
+- `stage-manifest.json` — look up model-tier mappings without grepping code
+
+`handoff-index.json` is for agent task history only. For source code locations, use
+normal code search/grep. If the indexes are missing, run `npm run index` once or fall
+back to direct file scanning.
 
 ## Behavior Examples
 
