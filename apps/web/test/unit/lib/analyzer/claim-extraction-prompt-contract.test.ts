@@ -205,6 +205,29 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("comparative ecosystem evidence profiling", () => {
+    it("pass1 keeps comparative ecosystem search hints concrete and in-language", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
+      expect(section).not.toBeNull();
+      expect(section).toContain("`searchHint` stay in the input language");
+      expect(section).toContain("activity plus a concrete institutional signal route");
+      expect(section).toContain("participant/member/certification lists");
+      expect(section).toContain("network rosters");
+      expect(section).toContain("generic words such as system, infrastructure, institutions, landscape, or comparison");
+    });
+
+    it("pass2 keeps comparative ecosystem profiles tied to concrete source-native signals", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      expect(section).not.toBeNull();
+      expect(section).toContain("primary verification routes");
+      expect(section).toContain("participant/member/certification lists");
+      expect(section).toContain("source-native program participation records");
+      expect(section).toContain("Broad landscape surveys, content analyses, and generic structural discussions may appear only as secondary/contextual routes");
+      expect(section).toContain("Do NOT let `expectedEvidenceProfile` reduce the comparison to abstract metrics");
+      expect(section).toContain("source-native records for each side");
+    });
+  });
+
   describe("decomposition integrity guard", () => {
     it("forbids whole-input carry-through when a comparison sentence is decomposed", () => {
       const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");

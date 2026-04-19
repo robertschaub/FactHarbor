@@ -488,6 +488,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("participant/member/certification list");
       expect(section).toContain("network or association roster");
       expect(section).toContain("weaker side toward enumerative ecosystem routes");
+      expect(section).toContain("at least one query for EACH compared side must name a concrete ecosystem signal");
+      expect(section).toMatch(/broad words such as system,\s*infrastructure,\s*institutions,\s*landscape/i);
+      expect(section).toMatch(/landscape,\s*overview,\s*or comparison is insufficient/i);
+      expect(section).toContain("concrete source-native signal or artifact");
     });
   });
 
