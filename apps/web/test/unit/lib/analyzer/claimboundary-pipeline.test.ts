@@ -1982,15 +1982,26 @@ describe("Stage 1: runPreliminarySearch", () => {
     // Mock the evidence extraction LLM call
     mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
     mockGenerateText.mockResolvedValue({ text: "" } as any);
-    mockExtractOutput.mockReturnValue({
-      evidenceItems: [
-        {
-          statement: "Evidence found in source",
-          evidenceScope: { methodology: "data analysis", temporal: "2024" },
-          relevantClaimIds: ["AC_01"],
-        },
-      ],
-    });
+    mockExtractOutput
+      .mockReturnValueOnce({
+        relevantSources: [
+          {
+            url: "https://example.com/1",
+            relevanceScore: 0.92,
+            jurisdictionMatch: "direct",
+            reasoning: "direct match",
+          },
+        ],
+      })
+      .mockReturnValueOnce({
+        evidenceItems: [
+          {
+            statement: "Evidence found in source",
+            evidenceScope: { methodology: "data analysis", temporal: "2024" },
+            relevantClaimIds: ["AC_01"],
+          },
+        ],
+      });
 
     const result = await runPreliminarySearch(
       roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
@@ -2004,7 +2015,7 @@ describe("Stage 1: runPreliminarySearch", () => {
     expect(state.sources).toHaveLength(1);
     expect(state.sources[0].url).toBe("https://example.com/1");
     expect(state.sources[0].searchQuery).toBe("test hint");
-    expect(state.llmCalls).toBe(1);
+    expect(state.llmCalls).toBe(2);
     expect(mockFetchUrl).toHaveBeenCalledWith(
       "https://example.com/1",
       expect.objectContaining({ timeoutMs: 23456, maxLength: 15000 }),
@@ -2041,6 +2052,18 @@ describe("Stage 1: runPreliminarySearch", () => {
 
     // Return very short text (< 100 chars)
     mockFetchUrl.mockResolvedValue({ text: "short", title: "Short", contentType: "text/html" });
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [
+        {
+          url: "https://example.com/short",
+          relevanceScore: 0.9,
+          jurisdictionMatch: "direct",
+          reasoning: "direct match",
+        },
+      ],
+    });
 
     const result = await runPreliminarySearch(
       roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
@@ -2048,7 +2071,32 @@ describe("Stage 1: runPreliminarySearch", () => {
 
     expect(result).toHaveLength(0);
     // extractPreliminaryEvidence should NOT have been called since no sources passed length filter
-    expect(state.llmCalls).toBe(0);
+    expect(state.llmCalls).toBe(1);
+  });
+
+  it("should skip preliminary fetch when relevance filtering rejects all results", async () => {
+    const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/offtarget", title: "Off-target", snippet: "text" }],
+      providersUsed: ["google"],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      relevantSources: [],
+    });
+
+    const result = await runPreliminarySearch(
+      roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
+    );
+
+    expect(result).toHaveLength(0);
+    expect(state.sources).toHaveLength(0);
+    expect(state.llmCalls).toBe(1);
+    expect(mockFetchUrl).not.toHaveBeenCalled();
   });
 });
 
@@ -7741,7 +7789,12 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
 
     vi.mocked(loadPipelineConfig).mockResolvedValue({
-      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      config: {
+        centralityThreshold: "medium",
+        maxAtomicClaims: 5,
+        preliminarySearchQueriesPerClaim: 1,
+        preliminaryMaxSources: 1,
+      } as any,
       contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
     } as any);
     vi.mocked(loadSearchConfig).mockResolvedValue({
@@ -7804,6 +7857,87 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(llmCallIndex).toBe(3);
     // No low_claim_count warning
     expect(state.warnings.filter((w: any) => w.type === "low_claim_count")).toHaveLength(0);
+  });
+
+  it("forwards pass1 detectedLanguage and inferredGeography into preliminary relevance classification", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        centralityThreshold: "medium",
+        maxAtomicClaims: 5,
+        preliminarySearchQueriesPerClaim: 1,
+        preliminaryMaxSources: 1,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/geo", title: "Geo", snippet: "snippet" }],
+      providersUsed: ["google"],
+    } as any);
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return {
+            ...pass1Fixture,
+            detectedLanguage: "de",
+            inferredGeography: "CH",
+          };
+        case 2:
+          return { relevantSources: [] };
+        case 3:
+          return makePass2(1);
+        case 4:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+
+    const state: any = {
+      originalInput: "Behauptung zur Schweiz.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    await extractClaims(state);
+
+    const relevanceCall = mockLoadSection.mock.calls.find(([, section]) => section === "RELEVANCE_CLASSIFICATION");
+    expect(relevanceCall).toBeTruthy();
+    expect(relevanceCall?.[2]).toMatchObject({
+      inferredGeography: "CH",
+    });
   });
 
   it("should recover via reprompt when initial post-Gate-1 count is below minimum", async () => {

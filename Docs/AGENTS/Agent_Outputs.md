@@ -1286,3 +1286,23 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Code Reviewer | Codex (GPT-5) | Wrapper Index-First Alignment -- [Standard] [open-items: no]
 **For next agent:** Implemented the approved wrapper-only fix. `GEMINI.md`, `.github/copilot-instructions.md`, `.clinerules/00-factharbor-rules.md`, and `.cursor/rules/factharbor-core.mdc` now all point agents to `Docs/AGENTS/index/handoff-index.json`, `stage-map.json`, and `stage-manifest.json` before scanning `Docs/AGENTS/Handoffs/` by filename, while preserving the rule that code locations still use grep/search.
 → Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review e8777ef2 CH DE Fact-Checking Comparison -- [Standard] [open-items: yes]
+**For next agent:** Job `e8777ef27ee74b649f80daf11d22ddcf` is not a prompt-drift case; active and runtime `claimboundary` hash both equal `99aa2a94...`. The main quality failure is prompt/runtime behavior: broad topical queries, off-target direct evidence admission, and loss of Swiss institutional extraction that was present in comparator `99550cfbf6c94b519758551707aaa183`. Start with `apps/web/prompts/claimboundary.prompt.md:279-285`, `:654-669`, `:799-818`, `:893-912`, `:1391-1396`, and `apps/web/src/lib/analyzer/research-query-stage.ts:181-185`.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_e8777ef2_CH_DE_Fact_Checking_Comparison.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review CH DE Fact-Checking Prompt Fix -- [Standard] [open-items: yes]
+**For next agent:** The prompt-only fix for job `e8777ef27ee74b649f80daf11d22ddcf` is now in `apps/web/prompts/claimboundary.prompt.md`. It hardens qualitative institutional-comparison handling across Pass 1, Pass 2, Stage 2 query/relevance/extraction/applicability, and Stage 4 verdict logic so topical-adjacent mentions no longer stand in for ecosystem evidence. Safe verification passed on the prompt-contract and frontmatter-drift tests; live validation still needs reseed + restart before rerunning the target input.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_CH_DE_Fact_Checking_Prompt_Fix.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: no]
+**For next agent:** Reviewed commit-backed analyzer changes in `3a13dbb9`, `bfc48338`, `01aa3203`, `1c7bd96e`, and `9479376d` and re-ran both the targeted retrieval/acquisition/prompt-contract suites and the full safe suite. No concrete post-last-run regression was reproduced; `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and `apps/web/src/lib/retrieval.ts` remain the main surfaces if later runtime evidence contradicts this scan.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review a99d1780 CH DE Fact-Checking Stage1 Filter And Grounding Fix -- [Standard] [open-items: yes]
+**For next agent:** Job `a99d17807c1c47dea23270bc8b1880b3` was not rollout drift; it already used active prompt hash `626f17c0...`. The implemented fix adds a Stage-1 LLM relevance gate before preliminary fetch/extraction in [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) and tightens [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) against different-sector lexical overlaps, omission-as-evidence from unrelated pages, and uncited verdict world knowledge. Fix review found and I corrected the missing Pass-1 geography handoff into the new relevance gate. Live confirmation still needs prompt reseed + restart + rerun of the exact input.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_a99d1780_CH_DE_Fact_Checking_Stage1_Filter_And_Grounding_Fix.md

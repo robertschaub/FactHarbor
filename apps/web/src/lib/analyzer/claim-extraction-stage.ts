@@ -37,6 +37,7 @@ import {
   type ModelTask,
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
+import { classifyRelevance } from "./research-extraction-stage";
 import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure } from "./pipeline-utils";
 
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
@@ -297,6 +298,10 @@ export async function extractClaims(
     pipelineConfig,
     currentDate,
     state,
+    {
+      language: pass1.detectedLanguage,
+      geography: pass1.inferredGeography,
+    },
   );
 
   // ------------------------------------------------------------------
@@ -1331,8 +1336,34 @@ export async function runPreliminarySearch(
               }
             }
 
+            const provisionalClaim = {
+              id: "AC_PRELIMINARY",
+              statement: claim.statement,
+              freshnessRequirement: "none",
+            } as AtomicClaim;
+            const relevantResults = response.results.length > 0
+              ? await classifyRelevance(
+                provisionalClaim,
+                response.results,
+                pipelineConfig,
+                currentDate,
+                searchGeo?.geography,
+                searchGeo?.geography ? [searchGeo.geography] : undefined,
+              )
+              : [];
+            if (response.results.length > 0) {
+              local.llmCalls++;
+            }
+
+            const relevantByUrl = new Map(
+              relevantResults.map((result) => [result.url, result.originalRank]),
+            );
+
             // Fetch sources in parallel (was serial per-source)
-            const sourcesToFetch = response.results.slice(0, 3);
+            const sourcesToFetch = response.results
+              .filter((searchResult) => relevantByUrl.has(searchResult.url))
+              .sort((a, b) => (relevantByUrl.get(a.url) ?? 0) - (relevantByUrl.get(b.url) ?? 0))
+              .slice(0, 3);
             const fetchErrorByType: Record<string, number> = {};
             const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
             let fetchFailed = 0;
