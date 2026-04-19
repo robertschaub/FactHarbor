@@ -1313,6 +1313,16 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
 
 ---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Prompt Diagnosis 7be084ee Asylum Current Total Regression -- [Standard] [open-items: yes]
+**For next agent:** Job `7be084ee2c52441894a0d4a5c67213ec` is prompt drift, not analyzer code drift. The key comparator is `c95d00114cc54e6da201237d1ab59218` on prompt hash `5b34870a...` versus the failing run on prompt hash `53232e79...`. `git diff --stat caa03914..3add5697` over the runtime path shows only one changed file: `apps/web/prompts/claimboundary.prompt.md`. The runtime blob diff confirms the only changes were the CH/DE comparative-ecosystem bullets added to `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, and `GENERATE_QUERIES`. The asylum run then lost the broad current-total route and fell onto 2024/component framing. Recommended direction is a **partial undo / narrowing** of that prompt expansion, not a full revert and not analyzer-code surgery.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Prompt_Diagnosis_7be084ee_Asylum_Current_Total_Regression.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | CH-DE Fact-Checking Query Seeding Stabilization -- [Standard] [open-items: yes]
+**For next agent:** The fix for `bcfcaa1f99304c83a8ee3676170444dd` is committed as `3add5697` and lives in `apps/web/prompts/claimboundary.prompt.md` plus the prompt-contract tests. Root cause was upstream query/evidence seeding drift, not rollout drift: Stage 1 had become too generic for this ecosystem-comparison family. Prompt reseed activated `claimboundary` hash `53232e79...`, and pending jobs are now demonstrably binding to the fixed build because `12efc9df...` completed on `3add5697...+bdb0bd8a` and queued jobs `ef358963...` and `3a8dfd60...` then entered `RUNNING` on that same executed SHA. Exact Swiss rerun `f59f64d739be47fa9d5192c9d7fefc34` is still queued and remains the clean behavioral confirmation target.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_CH_DE_Fact_Checking_Query_Seeding_Stabilization.md
+
+---
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review a99d1780 CH DE Fact-Checking Stage1 Filter And Grounding Fix -- [Standard] [open-items: yes]
 **For next agent:** Job `a99d17807c1c47dea23270bc8b1880b3` was not rollout drift; it already used active prompt hash `626f17c0...`. The implemented fix adds a Stage-1 LLM relevance gate before preliminary fetch/extraction in [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) and tightens [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) against different-sector lexical overlaps, omission-as-evidence from unrelated pages, and uncited verdict world knowledge. Fix review found and I corrected the missing Pass-1 geography handoff into the new relevance gate. Live confirmation still needs prompt reseed + restart + rerun of the exact input.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_a99d1780_CH_DE_Fact_Checking_Stage1_Filter_And_Grounding_Fix.md

@@ -483,15 +483,23 @@ describe("Stage-2 prompt contract", () => {
 
     it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("ONLY for comparative ecosystem claims");
+      expect(section).toContain("These rules do NOT apply to population-snapshot, threshold, or current-total claims; use the current-total rules above instead");
       expect(section).toContain("side-specific query coverage to the strongest institutional existence signals on BOTH sides");
-      expect(section).toContain("at least one returned query for EACH compared side must explicitly target an enumerative ecosystem route");
+      expect(section).toContain("At least one returned query for EACH compared side must explicitly target an enumerative ecosystem route");
       expect(section).toContain("participant/member/certification list");
       expect(section).toContain("network or association roster");
       expect(section).toContain("weaker side toward enumerative ecosystem routes");
-      expect(section).toContain("at least one query for EACH compared side must name a concrete ecosystem signal");
+      expect(section).toContain("At least one query for EACH compared side must name a concrete ecosystem signal");
       expect(section).toMatch(/broad words such as system,\s*infrastructure,\s*institutions,\s*landscape/i);
       expect(section).toMatch(/landscape,\s*overview,\s*or comparison is insufficient/i);
       expect(section).toContain("concrete source-native signal or artifact");
+      expect(section.indexOf("When the claim is explicitly about the present or current state")).toBeLessThan(
+        section.indexOf("ONLY for comparative ecosystem claims"),
+      );
+      expect(section.indexOf("For approximate comparison claims between current and historical or reference totals")).toBeLessThan(
+        section.indexOf("ONLY for comparative ecosystem claims"),
+      );
     });
   });
 

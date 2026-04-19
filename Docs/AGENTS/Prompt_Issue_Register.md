@@ -35,3 +35,18 @@ Entries not re-confirmed under newer prompt/runtime provenance become `status: u
 - **Observed behavior:** Job `4c5218a2960444c29baccff13f21cb38` emitted `verdict_grounding_issue` claiming `EV_1776602553386-3388` were invalid because they were absent from `citedEvidenceRegistry`, even though they existed in `evidencePool` and were discussed as claim-local context.
 - **Recommended fix:** Move the three-tier rule about claim-local context ahead of the registry-focused task bullets, or rewrite the task so `citedEvidenceRegistry` validates only directional citation arrays while `evidencePool` / `challengeContext` explicitly govern uncited reasoning references.
 - **Mitigation applied:** 2026-04-19 prompt revision on active hash `c77cb6e8ca4671a0a3a26552f69cf94150723a440c152d003b4d530114aab8e3` rewrites `VERDICT_GROUNDING_VALIDATION` so claim-local context is validated before hallucination is flagged and registry membership is explicitly limited to directional citation arrays. No post-fix live rerun yet, so the issue is downgraded to `unconfirmed`, not `resolved`.
+
+## PI-003 — Section-order spillover from unrelated comparative prompt expansion (P9)
+- **Type:** REPORT-SPECIFIC
+- **Severity:** HIGH
+- **Confidence:** INFERRED
+- **Prompt:** `claimboundary.prompt.md`, sections: `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, `GENERATE_QUERIES`
+- **Prompt hash:** `53232e79991d6005dbd19415edf0bd9cadafedc39a87c17ee07523acf5a47530`
+- **Coverage:** BLOB-EXACT
+- **First seen:** commit `3add5697b2c0f93d0cb348859dea72e8c9a08723` — 2026-04-19
+- **Last confirmed:** commit `3add5697b2c0f93d0cb348859dea72e8c9a08723` — 2026-04-19
+- **Status:** unconfirmed
+- **Description:** An unrelated prompt expansion for comparative institutional/ecosystem claims was added to generic shared sections and appears to have displaced attention from the existing broad-current-total retrieval rules for the asylum current-snapshot benchmark.
+- **Observed behavior:** Benchmark job `7be084ee2c52441894a0d4a5c67213ec` regressed from recent successful run `c95d00114cc54e6da201237d1ab59218` even though the runtime path had no analyzer code changes. The good run preserved the SEM 2025 umbrella-total path and found `stat-jahr-2025-kommentar-d.pdf`; the bad run instead collapsed onto 2024 yearly stats, under-threshold framing, and partial status counts.
+- **Recommended fix:** Narrow or relocate the comparative-ecosystem bullets introduced in `3add5697` so they remain effective for CH/DE ecosystem comparisons without living as broad, high-salience additions in the generic Stage 1 / Stage 2 prompt path. Pair that with a slightly harder current-total reacquisition rule for thresholded `current_snapshot` population claims.
+- **Mitigation applied:** 2026-04-19 prompt revision wraps the comparative-ecosystem instructions in `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, and `GENERATE_QUERIES` behind explicit `ONLY for comparative ecosystem claims` gates, adds negative exclusions for population-snapshot / threshold / current-total claims, and moves the current-total query guards ahead of the ecosystem block in `GENERATE_QUERIES`. Focused prompt-contract tests pass, but no post-fix live rerun has completed yet, so the issue is downgraded to `unconfirmed`, not `resolved`.
