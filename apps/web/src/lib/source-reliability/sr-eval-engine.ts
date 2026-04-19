@@ -169,11 +169,13 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
 // MODEL EVALUATION
 // ============================================================================
 
-function extractBiasIndicator(bias?: EvaluationResult["bias"]): string | null {
+function extractBiasIndicator(
+  bias?: EvaluationResult["bias"],
+): ResponsePayload["biasIndicator"] {
   if (!bias) return null;
   const spectrum = bias.politicalBias;
   if (spectrum === "not_applicable") return null;
-  return spectrum.replace(/_/g, "-");
+  return spectrum;
 }
 
 function buildResponsePayload(

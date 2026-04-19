@@ -14,6 +14,98 @@ import type {
   EvidencePackItemForQuality,
 } from "@/lib/source-reliability/evidence-quality-assessment";
 
+const SR_SOURCE_TYPE_VALUES = [
+  "editorial_publisher",
+  "wire_service",
+  "government",
+  "state_media",
+  "state_controlled_media",
+  "collaborative_reference",
+  "platform_ugc",
+  "advocacy",
+  "aggregator",
+  "propaganda_outlet",
+  "known_disinformation",
+  "unknown",
+] as const;
+
+const SR_POLITICAL_BIAS_VALUES = [
+  "far_left",
+  "left",
+  "center_left",
+  "center",
+  "center_right",
+  "right",
+  "far_right",
+  "not_applicable",
+] as const;
+
+const SR_OTHER_BIAS_VALUES = [
+  "pro_government",
+  "anti_government",
+  "corporate_interest",
+  "sensationalist",
+  "ideological_other",
+  "none_detected",
+] as const;
+
+export const SrSourceTypeSchema = z.enum(SR_SOURCE_TYPE_VALUES);
+export type SrSourceType = z.infer<typeof SrSourceTypeSchema>;
+
+export const SrPoliticalBiasSchema = z.enum(SR_POLITICAL_BIAS_VALUES);
+export type SrPoliticalBias = z.infer<typeof SrPoliticalBiasSchema>;
+
+export const SrOtherBiasSchema = z.enum(SR_OTHER_BIAS_VALUES);
+export type SrOtherBias = z.infer<typeof SrOtherBiasSchema>;
+
+const SOURCE_TYPE_ALIASES: Record<string, SrSourceType> = {
+  political_party: "advocacy",
+};
+
+const POLITICAL_BIAS_ALIASES: Record<string, SrPoliticalBias> = {
+  centre: "center",
+  centre_left: "center_left",
+  centre_right: "center_right",
+};
+
+const OTHER_BIAS_ALIASES: Record<string, SrOtherBias> = {
+  advocacy: "ideological_other",
+  none: "none_detected",
+};
+
+function normalizeContractToken(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized || undefined;
+}
+
+export function normalizeSrSourceType(value: unknown): SrSourceType {
+  const normalized = normalizeContractToken(value);
+  if (!normalized) return "unknown";
+  const canonical = SOURCE_TYPE_ALIASES[normalized] ?? normalized;
+  return SrSourceTypeSchema.safeParse(canonical).success
+    ? (canonical as SrSourceType)
+    : "unknown";
+}
+
+export function normalizeSrPoliticalBias(value: unknown): SrPoliticalBias {
+  const normalized = normalizeContractToken(value);
+  if (!normalized) return "not_applicable";
+  const canonical = POLITICAL_BIAS_ALIASES[normalized] ?? normalized;
+  return SrPoliticalBiasSchema.safeParse(canonical).success
+    ? (canonical as SrPoliticalBias)
+    : "not_applicable";
+}
+
+export function normalizeSrOtherBias(value: unknown): SrOtherBias | null {
+  const normalized = normalizeContractToken(value);
+  if (!normalized) return null;
+  const canonical = OTHER_BIAS_ALIASES[normalized] ?? normalized;
+  return SrOtherBiasSchema.safeParse(canonical).success
+    ? (canonical as SrOtherBias)
+    : null;
+}
+
 // ============================================================================
 // REQUEST-SCOPED CONFIG (replaces 8 mutable module-level lets)
 // ============================================================================
@@ -63,7 +155,7 @@ export const FactualRatingSchema = z
 export const EvaluationResultSchema = z.object({
   domain: z.string().optional(),
   evaluationDate: z.string().optional(),
-  sourceType: z.string().min(1).default("unknown"),
+  sourceType: z.preprocess((value) => normalizeSrSourceType(value), SrSourceTypeSchema),
   identifiedEntity: z.string().nullable().optional(), // The organization evaluated, or null if unknown
   evidenceQuality: z.object({
     independentAssessmentsCount: z.coerce.number().min(0).max(10).optional(),
@@ -74,11 +166,14 @@ export const EvaluationResultSchema = z.object({
   confidence: z.number().min(0).max(1),
   reasoning: z.string(),
   factualRating: FactualRatingSchema,
-  biasIndicator: z.string().optional(),
+  biasIndicator: z.preprocess((value) => {
+    if (value === undefined) return undefined;
+    return normalizeSrPoliticalBias(value);
+  }, SrPoliticalBiasSchema).optional(),
   bias: z
     .object({
-      politicalBias: z.string(),
-      otherBias: z.string().nullable().optional(),
+      politicalBias: z.preprocess((value) => normalizeSrPoliticalBias(value), SrPoliticalBiasSchema),
+      otherBias: z.preprocess((value) => normalizeSrOtherBias(value), z.union([SrOtherBiasSchema, z.null()])).optional(),
     })
     .optional(),
   evidenceCited: z.array(z.object({
@@ -145,7 +240,7 @@ export interface ResponsePayload {
   consensusAchieved: boolean;
   reasoning: string;
   category: string;
-  sourceType?: string; // LLM-classified source type (e.g., propaganda_outlet, state_controlled_media)
+  sourceType?: SrSourceType;
   identifiedEntity?: string | null; // The organization evaluated, or null if unknown
   evidencePack?: {
     providersUsed: string[];
@@ -153,10 +248,10 @@ export interface ResponsePayload {
     items: EvidencePackItem[];
     qualityAssessment?: EvidenceQualityAssessmentMeta;
   };
-  biasIndicator: string | null | undefined;
+  biasIndicator: SrPoliticalBias | null | undefined;
   bias?: {
-    politicalBias: string;
-    otherBias?: string | null;
+    politicalBias: SrPoliticalBias;
+    otherBias?: SrOtherBias | null;
   };
   evidenceCited?: EvidenceItem[];
   caveats?: string[];

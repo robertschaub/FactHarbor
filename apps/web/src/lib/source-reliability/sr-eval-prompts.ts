@@ -505,19 +505,19 @@ Input: "party-website.example"
 Evidence: [E1] Government directory listing: official website of political party X. [E2] Academic paper citing party publications. [E3] News article mentioning party's political positions.
 Output:
 {
-  "sourceType": "political_party",
+  "sourceType": "advocacy",
   "identifiedEntity": "Political Party X",
   "evidenceQuality": { "independentAssessmentsCount": 0, "recencyWindowUsed": "2020-2025", "notes": "Source type clearly identifiable from evidence. No independent reliability assessments but source type characteristics allow scoring." },
   "score": 0.30,
   "confidence": 0.60,
   "factualRating": "leaning_unreliable",
-  "bias": { "politicalBias": "right", "otherBias": "advocacy" },
-  "reasoning": "Evidence clearly identifies this as an official political party website. Political party websites are inherently advocacy sources — they present partisan positions, selectively use data, and lack editorial independence or corrections policies. Score of 0.30 reflects the inherent limitations of advocacy sources. No independent fact-checker ratings exist to adjust this assessment up or down.",
+  "bias": { "politicalBias": "right", "otherBias": null },
+  "reasoning": "Evidence clearly identifies this as an official political party website. That makes it an advocacy source rather than an editorial publisher. Score of 0.30 reflects the inherent limitations of advocacy sources. No independent fact-checker ratings exist to adjust this assessment up or down.",
   "evidenceCited": [
     { "claim": "Official political party website", "basis": "E1", "recency": "2023" },
     { "claim": "Referenced in academic research as party source", "basis": "E2", "recency": "2020" }
   ],
-  "caveats": ["Score based on source type classification (advocacy/political party), not independent fact-checker assessments", "No independent reliability ratings available"]
+  "caveats": ["Score based on source type classification (advocacy), not independent fact-checker assessments", "No independent reliability ratings available"]
 }
 
 **Example 6: Insufficient Data (truly unknown)**

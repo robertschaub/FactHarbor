@@ -16,6 +16,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
+import { z } from "zod";
 import { diagnoseInverseAsymmetry } from "./metrics";
 import type { SideResult } from "./types";
 
@@ -63,6 +64,11 @@ interface JobApiResponse {
   inputValue: string;
   resultJson: Record<string, unknown> | null;
 }
+
+const InverseVerificationSchema = z.object({
+  isStrictInverse: z.boolean(),
+  reasoning: z.string().trim().min(1).max(400),
+}).strict();
 
 async function fetchJob(
   jobId: string,
@@ -168,33 +174,58 @@ function loadInverseVerificationPrompt(): string {
   }
 }
 
+function extractJsonObject(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new Error("Empty verification response");
+  }
+
+  const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fencedMatch?.[1]) {
+    return fencedMatch[1].trim();
+  }
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return trimmed.slice(firstBrace, lastBrace + 1);
+  }
+
+  throw new Error("No JSON object found in verification response");
+}
+
 async function verifyInverse(
   claimA: string,
   claimB: string,
 ): Promise<{ isStrictInverse: boolean; reasoning: string }> {
-  const prompt = loadInverseVerificationPrompt()
-    .replace("{{CLAIM_A}}", claimA)
-    .replace("{{CLAIM_B}}", claimB);
-
-  const result = await generateText({
-    model: anthropic("claude-haiku-4-5-20251001"),
-    temperature: 0,
-    prompt,
-  });
-
-  try {
-    const parsed = JSON.parse(result.text.trim()) as {
-      isStrictInverse: boolean;
-      reasoning: string;
-    };
-    return {
-      isStrictInverse: Boolean(parsed.isStrictInverse),
-      reasoning: String(parsed.reasoning ?? ""),
-    };
-  } catch {
+  if (!claimA.trim() || !claimB.trim()) {
     return {
       isStrictInverse: false,
-      reasoning: `Failed to parse verification response: ${result.text.slice(0, 200)}`,
+      reasoning: "Inverse verification unavailable: one or both claims are empty.",
+    };
+  }
+
+  try {
+    const prompt = loadInverseVerificationPrompt()
+      .replace(/{{CLAIM_A}}/g, claimA)
+      .replace(/{{CLAIM_B}}/g, claimB);
+
+    const result = await generateText({
+      model: anthropic("claude-haiku-4-5-20251001"),
+      temperature: 0,
+      prompt,
+    });
+
+    const jsonText = extractJsonObject(result.text);
+    const parsed = JSON.parse(jsonText);
+    const validated = InverseVerificationSchema.parse(parsed);
+
+    return validated;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      isStrictInverse: false,
+      reasoning: `Inverse verification unavailable: ${message}`,
     };
   }
 }

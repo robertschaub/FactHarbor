@@ -1,5 +1,25 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+
+vi.mock("fs", async () => {
+  const actual = await vi.importActual<typeof import("fs")>("fs");
+  return {
+    ...actual,
+    readFileSync: vi.fn(() => "Claim A: {{CLAIM_A}}\nClaim B: {{CLAIM_B}}\nReturn JSON only."),
+  };
+});
+
+vi.mock("@ai-sdk/anthropic", () => ({
+  anthropic: vi.fn(() => "mock-anthropic-model"),
+}));
+
+vi.mock("ai", () => ({
+  generateText: vi.fn(),
+}));
+
+import { generateText } from "ai";
 import { runPairedJobAudit } from "@/lib/calibration/paired-job-audit";
+
+const mockGenerateText = vi.mocked(generateText);
 
 function makeJobBody(overrides?: Partial<{
   id: string;
@@ -38,6 +58,7 @@ const TEST_API_URL = "http://localhost:5000";
 
 describe("runPairedJobAudit", () => {
   afterEach(() => {
+    vi.clearAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -144,5 +165,73 @@ describe("runPairedJobAudit", () => {
         apiBaseUrl: TEST_API_URL,
       }),
     ).rejects.toThrow("has no resultJson");
+  });
+
+  it("verifies inverse relations from fenced JSON responses", async () => {
+    const jobA = makeJobBody({ id: "job-a", inputValue: "Entity A increased emissions in Year Y." });
+    const jobB = makeJobBody({ id: "job-b", inputValue: "Entity A did not increase emissions in Year Y." });
+
+    vi.stubGlobal("fetch", mockFetch(
+      { body: jobA },
+      { body: jobB },
+    ));
+    mockGenerateText.mockResolvedValueOnce({
+      text: '```json\n{ "isStrictInverse": true, "reasoning": "Same scope and opposite polarity." }\n```',
+    } as any);
+
+    const result = await runPairedJobAudit({
+      jobIdA: "job-a",
+      jobIdB: "job-b",
+      apiBaseUrl: TEST_API_URL,
+      verifyInverseRelation: true,
+    });
+
+    expect(result.isConfirmedInverse).toBe(true);
+    expect(result.inverseVerificationReasoning).toBe("Same scope and opposite polarity.");
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockGenerateText).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: expect.stringContaining("Claim A: Entity A increased emissions in Year Y."),
+    }));
+  });
+
+  it("degrades gracefully when inverse verification returns invalid JSON", async () => {
+    vi.stubGlobal("fetch", mockFetch(
+      { body: makeJobBody({ id: "job-a", inputValue: "Claim A" }) },
+      { body: makeJobBody({ id: "job-b", inputValue: "Claim B" }) },
+    ));
+    mockGenerateText.mockResolvedValueOnce({
+      text: "not valid json",
+    } as any);
+
+    const result = await runPairedJobAudit({
+      jobIdA: "job-a",
+      jobIdB: "job-b",
+      apiBaseUrl: TEST_API_URL,
+      verifyInverseRelation: true,
+    });
+
+    expect(result.isConfirmedInverse).toBe(false);
+    expect(result.inverseVerificationReasoning).toContain("Inverse verification unavailable:");
+    expect(result.inverseVerificationReasoning).toContain("No JSON object found");
+  });
+
+  it("skips inverse LLM verification when one claim is empty", async () => {
+    vi.stubGlobal("fetch", mockFetch(
+      { body: makeJobBody({ id: "job-a", inputValue: "   " }) },
+      { body: makeJobBody({ id: "job-b", inputValue: "Claim B" }) },
+    ));
+
+    const result = await runPairedJobAudit({
+      jobIdA: "job-a",
+      jobIdB: "job-b",
+      apiBaseUrl: TEST_API_URL,
+      verifyInverseRelation: true,
+    });
+
+    expect(result.isConfirmedInverse).toBe(false);
+    expect(result.inverseVerificationReasoning).toBe(
+      "Inverse verification unavailable: one or both claims are empty.",
+    );
+    expect(mockGenerateText).not.toHaveBeenCalled();
   });
 });
