@@ -261,6 +261,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass1).toContain("treat the input as `multi_assertion_input`");
       expect(pass1).toContain("preserve the shared anchor");
       expect(pass1).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
+      expect(pass1).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
+      expect(pass1).toContain("separate possible timelines or outcomes");
       expect(pass1).toContain("inseparable rank/order/composite proposition");
       expect(pass1).toContain("Decomposition integrity");
       expect(pass1).toContain("proper sub-assertion");
@@ -271,8 +273,10 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("treat the input as `multi_assertion_input`");
       expect(pass2).toContain("preserve the shared anchor");
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
+      expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
       expect(pass2).toContain("Single-claim bundling prohibition");
       expect(pass2).toContain("you MUST return separate atomic claims for those branches");
+      expect(pass2).toContain("A conjunctive clause with one shared verb phrase does not override this rule");
       expect(pass2).toContain("inseparable rank/order/composite proposition");
       expect(pass2).toContain("rest of a comparison class");
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
@@ -282,6 +286,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("non-atomic single-claim bundling");
       expect(contract).toContain("Single-claim bundling audit (MANDATORY)");
       expect(contract).toContain("returns only one thesis-direct claim");
+      expect(contract).toContain("The same rule applies when the coordination is written as one conjunctive clause with a shared verb phrase");
+      expect(contract).toContain("distinct institutions, actor groups, proceedings, or decision gates");
       expect(contract).toContain("bundled claim is non-atomic");
       expect(contract).toContain("`rePromptRequired` must be true");
       expect(contract).toContain("whole-input carry-through");
