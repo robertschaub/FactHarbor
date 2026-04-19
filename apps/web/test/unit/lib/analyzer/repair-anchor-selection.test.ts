@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { selectRepairAnchorText } from "@/lib/analyzer/claim-extraction-stage";
+import {
+  selectRepairAnchorText,
+  shouldRunContractRepairPass,
+} from "@/lib/analyzer/claim-extraction-stage";
 import type { CBClaimUnderstanding } from "@/lib/analyzer/types";
 
 function makeContractSummary(anchorText: string): NonNullable<CBClaimUnderstanding["contractValidationSummary"]> {
@@ -144,5 +147,27 @@ describe("selectRepairAnchorText", () => {
     );
 
     expect(repairAnchor).toBe("rechtskräftig bevor Volk und Parlament darüber entschieden haben");
+  });
+});
+
+describe("shouldRunContractRepairPass", () => {
+  it("skips repair for contract-approved claim sets", () => {
+    expect(shouldRunContractRepairPass({
+      ...makeContractSummary("rechtskräftig"),
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "approved",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_01"],
+        preservedByQuotes: ["rechtskräftig"],
+        validPreservedIds: ["AC_01"],
+      },
+    })).toBe(false);
+  });
+
+  it("keeps repair enabled for unapproved claim sets", () => {
+    expect(shouldRunContractRepairPass(makeContractSummary("rechtskräftig"))).toBe(true);
   });
 });

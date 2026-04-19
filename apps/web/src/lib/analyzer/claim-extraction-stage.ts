@@ -503,7 +503,7 @@ export async function extractClaims(
     // repaired set.
     // ------------------------------------------------------------------
     const repairPassEnabled = calcConfig.claimContractValidation?.repairPassEnabled ?? true;
-    if (repairPassEnabled && contractValidationSummary) {
+    if (repairPassEnabled && contractValidationSummary && shouldRunContractRepairPass(contractValidationSummary)) {
       const anchor = contractValidationSummary.truthConditionAnchor;
       const anchorPresentInInput = anchor?.presentInInput === true;
       const currentClaims = activePass2.atomicClaims as unknown as AtomicClaim[];
@@ -574,6 +574,10 @@ export async function extractClaims(
           console.warn("[Stage1] Contract repair failed (non-fatal):", repairErr);
         }
       }
+    } else if (repairPassEnabled && contractValidationSummary) {
+      console.info(
+        "[Stage1] Skipping contract repair because the current claim set is already contract-approved."
+      );
     }
   }
 
@@ -2803,6 +2807,15 @@ export function selectRepairAnchorText(
   }
 
   return anchorText;
+}
+
+export function shouldRunContractRepairPass(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+): boolean {
+  return !(
+    contractValidationSummary?.preservesContract === true &&
+    contractValidationSummary?.rePromptRequired === false
+  );
 }
 
 /**
