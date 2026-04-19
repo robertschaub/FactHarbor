@@ -1,0 +1,8 @@
+### 2026-04-19 | Unassigned | Codex (GPT-5) | ZHAW Meeting Prep Refinement
+**Task:** Improve the German meeting-preparation note for the ZHAW CAI / NLP conversation without cutting it too aggressively, then correct it to the actual meeting date and time.
+**Files touched:** `Docs/Meetings/2026-04-21_ZHAW_Meeting_Prep.md`, `Docs/AGENTS/Handoffs/2026-04-19_Unassigned_ZHAW_Meeting_Prep_Refinement.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Kept the document as a substantial prep brief rather than collapsing it into a one-pager, but rewrote it around clearer conversation goals, stronger discovery-first sequencing, a more credible demo narrative, and cleaner closing questions. After the user supplied the actual appointment details, corrected the prep note to the real meeting slot (`Dienstag, 21. April 2026, 10:15-11:00 Uhr`) and renamed the file so path and content stay aligned.
+**Open items:** If desired, the next step would be a true live-use companion page: a one-page speaking sheet with only the core opening, three key questions, the demo arc, the preferred next-step ask, and the fallback answers.
+**Warnings:** I improved structure and rhetoric, not external factual validation. Program details, publication references, and funding specifics remain as they stood in the source note and should be rechecked separately if this document becomes externally shared.
+**For next agent:** Use the revised file as the full briefing version. If you create a shorter meeting card, preserve the current structure: discovery first, demo as support, honest limits, then three project lines with C as the internal default but not the explicit opening push.
+**Learnings:** no
