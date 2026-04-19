@@ -105,7 +105,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("the original predicate itself");
       expect(section).toContain("Verbatim Fusion");
       expect(section).toContain("Do not change any existing claim `id`");
-      expect(section).toContain("Return the same number of claims you received");
+      expect(section).toContain("return the same number of claims you received");
       expect(section).toContain('thesisRelevance` is `"direct"`');
       expect(section).toContain("faithful restatement of that original proposition");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");

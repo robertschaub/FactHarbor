@@ -1412,3 +1412,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Inverse Verification And SR Contract Hardening -- [Standard] [open-items: yes]
 **For next agent:** `paired-job-audit.ts` now treats inverse verification as a validated degraded path instead of a throw-on-parse-failure path, and `inverse-claim-verification.prompt.md` now defines strict inverse boundaries explicitly for quantifiers, modality, scope, timeframe, identical claims, empty claims, and multilingual pairs. `sr-eval-types.ts` now canonicalizes SR `sourceType`/bias outputs to enum-backed values with one explicit legacy alias (`political_party` -> `advocacy`), `sr-eval-engine.ts` preserves canonical `biasIndicator` tokens, and `sr-eval-prompts.ts` no longer teaches the off-contract `political_party` example. Focused tests and `npm -w apps/web run build` passed; unrelated dirty `claimboundary` files were left untouched.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Inverse_Verification_And_SR_Contract_Hardening.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Compound Subject Decomposition Prompt Fix -- [Standard] [open-items: yes]
+**For next agent:** `claimboundary.prompt.md` now explicitly forbids splitting a compound subject/object that shares one joint temporal or conditional anchor, and its contract-repair section now allows redundant sub-claims to be merged away instead of forcing a broken fixed-count output. The focused Stage-1 prompt contract test passed. This was committed only; restart the stack before using it for clean commit-linked job runs.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Compound_Subject_Decomposition_Prompt_Fix.md
