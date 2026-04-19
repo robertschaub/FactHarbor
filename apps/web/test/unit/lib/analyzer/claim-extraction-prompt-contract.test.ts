@@ -210,7 +210,7 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
       expect(section).not.toBeNull();
       expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply to population-snapshot, threshold, or current-total claims");
+      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state count, total, ranking, or threshold comparison");
       expect(section).toContain("`searchHint` stay in the input language");
       expect(section).toContain("activity plus a concrete institutional signal route");
       expect(section).toContain("participant/member/certification lists");
@@ -222,7 +222,7 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
       expect(section).not.toBeNull();
       expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply to population-snapshot, threshold, or current-total claims");
+      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state count, total, ranking, or threshold comparison");
       expect(section).toContain("primary verification routes");
       expect(section).toContain("participant/member/certification lists");
       expect(section).toContain("source-native program participation records");

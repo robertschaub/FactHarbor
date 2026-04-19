@@ -484,7 +484,7 @@ describe("Stage-2 prompt contract", () => {
     it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
       expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply to population-snapshot, threshold, or current-total claims; use the current-total rules above instead");
+      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state count, total, ranking, or threshold comparison; use the present-state quantity rules above instead");
       expect(section).toContain("side-specific query coverage to the strongest institutional existence signals on BOTH sides");
       expect(section).toContain("At least one returned query for EACH compared side must explicitly target an enumerative ecosystem route");
       expect(section).toContain("participant/member/certification list");
