@@ -363,6 +363,143 @@ describe("primary-source refinement", () => {
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
   });
 
+  it("runs refinement when only component metrics are evidenced for a current aggregate metric contract", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "current aggregate metric claim",
+      freshnessRequirement: "current_snapshot",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "current persons in the aggregate system",
+          "recognized subgroup total",
+          "temporary protection subgroup total",
+        ],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "current persons in the aggregate system",
+        componentMetrics: [
+          "recognized subgroup total",
+          "temporary protection subgroup total",
+        ],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_component",
+          statement: "Recognized subgroup total is 120000 and temporary protection subgroup total is 70000.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/component-official",
+          sourceTitle: "Official component breakdown",
+          sourceExcerpt: "components",
+          claimDirection: "supports",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official statistics",
+            temporal: "2026",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
+  it("does not run refinement when the direct primary metric is already evidenced for the current aggregate metric contract", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "current aggregate metric claim",
+      freshnessRequirement: "current_snapshot",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: [
+          "current persons in the aggregate system",
+          "recognized subgroup total",
+          "temporary protection subgroup total",
+        ],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "current persons in the aggregate system",
+        componentMetrics: [
+          "recognized subgroup total",
+          "temporary protection subgroup total",
+        ],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      evidenceItems: [
+        {
+          id: "EV_primary_metric",
+          statement: "Current persons in the aggregate system total 235057.",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/aggregate-official",
+          sourceTitle: "Official aggregate total",
+          sourceExcerpt: "aggregate",
+          claimDirection: "supports",
+          probativeValue: "high",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: false,
+          evidenceScope: {
+            methodology: "official statistics",
+            temporal: "2026",
+          },
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+  });
+
   it("still triggers refinement when descriptive source labels mask incomplete quantitative primary coverage", async () => {
     const claim = {
       id: "AC_01",

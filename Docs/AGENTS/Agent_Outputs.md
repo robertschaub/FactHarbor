@@ -1288,6 +1288,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Improvement_Options_Debate.md
 
 ---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Current Aggregate Metric Refinement Fix -- [Standard] [open-items: yes]
+**For next agent:** Implemented the consolidated asylum fix across Stage 1, Stage 2, and Stage 4. `apps/web/prompts/claimboundary.prompt.md` now carries a positive `primaryMetric` / `componentMetrics` contract for current aggregate metric claims, and `apps/web/src/lib/analyzer/research-orchestrator.ts` now triggers the one-time primary-source refinement only while the direct aggregate metric is still missing. Focused prompt-contract tests, the refinement unit suite, and `npm -w apps/web run build` all passed. The remaining live check is a clean rerun of `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz` on the committed build to confirm recovery of the decisive umbrella-total source path.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Current_Aggregate_Metric_Refinement_Fix.md
+
+---
 ### 2026-04-19 | Code Reviewer | Codex (GPT-5) | Wrapper Index-First Alignment -- [Standard] [open-items: no]
 **For next agent:** Implemented the approved wrapper-only fix. `GEMINI.md`, `.github/copilot-instructions.md`, `.clinerules/00-factharbor-rules.md`, and `.cursor/rules/factharbor-core.mdc` now all point agents to `Docs/AGENTS/index/handoff-index.json`, `stage-map.json`, and `stage-manifest.json` before scanning `Docs/AGENTS/Handoffs/` by filename, while preserving the rule that code locations still use grep/search.
 → Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md
@@ -1311,6 +1316,12 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: no]
 **For next agent:** Reviewed commit-backed analyzer changes in `3a13dbb9`, `bfc48338`, `01aa3203`, `1c7bd96e`, and `9479376d` and re-ran both the targeted retrieval/acquisition/prompt-contract suites and the full safe suite. No concrete post-last-run regression was reproduced; `apps/web/src/lib/analyzer/research-acquisition-stage.ts` and `apps/web/src/lib/retrieval.ts` remain the main surfaces if later runtime evidence contradicts this scan.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Analysis Of Job 5e1e8697 Asylum Current Total Rerun -- [Standard] [open-items: yes]
+**For next agent:** Job `5e1e8697c9ac45c29e59c3058e22b172` ran on clean commit `b94c158973717b1dade12a5f9c816a115d5d35bb` with prompt hash `34bdfaa2e5cb3fca1215967865a3d5d2720d429abdb211a862f911518a6440a7`, but it did **not** validate the asylum fix. It finished `MOSTLY-FALSE 22/72`, which is worse than both `7be084ee2c52441894a0d4a5c67213ec` (`LEANING-FALSE 38/62`) and the earlier good comparator `c95d00114cc54e6da201237d1ab59218` (`MOSTLY-TRUE 78/72`). The important distinction is that the failure is no longer just generic prompt bleed: this run reached current-source-family material (`Asylstatistik Februar 2026`, `2026-02-grafiken-asylstatistik-d`) but still **missed** the decisive umbrella-total source `stat-jahr-2025-kommentar-d.pdf` that `c95...` admitted as supporting evidence. Stage 1/early Stage 2 still reframed the claim too compositionally: `expectedEvidenceProfile` now centers `Aggregation von Bestandszahlen nach Asylstatus`, and the generated queries shifted to category-sum routes like `Staatssekretariat Migration Bestandszahlen anerkannte Flüchtlinge vorläufig Aufgenommene aktuell` instead of the older source-native umbrella route `Staatssekretariat Migration SEM Asylstatistik Bestand`.
+**For next agent:** The strongest next seam is Stage 1/Stage 2 handling for current aggregate metrics: preserve the authoritative umbrella-total metric as the primary expected metric, and force refinement when only component/category current figures are admitted without a direct current total artifact. Contradiction iteration in `5e...` fetched zero new sources, and there was no refinement iteration at all, unlike `c95...`.
+→ Investigated live jobs `5e1e8697c9ac45c29e59c3058e22b172`, `7be084ee2c52441894a0d4a5c67213ec`, `c95d00114cc54e6da201237d1ab59218`
 
 ---
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Prompt Diagnosis 7be084ee Asylum Current Total Regression -- [Standard] [open-items: yes]

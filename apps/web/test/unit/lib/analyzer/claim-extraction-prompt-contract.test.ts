@@ -193,6 +193,10 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
       expect(section).not.toBeNull();
       expect(section).toContain("freshest decisive side");
+      expect(section).toContain("current aggregate-metric or threshold claims");
+      expect(section).toContain("`expectedEvidenceProfile.primaryMetric` must name the single decisive current metric");
+      expect(section).toContain("`expectedEvidenceProfile.componentMetrics`");
+      expect(section).toContain("secondary checks only");
       expect(section).toContain("compares two quantities, populations, or rates");
       expect(section).toContain("Do NOT collapse a comparative claim to only one side of the comparison");
       expect(section).toContain("broad public-language label");

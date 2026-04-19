@@ -295,6 +295,11 @@ describe("Stage-4 prompt contract", () => {
 
     it("advocate keeps broad public-language totals anchored to umbrella metrics instead of narrow subsets", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("`expectedEvidenceProfile.primaryMetric` is present");
+      expect(section).toContain("Direct evidence for `primaryMetric` should anchor the verdict");
+      expect(section).toContain("`expectedEvidenceProfile.componentMetrics` may jointly establish `primaryMetric`");
+      expect(section).toContain("compositional bridge");
+      expect(section).toContain("confidence-limiting evidence rather than decisive support or contradiction");
       expect(section).toContain("broad public-language wording");
       expect(section).toContain("closest authoritative umbrella measurement");
       expect(section).toContain("A smaller subset count does not by itself falsify a broader public-language total");
@@ -310,6 +315,11 @@ describe("Stage-4 prompt contract", () => {
 
     it("reconciliation preserves approximate-comparison handling for broad public-language claims", () => {
       const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("`expectedEvidenceProfile.primaryMetric` is present");
+      expect(section).toContain("If cited evidence directly states `primaryMetric`, weight it first");
+      expect(section).toContain("`expectedEvidenceProfile.componentMetrics` may jointly answer `primaryMetric`");
+      expect(section).toContain("direct `primaryMetric` artifact or the compositional bridge is missing");
+      expect(section).toContain("do NOT let component arithmetic alone drive a strong truth upgrade or downgrade");
       expect(section).toContain("broad public-language population claim");
       expect(section).toContain("closest authoritative umbrella totals first");
       expect(section).toContain("materially close in magnitude");
@@ -470,6 +480,9 @@ describe("Stage-2 prompt contract", () => {
 
     it("query generation preserves public-language and source-native umbrella coverage", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("`expectedEvidenceProfile.primaryMetric` is present");
+      expect(section).toContain("`expectedEvidenceProfile.componentMetrics` is present");
+      expect(section).toContain("Do NOT let all returned queries shift from `primaryMetric` to `componentMetrics`");
       expect(section).toContain("broad public-language population label");
       expect(section).toContain("public-language wording");
       expect(section).toContain("source-native umbrella wording");

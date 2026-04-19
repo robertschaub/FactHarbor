@@ -209,6 +209,31 @@ function countCoveredExpectedMetrics(
   }).length;
 }
 
+function hasConcreteMetricCoverage(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+  expectedMetrics: string[],
+): boolean {
+  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+  if (candidateTypes.size === 0 || expectedMetrics.length === 0) return false;
+
+  const evidenceTexts = evidenceItems
+    .filter((item) =>
+      !item.isSeeded
+      && item.relevantClaimIds?.includes(claim.id)
+      && !!item.sourceType
+      && candidateTypes.has(item.sourceType),
+    )
+    .map((item) => buildEvidenceMetricText(item))
+    .filter((text) => hasExplicitNumericSignal(text));
+
+  if (evidenceTexts.length === 0) return false;
+
+  const coveredMetrics = countCoveredExpectedMetrics(expectedMetrics, evidenceTexts);
+  const requiredCoverage = Math.min(expectedMetrics.length, 1);
+  return coveredMetrics >= requiredCoverage;
+}
+
 function getRequiredPrimaryMetricCoverage(expectedMetrics: string[]): number {
   return Math.min(expectedMetrics.length, 3);
 }
@@ -217,11 +242,11 @@ function hasConcretePrimaryMetricCoverage(
   claim: AtomicClaim,
   evidenceItems: EvidenceItem[],
 ): boolean {
-  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
-  if (candidateTypes.size === 0) return false;
-
   const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
   if (expectedMetrics.length === 0) return false;
+
+  const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+  if (candidateTypes.size === 0) return false;
 
   const evidenceTexts = evidenceItems
     .filter((item) =>
@@ -240,6 +265,16 @@ function hasConcretePrimaryMetricCoverage(
   return coveredMetrics >= requiredCoverage;
 }
 
+function hasConcreteCurrentPrimaryMetricCoverage(
+  claim: AtomicClaim,
+  evidenceItems: EvidenceItem[],
+): boolean {
+  const primaryMetric = claim.expectedEvidenceProfile?.primaryMetric?.trim();
+  if (!primaryMetric) return false;
+
+  return hasConcreteMetricCoverage(claim, evidenceItems, [primaryMetric]);
+}
+
 function hasNonSeededPrimarySourceCoverage(
   claim: AtomicClaim,
   evidenceItems: EvidenceItem[],
@@ -255,12 +290,32 @@ function hasNonSeededPrimarySourceCoverage(
   );
 }
 
+function hasCurrentAggregateMetricRefinementContract(claim: AtomicClaim): boolean {
+  const profile = claim.expectedEvidenceProfile;
+  return claim.freshnessRequirement === "current_snapshot"
+    && typeof profile?.primaryMetric === "string"
+    && profile.primaryMetric.trim().length > 0
+    && Array.isArray(profile.componentMetrics)
+    && profile.componentMetrics.some(
+      (metric) => typeof metric === "string" && metric.trim().length > 0,
+    );
+}
+
 function claimNeedsPrimarySourceRefinement(
   claim: AtomicClaim,
   evidenceItems: EvidenceItem[],
 ): boolean {
   const expectedMetrics = claim.expectedEvidenceProfile?.expectedMetrics ?? [];
   const candidateTypes = getPrimarySourceRefinementTargetTypes(claim);
+
+  if (hasCurrentAggregateMetricRefinementContract(claim)) {
+    // Stage 1 explicitly identified a decisive current aggregate metric plus
+    // secondary component metrics. Spend one bounded refinement pass on the
+    // direct aggregate route only when the direct metric is still missing, so
+    // component-rich official evidence cannot silently stand in for the
+    // umbrella artifact.
+    return !hasConcreteCurrentPrimaryMetricCoverage(claim, evidenceItems);
+  }
 
   if (expectedMetrics.length === 0 || candidateTypes.size === 0) {
     return false;

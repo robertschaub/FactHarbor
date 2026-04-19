@@ -859,6 +859,8 @@ export interface AtomicClaim {
     methodologies: string[];     // e.g., ["WTW analysis", "vehicle dynamometer testing"]
     expectedMetrics: string[];   // e.g., ["efficiency %", "energy loss kWh/km"]
     expectedSourceTypes: SourceType[]; // e.g., ["peer_reviewed_study", "government_report"]
+    primaryMetric?: string;      // Direct decisive metric for current aggregate / threshold claims
+    componentMetrics?: string[]; // Secondary sub-metrics used only when official sources publish compositionally
   };
 }
 

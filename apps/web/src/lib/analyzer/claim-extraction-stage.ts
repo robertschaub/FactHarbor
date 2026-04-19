@@ -97,7 +97,9 @@ export const Pass2AtomicClaimSchema = z.object({
           .filter((value): value is SourceType => typeof value === "string"),
       )
       .catch([]),
-  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [] }),
+    primaryMetric: z.string().optional(),
+    componentMetrics: z.array(z.string()).optional().catch([]),
+  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [], componentMetrics: [] }),
 });
 
 // Pass2OutputSchema: All fields use .catch() defaults to prevent AI SDK NoObjectGeneratedError.
@@ -1792,6 +1794,19 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
         const profile = normalized.expectedEvidenceProfile as Record<string, unknown>;
         if (!Array.isArray(profile.methodologies)) profile.methodologies = [];
         if (!Array.isArray(profile.expectedMetrics)) profile.expectedMetrics = [];
+        if (typeof profile.primaryMetric !== "string" || profile.primaryMetric.trim().length === 0) {
+          delete profile.primaryMetric;
+        } else {
+          profile.primaryMetric = profile.primaryMetric.trim();
+        }
+        if (!Array.isArray(profile.componentMetrics)) {
+          profile.componentMetrics = [];
+        } else {
+          profile.componentMetrics = (profile.componentMetrics as unknown[])
+            .filter((value): value is string => typeof value === "string")
+            .map((value) => value.trim())
+            .filter((value) => value.length > 0);
+        }
         if (!Array.isArray(profile.expectedSourceTypes)) {
           profile.expectedSourceTypes = [];
         } else {
