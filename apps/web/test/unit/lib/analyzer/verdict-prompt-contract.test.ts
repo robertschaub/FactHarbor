@@ -507,6 +507,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toMatch(/broad words such as system,\s*infrastructure,\s*institutions,\s*landscape/i);
       expect(section).toMatch(/landscape,\s*overview,\s*or comparison is insufficient/i);
       expect(section).toContain("concrete source-native signal or artifact");
+      expect(section).toContain("abstract words such as governance, coordination, evaluation, systematization, monitoring, or structure");
+      expect(section).toContain("broader policy problem or harm domain");
       expect(section.indexOf("When the claim is explicitly about the present or current state")).toBeLessThan(
         section.indexOf("ONLY for comparative ecosystem claims"),
       );
@@ -544,6 +546,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("generic institution homepages are at most borderline relevant");
       expect(section).toContain("statistics archive, series overview, or direct artifact route");
       expect(section).toContain("partial flow metrics");
+    });
+
+    it("relevance classification excludes broader-problem governance reports from direct ecosystem evidence", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section).toContain("broader policy problem or harm domain");
+      expect(section).toContain("not direct ecosystem evidence for the named activity");
+      expect(section).toContain("inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself");
     });
   });
 
@@ -627,6 +636,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("network affiliations");
       expect(section).toContain("broader ecosystem");
     });
+
+    it("institutional-ecosystem extraction blocks broader-problem governance reports unless they describe the named activity ecosystem", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("governance, legal framework, or regulation of a broader policy problem or harm domain");
+      expect(section).toContain("extract NO direct evidence items");
+      expect(section).toContain("inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself");
+    });
   });
 
   /** Stage 2 applicability assessment (research-extraction-stage.ts:441-445) */
@@ -691,6 +707,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Do not upgrade a foreign government publication to `contextual`");
       expect(section).toContain("cites local sources, quotes court filings, or describes the target proceeding in detail");
       expect(section).toContain("If the publication's own official assessment is the substantive evidence, classify it as `foreign_reaction`");
+    });
+
+    it("treats broader-problem governance material as contextual for institutional-ecosystem claims unless it directly describes the named activity ecosystem", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("broader policy problem or harm domain remains");
+      expect(section).toContain('"contextual"');
+      expect(section).toContain("inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself");
     });
 
     it("uses abstract examples without domain-specific terms", () => {

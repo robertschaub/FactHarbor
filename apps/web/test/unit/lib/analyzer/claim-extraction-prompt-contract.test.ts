@@ -220,6 +220,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("participant/member/certification lists");
       expect(section).toContain("network rosters");
       expect(section).toContain("generic words such as system, infrastructure, institutions, landscape, or comparison");
+      expect(section).toContain("Prefer actor-, participant-, membership-, certification-, roster-, or recurring-output routes");
+      expect(section).toContain("governance of a broader policy problem or harm domain");
     });
 
     it("pass2 keeps comparative ecosystem profiles tied to concrete source-native signals", () => {
@@ -233,6 +235,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Broad landscape surveys, content analyses, and generic structural discussions may appear only as secondary/contextual routes");
       expect(section).toContain("Do NOT let `expectedEvidenceProfile` reduce the comparison to abstract metrics");
       expect(section).toContain("source-native records for each side");
+      expect(section).toContain("broader policy problem, harm domain, or adjacent sector");
+      expect(section).toContain("secondary/contextual by default");
     });
   });
 
