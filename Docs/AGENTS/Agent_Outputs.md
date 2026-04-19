@@ -1382,3 +1382,23 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review 8f3ca9dd Revert Assessment -- [Standard] [open-items: yes]
 **For next agent:** Do not treat `8f3ca9dd55471881d69bf4c0b7f1c97c5790109b+8d56a484` as a clean rollback target. `8d56a484` is a dirty-worktree fingerprint, not a commit, and only four stored jobs ran on that state. The evidence supports a narrow partial prompt rollback/modification for the CH/DE comparative-ecosystem path, not a full revert: CH/DE regressed after later prompt commits (`1e206930`, then spillover around `3add5697`), while other families improved or remained healthy later (`13b8f97b...` asylum-current-total on clean `92143261`, `32f00bb3...` plastic, stable hydrogen, Bundesrat best runs elsewhere). Preserve `76f57b59` and today’s uncommitted prompt/test fixes; if acting, either commit the current forward fixes and rerun, or selectively narrow the implicated comparative-ecosystem prompt sections instead of resetting the whole stack.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_8f3ca9dd_Revert_Assessment.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Post-Commit Targeted Reruns Validation -- [Standard] [open-items: yes]
+**For next agent:** Preserved the current prompt/test work in clean commit `fc4c657f`, restarted the stack, and ran four clean exact-input reruns. Results on `fc4c657f`: `cb2361aa...` Bundesrat `UNVERIFIED 50/0` with `report_damaged` and zero evidence; `87e6e04e...` asylum-current-total `LEANING-TRUE 68/70`; `f8235a23...` asylum-WWII `MOSTLY-FALSE 25/74`; `850da2e6...` plastic `MOSTLY-FALSE 26/66`. Conclusion: do not partially roll back the comparative-ecosystem / aggregate-metric prompt line. Three families validate the current direction; the remaining broken family is Bundesrat, and its clean failure is still the known Stage-1 contract/decomposition issue rather than a later prompt-regression signal.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Post_Commit_Targeted_Reruns_Validation.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Prompt Audit Schema Contract Findings -- [Standard] [open-items: yes]
+**For next agent:** `input-policy-gate` is already runtime-sanitized before use, so most prompt-output contract claims there are weaker than they look. The stronger SR seam is not the prompt file alone but the combination of permissive runtime schemas (`sourceType`/bias are free strings) and cap logic that only understands a subset, plus the fact that the live SR engine currently builds prompts in `sr-eval-prompts.ts` instead of loading `source-reliability.prompt.md`. Missing frontmatter on `inverse-claim-verification.prompt.md` is not a current runtime defect because `paired-job-audit.ts` reads that file directly from disk and parses only its JSON response.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Prompt_Audit_Schema_Contract_Findings.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Consolidated Prompt Audit Adjudication -- [Standard] [open-items: yes]
+**For next agent:** Runtime-loading review confirmed the full `claimboundary` file is not sent to production LLM calls; the real hotspots are large individual sections such as `CLAIM_EXTRACTION_PASS2`, `GENERATE_QUERIES`, and `EXTRACT_EVIDENCE`. The consolidated view is: keep the ecosystem-duplication concern but treat it as a section-governance problem, not a full-file efficiency emergency; treat SR as a runtime schema/prompt-surface problem rather than a markdown-only prompt problem; and prioritize semantic hardening of `inverse-claim-verification.prompt.md` over frontmatter or metadata cleanup.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Adjudication.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Consolidated Prompt Audit Implementation Plan -- [Standard] [open-items: yes]
+**For next agent:** The written execution plan now lives in `Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md`. Follow the bounded order: Workstream 1 inverse-verification hardening, then Workstream 2 SR schema tightening/prompt-surface decision, then Workstream 3 `claimboundary` ecosystem governance. Do not start with full-file `claimboundary` splitting or loader refactors unless the governance pass proves insufficient.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Implementation_Plan.md

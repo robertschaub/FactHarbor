@@ -1,0 +1,19 @@
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Post-Commit Targeted Reruns Validation
+**Task:** Execute the consolidated proposal after the `8f3ca9dd` rollback assessment: preserve the current prompt/test work in git, restart the local stack, and run clean exact-input reruns for the highest-value approved benchmark inputs.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Post_Commit_Targeted_Reruns_Validation.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** First preserved the current prompt/test/handoff state in commit `fc4c657f712d5c26582f7c21426de843c2427a7b` (`fix(prompt): guard comparative ecosystem adjacency evidence`). Restarted the local stack via `scripts/restart-clean.ps1`, then submitted four approved exact-input jobs sequentially against the clean committed build. Results:
+
+- `cb2361aa346d4e9583819ccde37598d7` — `bundesrat-rechtskraftig`
+  `UNVERIFIED 50/0`, `boundaryCount=0`, `llmCalls=15`, `evidenceTotal=0`, warning `report_damaged:error`
+- `87e6e04eb138493882f2fa102eb6e26b` — `asylum-235000-de`
+  `LEANING-TRUE 68/70`, `boundaryCount=5`, `llmCalls=27`, `evidenceTotal=24`
+- `f8235a23d71c49c49bcf66043adb82c7` — `asylum-wwii-de`
+  `MOSTLY-FALSE 25/74`, `boundaryCount=6`, `llmCalls=44`, `evidenceTotal=26`
+- `850da2e6fd2c4d81ba72d94393939d58` — `plastic-en`
+  `MOSTLY-FALSE 26/66`, `boundaryCount=6`, `llmCalls=48`, `evidenceTotal=113`
+
+The rollback question is now narrower. The comparative-ecosystem / adjacency / aggregate-metric prompt line should **not** be partially rolled back based on these reruns. Three families produced usable reports on the clean committed build, including the previously high-priority asylum-current-total and plastic checks. The remaining failure is Bundesrat, and its failure mode is the already-known Stage-1 contract/decomposition problem rather than a later comparative-ecosystem prompt regression. Job `cb2361aa...` shows the same structural issue documented in earlier handoffs: Pass 2 plus repair produces `AC_01` as a near-verbatim whole-claim restatement and `AC_02` as a narrowed `Volk`-only branch, violating decomposition integrity and triggering `report_damaged`. That is a forward-fix target in Stage 1 / contract-repair behavior, not evidence for reverting later prompt work.
+**Open items:** Decide whether to update expectations/docs for `asylum-wwii-de` now that a clean current-stack rerun exists, or wait for a second confirming run. If the next work item is quality repair, the priority should shift to the Bundesrat Stage-1 contract-preservation path (`MT-5(C)` / repair / contract validation interplay), not comparative-ecosystem prompt rollback. A clean committed CH/DE rerun was not run here because that input is still outside the current Captain-defined benchmark list.
+**Warnings:** The Bundesrat event history contains one early `Job interrupted by server restart.` message immediately after the stack restart, but the final failure is structurally explained by the later contract-validation result rather than by a runtime collapse. Do not misread `cb2361aa...` as evidence against the newly committed prompt fix set in general; the other three clean reruns argue the opposite.
+**For next agent:** Treat `fc4c657f` as the preserved clean baseline for the current prompt direction. If continuing quality work, start with `cb2361aa346d4e9583819ccde37598d7` plus the older Bundesrat report-review handoff `Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Report_Review_d816e2e8_Stage1_Multi_Event_Reprompt.md`. The most likely forward path is still a Stage-1 / contract-repair fix that preserves the joint `Volk und Parlament` temporal anchor without producing a whole-claim-plus-subclaim set. Keep `87e6e04e...`, `f8235a23...`, and `850da2e6...` as the clean post-commit validation anchors showing that a comparative-ecosystem rollback is no longer justified.
+**Learnings:** no
