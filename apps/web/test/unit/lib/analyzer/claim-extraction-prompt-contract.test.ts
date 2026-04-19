@@ -204,4 +204,32 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
     });
   });
+
+  describe("exclusivity decomposition guard", () => {
+    it("defines the override semantically and avoids forcing exactly-two or order-splitting", () => {
+      const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+
+      expect(pass1).not.toBeNull();
+      expect(pass2).not.toBeNull();
+
+      expect(pass1).toContain("Exclusivity/uniqueness override");
+      expect(pass1).toContain("Ordering-rank guard");
+      expect(pass1).toContain("subject-specific proposition");
+      expect(pass1).toContain("relevant comparison class");
+      expect(pass1).toContain("Extract at least those two claims");
+      expect(pass1).toContain("Do not force exactly two claims");
+      expect(pass1).toContain("Do not create extra claims merely because verification requires multiple evidence routes");
+      expect(pass1).toContain("After excluding this override, classify the input under the normal rules");
+      expect(pass2).toContain("Exclusivity/uniqueness override");
+      expect(pass2).toContain("Ordering-rank guard");
+      expect(pass2).toContain("subject-specific proposition");
+      expect(pass2).toContain("relevant comparison class");
+      expect(pass2).toContain("Extract at least those two claims");
+      expect(pass2).toContain("Do not force exactly two claims");
+      expect(pass2).toContain("Do not create extra claims merely because verification requires multiple evidence routes");
+      expect(pass2).toContain("After excluding this override, classify the input under the normal rules below");
+      expect(pass2).not.toContain("treat it as `single_atomic_claim`");
+    });
+  });
 });
