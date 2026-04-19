@@ -1402,3 +1402,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Consolidated Prompt Audit Implementation Plan -- [Standard] [open-items: yes]
 **For next agent:** The written execution plan now lives in `Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md`. Follow the bounded order: Workstream 1 inverse-verification hardening, then Workstream 2 SR schema tightening/prompt-surface decision, then Workstream 3 `claimboundary` ecosystem governance. Do not start with full-file `claimboundary` splitting or loader refactors unless the governance pass proves insufficient.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Implementation_Plan.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Bundesrat Repair Anchor Narrowing Fix -- [Standard] [open-items: yes]
+**For next agent:** The live hard-failure path for the exact Captain-defined Bundesrat input is no longer the old `MT-5(C)` branch; the remaining Stage-1 seam was `selectRepairAnchorText(...)` narrowing the repair target to the temporal clause when only that sub-span was still missing. `claim-extraction-stage.ts` now keeps the validator's broader anchor unless the lone missing narrowed span is modifier/predicate-like, and `repair-anchor-selection.test.ts` locks the Bundesrat temporal-sub-anchor case. Fresh rerun `e26048eb15b042f5ba9f0b42a59e35c3` on executed build `88126439...+5814ca8f` completed `SUCCEEDED` with `LEANING-TRUE 62.9 / 73` instead of `report_damaged`, but its stored contract summary still notes a whole-claim-plus-`Volk` decomposition concern.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Bundesrat_Repair_Anchor_Narrowing_Fix.md

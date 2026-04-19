@@ -2774,18 +2774,32 @@ export function selectRepairAnchorText(
   }
 
   const normalizedAnchor = anchorText.toLowerCase();
+  const safeNarrowingTypes = new Set(["modal_illocutionary", "action_predicate"]);
   const narrowedCandidates = salienceAnchors
-    .map((salienceAnchor) => salienceAnchor.text.trim())
-    .filter((text) => text.length > 0)
-    .filter((text) => text.toLowerCase() !== normalizedAnchor)
-    .filter((text) => normalizedAnchor.includes(text.toLowerCase()))
-    .filter((text, index, items) =>
-      items.findIndex((candidate) => candidate.toLowerCase() === text.toLowerCase()) === index,
+    .map((salienceAnchor) => ({
+      text: salienceAnchor.text.trim(),
+      type: salienceAnchor.type,
+    }))
+    .filter((candidate) => candidate.text.length > 0)
+    .filter((candidate) => candidate.text.toLowerCase() !== normalizedAnchor)
+    .filter((candidate) => normalizedAnchor.includes(candidate.text.toLowerCase()))
+    .filter((candidate, index, items) =>
+      items.findIndex((otherCandidate) => otherCandidate.text.toLowerCase() === candidate.text.toLowerCase()) === index,
     )
-    .filter((text) => !claimSetContainsAnchorText(claims, text));
+    .filter((candidate) => !claimSetContainsAnchorText(claims, candidate.text));
 
   if (narrowedCandidates.length === 1) {
-    return narrowedCandidates[0];
+    const [soleCandidate] = narrowedCandidates;
+
+    // Only narrow to modifier/predicate-like salience spans. If the lone
+    // still-missing candidate is a temporal/scope clause, repairing against
+    // that sub-span tends to collapse the claim set into a whole-claim plus
+    // partial-subclaim shape on Bundesrat-class inputs. In that case, keep
+    // the validator's broader anchor so the repair prompt preserves the full
+    // proposition instead of chasing one clause in isolation.
+    if (safeNarrowingTypes.has(soleCandidate.type)) {
+      return soleCandidate.text;
+    }
   }
 
   return anchorText;

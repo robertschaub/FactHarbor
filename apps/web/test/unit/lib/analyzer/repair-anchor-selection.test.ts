@@ -129,4 +129,20 @@ describe("selectRepairAnchorText", () => {
 
     expect(repairAnchor).toBe("rechtskräftig bevor Volk und Parlament darüber entschieden haben");
   });
+
+  it("keeps the validator anchor when the lone missing narrowed span is temporal", () => {
+    const claims = [
+      {
+        statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig",
+      },
+    ];
+
+    const repairAnchor = selectRepairAnchorText(
+      makeContractSummary("rechtskräftig bevor Volk und Parlament darüber entschieden haben"),
+      claims,
+      bundesratSalience,
+    );
+
+    expect(repairAnchor).toBe("rechtskräftig bevor Volk und Parlament darüber entschieden haben");
+  });
 });

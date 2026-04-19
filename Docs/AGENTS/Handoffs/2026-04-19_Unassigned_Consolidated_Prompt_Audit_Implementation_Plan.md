@@ -1,0 +1,8 @@
+### 2026-04-19 | Unassigned | Codex (GPT-5) | Consolidated Prompt Audit Implementation Plan
+**Task:** Turn the consolidated prompt-audit adjudication into a written implementation plan in `Docs/WIP`.
+**Files touched:** `Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md`, `Docs/WIP/README.md`, `Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Implementation_Plan.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** The plan keeps the adjudicated priority order: inverse verification first, source-reliability contract/prompt-surface cleanup second, `claimboundary` ecosystem governance third, extraction coercion observability fourth, and input-gate fail-open visibility fifth. It explicitly rejects full-file `claimboundary` splitting as the first response and treats loader/include work as optional follow-up only if governance cleanup is not enough.
+**Open items:** Captain still needs to choose the authoritative live SR prompt surface (`sr-eval-prompts.ts` vs `source-reliability.prompt.md`) and the desired gate-failure behavior (`allow` with visibility vs `review`). No implementation started.
+**Warnings:** This turn wrote planning documentation only. No code, prompt, or test changes were made.
+**For next agent:** Use [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) as the execution baseline. If implementation begins, start with Workstream 1 and Workstream 2 schema tightening in the same bounded branch, then stop for review before Stage-1 routing work.
+**Learnings:** no
