@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-19 | Unassigned | Claude Opus 4.6 | Exclusivity Claim Atomicity Fix -- [Significant] [open-items: yes]
+**For next agent:** Uniqueness/exclusivity claims ("the only X that Y") were not decomposed — AC_01 was a verbatim copy of the full input. Added "Exclusivity/uniqueness override" to both Pass 1 and Pass 2 in `apps/web/prompts/claimboundary.prompt.md`. Prompt reseeded (hash `44867b58`); restart dev server and rerun job `01dfef57` to verify decomposition. All 1721 tests pass.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_01dfef57_Exclusivity_Claim_Atomicity_Fix.md
+
+---
 ### 2026-04-17 | Lead Developer | Codex (GPT-5) | Freshness Contract And Lane-Aware Retrieval Slice -- [Significant] [open-items: yes]
 **For next agent:** The current-evidence slice is now implemented end to end without reopening recency-penalty architecture: Stage 1 emits `AtomicClaim.freshnessRequirement`, Stage 2 query generation and relevance classification consume it, claim-acquisition telemetry mirrors it into `claimAcquisitionLedger.*.iterations[*]`, and search now supports `supplementaryProviders.mode = "demote_on_freshness"` to keep supplementaries last but bounded to 1 result for `current_snapshot` claims. Prompt storage was reseeded to `claimboundary` hash `4803f2db...`; safe verification passed via `npm -w apps/web run build` and `npm test`. Remaining next step is live reruns of jobs `83747b8b` and `866e2c83`.
 → Docs/AGENTS/Handoffs/2026-04-17_Lead_Developer_Freshness_Contract_And_Lane_Aware_Retrieval_Slice.md
@@ -1288,6 +1293,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Wrapper_Index_First_Alignment.md
 
 ---
+### 2026-04-19 | LLM Expert | Codex (GPT-5) | Claim-Extraction Atomicity Review -- [Standard] [open-items: no]
+**For next agent:** Reviewed the prompt-only exclusivity narrowing in `apps/web/prompts/claimboundary.prompt.md` and the focused contract assertions in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`. The semantic conclusion is to keep `sole` / `only` / `unique` inside the multi-assertion override, and keep `first` / `last` outside it by default because Stage 1 should usually preserve ordering/ranking as one atomic claim.
+→ Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md
+
+---
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review e8777ef2 CH DE Fact-Checking Comparison -- [Standard] [open-items: yes]
 **For next agent:** Job `e8777ef27ee74b649f80daf11d22ddcf` is not a prompt-drift case; active and runtime `claimboundary` hash both equal `99aa2a94...`. The main quality failure is prompt/runtime behavior: broad topical queries, off-target direct evidence admission, and loss of Swiss institutional extraction that was present in comparator `99550cfbf6c94b519758551707aaa183`. Start with `apps/web/prompts/claimboundary.prompt.md:279-285`, `:654-669`, `:799-818`, `:893-912`, `:1391-1396`, and `apps/web/src/lib/analyzer/research-query-stage.ts:181-185`.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_e8777ef2_CH_DE_Fact_Checking_Comparison.md
@@ -1306,3 +1316,18 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-19 | Unassigned | Codex (GPT-5) | Report Review a99d1780 CH DE Fact-Checking Stage1 Filter And Grounding Fix -- [Standard] [open-items: yes]
 **For next agent:** Job `a99d17807c1c47dea23270bc8b1880b3` was not rollout drift; it already used active prompt hash `626f17c0...`. The implemented fix adds a Stage-1 LLM relevance gate before preliminary fetch/extraction in [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) and tightens [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) against different-sector lexical overlaps, omission-as-evidence from unrelated pages, and uncited verdict world knowledge. Fix review found and I corrected the missing Pass-1 geography handoff into the new relevance gate. Live confirmation still needs prompt reseed + restart + rerun of the exact input.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_a99d1780_CH_DE_Fact_Checking_Stage1_Filter_And_Grounding_Fix.md
+
+---
+### 2026-04-19 | Unassigned | Codex (GPT-5) | ZHAW Meeting Prep Refinement -- [Standard] [open-items: yes]
+**For next agent:** [2026-04-21_ZHAW_Meeting_Prep.md](/c:/DEV/FactHarbor/Docs/Meetings/2026-04-21_ZHAW_Meeting_Prep.md) is the current briefing version. It was rewritten for clearer discovery-first framing and then corrected to the actual meeting slot (`Dienstag, 21. April 2026, 10:15-11:00 Uhr`), with the filename renamed to match. If you continue, the best follow-up is a short live speaking sheet rather than further expanding the main prep note.
+→ Docs/AGENTS/Handoffs/2026-04-19_Unassigned_ZHAW_Meeting_Prep_Refinement.md
+
+---
+### 2026-04-19 | LLM Expert | Codex (GPT-5) | Exclusivity Guard Prompt Review -- [Standard] [open-items: no]
+**For next agent:** Reviewed the current working-tree refinement in `apps/web/prompts/claimboundary.prompt.md` and the paired contract test in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`. Consolidated verdict: keep the prompt change; it is generic and multilingual-safe enough under AGENTS.md. The only nit is that the new test couples the contract to exact English wording (`sole/only/unique`, `first/last`) rather than the semantic distinction.
+→ Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md
+
+---
+### 2026-04-19 | LLM Expert | Codex (GPT-5) | Exclusivity Override Semantic Rewrite -- [Standard] [open-items: yes]
+**For next agent:** The interim token-shaped exclusivity rule was replaced with the reviewed semantic-structure version in `apps/web/prompts/claimboundary.prompt.md`, and the paired prompt-contract test now locks the semantic boundary instead of exact English cue words. Final rule shape: subject-specific proposition + comparison-class exclusivity proposition => `multi_assertion_input`, extract at least those two claims, do not force exactly two, do not add claims just because verification uses multiple evidence routes, keep anti-verbatim protection, and return order/rank cases to the normal classification rules instead of hard-forcing `single_atomic_claim`. Focused tests passed and prompt reseed activated `claimboundary` hash `8298884f...`; latest changes are still uncommitted and a fresh live rerun of the Swiss motivating input remains optional.
+→ Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Exclusivity_Override_Semantic_Rewrite.md

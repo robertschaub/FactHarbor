@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-19T05:33:50.834Z",
-  "count": 216,
+  "generatedAt": "2026-04-19T12:19:48.386Z",
+  "count": 225,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4477,6 +4477,61 @@
       "summary": "Wrapper Index-First Alignment"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
+      "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "exclusivity",
+        "guard",
+        "prompt",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The current prompt lines of interest are `apps/web/prompts/claimboundary.prompt.md:72-73` and `:222-223`; the paired contract assertions are in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts:208-223`. Keep the prompt logic as written unless you want a more semantics-orient"
+    },
+    {
+      "file": "2026-04-19_LLM_Expert_Exclusivity_Override_Semantic_Rewrite.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "exclusivity",
+        "override",
+        "semantic",
+        "rewrite"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Exclusivity_Override_Semantic_Rewrite.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Current anchors are `apps/web/prompts/claimboundary.prompt.md:72-73` and `:222-223` for the final semantic exclusivity + ordering guard, and `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts:208-231` for the focused contract assertions. Verification passed via `npm -w apps/we"
+    },
+    {
       "file": "2026-04-19_Unassigned_Broad_Current_Total_Comparison_Prompt_Fix.md",
       "date": "2026-04-19",
       "roles": [
@@ -4496,6 +4551,127 @@
         "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts"
       ],
       "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) at the `expectedEvidenceProfile` rules and `GENERATE_QUERIES` section, plus the updated contract assertions in [claim-extraction-prompt-contract.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyz"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "no",
+        "confirmed",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Start from commit SHAs `3a13dbb9`, `bfc48338`, `01aa3203`, `1c7bd96e`, and `9479376d`, plus `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, `apps/web/src/lib/retrieval.ts`, and the targeted tests under `apps/web/test/unit/lib/analyzer/` and `apps/web/test/unit/lib/`. Verification on this "
+    },
+    {
+      "file": "2026-04-19_Unassigned_Report_Review_01dfef57_Exclusivity_Claim_Atomicity_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "01dfef57",
+        "exclusivity",
+        "claim",
+        "atomicity",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "The fix is in `apps/web/prompts/claimboundary.prompt.md` — search for \"Exclusivity/uniqueness override\" to find both instances (Pass 1 and Pass 2 classification sections)."
+    },
+    {
+      "file": "2026-04-19_Unassigned_Report_Review_CH_DE_Fact_Checking_Prompt_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "ch",
+        "de",
+        "fact",
+        "checking",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) at the new bullets in `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, `GENERATE_QUERIES`, `RELEVANCE_CLASSIFICATION`, `EXTRACT_EVIDENCE`, `VERDICT_ADVOCATE`, `VERDICT_RECONCILIATION`, and `APPLICABI"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Report_Review_a99d1780_CH_DE_Fact_Checking_Stage1_Filter_And_Grounding_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "a99d1780",
+        "ch",
+        "de",
+        "fact",
+        "checking",
+        "stage1",
+        "filter",
+        "and",
+        "grounding",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "If Captain wants live confirmation, reseed prompts, restart `apps/web`, then rerun the exact input and compare the new result against `a99d17807c1c47dea23270bc8b1880b3` and `e8777ef27ee74b649f80daf11d22ddcf`. Pay specific attention to whether preliminary sources like DEval/BMG/EDK/IdéeSport disappea"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Report_Review_e8777ef2_CH_DE_Fact_Checking_Comparison.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "e8777ef2",
+        "ch",
+        "de",
+        "fact",
+        "checking",
+        "comparison"
+      ],
+      "files_touched": [],
+      "summary": "Start with job `e8777ef27ee74b649f80daf11d22ddcf` versus comparator `99550cfbf6c94b519758551707aaa183`. Main anchors are `apps/web/prompts/claimboundary.prompt.md:279-285`, `:654-669`, `:799-818`, `:893-912`, `:1391-1396`, plus `apps/web/src/lib/analyzer/research-query-stage.ts:181-185`. The cleares"
+    },
+    {
+      "file": "2026-04-19_Unassigned_ZHAW_Meeting_Prep_Refinement.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "zhaw",
+        "meeting",
+        "prep",
+        "refinement"
+      ],
+      "files_touched": [
+        "Docs/Meetings/2026-04-21_ZHAW_Meeting_Prep.md",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_ZHAW_Meeting_Prep_Refinement.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the revised file as the full briefing version. If you create a shorter meeting card, preserve the current structure: discovery first, demo as support, honest limits, then three project lines with C as the internal default but not the explicit opening push."
     }
   ]
 }

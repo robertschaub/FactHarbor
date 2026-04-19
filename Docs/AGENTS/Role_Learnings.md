@@ -184,6 +184,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** For colloquial current-vs-historical comparison claims, a generic instruction like "do not speculate" is often too weak. If the prompt does not explicitly forbid hand-built lower comparators from selected subgroups plus assumed overlap/attrition/duration, Stage 4 can still convert that arithmetic into decisive contradiction. The reliable fix is to state that unsupported reconstructions may reduce confidence or raise misleadingness, but must not drive a strong truth downgrade unless the source itself transparently endorses the reconstruction for the same comparison target.
 **Files:** `apps/web/prompts/claimboundary.prompt.md`, `apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts`
 
+### 2026-04-18 — Use Node, not inline PowerShell POST, for exact multilingual live submissions
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** On this Windows setup, an inline PowerShell `Invoke-RestMethod` / `Invoke-WebRequest` POST can silently degrade non-ASCII input in the stored job payload (`Flüchtlinge` became `Fl??chtlinge`). That breaks Captain-defined exact-input validation for multilingual runs even when the visible command text looks right. For approved non-English inputs, submit through Node (or another explicitly UTF-8-safe path) and confirm the stored `inputValue` before trusting the run.
+**Files:** local live submission path to `apps/web/src/app/api/fh/analyze/route.ts`, observed on jobs `d87c15b0ffba42b7a21520fd9cb331e7` and `25dea04fb0da4ab5ad12fd5dbf76896a`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer
