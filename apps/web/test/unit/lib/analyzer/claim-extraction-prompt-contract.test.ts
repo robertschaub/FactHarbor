@@ -263,6 +263,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass1).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass1).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
       expect(pass1).toContain("separate possible timelines or outcomes");
+      expect(pass1).toContain("Modifier-fusion rule for coordinated branches");
+      expect(pass1).toContain("keep that modifier fused with the same main act/state in EVERY branch claim");
       expect(pass1).toContain("inseparable rank/order/composite proposition");
       expect(pass1).toContain("Decomposition integrity");
       expect(pass1).toContain("proper sub-assertion");
@@ -274,6 +276,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("preserve the shared anchor");
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
+      expect(pass2).toContain("Modifier-fusion rule for coordinated branches");
+      expect(pass2).toContain("Do NOT create one claim for the modified act/state and a separate claim for the branch chronology");
       expect(pass2).toContain("Single-claim bundling prohibition");
       expect(pass2).toContain("you MUST return separate atomic claims for those branches");
       expect(pass2).toContain("A conjunctive clause with one shared verb phrase does not override this rule");
@@ -284,10 +288,14 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("whole-input restatement");
       expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
       expect(contract).toContain("non-atomic single-claim bundling");
+      expect(contract).toContain("externalization of a main-act modifier into a standalone sub-claim");
       expect(contract).toContain("Single-claim bundling audit (MANDATORY)");
       expect(contract).toContain("returns only one thesis-direct claim");
       expect(contract).toContain("The same rule applies when the coordination is written as one conjunctive clause with a shared verb phrase");
       expect(contract).toContain("distinct institutions, actor groups, proceedings, or decision gates");
+      expect(contract).toContain("Modifier externalization audit (MANDATORY)");
+      expect(contract).toContain("must remain fused with that main act in each branch claim");
+      expect(contract).toContain("A standalone modifier/effect claim does not count as preserving branch atomicity");
       expect(contract).toContain("bundled claim is non-atomic");
       expect(contract).toContain("`rePromptRequired` must be true");
       expect(contract).toContain("whole-input carry-through");
