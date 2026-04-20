@@ -1408,7 +1408,98 @@ export async function validateVerdicts(
           && current.verdictReason !== "verdict_integrity_failure"
         ) {
           const preRepairVerdict = current;
+          const finalizeAcceptedRepair = (candidate: CBClaimVerdict): CBClaimVerdict => {
+            if (!repairContext) return candidate;
+            return {
+              ...candidate,
+              boundaryFindings: refreshBoundaryFindingsAfterRepair(
+                candidate,
+                evidence,
+                repairContext.boundaries,
+                repairContext.coverageMatrix,
+                repairContext.calculationConfig,
+              ),
+            };
+          };
+          const acceptGroundedCandidate = async (
+            candidate: CBClaimVerdict,
+            unavailableMessage?: string,
+          ): Promise<{ accepted: CBClaimVerdict | null; grounding: NormalizedValidationEntry }> => {
+            const grounding = await validateGroundingOnly(
+              candidate,
+              evidence,
+              llmCall,
+              validationTier,
+              validationProvider,
+              repairContext,
+              warnings,
+            );
+            if (grounding.valid) {
+              return { accepted: finalizeAcceptedRepair(candidate), grounding };
+            }
+            if (grounding.unavailable) {
+              if (unavailableMessage) {
+                warnings?.push({
+                  type: "verdict_grounding_issue",
+                  severity: "info",
+                  message: unavailableMessage,
+                });
+              }
+              return { accepted: finalizeAcceptedRepair(candidate), grounding };
+            }
+            return { accepted: null, grounding };
+          };
+          const emitDirectionRescue = (candidate: CBClaimVerdict, phase: "post_normalization" | "post_repair") => {
+            const rescuedByConsistency = candidate.consistencyResult?.stable === true && candidate.consistencyResult?.assessed === true;
+            const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
+            const rescueDetail = rescuedByConsistency
+              ? `stable self-consistency (spread ${candidate.consistencyResult!.spread}pp)`
+              : "evidence ratio";
+            warnings?.push({
+              type: "direction_rescue_plausible",
+              severity: "info",
+              message: `Claim ${verdict.claimId}: ${phase === "post_normalization" ? "normalized" : "repaired"} verdict accepted via ${rescueDetail} (truth ${candidate.truthPercentage}%).`,
+              details: {
+                claimId: verdict.claimId,
+                truthPercentage: candidate.truthPercentage,
+                rescueReason,
+                phase,
+                ...(rescuedByConsistency ? { consistencySpread: candidate.consistencyResult!.spread } : {}),
+              },
+            });
+          };
+
           const repairSeedVerdict = normalizeVerdictCitationDirections(current, evidence);
+          const normalizedDirection = await validateDirectionOnly(
+            repairSeedVerdict,
+            evidence,
+            llmCall,
+            validationTier,
+            validationProvider,
+          );
+          const normalizedPlausible = normalizedDirection.valid !== false
+            || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
+
+          if (normalizedPlausible) {
+            if (normalizedDirection.valid === false) {
+              emitDirectionRescue(repairSeedVerdict, "post_normalization");
+            }
+            const normalizedAccepted = await acceptGroundedCandidate(
+              repairSeedVerdict,
+              `Claim ${verdict.claimId}: post-normalization grounding check unavailable; accepted structurally normalized citations.`,
+            );
+            if (normalizedAccepted.accepted) {
+              current = normalizedAccepted.accepted;
+              validated.push(current);
+              continue;
+            }
+            warnings?.push({
+              type: "verdict_grounding_issue",
+              severity: "info",
+              message: `Claim ${verdict.claimId}: normalized verdict failed grounding check: ${joinIssues(normalizedAccepted.grounding.issues)}`,
+            });
+          }
+
           const repaired = await attemptDirectionRepair(
             repairSeedVerdict,
             mergedDirectionIssues,
@@ -1418,124 +1509,7 @@ export async function validateVerdicts(
             repairContext,
           );
 
-          if (repaired) {
-            const normalizedRepaired = normalizeVerdictCitationDirections(repaired, evidence);
-            const finalizeAcceptedRepair = (candidate: CBClaimVerdict): CBClaimVerdict => {
-              if (!repairContext) return candidate;
-              return {
-                ...candidate,
-                boundaryFindings: refreshBoundaryFindingsAfterRepair(
-                  candidate,
-                  evidence,
-                  repairContext.boundaries,
-                  repairContext.coverageMatrix,
-                  repairContext.calculationConfig,
-                ),
-              };
-            };
-            const retryDirection = await validateDirectionOnly(
-              normalizedRepaired,
-              evidence,
-              llmCall,
-              validationTier,
-              validationProvider,
-            );
-            // Also apply plausibility check to the repaired verdict
-            const repairedPlausible = retryDirection.valid !== false || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
-            if (repairedPlausible) {
-              if (retryDirection.valid === false) {
-                // Repaired verdict passed via plausibility rescue, not LLM re-validation
-                const rescuedByConsistency = normalizedRepaired.consistencyResult?.stable === true && normalizedRepaired.consistencyResult?.assessed === true;
-                const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
-                const rescueDetail = rescuedByConsistency
-                  ? `stable self-consistency (spread ${normalizedRepaired.consistencyResult!.spread}pp)`
-                  : "evidence ratio";
-                warnings?.push({
-                  type: "direction_rescue_plausible",
-                  severity: "info",
-                  message: `Claim ${verdict.claimId}: repaired verdict accepted via ${rescueDetail} (truth ${normalizedRepaired.truthPercentage}%).`,
-                  details: {
-                    claimId: verdict.claimId,
-                    truthPercentage: normalizedRepaired.truthPercentage,
-                    rescueReason,
-                    phase: "post_repair",
-                    ...(rescuedByConsistency ? { consistencySpread: normalizedRepaired.consistencyResult!.spread } : {}),
-                  },
-                });
-              }
-              const repairedGrounding = await validateGroundingOnly(
-                normalizedRepaired,
-                evidence,
-                llmCall,
-                validationTier,
-                validationProvider,
-                repairContext,
-                warnings,
-              );
-              if (repairedGrounding.valid) {
-                current = finalizeAcceptedRepair(normalizedRepaired);
-              } else {
-                const fallbackReasoningVerdict: CBClaimVerdict = {
-                  ...normalizedRepaired,
-                  reasoning: preRepairVerdict.reasoning,
-                };
-                if (repairedGrounding.unavailable) {
-                  warnings?.push({
-                    type: "verdict_grounding_issue",
-                    severity: "info",
-                    message: `Claim ${verdict.claimId}: post-repair grounding check unavailable; preserved pre-repair reasoning.`,
-                  });
-                  current = finalizeAcceptedRepair(fallbackReasoningVerdict);
-                } else {
-                  warnings?.push({
-                    type: "verdict_grounding_issue",
-                    severity: "info",
-                    message: `Claim ${verdict.claimId}: repaired verdict failed grounding check: ${joinIssues(repairedGrounding.issues)}`,
-                  });
-                  const fallbackGrounding = await validateGroundingOnly(
-                    fallbackReasoningVerdict,
-                    evidence,
-                    llmCall,
-                    validationTier,
-                    validationProvider,
-                    repairContext,
-                    warnings,
-                  );
-                  if (fallbackGrounding.valid || fallbackGrounding.unavailable) {
-                    warnings?.push({
-                      type: "verdict_grounding_issue",
-                      severity: "info",
-                      message: `Claim ${verdict.claimId}: repaired reasoning rejected; preserved pre-repair grounded reasoning.`,
-                    });
-                    current = finalizeAcceptedRepair(fallbackReasoningVerdict);
-                  } else {
-                    warnings?.push({
-                      type: "verdict_grounding_issue",
-                      severity: "info",
-                      message: `Claim ${verdict.claimId}: repaired verdict grounding fallback failed: ${joinIssues(fallbackGrounding.issues)}`,
-                    });
-                    current = safeDowngradeVerdict(
-                      fallbackReasoningVerdict,
-                      "grounding",
-                      fallbackGrounding.issues,
-                      warnings,
-                      config.mixedConfidenceThreshold,
-                    );
-                  }
-                }
-              }
-            } else {
-              // Pass `repaired` (not `current`) so the warning records the last-attempted
-              // truth value, not the stale pre-repair value.
-              current = safeDowngradeVerdict(
-                normalizedRepaired,
-                "direction",
-                retryDirection.issues,
-                warnings,
-                config.mixedConfidenceThreshold,
-              );
-            }
-          } else {
+          if (!repaired) {
             current = safeDowngradeVerdict(
               current,
               "direction",
@@ -1543,7 +1517,80 @@ export async function validateVerdicts(
               warnings,
               config.mixedConfidenceThreshold,
             );
+            validated.push(current);
+            continue;
           }
+
+          const normalizedRepaired = normalizeVerdictCitationDirections(repaired, evidence);
+          const retryDirection = await validateDirectionOnly(
+            normalizedRepaired,
+            evidence,
+            llmCall,
+            validationTier,
+            validationProvider,
+          );
+          const repairedPlausible = retryDirection.valid !== false
+            || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
+
+          if (!repairedPlausible) {
+            current = safeDowngradeVerdict(
+              normalizedRepaired,
+              "direction",
+              retryDirection.issues,
+              warnings,
+              config.mixedConfidenceThreshold,
+            );
+            validated.push(current);
+            continue;
+          }
+
+          if (retryDirection.valid === false) {
+            emitDirectionRescue(normalizedRepaired, "post_repair");
+          }
+
+          const repairedAccepted = await acceptGroundedCandidate(normalizedRepaired);
+          if (repairedAccepted.accepted) {
+            current = repairedAccepted.accepted;
+            validated.push(current);
+            continue;
+          }
+
+          warnings?.push({
+            type: "verdict_grounding_issue",
+            severity: "info",
+            message: `Claim ${verdict.claimId}: repaired verdict failed grounding check: ${joinIssues(repairedAccepted.grounding.issues)}`,
+          });
+          const fallbackReasoningVerdict: CBClaimVerdict = {
+            ...normalizedRepaired,
+            reasoning: preRepairVerdict.reasoning,
+          };
+          const fallbackAccepted = await acceptGroundedCandidate(
+            fallbackReasoningVerdict,
+            `Claim ${verdict.claimId}: post-repair grounding check unavailable; preserved pre-repair reasoning.`,
+          );
+          if (fallbackAccepted.accepted) {
+            warnings?.push({
+              type: "verdict_grounding_issue",
+              severity: "info",
+              message: `Claim ${verdict.claimId}: repaired reasoning rejected; preserved pre-repair grounded reasoning.`,
+            });
+            current = fallbackAccepted.accepted;
+            validated.push(current);
+            continue;
+          }
+
+          warnings?.push({
+            type: "verdict_grounding_issue",
+            severity: "info",
+            message: `Claim ${verdict.claimId}: repaired verdict grounding fallback failed: ${joinIssues(fallbackAccepted.grounding.issues)}`,
+          });
+          current = safeDowngradeVerdict(
+            fallbackReasoningVerdict,
+            "grounding",
+            fallbackAccepted.grounding.issues,
+            warnings,
+            config.mixedConfidenceThreshold,
+          );
         }
       }
     }

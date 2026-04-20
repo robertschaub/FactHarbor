@@ -1232,8 +1232,17 @@ describe("validateVerdicts (Step 5)", () => {
     const warnings: AnalysisWarning[] = [];
 
     let directionValidationCalls = 0;
-    const mockLLM = vi.fn(async (key: string) => {
+    let groundingValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingValidationCalls += 1;
+        if (groundingValidationCalls === 2) {
+          const verdictInput = (input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0];
+          expect(verdictInput?.supportingEvidenceIds).toHaveLength(2);
+          expect((verdictInput?.supportingEvidenceIds as string[]).every((id) => /^EVG_\d{3}$/.test(id))).toBe(true);
+          expect(verdictInput?.contradictingEvidenceIds).toEqual([]);
+          return [{ claimId: "AC_01", groundingValid: false, issues: ["Normalized citations need repaired reasoning"] }];
+        }
         return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
       }
       if (key === "VERDICT_DIRECTION_VALIDATION") {
@@ -1276,6 +1285,75 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].challengeResponses).toEqual(verdicts[0].challengeResponses);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
     expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+    expect(groundingValidationCalls).toBe(3);
+  });
+
+  it("accepts structurally normalized citations before invoking repair", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 52,
+      confidence: 80,
+      reasoning: "Original grounded reasoning",
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports", applicability: "contextual" }),
+      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Mismatch"] }];
+        }
+        const verdictInput = (input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0];
+        expect(verdictInput?.supportingEvidenceIds).toEqual([]);
+        expect(verdictInput?.contradictingEvidenceIds).toEqual(["EV_01"]);
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        throw new Error("Repair should not run when normalized citations already validate");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(52);
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_01"]);
+    expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(false);
+    expect(result[0].boundaryFindings).toEqual([{
+      boundaryId: "CB_01",
+      boundaryName: "Standard Analysis Boundary",
+      truthPercentage: 52,
+      confidence: 80,
+      evidenceDirection: "mixed",
+      evidenceCount: 2,
+    }]);
   });
 
   it("rejects repaired reasoning that fails post-repair grounding and preserves pre-repair reasoning", async () => {
@@ -1297,10 +1375,15 @@ describe("validateVerdicts (Step 5)", () => {
     const warnings: AnalysisWarning[] = [];
 
     let directionValidationCalls = 0;
+    let groundingValidationCalls = 0;
     let repairGroundingChecks = 0;
     const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingValidationCalls += 1;
         const reasoning = ((input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0]?.reasoning ?? "") as string;
+        if (groundingValidationCalls === 2) {
+          return [{ claimId: "AC_01", groundingValid: false, issues: ["Normalized citations still need repaired reasoning"] }];
+        }
         if (reasoning.includes("Repair artifact reasoning")) {
           repairGroundingChecks += 1;
           return [{ claimId: "AC_01", groundingValid: false, issues: ["Repair artifact reasoning not grounded"] }];
@@ -1349,6 +1432,7 @@ describe("validateVerdicts (Step 5)", () => {
       evidenceCount: 2,
     }]);
     expect(repairGroundingChecks).toBe(1);
+    expect(groundingValidationCalls).toBe(4);
     expect(warnings.some((w) => w.message.includes("repaired reasoning rejected"))).toBe(true);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
   });
@@ -4130,8 +4214,13 @@ describe("claim-local direction validation (cross-claim contamination prevention
     const warnings: AnalysisWarning[] = [];
 
     let repairEvidencePool: Array<{ id: string; applicability?: string }> | undefined;
+    let groundingValidationCalls = 0;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingValidationCalls += 1;
+        if (groundingValidationCalls === 2) {
+          return [{ claimId: "AC_02", groundingValid: false, issues: ["Normalized citations require repair"] }];
+        }
         return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
       }
       if (key === "VERDICT_DIRECTION_VALIDATION") {
