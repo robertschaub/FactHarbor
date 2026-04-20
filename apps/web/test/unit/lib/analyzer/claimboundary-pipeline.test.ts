@@ -9822,7 +9822,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     });
   });
 
-  it("should keep audit mode on the base contract validation prompt without loading the binding appendix", async () => {
+  it("should keep audit mode on the base contract validation prompt before the single-claim binding challenger", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
 
@@ -9900,6 +9900,63 @@ describe("Stage 1: extractClaims reprompt loop", () => {
             },
           };
         case 5:
+          return {
+            singleClaimAssessment: {
+              isAtomic: true,
+              rePromptRequired: false,
+              summary: "already atomic",
+            },
+            coordinatedBranchFinding: {
+              presentInInput: false,
+              bundledInSingleClaim: false,
+              branchLabels: [],
+              reasoning: "no coordinated branches",
+            },
+          };
+        case 6:
+          return {
+            singleClaimAssessment: {
+              isAtomic: true,
+              rePromptRequired: false,
+              summary: "already atomic",
+            },
+            coordinatedBranchFinding: {
+              presentInInput: false,
+              bundledInSingleClaim: false,
+              branchLabels: [],
+              reasoning: "no coordinated branches",
+            },
+          };
+        case 7:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "binding challenger agrees",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "final",
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: ["final"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 8:
           return makeGate1Pass(1);
         default:
           throw new Error(`Unexpected LLM call #${llmCallIndex}`);
@@ -9928,7 +9985,11 @@ describe("Stage 1: extractClaims reprompt loop", () => {
 
     const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
     expect(renderedSections).toContain("CLAIM_CONTRACT_VALIDATION");
-    expect(renderedSections).not.toContain("CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+    expect(renderedSections).toContain("CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+
+    const contractValidationCalls = mockLoadSection.mock.calls.filter(([, section]) => section === "CLAIM_CONTRACT_VALIDATION");
+    expect(contractValidationCalls.length).toBeGreaterThan(0);
+    expect(contractValidationCalls[0]?.[2]?.salienceBindingContextJson).toContain('"mode": "audit"');
   });
 
 

@@ -1,8 +1,8 @@
 ---
-version: "1.0.5"
+version: "1.0.6"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-20T12:00:00Z"
+lastModified: "2026-04-20T14:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -146,6 +146,7 @@ Assign one of: `agent` · `action_predicate` · `temporal` · `causal` · `scope
 - **Do not hallucinate anchors.** If the input is a plain factual assertion with no distinguishing meaning aspect beyond the bare agent-action-object, return `anchors: []`. Empty is the correct answer for inputs that lack truth-condition-bearing structure.
 - **Referential metadata** (specific dates, named entities, numeric identifiers) is an anchor only if the proposition depends on that specific referent — e.g. "the vote of 12 March" where the date is constitutive, not merely descriptive. Otherwise exclude.
 - **Finality, binding-effect, and completion-status qualifiers** are distinguishing anchors when removing them would change what evidence answers the user's thesis. Classify these under `modal_illocutionary` unless the distinction is the action/predicate itself (for example, decided vs discussed belongs under `action_predicate`).
+- **Priority-anchor emission.** When a finality, binding-effect, or completion-status qualifier modifies the main act/state and coordinated-branch decomposition could otherwise bury it inside a broader clause, emit that qualifier as its own anchor entry instead of relying only on the broader clause anchor. If both a broader clause anchor and a narrower finality/status anchor are plausible, emit both — the finality/status anchor is the priority preservation anchor for downstream decomposition.
 - Emit only aspects whose omission would materially change the thesis-direct proposition downstream extraction must preserve.
 - Keep `rationale` to one sentence. Keep `truthConditionShiftIfRemoved` to one sentence.
 - Operate in the input's own language. Do not translate anchors.
@@ -431,6 +432,7 @@ Binding-mode rules:
 - If an anchor materially modifies the thesis-defining proposition, at least one thesis-direct atomic claim must carry that anchor text verbatim in its `statement`.
 - When multiple precommitted anchors are provided, the anchor that most directly modifies the thesis-defining action takes priority. This is the same tiebreaker as the base truth-condition-bearing modifier rule: prefer the anchor whose predicate fuses the modifier with the input's original action over an anchor that stands alone or only describes an effect.
 - Fuse the priority anchor verbatim into the primary thesis-direct claim's statement. Preserve other anchors where naturally possible, but they do not override the primary fusion requirement.
+- If the precommitted anchors include a modal_illocutionary or action_predicate qualifier on the main act/state and coordinated-branch decomposition is required, preserving that priority anchor in each branch claim takes precedence over keeping one bundled near-verbatim sentence.
 - Keep the existing meaning-preservation scaffold from the base prompt. The precommitted anchors constrain decomposition; they do not authorize new claims, new entities, or evidence-derived narrowing.
 
 ---
@@ -526,13 +528,21 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
 18. **Modifier externalization audit (MANDATORY).**
     When decomposition is driven by coordinated branches, a truth-condition-bearing modifier on the main act must remain fused with that main act in each branch claim that stays inside the modifier's scope. Fail validation if one thesis-direct claim isolates the modifier or its legal/status effect while another thesis-direct claim carries the branch chronology or actor split without that modifier. A standalone modifier/effect claim does not count as preserving branch atomicity.
 
-19. **Decomposition integrity (MANDATORY).**
+19. **Precommitted priority-anchor guard (MANDATORY when available).**
+    When the provided precommitted salience context reports `success: true` and includes one or more `priorityAnchors`, treat any `modal_illocutionary` or `action_predicate` priority anchor on the main act/state as a structural preservation constraint. Do NOT approve a claim set that keeps that priority anchor only inside a whole-proposition bundled carrier, or externalizes it away from branch-level claims when coordinated-branch decomposition is otherwise required. Apply this guard only within the anchor's true semantic scope; do not force it onto branches the input does not place inside scope.
+
+20. **Decomposition integrity (MANDATORY).**
     When the claim set contains more than one thesis-direct claim, each thesis-direct claim must be a proper sub-assertion of the original input. Fail validation if a thesis-direct claim is a literal, near-verbatim, or semantic restatement of the whole input while other thesis-direct claims isolate component propositions, or if one thesis-direct claim semantically subsumes another instead of isolating a separately checkable proposition. A decomposed set must not contain the whole proposition plus one of its parts.
 
 ### Input
 
 Original input:
 `${analysisInput}`
+
+Precommitted salience context (when available):
+```json
+${salienceBindingContextJson}
+```
 
 Input classification:
 `${inputClassification}`
@@ -611,15 +621,22 @@ Assess the original input and the single extracted claim. Determine whether the 
 2. **Near-verbatim is not enough.** A near-verbatim restatement of the input may still be non-atomic if the input ties one act/state to multiple independently verifiable coordinated branches.
 3. **Coordinated branch test.** If one act/state is linked by a shared temporal, conditional, causal, or procedural relation to multiple coordinated branches, and those branches could independently be verified, falsified, or dated, then one bundled claim is non-atomic.
 4. **Conjunctive gate rule.** A clause like "A and B decided" is NOT automatically one atomic branch merely because it shares one verb phrase. If A and B are distinct institutions, actor groups, proceedings, or decision gates with separate possible timelines or outcomes, they are separate branches.
-5. **Modifier fusion across branches.** If the main act/state carries a truth-condition-bearing modifier that stays in scope across the coordinated branches, each branch claim should preserve that modifier fused to the same main act/state. A single bundled claim does NOT satisfy this if branch decomposition is otherwise required.
-6. **No false positives for inseparable composites.** Do NOT require decomposition for pure rank/order/composite propositions whose coordinated phrase cannot resolve differently branch-by-branch.
-7. **Conservative retry rule.** Set `rePromptRequired: true` only when the single claim is materially non-atomic and downstream research would likely investigate different propositions if the claim were split.
-8. **Mandatory branch enumeration.** When coordinated branches relevant to this audit are present, list each independently verifiable branch in `branchLabels` using short verbatim or near-verbatim labels from the input or the single claim. Return an empty array only when no such branches are present.
+5. **Priority anchor guard.** When precommitted salience context is available and `success` is `true`, treat any `priorityAnchors` entry that is `modal_illocutionary` or `action_predicate` on the main act/state as a priority preservation constraint for this audit.
+6. **No anchor weakening or externalization.** If coordinated branch decomposition is required, do NOT pass a bundled single claim when the priority anchor would likely be weakened, dropped, or moved out of the branch-level proposition instead of staying fused to the same main act/state in each branch claim.
+7. **Modifier fusion across branches.** If the main act/state carries a truth-condition-bearing modifier that stays in scope across the coordinated branches, each branch claim should preserve that modifier fused to the same main act/state. A single bundled claim does NOT satisfy this if branch decomposition is otherwise required.
+8. **No false positives for inseparable composites.** Do NOT require decomposition for pure rank/order/composite propositions whose coordinated phrase cannot resolve differently branch-by-branch.
+9. **Conservative retry rule.** Set `rePromptRequired: true` only when the single claim is materially non-atomic and downstream research would likely investigate different propositions if the claim were split.
+10. **Mandatory branch enumeration.** When coordinated branches relevant to this audit are present, list each independently verifiable branch in `branchLabels` using short verbatim or near-verbatim labels from the input or the single claim. Return an empty array only when no such branches are present.
 
 ### Input
 
 Original input:
 `${analysisInput}`
+
+Precommitted salience context (when available):
+```json
+${salienceBindingContextJson}
+```
 
 Input classification:
 `${inputClassification}`

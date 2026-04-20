@@ -44,6 +44,16 @@ function renderWithVars(
 }
 
 describe("Stage-1 prompt contract", () => {
+  describe("CLAIM_SALIENCE_COMMITMENT", () => {
+    it("locks in priority-anchor emission for truth-condition-bearing modifiers", () => {
+      const section = extractSection(promptContent, "CLAIM_SALIENCE_COMMITMENT");
+      expect(section, "Section ## CLAIM_SALIENCE_COMMITMENT not found").not.toBeNull();
+      expect(section).toContain("Priority-anchor emission.");
+      expect(section).toContain("finality, binding-effect, or completion-status qualifier");
+      expect(section).toContain("priority preservation anchor");
+    });
+  });
+
   describe("CLAIM_CONTRACT_REPAIR", () => {
     const vars: Record<string, string> = {
       analysisInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
@@ -130,6 +140,9 @@ describe("Stage-1 prompt contract", () => {
           anchors: [
             { text: "legally binding", type: "modal_illocutionary" },
           ],
+          priorityAnchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+          ],
         },
         null,
         2,
@@ -150,6 +163,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("binding authority is unavailable");
       expect(section).toContain("Ignore the provided `anchors` list and follow the base extraction prompt unchanged");
       expect(section).toContain("provided `anchors` array is empty");
+      expect(section).toContain("preserving that priority anchor in each branch claim takes precedence over keeping one bundled near-verbatim sentence");
     });
   });
 
@@ -161,6 +175,10 @@ describe("Stage-1 prompt contract", () => {
           mode: "binding",
           success: true,
           anchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+            { text: "signed", type: "action_predicate" },
+          ],
+          priorityAnchors: [
             { text: "legally binding", type: "modal_illocutionary" },
             { text: "signed", type: "action_predicate" },
           ],
@@ -197,6 +215,31 @@ describe("Stage-1 prompt contract", () => {
       inputClassification: "single_atomic_claim",
       impliedClaim: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
       articleThesis: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+      salienceBindingContextJson: JSON.stringify(
+        {
+          enabled: true,
+          mode: "audit",
+          success: true,
+          anchors: [
+            {
+              text: "rechtskräftig",
+              type: "modal_illocutionary",
+            },
+            {
+              text: "bevor Volk und Parlament darüber entschieden haben",
+              type: "temporal",
+            },
+          ],
+          priorityAnchors: [
+            {
+              text: "rechtskräftig",
+              type: "modal_illocutionary",
+            },
+          ],
+        },
+        null,
+        2,
+      ),
       atomicClaimsJson: JSON.stringify([
         {
           claimId: "AC_01",
@@ -222,6 +265,9 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
       expect(section).not.toBeNull();
       expect(section).toContain("Near-verbatim is not enough");
+      expect(section).toContain("Precommitted salience context");
+      expect(section).toContain("Priority anchor guard");
+      expect(section).toContain("No anchor weakening or externalization");
       expect(section).toContain("Coordinated branch test");
       expect(section).toContain("Conjunctive gate rule");
       expect(section).toContain("Modifier fusion across branches");

@@ -357,30 +357,21 @@ export async function extractClaims(
     let anchorRetryReason: string | undefined;
     let atomicityRetryReason: string | undefined;
     if (contractResult) {
-      let evaluatedContract = evaluateClaimContractValidation(
-        contractResult,
+      let evaluatedContract = await applyApprovedSingleClaimChallenges(
         pass2.atomicClaims as unknown as AtomicClaim[],
-      );
-      if (shouldRunSingleClaimAtomicityValidation(
-        pass2.atomicClaims as unknown as AtomicClaim[],
-        evaluatedContract,
-        salienceCommitment,
-      )) {
-        const atomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
+        evaluateClaimContractValidation(
+          contractResult,
           pass2.atomicClaims as unknown as AtomicClaim[],
-          state.originalInput,
-          pass2.impliedClaim ?? "",
-          pass2.articleThesis ?? "",
-          pass2.inputClassification ?? "single_atomic_claim",
-          pipelineConfig,
-          state,
-          24,
-        );
-        evaluatedContract = applySingleClaimAtomicityValidation(
-          evaluatedContract,
-          atomicityResult,
-        );
-      }
+        ),
+        state.originalInput,
+        pass2.impliedClaim ?? "",
+        pass2.articleThesis ?? "",
+        pass2.inputClassification ?? "single_atomic_claim",
+        pipelineConfig,
+        state,
+        24,
+        salienceCommitment,
+      );
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       anchorRetryReason = evaluatedContract.anchorRetryReason;
       atomicityRetryReason = evaluatedContract.atomicityRetryReason;
@@ -491,18 +482,12 @@ export async function extractClaims(
         }
 
         let evaluatedRetryContract = retryContractResult
-          ? evaluateClaimContractValidation(
-            retryContractResult,
+          ? await applyApprovedSingleClaimChallenges(
             retryPass2.atomicClaims as unknown as AtomicClaim[],
-          )
-          : undefined;
-        if (retryContractResult && evaluatedRetryContract && shouldRunSingleClaimAtomicityValidation(
-          retryPass2.atomicClaims as unknown as AtomicClaim[],
-          evaluatedRetryContract,
-          salienceCommitment,
-        )) {
-          const retryAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
-            retryPass2.atomicClaims as unknown as AtomicClaim[],
+            evaluateClaimContractValidation(
+              retryContractResult,
+              retryPass2.atomicClaims as unknown as AtomicClaim[],
+            ),
             state.originalInput,
             retryPass2.impliedClaim ?? "",
             retryPass2.articleThesis ?? "",
@@ -510,12 +495,9 @@ export async function extractClaims(
             pipelineConfig,
             state,
             24,
-          );
-          evaluatedRetryContract = applySingleClaimAtomicityValidation(
-            evaluatedRetryContract,
-            retryAtomicityResult,
-          );
-        }
+            salienceCommitment,
+          )
+          : undefined;
 
         if (evaluatedRetryContract && !evaluatedRetryContract.effectiveRePromptRequired) {
           activePass2 = retryPass2;
@@ -600,30 +582,21 @@ export async function extractClaims(
             );
 
             if (repairValidationResult) {
-              let evaluatedRepair = evaluateClaimContractValidation(
-                repairValidationResult,
+              let evaluatedRepair = await applyApprovedSingleClaimChallenges(
                 repairedPass2.atomicClaims as unknown as AtomicClaim[],
-              );
-              if (shouldRunSingleClaimAtomicityValidation(
-                repairedPass2.atomicClaims as unknown as AtomicClaim[],
-                evaluatedRepair,
-                salienceCommitment,
-              )) {
-                const repairAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
+                evaluateClaimContractValidation(
+                  repairValidationResult,
                   repairedPass2.atomicClaims as unknown as AtomicClaim[],
-                  state.originalInput,
-                  activePass2.impliedClaim ?? "",
-                  activePass2.articleThesis ?? "",
-                  activePass2.inputClassification ?? "single_atomic_claim",
-                  pipelineConfig,
-                  state,
-                  25,
-                );
-                evaluatedRepair = applySingleClaimAtomicityValidation(
-                  evaluatedRepair,
-                  repairAtomicityResult,
-                );
-              }
+                ),
+                state.originalInput,
+                activePass2.impliedClaim ?? "",
+                activePass2.articleThesis ?? "",
+                activePass2.inputClassification ?? "single_atomic_claim",
+                pipelineConfig,
+                state,
+                25,
+                salienceCommitment,
+              );
               activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
               stageAttribution = "repair";
               lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
@@ -994,30 +967,21 @@ export async function extractClaims(
       }
 
       if (finalContractResult) {
-        let evaluatedFinalContract = evaluateClaimContractValidation(
-          finalContractResult,
+        let evaluatedFinalContract = await applyApprovedSingleClaimChallenges(
           finalAcceptedClaims,
-        );
-        if (shouldRunSingleClaimAtomicityValidation(
-          finalAcceptedClaims,
-          evaluatedFinalContract,
-          salienceCommitment,
-        )) {
-          const finalAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
+          evaluateClaimContractValidation(
+            finalContractResult,
             finalAcceptedClaims,
-            state.originalInput,
-            bestPass2.impliedClaim ?? "",
-            bestPass2.articleThesis ?? "",
-            bestPass2.inputClassification ?? "single_atomic_claim",
-            pipelineConfig,
-            state,
-            26,
-          );
-          evaluatedFinalContract = applySingleClaimAtomicityValidation(
-            evaluatedFinalContract,
-            finalAtomicityResult,
-          );
-        }
+          ),
+          state.originalInput,
+          bestPass2.impliedClaim ?? "",
+          bestPass2.articleThesis ?? "",
+          bestPass2.inputClassification ?? "single_atomic_claim",
+          pipelineConfig,
+          state,
+          26,
+          salienceCommitment,
+        );
         contractValidationSummary = evaluatedFinalContract.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
         console.info("[Stage1] Refreshed contract summary for final accepted claims after Gate 1 / reprompt selection.");
@@ -2044,16 +2008,7 @@ export async function runPass2(
     );
 
   const bindingModeActive = salienceBinding?.mode === "binding";
-  const salienceBindingContextJson = JSON.stringify(
-    {
-      enabled: salienceBinding?.enabled ?? false,
-      mode: salienceBinding?.mode ?? "audit",
-      success: salienceBinding?.success ?? false,
-      anchors: salienceBinding?.anchors ?? [],
-    },
-    null,
-    2,
-  );
+  const salienceBindingContextJson = buildSalienceBindingContextJson(salienceBinding);
 
   const renderedWithEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
     currentDate,
@@ -2938,6 +2893,31 @@ export function selectPreferredSingleClaimAtomicityValidation(
   return primary ?? challenger;
 }
 
+export function getPrioritySalienceAnchorsForAtomicityValidation(
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): NonNullable<CBClaimUnderstanding["salienceCommitment"]>["anchors"] {
+  const anchors = salienceCommitment?.anchors ?? [];
+  const priorityTypes = new Set(["modal_illocutionary", "action_predicate"]);
+  const prioritizedAnchors = anchors.filter((anchor) => priorityTypes.has(anchor.type));
+  return prioritizedAnchors.length > 0 ? prioritizedAnchors : anchors;
+}
+
+function buildSalienceBindingContextJson(
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): string {
+  return JSON.stringify(
+    {
+      enabled: salienceCommitment?.enabled ?? false,
+      mode: salienceCommitment?.mode ?? "audit",
+      success: salienceCommitment?.success ?? false,
+      anchors: salienceCommitment?.anchors ?? [],
+      priorityAnchors: getPrioritySalienceAnchorsForAtomicityValidation(salienceCommitment),
+    },
+    null,
+    2,
+  );
+}
+
 export function applySingleClaimAtomicityValidation(
   contractValidation: EvaluatedClaimContractValidation,
   atomicityResult: SingleClaimAtomicityValidationResult | undefined,
@@ -2989,6 +2969,33 @@ function claimSetContainsAnchorText(
   return claims.some(
     (claim) => typeof claim.statement === "string" && claim.statement.toLowerCase().includes(normalizedAnchor),
   );
+}
+
+function toBindingSalienceCommitment(
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined {
+  if (!salienceCommitment?.success || (salienceCommitment.anchors?.length ?? 0) === 0) {
+    return undefined;
+  }
+
+  return {
+    ...salienceCommitment,
+    ran: true,
+    enabled: true,
+    success: true,
+    mode: "binding",
+    anchors: salienceCommitment.anchors ?? [],
+  };
+}
+
+export function selectPreferredSingleClaimContractChallenge(
+  primary: EvaluatedClaimContractValidation,
+  challenger: EvaluatedClaimContractValidation | undefined,
+): EvaluatedClaimContractValidation {
+  if (challenger?.effectiveRePromptRequired) {
+    return challenger;
+  }
+  return primary;
 }
 
 export function selectRepairAnchorText(
@@ -3056,6 +3063,99 @@ export function shouldRunContractRepairPass(
   );
 }
 
+async function runSingleClaimBindingContractChallenge(
+  claims: AtomicClaim[],
+  originalInput: string,
+  impliedClaim: string,
+  articleThesis: string,
+  inputClassification: string,
+  pipelineConfig: PipelineConfig,
+  salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+  state: CBResearchState,
+  progressPercent: number,
+): Promise<EvaluatedClaimContractValidation | undefined> {
+  if (claims.length !== 1 || salienceCommitment?.mode === "binding") {
+    return undefined;
+  }
+
+  const bindingSalienceCommitment = toBindingSalienceCommitment(salienceCommitment);
+  if (!bindingSalienceCommitment) {
+    return undefined;
+  }
+
+  const modelName = getModelForTask("context_refinement", undefined, pipelineConfig).modelName;
+  state.onEvent?.("Re-checking single-claim contract against salience anchors...", progressPercent);
+  state.onEvent?.(`LLM call: single-claim binding contract challenge — ${modelName}`, -1);
+
+  const challengerResult = await validateClaimContract(
+    claims,
+    originalInput,
+    impliedClaim,
+    articleThesis,
+    inputClassification,
+    pipelineConfig,
+    bindingSalienceCommitment,
+  );
+  state.llmCalls++;
+
+  return challengerResult
+    ? evaluateClaimContractValidation(challengerResult, claims)
+    : undefined;
+}
+
+async function applyApprovedSingleClaimChallenges(
+  claims: AtomicClaim[],
+  contractValidation: EvaluatedClaimContractValidation,
+  originalInput: string,
+  impliedClaim: string,
+  articleThesis: string,
+  inputClassification: string,
+  pipelineConfig: PipelineConfig,
+  state: CBResearchState,
+  progressPercent: number,
+  salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+): Promise<EvaluatedClaimContractValidation> {
+  if (!shouldRunSingleClaimAtomicityValidation(claims, contractValidation, salienceCommitment)) {
+    return contractValidation;
+  }
+
+  const atomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
+    claims,
+    originalInput,
+    impliedClaim,
+    articleThesis,
+    inputClassification,
+    pipelineConfig,
+    salienceCommitment,
+    state,
+    progressPercent,
+  );
+  const postAtomicityValidation = applySingleClaimAtomicityValidation(
+    contractValidation,
+    atomicityResult,
+  );
+  if (postAtomicityValidation.effectiveRePromptRequired) {
+    return postAtomicityValidation;
+  }
+
+  const bindingChallenge = await runSingleClaimBindingContractChallenge(
+    claims,
+    originalInput,
+    impliedClaim,
+    articleThesis,
+    inputClassification,
+    pipelineConfig,
+    salienceCommitment,
+    state,
+    progressPercent,
+  );
+
+  return selectPreferredSingleClaimContractChallenge(
+    postAtomicityValidation,
+    bindingChallenge,
+  );
+}
+
 async function runSingleClaimAtomicityValidationWithRecheck(
   claims: AtomicClaim[],
   originalInput: string,
@@ -3063,6 +3163,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
   articleThesis: string,
   inputClassification: string,
   pipelineConfig: PipelineConfig,
+  salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
   state: CBResearchState,
   progressPercent: number,
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
@@ -3078,6 +3179,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     articleThesis,
     inputClassification,
     pipelineConfig,
+    salienceCommitment,
   );
   state.llmCalls++;
 
@@ -3094,6 +3196,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     articleThesis,
     inputClassification,
     pipelineConfig,
+    salienceCommitment,
   );
   state.llmCalls++;
 
@@ -3107,6 +3210,7 @@ async function validateSingleClaimAtomicity(
   articleThesis: string,
   inputClassification: string,
   pipelineConfig: PipelineConfig,
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
   if (claims.length !== 1) return undefined;
 
@@ -3119,6 +3223,7 @@ async function validateSingleClaimAtomicity(
       inputClassification,
       impliedClaim,
       articleThesis,
+      salienceBindingContextJson: buildSalienceBindingContextJson(salienceCommitment),
       atomicClaimsJson: JSON.stringify(
         claims.map((claim) => ({
           claimId: claim.id,
@@ -3249,16 +3354,7 @@ async function validateClaimContract(
   const expectedClaimIds = new Set(claims.map((c) => c.id));
   const llmCallStartedAt = Date.now();
   const bindingModeActive = salienceBinding?.mode === "binding";
-  const salienceBindingContextJson = JSON.stringify(
-    {
-      enabled: salienceBinding?.enabled ?? false,
-      mode: salienceBinding?.mode ?? "audit",
-      success: salienceBinding?.success ?? false,
-      anchors: salienceBinding?.anchors ?? [],
-    },
-    null,
-    2,
-  );
+  const salienceBindingContextJson = buildSalienceBindingContextJson(salienceBinding);
 
   try {
     const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
@@ -3266,6 +3362,7 @@ async function validateClaimContract(
       inputClassification,
       impliedClaim,
       articleThesis,
+      salienceBindingContextJson,
       atomicClaimsJson: JSON.stringify(
         claims.map((c) => {
           // Track 1 (Rev B): pass directness context so the LLM validator can

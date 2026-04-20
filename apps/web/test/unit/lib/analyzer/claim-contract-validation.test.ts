@@ -17,6 +17,8 @@ import {
   evaluateClaimContractValidation,
   applySingleClaimAtomicityValidation,
   evaluateSingleClaimAtomicityValidation,
+  getPrioritySalienceAnchorsForAtomicityValidation,
+  selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
   type ClaimContractValidationResult,
@@ -502,6 +504,36 @@ describe("Single-claim atomicity enforcement", () => {
     expect(selectPreferredSingleClaimAtomicityValidation(primary, challenger)).toEqual(challenger);
   });
 
+  it("prefers a binding contract challenger when it upgrades an apparent pass into a retry", () => {
+    const challenger: import("@/lib/analyzer/claim-extraction-stage").EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "binding-mode challenger found unresolved branch bundling",
+        failureMode: "contract_violated",
+      },
+      effectiveRePromptRequired: true,
+      atomicityRetryReason: "binding_contract_challenge_failed",
+    };
+
+    expect(selectPreferredSingleClaimContractChallenge(approvedContract, challenger)).toEqual(challenger);
+  });
+
+  it("keeps the primary contract result when the binding challenger stays permissive", () => {
+    const challenger: import("@/lib/analyzer/claim-extraction-stage").EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "binding-mode challenger agrees",
+      },
+      effectiveRePromptRequired: false,
+    };
+
+    expect(selectPreferredSingleClaimContractChallenge(approvedContract, challenger)).toEqual(approvedContract);
+  });
+
   it("overrides a passing contract summary when atomicity fails", () => {
     const merged = applySingleClaimAtomicityValidation(
       approvedContract,
@@ -524,6 +556,53 @@ describe("Single-claim atomicity enforcement", () => {
     expect(merged.summary.failureMode).toBe("contract_violated");
     expect(merged.summary.atomicityRetryReason).toContain("single_claim_atomicity_failed");
     expect(merged.effectiveRePromptRequired).toBe(true);
+  });
+});
+
+describe("Atomicity salience prioritization", () => {
+  it("prioritizes modal and action-predicate anchors when available", () => {
+    const prioritized = getPrioritySalienceAnchorsForAtomicityValidation({
+      enabled: true,
+      mode: "audit",
+      success: true,
+      anchors: [
+        {
+          text: "before Volk und Parlament darüber entschieden haben",
+          inputSpan: "before Volk und Parlament darüber entschieden haben",
+          type: "temporal",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
+        {
+          text: "rechtskräftig",
+          inputSpan: "rechtskräftig",
+          type: "modal_illocutionary",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
+      ],
+    } as any);
+
+    expect(prioritized.map((anchor) => anchor.text)).toEqual(["rechtskräftig"]);
+  });
+
+  it("falls back to the full anchor list when no priority anchors are available", () => {
+    const prioritized = getPrioritySalienceAnchorsForAtomicityValidation({
+      enabled: true,
+      mode: "audit",
+      success: true,
+      anchors: [
+        {
+          text: "before parliament decided",
+          inputSpan: "before parliament decided",
+          type: "temporal",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
+      ],
+    } as any);
+
+    expect(prioritized.map((anchor) => anchor.text)).toEqual(["before parliament decided"]);
   });
 });
 
@@ -1093,6 +1172,22 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
       inputClassification: "single_atomic_claim",
       impliedClaim: "Sample claim",
       articleThesis: "Sample thesis",
+      salienceBindingContextJson: JSON.stringify(
+        {
+          enabled: true,
+          mode: "audit",
+          success: true,
+          anchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+            { text: "signed", type: "action_predicate" },
+          ],
+          priorityAnchors: [
+            { text: "legally binding", type: "modal_illocutionary" },
+          ],
+        },
+        null,
+        2,
+      ),
       atomicClaimsJson: JSON.stringify(
         [
           {
@@ -1131,6 +1226,7 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
   it("locks in truth-condition and anti-inference output requirements", () => {
     const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
     expect(section).not.toBeNull();
+    expect(section).toContain("Precommitted priority-anchor guard");
     expect(section).toContain('"truthConditionAnchor"');
     expect(section).toContain('"antiInferenceCheck"');
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
@@ -1148,6 +1244,9 @@ describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
     const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
     expect(section).not.toBeNull();
     expect(section).toContain("Near-verbatim is not enough");
+    expect(section).toContain("Precommitted salience context");
+    expect(section).toContain("Priority anchor guard");
+    expect(section).toContain("No anchor weakening or externalization");
     expect(section).toContain("Coordinated branch test");
     expect(section).toContain("Conjunctive gate rule");
     expect(section).toContain("Modifier fusion across branches");
