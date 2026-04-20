@@ -15,6 +15,9 @@ import {
 } from "@/lib/analyzer/claimboundary-pipeline";
 import {
   evaluateClaimContractValidation,
+  applySingleClaimAtomicityValidation,
+  evaluateSingleClaimAtomicityValidation,
+  shouldRunSingleClaimAtomicityValidation,
   type ClaimContractValidationResult,
 } from "@/lib/analyzer/claim-extraction-stage";
 import type { AtomicClaim } from "@/lib/analyzer/types";
@@ -344,6 +347,101 @@ describe("Claim contract retry decision", () => {
     expect(failingReasons).toContain("AC_01");
     expect(failingReasons).toContain("not viable");
     expect(failingReasons).not.toContain("AC_02");
+  });
+});
+
+describe("Single-claim atomicity enforcement", () => {
+  const makeAtomicityResult = (overrides: Partial<import("@/lib/analyzer/claim-extraction-stage").SingleClaimAtomicityValidationResult> = {}) => ({
+    singleClaimAssessment: {
+      isAtomic: true,
+      rePromptRequired: false,
+      summary: "single claim is atomic enough",
+      ...(overrides.singleClaimAssessment ?? {}),
+    },
+    coordinatedBranchFinding: {
+      presentInInput: false,
+      bundledInSingleClaim: false,
+      reasoning: "no coordinated branches that require splitting",
+      ...(overrides.coordinatedBranchFinding ?? {}),
+    },
+  });
+
+  const approvedContract: import("@/lib/analyzer/claim-extraction-stage").EvaluatedClaimContractValidation = {
+    summary: {
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "contract preserved",
+    },
+    effectiveRePromptRequired: false,
+  };
+
+  it("runs only for approved single-claim outputs", () => {
+    const singleClaim: AtomicClaim[] = [{
+      id: "AC_01",
+      statement: "A signed before B and C decided.",
+      category: "factual",
+      centrality: "high",
+      harmPotential: "medium",
+      isCentral: true,
+      claimDirection: "supports_thesis",
+      keyEntities: [],
+      checkWorthiness: "high",
+      specificityScore: 0.8,
+      groundingQuality: "moderate",
+      expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
+    }];
+
+    expect(shouldRunSingleClaimAtomicityValidation(singleClaim, approvedContract)).toBe(true);
+    expect(shouldRunSingleClaimAtomicityValidation([...singleClaim, { ...singleClaim[0], id: "AC_02" }], approvedContract)).toBe(false);
+    expect(shouldRunSingleClaimAtomicityValidation(singleClaim, {
+      ...approvedContract,
+      summary: { ...approvedContract.summary, preservesContract: false, rePromptRequired: true },
+      effectiveRePromptRequired: true,
+    })).toBe(false);
+  });
+
+  it("forces retry when a bundled single claim still contains coordinated branches", () => {
+    const evaluated = evaluateSingleClaimAtomicityValidation(makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: false,
+        rePromptRequired: true,
+        summary: "one bundled claim still contains multiple coordinated decision gates",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: true,
+        bundledInSingleClaim: true,
+        reasoning: "Parliament and the people are independently verifiable decision gates",
+      },
+    }));
+
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.retryReason).toContain("single_claim_atomicity_failed");
+    expect(evaluated.summaryAppendix).toContain("independently verifiable decision gates");
+  });
+
+  it("overrides a passing contract summary when atomicity fails", () => {
+    const merged = applySingleClaimAtomicityValidation(
+      approvedContract,
+      makeAtomicityResult({
+        singleClaimAssessment: {
+          isAtomic: false,
+          rePromptRequired: true,
+          summary: "bundled single claim is non-atomic",
+        },
+        coordinatedBranchFinding: {
+          presentInInput: true,
+          bundledInSingleClaim: true,
+          reasoning: "one act is still tied to multiple coordinated branches",
+        },
+      }),
+    );
+
+    expect(merged.summary.preservesContract).toBe(false);
+    expect(merged.summary.rePromptRequired).toBe(true);
+    expect(merged.summary.failureMode).toBe("contract_violated");
+    expect(merged.summary.atomicityRetryReason).toContain("single_claim_atomicity_failed");
+    expect(merged.effectiveRePromptRequired).toBe(true);
   });
 });
 
@@ -955,6 +1053,24 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain('"antiInferenceCheck"');
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
+  });
+});
+
+describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
+  it("section exists in prompt file", () => {
+    const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
+    expect(section, "Section ## CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION not found").not.toBeNull();
+  });
+
+  it("locks in the bundled-single-claim retry doctrine", () => {
+    const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
+    expect(section).not.toBeNull();
+    expect(section).toContain("Near-verbatim is not enough");
+    expect(section).toContain("Coordinated branch test");
+    expect(section).toContain("Conjunctive gate rule");
+    expect(section).toContain("Modifier fusion across branches");
+    expect(section).toContain("singleClaimAssessment");
+    expect(section).toContain("bundledInSingleClaim");
   });
 });
 

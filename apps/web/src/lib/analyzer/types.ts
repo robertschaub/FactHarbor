@@ -1241,6 +1241,7 @@ export interface CBClaimUnderstanding {
      */
     failureMode?: "contract_violated" | "validator_unavailable";
     anchorRetryReason?: string;
+    atomicityRetryReason?: string;
     truthConditionAnchor?: {
       presentInInput: boolean;
       anchorText: string;

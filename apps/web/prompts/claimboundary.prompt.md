@@ -1,8 +1,8 @@
 ---
-version: "1.0.3"
+version: "1.0.4"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-19T15:15:00Z"
+lastModified: "2026-04-20T00:00:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -27,6 +27,7 @@ requiredSections:
   - "CLAIM_EXTRACTION_PASS2"
   - "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_VALIDATION"
+  - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_REPAIR"
   - "CLAIM_VALIDATION"
@@ -595,6 +596,67 @@ Field constraints:
 - `truthConditionAnchor.preservedByQuotes`: must be exact text spans from the cited claims, not paraphrases, and they must quote the modifier-bearing text itself (or the exact preserved span that still contains that modifier) rather than unrelated text from the same claim.
 - If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.
 - If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.
+
+---
+
+## CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION
+
+You are a single-claim atomicity validator. Your task is to decide whether a single extracted claim is still too bundled because it preserves multiple independently verifiable coordinated branches inside one thesis-direct statement.
+
+### Task
+
+Assess the original input and the single extracted claim. Determine whether the single claim is structurally atomic enough, or whether it still bundles multiple coordinated branches that should be decomposed into separate atomic claims.
+
+### Rules
+
+1. **Atomicity only.** Do not judge truth, evidence quality, or source reliability. Judge only whether the single extracted claim is one atomic proposition or an improperly bundled set of coordinated branches.
+2. **Near-verbatim is not enough.** A near-verbatim restatement of the input may still be non-atomic if the input ties one act/state to multiple independently verifiable coordinated branches.
+3. **Coordinated branch test.** If one act/state is linked by a shared temporal, conditional, causal, or procedural relation to multiple coordinated branches, and those branches could independently be verified, falsified, or dated, then one bundled claim is non-atomic.
+4. **Conjunctive gate rule.** A clause like "A and B decided" is NOT automatically one atomic branch merely because it shares one verb phrase. If A and B are distinct institutions, actor groups, proceedings, or decision gates with separate possible timelines or outcomes, they are separate branches.
+5. **Modifier fusion across branches.** If the main act/state carries a truth-condition-bearing modifier that stays in scope across the coordinated branches, each branch claim should preserve that modifier fused to the same main act/state. A single bundled claim does NOT satisfy this if branch decomposition is otherwise required.
+6. **No false positives for inseparable composites.** Do NOT require decomposition for pure rank/order/composite propositions whose coordinated phrase cannot resolve differently branch-by-branch.
+7. **Conservative retry rule.** Set `rePromptRequired: true` only when the single claim is materially non-atomic and downstream research would likely investigate different propositions if the claim were split.
+
+### Input
+
+Original input:
+`${analysisInput}`
+
+Input classification:
+`${inputClassification}`
+
+Implied claim:
+`${impliedClaim}`
+
+Article thesis:
+`${articleThesis}`
+
+Atomic claims:
+${atomicClaimsJson}
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "singleClaimAssessment": {
+    "isAtomic": true,
+    "rePromptRequired": false,
+    "summary": "short explanation"
+  },
+  "coordinatedBranchFinding": {
+    "presentInInput": false,
+    "bundledInSingleClaim": false,
+    "reasoning": "short explanation"
+  }
+}
+```
+
+Field constraints:
+- `singleClaimAssessment.isAtomic`: whether the single extracted claim is atomic enough.
+- `singleClaimAssessment.rePromptRequired`: set to `true` when the single claim should be retried as a split decomposition.
+- `coordinatedBranchFinding.presentInInput`: whether the input actually contains coordinated branches relevant to this audit.
+- `coordinatedBranchFinding.bundledInSingleClaim`: whether those coordinated branches were left bundled inside the single extracted claim.
 
 ---
 

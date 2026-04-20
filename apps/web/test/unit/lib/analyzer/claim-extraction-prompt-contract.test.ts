@@ -191,6 +191,47 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION", () => {
+    const vars: Record<string, string> = {
+      analysisInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      inputClassification: "single_atomic_claim",
+      impliedClaim: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+      articleThesis: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+      atomicClaimsJson: JSON.stringify([
+        {
+          claimId: "AC_01",
+          statement: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben.",
+          thesisRelevance: "direct",
+          claimDirection: "supports_thesis",
+        },
+      ], null, 2),
+    };
+
+    it("section exists and resolves its variables", () => {
+      const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
+      expect(section, "Section ## CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION not found").not.toBeNull();
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, vars);
+      expect(
+        unresolved,
+        `Unresolved variables in CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION: ${unresolved.join(", ")}`,
+      ).toEqual([]);
+    });
+
+    it("locks in the branch-bundling retry doctrine", () => {
+      const section = extractSection(promptContent, "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Near-verbatim is not enough");
+      expect(section).toContain("Coordinated branch test");
+      expect(section).toContain("Conjunctive gate rule");
+      expect(section).toContain("Modifier fusion across branches");
+      expect(section).toContain("No false positives for inseparable composites");
+      expect(section).toContain("singleClaimAssessment");
+      expect(section).toContain("coordinatedBranchFinding");
+      expect(section).toContain("bundledInSingleClaim");
+    });
+  });
+
   describe("broad public-language total handling", () => {
     it("claim extraction keeps comparison profiles bilateral and anchored to umbrella quantities", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
