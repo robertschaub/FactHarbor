@@ -266,13 +266,17 @@ describe("Stage-1 prompt contract", () => {
       expect(section).not.toBeNull();
       expect(section).toContain("Near-verbatim is not enough");
       expect(section).toContain("Precommitted salience context");
+      expect(section).toContain("the `coordinatedBranchFinding` object is the general structural-finding container");
       expect(section).toContain("Priority anchor guard");
+      expect(section).toContain("Comparison-side test");
       expect(section).toContain("No anchor weakening or externalization");
       expect(section).toContain("Coordinated branch test");
+      expect(section).toContain("named/current side plus another proposition about the comparator/reference side");
       expect(section).toContain("Conjunctive gate rule");
-      expect(section).toContain("Modifier fusion across branches");
+      expect(section).toContain("Modifier fusion across split propositions");
       expect(section).toContain("No false positives for inseparable composites");
       expect(section).toContain("Mandatory branch enumeration");
+      expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");
       expect(section).toContain("singleClaimAssessment");
       expect(section).toContain("coordinatedBranchFinding");
       expect(section).toContain("bundledInSingleClaim");
@@ -370,7 +374,9 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("Modifier-fusion rule for coordinated branches");
       expect(pass2).toContain("Do NOT create one claim for the modified act/state and a separate claim for the branch chronology");
       expect(pass2).toContain("Single-claim bundling prohibition");
-      expect(pass2).toContain("you MUST return separate atomic claims for those branches");
+      expect(pass2).toContain("you MUST split it");
+      expect(pass2).toContain("named/current side plus a separate proposition about the comparator/reference side");
+      expect(pass2).toContain("Preserve the shared relation or comparison anchor in each split claim");
       expect(pass2).toContain("A conjunctive clause with one shared verb phrase does not override this rule");
       expect(pass2).toContain("inseparable rank/order/composite proposition");
       expect(pass2).toContain("rest of a comparison class");
@@ -383,6 +389,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("Single-claim bundling audit (MANDATORY)");
       expect(contract).toContain("returns only one thesis-direct claim");
       expect(contract).toContain("The same rule applies when the coordination is written as one conjunctive clause with a shared verb phrase");
+      expect(contract).toContain("comparison-side bundling");
+      expect(contract).toContain("current-versus-historical, current-versus-threshold, or named-side-versus-rest-of-comparison-class comparisons");
       expect(contract).toContain("distinct institutions, actor groups, proceedings, or decision gates");
       expect(contract).toContain("Modifier externalization audit (MANDATORY)");
       expect(contract).toContain("must remain fused with that main act in each branch claim");

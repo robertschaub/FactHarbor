@@ -473,6 +473,26 @@ describe("Single-claim atomicity enforcement", () => {
     expect(evaluated.summaryAppendix).toContain("branchLabels=[Volk, Parlament]");
   });
 
+  it("treats named-side versus comparator-side labels as a retry trigger even when booleans look permissive", () => {
+    const evaluated = evaluateSingleClaimAtomicityValidation(makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: true,
+        rePromptRequired: false,
+        summary: "single claim was treated as atomic",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: true,
+        bundledInSingleClaim: false,
+        branchLabels: ["current-side total", "historical comparator"],
+        reasoning: "the claim bundles a current-side proposition with a separately checkable historical comparator",
+      },
+    }));
+
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.retryReason).toContain("single_claim_atomicity_failed");
+    expect(evaluated.summaryAppendix).toContain("branchLabels=[current-side total, historical comparator]");
+  });
+
   it("prefers a challenger result when it upgrades an apparent pass into a retry", () => {
     const primary = makeAtomicityResult({
       singleClaimAssessment: {
@@ -1245,13 +1265,18 @@ describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
     expect(section).not.toBeNull();
     expect(section).toContain("Near-verbatim is not enough");
     expect(section).toContain("Precommitted salience context");
+    expect(section).toContain("the `coordinatedBranchFinding` object is the general structural-finding container");
+    expect(section).toContain("Comparison-side test");
     expect(section).toContain("Priority anchor guard");
     expect(section).toContain("No anchor weakening or externalization");
     expect(section).toContain("Coordinated branch test");
     expect(section).toContain("Conjunctive gate rule");
-    expect(section).toContain("Modifier fusion across branches");
+    expect(section).toContain("named/current side plus another proposition about the comparator/reference side");
+    expect(section).toContain("Modifier fusion across split propositions");
     expect(section).toContain("Mandatory branch enumeration");
+    expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");
     expect(section).toContain("singleClaimAssessment");
+    expect(section).toContain("coordinatedBranchFinding");
     expect(section).toContain("bundledInSingleClaim");
     expect(section).toContain("branchLabels");
   });
