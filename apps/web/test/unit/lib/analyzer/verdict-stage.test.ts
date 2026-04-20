@@ -109,6 +109,7 @@ function createEvidenceItem(
     sourceTitle: "Example Source",
     sourceExcerpt: "This is a source excerpt with sufficient length to meet requirements.",
     claimDirection: "supports",
+    applicability: "direct",
     probativeValue: "high",
     claimBoundaryId: "CB_01",
     relevantClaimIds: ["AC_01"],
@@ -289,6 +290,7 @@ describe("advocateVerdict (Step 1)", () => {
       id: "EV_01",
       statement: evidence[0].statement,
       claimDirection: "supports",
+      applicability: "direct",
       sourceId: "S1",
       sourceUrl: "https://example.com/source",
       sourceTitle: "Example Source",
@@ -3742,10 +3744,10 @@ describe("buildSourcePortfolioByClaim", () => {
 });
 
 // ============================================================================
-// isVerdictDirectionPlausible — polarity-mismatch structural check only
-// (Hemisphere-ratio Rules 1-3 and self-consistency rescue boost were removed
-//  because they used arithmetic on weighted evidence ratios to decide what
-//  text means — a Q-AH1 violation. LLM direction validation now stands alone.)
+// isVerdictDirectionPlausible — structural citation guard only
+// (It now rejects both polarity mismatches and explicitly non-direct
+// directional citations. This cross-checks existing LLM-assigned labels only;
+// it does not perform new semantic interpretation in code.)
 // ============================================================================
 
 describe("isVerdictDirectionPlausible", () => {
@@ -3784,6 +3786,22 @@ describe("isVerdictDirectionPlausible", () => {
       contradictingEvidenceIds: [],
     });
     expect(isVerdictDirectionPlausible(verdict, [])).toBe(true);
+  });
+
+  it("returns false when directional citations rely on explicitly contextual evidence", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 70,
+      supportingEvidenceIds: ["EV_CTX"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({
+        id: "EV_CTX",
+        claimDirection: "supports",
+        applicability: "contextual",
+      }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
   });
 
   it("polarity mismatch blocks self-consistency rescue: supporting bucket with contradicting evidence", () => {
@@ -3977,16 +3995,17 @@ describe("claim-local direction validation (cross-claim contamination prevention
     );
 
     // Verify AC_02's direction validation evidence pool contains only its 4 items
-    const ac02Pool = directionInputsByClaimId.get("AC_02") as Array<{ id: string }>;
+    const ac02Pool = directionInputsByClaimId.get("AC_02") as Array<{ id: string; applicability?: string }>;
     expect(ac02Pool).toBeDefined();
     const ac02PoolIds = ac02Pool.map((e) => e.id).sort();
     expect(ac02PoolIds).toEqual(["EV_N1", "EV_N2", "EV_N3", "EV_N4"]);
     // Crucially, AC_01's supporting evidence must NOT appear in AC_02's pool
     expect(ac02PoolIds).not.toContain("EV_S1");
     expect(ac02PoolIds).not.toContain("EV_S6");
+    expect(ac02Pool!.every((e) => e.applicability === "direct")).toBe(true);
 
     // AC_01's pool should contain its own 6 items
-    const ac01Pool = directionInputsByClaimId.get("AC_01") as Array<{ id: string }>;
+    const ac01Pool = directionInputsByClaimId.get("AC_01") as Array<{ id: string; applicability?: string }>;
     expect(ac01Pool).toBeDefined();
     expect(ac01Pool).toHaveLength(6);
   });
@@ -4020,7 +4039,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
     const warnings: AnalysisWarning[] = [];
 
-    let repairEvidencePool: Array<{ id: string }> | undefined;
+    let repairEvidencePool: Array<{ id: string; applicability?: string }> | undefined;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
         return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
@@ -4029,7 +4048,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
         return [{ claimId: "AC_02", directionValid: false, issues: ["Direction mismatch"] }];
       }
       if (key === "VERDICT_DIRECTION_REPAIR") {
-        repairEvidencePool = input.evidencePool as Array<{ id: string }>;
+        repairEvidencePool = input.evidencePool as Array<{ id: string; applicability?: string }>;
         return { claimId: "AC_02", truthPercentage: 25, reasoning: "Adjusted to match contradicting evidence" };
       }
       return [];
@@ -4056,6 +4075,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     // Must NOT contain AC_01's evidence
     expect(repairPoolIds).not.toContain("EV_S1");
     expect(repairPoolIds).not.toContain("EV_S2");
+    expect(repairEvidencePool!.every((e) => e.applicability === "direct")).toBe(true);
   });
 
   it("validateDirectionOnly uses claim-local evidence after repair", async () => {
@@ -4086,7 +4106,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
     const warnings: AnalysisWarning[] = [];
 
-    let revalidationEvidencePool: Array<{ id: string }> | undefined;
+    let revalidationEvidencePool: Array<{ id: string; applicability?: string }> | undefined;
     let directionCallCount = 0;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
@@ -4099,7 +4119,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
           return [{ claimId: "AC_02", directionValid: false, issues: ["Mismatch"] }];
         }
         // Re-validation after repair — capture the evidence pool (now embedded per-verdict)
-        const verdictArr = input.verdicts as Array<{ evidencePool?: Array<{ id: string }> }>;
+        const verdictArr = input.verdicts as Array<{ evidencePool?: Array<{ id: string; applicability?: string }> }>;
         revalidationEvidencePool = verdictArr?.[0]?.evidencePool;
         return [{ claimId: "AC_02", directionValid: true, issues: [] }];
       }
@@ -4130,6 +4150,7 @@ describe("claim-local direction validation (cross-claim contamination prevention
     expect(revalidationIds).toEqual(["EV_C1", "EV_C2", "EV_C3", "EV_C4"]);
     expect(revalidationIds).not.toContain("EV_S1");
     expect(revalidationIds).not.toContain("EV_S2");
+    expect(revalidationEvidencePool!.every((e) => e.applicability === "direct")).toBe(true);
   });
 
   it("grounding validation uses strict claim-local evidence and separate cited registry", async () => {

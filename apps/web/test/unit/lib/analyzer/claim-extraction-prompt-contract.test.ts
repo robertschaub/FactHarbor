@@ -314,14 +314,14 @@ describe("Stage-1 prompt contract", () => {
   });
 
   describe("distinct event discipline", () => {
-    it("keeps distinctEvents tied to input-authored direct proceeding milestones", () => {
+    it("keeps distinctEvents tied to input-authored direct path milestones", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
       expect(section).not.toBeNull();
       expect(section).toContain("Distinct Events Rules");
       expect(section).toContain("The input text — and only the input text — determines what events exist for Stage 2 to investigate");
       expect(section).toContain("direct milestones of that same proceeding or verdict");
-      expect(section).toContain("Use the narrowest same-matter or same-proceeding path interpretation");
-      expect(section).toContain("same party, adjudicator, decision-maker, authority, institution, or officeholder");
+      expect(section).toContain("Use the narrowest same-matter path interpretation");
+      expect(section).toContain("overlapping institutional dispute involving the same actors or institutions");
       expect(section).toContain("Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts");
       expect(section).toContain("do NOT explode that process into every earlier conflict, investigation, institutional dispute, or actor confrontation");
     });

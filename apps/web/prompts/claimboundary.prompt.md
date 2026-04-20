@@ -1,8 +1,8 @@
 ---
-version: "1.0.8"
+version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-20T17:20:00Z"
+lastModified: "2026-04-20T18:20:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -338,13 +338,13 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 - Multiple proceedings or trials by the jurisdiction's own institutions.
 - Temporal episodes of the same phenomenon (e.g., "2022 trial" and "2024 appeal").
 - When the input names one proceeding, process, verdict, or outcome in broad terms, keep `distinctEvents` limited to the direct milestones of that same proceeding or verdict (for example filing/charging, hearing, ruling, appeal, enforcement) rather than every earlier controversy involving the same actors or institution.
-- Use the narrowest same-matter or same-proceeding path interpretation that still fits the input. If the input says only "the proceedings", "the case", or "the verdict" and does not enumerate earlier episodes, do NOT infer that every earlier inquiry, investigation, sanction, or institutional dispute involving the same party, adjudicator, decision-maker, authority, institution, or officeholder belongs to that path.
+- Use the narrowest same-matter path interpretation that still fits the input. If the input refers only to one target process, decision path, or outcome in broad terms and does not enumerate earlier episodes, do NOT infer that every earlier inquiry, investigation, sanction, or overlapping institutional dispute involving the same actors or institutions belongs to that path.
 
 **Exclude:**
 - Foreign government reactions, official actions, or statements about the claim's jurisdiction. These are third-party responses, not events within the claim's scope.
 - International media coverage or foreign political commentary.
 - Events that are consequences or ripple effects of the claim's subject in other jurisdictions.
-- Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts that merely involve the same actors or institution but are not themselves the target proceeding, process, verdict, or outcome named in the input.
+- Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts that merely involve the same actors or institution but are not themselves the directly evaluated target named in the input.
 - If the input names a proceeding or verdict without enumerating earlier episodes, do NOT explode that process into every earlier conflict, investigation, institutional dispute, or actor confrontation learned from background material.
 
 **Test:** For each proposed event, ask: "Did this event occur within the claim's jurisdiction/system?" If a claim is about Country A's courts, only proceedings in Country A's courts qualify. Country B's official actions against Country A are NOT a distinct event — they are a foreign reaction.
@@ -811,7 +811,7 @@ Treat `${freshnessRequirement}` as the authoritative claim-level freshness contr
 - When the decisive proposition may depend on an umbrella figure plus aligned component figures, at least one query must keep the umbrella population, metric, or threshold comparison as the main target rather than collapsing entirely into component-only phrasing. Component-breakdown queries are complementary, not substitutes for the umbrella query.
 - When the claim itself contains a numeric threshold or count anchor, preserve that anchor or a direct comparison to it in at least one query when doing so would help locate the decisive current figure.
 - For approximate comparison claims between current and historical or reference totals, dedicate query coverage to BOTH sides of the comparison. Retrieve the decisive current total and the comparator total directly; methodology-bridge or definition queries are supplements, not substitutes, for those totals.
-- For claims about legality, procedural compliance, or fair-trial standards in a specific proceeding or verdict, dedicate at least one query to the source-native case record or decisive target-case artifact itself (for example case file/identifier, charging document, hearing or ruling record, judgment, appeal/remedy path, or official court publication). Do NOT let all returned queries collapse into criticism, controversy, sanctions, or broader institutional commentary involving the same actors.
+- For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, dedicate at least one query to the source-native record of the directly evaluated target itself (for example an official filing, hearing/ruling record, decision text, appeal/remedy path, or authoritative case/publication identifier). Do NOT let all returned queries collapse into criticism, controversy, sanctions, or broader commentary involving overlapping actors or institutions.
 - **Comparative ecosystem claims only** (claims about whether an activity is institutionalized or systematically established across jurisdictions — NOT claims whose decisive evidence is a present-state metric, ranking, or threshold; when both ecosystem and metric readings are plausible from the wording alone, default to the metric/present-state interpretation; for metric claims use the present-state rules above):
   - Dedicate side-specific query coverage to the strongest institutional existence signals on BOTH sides (for example: directories/registries, certification or membership lists, dedicated units/teams/desks, recurring official or organizational outputs, and governance/monitoring frameworks). Do NOT rely only on broad topic-overview queries or wait for a single source to state the whole comparison explicitly.
   - Keep the named activity or the closest source-native activity label explicit in EVERY query. Vary the institutional signal route around that label (directory, registry, membership, certification, monitoring, recurring output, governance) instead of replacing the activity with generic words such as structure, system, evaluation, governance, or coordination that could surface unrelated sectors.
@@ -887,8 +887,8 @@ When existing evidence is available, use it to **identify gaps**, not to confirm
 - When `existingEvidenceSummary` is `"none"` (first iteration), ignore this section and rely on `expectedEvidenceProfile` and `distinctEvents` only.
 
 **Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events or time-bounded episodes that are each direct milestones of the same claim, you MUST distribute query coverage across those direct milestones rather than collapsing onto only the most prominent one. For each iteration:
-- Before applying this rule, discard event candidates that are merely antecedent background, side disputes, institutional conflicts, foreign reactions, or historical comparator episodes rather than direct milestones of the target proceeding, process, verdict, or outcome.
-- Same party, adjudicator, decision-maker, authority, institution, or officeholder overlap does NOT by itself make an earlier or parallel episode a direct milestone of the target proceeding.
+- Before applying this rule, discard event candidates that are merely antecedent background, side disputes, institutional conflicts, foreign reactions, or historical comparator episodes rather than direct milestones of the directly evaluated target.
+- Overlap in actors, institutions, decision-makers, or authorities does NOT by itself make an earlier or parallel episode a direct milestone of the target path.
 - Generate at least one query that explicitly targets a **different** event cluster than the most prominent one in the current evidence pool.
 - Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal and event focus.
 - Do NOT rely solely on the merged claim statement or `expectedEvidenceProfile`, which may already reflect a skewed single-event evidence pool.
@@ -970,8 +970,8 @@ A result is **not relevant** if:
   - **Target-specific**: The result primarily covers the specific proceeding, event, or actor named in the claim. Score normally based on relevance.
   - **Comparator/precedent**: The result primarily covers a different proceeding, event, or actor — even if it involves the same institution, jurisdiction, or subject area. These may provide useful background but are not direct evidence about the target claim. Score at most **0.5** and set `jurisdictionMatch` to `"contextual"`.
   - A source reporting on a prior case involving a different party in the same court is comparator, not target-specific.
-  - A source reporting on the target proceeding itself, even if it also mentions prior cases, is target-specific.
-  - For claims about legality, procedural compliance, or fair-trial standards in a specific proceeding or verdict, a result about an earlier or parallel proceeding, collateral inquiry, sanction episode, impeachment effort, or broader institutional controversy involving the same party, adjudicator, decision-maker, authority, institution, or officeholder is comparator/precedent unless the title/snippet itself makes clear that it documents the target case path. Same-actor or same-institution overlap alone is insufficient.
+  - A source reporting on the directly evaluated target itself, even if it also mentions prior cases, is target-specific.
+  - For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, a result about an earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy involving overlapping actors or institutions is comparator/precedent unless the title/snippet itself makes clear that it documents the target path. Overlap alone is insufficient.
 - For claims about whether a jurisdiction or entity has a systematic institutional ecosystem or organized capability, results that only show the activity occurring in one unrelated topical context, one case study, or one platform-specific implementation are contextual at most unless they explicitly document the broader ecosystem being assessed.
 - For such claims, pages about the institutionalization, governance, evaluation, coordination, or system structure of a DIFFERENT activity, sector, or policy problem are different-topic lexical overlaps, not relevant evidence, even if they share words like systematic, institutional, governance, coordination, evaluation, or structure.
 - For such claims, reports about the governance, legal framework, or regulation of a broader policy problem or harm domain are not direct ecosystem evidence for the named activity unless the result explicitly inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself.
@@ -1072,10 +1072,10 @@ Given a claim and source content, extract evidence items with full metadata incl
     - Evidence that directly documents, evaluates, or legally assesses the specific proceeding, event, actor, or policy named in the claim is **target-specific**. Assign `claimDirection` based on whether it supports or contradicts the claim.
     - Evidence about a **different** proceeding, actor, event, or case — even if it involves the same institution, jurisdiction, or subject area — is **comparator/precedent** material. This includes: historical cases involving different parties, prior investigations of different actors, rulings about different defendants, institutional pattern evidence from a different time period or context, and outcomes of structurally related but legally distinct proceedings.
     - Comparator evidence is normally `"contextual"`. It provides background for interpreting the claim but does not by itself determine whether the target-specific claim is true or false.
-    - **Exception — the finding itself is about the target proceeding:** Comparator evidence may be classified as `"supports"` or `"contradicts"` only when the finding directly evaluates, rules on, or documents the **target proceeding, event, or actor named in the claim** — not merely the same institution, court system, or jurisdiction. Sharing the same institution is not sufficient; the evidence must assess the target proceeding itself.
-    - For claims about whether a specific proceeding, process, or verdict satisfied legal, procedural, or fair-trial standards, evidence from earlier or parallel proceedings, collateral inquiries, sanctions, impeachment efforts, or broader institutional controversies involving the same party, adjudicator, decision-maker, authority, institution, or officeholder is comparator/precedent by default.
-    - Such material may be classified as `"supports"` or `"contradicts"` only when the source explicitly documents a formal step, ruling, evidentiary act, appellate safeguard, or procedural feature of the target proceeding itself, or explicitly states that the criticized/supportive mechanism governed that same target proceeding.
-    - Same-actor or same-institution overlap alone does not create that bridge.
+    - **Exception — the finding itself is about the directly evaluated target:** Comparator evidence may be classified as `"supports"` or `"contradicts"` only when the finding directly evaluates, rules on, or documents the **target object named in the claim** — not merely the same institution, decision system, or jurisdiction. Sharing the same institution is not sufficient; the evidence must assess the directly evaluated target itself.
+    - For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, evidence from earlier or parallel episodes, collateral inquiries, sanctions, or broader institutional controversies involving overlapping actors or institutions is comparator/precedent by default.
+    - Such material may be classified as `"supports"` or `"contradicts"` only when the source explicitly documents a formal step, decision artifact, evidentiary act, remedy/safeguard, or other procedural feature of the directly evaluated target itself, or explicitly states that the criticized/supportive mechanism governed that same target.
+    - Overlap in actors or institutions alone does not create that bridge.
     - "A judge was found biased in a different case involving a different party" → `"contextual"`, even if it is the same court or the same jurisdiction.
     - "Similar unfairness happened in a prior case involving a different party" → `"contextual"`, not `"contradicts"`.
     - "An international body ruled on deficiencies in this specific proceeding" → may be `"supports"` or `"contradicts"` depending on the finding.
@@ -1365,6 +1365,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - `confidence`: 0–100. How confident you are in the verdict given the available evidence. Lower if evidence is thin, contradictory, or low-quality.
 - Use `supportingEvidenceIds` and `contradictingEvidenceIds` as the authoritative evidence-citation channel.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning`. Keep reasoning natural-language only.
+- Treat `applicability` as binding for directional citation arrays. Only evidence items marked `direct` may appear in `supportingEvidenceIds` or `contradictingEvidenceIds`. Items marked `contextual` or `foreign_reaction` may inform confidence, limitations, or background reasoning, but they are not directional support or contradiction.
 - Per-boundary findings provide quantitative signals — assess each boundary's evidence independently before synthesizing.
 - **FIRST assess per-boundary, THEN synthesize across boundaries.** Do not skip the per-boundary analysis.
 - When boundaries provide conflicting evidence, the verdict should reflect the conflict rather than averaging it away. Explain the disagreement.
@@ -1386,9 +1387,9 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - **Distinguish factual findings from institutional positions:**
   - When weighing evidence, distinguish between a source's **factual outputs** (research data, statistical publications, investigations, compliance reports, legal analyses, field measurements) and its **positional outputs** (executive orders, diplomatic statements, sanctions, press releases, political declarations). Factual outputs derive probative value from their methodology and data quality. Positional outputs represent institutional stances — weigh them primarily as indicators of that institution's position, not as independent evidence for or against factual claims.
   - When a non-party entity's positional output (e.g., an external actor's official statement about another institution's internal processes) is the only evidence in a boundary contradicting the claim, assess whether it provides factual counter-evidence or merely expresses political disagreement. Political disagreement alone does not constitute factual contradiction.
-  - Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain positional outputs even when framed as neutral or standards-based analysis. Do not treat them as independent high-probative contradiction unless they are corroborated by direct in-jurisdiction evidence or neutral external evidence about the target proceeding/event/actor.
-  - For claims about whether a specific proceeding, process, or verdict satisfied legal, procedural, or fair-trial standards, contextual evidence from other proceedings or broader institutional controversies involving the same party, adjudicator, decision-maker, authority, institution, or officeholder can limit confidence or explain risk, but it does not by itself outweigh target-specific evidence unless the source explicitly bridges the same criticized/supportive mechanism into the target proceeding.
-  - Grounded external or foreign documentation can be probative when it documents the target proceeding with concrete, sourced findings. Unsupported commentary, sanctions politics, or off-scope institutional disputes remain contextual background rather than decisive contradiction.
+  - Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain positional outputs even when framed as neutral or standards-based analysis. Do not treat them as independent high-probative contradiction unless they are corroborated by direct in-jurisdiction evidence or neutral external evidence about the directly evaluated target.
+  - For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, contextual evidence from other episodes or broader institutional controversies involving overlapping actors or institutions can limit confidence or explain risk, but it does not by itself outweigh direct target-specific evidence unless the source explicitly bridges the same criticized/supportive mechanism into the directly evaluated target.
+  - Grounded external documentation, including foreign documentation when it supplies concrete sourced findings about the directly evaluated target, can be probative. Unsupported commentary, sanctions politics, or off-scope disputes remain contextual background rather than decisive contradiction.
 - **Source concentration and track-record awareness (MANDATORY when sourcePortfolioByClaim is provided):**
   - Consult the per-claim Source Portfolio (keyed by claim ID) to identify evidence concentration FOR EACH CLAIM independently. When multiple evidence items originate from the same source, they represent ONE analytical perspective, not independent observations. Weight them collectively, not individually.
   - Use `trackRecordScore` (0.0–1.0, where 1.0 = highest reliability) to calibrate how much weight a source's evidence carries. A low track-record score (below 0.5) means the source has lower established reliability — its evidence items should carry proportionally less weight than items from higher-reliability sources, even if individually rated as high probativeValue.
@@ -1480,6 +1481,7 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 - Be genuinely adversarial — provide specific counter-arguments, not vague skepticism.
 - Use `evidenceIds` as the authoritative machine-readable citation channel for each challenge point.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `description`. Keep challenge prose natural-language only.
+- If a verdict uses evidence marked `contextual` or `foreign_reaction` inside `supportingEvidenceIds` or `contradictingEvidenceIds`, treat that as a concrete structural weakness and challenge the verdict on that basis rather than treating the non-direct item as clean directional evidence.
 - **Every challenge point MUST cite specific evidence IDs** that it references, disputes, or identifies as problematic. If your challenge is about absent evidence, cite the evidence items that SHOULD have a counterpart but don't. Challenges with zero evidence IDs are structurally weak and will be discounted.
 - "Maybe more research would help" is NOT a valid challenge. State what specific evidence is missing, what type of source would provide it, and why its absence matters for the verdict.
 - Each challenge point must be specific enough that the reconciler can evaluate and respond to it directly.
@@ -1747,6 +1749,7 @@ This is a lightweight directional sanity check. Flag only clear mismatches (e.g.
 - Only check directional consistency — a verdict at 60% with mostly supporting evidence is fine; a verdict at 85% with mostly contradicting evidence is a flag.
 - Minor discrepancies (e.g., 55% with slightly more contradicting evidence) should NOT be flagged — only clear mismatches.
 - Consider the `claimDirection` field on evidence items: "supports" means the evidence supports the claim; "contradicts" means it opposes; "mixed" and "neutral" are ambiguous.
+- Consider the `applicability` field when present. Only evidence marked `direct` may remain in `supportingEvidenceIds` or `contradictingEvidenceIds`. If a cited directional item is marked `contextual` or `foreign_reaction`, flag that as a direction issue even when its `claimDirection` matches the bucket.
 
 ### Input
 
@@ -1795,6 +1798,7 @@ Given one verdict plus direction-validation issues, produce a repaired verdict u
 - Do not output any new evidence IDs.
 - Do not change the claim identity.
 - Keep `reasoning` natural-language only. Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in prose.
+- When `evidencePool` includes `applicability`, keep only `direct` evidence IDs in `supportingEvidenceIds` and `contradictingEvidenceIds`. Remove `contextual` or `foreign_reaction` IDs from directional arrays; they may be discussed only as background or confidence-limiting context.
 - Return exactly one JSON object.
 
 ### Input
@@ -2166,31 +2170,31 @@ For each evidence item, determine whether it was produced by actors within the c
 
 ### Applicability Categories
 
-- **direct**: Evidence that evaluates, documents, or legally assesses the **specific proceeding, event, or actor named in the claims**. This includes: rulings in the target case, testimony or findings about the target event, official records of the target proceeding, and reporting that primarily covers the target event itself.
-- **contextual**: Evidence that provides relevant background but does not directly evaluate the target proceeding/event/actor. This includes:
+- **direct**: Evidence that evaluates, documents, or materially measures the **specific target object named by the claim**. This includes official records, findings, measurements, or reporting whose substantive focus is that same target.
+- **contextual**: Evidence that provides relevant background but does not directly evaluate the target object. This includes:
   - Evidence from neutral external observers (international academic studies, NGO reports, comparative legal analyses). Neutral external observers exclude foreign governments, foreign legislative bodies, executive offices, state media, and official government publications.
-  - **Comparator/precedent evidence**: findings about a different proceeding, case, actor, or event — even if it involves the same institution, court system, or jurisdiction. Prior cases involving different parties, historical investigations of different actors, and institutional pattern evidence from a different context are contextual, not direct.
-  - A finding about a different party in the same court is `"contextual"`, not `"direct"`.
+  - **Comparator/precedent evidence**: findings about a different target object — even if it involves the same institution, decision system, or jurisdiction. Prior cases involving different parties, historical investigations of different actors, and institutional pattern evidence from a different context are contextual, not direct.
+  - A finding about a different target object inside the same institution is `"contextual"`, not `"direct"`.
 - **foreign_reaction**: Evidence produced by foreign governments or their legislative or executive bodies about the claim's jurisdiction, including official actions, resolutions, or formal assessments. These are political reactions, not evidence about the claim's substance.
 
 ### Rules
 
 - Do not assume any particular language. Assess based on the evidence's substance, not its language or publisher.
-- **Classify by what the evidence evaluates, not what topic it shares.** An evidence item from within the claim's jurisdiction that evaluates a different case/actor is `"contextual"`, not `"direct"`.
-- For claims about whether a specific proceeding, process, or verdict satisfied legal, procedural, or fair-trial standards, evidence from an earlier or parallel proceeding, collateral inquiry, sanction episode, impeachment effort, or broader institutional controversy involving the same party, adjudicator, decision-maker, authority, institution, or officeholder is `"contextual"` unless it directly documents the target case path or explicitly states that the criticized/supportive procedure governed that same target proceeding.
-- Same-actor or same-institution overlap alone is insufficient.
+- **Classify by what the evidence evaluates, not what topic it shares.** An evidence item from within the claim's jurisdiction that evaluates a different target object is `"contextual"`, not `"direct"`.
+- For claims about whether a target process or decision satisfied legality, procedure, fairness, or similar rule-governed standards, evidence from an earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy involving overlapping actors or institutions is `"contextual"` unless it directly documents the target path or explicitly states that the criticized/supportive procedure governed that same target.
+- Overlap in actors or institutions alone is insufficient.
 - For claims about whether an activity is systematic, institutionalized, organized, or otherwise established within a jurisdiction or entity, mark an item `"direct"` only when it evaluates the existence, absence, or structure of that broader ecosystem itself. Evidence about one topical use case, one platform-specific program, or one isolated implementation is usually `"contextual"` unless the source explicitly presents it as representative of the system being assessed.
 - For such claims, evidence about the governance, legal framework, or regulation of a broader policy problem or harm domain remains `"contextual"` unless it explicitly inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
-- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the target proceeding; otherwise "contextual."
-- Foreign media reporting on the target proceeding's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
+- International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the directly evaluated target; otherwise "contextual."
+- Foreign media reporting on the directly evaluated target's events is "contextual" — the media organization is foreign but it's reporting on the jurisdiction's own events.
 - State media, government press offices, and official government publications are not neutral external observers — classify by the issuing authority.
 - Foreign government-issued assessments, rankings, monitoring reports, or official evaluations about another jurisdiction remain `foreign_reaction` even when they summarize local events, procedures, or institutional conditions.
-- Do not upgrade a foreign government publication to `contextual` merely because it cites local sources, quotes court filings, or describes the target proceeding in detail. If the publication's own official assessment is the substantive evidence, classify it as `foreign_reaction`.
+- Do not upgrade a foreign government publication to `contextual` merely because it cites local sources, quotes official records, or describes the target in detail. If the publication's own official assessment is the substantive evidence, classify it as `foreign_reaction`.
 - Foreign government assessments, rankings, monitoring reports, or official evaluations about the jurisdiction remain "foreign_reaction" even when framed as neutral or standards-based analysis. Positive example: "Foreign government report rates Country A institutions as failing core standards" -> `foreign_reaction`. Negative example (contrast): "Foreign academic study rates Country A institutions as failing core standards" -> `contextual` (the issuing authority is a foreign academic institution, not a foreign government).
 - Foreign government ACTIONS (sanctions, executive orders) are always "foreign_reaction" — even if they mention the jurisdiction's events.
-- Neutral external reporting or analysis about the target proceeding remains "contextual" unless the substantive evidence is the foreign government's own action or official assessment.
+- Neutral external reporting or analysis about the directly evaluated target remains "contextual" unless the substantive evidence is the foreign government's own action or official assessment.
 
 ### Input
 

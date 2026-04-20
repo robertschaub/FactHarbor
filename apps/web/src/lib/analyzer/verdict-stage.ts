@@ -83,6 +83,7 @@ type VerdictPromptEvidenceItem = Pick<
   | "statement"
   | "category"
   | "claimDirection"
+  | "applicability"
   | "sourceId"
   | "sourceUrl"
   | "sourceTitle"
@@ -112,6 +113,7 @@ function toVerdictPromptEvidenceItems(
     statement: item.statement,
     category: item.category,
     claimDirection: item.claimDirection,
+    applicability: item.applicability,
     sourceId: item.sourceId,
     sourceUrl: item.sourceUrl,
     sourceTitle: item.sourceTitle,
@@ -126,6 +128,24 @@ function toVerdictPromptEvidenceItems(
     isDerivative: item.isDerivative,
     derivedFromSourceUrl: item.derivedFromSourceUrl,
     scopeQuality: item.scopeQuality,
+  }));
+}
+
+type DirectionValidationEvidencePoolItem = {
+  id: string;
+  statement: string;
+  claimDirection?: EvidenceItem["claimDirection"];
+  applicability?: EvidenceItem["applicability"];
+};
+
+function toDirectionValidationEvidencePool(
+  evidence: EvidenceItem[],
+): DirectionValidationEvidencePoolItem[] {
+  return evidence.map((item) => ({
+    id: item.id,
+    statement: item.statement,
+    claimDirection: item.claimDirection,
+    applicability: item.applicability,
   }));
 }
 
@@ -1060,7 +1080,7 @@ export interface VerdictRepairRequest {
   claim?: AtomicClaim;
   boundaryContext: Array<{ boundaryId: string; boundaryName: string }>;
   evidenceDirectionSummary: { supports: number; contradicts: number; mixed: number; neutral: number };
-  evidencePool: Array<{ id: string; statement: string; claimDirection?: EvidenceItem["claimDirection"] }>;
+  evidencePool: DirectionValidationEvidencePoolItem[];
 }
 
 type IntrinsicDirectionSummary = {
@@ -1068,6 +1088,8 @@ type IntrinsicDirectionSummary = {
   weightedContradicts: number;
   misbucketedSupportingIds: string[];
   misbucketedContradictingIds: string[];
+  nonDirectSupportingIds: string[];
+  nonDirectContradictingIds: string[];
 };
 
 export interface VerdictValidationRepairContext {
@@ -1293,11 +1315,7 @@ export async function validateVerdicts(
             truthPercentage: v.truthPercentage,
             supportingEvidenceIds: v.supportingEvidenceIds,
             contradictingEvidenceIds: v.contradictingEvidenceIds,
-            evidencePool: localEvidence.map((e) => ({
-              id: e.id,
-              statement: e.statement,
-              claimDirection: e.claimDirection,
-            })),
+            evidencePool: toDirectionValidationEvidencePool(localEvidence),
           };
         }),
       },
@@ -1552,33 +1570,28 @@ function joinIssues(issues: string[]): string {
 }
 
 /**
- * Deterministic sanity check for verdict direction.
- * Returns true if the truth percentage is directionally consistent with the
- * weighted evidence ratio, allowing us to override false-positive LLM validation failures.
+ * Deterministic structural sanity check for verdict direction.
+ * Returns false when directional citation arrays contain evidence whose own
+ * stored labels make that usage invalid:
+ * - polarity mismatch (`supports` cited as contradicting, or vice versa)
+ * - explicit non-direct applicability (`contextual` / `foreign_reaction`)
  *
- * Uses probativeValue weights from CalcConfig if provided.
+ * This is schema-level validation across existing LLM-assigned fields, not a
+ * semantic text interpretation rule.
  */
 export function isVerdictDirectionPlausible(
   verdict: CBClaimVerdict,
   evidence: EvidenceItem[],
   calcConfig?: CalcConfig,
 ): boolean {
-  // Polarity-mismatch structural check only. Returns false if the verdict's
-  // citation buckets (supportingEvidenceIds / contradictingEvidenceIds) contain
-  // evidence whose own claimDirection contradicts the bucket label. This is a
-  // schema guard (two LLM-assigned labels disagree), not semantic adjudication.
-  //
-  // Hemisphere-ratio rules (Rules 1-3) and the self-consistency rescue boost
-  // were removed because they used arithmetic on weighted evidence ratios to
-  // decide what text means — a Q-AH1 violation per AGENTS.md LLM Intelligence
-  // mandate. LLM direction validation now stands on its own.
-  const evidenceById = new Map(evidence.map((e) => [e.id, e]));
-  const mislabeledSupporting = (verdict.supportingEvidenceIds ?? [])
-    .filter((id) => evidenceById.get(id)?.claimDirection === "contradicts").length;
-  const mislabeledContradicting = (verdict.contradictingEvidenceIds ?? [])
-    .filter((id) => evidenceById.get(id)?.claimDirection === "supports").length;
+  const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
 
-  if (mislabeledSupporting > 0 || mislabeledContradicting > 0) {
+  if (
+    summary.misbucketedSupportingIds.length > 0
+    || summary.misbucketedContradictingIds.length > 0
+    || summary.nonDirectSupportingIds.length > 0
+    || summary.nonDirectContradictingIds.length > 0
+  ) {
     return false;
   }
 
@@ -1599,6 +1612,8 @@ function summarizeBucketWeightedEvidenceDirection(
   let weightedContradicts = 0;
   const misbucketedSupportingIds: string[] = [];
   const misbucketedContradictingIds: string[] = [];
+  const nonDirectSupportingIds: string[] = [];
+  const nonDirectContradictingIds: string[] = [];
 
   for (const id of supportIds) {
     const item = evidenceById.get(id);
@@ -1606,6 +1621,9 @@ function summarizeBucketWeightedEvidenceDirection(
     weightedSupports += weight;
     if (item?.claimDirection === "contradicts") {
       misbucketedSupportingIds.push(id);
+    }
+    if (item?.applicability && item.applicability !== "direct") {
+      nonDirectSupportingIds.push(id);
     }
   }
 
@@ -1616,6 +1634,9 @@ function summarizeBucketWeightedEvidenceDirection(
     if (item?.claimDirection === "supports") {
       misbucketedContradictingIds.push(id);
     }
+    if (item?.applicability && item.applicability !== "direct") {
+      nonDirectContradictingIds.push(id);
+    }
   }
 
   return {
@@ -1623,6 +1644,8 @@ function summarizeBucketWeightedEvidenceDirection(
     weightedContradicts,
     misbucketedSupportingIds,
     misbucketedContradictingIds,
+    nonDirectSupportingIds,
+    nonDirectContradictingIds,
   };
 }
 
@@ -1642,6 +1665,16 @@ function getDeterministicDirectionIssues(
   if (summary.misbucketedContradictingIds.length > 0) {
     issues.push(
       `Contradicting citations are polarity-misaligned: ${summary.misbucketedContradictingIds.length} contradictingEvidenceIds point to supporting evidence in the claim-local pool.`,
+    );
+  }
+  if (summary.nonDirectSupportingIds.length > 0) {
+    issues.push(
+      `Supporting citations include ${summary.nonDirectSupportingIds.length} explicitly non-direct evidence item(s); supportingEvidenceIds may cite only direct evidence.`,
+    );
+  }
+  if (summary.nonDirectContradictingIds.length > 0) {
+    issues.push(
+      `Contradicting citations include ${summary.nonDirectContradictingIds.length} explicitly non-direct evidence item(s); contradictingEvidenceIds may cite only direct evidence.`,
     );
   }
 
@@ -1664,7 +1697,11 @@ function normalizeVerdictCitationDirections(
   const supportingEvidenceIds: string[] = [];
   const contradictingEvidenceIds: string[] = [];
   for (const id of citedIds) {
-    const direction = evidenceById.get(id)?.claimDirection;
+    const item = evidenceById.get(id);
+    if (item?.applicability && item.applicability !== "direct") {
+      continue;
+    }
+    const direction = item?.claimDirection;
     if (direction === "supports") supportingEvidenceIds.push(id);
     else if (direction === "contradicts") contradictingEvidenceIds.push(id);
     else if (originalSupporting.has(id)) supportingEvidenceIds.push(id);
@@ -2009,11 +2046,7 @@ async function attemptDirectionRepair(
     claim,
     boundaryContext,
     evidenceDirectionSummary: summary,
-    evidencePool: localEvidence.map((item) => ({
-      id: item.id,
-      statement: item.statement,
-      claimDirection: item.claimDirection,
-    })),
+    evidencePool: toDirectionValidationEvidencePool(localEvidence),
   };
 
   const repairExecutor = repairContext.repairExecutor ?? defaultRepairExecutor;
@@ -2038,11 +2071,7 @@ async function validateDirectionOnly(
         truthPercentage: verdict.truthPercentage,
         supportingEvidenceIds: verdict.supportingEvidenceIds,
         contradictingEvidenceIds: verdict.contradictingEvidenceIds,
-        evidencePool: localEvidence.map((e) => ({
-          id: e.id,
-          statement: e.statement,
-          claimDirection: e.claimDirection,
-        })),
+        evidencePool: toDirectionValidationEvidencePool(localEvidence),
       }],
     },
     {

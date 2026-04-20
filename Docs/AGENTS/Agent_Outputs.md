@@ -1467,6 +1467,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
 
 ---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Bolsonaro Target-Object Applicability Guard Fix -- [Significant] [open-items: yes]
+**For next agent:** The forward fix for the remaining Bolsonaro `UNVERIFIED` atomic claims is ready but not yet live-rerun-verified. `claimboundary.prompt.md` no longer reuses benchmark-shaped `"the proceedings" / "the case" / "the verdict"` steering language from commit `39c2d222`; the relevant Stage 1/2/4 rules now use generic target-object / target-path wording. `verdict-stage.ts` now forwards `applicability` into Stage 4 verdict prompting and direction validation/repair, rejects explicitly non-direct directional citations in `isVerdictDirectionPlausible(...)`, emits deterministic direction issues for them, and strips them from directional arrays before repair/revalidation. Focused verification passed on the Stage 1/4 suites, `tsc --noEmit`, and `npm -w apps/web run build`. Still pending: commit, restart services, and rerun the approved English Bolsonaro input so the new job records the committed hash.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Bolsonaro_Target_Object_Applicability_Guard_Fix.md
+
+---
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Stage 2 Console Noise Cleanup -- [Standard] [open-items: yes]
 **For next agent:** `research-extraction-stage.ts` no longer emits Stage 2 diagnostics through `console.warn`, `console.info`, or `debugLog(...)`. Relevance classification summaries, discard summaries, extraction fail-open notices, applicability summaries, and applicability fail-open notices now all route through `debugLogFileOnly(...)`, so they land in `debug-analyzer.log` without polluting stdout. `research-extraction-stage.test.ts` now also locks the applicability summary onto the file-only logger. Focused verification passed on `npm -w apps/web exec vitest run test/unit/lib/analyzer/research-extraction-stage.test.ts`; `npm -w apps/web run build` still prints unrelated SR-Eval/config startup lines outside this module. The unrelated pre-existing edit in `apps/web/src/lib/input-policy-gate.ts` remains out of scope and uncommitted.
 
