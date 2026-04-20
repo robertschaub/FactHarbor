@@ -23,9 +23,20 @@ If still ambiguous, ask the active human user before proceeding.
 Claude Code's built-in system prompt includes directives to "try the simplest approach first" and "do not overdo it." **These are explicitly overridden for this project.**
 
 For FactHarbor, correctness and completeness take priority over speed and brevity. Always:
-- Read files fully before editing
+- Read files fully before editing (see Large File Exception below)
 - Reason deeply before acting — do not shortcut to the first plausible answer
 - Prefer thorough analysis over fast output
+
+### Large File Exception — Prompt Files
+
+For prompt files over 100KB (currently: `claimboundary.prompt.md` at 212KB), use targeted reads instead of reading the full file:
+
+1. Grep for the `## SECTION_NAME` header to find the line number
+2. Grep for the next `## ` header to find the section end
+3. Read only the needed section using offset/limit
+4. When editing: read the target section + 20 lines of surrounding context
+
+This exception applies ONLY to prompt files in `apps/web/prompts/` that exceed 100KB. Full reads remain required for all other files and for prompt files under 100KB.
 
 ---
 
