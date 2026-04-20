@@ -121,6 +121,11 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("preserve the shared anchor in each");
       expect(section).toContain('thesisRelevance` is `"direct"`');
       expect(section).toContain("faithful restatement of that original proposition");
+      expect(section).toContain("Comparison-Side Repair Fidelity");
+      expect(section).toContain("named/current-side proposition from a comparison");
+      expect(section).toContain("remaining comparison or parity proposition");
+      expect(section).toContain("Preserve the original comparison operator and approximation strength");
+      expect(section).toContain("neutral anaphoric reference");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");

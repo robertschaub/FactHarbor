@@ -789,7 +789,22 @@ describe("filterByCentrality", () => {
 });
 
 describe("shouldProtectValidatedAnchorCarriers", () => {
-  it("protects only clean retry or repair outputs", () => {
+  it("protects any clean contract-approved output", () => {
+    expect(shouldProtectValidatedAnchorCarriers({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      summary: "clean initial",
+      stageAttribution: "initial",
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "rechtskräftig",
+        preservedInClaimIds: ["AC_04"],
+        preservedByQuotes: [],
+        validPreservedIds: ["AC_04"],
+      },
+    })).toBe(true);
+
     expect(shouldProtectValidatedAnchorCarriers({
       ran: true,
       preservesContract: true,
@@ -9429,6 +9444,137 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         validPreservedIds: ["AC_04"],
       },
     });
+  });
+
+  it("should keep initial contract-approved anchor carriers through Gate 1 filtering", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 2, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1, repairPassEnabled: true },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(3, { inputClassification: "multi_assertion_input", statementPrefix: "Bolsonaro" }),
+            atomicClaims: [
+              createAtomicClaim({
+                id: "AC_01",
+                statement: "O processo respeitou o direito processual brasileiro.",
+                category: "evaluative",
+                specificityScore: 0.65,
+              }),
+              createAtomicClaim({
+                id: "AC_02",
+                statement: "O processo respeitou os requisitos constitucionais.",
+                category: "evaluative",
+                specificityScore: 0.62,
+              }),
+              createAtomicClaim({
+                id: "AC_03",
+                statement: "As sentenças proferidas foram justas.",
+                category: "evaluative",
+                specificityScore: 0.55,
+              }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "initial set preserves all explicit conjuncts",
+            },
+            claims: [
+              { claimId: "AC_01", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "procedural-law conjunct preserved" },
+              { claimId: "AC_02", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "constitutional conjunct preserved" },
+              { claimId: "AC_03", preservesEvaluativeMeaning: true, usesNeutralDimensionQualifier: true, proxyDriftSeverity: "none", recommendedAction: "keep", reasoning: "sentence-fairness conjunct preserved" },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentenças proferidas foram justas",
+              preservedInClaimIds: ["AC_01", "AC_02", "AC_03"],
+              preservedByQuotes: [
+                "respeitou o direito processual brasileiro",
+                "respeitou os requisitos constitucionais",
+                "as sentenças proferidas foram justas",
+              ],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            validatedClaims: [
+              { claimId: "AC_01", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_02", passedOpinion: true, passedSpecificity: false, passedFidelity: true, reasoning: "keep" },
+              { claimId: "AC_03", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "evaluative but thesis-direct" },
+            ],
+          };
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentenças proferidas foram justas",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "initial",
+      summary: "initial set preserves all explicit conjuncts",
+      truthConditionAnchor: {
+        presentInInput: true,
+        validPreservedIds: ["AC_01", "AC_02", "AC_03"],
+      },
+    });
+    expect(llmCallIndex).toBe(4);
   });
 
   it("should persist full salience status including mode when salience commitment succeeds", async () => {

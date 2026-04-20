@@ -597,14 +597,18 @@ export async function extractClaims(
                 25,
                 salienceCommitment,
               );
-              activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
-              stageAttribution = "repair";
-              lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
-              contractValidationSummary = evaluatedRepair.summary;
-              contractValidationSummary.stageAttribution = stageAttribution;
-              console.info(
-                `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${repairAnchorText}" fused and validated.`
-              );
+              if (!evaluatedRepair.effectiveRePromptRequired) {
+                activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
+                stageAttribution = "repair";
+                lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
+                contractValidationSummary = evaluatedRepair.summary;
+                contractValidationSummary.stageAttribution = stageAttribution;
+                console.info(
+                  `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${repairAnchorText}" fused and validated cleanly.`
+                );
+              } else {
+                console.info("[Stage1] Contract repair did not validate cleanly; keeping pre-repair set.");
+              }
             } else {
               console.warn("[Stage1] Contract repair could not be re-validated; keeping pre-repair set.");
             }
@@ -2655,10 +2659,8 @@ function pruneGate1FidelityDriftFromContractApprovedSet(
 export function shouldProtectValidatedAnchorCarriers(
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
 ): boolean {
-  const stageAttribution = contractValidationSummary?.stageAttribution;
   return (
-    (stageAttribution === "retry" || stageAttribution === "repair")
-    && contractValidationSummary?.preservesContract === true
+    contractValidationSummary?.preservesContract === true
     && contractValidationSummary?.rePromptRequired === false
   );
 }

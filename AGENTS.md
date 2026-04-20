@@ -254,6 +254,13 @@ Full project structure: see Architecture diagram above and `apps/api/AGENTS.md` 
 
 **`npm test` is safe** (excludes real-LLM tests). **NEVER run expensive tests routinely** — they call real APIs at $1-5+/run: `test:llm`, `test:neutrality`, `test:cb-integration`, `test:expensive`. Run only when explicitly asked, validating a quality-affecting change, or collecting optimization baselines. Use `npm test` for verification and `npm -w apps/web run build` for compilation.
 
+### Live Job Submission Discipline
+
+When submitting **live analysis jobs or validation batches** after changing source code, prompts, or config behavior:
+- **Commit first** before submitting a batch of jobs so each job records an associated git revision/hash that maps to the actual source under test.
+- **Refresh the runtime before submission.** If the change requires a process reload to take effect, restart the affected services first. If the change is prompt/config-only and reseeding is sufficient, reseed before submitting jobs.
+- **Do not submit live jobs against stale processes or stale prompt/config state.** Verification runs must use the updated source/prompt/config actually intended for evaluation.
+
 ---
 
 ## Reading .xwiki Files

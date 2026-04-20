@@ -1523,3 +1523,7 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-20 | Lead Developer + LLM Expert | Codex (GPT-5) | Dominant Proposition Opus Follow-up -- [Standard] [open-items: yes]
 **For next agent:** The dominant-proposition plan now incorporates the remaining useful Opus follow-ups without changing architecture: prompt work is ordered before validation/re-authorization, `topLevelProposition` requires at least two `componentClaimIds`, the prompt doctrine now distinguishes `articleThesis` from a falsifiable parent proposition, and Phase A explicitly monitors Pass 2 prompt-token/caching impact instead of treating prompt budget as a blocker.
 → Docs/AGENTS/Handoffs/2026-04-20_Lead_Developer_LLM_Expert_Dominant_Proposition_Opus_Followup.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Global Rule For Commit-Before-Batch And Runtime Refresh -- [Standard] [open-items: no]
+**For next agent:** Root `AGENTS.md` now requires agents to commit before submitting any live analysis batch so job records map to a concrete revision, and to restart or reseed before submission whenever the runtime would otherwise still be stale. Apply this to future live reruns, validation batches, and report-review verification runs.
