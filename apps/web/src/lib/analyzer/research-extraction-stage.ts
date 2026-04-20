@@ -318,18 +318,48 @@ export async function extractResearchEvidence(
     // Map to full EvidenceItem format
     let idCounter = Date.now(); // Use timestamp-based IDs to avoid collisions
     let claimIdMismatchCount = 0;
+    let categoryNormalizationCount = 0;
+    let categoryFallbackToEvidenceCount = 0;
+    let missingSourceUrlAssignmentCount = 0;
+    let unmatchedSourceUrlFallbackCount = 0;
+    let contextualMappedToNeutralCount = 0;
+
     const evidenceItems = validated.evidenceItems.map((ei) => {
       // Log when LLM returns mismatched claim IDs (admin diagnostic)
       if (ei.relevantClaimIds.length > 0 && !ei.relevantClaimIds.includes(targetClaim.id)) {
         claimIdMismatchCount++;
       }
+      
+      const normalizedCategoryInput = ei.category.toLowerCase().replace(/[_\s-]+/g, "_");
+      const mappedCategory = mapCategory(ei.category);
+      if (mappedCategory !== normalizedCategoryInput) {
+        categoryNormalizationCount++;
+      }
+      if (
+        mappedCategory === "evidence"
+        && normalizedCategoryInput !== "evidence"
+        && normalizedCategoryInput !== "case_study"
+      ) {
+        categoryFallbackToEvidenceCount++;
+      }
+      
       // Use LLM-attributed sourceUrl when available; fall back to first source.
-      const matchedSource = sources.find((s) => s.url === ei.sourceUrl) ?? sources[0];
+      let matchedSource = sources.find((s) => s.url === ei.sourceUrl);
+      if (!ei.sourceUrl) {
+        missingSourceUrlAssignmentCount++;
+      } else if (!matchedSource) {
+        unmatchedSourceUrlFallbackCount++;
+      }
+      matchedSource = matchedSource ?? sources[0];
+
+      if (ei.claimDirection === "contextual") {
+        contextualMappedToNeutralCount++;
+      }
 
       return {
         id: `EV_${String(idCounter++)}`,
         statement: ei.statement,
-        category: mapCategory(ei.category),
+        category: mappedCategory,
         specificity: ei.probativeValue === "high" ? "high" as const : "medium" as const,
         sourceId: "",
         sourceUrl: matchedSource?.url ?? "",
@@ -354,8 +384,22 @@ export async function extractResearchEvidence(
       } satisfies EvidenceItem;
     });
 
-    if (claimIdMismatchCount > 0) {
-      debugLog(`[Stage2] Corrected ${claimIdMismatchCount}/${evidenceItems.length} evidence items with mismatched claim IDs for ${targetClaim.id}`);
+    if (
+      claimIdMismatchCount > 0
+      || categoryNormalizationCount > 0
+      || categoryFallbackToEvidenceCount > 0
+      || missingSourceUrlAssignmentCount > 0
+      || unmatchedSourceUrlFallbackCount > 0
+      || contextualMappedToNeutralCount > 0
+    ) {
+      debugLog(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
+        claimIdMismatches: claimIdMismatchCount,
+        categoryNormalizations: categoryNormalizationCount,
+        categoryFallbackToEvidence: categoryFallbackToEvidenceCount,
+        missingSourceUrlAssignments: missingSourceUrlAssignmentCount,
+        unmatchedSourceUrlFallbacks: unmatchedSourceUrlFallbackCount,
+        contextualMappedToNeutral: contextualMappedToNeutralCount,
+      });
     }
 
     recordLLMCall({

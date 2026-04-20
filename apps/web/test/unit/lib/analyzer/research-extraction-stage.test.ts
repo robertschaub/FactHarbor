@@ -10,11 +10,13 @@ import {
 import {
   loadAndRenderSection,
 } from "@/lib/analyzer/prompt-loader";
+import { debugLog } from "@/lib/analyzer/debug";
 import {
   getModelForTask,
   extractStructuredOutput
 } from "@/lib/analyzer/llm";
 import { generateText } from "ai";
+import { mapCategory } from "@/lib/analyzer/pipeline-utils";
 
 // Mock modules
 vi.mock("ai", () => ({
@@ -33,6 +35,10 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
   loadAndRenderSection: vi.fn(),
 }));
 
+vi.mock("@/lib/analyzer/debug", () => ({
+  debugLog: vi.fn(),
+}));
+
 vi.mock("@/lib/analyzer/metrics-integration", () => ({
   recordLLMCall: vi.fn(),
 }));
@@ -47,6 +53,8 @@ vi.mock("@/lib/analyzer/pipeline-utils", () => ({
 const mockLoadSection = vi.mocked(loadAndRenderSection);
 const mockGenerateText = vi.mocked(generateText);
 const mockExtractOutput = vi.mocked(extractStructuredOutput);
+const mockDebugLog = vi.mocked(debugLog);
+const mockMapCategory = vi.mocked(mapCategory);
 
 // ============================================================================
 // HELPERS
@@ -77,6 +85,7 @@ function createEvidence(overrides: Record<string, unknown> = {}) {
 describe("Research Extraction Stage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockMapCategory.mockImplementation((category) => category as any);
   });
 
   // ============================================================================
@@ -566,6 +575,73 @@ describe("Research Extraction Stage", () => {
       expect(result[0].sourceUrl).toBe("https://example.com/2");
       // sourceId is empty at extraction time; backfillMissingSourceIds populates it later
       expect(result[0].sourceId).toBe("");
+    });
+
+    it("should log structured extraction normalizations with honest counter semantics", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sources = [
+        { url: "https://example.com/1", title: "Source 1", text: "text" },
+        { url: "https://example.com/2", title: "Source 2", text: "text" },
+      ];
+
+      mockMapCategory.mockImplementation((category) => {
+        const normalized = String(category).toLowerCase().replace(/[_\s-]+/g, "_");
+        if (normalized === "expert_testimony") return "expert_quote" as any;
+        if (normalized === "case_study") return "evidence" as any;
+        if (normalized === "made_up_category") return "evidence" as any;
+        return normalized as any;
+      });
+
+      mockLoadSection.mockResolvedValue({ content: "extract prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        evidenceItems: [
+          {
+            statement: "Alias category with missing source and contextual direction",
+            category: "expert_testimony",
+            claimDirection: "contextual",
+            evidenceScope: { methodology: "Analysis", temporal: "2025" },
+            probativeValue: "medium",
+            relevantClaimIds: ["claim_01"],
+          },
+          {
+            statement: "Unknown category with unmatched source",
+            category: "made_up_category",
+            claimDirection: "supports",
+            evidenceScope: { methodology: "Analysis", temporal: "2025" },
+            probativeValue: "high",
+            sourceUrl: "https://example.com/missing",
+            relevantClaimIds: ["AC_01"],
+          },
+          {
+            statement: "Known alias to evidence with missing source",
+            category: "case_study",
+            claimDirection: "supports",
+            evidenceScope: { methodology: "Analysis", temporal: "2025" },
+            probativeValue: "low",
+            relevantClaimIds: ["AC_01"],
+          },
+        ],
+      });
+
+      const result = await extractResearchEvidence(claim, sources as any, mockConfig, "2026-03-23");
+
+      expect(result).toHaveLength(3);
+      expect(result[0].claimDirection).toBe("neutral");
+      expect(result[0].sourceUrl).toBe("https://example.com/1");
+      expect(result[1].sourceUrl).toBe("https://example.com/1");
+      expect(result[2].category).toBe("evidence");
+      expect(mockDebugLog).toHaveBeenCalledWith(
+        "[Stage2] Extraction normalizations for AC_01",
+        {
+          claimIdMismatches: 1,
+          categoryNormalizations: 3,
+          categoryFallbackToEvidence: 1,
+          missingSourceUrlAssignments: 2,
+          unmatchedSourceUrlFallbacks: 1,
+          contextualMappedToNeutral: 1,
+        },
+      );
     });
   });
 
