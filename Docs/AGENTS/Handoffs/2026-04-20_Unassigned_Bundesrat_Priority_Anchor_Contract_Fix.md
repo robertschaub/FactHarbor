@@ -36,9 +36,27 @@
 - `npm -w apps/web exec vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
 - `npm -w apps/web run build`
 
+**Post-commit runtime validation:**
+- Main fix commit: `ccb5336e` `fix(stage1): enforce priority-anchor contract for single-claim checks`
+- Clean runtime `HEAD` after housekeeping: `8e3d9542` `chore(repo): refresh indexes and normalize lockfile metadata`
+- Services restarted cleanly before submissions.
+- Clean reruns submitted on `8e3d9542`:
+  - `7810fa9f1a0d4e10bc89f929fc5c3166`
+  - `0487ca351dbb40948ece1b70ca31dfc3`
+  - `46e6eec5b373489287136193bf2f181b`
+- Results:
+  - `7810fa9f...`: `SUCCEEDED`, executed commit `8e3d95421fa4bb006150d8ab9d2b3fcfcc79e9cf`, `claimCount: 2`
+  - `0487ca35...`: `SUCCEEDED`, executed commit `8e3d95421fa4bb006150d8ab9d2b3fcfcc79e9cf`, `claimCount: 2`
+  - both exact-input reruns produced the same two Stage 1 claims:
+    - `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig, bevor das Parlament darüber entschieden hat.`
+    - `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig, bevor das Volk darüber entschieden hat.`
+  - `46e6eec5...` (sibling without `rechtskräftig`) failed before result generation because the Anthropic API reported insufficient credit during Pass 1; this did not produce a clean comparator run.
+- Important note: the two successful exact-input reruns still ended with fallback `UNVERIFIED 50 / 0` overall because Stage 4 verdict generation later hit provider-credit failure. That does not change the Stage 1 atomicity result above.
+
 **Warnings:**
 - A pre-existing tracked `package-lock.json` diff was already present before this fix work. It is unrelated to the analyzer change but blocks truly clean commit-linked reruns unless it is either committed or explicitly removed.
 - The current fix improves the Stage 1 contract path, but the Bundesrat family historically showed some nondeterminism even after earlier fixes. Validation should use the exact Captain-defined input on a clean restarted commit and should be repeated at least twice.
+- Runtime validation is currently limited by Anthropic credit exhaustion. The exact-input reruns got far enough to confirm the Stage 1 split twice, but the sibling comparator input failed in Pass 1 for billing reasons and the completed exact-input jobs fell back to `UNVERIFIED` later in Stage 4 for the same reason.
 - The untracked agent worktree under `.claude/worktrees/` was explicitly removed after the external reviews to avoid dirty-hash pollution.
 
 **For next agent:**
