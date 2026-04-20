@@ -1525,7 +1525,7 @@ describe("validateVerdicts (Step 5)", () => {
         return [{ claimId: "AC_02", directionValid: false, issues: ["Truth percentage still does not match the remaining contradicting evidence"] }];
       }
       if (key === "VERDICT_DIRECTION_REPAIR") {
-        return { claimId: "AC_02", truthPercentage: 35, reasoning: "Repair still left a mismatched mixed verdict" };
+        return { claimId: "AC_02", truthPercentage: 65, reasoning: "Repair still left a mismatched mixed verdict" };
       }
       return [];
     }) as unknown as LLMCallFn;
@@ -1552,7 +1552,7 @@ describe("validateVerdicts (Step 5)", () => {
   it("derives repaired citation arrays from claim-local direct evidence when repair omits them", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
-      truthPercentage: 82,
+      truthPercentage: 35,
       confidence: 80,
       supportingEvidenceIds: ["EV_01"],
       contradictingEvidenceIds: ["EV_02"],
@@ -4083,10 +4083,11 @@ describe("buildSourcePortfolioByClaim", () => {
 });
 
 // ============================================================================
-// isVerdictDirectionPlausible — structural citation guard only
-// (It now rejects both polarity mismatches and explicitly non-direct
-// directional citations. This cross-checks existing LLM-assigned labels only;
-// it does not perform new semantic interpretation in code.)
+// isVerdictDirectionPlausible — structural citation + one-sided direct-evidence guard
+// (It rejects polarity mismatches, explicitly non-direct directional citations,
+// and midpoint/positive/negative verdicts that cite only one direct side.
+// This cross-checks existing LLM-assigned labels only; it does not perform
+// new semantic interpretation in code.)
 // ============================================================================
 
 describe("isVerdictDirectionPlausible", () => {
@@ -4139,6 +4140,31 @@ describe("isVerdictDirectionPlausible", () => {
         claimDirection: "supports",
         applicability: "contextual",
       }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when truth leans positive but only direct contradicting citations remain", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 55,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: ["EV_C1", "EV_C2"],
+    });
+    const ev = [
+      createEvidenceItem({ id: "EV_C1", claimDirection: "contradicts", applicability: "direct" }),
+      createEvidenceItem({ id: "EV_C2", claimDirection: "contradicts", applicability: "direct" }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when a 50% midpoint verdict cites only one direct side", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 50,
+      supportingEvidenceIds: ["EV_S1"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", applicability: "direct" }),
     ];
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
   });

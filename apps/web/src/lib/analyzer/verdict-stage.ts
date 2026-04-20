@@ -1086,6 +1086,8 @@ export interface VerdictRepairRequest {
 type IntrinsicDirectionSummary = {
   weightedSupports: number;
   weightedContradicts: number;
+  directSupportingCount: number;
+  directContradictingCount: number;
   misbucketedSupportingIds: string[];
   misbucketedContradictingIds: string[];
   nonDirectSupportingIds: string[];
@@ -1478,7 +1480,7 @@ export async function validateVerdicts(
             validationProvider,
           );
           const normalizedPlausible = normalizedDirection.valid !== false
-            && isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
+            || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1530,7 +1532,7 @@ export async function validateVerdicts(
             validationProvider,
           );
           const repairedPlausible = retryDirection.valid !== false
-            && isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
+            || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(
@@ -1821,6 +1823,15 @@ export function isVerdictDirectionPlausible(
     || summary.misbucketedContradictingIds.length > 0
     || summary.nonDirectSupportingIds.length > 0
     || summary.nonDirectContradictingIds.length > 0
+    || (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
+    || (verdict.truthPercentage < 50 && summary.directContradictingCount === 0 && summary.directSupportingCount > 0)
+    || (
+      verdict.truthPercentage === 50
+      && (
+        (summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
+        || (summary.directContradictingCount === 0 && summary.directSupportingCount > 0)
+      )
+    )
   ) {
     return false;
   }
@@ -1840,6 +1851,8 @@ function summarizeBucketWeightedEvidenceDirection(
 
   let weightedSupports = 0;
   let weightedContradicts = 0;
+  let directSupportingCount = 0;
+  let directContradictingCount = 0;
   const misbucketedSupportingIds: string[] = [];
   const misbucketedContradictingIds: string[] = [];
   const nonDirectSupportingIds: string[] = [];
@@ -1848,7 +1861,10 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of supportIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    weightedSupports += weight;
+    if (!item?.applicability || item.applicability === "direct") {
+      weightedSupports += weight;
+      directSupportingCount += 1;
+    }
     if (item?.claimDirection === "contradicts") {
       misbucketedSupportingIds.push(id);
     }
@@ -1860,7 +1876,10 @@ function summarizeBucketWeightedEvidenceDirection(
   for (const id of contradictIds) {
     const item = evidenceById.get(id);
     const weight = weights[item?.probativeValue ?? "low"] ?? 0.5;
-    weightedContradicts += weight;
+    if (!item?.applicability || item.applicability === "direct") {
+      weightedContradicts += weight;
+      directContradictingCount += 1;
+    }
     if (item?.claimDirection === "supports") {
       misbucketedContradictingIds.push(id);
     }
@@ -1872,6 +1891,8 @@ function summarizeBucketWeightedEvidenceDirection(
   return {
     weightedSupports,
     weightedContradicts,
+    directSupportingCount,
+    directContradictingCount,
     misbucketedSupportingIds,
     misbucketedContradictingIds,
     nonDirectSupportingIds,
@@ -1905,6 +1926,34 @@ function getDeterministicDirectionIssues(
   if (summary.nonDirectContradictingIds.length > 0) {
     issues.push(
       `Contradicting citations include ${summary.nonDirectContradictingIds.length} explicitly non-direct evidence item(s); contradictingEvidenceIds may cite only direct evidence.`,
+    );
+  }
+  if (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0) {
+    issues.push(
+      `Truth percentage ${verdict.truthPercentage}% points above the midpoint, but the direct cited evidence is one-sided toward contradiction (${summary.directContradictingCount} contradicting, 0 supporting).`,
+    );
+  }
+  if (verdict.truthPercentage < 50 && summary.directContradictingCount === 0 && summary.directSupportingCount > 0) {
+    issues.push(
+      `Truth percentage ${verdict.truthPercentage}% points below the midpoint, but the direct cited evidence is one-sided toward support (${summary.directSupportingCount} supporting, 0 contradicting).`,
+    );
+  }
+  if (
+    verdict.truthPercentage === 50
+    && summary.directSupportingCount === 0
+    && summary.directContradictingCount > 0
+  ) {
+    issues.push(
+      `A 50% midpoint verdict requires mixed direct evidence, but only direct contradicting citations are present (${summary.directContradictingCount} contradicting, 0 supporting).`,
+    );
+  }
+  if (
+    verdict.truthPercentage === 50
+    && summary.directContradictingCount === 0
+    && summary.directSupportingCount > 0
+  ) {
+    issues.push(
+      `A 50% midpoint verdict requires mixed direct evidence, but only direct supporting citations are present (${summary.directSupportingCount} supporting, 0 contradicting).`,
     );
   }
 
