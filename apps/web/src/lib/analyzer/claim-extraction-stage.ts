@@ -933,6 +933,7 @@ export async function extractClaims(
     } else {
       state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 26);
       state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+      const previousContractValidationSummary = contractValidationSummary;
 
       let finalContractResult = await validateClaimContract(
         finalAcceptedClaims,
@@ -985,6 +986,22 @@ export async function extractClaims(
         contractValidationSummary = evaluatedFinalContract.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
         console.info("[Stage1] Refreshed contract summary for final accepted claims after Gate 1 / reprompt selection.");
+      } else if (canCarryForwardValidatedContractApproval(
+        previousContractValidationSummary,
+        lastContractValidatedClaims,
+        finalAcceptedClaims,
+      )) {
+        contractValidationSummary = {
+          ...previousContractValidationSummary!,
+          summary: [
+            previousContractValidationSummary?.summary ?? "",
+            "final_revalidation_unavailable: carried forward the last contract-approved summary because Gate 1 kept only previously validated claims and all validated anchor carriers remained present.",
+          ].filter(Boolean).join(" "),
+          stageAttribution,
+        };
+        console.warn(
+          "[Stage1] Final accepted claims could not be re-validated; carrying forward prior contract approval because the final set retains only previously validated claims and all validated anchor carriers survived.",
+        );
       } else {
         // Fix 3 (2026-04-10): do NOT stamp preservesContract=true on a path
         // that explicitly could not verify success. This branch is only
@@ -2949,14 +2966,58 @@ export function applySingleClaimAtomicityValidation(
   };
 }
 
-function areClaimSetsEquivalent(left: AtomicClaim[] | undefined, right: AtomicClaim[]): boolean {
+function getClaimContractSignature(claim: Pick<AtomicClaim, "id" | "statement">): string {
+  return `${claim.id}\u0000${claim.statement}`;
+}
+
+export function areClaimSetsEquivalent(left: AtomicClaim[] | undefined, right: AtomicClaim[]): boolean {
   if (!left) return false;
   if (left.length !== right.length) return false;
 
-  return left.every((claim, index) => {
-    const rightClaim = right[index];
-    return rightClaim && claim.id === rightClaim.id && claim.statement === rightClaim.statement;
-  });
+  const leftSignatures = new Set(left.map(getClaimContractSignature));
+  const rightSignatures = new Set(right.map(getClaimContractSignature));
+
+  return (
+    leftSignatures.size === left.length
+    && rightSignatures.size === right.length
+    && [...leftSignatures].every((signature) => rightSignatures.has(signature))
+  );
+}
+
+export function canCarryForwardValidatedContractApproval(
+  previousSummary: CBClaimUnderstanding["contractValidationSummary"],
+  previousValidatedClaims: AtomicClaim[] | undefined,
+  finalAcceptedClaims: AtomicClaim[],
+): boolean {
+  if (
+    !previousSummary?.preservesContract
+    || previousSummary.rePromptRequired
+    || !previousValidatedClaims
+    || finalAcceptedClaims.length === 0
+  ) {
+    return false;
+  }
+
+  const validatedAnchorCarrierIds = previousSummary.truthConditionAnchor?.validPreservedIds ?? [];
+  if (validatedAnchorCarrierIds.length === 0) {
+    return false;
+  }
+
+  const validatedClaimSignatures = new Set(previousValidatedClaims.map(getClaimContractSignature));
+  if (!finalAcceptedClaims.every((claim) => validatedClaimSignatures.has(getClaimContractSignature(claim)))) {
+    return false;
+  }
+
+  const finalAcceptedClaimIds = new Set(finalAcceptedClaims.map((claim) => claim.id));
+  if (!validatedAnchorCarrierIds.every((claimId) => finalAcceptedClaimIds.has(claimId))) {
+    return false;
+  }
+
+  const validatedThesisDirectClaimIds = previousValidatedClaims
+    .filter((claim) => (claim.thesisRelevance ?? "direct") === "direct")
+    .map((claim) => claim.id);
+
+  return validatedThesisDirectClaimIds.every((claimId) => finalAcceptedClaimIds.has(claimId));
 }
 
 function claimSetContainsAnchorText(

@@ -1478,3 +1478,48 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Dominant Proposition Plan Review Adjudication — [Standard] [open-items: yes]
 **For next agent:** External review tightened the plan materially. Keep the core model, but use a safer rollout: Phase A is detection-only by default with `topLevelPropositionAggregationEnabled = false`, `evaluationMode` is dropped from the Phase A contract, `componentClaimIds` must be validated against the final post-retry `atomicClaims` set, and the prompt must explicitly block `topLevelProposition` on alternative-dimension inputs such as `Plastic recycling is pointless`. If parent-aware aggregation is added later, it must bypass the existing `dominanceAssessment` path and record `aggregationMode` plus `constrainingClaimId` in the adjudication trail. `articleThesis` and `topLevelProposition` must be documented as separate fields with distinct semantics.
 → Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Dominant_Proposition_Architecture_Plan.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Dominant Proposition Plan Review Findings Addressed — [Standard] [open-items: yes]
+**For next agent:** The plan now addresses the lead-architect review directly. `topLevelProposition` must not only survive post-retry ID validation; it must also be semantically re-authorized during the final Stage 1 contract-validation refresh over the final accepted child set. Phase B now explicitly says any required child that is `UNVERIFIED`, `INSUFFICIENT`, confidence-`0`, or otherwise non-publishable forces the parent to a non-publishable `UNVERIFIED` outcome. The plan also now defines the needed parent-aware persistence/audit shape: `AdjudicationPath.path = "parent_all_must_hold"` plus a `parentAggregation` block with `aggregationMode`, `componentClaimIds`, `constrainingClaimId`, `unresolvedRequiredClaimIds`, and `publishable`. `articleThesis` is no longer implicitly hidden; keep it in diagnostics/export/admin surfaces even when `topLevelProposition` becomes the report headline.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Dominant_Proposition_Plan_Review_Adjudication.md
+
+---
+### 2026-04-20 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Proposition Plan Review — [Standard] [open-items: yes]
+**For next agent:** Revise the plan before coding. The three blockers are: final parent validity must be re-LLM-authorized against the final post-Gate-1 child set; `all_must_hold` must define `UNVERIFIED`/non-publishable child behavior; and Phase B needs an explicit new `OverallAssessment`/`AdjudicationPath` contract rather than overloading Option G shapes.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Architect_LLM_Expert_Dominant_Proposition_Plan_Review.md
+
+---
+### 2026-04-20 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Proposition Plan Re-Review — [Standard] [open-items: yes]
+**For next agent:** The three original blockers are addressed. The only remaining note is non-blocking: when Phase B types are formalized, treat the `adjudicationPath` example as an extension to the current Option G contract unless you intentionally redesign that contract in the same change.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Architect_LLM_Expert_Dominant_Proposition_Plan_Rereview.md
+
+---
+### 2026-04-20 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Proposition Final Assessment — [Standard] [open-items: yes]
+**For next agent:** The plan is approved for Phase A. Only one optional docs refinement remains: make the Phase B `AdjudicationPath` example explicitly additive to the current Option G contract unless a deliberate migration is specified.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Architect_LLM_Expert_Dominant_Proposition_Final_Assessment.md
+
+---
+### 2026-04-20 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Proposition Proceed Recommendation — [Standard] [open-items: yes]
+**For next agent:** Phase A is still safe to proceed. The only remaining downstream-risk item is contract wording: the Phase B `adjudicationPath` snippet in [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md) must explicitly say whether it extends the live Option G `AdjudicationPath` fields in [types.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/types.ts:1403) or replaces them as part of the same change. Make that additive-vs-replacement decision explicit before Phase B coding.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Architect_LLM_Expert_Dominant_Proposition_Proceed_Recommendation.md
+
+---
+### 2026-04-20 | Lead Developer + LLM Expert | Codex (GPT-5) | Dominant Proposition Phase B Migration Semantics -- [Standard] [open-items: yes]
+**For next agent:** The dominant-proposition plan now includes an explicit `Phase B Migration Semantics` subsection in `Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md`: non-parent runs keep the live Option G `AdjudicationPath` unchanged, parent-aware runs use `path = "parent_all_must_hold"` plus `parentAggregation`, `articleAdjudication` stays absent there, and `directionConflict`, `llmAdjudication`, and `guardsApplied` cannot be dropped implicitly.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Developer_LLM_Expert_Dominant_Proposition_PhaseB_Migration_Semantics.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Unverified Stage 1 Contract Stability Fix -- [Significant] [open-items: yes]
+**For next agent:** `/report-review` confirmed the reports-page `UNVERIFIED` badges were real Stage 1 regressions, not UI drift. `claimboundary.prompt.md` now preserves explicit conjuncts in `multi_assertion_input` cases and keeps broad efficiency claims inside efficiency/system-boundary frames instead of operational proxies; `claim-extraction-stage.ts` now treats claim-set equivalence as order-insensitive and can carry forward a prior contract approval after final revalidation failure only when the final set is a subset of previously validated claims and all validated anchor carriers remain. Verification passed on `claim-contract-validation.test.ts`, `claim-extraction-prompt-contract.test.ts`, new `contract-revalidation-fallback.test.ts`, `tsc --noEmit`, and `npm -w apps/web run build`. Still pending: rerun jobs `8497c447cbf54ddbb11680cdab4ae906`, `a2be703ddd014cf69cdb345f0c076fb9`, and `f1afe3ad61754067bd4f1d8742bae7c6` on the current stack.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Unverified_Stage1_Contract_Stability_Fix.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Unverified Review Follow-up Fix -- [Standard] [open-items: yes]
+**For next agent:** The two review findings on the Stage 1 stability patch are resolved. `canCarryForwardValidatedContractApproval(...)` now requires every previously validated thesis-direct claim to survive, not just anchor carriers, and the prompt’s efficiency guard was rewritten to generic wording without hydrogen/vehicle-shaped proxy examples. Verification passed on the same focused analyzer suites (`73 passed`), `tsc --noEmit`, and `npm -w apps/web run build`; `postbuild` reseeded active prompt state to hash `79442a030aca...`.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Unverified_Review_Followup_Fix.md
+
+---
+### 2026-04-20 | Lead Developer + LLM Expert | Codex (GPT-5) | Dominant Proposition Opus Follow-up -- [Standard] [open-items: yes]
+**For next agent:** The dominant-proposition plan now incorporates the remaining useful Opus follow-ups without changing architecture: prompt work is ordered before validation/re-authorization, `topLevelProposition` requires at least two `componentClaimIds`, the prompt doctrine now distinguishes `articleThesis` from a falsifiable parent proposition, and Phase A explicitly monitors Pass 2 prompt-token/caching impact instead of treating prompt budget as a blocker.
+→ Docs/AGENTS/Handoffs/2026-04-20_Lead_Developer_LLM_Expert_Dominant_Proposition_Opus_Followup.md

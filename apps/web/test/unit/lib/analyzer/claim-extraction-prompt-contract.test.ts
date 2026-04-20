@@ -338,6 +338,18 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("efficiency predicate discipline", () => {
+    it("keeps broad efficiency decompositions inside efficiency frames instead of operational proxies", () => {
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+
+      expect(pass2).not.toBeNull();
+      expect(pass2).toContain("comparative efficiency, optimization, or resource-use predicates");
+      expect(pass2).toContain("full-pathway vs. use-phase-only vs. conversion-stage efficiency");
+      expect(pass2).toContain("keep decomposition inside actual efficiency measurement frames or system boundaries");
+      expect(pass2).toContain("Do NOT switch to downstream operational proxies or adjacent performance traits");
+    });
+  });
+
   describe("decomposition integrity guard", () => {
     it("forbids whole-input carry-through when a comparison sentence is decomposed", () => {
       const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
@@ -368,6 +380,10 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("shared temporal or conditional relation");
       expect(pass2).toContain("independently be verified, falsified, or dated on their own");
       expect(pass2).toContain("treat the input as `multi_assertion_input`");
+      expect(pass2).toContain("Extract one thesis-direct atomic claim per explicit independently verifiable proposition");
+      expect(pass2).toContain("preserve each explicit independently verifiable proposition");
+      expect(pass2).toContain("Do NOT omit a later coordinated proposition");
+      expect(pass2).toContain("Do NOT let one returned claim absorb or paraphrase away another explicit coordinated proposition");
       expect(pass2).toContain("preserve the shared anchor");
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
@@ -405,6 +421,9 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("semantically subsuming another returned claim");
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
+      expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
+      expect(contract).toContain("preserve each explicit proposition unit");
+      expect(contract).toContain("omitting another explicit independently verifiable conjunct");
     });
   });
 });
