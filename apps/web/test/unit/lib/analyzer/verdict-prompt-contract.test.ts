@@ -293,6 +293,14 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("direct in-jurisdiction evidence or neutral external evidence");
     });
 
+    it("advocate keeps off-scope proceeding controversies confidence-limiting unless explicitly bridged", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("contextual evidence from other proceedings or broader institutional controversies");
+      expect(section).toContain("does not by itself outweigh target-specific evidence");
+      expect(section).toContain("explicitly bridges the same criticized/supportive mechanism into the target proceeding");
+      expect(section).toContain("Grounded external or foreign documentation can be probative when it documents the target proceeding");
+    });
+
     it("advocate keeps broad public-language totals anchored to umbrella metrics instead of narrow subsets", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
       expect(section).toContain("`expectedEvidenceProfile.primaryMetric` is present");
@@ -523,9 +531,17 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
       expect(section).toContain("that are each direct milestones of the same claim");
       expect(section).toContain("discard event candidates that are merely antecedent background, side disputes, institutional conflicts, foreign reactions, or historical comparator episodes");
+      expect(section).toContain("Same party, adjudicator, decision-maker, authority, institution, or officeholder overlap does NOT by itself make an earlier or parallel episode a direct milestone");
       expect(section).toContain("If `freshnessRequirement` is `current_snapshot` or `recent`, prioritize the latest direct milestone(s)");
       expect(section).toContain("current official or source-native routes first");
       expect(section).toContain("Do NOT let the multi-event rule force one query toward a stale antecedent episode");
+    });
+
+    it("query generation keeps legal-fairness claims anchored to target-case artifacts", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("legality, procedural compliance, or fair-trial standards");
+      expect(section).toContain("source-native case record or decisive target-case artifact itself");
+      expect(section).toContain("Do NOT let all returned queries collapse into criticism, controversy, sanctions, or broader institutional commentary");
     });
   });
 
@@ -557,6 +573,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("generic institution homepages are at most borderline relevant");
       expect(section).toContain("statistics archive, series overview, or direct artifact route");
       expect(section).toContain("partial flow metrics");
+    });
+
+    it("treats same-actor procedural controversies as comparator evidence unless they document the target case path", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section).toContain("legality, procedural compliance, or fair-trial standards");
+      expect(section).toContain("collateral inquiry, sanction episode, impeachment effort, or broader institutional controversy");
+      expect(section).toContain("Same-actor or same-institution overlap alone is insufficient");
     });
 
     it("relevance classification excludes broader-problem governance reports from direct ecosystem evidence", () => {
@@ -615,6 +638,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).not.toContain("direct institutional nexus");
       // Must contain the contrastive example showing same court ≠ target-specific
       expect(section).toContain("different case involving a different party");
+    });
+
+    it("keeps same-actor legal-fairness controversies contextual unless explicitly bridged to the target proceeding", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("legal, procedural, or fair-trial standards");
+      expect(section).toContain("earlier or parallel proceedings, collateral inquiries, sanctions, impeachment efforts, or broader institutional controversies");
+      expect(section).toContain("formal step, ruling, evidentiary act, appellate safeguard, or procedural feature of the target proceeding itself");
+      expect(section).toContain("Same-actor or same-institution overlap alone does not create that bridge");
     });
 
     it("comparator guidance uses abstract examples without domain-specific terms", () => {
@@ -695,6 +726,14 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("what the evidence evaluates");
       expect(section).toContain("different case/actor");
+    });
+
+    it("keeps same-actor legal-fairness controversies contextual unless they document the target case path", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("legal, procedural, or fair-trial standards");
+      expect(section).toContain("earlier or parallel proceeding, collateral inquiry, sanction episode, impeachment effort, or broader institutional controversy");
+      expect(section).toContain("directly documents the target case path");
+      expect(section).toContain("Same-actor or same-institution overlap alone is insufficient");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
