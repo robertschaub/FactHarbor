@@ -682,6 +682,12 @@ describe("Research Extraction Stage", () => {
       expect(result[0].applicability).toBe("direct");
       expect(result[1].applicability).toBe("foreign_reaction");
       expect(result[2].applicability).toBe("contextual");
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
+      );
+      expect(mockDebugLog).not.toHaveBeenCalledWith(
+        "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
+      );
     });
 
     it("should skip assessment when inferredGeography is null", async () => {

@@ -13,7 +13,7 @@ import {
   normalizeRelevantGeographies,
 } from "./jurisdiction-context";
 import { recordLLMCall } from "./metrics-integration";
-import { debugLog, debugLogFileOnly } from "./debug";
+import { debugLogFileOnly } from "./debug";
 import { 
   mapCategory, 
   mapSourceType, 
@@ -190,7 +190,7 @@ export async function classifyRelevance(
     });
 
     // Diagnostics: log every classified result (admin-only via debugLog)
-    debugLog(`[Stage2] Relevance classification: ${adjustedSources.length} results for "${claim.statement.slice(0, 60)}"`, adjustedSources.map((s) => ({
+    debugLogFileOnly(`[Stage2] Relevance classification: ${adjustedSources.length} results for "${claim.statement.slice(0, 60)}"`, adjustedSources.map((s) => ({
       rank: s.originalRank,
       url: s.url.slice(0, 80),
       raw: s.rawScore,
@@ -207,7 +207,7 @@ export async function classifyRelevance(
     if (discarded.length > 0) {
       const cappedCount = discarded.filter((s) => s.jurisdictionMatch === "foreign_reaction").length;
       const belowThreshold = discarded.length - cappedCount;
-      debugLog(`[Stage2] Discarded ${discarded.length} items: ${cappedCount} capped (foreign_reaction), ${belowThreshold} below threshold (${relevanceThreshold})`,
+      debugLogFileOnly(`[Stage2] Discarded ${discarded.length} items: ${cappedCount} capped (foreign_reaction), ${belowThreshold} below threshold (${relevanceThreshold})`,
         discarded.map((s) => ({ url: s.url.slice(0, 80), raw: s.rawScore, adjusted: s.relevanceScore, jurisdiction: s.jurisdictionMatch })),
       );
     }
@@ -244,7 +244,9 @@ export async function classifyRelevance(
       errorMessage,
       timestamp: new Date(),
     });
-    console.warn("[Stage2] Relevance classification failed, accepting all results:", err);
+    debugLogFileOnly("[Stage2] Relevance classification failed, accepting all results", {
+      errorMessage,
+    });
     return searchResults.map((r, i) => ({ url: r.url, relevanceScore: 0.5, originalRank: i }));
   }
 }
@@ -433,7 +435,10 @@ export async function extractResearchEvidence(
       errorMessage,
       timestamp: new Date(),
     });
-    console.warn("[Stage2] Evidence extraction failed:", err);
+    debugLogFileOnly("[Stage2] Evidence extraction failed", {
+      claimId: targetClaim.id,
+      errorMessage,
+    });
     return [];
   }
 }
@@ -491,7 +496,9 @@ export async function assessEvidenceApplicability(
   });
 
   if (!rendered) {
-    console.warn("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter");
+    debugLogFileOnly("[Fix3] APPLICABILITY_ASSESSMENT prompt section not found — skipping applicability filter", {
+      claimIds: claims.map((claim) => claim.id),
+    });
     return evidenceItems;
   }
 
@@ -556,12 +563,12 @@ export async function assessEvidenceApplicability(
     // Count unclassified (items not in LLM response — default to "direct")
     counts.unclassified = evidenceItems.length - classificationMap.size;
 
-    debugLog(
+    debugLogFileOnly(
       `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
       `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
-    console.info(
+    debugLogFileOnly(
       `[Fix3] Applicability: ${counts.direct}D/${counts.contextual}C/${counts.foreign_reaction}F ` +
       `(${evidenceItems.length} total, geography: ${normalizedRelevantGeographies.join(",")})`
     );
@@ -584,8 +591,10 @@ export async function assessEvidenceApplicability(
       timestamp: new Date(),
     });
     // Fail-open: if assessment fails, keep all evidence (don't block pipeline)
-    console.warn("[Fix3] Applicability assessment failed, keeping all evidence:", err);
-    debugLog(`[Fix3] ERROR: Applicability assessment failed: ${errorMessage}`);
+    debugLogFileOnly("[Fix3] Applicability assessment failed, keeping all evidence", {
+      claimIds: claims.map((claim) => claim.id),
+      errorMessage,
+    });
     return evidenceItems;
   }
 }
