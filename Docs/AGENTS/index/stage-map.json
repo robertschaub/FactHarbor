@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-20T05:27:25.642Z",
+  "generatedAt": "2026-04-20T06:13:27.036Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -45,6 +45,7 @@
         "evaluateClaimContractValidation",
         "shouldRunSingleClaimAtomicityValidation",
         "evaluateSingleClaimAtomicityValidation",
+        "selectPreferredSingleClaimAtomicityValidation",
         "applySingleClaimAtomicityValidation",
         "selectRepairAnchorText",
         "shouldRunContractRepairPass",
