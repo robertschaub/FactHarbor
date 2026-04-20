@@ -273,6 +273,7 @@ Before producing any atomic claims, reason step-by-step about what the input is 
   2. Lock those claims.
   3. Use preliminary evidence only to populate `expectedEvidenceProfile` and `groundingQuality`.
 - **Decomposition integrity (MANDATORY):** When you output more than one thesis-direct atomic claim, each thesis-direct claim must be a proper sub-assertion of the input. Do NOT keep a whole-input restatement as one atomic claim alongside narrower claims. No thesis-direct atomic claim may be semantically equivalent to the full input, `impliedClaim`, or `articleThesis` when other thesis-direct claims isolate component propositions. If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim, the broader claim is not atomic and must be decomposed further or removed.
+- **Comparison decomposition integrity (MANDATORY):** When a comparison sentence is decomposed into more than one thesis-direct claim, do NOT isolate one side as a standalone claim and then restate that same side plus the full comparison in another thesis-direct claim. If one claim already isolates the named/current-side metric or event, the companion claim must isolate the remaining comparator/reference or parity proposition using near-verbatim comparison wording instead of semantically subsuming the isolated-side claim.
 - **Single-claim bundling prohibition:** If one returned claim still depends on two or more independently verifiable sub-propositions, you MUST split it. This includes: (a) one act/state asserted to occur before, after, because of, or subject to multiple coordinated branch events whose branches could independently occur, fail, or be dated, and (b) comparison claims whose truth depends on one proposition about the named/current side plus a separate proposition about the comparator/reference side (including historical, threshold, or rest-of-comparison-class propositions). If each side could be evidenced separately and one side could be true while another is false, one bundled claim is non-atomic. Preserve the shared relation or comparison anchor in each split claim, and do NOT keep a bundled whole-claim version. A conjunctive clause with one shared verb phrase does not override this rule: if the coordinated members are distinct institutions, actor groups, proceedings, or decision gates with separate possible timelines or outcomes, split them. Exception: keep one claim only when the coordinated phrase is an inseparable rank/order/composite proposition whose truth cannot differ branch-by-branch.
 - Each claim must be specific enough to generate targeted search queries without additional framing.
 - Use the preliminary evidence to inform `expectedEvidenceProfile` (what methodologies, metrics, and source types to look for) — but do NOT import evidence-specific details into the claim `statement`, `impliedClaim`, or `articleThesis`. The claim text must be derivable from the original input alone; the evidence only tells you what verification dimensions exist.
@@ -456,6 +457,7 @@ In addition to proxy drift and representational drift, explicitly audit for:
 - externalization of a main-act modifier into a standalone sub-claim instead of keeping it fused in each coordinated branch claim
 - whole-input carry-through in a decomposed claim set
 - one returned claim semantically subsuming another returned claim instead of isolating a proper sub-assertion
+- comparison decomposition where one thesis-direct claim isolates one side but another thesis-direct claim restates that same side plus the full comparison
 
 For each claim, determine:
 - whether it preserves the original evaluative meaning
@@ -533,6 +535,7 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
 
 20. **Decomposition integrity (MANDATORY).**
     When the claim set contains more than one thesis-direct claim, each thesis-direct claim must be a proper sub-assertion of the original input. Fail validation if a thesis-direct claim is a literal, near-verbatim, or semantic restatement of the whole input while other thesis-direct claims isolate component propositions, or if one thesis-direct claim semantically subsumes another instead of isolating a separately checkable proposition. A decomposed set must not contain the whole proposition plus one of its parts.
+    This applies to decomposed comparison sentences as well: if one thesis-direct claim isolates a named/current-side metric or event, another thesis-direct claim may NOT restate that same side plus the full comparison/reference proposition. The companion claim must isolate the remaining comparator/reference or parity proposition instead of semantically subsuming the isolated-side claim.
 
 ### Input
 

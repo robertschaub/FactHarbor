@@ -381,6 +381,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("inseparable rank/order/composite proposition");
       expect(pass2).toContain("rest of a comparison class");
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
+      expect(pass2).toContain("Comparison decomposition integrity (MANDATORY)");
+      expect(pass2).toContain("the companion claim must isolate the remaining comparator/reference or parity proposition");
       expect(pass2).toContain("proper sub-assertion");
       expect(pass2).toContain("whole-input restatement");
       expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
@@ -398,6 +400,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("bundled claim is non-atomic");
       expect(contract).toContain("`rePromptRequired` must be true");
       expect(contract).toContain("whole-input carry-through");
+      expect(contract).toContain("another thesis-direct claim restates that same side plus the full comparison");
+      expect(contract).toContain("The companion claim must isolate the remaining comparator/reference or parity proposition");
       expect(contract).toContain("semantically subsuming another returned claim");
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
