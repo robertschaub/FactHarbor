@@ -350,18 +350,27 @@ describe("Stage-1 prompt contract", () => {
 
       expect(pass1).not.toBeNull();
       expect(pass1).toContain("keep the original compared entities and broad predicate at the same level of generality as the input");
-      expect(pass1).toContain("reserve those distinctions for verification framing, not rough-claim wording");
+      expect(pass1).toContain("the rough claim should keep that same comparison rather than restating it as a different metric, mechanism, or proxy claim");
+      expect(pass1).toContain("Reserve narrower distinctions for verification framing, not rough-claim wording");
       expect(pass1).toContain("preserve the same compared entities and broad predicate in every rough claim");
       expect(pass1).toContain("narrower implementation, pathway, subsystem, or exemplar variant");
+      expect(pass1).toContain("Preferred rough-claim form for broad comparative predicates");
+      expect(pass1).toContain('"[A] is more/less [same predicate] than [B] in terms of [dimension]"');
       expect(pass2).not.toBeNull();
       expect(pass2).toContain("comparative efficiency, optimization, or resource-use predicates");
       expect(pass2).toContain("full-pathway vs. use-phase-only vs. conversion-stage efficiency");
       expect(pass2).toContain("keep the original compared entities and broad predicate at the same level of generality as the input");
-      expect(pass2).toContain("keep such specificity inside `expectedEvidenceProfile`, search queries, or evidence scopes instead of the claim statement");
+      expect(pass2).toContain("the atomic claim must keep that same comparison rather than restating it as a different metric, mechanism, or proxy claim");
+      expect(pass2).toContain("Keep narrower specificity inside `expectedEvidenceProfile`, search queries, or evidence scopes instead of the claim statement");
       expect(pass2).toContain("keep decomposition inside actual efficiency measurement frames or system boundaries");
       expect(pass2).toContain("Do NOT switch to downstream operational proxies or adjacent performance traits");
       expect(pass2).toContain("Keep the compared entities at the same level of generality as the input across all dimension claims");
       expect(pass2).toContain("collapse back to a single broad claim rather than forcing a proxy decomposition");
+      expect(pass2).toContain("Comparative predicate template (MANDATORY)");
+      expect(pass2).toContain('"[A] is more/less [same predicate] than [B] in terms of [dimension]"');
+      expect(pass2).toContain('"achieves higher conversion efficiency"');
+      expect(pass2).toContain('"requires less total input per unit output"');
+      expect(pass2).toContain('"has lower pathway losses"');
     });
   });
 
