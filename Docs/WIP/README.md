@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-19
-**Status**: Consolidation #12 complete. 48 files archived. 38 active markdown docs remain.
+**Last Updated**: 2026-04-20
+**Status**: Consolidation #12 complete. 48 files archived. 39 active markdown docs remain.
 
 ---
 
@@ -50,6 +50,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-04-16_Prompt_Genericity_Pass_Plan.md](2026-04-16_Prompt_Genericity_Pass_Plan.md) — items 7-10 awaiting Captain approval; items 1-6 possibly landed
 - [2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md](2026-04-17_AGENTS_md_Text_Interpretation_Rule_Draft.md) — v3 rule draft awaiting Captain review; 3 open questions
 - [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) — adjudicated execution plan after GPT + Claude Opus prompt-audit consolidation
+- [2026-04-20_Dominant_Proposition_Architecture_Plan.md](2026-04-20_Dominant_Proposition_Architecture_Plan.md) — consolidated reviewed plan for optional parent/top-level proposition semantics, `all_must_hold` aggregation, and UCM-flagged alpha rollout
 
 ### Multilingual
 - [2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md](2026-04-01_Multilingual_Output_Search_Policy_Architect_Review.md) — **APPROVED** multilingual policy; Proposal 2 partially shipped, EN lane experimental/default-off
