@@ -2864,7 +2864,8 @@ export function evaluateSingleClaimAtomicityValidation(
     && atomicityResult.coordinatedBranchFinding.bundledInSingleClaim;
   const effectiveRePromptRequired =
     atomicityResult.singleClaimAssessment.rePromptRequired
-    || (!atomicityResult.singleClaimAssessment.isAtomic && structurallyBundled);
+    || !atomicityResult.singleClaimAssessment.isAtomic
+    || structurallyBundled;
 
   if (!effectiveRePromptRequired) {
     return {

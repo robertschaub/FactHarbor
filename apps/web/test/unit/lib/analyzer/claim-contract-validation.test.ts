@@ -420,6 +420,25 @@ describe("Single-claim atomicity enforcement", () => {
     expect(evaluated.summaryAppendix).toContain("independently verifiable decision gates");
   });
 
+  it("treats bundled coordinated branches as a retry trigger even if the atomic flag is inconsistent", () => {
+    const evaluated = evaluateSingleClaimAtomicityValidation(makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: true,
+        rePromptRequired: false,
+        summary: "claim appears near-verbatim but still bundles decision branches",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: true,
+        bundledInSingleClaim: true,
+        reasoning: "Volk and Parlament remain fused inside one claim statement",
+      },
+    }));
+
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.retryReason).toContain("single_claim_atomicity_failed");
+    expect(evaluated.summaryAppendix).toContain("Volk and Parlament remain fused");
+  });
+
   it("overrides a passing contract summary when atomicity fails", () => {
     const merged = applySingleClaimAtomicityValidation(
       approvedContract,
