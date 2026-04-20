@@ -10,7 +10,7 @@ import {
 import {
   loadAndRenderSection,
 } from "@/lib/analyzer/prompt-loader";
-import { debugLog } from "@/lib/analyzer/debug";
+import { debugLog, debugLogFileOnly } from "@/lib/analyzer/debug";
 import {
   getModelForTask,
   extractStructuredOutput
@@ -37,6 +37,7 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
 
 vi.mock("@/lib/analyzer/debug", () => ({
   debugLog: vi.fn(),
+  debugLogFileOnly: vi.fn(),
 }));
 
 vi.mock("@/lib/analyzer/metrics-integration", () => ({
@@ -54,6 +55,7 @@ const mockLoadSection = vi.mocked(loadAndRenderSection);
 const mockGenerateText = vi.mocked(generateText);
 const mockExtractOutput = vi.mocked(extractStructuredOutput);
 const mockDebugLog = vi.mocked(debugLog);
+const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
 
 // ============================================================================
@@ -631,7 +633,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].sourceUrl).toBe("https://example.com/1");
       expect(result[1].sourceUrl).toBe("https://example.com/1");
       expect(result[2].category).toBe("evidence");
-      expect(mockDebugLog).toHaveBeenCalledWith(
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         "[Stage2] Extraction normalizations for AC_01",
         {
           claimIdMismatches: 1,
@@ -641,6 +643,10 @@ describe("Research Extraction Stage", () => {
           unmatchedSourceUrlFallbacks: 1,
           contextualMappedToNeutral: 1,
         },
+      );
+      expect(mockDebugLog).not.toHaveBeenCalledWith(
+        "[Stage2] Extraction normalizations for AC_01",
+        expect.anything(),
       );
     });
   });

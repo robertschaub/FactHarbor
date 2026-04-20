@@ -13,7 +13,7 @@ import {
   normalizeRelevantGeographies,
 } from "./jurisdiction-context";
 import { recordLLMCall } from "./metrics-integration";
-import { debugLog } from "./debug";
+import { debugLog, debugLogFileOnly } from "./debug";
 import { 
   mapCategory, 
   mapSourceType, 
@@ -392,7 +392,7 @@ export async function extractResearchEvidence(
       || unmatchedSourceUrlFallbackCount > 0
       || contextualMappedToNeutralCount > 0
     ) {
-      debugLog(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
+      debugLogFileOnly(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
         claimIdMismatches: claimIdMismatchCount,
         categoryNormalizations: categoryNormalizationCount,
         categoryFallbackToEvidence: categoryFallbackToEvidenceCount,

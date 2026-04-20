@@ -75,9 +75,13 @@ const IS_LOCAL_DEV = process.env.NODE_ENV === "development" &&
 // ============================================================================
 
 /**
- * Log a message to the debug file and console
+ * Shared debug log writer.
  */
-export function debugLog(message: string, data?: any): void {
+function writeDebugLog(
+  message: string,
+  data: any,
+  options: { emitToConsole: boolean },
+): void {
   const timestamp = new Date().toISOString();
   let logLine = `[${timestamp}] ${message}`;
   
@@ -105,8 +109,23 @@ export function debugLog(message: string, data?: any): void {
     });
   }
 
-  // Also log to console
-  console.log(logLine.trim());
+  if (options.emitToConsole) {
+    console.log(logLine.trim());
+  }
+}
+
+/**
+ * Log a message to the debug file and console.
+ */
+export function debugLog(message: string, data?: any): void {
+  writeDebugLog(message, data, { emitToConsole: true });
+}
+
+/**
+ * Log a message to the debug file only.
+ */
+export function debugLogFileOnly(message: string, data?: any): void {
+  writeDebugLog(message, data, { emitToConsole: false });
 }
 
 /**
