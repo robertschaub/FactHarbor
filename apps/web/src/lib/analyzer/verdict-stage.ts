@@ -2211,6 +2211,28 @@ function refreshBoundaryFindingsAfterRepair(
     .filter((finding): finding is BoundaryFinding => Boolean(finding));
 }
 
+function deriveDirectionalCitationsFromEvidencePool(
+  evidencePool: DirectionValidationEvidencePoolItem[],
+): { supportingEvidenceIds: string[]; contradictingEvidenceIds: string[] } | null {
+  const supportingEvidenceIds: string[] = [];
+  const contradictingEvidenceIds: string[] = [];
+
+  for (const item of evidencePool) {
+    if (item.applicability && item.applicability !== "direct") continue;
+    if (item.claimDirection === "supports") supportingEvidenceIds.push(item.id);
+    if (item.claimDirection === "contradicts") contradictingEvidenceIds.push(item.id);
+  }
+
+  if (supportingEvidenceIds.length === 0 && contradictingEvidenceIds.length === 0) {
+    return null;
+  }
+
+  return {
+    supportingEvidenceIds: Array.from(new Set(supportingEvidenceIds)),
+    contradictingEvidenceIds: Array.from(new Set(contradictingEvidenceIds)),
+  };
+}
+
 async function defaultRepairExecutor(
   request: VerdictRepairRequest,
   llmCall: LLMCallFn,
@@ -2261,6 +2283,7 @@ async function defaultRepairExecutor(
   const validEvidenceIds = new Set(request.evidencePool.map((item) => item.id));
   const repairedSupportingEvidenceIds = parseEvidenceIdArray(parsed.supportingEvidenceIds, validEvidenceIds);
   const repairedContradictingEvidenceIds = parseEvidenceIdArray(parsed.contradictingEvidenceIds, validEvidenceIds);
+  const derivedDirectionalCitations = deriveDirectionalCitationsFromEvidencePool(request.evidencePool);
   return {
     ...request.verdict,
     truthPercentage: repairedTruth,
@@ -2271,8 +2294,12 @@ async function defaultRepairExecutor(
       config.mixedConfidenceThreshold,
     ),
     reasoning: repairedReasoning,
-    supportingEvidenceIds: repairedSupportingEvidenceIds ?? request.verdict.supportingEvidenceIds,
-    contradictingEvidenceIds: repairedContradictingEvidenceIds ?? request.verdict.contradictingEvidenceIds,
+    supportingEvidenceIds: repairedSupportingEvidenceIds
+      ?? derivedDirectionalCitations?.supportingEvidenceIds
+      ?? request.verdict.supportingEvidenceIds,
+    contradictingEvidenceIds: repairedContradictingEvidenceIds
+      ?? derivedDirectionalCitations?.contradictingEvidenceIds
+      ?? request.verdict.contradictingEvidenceIds,
     boundaryFindings: request.verdict.boundaryFindings,
   };
 }

@@ -1549,6 +1549,67 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
   });
 
+  it("derives repaired citation arrays from claim-local direct evidence when repair omits them", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 82,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts", applicability: "contextual" }),
+      createEvidenceItem({ id: "EV_03", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "contradicts" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let directionValidationCalls = 0;
+    let repairedDirectionInput: Record<string, unknown> | undefined;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Initial mismatch"] }];
+        }
+        if (directionValidationCalls === 2) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Normalized verdict still overstates the supporting side"] }];
+        }
+        repairedDirectionInput = (input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0];
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_01", truthPercentage: 52, reasoning: "Adjusted to reflect both the compliant trial phase and the contradicting investigative-phase evidence" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      [],
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(repairedDirectionInput?.supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(repairedDirectionInput?.contradictingEvidenceIds).toEqual(["EV_03"]);
+    expect(result[0].truthPercentage).toBe(52);
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_01"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_03"]);
+  });
+
   it("overrides false-positive LLM direction failure via deterministic plausibility check (AC_03 case)", async () => {
     // Scenario: Truth 15% (Mostly False), 8 contradicts, 3 supports. 
     // This is directionally consistent, but LLM incorrectly flags it.
