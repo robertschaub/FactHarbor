@@ -259,8 +259,9 @@ describe("Stage-1 prompt contract", () => {
     it("pass1 keeps comparative ecosystem search hints concrete and in-language", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
       expect(section).not.toBeNull();
-      expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state metric, ranking, threshold comparison, or other current measurable value");
+      expect(section).toContain("Comparative ecosystem claims only");
+      expect(section).toContain("NOT claims whose decisive evidence is a present-state metric, ranking, or threshold");
+      expect(section).toContain("when both ecosystem and metric readings are plausible from the wording alone, default to the metric/present-state interpretation");
       expect(section).toContain("`searchHint` stay in the input language");
       expect(section).toContain("activity plus a concrete institutional signal route");
       expect(section).toContain("participant/member/certification lists");
@@ -273,8 +274,9 @@ describe("Stage-1 prompt contract", () => {
     it("pass2 keeps comparative ecosystem profiles tied to concrete source-native signals", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
       expect(section).not.toBeNull();
-      expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state metric, ranking, threshold comparison, or other current measurable value");
+      expect(section).toContain("Comparative ecosystem claims only");
+      expect(section).toContain("NOT claims whose decisive evidence is a present-state metric, ranking, or threshold");
+      expect(section).toContain("when both ecosystem and metric readings are plausible from the wording alone, default to the metric/present-state interpretation");
       expect(section).toContain("primary verification routes");
       expect(section).toContain("participant/member/certification lists");
       expect(section).toContain("source-native program participation records");

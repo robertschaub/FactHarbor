@@ -496,8 +496,10 @@ describe("Stage-2 prompt contract", () => {
 
     it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
-      expect(section).toContain("ONLY for comparative ecosystem claims");
-      expect(section).toContain("These rules do NOT apply when the decisive evidence is a present-state metric, ranking, threshold comparison, or other current measurable value; use the present-state metric rules above instead");
+      expect(section).toContain("Comparative ecosystem claims only");
+      expect(section).toContain("NOT claims whose decisive evidence is a present-state metric, ranking, or threshold");
+      expect(section).toContain("when both ecosystem and metric readings are plausible from the wording alone, default to the metric/present-state interpretation");
+      expect(section).toContain("for metric claims use the present-state rules above");
       expect(section).toContain("side-specific query coverage to the strongest institutional existence signals on BOTH sides");
       expect(section).toContain("At least one returned query for EACH compared side must explicitly target an enumerative ecosystem route");
       expect(section).toContain("participant/member/certification list");
@@ -510,10 +512,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("abstract words such as governance, coordination, evaluation, systematization, monitoring, or structure");
       expect(section).toContain("broader policy problem or harm domain");
       expect(section.indexOf("When the claim is explicitly about the present or current state")).toBeLessThan(
-        section.indexOf("ONLY for comparative ecosystem claims"),
+        section.indexOf("Comparative ecosystem claims only"),
       );
       expect(section.indexOf("For approximate comparison claims between current and historical or reference totals")).toBeLessThan(
-        section.indexOf("ONLY for comparative ecosystem claims"),
+        section.indexOf("Comparative ecosystem claims only"),
       );
     });
   });
