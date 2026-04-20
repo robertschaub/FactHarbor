@@ -345,13 +345,23 @@ describe("Stage-1 prompt contract", () => {
 
   describe("efficiency predicate discipline", () => {
     it("keeps broad efficiency decompositions inside efficiency frames instead of operational proxies", () => {
+      const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
       const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
 
+      expect(pass1).not.toBeNull();
+      expect(pass1).toContain("keep the original compared entities and broad predicate at the same level of generality as the input");
+      expect(pass1).toContain("reserve those distinctions for verification framing, not rough-claim wording");
+      expect(pass1).toContain("preserve the same compared entities and broad predicate in every rough claim");
+      expect(pass1).toContain("narrower implementation, pathway, subsystem, or exemplar variant");
       expect(pass2).not.toBeNull();
       expect(pass2).toContain("comparative efficiency, optimization, or resource-use predicates");
       expect(pass2).toContain("full-pathway vs. use-phase-only vs. conversion-stage efficiency");
+      expect(pass2).toContain("keep the original compared entities and broad predicate at the same level of generality as the input");
+      expect(pass2).toContain("keep such specificity inside `expectedEvidenceProfile`, search queries, or evidence scopes instead of the claim statement");
       expect(pass2).toContain("keep decomposition inside actual efficiency measurement frames or system boundaries");
       expect(pass2).toContain("Do NOT switch to downstream operational proxies or adjacent performance traits");
+      expect(pass2).toContain("Keep the compared entities at the same level of generality as the input across all dimension claims");
+      expect(pass2).toContain("collapse back to a single broad claim rather than forcing a proxy decomposition");
     });
   });
 
