@@ -1407,6 +1407,7 @@ export async function validateVerdicts(
           config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
           && current.verdictReason !== "verdict_integrity_failure"
         ) {
+          const preRepairVerdict = current;
           const repairSeedVerdict = normalizeVerdictCitationDirections(current, evidence);
           const repaired = await attemptDirectionRepair(
             repairSeedVerdict,
@@ -1419,6 +1420,19 @@ export async function validateVerdicts(
 
           if (repaired) {
             const normalizedRepaired = normalizeVerdictCitationDirections(repaired, evidence);
+            const finalizeAcceptedRepair = (candidate: CBClaimVerdict): CBClaimVerdict => {
+              if (!repairContext) return candidate;
+              return {
+                ...candidate,
+                boundaryFindings: refreshBoundaryFindingsAfterRepair(
+                  candidate,
+                  evidence,
+                  repairContext.boundaries,
+                  repairContext.coverageMatrix,
+                  repairContext.calculationConfig,
+                ),
+              };
+            };
             const retryDirection = await validateDirectionOnly(
               normalizedRepaired,
               evidence,
@@ -1449,7 +1463,67 @@ export async function validateVerdicts(
                   },
                 });
               }
-              current = normalizedRepaired;
+              const repairedGrounding = await validateGroundingOnly(
+                normalizedRepaired,
+                evidence,
+                llmCall,
+                validationTier,
+                validationProvider,
+                repairContext,
+                warnings,
+              );
+              if (repairedGrounding.valid) {
+                current = finalizeAcceptedRepair(normalizedRepaired);
+              } else {
+                const fallbackReasoningVerdict: CBClaimVerdict = {
+                  ...normalizedRepaired,
+                  reasoning: preRepairVerdict.reasoning,
+                };
+                if (repairedGrounding.unavailable) {
+                  warnings?.push({
+                    type: "verdict_grounding_issue",
+                    severity: "info",
+                    message: `Claim ${verdict.claimId}: post-repair grounding check unavailable; preserved pre-repair reasoning.`,
+                  });
+                  current = finalizeAcceptedRepair(fallbackReasoningVerdict);
+                } else {
+                  warnings?.push({
+                    type: "verdict_grounding_issue",
+                    severity: "info",
+                    message: `Claim ${verdict.claimId}: repaired verdict failed grounding check: ${joinIssues(repairedGrounding.issues)}`,
+                  });
+                  const fallbackGrounding = await validateGroundingOnly(
+                    fallbackReasoningVerdict,
+                    evidence,
+                    llmCall,
+                    validationTier,
+                    validationProvider,
+                    repairContext,
+                    warnings,
+                  );
+                  if (fallbackGrounding.valid || fallbackGrounding.unavailable) {
+                    warnings?.push({
+                      type: "verdict_grounding_issue",
+                      severity: "info",
+                      message: `Claim ${verdict.claimId}: repaired reasoning rejected; preserved pre-repair grounded reasoning.`,
+                    });
+                    current = finalizeAcceptedRepair(fallbackReasoningVerdict);
+                  } else {
+                    warnings?.push({
+                      type: "verdict_grounding_issue",
+                      severity: "info",
+                      message: `Claim ${verdict.claimId}: repaired verdict grounding fallback failed: ${joinIssues(fallbackGrounding.issues)}`,
+                    });
+                    current = safeDowngradeVerdict(
+                      fallbackReasoningVerdict,
+                      "grounding",
+                      fallbackGrounding.issues,
+                      warnings,
+                      config.mixedConfidenceThreshold,
+                    );
+                  }
+                }
+              }
             } else {
               // Pass `repaired` (not `current`) so the warning records the last-attempted
               // truth value, not the stale pre-repair value.
@@ -1484,6 +1558,7 @@ type NormalizedValidationEntry = {
   claimId: string;
   valid: boolean;
   issues: string[];
+  unavailable?: boolean;
 };
 
 function normalizeValidationEntries(
@@ -1563,6 +1638,114 @@ async function runValidationCheckWithRetry(
   });
 
   return [];
+}
+
+async function validateGroundingOnly(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  llmCall: LLMCallFn,
+  validationTier: string,
+  validationProvider: LLMProviderType | undefined,
+  repairContext?: VerdictValidationRepairContext,
+  warnings?: AnalysisWarning[],
+): Promise<NormalizedValidationEntry> {
+  const localEvidence = getGroundingClaimLocalEvidence(verdict.claimId, evidence);
+  const citedEvidenceRegistry = getCitedEvidenceRegistry(verdict, evidence);
+  const localSourcePortfolio = getClaimLocalSourcePortfolio(
+    verdict.claimId,
+    localEvidence,
+    repairContext?.sourcePortfolioByClaim,
+  );
+  const boundaryIds = getClaimBoundaryIdsForValidation(
+    verdict,
+    repairContext?.boundaries,
+    repairContext?.coverageMatrix,
+  );
+  const challengeContext = buildClaimChallengeContext(
+    verdict.claimId,
+    repairContext?.validatedChallengeDoc,
+  );
+
+  const groundingIds: string[] = [
+    ...localEvidence.map((item) => item.id),
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+    ...citedEvidenceRegistry.map((item) => item.id),
+  ];
+  for (const challenge of challengeContext) {
+    groundingIds.push(...challenge.citedEvidenceIds);
+    if (challenge.challengeValidation) {
+      groundingIds.push(...challenge.challengeValidation.validIds);
+      groundingIds.push(...challenge.challengeValidation.invalidIds);
+    }
+  }
+
+  const groundingAliasMap = buildGroundingAliasMap(groundingIds);
+  const normalized = await runValidationCheckWithRetry(
+    "grounding",
+    "VERDICT_GROUNDING_VALIDATION",
+    {
+      verdicts: [{
+        claimId: verdict.claimId,
+        reasoning: aliasReasoningText(verdict.reasoning, groundingAliasMap),
+        supportingEvidenceIds: aliasIds(verdict.supportingEvidenceIds, groundingAliasMap),
+        contradictingEvidenceIds: aliasIds(verdict.contradictingEvidenceIds, groundingAliasMap),
+        boundaryIds,
+        challengeContext: challengeContext.map((entry) => ({
+          ...entry,
+          citedEvidenceIds: aliasIds(entry.citedEvidenceIds, groundingAliasMap),
+          ...(entry.challengeValidation ? {
+            challengeValidation: {
+              evidenceIdsValid: entry.challengeValidation.evidenceIdsValid,
+              validIds: aliasIds(entry.challengeValidation.validIds, groundingAliasMap),
+              invalidIds: aliasIds(entry.challengeValidation.invalidIds, groundingAliasMap),
+            },
+          } : {}),
+        })),
+        evidencePool: localEvidence.map((item) => ({
+          id: aliasId(item.id, groundingAliasMap),
+          statement: item.statement,
+          sourceId: item.sourceId,
+          sourceUrl: item.sourceUrl,
+          claimDirection: item.claimDirection,
+        })),
+        citedEvidenceRegistry: citedEvidenceRegistry.map((item) => ({
+          ...item,
+          id: aliasId(item.id, groundingAliasMap),
+        })),
+        ...(localSourcePortfolio.length > 0 ? {
+          sourcePortfolio: localSourcePortfolio.map((item) => ({
+            sourceId: item.sourceId,
+            domain: item.domain,
+            sourceUrl: item.sourceUrl,
+            trackRecordScore: item.trackRecordScore,
+            trackRecordConfidence: item.trackRecordConfidence,
+            evidenceCount: item.evidenceCount,
+          })),
+        } : {}),
+      }],
+    },
+    "groundingValid",
+    validationTier,
+    validationProvider,
+    llmCall,
+    warnings,
+    "grounding_check_degraded",
+  );
+
+  if (normalized.length === 0) {
+    return {
+      claimId: verdict.claimId,
+      valid: false,
+      issues: ["Grounding validation unavailable after repair"],
+      unavailable: true,
+    };
+  }
+
+  return {
+    ...normalized[0],
+    issues: dealiasGroundingIssues(normalized[0].issues, groundingAliasMap),
+  };
 }
 
 function joinIssues(issues: string[]): string {
@@ -1939,6 +2122,48 @@ function buildBoundaryContext(
   }));
 }
 
+function refreshBoundaryFindingsAfterRepair(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  boundaries: ClaimAssessmentBoundary[],
+  coverageMatrix: CoverageMatrix,
+  calcConfig?: CalcConfig,
+): BoundaryFinding[] {
+  const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence)
+    .filter((item) => !item.applicability || item.applicability === "direct");
+  const weights = calcConfig?.probativeValueWeights ?? DEFAULT_CALC_CONFIG.probativeValueWeights!;
+  const boundaryById = new Map(boundaries.map((boundary) => [boundary.id, boundary]));
+
+  return coverageMatrix.getBoundariesForClaim(verdict.claimId)
+    .map((boundaryId) => {
+      const boundaryEvidence = localEvidence.filter((item) => item.claimBoundaryId === boundaryId);
+      if (boundaryEvidence.length === 0) return null;
+
+      let weightedSupports = 0;
+      let weightedContradicts = 0;
+      for (const item of boundaryEvidence) {
+        const weight = weights[item.probativeValue ?? "low"] ?? 0.5;
+        if (item.claimDirection === "supports") weightedSupports += weight;
+        else if (item.claimDirection === "contradicts") weightedContradicts += weight;
+      }
+
+      let evidenceDirection: BoundaryFinding["evidenceDirection"] = "neutral";
+      if (weightedSupports > weightedContradicts && weightedSupports > 0) evidenceDirection = "supports";
+      else if (weightedContradicts > weightedSupports && weightedContradicts > 0) evidenceDirection = "contradicts";
+      else if (weightedSupports > 0 && weightedContradicts > 0) evidenceDirection = "mixed";
+
+      return {
+        boundaryId,
+        boundaryName: boundaryById.get(boundaryId)?.name ?? boundaryId,
+        truthPercentage: verdict.truthPercentage,
+        confidence: verdict.confidence,
+        evidenceDirection,
+        evidenceCount: boundaryEvidence.length,
+      };
+    })
+    .filter((finding): finding is BoundaryFinding => Boolean(finding));
+}
+
 async function defaultRepairExecutor(
   request: VerdictRepairRequest,
   llmCall: LLMCallFn,
@@ -2001,7 +2226,7 @@ async function defaultRepairExecutor(
     reasoning: repairedReasoning,
     supportingEvidenceIds: repairedSupportingEvidenceIds ?? request.verdict.supportingEvidenceIds,
     contradictingEvidenceIds: repairedContradictingEvidenceIds ?? request.verdict.contradictingEvidenceIds,
-    boundaryFindings: [], // Clear stale findings from prior debate before repair
+    boundaryFindings: request.verdict.boundaryFindings,
   };
 }
 

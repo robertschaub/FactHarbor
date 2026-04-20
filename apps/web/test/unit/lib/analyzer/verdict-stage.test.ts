@@ -1215,6 +1215,12 @@ describe("validateVerdicts (Step 5)", () => {
       confidence: 80,
       supportingEvidenceIds: ["EV_01"],
       contradictingEvidenceIds: ["EV_02"],
+      challengeResponses: [{
+        challengeType: "assumption",
+        response: "Original challenge handling",
+        verdictAdjusted: true,
+        adjustmentBasedOnChallengeIds: ["CP_AC_01_0"],
+      }],
     })];
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const boundaries = [createClaimBoundary({ id: "CB_01" })];
@@ -1259,8 +1265,92 @@ describe("validateVerdicts (Step 5)", () => {
 
     expect(result[0].truthPercentage).toBe(46);
     expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(result[0].boundaryFindings).toEqual([{
+      boundaryId: "CB_01",
+      boundaryName: "Standard Analysis Boundary",
+      truthPercentage: 46,
+      confidence: 80,
+      evidenceDirection: "supports",
+      evidenceCount: 2,
+    }]);
+    expect(result[0].challengeResponses).toEqual(verdicts[0].challengeResponses);
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
     expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+  });
+
+  it("rejects repaired reasoning that fails post-repair grounding and preserves pre-repair reasoning", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 82,
+      confidence: 80,
+      reasoning: "Original grounded reasoning",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    let repairGroundingChecks = 0;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        const reasoning = ((input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0]?.reasoning ?? "") as string;
+        if (reasoning.includes("Repair artifact reasoning")) {
+          repairGroundingChecks += 1;
+          return [{ claimId: "AC_01", groundingValid: false, issues: ["Repair artifact reasoning not grounded"] }];
+        }
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Mismatch"] }];
+        }
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return {
+          claimId: "AC_01",
+          truthPercentage: 46,
+          reasoning: "Repair artifact reasoning with unsupported machine-id prose",
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(46);
+    expect(result[0].reasoning).toBe("Original grounded reasoning");
+    expect(result[0].boundaryFindings).toEqual([{
+      boundaryId: "CB_01",
+      boundaryName: "Standard Analysis Boundary",
+      truthPercentage: 46,
+      confidence: 80,
+      evidenceDirection: "supports",
+      evidenceCount: 2,
+    }]);
+    expect(repairGroundingChecks).toBe(1);
+    expect(warnings.some((w) => w.message.includes("repaired reasoning rejected"))).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
   });
 
   // NOTE: Two tests removed here ("downgrades after failed direction retry" and
