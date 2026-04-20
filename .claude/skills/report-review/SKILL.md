@@ -18,6 +18,7 @@ Analyze local job reports for: $ARGUMENTS
 These constraints bind both this skill's analysis AND the fixes it proposes. If a recommendation violates any of them, downgrade it to `REJECTED — policy violation` and do not surface it to the user.
 
 1. **Generic by Design** — no proposed fix may introduce domain-specific keywords, named entities, regions, or date-periods into source code or prompts. Benchmark inputs listed in `AGENTS.md §Captain-Defined Analysis Inputs` are targets of analysis, never vocabulary for prompts or code.
+   - Concrete failing jobs and benchmark inputs are for diagnosis only. A proposed fix must be stated from the abstract failure mechanism, not from vocabulary that appears only because it was present in the triggering analysis.
 2. **No new deterministic text analysis** — do not propose regex, keyword lists, forbidden-term lists, similarity heuristics, or rule-based classifiers as fixes. Analysis decisions must stay in LLM calls.
 3. **No string-match tests as mitigations** — do not recommend adding unit tests that grep prompt text for specific phrases, nor tests that assert specific words appear in verdicts.
 4. **No deterministic verdict manipulation in source code** — do not propose post-hoc truth-percentage nudges, verdict-label overrides, or confidence clamps based on input content. Verdict shaping happens via prompt + aggregation logic that is input-agnostic, not via code paths that inspect the claim text.
@@ -472,6 +473,12 @@ A finding survives only if **≥2 active specialist panels confirm** AND Devil's
 
 Every fix proposal MUST declare its mechanism and pass the constraint gate.
 
+**Benchmark-overfit scrub (MANDATORY before a fix survives):**
+1. Write an `Abstract mechanism` sentence in ≤20 words using no benchmark-specific nouns, actors, institutions, regions, or date-periods.
+2. Compare the proposed change against the triggering job input, finding text, and any copied source wording. If a non-contract noun or phrase is present only because it appeared in the triggering analysis, rewrite it abstractly or reject the fix.
+3. Apply the `Generic test`: would the same wording still be correct for an unrelated topic family?
+4. If the scrub fails, move the candidate to `7d.3 Rejected fixes` under rule 1 or rule 7. Do not rationalize with "this specific case needs it."
+
 **Allowed mechanisms:**
 
 | Mechanism | When | Constraint reminder |
@@ -497,7 +504,9 @@ Every fix proposal MUST declare its mechanism and pass the constraint gate.
 Mechanism:          <prompt-edit | ucm-config | stage-code-structural | workflow-gate | prompt-rollout | data-update | partial-rollback | full-rollback | modification>
 Target file/path:   <specific path or commit:file:section for rollback mechanisms>
 Change (specific):  <exact generic wording, config delta, structural edit, or revert-section spec>
+Abstract mechanism: <one-line failure mechanism, phrased without trigger-specific vocabulary>
 Constraint gate:    PASS — <which rules apply and why this passes them>
+Trigger-vocab scrub:<PASS/FAIL + short reason>
 Generic test:       <yes/no + reasoning — does this help inputs unlike the failing one?>
 Regression risk:    <families from benchmark-expectations.json that could shift, or "none expected">
 Expected outcome:   <behavioral change in concrete terms>
@@ -821,6 +830,7 @@ Related: <file paths, Q-codes, or slugs — used for Phase 2 filtering on future
 
 Before emitting output, re-read the non-negotiable constraints and scan all proposed fixes:
 - Does any fix name a benchmark input, entity, region, or date? → revise or drop
+- Does any fix reuse nouns or phrasing taken from the triggering job/input instead of the abstract mechanism? → revise or drop
 - Does any fix add a unit test asserting prompt/verdict word content? → drop
 - Does any fix put a threshold in code instead of UCM? → move to UCM
 - Does any fix bypass an LLM call with a rule? → drop

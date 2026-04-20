@@ -84,6 +84,7 @@ Exception: Structural constants are allowed in code (e.g., enum-like labels, sch
 ### Analysis Prompt Rules
 These rules apply specifically to the LLM prompts used in the analysis pipeline (under `apps/web/prompts/`). Improving these prompts for quality and efficiency is welcome — but only with explicit human approval.
 - **No test-case terms.** Prompt examples must be abstract (e.g., "Entity A did X" not "Country built industry"). This prevents teaching-to-the-test.
+- **Diagnosis is not wording license.** Concrete failing analyses may be used to identify the abstract failure mechanism, but landed prompt changes must be phrased in topic-neutral terms and must not reuse trigger vocabulary merely because it appeared in the analysis that exposed the issue.
 - **Do not enforce** finding ClaimAssessmentBoundaries or EvidenceScopes by using non-generic terms, date-periods, or regions. These must emerge naturally from evidence.
 
 ### Terminology — NEVER Confuse These

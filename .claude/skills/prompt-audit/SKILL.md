@@ -19,6 +19,7 @@ Audit prompts for: $ARGUMENTS
 A proposed prompt edit that trips any of these is rejected with its rule number — no exceptions, no reasoning-past-the-rule.
 
 1. **Generic by Design** — no proposed edit may introduce domain-specific keywords, named entities, regions, or date-periods.
+   - Concrete failing analyses or motivating examples are for diagnosis only. Proposed prompt edits must be expressed from the abstract failure mechanism, not from vocabulary reused because it appeared in the triggering case.
 2. **No deterministic text analysis** — no regex, keyword-list, or rule-based classifier recommendations.
 3. **No string-match tests as mitigations** — no recommendations that grep specific words in prompt or output.
 4. **Strings that influence analysis live in prompts or web-search queries only** — never hardcoded elsewhere.
@@ -82,6 +83,7 @@ For each in-scope prompt, evaluate each criterion. Record one of `PASS` / `CONCE
 - No specific countries, regions, or jurisdictions as examples
 - No specific dates or date-periods
 - No benchmark vocabulary — cross-check every noun/entity against `AGENTS.md §Captain-Defined Analysis Inputs`
+- No trigger-vocabulary reuse — if wording looks shaped around a motivating case rather than an abstract mechanism, flag it even when the words are superficially generic
 - Examples use abstract placeholders ("Entity A", "Region X", "Topic T")
 
 **R6. Multilingual robustness** (MANDATORY per AGENTS.md)
@@ -137,6 +139,7 @@ Codes — use `P` (PASS), `W` (CONCERN/warn), `F` (FAIL). `Score` = count of `P`
   Evidence:      <line# or quoted text, <=2 lines>
   Issue:         <what's wrong, <=20 words>
   Fix proposal:  <generic, language-neutral edit, <=30 words>
+  Abstract mech: <failure mechanism in topic-neutral terms, <=15 words>
   Mechanism:     prompt-edit
 ```
 
@@ -156,6 +159,8 @@ Marking convention — R1–R6: `Y` = VIOLATES (reject), `N` = compliant. R7: `Y
 ```
 AUDIT-CERT: every accepted fix is N for R1-R6 and Y for R7. Violators listed in 2e.
 ```
+
+**Trigger-vocabulary rule for the audit table:** if a proposed fix reuses nouns or phrasing from a motivating benchmark/job/example instead of stating the abstract mechanism, mark it as an R1 violation (and usually R7 if it becomes language-shaped).
 
 If you cannot certify truthfully, note as compliance deadlock in 2e and escalate to Captain — do NOT soften the audit or reclassify violations.
 
