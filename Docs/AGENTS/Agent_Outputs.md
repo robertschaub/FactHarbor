@@ -1427,3 +1427,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Coordinated Branch Repair-Pass Gating And Atomicity Debug -- [Standard] [open-items: yes]
 **For next agent:** The C11b repair pass was mutating contract-approved coordinated-branch sets by forcing the full literal anchor back into one claim. `claim-extraction-stage.ts` now skips repair on contract-approved sets and `repair-anchor-selection.test.ts` covers that gate. This removed the structural collapse: dirty-build rerun `06706852...` produced the desired Parliament/Volk split with `rechtskräftig` preserved in both branches. However the final clean rerun `447cc942...` on `fd4d6abf` still regressed to one bundled claim at `stageAttribution: initial`, so the remaining problem is now unstable initial extraction / validation, not repair.
 → Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Coordinated_Branch_Repair_Pass_Gating_And_Atomicity_Debug.md
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Single-Claim Atomicity Enforcement Fix -- [Standard] [open-items: yes]
+**For next agent:** Added a dedicated Stage-1 single-claim atomicity audit and then tightened its override semantics so any bundled coordinated-branch finding or explicit non-atomic judgment forces retry. The first clean rerun on `adff6e0b` still failed with one bundled claim, but the follow-up contradiction-guard fix succeeded on clean commit `4bdef2c1`: job `8537313effa74c98a0945636c69dbd42` finished `LEANING-TRUE 58/74` with `claimCount: 2`, both `Volk` and `Parlament` claims preserving `rechtskräftig`, and `contractValidationSummary.stageAttribution: "retry"`.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Single_Claim_Atomicity_Enforcement_Fix.md
