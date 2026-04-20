@@ -1267,11 +1267,14 @@ describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
     expect(section).toContain("Precommitted salience context");
     expect(section).toContain("the `coordinatedBranchFinding` object is the general structural-finding container");
     expect(section).toContain("Comparison-side test");
+    expect(section).toContain("Pure bilateral comparison exception");
     expect(section).toContain("Priority anchor guard");
     expect(section).toContain("No anchor weakening or externalization");
     expect(section).toContain("Coordinated branch test");
     expect(section).toContain("Conjunctive gate rule");
     expect(section).toContain("named/current side plus another proposition about the comparator/reference side");
+    expect(section).toContain("Do NOT require decomposition merely because a claim compares A and B");
+    expect(section).toContain('A statement of the form "A is more/less [predicate] than B" is ordinarily one inseparable comparative proposition');
     expect(section).toContain("Modifier fusion across split propositions");
     expect(section).toContain("Mandatory branch enumeration");
     expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");

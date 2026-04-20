@@ -274,9 +274,12 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("the `coordinatedBranchFinding` object is the general structural-finding container");
       expect(section).toContain("Priority anchor guard");
       expect(section).toContain("Comparison-side test");
+      expect(section).toContain("Pure bilateral comparison exception");
       expect(section).toContain("No anchor weakening or externalization");
       expect(section).toContain("Coordinated branch test");
       expect(section).toContain("named/current side plus another proposition about the comparator/reference side");
+      expect(section).toContain("Do NOT require decomposition merely because a claim compares A and B");
+      expect(section).toContain('A statement of the form "A is more/less [predicate] than B" is ordinarily one inseparable comparative proposition');
       expect(section).toContain("Conjunctive gate rule");
       expect(section).toContain("Modifier fusion across split propositions");
       expect(section).toContain("No false positives for inseparable composites");
