@@ -1478,7 +1478,7 @@ export async function validateVerdicts(
             validationProvider,
           );
           const normalizedPlausible = normalizedDirection.valid !== false
-            || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
+            && isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1530,7 +1530,7 @@ export async function validateVerdicts(
             validationProvider,
           );
           const repairedPlausible = retryDirection.valid !== false
-            || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
+            && isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
             current = safeDowngradeVerdict(

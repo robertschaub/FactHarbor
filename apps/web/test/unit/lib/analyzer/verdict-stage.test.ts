@@ -1437,13 +1437,117 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(false);
   });
 
-  // NOTE: Two tests removed here ("downgrades after failed direction retry" and
-  // "should record repaired truth% in safe-downgrade warning"). With hemisphere
-  // Rules 1-3 deleted, the safe-downgrade path is unreachable when polarity is
-  // clean after normalizeVerdictCitationDirections — the || in repairedPlausible
-  // always rescues. A follow-up commit should change || to && so LLM direction
-  // re-validation is the authority, not the polarity check. Until then, these
-  // tests cannot meaningfully exercise the downgrade path.
+  it("sends normalized verdicts to repair when direction validation still fails", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 55,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+      contradictingEvidenceIds: [],
+      consistencyResult: { claimId: "AC_02", percentages: [55, 55, 55], average: 55, spread: 0, stable: true, assessed: true },
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"], claimDirection: "supports", applicability: "contextual" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Initial mismatch"] }];
+        }
+        if (directionValidationCalls === 2) {
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Truth percentage remains inconsistent with the remaining contradicting evidence"] }];
+        }
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_02", truthPercentage: 35, reasoning: "Adjusted to match contradicting evidence after normalization" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      [],
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(35);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+  });
+
+  it("safe-downgrades when repaired verdict still fails direction re-validation", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 55,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_01", "EV_02"],
+      contradictingEvidenceIds: [],
+      consistencyResult: { claimId: "AC_02", percentages: [55, 55, 55], average: 55, spread: 0, stable: true, assessed: true },
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"], claimDirection: "contradicts" }),
+      createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"], claimDirection: "supports", applicability: "contextual" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Initial mismatch"] }];
+        }
+        return [{ claimId: "AC_02", directionValid: false, issues: ["Truth percentage still does not match the remaining contradicting evidence"] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return { claimId: "AC_02", truthPercentage: 35, reasoning: "Repair still left a mismatched mixed verdict" };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((w) => w.type === "verdict_integrity_failure")).toBe(true);
+  });
 
   it("overrides false-positive LLM direction failure via deterministic plausibility check (AC_03 case)", async () => {
     // Scenario: Truth 15% (Mostly False), 8 contradicts, 3 supports. 
