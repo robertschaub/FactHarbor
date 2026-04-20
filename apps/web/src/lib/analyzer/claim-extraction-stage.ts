@@ -364,18 +364,18 @@ export async function extractClaims(
       if (shouldRunSingleClaimAtomicityValidation(
         pass2.atomicClaims as unknown as AtomicClaim[],
         evaluatedContract,
+        salienceCommitment,
       )) {
-        state.onEvent?.("Validating single-claim atomicity...", 24);
-        state.onEvent?.(`LLM call: single-claim atomicity validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
-        const atomicityResult = await validateSingleClaimAtomicity(
+        const atomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
           pass2.atomicClaims as unknown as AtomicClaim[],
           state.originalInput,
           pass2.impliedClaim ?? "",
           pass2.articleThesis ?? "",
           pass2.inputClassification ?? "single_atomic_claim",
           pipelineConfig,
+          state,
+          24,
         );
-        state.llmCalls++;
         evaluatedContract = applySingleClaimAtomicityValidation(
           evaluatedContract,
           atomicityResult,
@@ -499,18 +499,18 @@ export async function extractClaims(
         if (retryContractResult && evaluatedRetryContract && shouldRunSingleClaimAtomicityValidation(
           retryPass2.atomicClaims as unknown as AtomicClaim[],
           evaluatedRetryContract,
+          salienceCommitment,
         )) {
-          state.onEvent?.("Validating single-claim atomicity...", 24);
-          state.onEvent?.(`LLM call: single-claim atomicity validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
-          const retryAtomicityResult = await validateSingleClaimAtomicity(
+          const retryAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
             retryPass2.atomicClaims as unknown as AtomicClaim[],
             state.originalInput,
             retryPass2.impliedClaim ?? "",
             retryPass2.articleThesis ?? "",
             retryPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
+            state,
+            24,
           );
-          state.llmCalls++;
           evaluatedRetryContract = applySingleClaimAtomicityValidation(
             evaluatedRetryContract,
             retryAtomicityResult,
@@ -607,18 +607,18 @@ export async function extractClaims(
               if (shouldRunSingleClaimAtomicityValidation(
                 repairedPass2.atomicClaims as unknown as AtomicClaim[],
                 evaluatedRepair,
+                salienceCommitment,
               )) {
-                state.onEvent?.("Validating single-claim atomicity...", 25);
-                state.onEvent?.(`LLM call: single-claim atomicity validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
-                const repairAtomicityResult = await validateSingleClaimAtomicity(
+                const repairAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
                   repairedPass2.atomicClaims as unknown as AtomicClaim[],
                   state.originalInput,
                   activePass2.impliedClaim ?? "",
                   activePass2.articleThesis ?? "",
                   activePass2.inputClassification ?? "single_atomic_claim",
                   pipelineConfig,
+                  state,
+                  25,
                 );
-                state.llmCalls++;
                 evaluatedRepair = applySingleClaimAtomicityValidation(
                   evaluatedRepair,
                   repairAtomicityResult,
@@ -998,18 +998,21 @@ export async function extractClaims(
           finalContractResult,
           finalAcceptedClaims,
         );
-        if (shouldRunSingleClaimAtomicityValidation(finalAcceptedClaims, evaluatedFinalContract)) {
-          state.onEvent?.("Validating single-claim atomicity...", 26);
-          state.onEvent?.(`LLM call: single-claim atomicity validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
-          const finalAtomicityResult = await validateSingleClaimAtomicity(
+        if (shouldRunSingleClaimAtomicityValidation(
+          finalAcceptedClaims,
+          evaluatedFinalContract,
+          salienceCommitment,
+        )) {
+          const finalAtomicityResult = await runSingleClaimAtomicityValidationWithRecheck(
             finalAcceptedClaims,
             state.originalInput,
             bestPass2.impliedClaim ?? "",
             bestPass2.articleThesis ?? "",
             bestPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
+            state,
+            26,
           );
-          state.llmCalls++;
           evaluatedFinalContract = applySingleClaimAtomicityValidation(
             evaluatedFinalContract,
             finalAtomicityResult,
@@ -2544,6 +2547,7 @@ const SingleClaimAtomicityAssessmentSchema = z.object({
 const SingleClaimCoordinatedBranchFindingSchema = z.object({
   presentInInput: z.boolean(),
   bundledInSingleClaim: z.boolean(),
+  branchLabels: z.array(z.string()).catch([]),
   reasoning: z.string().catch(""),
 });
 
@@ -2842,11 +2846,14 @@ export function evaluateClaimContractValidation(
 export function shouldRunSingleClaimAtomicityValidation(
   claims: AtomicClaim[],
   contractValidation: EvaluatedClaimContractValidation | undefined,
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
 ): boolean {
   return (
     claims.length === 1
     && contractValidation?.summary.preservesContract === true
     && contractValidation.effectiveRePromptRequired === false
+    && salienceCommitment?.success === true
+    && (salienceCommitment.anchors?.length ?? 0) > 0
   );
 }
 
@@ -2856,27 +2863,55 @@ export interface EvaluatedSingleClaimAtomicityValidation {
   summaryAppendix?: string;
 }
 
+function getDistinctAtomicityBranchLabels(
+  atomicityResult: SingleClaimAtomicityValidationResult,
+): string[] {
+  const branchLabels = atomicityResult.coordinatedBranchFinding.branchLabels ?? [];
+  const seen = new Set<string>();
+  const distinct: string[] = [];
+
+  for (const branchLabel of branchLabels) {
+    const trimmed = branchLabel.trim();
+    if (!trimmed) continue;
+    const normalized = trimmed.toLowerCase();
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    distinct.push(trimmed);
+  }
+
+  return distinct;
+}
+
 export function evaluateSingleClaimAtomicityValidation(
   atomicityResult: SingleClaimAtomicityValidationResult,
 ): EvaluatedSingleClaimAtomicityValidation {
+  const branchLabels = getDistinctAtomicityBranchLabels(atomicityResult);
+  const explicitMultiBranch = branchLabels.length >= 2;
   const structurallyBundled =
-    atomicityResult.coordinatedBranchFinding.presentInInput
-    && atomicityResult.coordinatedBranchFinding.bundledInSingleClaim;
+    atomicityResult.coordinatedBranchFinding.bundledInSingleClaim
+    || explicitMultiBranch;
   const effectiveRePromptRequired =
     atomicityResult.singleClaimAssessment.rePromptRequired
     || !atomicityResult.singleClaimAssessment.isAtomic
     || structurallyBundled;
+  const branchSummary = branchLabels.length > 0
+    ? `branchLabels=[${branchLabels.join(", ")}]`
+    : undefined;
 
   if (!effectiveRePromptRequired) {
     return {
       effectiveRePromptRequired: false,
-      summaryAppendix: atomicityResult.singleClaimAssessment.summary || atomicityResult.coordinatedBranchFinding.reasoning,
+      summaryAppendix: [
+        atomicityResult.singleClaimAssessment.summary || atomicityResult.coordinatedBranchFinding.reasoning,
+        branchSummary,
+      ].filter(Boolean).join("; "),
     };
   }
 
   const summaryAppendix = [
     atomicityResult.singleClaimAssessment.summary,
     atomicityResult.coordinatedBranchFinding.reasoning,
+    branchSummary,
   ].filter(Boolean).join("; ");
 
   return {
@@ -2888,6 +2923,19 @@ export function evaluateSingleClaimAtomicityValidation(
     ].filter(Boolean).join(": "),
     summaryAppendix,
   };
+}
+
+export function selectPreferredSingleClaimAtomicityValidation(
+  primary: SingleClaimAtomicityValidationResult | undefined,
+  challenger: SingleClaimAtomicityValidationResult | undefined,
+): SingleClaimAtomicityValidationResult | undefined {
+  if (primary && evaluateSingleClaimAtomicityValidation(primary).effectiveRePromptRequired) {
+    return primary;
+  }
+  if (challenger && evaluateSingleClaimAtomicityValidation(challenger).effectiveRePromptRequired) {
+    return challenger;
+  }
+  return primary ?? challenger;
 }
 
 export function applySingleClaimAtomicityValidation(
@@ -3006,6 +3054,50 @@ export function shouldRunContractRepairPass(
     contractValidationSummary?.preservesContract === true &&
     contractValidationSummary?.rePromptRequired === false
   );
+}
+
+async function runSingleClaimAtomicityValidationWithRecheck(
+  claims: AtomicClaim[],
+  originalInput: string,
+  impliedClaim: string,
+  articleThesis: string,
+  inputClassification: string,
+  pipelineConfig: PipelineConfig,
+  state: CBResearchState,
+  progressPercent: number,
+): Promise<SingleClaimAtomicityValidationResult | undefined> {
+  if (claims.length !== 1) return undefined;
+
+  const modelName = getModelForTask("context_refinement", undefined, pipelineConfig).modelName;
+  state.onEvent?.("Validating single-claim atomicity...", progressPercent);
+  state.onEvent?.(`LLM call: single-claim atomicity validation — ${modelName}`, -1);
+  const primaryResult = await validateSingleClaimAtomicity(
+    claims,
+    originalInput,
+    impliedClaim,
+    articleThesis,
+    inputClassification,
+    pipelineConfig,
+  );
+  state.llmCalls++;
+
+  if (primaryResult && evaluateSingleClaimAtomicityValidation(primaryResult).effectiveRePromptRequired) {
+    return primaryResult;
+  }
+
+  state.onEvent?.("Re-checking single-claim atomicity...", progressPercent);
+  state.onEvent?.(`LLM call: single-claim atomicity re-check — ${modelName}`, -1);
+  const challengerResult = await validateSingleClaimAtomicity(
+    claims,
+    originalInput,
+    impliedClaim,
+    articleThesis,
+    inputClassification,
+    pipelineConfig,
+  );
+  state.llmCalls++;
+
+  return selectPreferredSingleClaimAtomicityValidation(primaryResult, challengerResult);
 }
 
 async function validateSingleClaimAtomicity(

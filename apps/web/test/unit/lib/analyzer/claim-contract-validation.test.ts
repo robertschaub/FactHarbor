@@ -17,6 +17,7 @@ import {
   evaluateClaimContractValidation,
   applySingleClaimAtomicityValidation,
   evaluateSingleClaimAtomicityValidation,
+  selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
   type ClaimContractValidationResult,
 } from "@/lib/analyzer/claim-extraction-stage";
@@ -361,6 +362,7 @@ describe("Single-claim atomicity enforcement", () => {
     coordinatedBranchFinding: {
       presentInInput: false,
       bundledInSingleClaim: false,
+      branchLabels: [],
       reasoning: "no coordinated branches that require splitting",
       ...(overrides.coordinatedBranchFinding ?? {}),
     },
@@ -375,6 +377,15 @@ describe("Single-claim atomicity enforcement", () => {
     },
     effectiveRePromptRequired: false,
   };
+  const salienceCommitment = {
+    success: true,
+    anchors: [
+      {
+        text: "before B and C decided",
+        type: "action_predicate",
+      },
+    ],
+  } as any;
 
   it("runs only for approved single-claim outputs", () => {
     const singleClaim: AtomicClaim[] = [{
@@ -392,13 +403,14 @@ describe("Single-claim atomicity enforcement", () => {
       expectedEvidenceProfile: { methodologies: [], expectedMetrics: [], expectedSourceTypes: [] },
     }];
 
-    expect(shouldRunSingleClaimAtomicityValidation(singleClaim, approvedContract)).toBe(true);
-    expect(shouldRunSingleClaimAtomicityValidation([...singleClaim, { ...singleClaim[0], id: "AC_02" }], approvedContract)).toBe(false);
+    expect(shouldRunSingleClaimAtomicityValidation(singleClaim, approvedContract, salienceCommitment)).toBe(true);
+    expect(shouldRunSingleClaimAtomicityValidation(singleClaim, approvedContract)).toBe(false);
+    expect(shouldRunSingleClaimAtomicityValidation([...singleClaim, { ...singleClaim[0], id: "AC_02" }], approvedContract, salienceCommitment)).toBe(false);
     expect(shouldRunSingleClaimAtomicityValidation(singleClaim, {
       ...approvedContract,
       summary: { ...approvedContract.summary, preservesContract: false, rePromptRequired: true },
       effectiveRePromptRequired: true,
-    })).toBe(false);
+    }, salienceCommitment)).toBe(false);
   });
 
   it("forces retry when a bundled single claim still contains coordinated branches", () => {
@@ -437,6 +449,57 @@ describe("Single-claim atomicity enforcement", () => {
     expect(evaluated.effectiveRePromptRequired).toBe(true);
     expect(evaluated.retryReason).toContain("single_claim_atomicity_failed");
     expect(evaluated.summaryAppendix).toContain("Volk and Parlament remain fused");
+  });
+
+  it("treats explicit multi-branch labels as a retry trigger even when booleans look permissive", () => {
+    const evaluated = evaluateSingleClaimAtomicityValidation(makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: true,
+        rePromptRequired: false,
+        summary: "single claim was treated as atomic",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: false,
+        bundledInSingleClaim: false,
+        branchLabels: ["Volk", "Parlament"],
+        reasoning: "two independently verifiable decision gates were identified",
+      },
+    }));
+
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.retryReason).toContain("single_claim_atomicity_failed");
+    expect(evaluated.summaryAppendix).toContain("branchLabels=[Volk, Parlament]");
+  });
+
+  it("prefers a challenger result when it upgrades an apparent pass into a retry", () => {
+    const primary = makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: true,
+        rePromptRequired: false,
+        summary: "single claim looks atomic",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: false,
+        bundledInSingleClaim: false,
+        branchLabels: [],
+        reasoning: "no split required",
+      },
+    });
+    const challenger = makeAtomicityResult({
+      singleClaimAssessment: {
+        isAtomic: true,
+        rePromptRequired: false,
+        summary: "challenge pass found hidden branch split",
+      },
+      coordinatedBranchFinding: {
+        presentInInput: true,
+        bundledInSingleClaim: false,
+        branchLabels: ["Volk", "Parlament"],
+        reasoning: "challenge pass identified two independent branch labels",
+      },
+    });
+
+    expect(selectPreferredSingleClaimAtomicityValidation(primary, challenger)).toEqual(challenger);
   });
 
   it("overrides a passing contract summary when atomicity fails", () => {
@@ -1088,8 +1151,10 @@ describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
     expect(section).toContain("Coordinated branch test");
     expect(section).toContain("Conjunctive gate rule");
     expect(section).toContain("Modifier fusion across branches");
+    expect(section).toContain("Mandatory branch enumeration");
     expect(section).toContain("singleClaimAssessment");
     expect(section).toContain("bundledInSingleClaim");
+    expect(section).toContain("branchLabels");
   });
 });
 

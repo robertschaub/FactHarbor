@@ -1,5 +1,5 @@
 ---
-version: "1.0.4"
+version: "1.0.5"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
 lastModified: "2026-04-20T00:00:00Z"
@@ -616,6 +616,7 @@ Assess the original input and the single extracted claim. Determine whether the 
 5. **Modifier fusion across branches.** If the main act/state carries a truth-condition-bearing modifier that stays in scope across the coordinated branches, each branch claim should preserve that modifier fused to the same main act/state. A single bundled claim does NOT satisfy this if branch decomposition is otherwise required.
 6. **No false positives for inseparable composites.** Do NOT require decomposition for pure rank/order/composite propositions whose coordinated phrase cannot resolve differently branch-by-branch.
 7. **Conservative retry rule.** Set `rePromptRequired: true` only when the single claim is materially non-atomic and downstream research would likely investigate different propositions if the claim were split.
+8. **Mandatory branch enumeration.** When coordinated branches relevant to this audit are present, list each independently verifiable branch in `branchLabels` using short verbatim or near-verbatim labels from the input or the single claim. Return an empty array only when no such branches are present.
 
 ### Input
 
@@ -647,6 +648,7 @@ Return a JSON object:
   "coordinatedBranchFinding": {
     "presentInInput": false,
     "bundledInSingleClaim": false,
+    "branchLabels": [],
     "reasoning": "short explanation"
   }
 }
@@ -657,6 +659,7 @@ Field constraints:
 - `singleClaimAssessment.rePromptRequired`: set to `true` when the single claim should be retried as a split decomposition.
 - `coordinatedBranchFinding.presentInInput`: whether the input actually contains coordinated branches relevant to this audit.
 - `coordinatedBranchFinding.bundledInSingleClaim`: whether those coordinated branches were left bundled inside the single extracted claim.
+- `coordinatedBranchFinding.branchLabels`: zero or more short labels naming the independently verifiable branches identified for this audit. Use an empty array only when no such branches are present.
 
 ---
 

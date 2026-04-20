@@ -1,0 +1,12 @@
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Daily Bug Scan Atomicity Gating Fix
+**Task:** Scan commits since the previous automation run, confirm any concrete regressions, and apply only the smallest safe fix.
+**Files touched:** `apps/web/src/lib/analyzer/claim-extraction-stage.ts`; `apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts`; `Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Daily_Bug_Scan_Atomicity_Gating_Fix.md`; `Docs/AGENTS/Agent_Outputs.md`; `C:/Users/rober/.codex/automations/daily-bug-scan/memory.md`
+**Key decisions:** The only confirmed regression in the post-run commit window was introduced by the new Stage 1 single-claim atomicity audit (`6edbc457`, tightened in `f287e427`). Concrete evidence was the safe unit suite `npm -w apps/web exec vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts`, which failed two Stage 1 scenarios because `shouldRunSingleClaimAtomicityValidation(...)` added an extra LLM call even when salience commitment was disabled. I fixed this by gating the atomicity audit on successful salience commitment with at least one anchor, and I updated the atomicity unit test to lock that narrower contract in place. I did not touch the already-dirty prompt file.
+**Open items:** No other commit-backed bugs were confirmed in this scan window. If this area regresses again, start with the Stage 1 call path around `shouldRunSingleClaimAtomicityValidation(...)` and check whether the active config enables salience commitment.
+**Warnings:** The workspace was already dirty in `apps/web/prompts/claimboundary.prompt.md` before this run. I left that file untouched. The fix is intentionally narrow and aimed at the proven regression only; it does not change the atomicity validator prompt or its retry semantics when salience data is available.
+**For next agent:** Primary anchors are [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) around the atomicity call sites and [claim-contract-validation.test.ts](C:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts). Verification on this tree:
+- `npm -w apps/web exec vitest run test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/repair-anchor-selection.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`
+- `npm -w apps/web exec vitest run test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+Both passed after the gating fix.
+**Learnings:** no

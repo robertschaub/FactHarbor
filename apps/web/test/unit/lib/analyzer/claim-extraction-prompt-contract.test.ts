@@ -226,9 +226,11 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Conjunctive gate rule");
       expect(section).toContain("Modifier fusion across branches");
       expect(section).toContain("No false positives for inseparable composites");
+      expect(section).toContain("Mandatory branch enumeration");
       expect(section).toContain("singleClaimAssessment");
       expect(section).toContain("coordinatedBranchFinding");
       expect(section).toContain("bundledInSingleClaim");
+      expect(section).toContain("branchLabels");
     });
   });
 
