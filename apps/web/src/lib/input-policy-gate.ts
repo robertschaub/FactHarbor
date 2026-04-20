@@ -77,7 +77,7 @@ export async function evaluateInputPolicy(
   try {
     const config = await loadPromptConfig(GATE_PROMPT_PROFILE);
     if (!config) {
-      console.warn("[InputGate] Prompt config not found — failing open");
+      console.warn("[InputGate] POLICY_DEGRADED: Prompt config not found — failing open");
       return {
         decision: "allow",
         reasonCode: "gate_unavailable",
@@ -118,7 +118,7 @@ export async function evaluateInputPolicy(
         .trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      console.warn("[InputGate] Failed to parse gate response — failing open");
+      console.warn("[InputGate] POLICY_DEGRADED: Failed to parse gate response — failing open");
       return {
         decision: "allow",
         reasonCode: "parse_failure",
@@ -157,7 +157,7 @@ export async function evaluateInputPolicy(
       confidence,
     };
   } catch (err: any) {
-    console.error("[InputGate] Gate error — failing open:", err?.message);
+    console.error("[InputGate] POLICY_DEGRADED: Gate error — failing open:", err?.message);
     return {
       decision: "allow",
       reasonCode: "gate_error",
