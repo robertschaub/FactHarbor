@@ -313,6 +313,18 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("distinct event discipline", () => {
+    it("keeps distinctEvents tied to input-authored direct proceeding milestones", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Distinct Events Rules");
+      expect(section).toContain("The input text — and only the input text — determines what events exist for Stage 2 to investigate");
+      expect(section).toContain("direct milestones of that same proceeding or verdict");
+      expect(section).toContain("Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts");
+      expect(section).toContain("do NOT explode that process into every earlier conflict, investigation, institutional dispute, or actor confrontation");
+    });
+  });
+
   describe("comparative ecosystem evidence profiling", () => {
     it("pass1 keeps comparative ecosystem search hints concrete and in-language", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");

@@ -1,8 +1,8 @@
 ---
-version: "1.0.6"
+version: "1.0.7"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-20T14:00:00Z"
+lastModified: "2026-04-20T16:30:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -337,11 +337,14 @@ Before producing any atomic claims, reason step-by-step about what the input is 
 - Events, proceedings, rulings, or episodes that are WITHIN the claim's jurisdiction and directly relevant to the claim's substance.
 - Multiple proceedings or trials by the jurisdiction's own institutions.
 - Temporal episodes of the same phenomenon (e.g., "2022 trial" and "2024 appeal").
+- When the input names one proceeding, process, verdict, or outcome in broad terms, keep `distinctEvents` limited to the direct milestones of that same proceeding or verdict (for example filing/charging, hearing, ruling, appeal, enforcement) rather than every earlier controversy involving the same actors or institution.
 
 **Exclude:**
 - Foreign government reactions, official actions, or statements about the claim's jurisdiction. These are third-party responses, not events within the claim's scope.
 - International media coverage or foreign political commentary.
 - Events that are consequences or ripple effects of the claim's subject in other jurisdictions.
+- Antecedent background disputes, side investigations, impeachment efforts, sanctions, media controversies, historical comparator cases, or broader institutional conflicts that merely involve the same actors or institution but are not themselves the target proceeding, process, verdict, or outcome named in the input.
+- If the input names a proceeding or verdict without enumerating earlier episodes, do NOT explode that process into every earlier conflict, investigation, institutional dispute, or actor confrontation learned from background material.
 
 **Test:** For each proposed event, ask: "Did this event occur within the claim's jurisdiction/system?" If a claim is about Country A's courts, only proceedings in Country A's courts qualify. Country B's official actions against Country A are NOT a distinct event — they are a foreign reaction.
 
@@ -881,10 +884,13 @@ When existing evidence is available, use it to **identify gaps**, not to confirm
 - If a comparative institutional-ecosystem claim already has evidence for one side but the other side is still represented mainly by contextual, isolated-implementation, or single-organization material, pivot the next queries for the weaker side toward enumerative ecosystem routes (directory/registry, participant/member/certification list, network roster, dedicated unit page, or recurring ecosystem report) instead of repeating another broad topical query.
 - When `existingEvidenceSummary` is `"none"` (first iteration), ignore this section and rely on `expectedEvidenceProfile` and `distinctEvents` only.
 
-**Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events or time-bounded episodes related to the same claim, you MUST distribute query coverage across those events rather than collapsing onto only the most prominent one. For each iteration:
+**Multi-event coverage rule:** When `distinctEvents` contains two or more distinct events or time-bounded episodes that are each direct milestones of the same claim, you MUST distribute query coverage across those direct milestones rather than collapsing onto only the most prominent one. For each iteration:
+- Before applying this rule, discard event candidates that are merely antecedent background, side disputes, institutional conflicts, foreign reactions, or historical comparator episodes rather than direct milestones of the target proceeding, process, verdict, or outcome.
 - Generate at least one query that explicitly targets a **different** event cluster than the most prominent one in the current evidence pool.
 - Use event names, dates, and descriptions from `distinctEvents` metadata to vary temporal and event focus.
 - Do NOT rely solely on the merged claim statement or `expectedEvidenceProfile`, which may already reflect a skewed single-event evidence pool.
+- If `freshnessRequirement` is `current_snapshot` or `recent`, prioritize the latest direct milestone(s) and current official or source-native routes first. Older direct milestones may be queried only after the freshness-appropriate decisive route is covered, or when they directly govern one of the claim's listed verification metrics.
+- Do NOT let the multi-event rule force one query toward a stale antecedent episode when the claim is about the legality, fairness, compliance, or outcome of a later proceeding, process, or verdict.
 - Staying generic: use only terminology from the claim and `distinctEvents` metadata — do NOT introduce external domain knowledge or hardcoded entity names.
 
 Example pattern (abstract): if `distinctEvents` contains multiple separately named events, generate one query for each event rather than a single merged topical query.

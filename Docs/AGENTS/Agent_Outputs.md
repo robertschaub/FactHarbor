@@ -1527,3 +1527,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Global Rule For Commit-Before-Batch And Runtime Refresh -- [Standard] [open-items: no]
 **For next agent:** Root `AGENTS.md` now requires agents to commit before submitting any live analysis batch so job records map to a concrete revision, and to restart or reseed before submission whenever the runtime would otherwise still be stale. Apply this to future live reruns, validation batches, and report-review verification runs.
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Unverified Stage 1 Live Rerun Fix -- [Significant] [open-items: yes]
+**For next agent:** The two current `UNVERIFIED` Stage 1 regressions are fixed forward and verified live on committed runtime `5f1a7446`: Swiss comparison rerun `9382cb2dc3714267b2bb9f24d8b20bbb` now finishes `LEANING-FALSE | 65`, and Portuguese Bolsonaro rerun `2d5db7022b944dca8cc72f2bc8ca5aae` now finishes `LEANING-TRUE | 55`. The concrete fix split is: comparison-side repair fidelity in `CLAIM_CONTRACT_REPAIR`, clean-only repair adoption in `claim-extraction-stage.ts`, and Gate 1 anchor-carrier restoration widened to contract-approved `initial` sets so thesis-direct conjuncts are not lost before flaky final revalidation.
+→ Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Unverified_Stage1_Live_Rerun_Fix.md

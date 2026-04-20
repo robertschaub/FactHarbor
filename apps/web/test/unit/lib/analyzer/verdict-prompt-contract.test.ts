@@ -518,6 +518,15 @@ describe("Stage-2 prompt contract", () => {
         section.indexOf("Comparative ecosystem claims only"),
       );
     });
+
+    it("multi-event coverage stays on direct milestones and freshness-appropriate routes", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("that are each direct milestones of the same claim");
+      expect(section).toContain("discard event candidates that are merely antecedent background, side disputes, institutional conflicts, foreign reactions, or historical comparator episodes");
+      expect(section).toContain("If `freshnessRequirement` is `current_snapshot` or `recent`, prioritize the latest direct milestone(s)");
+      expect(section).toContain("current official or source-native routes first");
+      expect(section).toContain("Do NOT let the multi-event rule force one query toward a stale antecedent episode");
+    });
   });
 
   /** Stage 2 relevance classification (research-extraction-stage.ts:113-123) */
