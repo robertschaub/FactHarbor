@@ -342,16 +342,29 @@ export async function extractClaims(
     state.onEvent?.("Validating claim contract fidelity...", 24);
     state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
 
-    const contractResult = await validateClaimContract(
-      pass2.atomicClaims as unknown as AtomicClaim[],
-      state.originalInput,
-      pass2.impliedClaim ?? "",
-      pass2.articleThesis ?? "",
-      pass2.inputClassification ?? "single_atomic_claim",
-      pipelineConfig,
-      salienceCommitment,
+    const {
+      result: contractResult,
+      attempts: contractValidationAttempts,
+    } = await runClaimContractValidationWithRetry(() =>
+      validateClaimContract(
+        pass2.atomicClaims as unknown as AtomicClaim[],
+        state.originalInput,
+        pass2.impliedClaim ?? "",
+        pass2.articleThesis ?? "",
+        pass2.inputClassification ?? "single_atomic_claim",
+        pipelineConfig,
+        salienceCommitment,
+      )
     );
-    state.llmCalls++;
+    state.llmCalls += contractValidationAttempts;
+
+    if (contractValidationAttempts > 1) {
+      console.info(
+        contractResult
+          ? "[Stage1] Claim contract validation recovered on a second structured-output attempt."
+          : "[Stage1] Claim contract validation returned no usable result after two attempts.",
+      );
+    }
 
     // Capture observability summary
     let evaluatedContract: EvaluatedClaimContractValidation | undefined;
@@ -483,16 +496,30 @@ export async function extractClaims(
 
         let retryContractResult: ClaimContractValidationResult | undefined;
         try {
-          retryContractResult = await validateClaimContract(
-            retryPass2.atomicClaims as unknown as AtomicClaim[],
-            state.originalInput,
-            retryPass2.impliedClaim ?? "",
-            retryPass2.articleThesis ?? "",
-            retryPass2.inputClassification ?? "single_atomic_claim",
-            pipelineConfig,
-            retrySalienceCommitment,
+          const {
+            result,
+            attempts: retryContractValidationAttempts,
+          } = await runClaimContractValidationWithRetry(() =>
+            validateClaimContract(
+              retryPass2.atomicClaims as unknown as AtomicClaim[],
+              state.originalInput,
+              retryPass2.impliedClaim ?? "",
+              retryPass2.articleThesis ?? "",
+              retryPass2.inputClassification ?? "single_atomic_claim",
+              pipelineConfig,
+              retrySalienceCommitment,
+            )
           );
-          state.llmCalls++;
+          retryContractResult = result;
+          state.llmCalls += retryContractValidationAttempts;
+
+          if (retryContractValidationAttempts > 1) {
+            console.info(
+              retryContractResult
+                ? "[Stage1] Claim contract retry validation recovered on a second structured-output attempt."
+                : "[Stage1] Claim contract retry validation returned no usable result after two attempts.",
+            );
+          }
         } catch {
           // Re-validation failure is non-fatal — keep original Pass 2 output.
         }
@@ -587,15 +614,29 @@ export async function extractClaims(
 
             // C17 [BLOCKER FIX]: mandatory re-validation refresh after repair.
             // Decoupled from Gate 1 to ensure structural and semantic correctness.
-            const repairValidationResult = await validateClaimContract(
-              repairedPass2.atomicClaims as unknown as AtomicClaim[],
-              state.originalInput,
-              activePass2.impliedClaim ?? "",
-              activePass2.articleThesis ?? "",
-              activePass2.inputClassification ?? "single_atomic_claim",
-              pipelineConfig,
-              salienceCommitment,
+            const {
+              result: repairValidationResult,
+              attempts: repairValidationAttempts,
+            } = await runClaimContractValidationWithRetry(() =>
+              validateClaimContract(
+                repairedPass2.atomicClaims as unknown as AtomicClaim[],
+                state.originalInput,
+                activePass2.impliedClaim ?? "",
+                activePass2.articleThesis ?? "",
+                activePass2.inputClassification ?? "single_atomic_claim",
+                pipelineConfig,
+                salienceCommitment,
+              )
             );
+            state.llmCalls += repairValidationAttempts;
+
+            if (repairValidationAttempts > 1) {
+              console.info(
+                repairValidationResult
+                  ? "[Stage1] Contract repair validation recovered on a second structured-output attempt."
+                  : "[Stage1] Contract repair validation returned no usable result after two attempts.",
+              );
+            }
 
             if (repairValidationResult) {
               let evaluatedRepair = await applyApprovedSingleClaimChallenges(
@@ -955,27 +996,11 @@ export async function extractClaims(
       state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
       const previousContractValidationSummary = contractValidationSummary;
 
-      let finalContractResult = await validateClaimContract(
-        finalAcceptedClaims,
-        state.originalInput,
-        bestPass2.impliedClaim ?? "",
-        bestPass2.articleThesis ?? "",
-        bestPass2.inputClassification ?? "single_atomic_claim",
-        pipelineConfig,
-        salienceCommitment,
-      );
-      state.llmCalls++;
-
-      // C12 (Phase 6): single retry on transient LLM failure at final
-      // revalidation. Run 1 on the C11b build produced validator_unavailable
-      // here, causing a report_damaged outcome for what looks like a
-      // network/LLM hiccup rather than a contract-fidelity problem. One
-      // retry is narrow, orthogonal, and cheap; it does not change the
-      // fidelity authority of the validator.
-      if (!finalContractResult) {
-        console.info("[Stage1] Final revalidation returned no result; retrying once (C12).");
-        state.onEvent?.("Retrying final contract revalidation...", 27);
-        finalContractResult = await validateClaimContract(
+      const {
+        result: finalContractResult,
+        attempts: finalContractValidationAttempts,
+      } = await runClaimContractValidationWithRetry(() =>
+        validateClaimContract(
           finalAcceptedClaims,
           state.originalInput,
           bestPass2.impliedClaim ?? "",
@@ -983,8 +1008,17 @@ export async function extractClaims(
           bestPass2.inputClassification ?? "single_atomic_claim",
           pipelineConfig,
           salienceCommitment,
+        )
+      );
+      state.llmCalls += finalContractValidationAttempts;
+
+      if (finalContractValidationAttempts > 1) {
+        state.onEvent?.("Retrying final contract revalidation...", 27);
+        console.info(
+          finalContractResult
+            ? "[Stage1] Final contract revalidation recovered on a second structured-output attempt."
+            : "[Stage1] Final contract revalidation returned no usable result after two attempts.",
         );
-        state.llmCalls++;
       }
 
       if (finalContractResult) {
@@ -2555,9 +2589,32 @@ export interface ClaimContractValidationResult {
   antiInferenceCheck?: z.infer<typeof ClaimContractAntiInferenceSchema>;
 }
 
+export interface ClaimContractValidationRetryResult {
+  result: ClaimContractValidationResult | undefined;
+  attempts: number;
+}
+
 export interface SingleClaimAtomicityValidationResult {
   singleClaimAssessment: z.infer<typeof SingleClaimAtomicityAssessmentSchema>;
   coordinatedBranchFinding: z.infer<typeof SingleClaimCoordinatedBranchFindingSchema>;
+}
+
+export async function runClaimContractValidationWithRetry(
+  runValidation: () => Promise<ClaimContractValidationResult | undefined>,
+  maxAttempts = 2,
+): Promise<ClaimContractValidationRetryResult> {
+  let attempts = 0;
+  let result: ClaimContractValidationResult | undefined;
+
+  while (attempts < maxAttempts) {
+    attempts += 1;
+    result = await runValidation();
+    if (result) {
+      return { result, attempts };
+    }
+  }
+
+  return { result: undefined, attempts };
 }
 
 type Gate1ValidationResult = {
@@ -3133,11 +3190,8 @@ export function buildContractRetrySaliencePlan(
   const exactMatches = upstreamAnchors.filter(
     (anchor) => anchor.text.trim() === anchorText,
   );
-  const otherAnchors = upstreamAnchors.filter(
-    (anchor) => anchor.text.trim() !== anchorText,
-  );
   const mergedAnchors = exactMatches.length > 0
-    ? [...exactMatches, ...otherAnchors]
+    ? upstreamAnchors
     : [createMergedRetryAnchor(anchorText), ...upstreamAnchors];
 
   return {
@@ -3501,7 +3555,8 @@ async function validateSingleClaimAtomicity(
  * the validator audits against the precommitted salience anchor set rather
  * than discovering a fresh anchor inventory.
  *
- * Returns undefined on any failure — the caller treats undefined as fail-open (accept claims).
+ * Returns undefined on any failure — the caller may retry once and otherwise
+ * treats the contract state as degraded rather than silently fail-open.
  */
 async function validateClaimContract(
   claims: AtomicClaim[],

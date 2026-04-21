@@ -19,6 +19,7 @@ import {
   buildContractRetrySaliencePlan,
   evaluateSingleClaimAtomicityValidation,
   getPrioritySalienceAnchorsForAtomicityValidation,
+  runClaimContractValidationWithRetry,
   selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
@@ -243,6 +244,41 @@ describe("ClaimContractOutputSchema", () => {
   });
 });
 
+describe("runClaimContractValidationWithRetry", () => {
+  it("recovers when the first validation attempt returns undefined", async () => {
+    const expected: ClaimContractValidationResult = {
+      inputAssessment: {
+        preservesOriginalClaimContract: true,
+        rePromptRequired: false,
+        summary: "validator recovered",
+      },
+      claims: [],
+    };
+
+    let calls = 0;
+    const result = await runClaimContractValidationWithRetry(async () => {
+      calls += 1;
+      return calls === 1 ? undefined : expected;
+    });
+
+    expect(calls).toBe(2);
+    expect(result.attempts).toBe(2);
+    expect(result.result).toEqual(expected);
+  });
+
+  it("stops after two unavailable attempts", async () => {
+    let calls = 0;
+    const result = await runClaimContractValidationWithRetry(async () => {
+      calls += 1;
+      return undefined;
+    });
+
+    expect(calls).toBe(2);
+    expect(result.attempts).toBe(2);
+    expect(result.result).toBeUndefined();
+  });
+});
+
 // ============================================================================
 // RETRY DECISION LOGIC
 // ============================================================================
@@ -411,10 +447,17 @@ describe("contract retry salience planning", () => {
     ]);
   });
 
-  it("does not duplicate an exact-match validator anchor and keeps it first", () => {
+  it("does not duplicate an exact-match validator anchor and preserves upstream order", () => {
     const exactMatchSalience = {
       ...salienceCommitment,
       anchors: [
+        {
+          text: "actually",
+          inputSpan: "actually",
+          type: "modal_illocutionary",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
         {
           text: "actually making nukes",
           inputSpan: "actually making nukes",
@@ -422,7 +465,13 @@ describe("contract retry salience planning", () => {
           rationale: "",
           truthConditionShiftIfRemoved: "",
         },
-        ...salienceCommitment.anchors,
+        {
+          text: "making nukes",
+          inputSpan: "making nukes",
+          type: "action_predicate",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
       ],
     } as any;
 
@@ -449,7 +498,11 @@ describe("contract retry salience planning", () => {
     const anchorTexts = result.retrySalienceCommitment?.anchors.map((anchor) => anchor.text) ?? [];
 
     expect(anchorTexts.filter((text) => text === "actually making nukes")).toHaveLength(1);
-    expect(anchorTexts[0]).toBe("actually making nukes");
+    expect(anchorTexts).toEqual([
+      "actually",
+      "actually making nukes",
+      "making nukes",
+    ]);
   });
 
   it("keeps audit mode and anchor guidance when no trustworthy upstream anchors exist", () => {
@@ -619,7 +672,10 @@ describe("Single-claim atomicity enforcement", () => {
     anchors: [
       {
         text: "before B and C decided",
-        type: "action_predicate",
+        inputSpan: "before B and C decided",
+        type: "modal_illocutionary",
+        rationale: "",
+        truthConditionShiftIfRemoved: "",
       },
     ],
   } as any;
