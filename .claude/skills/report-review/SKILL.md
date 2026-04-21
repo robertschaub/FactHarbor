@@ -68,6 +68,8 @@ These constraints bind both this skill's analysis AND the fixes it proposes. If 
 
     **Self-check trigger:** before reporting, verify that any `/validate` call the skill executed (not merely proposed) uses an input byte-exactly matched to an existing family's `inputValue`. Autonomous novel-input execution is always a rule-13 violation and is logged in 7a; the finding derived from it is not emitted. Novel-input *proposals* require Captain approval like any other proposal — they are not autonomously executable.
 
+  14. **Failed-attempt recovery discipline** — when in-scope evidence shows that a code, prompt, or config change already failed its first focused validation (for example `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not stack a broader proposed fix on top of that attempt without first classifying the earlier attempt as `keep`, `quarantine`, or `revert`. Recommendations may retain only the parts still supported by inspected job evidence and verifier output.
+
 **Sub-agents spawned in Phase 4 MUST be given this list verbatim in their brief.**
 
 ---

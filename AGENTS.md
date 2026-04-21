@@ -129,6 +129,18 @@ EvidenceItem key fields: `statement`, `category`, `claimDirection`, `evidenceSco
     - `Using hydrogen for cars is more efficient than using electricity`
     - `Plastic recycling is pointless`
 
+### Failed-Attempt Recovery
+
+When a code or prompt change fails its first focused validation (for example: `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not automatically stack broader edits on top of that failed attempt.
+
+- **Classify the prior attempt before proceeding:** explicitly decide whether it is `keep`, `quarantine`, or `revert`.
+- **Keep** only the parts still justified by the latest local evidence and verifier output.
+- **Quarantine or revert** parts that are now speculative, contradicted by validation, or no longer needed for the next hypothesis.
+- **Broaden scope only with a verifier-backed reason:** if moving from a narrow local fix into cross-file or cross-system changes, state what the failed validation showed and why the broader scope is required.
+- **If ownership is unclear, ask Captain before reverting.** Never assume an earlier change is safe to remove just because the current attempt failed.
+
+This is **bounded backtracking**, not blanket rollback-first behavior.
+
 ### Pipeline Integrity
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items

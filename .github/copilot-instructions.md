@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-21 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -34,6 +34,12 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 	- `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
 	- `Using hydrogen for cars is more efficient than using electricity`
 	- `Plastic recycling is pointless`
+
+## Failed-Attempt Recovery
+
+- After a code or prompt change fails focused validation (for example: `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not automatically stack broader edits on top.
+- First classify the earlier attempt: `keep`, `quarantine`, or `revert`.
+- Broaden scope only with a verifier-backed reason; if ownership of the earlier change is unclear, ask Captain before reverting.
 
 ## Commands
 

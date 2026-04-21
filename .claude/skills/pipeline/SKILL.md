@@ -29,3 +29,5 @@ Apply AGENTS.md rules throughout:
 - No deterministic text-analysis logic — LLM intelligence for any meaning decision
 - No hardcoded keywords or domain-specific logic
 - Read fully before editing — do not propose changes based on partial reads
+- After a focused validation failure (for example `npm test`, `npm -w apps/web run build`, or the explicitly described manual check), classify the current attempt as `keep`, `quarantine`, or `revert` before proposing a broader multi-stage change
+- Treat that as bounded backtracking, not blanket rollback-first behavior

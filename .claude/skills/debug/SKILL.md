@@ -29,7 +29,13 @@ Look for:
 Run `git log --oneline -5` to see what changed.
 Identify whether issues correlate with specific commits.
 
-**Step 5 — Report findings:**
+**Step 5 — Failed-attempt recovery discipline:**
+If the first focused validation for the slice failed (for example `npm test`, `npm -w apps/web run build`, or the manual verification explicitly described for the change), do not jump straight to a broader fix package.
+First classify the earlier attempt as `keep`, `quarantine`, or `revert`.
+Keep only the parts still justified by the evidence from Steps 1-4.
+Broaden scope only if the failure evidence shows why a wider change is required.
+
+**Step 6 — Report findings:**
 Summarize in priority order. For each issue: stage where it occurs, likely cause, recommended fix.
 
 Flag any regressions in the Captain's priority benchmark families:
