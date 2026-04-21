@@ -2723,7 +2723,8 @@ export function evaluateClaimContractValidation(
         .filter((claim) => (claim.thesisRelevance ?? "direct") === "direct")
         .map((claim) => claim.id),
     );
-    validPreservedIds = (anchor.preservedInClaimIds ?? [])
+    const citedPreservedIds = anchor.preservedInClaimIds ?? [];
+    validPreservedIds = citedPreservedIds
       .filter((id) => claimIds.has(id))
       .filter((id) => directClaimIds.has(id));
 
@@ -2756,17 +2757,20 @@ export function evaluateClaimContractValidation(
       );
     });
 
-    // Override the LLM's judgment when its citations are structurally
-    // invalid (no valid thesis-direct IDs) OR when the LLM contradicts
+    // Override the LLM's judgment when the validator actually cites anchor
+    // carriers but none survive structural validation, OR when it contradicts
     // itself between preservedInClaimIds and its per-claim assessment.
-    const noValidIds = validPreservedIds.length === 0;
+    // If the validator cites no carrier IDs at all, leave that case to the
+    // validator's own top-level assessment: some article-level caveats can be
+    // acceptable without a thesis-direct carrier, and forcing a retry here
+    // would turn that observational anchor into a false report_damaged.
+    const noValidIds = citedPreservedIds.length > 0 && validPreservedIds.length === 0;
     const selfContradicted = contradictedPreservedIds.length > 0;
     if (noValidIds || selfContradicted) {
       anchorOverrideRetry = true;
       const reasons: string[] = [];
       if (noValidIds) {
-        const citedRaw = anchor.preservedInClaimIds ?? [];
-        const existingCited = citedRaw.filter((id) => claimIds.has(id));
+        const existingCited = citedPreservedIds.filter((id) => claimIds.has(id));
         const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
         if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
           reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
@@ -2775,7 +2779,7 @@ export function evaluateClaimContractValidation(
         }
       }
       if (selfContradicted) reasons.push(`LLM self-contradiction on claim(s) [${contradictedPreservedIds.join(",")}] — listed as anchor-preserving but flagged as drifted in per-claim assessment`);
-      anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${(anchor.preservedInClaimIds ?? []).join(",")}], valid IDs=[${validPreservedIds.join(",")}]`;
+      anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${citedPreservedIds.join(",")}], valid IDs=[${validPreservedIds.join(",")}]`;
     }
   }
 
