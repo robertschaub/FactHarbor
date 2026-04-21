@@ -354,10 +354,11 @@ export async function extractClaims(
     state.llmCalls++;
 
     // Capture observability summary
+    let evaluatedContract: EvaluatedClaimContractValidation | undefined;
     let anchorRetryReason: string | undefined;
     let atomicityRetryReason: string | undefined;
     if (contractResult) {
-      let evaluatedContract = await applyApprovedSingleClaimChallenges(
+      evaluatedContract = await applyApprovedSingleClaimChallenges(
         pass2.atomicClaims as unknown as AtomicClaim[],
         evaluateClaimContractValidation(
           contractResult,
@@ -378,9 +379,7 @@ export async function extractClaims(
       contractValidationSummary = evaluatedContract.summary;
       contractValidationSummary.stageAttribution = stageAttribution;
 
-      // Override the contract result's flag for the retry decision below
       if (evaluatedContract.effectiveRePromptRequired) {
-        contractResult.inputAssessment.rePromptRequired = true;
         if (anchorRetryReason) {
           console.info(`[Stage1] Claim contract validation override: forcing retry — ${anchorRetryReason}`);
         }
@@ -402,7 +401,9 @@ export async function extractClaims(
 
     const shouldRetryAfterValidation =
       contractMaxRetries > 0 && (
-        (contractResult?.inputAssessment.rePromptRequired ?? false)
+        (evaluatedContract?.effectiveRePromptRequired
+          ?? contractResult?.inputAssessment.rePromptRequired
+          ?? false)
         || !contractResult
       );
 
@@ -445,6 +446,21 @@ export async function extractClaims(
           : `[Stage1] Claim contract validation returned no usable result. Retrying Pass 2 with conservative contract guidance.`
       );
 
+      const { retrySalienceCommitment, anchorEscalation } = buildContractRetrySaliencePlan(
+        evaluatedContract,
+        salienceCommitment,
+      );
+
+      if (anchorEscalation.mode === "binding_merged_anchor") {
+        console.info(
+          `[Stage1] Claim contract retry will use binding-mode salience with merged validator anchor "${anchorEscalation.anchorText}".`,
+        );
+      } else if (anchorEscalation.mode === "audit_guidance_only") {
+        console.info(
+          `[Stage1] Truth-condition anchor "${anchorEscalation.anchorText}" was omitted, but no trustworthy upstream salience inventory is available; retrying in audit mode with corrective guidance only.`,
+        );
+      }
+
       try {
         state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 24);
         const retryPass2 = await runPass2(
@@ -457,7 +473,7 @@ export async function extractClaims(
           pass1.inferredGeography,
           pass1.detectedLanguage,
           "context_refinement",
-          salienceCommitment,
+          retrySalienceCommitment,
         );
         state.llmCalls++;
 
@@ -474,7 +490,7 @@ export async function extractClaims(
             retryPass2.articleThesis ?? "",
             retryPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
-            salienceCommitment,
+            retrySalienceCommitment,
           );
           state.llmCalls++;
         } catch {
@@ -495,7 +511,7 @@ export async function extractClaims(
             pipelineConfig,
             state,
             24,
-            salienceCommitment,
+            retrySalienceCommitment,
           )
           : undefined;
 
@@ -3052,6 +3068,87 @@ function toBindingSalienceCommitment(
     success: true,
     mode: "binding",
     anchors: salienceCommitment.anchors ?? [],
+  };
+}
+
+export interface ContractRetryAnchorEscalation {
+  mode: "none" | "binding_merged_anchor" | "audit_guidance_only";
+  anchorText?: string;
+}
+
+export interface ContractRetrySaliencePlan {
+  retrySalienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined;
+  anchorEscalation: ContractRetryAnchorEscalation;
+}
+
+function createMergedRetryAnchor(
+  anchorText: string,
+): NonNullable<CBClaimUnderstanding["salienceCommitment"]>["anchors"][number] {
+  return {
+    text: anchorText,
+    inputSpan: anchorText,
+    type: "action_predicate",
+    rationale: "Validator-discovered truth-condition anchor missing from structurally valid claim carriers.",
+    truthConditionShiftIfRemoved: "Removing this anchor changes the proposition's truth conditions.",
+  };
+}
+
+export function buildContractRetrySaliencePlan(
+  evaluatedContract: EvaluatedClaimContractValidation | undefined,
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): ContractRetrySaliencePlan {
+  const noEscalation: ContractRetrySaliencePlan = {
+    retrySalienceCommitment: salienceCommitment,
+    anchorEscalation: { mode: "none" },
+  };
+
+  if (!evaluatedContract?.effectiveRePromptRequired) {
+    return noEscalation;
+  }
+
+  const truthConditionAnchor = evaluatedContract.summary.truthConditionAnchor;
+  const anchorText = truthConditionAnchor?.anchorText?.trim();
+  if (truthConditionAnchor?.presentInInput !== true || !anchorText) {
+    return noEscalation;
+  }
+
+  if ((truthConditionAnchor.validPreservedIds ?? []).length > 0) {
+    return noEscalation;
+  }
+
+  const upstreamAnchors = salienceCommitment?.success
+    ? salienceCommitment.anchors ?? []
+    : [];
+
+  if (upstreamAnchors.length === 0) {
+    return {
+      retrySalienceCommitment: salienceCommitment,
+      anchorEscalation: {
+        mode: "audit_guidance_only",
+        anchorText,
+      },
+    };
+  }
+
+  const exactMatches = upstreamAnchors.filter(
+    (anchor) => anchor.text.trim() === anchorText,
+  );
+  const otherAnchors = upstreamAnchors.filter(
+    (anchor) => anchor.text.trim() !== anchorText,
+  );
+  const mergedAnchors = exactMatches.length > 0
+    ? [...exactMatches, ...otherAnchors]
+    : [createMergedRetryAnchor(anchorText), ...upstreamAnchors];
+
+  return {
+    retrySalienceCommitment: toBindingSalienceCommitment({
+      ...salienceCommitment!,
+      anchors: mergedAnchors,
+    }) ?? salienceCommitment,
+    anchorEscalation: {
+      mode: "binding_merged_anchor",
+      anchorText,
+    },
   };
 }
 

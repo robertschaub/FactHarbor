@@ -16,12 +16,14 @@ import {
 import {
   evaluateClaimContractValidation,
   applySingleClaimAtomicityValidation,
+  buildContractRetrySaliencePlan,
   evaluateSingleClaimAtomicityValidation,
   getPrioritySalienceAnchorsForAtomicityValidation,
   selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
   type ClaimContractValidationResult,
+  type EvaluatedClaimContractValidation,
 } from "@/lib/analyzer/claim-extraction-stage";
 import type { AtomicClaim } from "@/lib/analyzer/types";
 import {
@@ -350,6 +352,239 @@ describe("Claim contract retry decision", () => {
     expect(failingReasons).toContain("AC_01");
     expect(failingReasons).toContain("not viable");
     expect(failingReasons).not.toContain("AC_02");
+  });
+});
+
+describe("contract retry salience planning", () => {
+  const salienceCommitment = {
+    ran: true,
+    enabled: true,
+    mode: "audit",
+    success: true,
+    anchors: [
+      {
+        text: "actually",
+        inputSpan: "actually",
+        type: "modal_illocutionary",
+        rationale: "",
+        truthConditionShiftIfRemoved: "",
+      },
+      {
+        text: "making nukes",
+        inputSpan: "making nukes",
+        type: "action_predicate",
+        rationale: "",
+        truthConditionShiftIfRemoved: "",
+      },
+    ],
+  } as any;
+
+  it("escalates to binding and merges the validator anchor when no valid carriers survive", () => {
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "anchor omitted from all thesis-direct claims",
+        failureMode: "contract_violated",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: [],
+          validPreservedIds: [],
+          preservedByQuotes: [],
+        },
+      },
+      effectiveRePromptRequired: true,
+      anchorRetryReason: "anchor_provenance_failed: missing valid carrier",
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, salienceCommitment);
+
+    expect(result.anchorEscalation.mode).toBe("binding_merged_anchor");
+    expect(result.anchorEscalation.anchorText).toBe("actually making nukes");
+    expect(result.retrySalienceCommitment?.mode).toBe("binding");
+    expect(result.retrySalienceCommitment?.anchors.map((anchor) => anchor.text)).toEqual([
+      "actually making nukes",
+      "actually",
+      "making nukes",
+    ]);
+  });
+
+  it("does not duplicate an exact-match validator anchor and keeps it first", () => {
+    const exactMatchSalience = {
+      ...salienceCommitment,
+      anchors: [
+        {
+          text: "actually making nukes",
+          inputSpan: "actually making nukes",
+          type: "action_predicate",
+          rationale: "",
+          truthConditionShiftIfRemoved: "",
+        },
+        ...salienceCommitment.anchors,
+      ],
+    } as any;
+
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "anchor omitted from all thesis-direct claims",
+        failureMode: "contract_violated",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: [],
+          validPreservedIds: [],
+          preservedByQuotes: [],
+        },
+      },
+      effectiveRePromptRequired: true,
+      anchorRetryReason: "anchor_provenance_failed: missing valid carrier",
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, exactMatchSalience);
+    const anchorTexts = result.retrySalienceCommitment?.anchors.map((anchor) => anchor.text) ?? [];
+
+    expect(anchorTexts.filter((text) => text === "actually making nukes")).toHaveLength(1);
+    expect(anchorTexts[0]).toBe("actually making nukes");
+  });
+
+  it("keeps audit mode and anchor guidance when no trustworthy upstream anchors exist", () => {
+    const emptySalience = {
+      ran: true,
+      enabled: true,
+      mode: "audit",
+      success: true,
+      anchors: [],
+    } as any;
+
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "anchor omitted from all thesis-direct claims",
+        failureMode: "contract_violated",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: [],
+          validPreservedIds: [],
+          preservedByQuotes: [],
+        },
+      },
+      effectiveRePromptRequired: true,
+      anchorRetryReason: "anchor_provenance_failed: missing valid carrier",
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, emptySalience);
+
+    expect(result.anchorEscalation.mode).toBe("audit_guidance_only");
+    expect(result.anchorEscalation.anchorText).toBe("actually making nukes");
+    expect(result.retrySalienceCommitment).toEqual(emptySalience);
+  });
+
+  it("keeps audit mode and anchor guidance when salience commitment failed", () => {
+    const failedSalience = {
+      ran: true,
+      enabled: true,
+      mode: "audit",
+      success: false,
+      anchors: [],
+    } as any;
+
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "anchor omitted from all thesis-direct claims",
+        failureMode: "contract_violated",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: [],
+          validPreservedIds: [],
+          preservedByQuotes: [],
+        },
+      },
+      effectiveRePromptRequired: true,
+      anchorRetryReason: "anchor_provenance_failed: missing valid carrier",
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, failedSalience);
+
+    expect(result.anchorEscalation.mode).toBe("audit_guidance_only");
+    expect(result.retrySalienceCommitment).toEqual(failedSalience);
+  });
+
+  it("does not escalate when the anchor still has valid preserved IDs", () => {
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "retry required for non-anchor drift",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: ["AC_01"],
+          validPreservedIds: ["AC_01"],
+          preservedByQuotes: ["actually making nukes"],
+        },
+      },
+      effectiveRePromptRequired: true,
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, salienceCommitment);
+
+    expect(result.anchorEscalation.mode).toBe("none");
+    expect(result.retrySalienceCommitment).toEqual(salienceCommitment);
+  });
+
+  it("does not escalate when no retry is required", () => {
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "contract preserved",
+      },
+      effectiveRePromptRequired: false,
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, salienceCommitment);
+
+    expect(result.anchorEscalation.mode).toBe("none");
+    expect(result.retrySalienceCommitment).toEqual(salienceCommitment);
+  });
+
+  it("still escalates when raw cited IDs exist but validPreservedIds is empty", () => {
+    const evaluated: EvaluatedClaimContractValidation = {
+      summary: {
+        ran: true,
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "hallucinated or tangential carrier",
+        failureMode: "contract_violated",
+        truthConditionAnchor: {
+          presentInInput: true,
+          anchorText: "actually making nukes",
+          preservedInClaimIds: ["AC_99"],
+          validPreservedIds: [],
+          preservedByQuotes: [],
+        },
+      },
+      effectiveRePromptRequired: true,
+      anchorRetryReason: "anchor_provenance_failed: cited ID invalid after structural filtering",
+    };
+
+    const result = buildContractRetrySaliencePlan(evaluated, salienceCommitment);
+
+    expect(result.anchorEscalation.mode).toBe("binding_merged_anchor");
   });
 });
 

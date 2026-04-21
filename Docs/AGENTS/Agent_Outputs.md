@@ -1550,3 +1550,57 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-04-20 | Unassigned | Codex (GPT-5) | Prompt Audit Overfit Check Alignment -- [Standard] [open-items: no]
 **For next agent:** `/prompt-audit` now checks the same diagnosis-vs-fix discipline: motivating cases are for diagnosis only, generic-hygiene now flags trigger-vocabulary reuse even when the wording is superficially generic, and each proposed fix must state an abstract mechanism. The audit table now treats benchmark-shaped reuse as a rule-1 violation.
+
+---
+### 2026-04-20 | Unassigned | Codex (GPT-5) | Bolsonaro AC_02 CB_01 Contradicting Evidence Audit -- [Standard] [open-items: yes]
+**For next agent:** Narrow-audited live job `2369faac2e464221a124a2bf97c5916e` at the evidence-item level for `AC_02` inside `CB_01`. Only three `CB_01` items mapped to `AC_02` actually carry `claimDirection="contradicts"`: `EV_006` (Wikipedia broader Moraes controversy), `EV_032` (CSMonitor broader unilateral-decision / due-process concern), and `EV_024` (Al Jazeera panel-composition fact). `EV_006` and `EV_032` are already labeled `applicability="contextual"` and look correctly contextual rather than direct. `EV_024` is the only contradict row still labeled `direct`, but the statement itself only documents that Justice de Moraes sat on the panel; the stronger suspicion there is directional over-read, not a foreign-assessment leak. No `foreign_reaction` items were mapped to `AC_02`, and no U.S. State Department item was mapped into the `AC_02 / CB_01` subset despite the broader boundary description mentioning it. The strongest target-specific cautionary material in this boundary is actually carried by `direct` but `neutral` items such as `EV_015`, `EV_028`, and `EV_034` (Justice Fux dissent / jurisdiction objections). Current takeaway: this audit does **not** justify a broad applicability rewrite. If anything is tightened, it should be a narrow generic prompt refinement so target-specific descriptive facts about panel composition or forum assignment are not auto-read as contradiction unless the source explicitly ties them to a procedural/fairness defect in the target proceeding.
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: yes]
+**For next agent:** This scan covered the post-`2026-04-20T09:24:03Z` window and found no confirmed regression after reviewing verdict commits `f8ae0d44`, `a1353b82`, `f874e62e`, `c2f68884`, `972eb1c4`, `ace3c114` plus Stage 1 commits `08b3d771` and `5f1a7446`. Verification passed on `test/unit/lib/analyzer/verdict-stage.test.ts`, `test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, and `npm -w apps/web run build`. If a later signal appears, start in `apps/web/src/lib/analyzer/verdict-stage.ts` around `validateVerdicts(...)` and `isVerdictDirectionPlausible(...)`.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review Skill Restore Exact-Job-First -- [Standard] [open-items: yes]
+**For next agent:** `/report-review` once again accepts full job URLs, inspects the exact requested jobs before comparators, and requires inspected-job evidence before prompt edits can be proposed as confirmed fixes.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_Skill_Restore_Exact_Job_First.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review Cross-Tool Publication -- [Standard] [open-items: yes]
+**For next agent:** `/report-review` is now published across the shared non-Claude discovery surfaces: `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md`. The canonical workflow remains `.claude/skills/report-review/SKILL.md`.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_Cross_Tool_Publication.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Daily Bug Scan Report Review Publication No Regression -- [Standard] [open-items: no]
+**For next agent:** Commit `51ede468` is the only post-`2026-04-21T06:00:17Z` change in scope and it is docs/workflow-only. `git show`, `git diff --check`, and cross-file reference checks found no concrete regression to fix; excluded uncommitted analyzer/test work remains out of scope for this run.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_Report_Review_Publication_No_Regression.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review e5e6ec8d Anchor Override Fix -- [Standard] [open-items: yes]
+**For next agent:** Hosted job `e5e6ec8da824491c8984a18505481ba7` and local job `ae6b54e96bda4a54a685731fddc099bc` were confirmed to be the same PDF URL on the same prompt hash/commit family. The bad hosted run died in Stage 1 because `evaluateClaimContractValidation(...)` treated an uncited article-level limitation anchor as a hard provenance failure and flipped `preservesContract` to false. `claim-extraction-stage.ts` now only fires that structural override when the validator actually cites anchor carrier IDs and none survive structural validation; a new focused regression test covers the uncited-meta-anchor case.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_e5e6ec8d_Anchor_Override_Fix.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Daily Bug Scan Uncommitted Anchor Override Fix Verified -- [Standard] [open-items: yes]
+**For next agent:** Including uncommitted changes changes the scan result: the working tree contains a concrete Stage 1 bug fix already in progress in `claim-extraction-stage.ts`. The narrowed `noValidIds` guard and the new focused regression test are both validated locally; the only remaining step is a fresh rerun of the affected job/current stack.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_Uncommitted_Anchor_Override_Fix_Verified.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Benchmark Rerun Wave Five Candidates -- [Standard] [open-items: yes]
+**For next agent:** Five approved benchmark inputs were rerun on committed runtime `eaacd9ce` to probe expectation gaps and challenging families. `asylum-235000-de` landed cleanly inside Captain's bands (`LEANING-TRUE | 70 | 68`), `asylum-wwii-de` now has its first current-stack result (`LEANING-FALSE | 38 | 65`), `plastic-en` avoided the old collapse but still drifted high on truth (`MIXED | 44 | 65`), and both Bundesrat variants remain materially out of band (`MOSTLY-TRUE | 72 | 76` and `TRUE | 97 | 89`).
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Benchmark_Rerun_Wave_Five_Candidates.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review 1b52c739 Contract Retry Binding Fix -- [Standard] [open-items: yes]
+**For next agent:** Exact job `1b52c73913634990b7cb99224e9d56cc` was a real Stage 1 collapse on the same commit/prompt that previously handled the same Iran input successfully. The forward fix in `claim-extraction-stage.ts` now escalates anchor-driven contract retries into salience-binding mode whenever the validator says a truth-condition anchor is present in the input but preserved by no claim IDs, so the retry Pass 2 cannot free-drift back into proxy background claims.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Contract_Retry_Binding_Fix.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review 1b52c739 Binding Retry Redesign Assessment -- [Standard] [open-items: yes]
+**For next agent:** The expert review findings on the uncommitted binding-retry patch are valid. Do not ship the current boolean helper. Replace it with a builder that keys off `validPreservedIds` from the evaluated contract result and merges the validator-discovered anchor into the binding inventory before retry if the original salience list omitted it.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Binding_Retry_Redesign_Assessment.md
+
+---
+### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review 1b52c739 Retry Salience Plan Fix -- [Standard] [open-items: yes]
+**For next agent:** The unsafe raw-payload retry-binding helper is gone. Stage 1 now plans retry salience from the evaluated contract result: zero `validPreservedIds` on a present-in-input truth-condition anchor yields either merged binding-mode retry (when trustworthy upstream salience anchors exist) or audit-mode guidance-only retry (when they do not). The old `contractResult.inputAssessment.rePromptRequired = true` mutation was removed; retry gating now reads `evaluatedContract.effectiveRePromptRequired` directly.
+→ Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Retry_Salience_Plan_Fix.md
