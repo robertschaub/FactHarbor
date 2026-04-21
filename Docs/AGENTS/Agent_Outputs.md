@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-21 | Lead Architect | Codex (GPT-5) | Additive Repair Drift Problem Statement -- [Standard] [open-items: yes]
+**For next agent:** New reference doc at [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) explains the workflow failure mode behind agents stacking failed code/prompt attempts instead of retiring them. Keep the final framing precise: the problem is real, but the better-supported response is verifier-gated bounded backtracking, hunk quarantine, and explicit scope-approval controls, not automatic rollback-first behavior.
+→ Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Problem_Statement.md
+
+---
 ### 2026-04-19 | Unassigned | Claude Opus 4.6 | Exclusivity Claim Atomicity Fix -- [Significant] [open-items: yes]
 **For next agent:** Uniqueness/exclusivity claims ("the only X that Y") were not decomposed — AC_01 was a verbatim copy of the full input. Added "Exclusivity/uniqueness override" to both Pass 1 and Pass 2 in `apps/web/prompts/claimboundary.prompt.md`. Prompt reseeded (hash `44867b58`); restart dev server and rerun job `01dfef57` to verify decomposition. All 1721 tests pass.
 → Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_01dfef57_Exclusivity_Claim_Atomicity_Fix.md
@@ -1604,3 +1609,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-21 | Unassigned | Codex (GPT-5) | Report Review 1b52c739 Retry Salience Plan Fix -- [Standard] [open-items: yes]
 **For next agent:** The unsafe raw-payload retry-binding helper is gone. Stage 1 now plans retry salience from the evaluated contract result: zero `validPreservedIds` on a present-in-input truth-condition anchor yields either merged binding-mode retry (when trustworthy upstream salience anchors exist) or audit-mode guidance-only retry (when they do not). The old `contractResult.inputAssessment.rePromptRequired = true` mutation was removed; retry gating now reads `evaluatedContract.effectiveRePromptRequired` directly.
 → Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Retry_Salience_Plan_Fix.md
+
+---
+### 2026-04-21 | LLM Expert | Codex (GPT-5) | Debate Skill Structural Hardening -- [Significant] [open-items: yes]
+**For next agent:** `/debate` now keeps its core adversarial architecture but adds a mandatory intake/structural-audit layer, manifest-based routing instead of proposition-keyword routing, structural-first role outputs, and auditable final sections (`Structural Audit`, `Rejected Arguments`, `Skipped Roles`). If another workflow calls it, pass `CONTEXT_MANIFEST` with evidence IDs and known gaps rather than a free-form context blob.
+→ Docs/AGENTS/Handoffs/2026-04-21_LLM_Expert_Debate_Skill_Structural_Hardening.md

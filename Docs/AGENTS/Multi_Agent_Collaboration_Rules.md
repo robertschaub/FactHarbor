@@ -653,6 +653,19 @@ Lightweight models have smaller context windows. When activated with "As \<Role\
 
 This avoids consuming 60%+ of context on upfront reads that may not be relevant to a simple task.
 
+### 6.4 Model Tiers in `/debate` Skill
+
+The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversarial roles with model tiers aligned to §6.1–6.3:
+
+| Role | Tier | Rationale |
+|---|---|---|
+| Advocate, Challenger | Mid-tier (Sonnet) | Reasoning-intensive argument construction |
+| Consistency Probes, Validator | Lightweight (Haiku) | Classification and structural checking |
+| Reconciler (FULL only) | Top-tier (Opus) | High-stakes synthesis requiring nuanced judgment |
+| Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
+
+Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
+
 ---
 
 ## 7. Escalation Protocol

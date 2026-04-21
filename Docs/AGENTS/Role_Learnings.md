@@ -297,6 +297,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** A skill that contains self-referential constraints (rules that bind the skill's own behavior — e.g., `/report-review` constraint 9 requires index-first for handoff scans) can silently contradict those rules in downstream phases without any same-model reviewer catching it. A 5-panel same-model debate (Lead Architect, LLM Expert, Code Reviewer, Senior Developer, Devil's Advocate) on `/report-review` passed without flagging that Phase 2b instructed direct grep of `Docs/AGENTS/Handoffs/` in violation of its own rule 9 — every panel read the constraint list at the top of the skill but none of them cross-checked it against every downstream Phase. An independent GPT-5.4 adversarial review caught it on first pass. The likely mechanism is that same-model reviewers share attention priors: they all gravitate to the same "interesting" content and all look away from the same "boilerplate", so a rule-vs-usage mismatch inside the boilerplate slips through. Operational rule: any skill with constraints that bind its own phases should get at least one cross-model adversarial review pass before shipping. Specifically brief that review to check every rule against every Phase.
 **Files:** `.claude/skills/report-review/SKILL.md` (Phase 2b index-first fix); `Docs/AGENTS/Handoffs/2026-04-16_Lead_Developer_LLM_Expert_Report_Review_Skill_Improvements.md` (third amendment — GPT-5.4 review record)
 
+### 2026-04-21 — Debate skills need a fixed transport envelope even when the domain schema stays caller-owned
+**Role:** LLM Expert  **Agent/Tool:** Codex (GPT-5)
+**Category:** useful-pattern
+**Learning:** For reusable meta-skills like `/debate`, "generic" should not mean "unstructured". Keep the domain content caller-owned, but force a small structural transport envelope: stable evidence-item IDs, explicit known gaps, and optional provenance/language/runtime state only when it materially affects judgment quality. That lets every debate role reason over the same auditable footing without hardcoding a domain schema.
+**Files:** `.claude/skills/debate/SKILL.md`
+
 ## Product Strategist
 
 _(No entries yet)_

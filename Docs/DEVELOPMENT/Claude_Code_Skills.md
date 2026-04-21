@@ -1,6 +1,6 @@
 # FactHarbor Workflow Skills
 
-FactHarbor currently ships ten built-in workflow skills. Claude Code exposes them as slash
+FactHarbor currently ships eleven built-in workflow skills. Claude Code exposes them as slash
 commands, and the same canonical procedures live under `.claude/skills/<name>/SKILL.md` for
 Codex/GPT, Gemini, and Cline to consume directly.
 
@@ -14,6 +14,7 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 |---|---|---|---|
 | [Pipeline Analysis](#pipeline-analysis) | `/pipeline` | Debug, architecture questions, multi-stage changes | No |
 | [Quality Audit](#quality-audit) | `/audit` | Pre-release checks, quality regressions | No |
+| [Adversarial Debate](#adversarial-debate) | `/debate` | Structured adversarial debate on any proposition; reusable by other skills | No |
 | [Validation](#validation) | `/validate` | Measure benchmark regressions after pipeline changes | **Yes — $1-5+** |
 | [Handoff](#handoff) | `/handoff` | End of any significant task | No |
 | [Debug Check](#debug-check) | `/debug` | Post-change health check; log + test analysis | No |
@@ -119,6 +120,55 @@ Examples:
 
 4. Assigns severity: **PHASE-BLOCKER** / **HIGH** / **MEDIUM** / **LOW**.
 5. Outputs a structured table: `ID | Category | Severity | File:Line | Description | Recommended Fix`.
+
+---
+
+## Adversarial Debate
+
+**File:** [`.claude/skills/debate/SKILL.md`](../../.claude/skills/debate/SKILL.md)
+
+Structured adversarial debate modeled on the pipeline's Stage 4 verdict debate (`verdict-stage.ts`). Runs an intake/structural audit, then spawns Advocate, Challenger, and Reconciler roles with optional Consistency Probes and Validator. No real LLM calls to the analysis pipeline — agent spawns only.
+
+### When to use
+
+- Architecture or design decisions that need adversarial pressure before committing
+- Root-cause attribution when multiple plausible causes exist
+- Fix mechanism selection (prompt-edit vs. UCM vs. stage-code vs. rollback)
+- Any decision another skill wants to stress-test before acting on it
+
+### Invocation
+
+```
+/debate [--lite | --standard | --full] [--constraints "..."] "Proposition text"
+```
+
+Examples:
+```
+/debate "Should we split the verdict stage into two separate LLM calls?"
+/debate --full "The regression in bolsonaro-en is caused by the prompt change in commit 3add5697, not the evidence filter update"
+/debate --lite "Use Haiku or Sonnet for the new validation step?"
+```
+
+### Complexity tiers
+
+| Tier | Agents | Models | When |
+|---|---|---|---|
+| LITE | 2 (Challenger + Reconciler) | mid-tier | Binary choices with bounded evidence |
+| STANDARD | 3 (Advocate + Challenger + Reconciler) | mid-tier | Tradeoffs and mechanism selection (default) |
+| FULL | 5–6 (+ Probes + Validator) | mid + lightweight + top-tier | Uncertain attribution, high-stakes, irreversible |
+
+Callers pass an explicit tier flag. Auto-detection uses the context manifest's structural properties (evidence depth, gaps, risk markers), not proposition keywords.
+
+### What it does
+
+1. **Intake audit** — verifies the evidence bundle has concrete items, stable IDs, and explicit known gaps.
+2. **Argument panel** — Advocate and Challenger construct opposing cases citing inventory items.
+3. **Reconciliation** — Reconciler decides inside the structural envelope; baseless challenges do not shift the conclusion.
+4. **Validation** (FULL only) — lightweight grounding + direction check on the Reconciler's decision.
+
+### Cross-skill integration
+
+Other skills invoke `/debate` by passing a `CONTEXT_MANIFEST` with `EVIDENCE_INVENTORY`, `KNOWN_GAPS`, and optional `OPTIONAL_STATE`. The skill adds no domain rules — caller constraints pass through verbatim to all roles.
 
 ---
 

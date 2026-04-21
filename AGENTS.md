@@ -327,6 +327,7 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 
 | Slash command | Workflow file | When to use |
 |---|---|---|
+| `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |
 | `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |
 | `/audit` | `.claude/skills/audit/SKILL.md` | Full prompt + code quality audit; pre-release or after major changes |
 | `/prompt-audit` | `.claude/skills/prompt-audit/SKILL.md` | Static prompt-only audit against a 9-criterion rubric (rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, failure-mode coverage); linter-style, no runs, no writes |
