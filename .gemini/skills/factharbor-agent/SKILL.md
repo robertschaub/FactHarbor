@@ -36,6 +36,7 @@ Available workflows:
 - `debug` → `.claude/skills/debug/SKILL.md`
 - `explain-code` → `.claude/skills/explain-code/SKILL.md`
 - `prompt-diagnosis` → `.claude/skills/prompt-diagnosis/SKILL.md`
+- `report-review` → `.claude/skills/report-review/SKILL.md`
 - `docs-update` → `.claude/skills/docs-update/SKILL.md`
 - `wip-update` → `.claude/skills/wip-update/SKILL.md`
 

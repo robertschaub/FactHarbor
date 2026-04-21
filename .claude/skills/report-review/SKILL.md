@@ -1,6 +1,6 @@
 ---
 name: report-review
-description: Analyze local job reports from the most recent build/commit (HEAD by default), detect quality issues, and propose AGENTS.md-compliant fixes. Scopes to HEAD by default, or to specific job IDs / commit / input slug passed as argument. Uses RAG (static register + handoffs + machine-readable benchmark expectations, plus dynamic follow-up scans) and runs an adaptive multi-agent debate before emitting recommendations. Complements `/prompt-diagnosis` (which is narrower — prompt provenance only) by covering evidence, boundaries, verdict reasoning, and warning severity end to end.
+description: Analyze local job reports from the most recent build/commit (HEAD by default), detect quality issues, and propose AGENTS.md-compliant fixes. Scopes to HEAD by default, or to specific job URLs / job IDs / commit / input slug passed as argument. Uses RAG (static register + handoffs + machine-readable benchmark expectations, plus dynamic follow-up scans) and runs an adaptive multi-agent debate before emitting recommendations. Complements `/prompt-diagnosis` (which is narrower — prompt provenance only) by covering evidence, boundaries, verdict reasoning, and warning severity end to end.
 allowed-tools: Read Glob Grep Bash Agent
 ---
 
@@ -9,7 +9,7 @@ ultrathink
 Analyze local job reports for: $ARGUMENTS
 (Leave blank to scan all jobs executed at HEAD.)
 
-`$ARGUMENTS` may be: one or more `jobId`s (comma-separated), a commit SHA (`commit=<sha>`), a benchmark input slug (`input=bolsonaro-en`), a directory under `test-output/`, or empty.
+`$ARGUMENTS` may be: one or more `jobId`s or FactHarbor job URLs (comma-separated), a commit SHA (`commit=<sha>`), a benchmark input slug (`input=bolsonaro-en`), a directory under `test-output/`, or empty.
 
 ---
 
@@ -27,9 +27,15 @@ These constraints bind both this skill's analysis AND the fixes it proposes. If 
 7. **Multilingual robustness** — a fix that only works for English (or any single language) is not a fix. Challenge any recommendation that implicitly assumes English word order, English keywords, or Latin script.
 8. **Report Quality & Event Communication (AGENTS.md)** — severity reflects verdict impact, not internal noise. Do not propose downgrading a degrading-signal warning to hide it, and do not propose escalating a fully-recovered fallback to `warning+`.
 
-9. **Index before scanning** — before listing or grepping `Docs/AGENTS/Handoffs/`, query `Docs/AGENTS/index/handoff-index.json` (filter by `roles` + `topics`). Read only the matched files. `handoff-index.json` covers agent task history only — for source code locations use grep, not this index.
+9. **Inspect user-provided jobs first (HARD RULE)** — if the Captain/user supplied one or more specific job URLs or job IDs, those exact jobs are the primary evidence base and MUST be inspected before diagnosis, comparison, or fix proposals. Do not substitute nearby jobs, same-commit jobs, or same-input jobs as if they were equivalent. If a provided job cannot be read (missing, hidden, deleted, permission-blocked, or payload unavailable), state that explicitly and treat any subsequent recommendation as provisional hardening only — NOT as a confirmed root-cause fix for that job.
 
-10. **Destructive operations require Captain's permission, with two narrow pragmatic allowances.** This rule overrides any prior amendment that permitted broader autonomous action.
+10. **Prompt-change justification gate (HARD RULE)** — do not propose or apply prompt changes merely because a report is bad or because nearby jobs suggest a plausible prompt issue. Every prompt change must be justified by concrete evidence from the inspected in-scope jobs showing why prompt behavior is implicated rather than code, config, rollout state, or runtime variance. If the provided job was not inspectable, prompt edits may only be surfaced as speculative/provisional options and must be labeled as such.
+
+11. **No speculative prompt piling** — when multiple plausible failure layers exist, prefer the narrowest confirmed mechanism from inspected job evidence. Do not stack prompt edits on top of code/config/runtime uncertainty. If causality is unclear, escalate that uncertainty instead of accumulating prompt changes.
+
+12. **Index before scanning** — before listing or grepping `Docs/AGENTS/Handoffs/`, query `Docs/AGENTS/index/handoff-index.json` (filter by `roles` + `topics`). Read only the matched files. `handoff-index.json` covers agent task history only — for source code locations use grep, not this index.
+
+13. **Destructive operations require Captain's permission, with two narrow pragmatic allowances.** This rule overrides any prior amendment that permitted broader autonomous action.
 
     **Allowed without per-run approval (skill may execute):**
     - All read operations: codebase, `apps/api/factharbor.db` read-only, `apps/web/config.db` read-only, `apps/web/debug-analyzer.log`, result JSONs, git log/show/diff/rev-parse, grep.
@@ -60,7 +66,7 @@ These constraints bind both this skill's analysis AND the fixes it proposes. If 
     - Deployment actions: `git push`, `gh workflow run`, gh-pages writes, CI triggers, deploy-targeted builds.
     - Novel-input submission (input not byte-exactly matched to an existing family's `inputValue`). Per AGENTS.md §Captain-Defined Analysis Inputs, the skill should prefer proposing the family addition to `benchmark-expectations.json` first; Captain's approval of a novel-input `/validate` implicitly requires Captain to add the family or authorize the substitution.
 
-    **Self-check trigger:** before reporting, verify that any `/validate` call the skill executed (not merely proposed) uses an input byte-exactly matched to an existing family's `inputValue`. Autonomous novel-input execution is always a rule-10 violation and is logged in 7a; the finding derived from it is not emitted. Novel-input *proposals* require Captain approval like any other proposal — they are not autonomously executable.
+    **Self-check trigger:** before reporting, verify that any `/validate` call the skill executed (not merely proposed) uses an input byte-exactly matched to an existing family's `inputValue`. Autonomous novel-input execution is always a rule-13 violation and is logged in 7a; the finding derived from it is not emitted. Novel-input *proposals* require Captain approval like any other proposal — they are not autonomously executable.
 
 **Sub-agents spawned in Phase 4 MUST be given this list verbatim in their brief.**
 
@@ -77,11 +83,11 @@ The numbered phases below are named by function; this table maps them to the ana
 | Decide | Phase 4 (adaptive multi-agent debate) — with default downgrade rule applying when Phase 4 is skipped (empty panel set) | Reconciliation rule is the decision: ≥2 panels confirm AND Devil's Advocate cannot rebut. On skip, findings carry forward with confidence downgraded one tier — the skip clause itself is a decision. Lifecycle "Decide" ≠ phase name; Phase 4 is "Debate" functionally. |
 | Propose | Phase 5 (proposed fixes) + Phase 6 (meta-recommendations) | Both are proposals; Phase 5 is per-finding, Phase 6 is systemic/infra. |
 | Plan | Phase 5 — **Apply-order sub-step** (dependency sequencing across multi-fix runs) | Emits an explicit `Apply order:` block when multiple fixes will land together. |
-| Act | Rule-10-allowed autonomous paths only: prompt reseed, single `/validate`. Everything else is Captain's step after reviewing Phase 7d. | Deliberate non-destructive posture; the skill's default is "propose, don't execute". |
+| Act | Rule-13-allowed autonomous paths only: prompt reseed, single `/validate`. Everything else is Captain's step after reviewing Phase 7d. | Deliberate non-destructive posture; the skill's default is "propose, don't execute". |
 | Test | Phase 3i (historical regression bisection) + Phase 3j (stability across reruns) + allowed `/validate` | Test-of-fix-after-applying happens in a future `/report-review` invocation, not within the current run. |
-| Review | Mostly external — amendment cycles, cross-model adversarial review, drift-guard script. Within-run: Self-check enforces rule-10/generic/constraint compliance (guardrail, not review), and Phase 9 runs a post-execution reflection that produces learning/improvement *proposals* (not judgments on the run's analytical output). | The skill still does not judge its own analytical output within a run. Phase 9 reflects on what executing the skill revealed about the skill/expectations, which is a distinct activity from reviewing the analysis findings. |
+| Review | Mostly external — amendment cycles, cross-model adversarial review, drift-guard script. Within-run: Self-check enforces rule-13/generic/constraint compliance (guardrail, not review), and Phase 9 runs a post-execution reflection that produces learning/improvement *proposals* (not judgments on the run's analytical output). | The skill still does not judge its own analytical output within a run. Phase 9 reflects on what executing the skill revealed about the skill/expectations, which is a distinct activity from reviewing the analysis findings. |
 
-Phase 7 ("Output format") is presentation, not a lifecycle step. Phase 8 (register update, propose-only under rule 10) is a specialized Act-with-approval path. Phase 9 (post-execution learnings and improvement proposals, also propose-only) is the internal-reflection complement to external Review — it captures skill/expectations feedback without judging the run's analysis.
+Phase 7 ("Output format") is presentation, not a lifecycle step. Phase 8 (register update, propose-only under rule 13) is a specialized Act-with-approval path. Phase 9 (post-execution learnings and improvement proposals, also propose-only) is the internal-reflection complement to external Review — it captures skill/expectations feedback without judging the run's analysis.
 
 ---
 
@@ -103,6 +109,7 @@ Record:
 **Selector validation (mandatory — runs BEFORE scope determination; abort with a clear error on any failure, do NOT proceed into phases that will feed the value into shell/git/sqlite).** `$ARGUMENTS` is user-controlled and flows into later file, git, and DB reads. Every selector token must pass its validator below before it is accepted:
 
 - `jobId` tokens — must match `^[0-9a-fA-F]{32}$` (the SQLite `Jobs.JobId` is a 32-char lowercase hex with no dashes; reject anything else)
+- `job URL` tokens — must be an `http` or `https` URL whose path matches `/jobs/<32-hex-jobId>` (optional trailing slash or query string allowed) and whose host is `app.factharbor.ch`, `localhost`, or `127.0.0.1`. Extract the `jobId`, preserve the original URL/host for inspectability logging, and treat the resolved `jobId` as an explicit requested job selector.
 - `commit=<sha>` — pass `<sha>` through `git rev-parse --verify --quiet <sha>^{commit}`; reject on non-zero exit. Never substitute `<sha>` into a shell command without running this check first.
 - `input=<slug>` — must appear as an exact `families[].slug` value in `Docs/AGENTS/benchmark-expectations.json`. Prefix matches resolve only if exactly one family has that prefix; otherwise stop and ask Captain.
 - test-output subdirectory selector — must be a relative path that, after joining with the repo root and canonicalizing, still resolves under `<repo>/test-output/`. Reject absolute paths, `..` segments, symlinks that escape the tree, and any path that does not exist.
@@ -113,9 +120,11 @@ If any selector fails validation, STOP with `SELECTOR-REJECTED: <which selector 
 Then determine the review scope from the validated `$ARGUMENTS`:
 - **empty** → scope = all jobs whose `executedWebGitCommitHash` starts with `HEAD-SHA`
 - **`commit=<sha>`** → scope = jobs matching that commit
-- **`jobId` list** → scope = those jobs only
+- **`jobId` or `job URL` list** → scope = those exact jobs only
 - **`input=<slug>`** → scope = jobs whose **`inputValue`** (the full, canonical input from the API DB — NOT the truncated `inputPreview`) exactly matches the `inputValue` keyed by that slug in `Docs/AGENTS/benchmark-expectations.json`. `inputPreview` is display-only and truncated; comparing against it silently drops long inputs (e.g., the Portuguese Bolsonaro variant at 190+ chars).
 - **test-output subdirectory** → scope = all job JSONs under the validated path
+
+When the selector is an explicit `jobId`/`job URL` list, preserve the user-supplied order as `REQUESTED-JOBS[] = { rawSelector, resolvedJobId, originHost }`. Phase 1 MUST classify every entry in `REQUESTED-JOBS[]` as `INSPECTED` or `NOT-INSPECTABLE` before loading same-input, same-commit, or historical comparator jobs. Comparator jobs are supplemental context only; they never substitute for a requested job.
 
 If the scope ends up empty (e.g., no jobs ran at HEAD yet), surface that immediately and ask Captain whether to (a) broaden to the previous commit, (b) request a rerun, or (c) abort. **Do not silently broaden.**
 
@@ -124,6 +133,8 @@ If the scope ends up empty (e.g., no jobs ran at HEAD yet), surface that immedia
 ## Phase 1 — Load jobs
 
 Jobs live in three places. Read all three; prefer structured fields over log text.
+
+**Exact-job inspection order (mandatory when `REQUESTED-JOBS[]` is non-empty):** resolve each requested job before any comparator work. Attempt inspection in this order: (1) exact match in the API DB / API response payload, (2) exact matching JSON artifact under `test-output/` or repo root, (3) direct fetch of the provided job URL when the selector itself is a URL and network access is available. For each requested job, emit one status line in Phase 7a: `REQUESTED-JOB <jobId> — INSPECTED via <source>` or `REQUESTED-JOB <jobId> — NOT-INSPECTABLE: <reason>`. A requested job that is missing, deleted, inaccessible, or payload-truncated remains part of scope as a failed inspection; do not silently replace it with a nearby job.
 
 **SQLite access — shared preamble for Phase 1a, Phase 3h, Phase 3i.1, Phase 3i.4:** every `sqlite3` invocation in this skill must fall back to Python's `sqlite3` module in read-only mode (`uri=True, mode=ro`) if the `sqlite3` CLI is unavailable. This is a known Windows/`better-sqlite3` ABI quirk on some local setups. **Never write to `factharbor.db` or `config.db` via this skill** — both are read-only data sources. If a DB is locked by the running web server (`SQLITE_BUSY`), retry once with read-only URI (`file:apps/web/config.db?mode=ro`); if still locked, record `CONFIG-DB-LOCKED` or `API-DB-LOCKED` in Phase 7a and degrade that dimension's finding confidence to `SPECULATIVE`.
 
@@ -471,7 +482,7 @@ A finding survives only if **≥2 active specialist panels confirm** AND Devil's
 
 ## Phase 5 — Proposed fixes (constrained to allowed mechanisms)
 
-Every fix proposal MUST declare its mechanism and pass the constraint gate.
+Every fix proposal MUST declare its mechanism, cite inspected-job evidence, and pass the constraint gate.
 
 **Benchmark-overfit scrub (MANDATORY before a fix survives):**
 1. Write an `Abstract mechanism` sentence in ≤20 words using no benchmark-specific nouns, actors, institutions, regions, or date-periods.
@@ -483,13 +494,13 @@ Every fix proposal MUST declare its mechanism and pass the constraint gate.
 
 | Mechanism | When | Constraint reminder |
 |---|---|---|
-| Prompt edit (generic wording) | Instruction ambiguity, missing constraint, insufficient scaffold | Rule 1: no benchmark terms, entities, regions, dates. Rule 7: works in every language the pipeline supports. |
+| Prompt edit (generic wording) | Instruction ambiguity, missing constraint, insufficient scaffold | Rules 1 and 7 still apply. Rule 10 also applies: cite inspected-job evidence showing prompt behavior is implicated; if the requested job was not inspectable, label the prompt edit provisional-only. |
 | UCM config change | Threshold, weight, model-route, limit tuning | Update `apps/web/configs/*.default.json` AND `config-schemas.ts` in sync; drift verified by `config-drift.test.ts` |
 | Stage code — structural only | Schema mismatch, retry/timeout, null-guard, warning registration | Rule 2: no analytical decision logic. LLM call stays as the decision point. |
 | Workflow gate | Human-in-loop quality check, pre-merge benchmark rerun, rollout verification, serialize concurrent submissions | Documented procedure; no code change |
 | Prompt rollout action | Active blob differs from current file (see 3h prompt rollout drift) | `npm -w apps/web run reseed:prompts` or full build |
 | Env-var change | Infrastructure-tier knob per AGENTS.md §Configuration Placement (FH_RUNNER_MAX_CONCURRENCY, FH_ADMIN_KEY, FH_API_BASE_URL, FH_CONFIG_DB_PATH, FH_SR_CACHE_PATH) | Propose the new value + restart step as a documented procedure. Do NOT put it in UCM — these values live in `.env.local` / process environment and take effect only on restart. |
-| Data update (expectations file) | A rerun verified (or refuted) a family's quality at HEAD; new observation replaces or augments `latestVerifiedJobId`/`latestObserved`; bands widen to include the new point only when inside `noiseTolerancePct` | Update `Docs/AGENTS/benchmark-expectations.json` (and sync `Captain_Quality_Expectations.md` prose). **Emit as proposal per rule 10**; Captain approves before the skill writes. Do NOT change `qualityStatus` from the same-run data that triggered the update; qualityStatus changes require direct rerun confirmation AND Captain approval. Rule 2 not violated — data file, no analytical logic. |
+| Data update (expectations file) | A rerun verified (or refuted) a family's quality at HEAD; new observation replaces or augments `latestVerifiedJobId`/`latestObserved`; bands widen to include the new point only when inside `noiseTolerancePct` | Update `Docs/AGENTS/benchmark-expectations.json` (and sync `Captain_Quality_Expectations.md` prose). **Emit as proposal per rule 13**; Captain approves before the skill writes. Do NOT change `qualityStatus` from the same-run data that triggered the update; qualityStatus changes require direct rerun confirmation AND Captain approval. Rule 2 not violated — data file, no analytical logic. |
 
 **Rejected mechanisms (never propose):**
 - Hardcoded keyword list in code — rules 1+2
@@ -503,6 +514,7 @@ Every fix proposal MUST declare its mechanism and pass the constraint gate.
 [F##] <severity> | <SYSTEMIC|REPORT-SPECIFIC|INFRASTRUCTURE|REGRESSION> | dim <3x>
 Mechanism:          <prompt-edit | ucm-config | stage-code-structural | workflow-gate | prompt-rollout | data-update | partial-rollback | full-rollback | modification>
 Target file/path:   <specific path or commit:file:section for rollback mechanisms>
+Inspected-job evidence: <exact in-scope jobId(s) + field/path/value(s) supporting this mechanism; if a requested job was not inspectable, say so and mark any prompt-edit as provisional>
 Change (specific):  <exact generic wording, config delta, structural edit, or revert-section spec>
 Abstract mechanism: <one-line failure mechanism, phrased without trigger-specific vocabulary>
 Constraint gate:    PASS — <which rules apply and why this passes them>
@@ -545,13 +557,13 @@ Apply order:
    - A `stage-code-structural` fix that changes a schema field MUST come before any `prompt-edit` that depends on the new field.
    - A fix that registers a new warning type in `warning-display.ts` MUST come before any fix that begins emitting that warning — otherwise the emission lands as an unregistered warning and hits the exact Q-WS2 schema-drift violation Phase 3f exists to catch.
    - A `config-schemas.ts` (Zod) edit MUST come before any `ucm-config` change to `apps/web/configs/*.default.json` that introduces a new key — otherwise `config-drift.test.ts` trips on the unrecognized field.
-   - When the proposal path for a novel-input `/validate` is family-addition (the recommended route per AGENTS.md §Captain-Defined Analysis Inputs), the `benchmark-expectations.json` family-addition MUST come before the `/validate`. Alternative path: per rule 10 Captain may directly approve a novel-input `/validate` without first adding the family (an explicit substitution authorization); in that case this sub-clause does not apply and the proposal should state that Captain's direct authorization bypasses the family-addition step. Default to the family-addition path when the proposal is for a repeatable benchmark family.
+    - When the proposal path for a novel-input `/validate` is family-addition (the recommended route per AGENTS.md §Captain-Defined Analysis Inputs), the `benchmark-expectations.json` family-addition MUST come before the `/validate`. Alternative path: per rule 13 Captain may directly approve a novel-input `/validate` without first adding the family (an explicit substitution authorization); in that case this sub-clause does not apply and the proposal should state that Captain's direct authorization bypasses the family-addition step. Default to the family-addition path when the proposal is for a repeatable benchmark family.
 2. **Data-after-evidence.** A `data-update` to `benchmark-expectations.json` or `Captain_Quality_Expectations.md` comes AFTER the rerun that produced its observation. Exception: pre-populating from a prior verified job Captain already holds and has referenced in the proposal — explicitly cite the source jobId in the proposal when taking this path.
 3. **Rollback before forward-fix when both target the same defect.** If a `partial-rollback` and a follow-up `prompt-edit` both target the same regression, apply the rollback first (restore last-known-good), then the forward-fix (additive over a clean base). Captain may re-evaluate whether the forward-fix is still needed after the rollback — the skill does not presume it.
-4. **rootCauseId groups SHOULD apply atomically.** A group's primary and `Related fixes:` are most safely applied together. If Captain splits the group across approval cycles, the skill flags it in Phase 7d as `PARTIAL-GROUP-APPLY` risk with explicit "this leaves the pipeline in a half-state" wording — the skill cannot enforce atomicity at execution (that is Captain's step per rule 10), but it surfaces the risk.
+4. **rootCauseId groups SHOULD apply atomically.** A group's primary and `Related fixes:` are most safely applied together. If Captain splits the group across approval cycles, the skill flags it in Phase 7d as `PARTIAL-GROUP-APPLY` risk with explicit "this leaves the pipeline in a half-state" wording — the skill cannot enforce atomicity at execution (that is Captain's step per rule 13), but it surfaces the risk.
 5. **No cross-fix dependencies → no order.** Two fixes are "independent" iff: (a) no shared target file-and-section, (b) no shared pre-condition action (e.g., both requiring the same reseed is NOT independent — they share that pre-condition), (c) no shared `rootCauseId`. When ALL proposed fixes are independent, emit the block as a single line: `Apply order: Independent set: F01, F02, F03 — no cross-fix dependencies.` No numbered steps. Inventing order where none exists misleads the next reader.
 
-The apply-order block feeds directly into Captain's approval decision — Captain can approve the whole sequence, approve a prefix, or reject. The skill itself does NOT execute the full sequence; rule-10-allowed steps (a single `prompt-rollout` reseed OR a single `/validate`, never both in one invocation per gate 3) may still auto-execute per their own gates — everything else is Captain's step per rule 10.
+The apply-order block feeds directly into Captain's approval decision — Captain can approve the whole sequence, approve a prefix, or reject. The skill itself does NOT execute the full sequence; rule-13-allowed steps (a single `prompt-rollout` reseed OR a single `/validate`, never both in one invocation per gate 3) may still auto-execute per their own gates — everything else is Captain's step per rule 13.
 
 ---
 
@@ -671,10 +683,10 @@ Phase 7f points Captain at follow-up skills (`/audit`, `/prompt-diagnosis`, `/va
 
 **Categories — emit ONLY when the stated trigger fires (not for ordinary disagreement, not for ordinary "could use more data" cases):**
 
-- **A. Debate deadlock with no compliant resolution.** Phase 4 reconciliation leaves a material finding with no surviving compliant proposal: ≥2 panels CONFIRM the finding, Devil's Advocate rebuts every proposed fix with a concrete regression risk, and no alternative mechanism satisfies the rule 1–10 constraint gate. Ordinary Devil's Advocate rebuttal that results in downgrade or drop is NOT this category — that is the normal reconciliation path under SKILL.md §Phase 4 "Debate reconciliation".
-- **B. Pre-condition UNKNOWN.** The pre-condition gate (rule 10) returned UNKNOWN for drift state because scope contained no recoverable `meta.promptContentHash` values for Phase 3h to compare against the active hash. The skill cannot execute a reseed or `/validate` safely until Captain confirms rollout state.
-- **C. Compliance deadlock.** A real finding has no mechanism that passes the rule 1–10 constraint gate, whether detected during Phase 5 fix composition, at the 7d.1 Rejected-mechanisms self-audit (pre-emission catch), or during the Self-check destructive-action sweep (late catch). Every proposed fix violates at least one of rules 1–10, and no alternative exists within the skill's allowed mechanism set. A 7d.1 audit that cannot emit `AUDIT-CERT` truthfully for any candidate MUST escalate here rather than weakening the audit or softening a violation.
-- **E. Multi-validate resolution needed.** A single `/validate` executed this invocation produced ambiguous results (typically a Phase 3i midpoint-bisection that splits the window), and resolving the finding requires a second `/validate` in a later invocation. Rule 10 caps `/validate` at one per invocation, so this is a hard stop inside the current run. "Could use more data in general" is NOT this category — that belongs in 7f.
+- **A. Debate deadlock with no compliant resolution.** Phase 4 reconciliation leaves a material finding with no surviving compliant proposal: ≥2 panels CONFIRM the finding, Devil's Advocate rebuts every proposed fix with a concrete regression risk, and no alternative mechanism satisfies the non-negotiable constraint gate. Ordinary Devil's Advocate rebuttal that results in downgrade or drop is NOT this category — that is the normal reconciliation path under SKILL.md §Phase 4 "Debate reconciliation".
+- **B. Pre-condition UNKNOWN.** The pre-condition gate (rule 13) returned UNKNOWN for drift state because scope contained no recoverable `meta.promptContentHash` values for Phase 3h to compare against the active hash. The skill cannot execute a reseed or `/validate` safely until Captain confirms rollout state.
+- **C. Compliance deadlock.** A real finding has no mechanism that passes the non-negotiable constraint gate, whether detected during Phase 5 fix composition, at the 7d.1 Rejected-mechanisms self-audit (pre-emission catch), or during the Self-check destructive-action sweep (late catch). Every proposed fix violates at least one non-negotiable constraint, and no alternative exists within the skill's allowed mechanism set. A 7d.1 audit that cannot emit `AUDIT-CERT` truthfully for any candidate MUST escalate here rather than weakening the audit or softening a violation.
+- **E. Multi-validate resolution needed.** A single `/validate` executed this invocation produced ambiguous results (typically a Phase 3i midpoint-bisection that splits the window), and resolving the finding requires a second `/validate` in a later invocation. Rule 13 caps `/validate` at one per invocation, so this is a hard stop inside the current run. "Could use more data in general" is NOT this category — that belongs in 7f.
 - **G. Cross-skill ordering affects validity.** A finding requires follow-up by ≥2 skills AND the order materially affects whether the subsequent skills' conclusions are valid AND the skill cannot determine the correct order from in-scope evidence. If the skill can name the order (e.g., "run `/audit` first, then `/prompt-diagnosis`"), it belongs in 7f — escalate to 7g only when the order is genuinely undetermined.
 - **H. Unclassifiable systemic pattern.** Multiple reports show a consistent pattern that does not fit any known Q-code, infrastructure pattern, or regression signature. The skill cannot name the failure class; Captain either needs to add a new Q-code (route to `/audit` + `report-quality-expectations.json` update) or identify the pattern.
 
@@ -689,14 +701,14 @@ CAPTAIN ESCALATION <A|B|C|E|G|H> — <one-line problem statement>
 ```
 
 **Rules:**
-- Category B, when triggered by an attempted `/validate` execution, also stops the skill from executing the action (rule 10 pre-condition gate). The escalation is emitted; the execution is withheld.
+- Category B, when triggered by an attempted `/validate` execution, also stops the skill from executing the action (rule 13 pre-condition gate). The escalation is emitted; the execution is withheld.
 - All other categories flag-and-continue: the skill emits 7a–7f normally, then appends the escalation block(s). The finding stays on record with its current confidence, not silently dropped.
 - If multiple escalations fire, emit one block per category in A→B→C→E→G→H order.
 - If NO escalation fires, 7g is omitted entirely (do not emit an "escalations: none" header).
 
 ### 7h. Proposed learnings (Phase 9 output)
 
-Emits the learning and improvement proposals Phase 9 produced. All entries are proposals requiring Captain approval before any file is written — rule 10 applies identically to new writes and updates, to `Skills_Learnings.md` and to the skill/expectation files.
+Emits the learning and improvement proposals Phase 9 produced. All entries are proposals requiring Captain approval before any file is written — rule 13 applies identically to new writes and updates, to `Skills_Learnings.md` and to the skill/expectation files.
 
 **Output format (one block per learning, grouped by category A→D):**
 
@@ -765,13 +777,13 @@ RETURN FORMAT (strict):
 <<formatted per /prompt-diagnosis §6b, only if REGISTER-ELIGIBLE=yes, AND with an explicit `qCode:` field added on its own line immediately after the `Pcode:` line. If the finding has no Pcode mapping, write `Pcode: n/a`. Legacy entries without qCode are backward compatible; new entries MUST carry qCode so future dedup can match on it.>>
 ```
 
-2. **Do NOT write to the register autonomously (rule 10).** Emit the candidate block as a **proposal** in Phase 7d under `Proposed register entries`, tagged with the reviewer's REGISTER-ELIGIBLE / LOW-RISK / UPDATE-EXISTING outcomes. Captain either approves ("write entry F## to the register") or rejects. On explicit approval, the agent appends the block using the Windows-safe atomic write procedure below. The 5-check reviewer still runs — its purpose now is to produce a confidence-qualified proposal for Captain, not to clear an autonomous write gate.
+2. **Do NOT write to the register autonomously (rule 13).** Emit the candidate block as a **proposal** in Phase 7d under `Proposed register entries`, tagged with the reviewer's REGISTER-ELIGIBLE / LOW-RISK / UPDATE-EXISTING outcomes. Captain either approves ("write entry F## to the register") or rejects. On explicit approval, the agent appends the block using the Windows-safe atomic write procedure below. The 5-check reviewer still runs — its purpose now is to produce a confidence-qualified proposal for Captain, not to clear an autonomous write gate.
 
    **Near-duplicate handling:** Check 5 still matches on `(qCode OR Pcode, prompt-file, root-cause word-overlap)`. Because qCode and Pcode are distinct taxonomies (no crosswalk), Check 5 tries qCode first against entries that have one; falls back to Pcode for legacy `/prompt-diagnosis`-era entries. A new qCode-era finding can never match a legacy Pcode-only entry, which is correct — creating a new entry is honest. If Check 5 returns `UPDATE-EXISTING=<id>`, the proposed block is an amendment to that entry, not a new one; Captain still approves before the append happens.
 
    **Write procedure when Captain approves (Windows-safe, atomic):** write to `Docs/AGENTS/Prompt_Issue_Register.md.tmp` first, then rename over the original. If the rename fails (file locked, typically because Captain has the file open in an editor), leave `.tmp` in place, record `REGISTER-LOCKED` in 7d, and do not retry — the next `/report-review` run will surface the tmp state. Create the register with the header from `/prompt-diagnosis §6a` only when Captain approves the first entry (nothing-to-append case).
 
-3. If `REGISTER-ELIGIBLE=yes AND LOW-RISK=no AND UPDATE-EXISTING=<id>`: emit the update-confirmation as a proposal in Phase 7d under `Proposed register entries` tagged with `UPDATE-EXISTING=<id>` and the specific field deltas (e.g. `last-confirmed: <this-run>`, bump `prompt-hash`). Captain approves before the append lands — no autonomous update-append either. Rule 10 covers any write to `Prompt_Issue_Register.md`, whether new entry or amendment to an existing one; UPDATE-EXISTING is not a carve-out from rule 10.
+3. If `REGISTER-ELIGIBLE=yes AND LOW-RISK=no AND UPDATE-EXISTING=<id>`: emit the update-confirmation as a proposal in Phase 7d under `Proposed register entries` tagged with `UPDATE-EXISTING=<id>` and the specific field deltas (e.g. `last-confirmed: <this-run>`, bump `prompt-hash`). Captain approves before the append lands — no autonomous update-append either. Rule 13 covers any write to `Prompt_Issue_Register.md`, whether new entry or amendment to an existing one; UPDATE-EXISTING is not a carve-out from rule 13.
 
 4. If `REGISTER-ELIGIBLE=no`: list the finding in 7d under `Register-skipped entries` with the failed check number and reason.
 
@@ -785,7 +797,7 @@ RETURN FORMAT (strict):
 
 After Phases 1–8 complete and before Self-check, reflect on what executing this invocation of `/report-review` taught you that is worth persisting for other agents or Captain. This phase is NOT a review of the run's analytical findings (that would be self-judging — not allowed per the lifecycle Review row). It is reflection on the *skill itself* and the *expectation artifacts*: what was awkward, what was missing, what a future agent or Captain would want to know.
 
-**Phase 9 is propose-only. Every output is emitted in 7h. No autonomous writes. Rule 10 applies verbatim to Phase 9 writes, same as Phase 8.**
+**Phase 9 is propose-only. Every output is emitted in 7h. No autonomous writes. Rule 13 applies verbatim to Phase 9 writes, same as Phase 8.**
 
 **9a. Reflect across four categories:**
 
@@ -838,9 +850,9 @@ Before emitting output, re-read the non-negotiable constraints and scan all prop
 
 Dropped fixes must appear in 7d under `Rejected fixes` with the rule number violated.
 
-**Destructive-action sweep (rule 10):** before reporting, apply the revised rule 10 matrix:
+**Destructive-action sweep (rule 13):** before reporting, apply the revised rule 13 matrix:
 
 - For every Phase 5/6 proposal, every Phase 8 register block, AND every Phase 9 learning/improvement proposal: if it would execute in the **Require Captain approval** category (file writes to `Skills_Learnings.md`, `SKILL.md`, `benchmark-expectations.json`, `report-quality-expectations.json`, `Captain_Quality_Expectations.md`, `Prompt_Issue_Register.md`, prompt files, or any other repo file; multiple validates; full suites; git mutations; applied rollbacks; env-var/config changes), reclassify it under the appropriate `Proposed ...` subsection in 7d or 7h. No Phase 9 write lands without explicit Captain approval — same gate as Phase 8.
-- For every `/validate` call the skill executed autonomously: verify (a) exactly one `/validate` was run in this invocation, (b) the slug is in `benchmark-expectations.json.families[]`, (c) the input submitted was byte-exactly the family's canonical `inputValue`, (d) pre-condition gate passed immediately before execution (git clean on analyzer/prompt/config paths, no PROMPT-ROLLOUT-DRIFT active, no reseed performed in the same invocation). If any of these fail, log the violation in 7a under `Rule-10 violations` and do not emit findings derived from the invalid run.
-- For every reseed the skill executed autonomously: verify (a) git status was clean on analyzer/prompt/config paths immediately before, (b) no `/validate` was executed in the same invocation after the reseed. If either fails, log under `Rule-10 violations`.
+- For every `/validate` call the skill executed autonomously: verify (a) exactly one `/validate` was run in this invocation, (b) the slug is in `benchmark-expectations.json.families[]`, (c) the input submitted was byte-exactly the family's canonical `inputValue`, (d) pre-condition gate passed immediately before execution (git clean on analyzer/prompt/config paths, no PROMPT-ROLLOUT-DRIFT active, no reseed performed in the same invocation). If any of these fail, log the violation in 7a under `Rule-13 violations` and do not emit findings derived from the invalid run.
+- For every reseed the skill executed autonomously: verify (a) git status was clean on analyzer/prompt/config paths immediately before, (b) no `/validate` was executed in the same invocation after the reseed. If either fails, log under `Rule-13 violations`.
 - For any proposal that would submit an input not in `benchmark-expectations.json.families[]`: emit as proposal with an explicit note that Captain should add the family to `benchmark-expectations.json` and `AGENTS.md` first per AGENTS.md §Captain-Defined Analysis Inputs, then re-invoke. The skill never *autonomously* submits novel inputs, but Captain can approve a proposal.

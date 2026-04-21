@@ -1,8 +1,8 @@
 # FactHarbor Workflow Skills
 
-FactHarbor currently ships nine built-in workflow skills. Claude Code exposes them as slash
+FactHarbor currently ships ten built-in workflow skills. Claude Code exposes them as slash
 commands, and the same canonical procedures live under `.claude/skills/<name>/SKILL.md` for
-Codex/GPT and Gemini to consume directly.
+Codex/GPT, Gemini, and Cline to consume directly.
 
 Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini, GPT, Copilot, Cline): the YAML frontmatter is ignored and the rest is plain markdown. See [§ Cross-Tool Usage](#cross-tool-usage).
 
@@ -19,6 +19,7 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 | [Debug Check](#debug-check) | `/debug` | Post-change health check; log + test analysis | No |
 | [Explain Code](#explain-code) | `/explain-code` | Explain how code works with analogies and diagrams | No |
 | [Prompt Diagnosis](#prompt-diagnosis) | `/prompt-diagnosis` | RAG-augmented prompting deficiency analysis with runtime prompt-hash plus commit context | No |
+| [Report Review](#report-review) | `/report-review` | Holistic job-report analysis: expectations, evidence, boundaries, verdict reasoning, warnings | No |
 | [Docs Update](#docs-update) | `/docs-update` | Update living docs across `Docs/` and archive only clearly obsolete material | No |
 | [WIP Update](#wip-update) | `/wip-update` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP docs | No |
 
@@ -304,11 +305,14 @@ For complex concepts it uses multiple analogies. The tone is conversational, not
 
 ## Cross-Tool Usage
 
-All nine skills are discoverable by non-Claude agents:
+All ten skills are discoverable by non-Claude agents:
 
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also
   enter through [`.gemini/skills/factharbor-agent/SKILL.md`](../../.gemini/skills/factharbor-agent/SKILL.md).
+- **Cline and other AGENTS-aware tools** read the **Named Workflows** table in
+  [AGENTS.md](../../AGENTS.md) and then open the referenced `.claude/skills/<name>/SKILL.md`
+  file directly.
 
 For any tool that is not Claude Code:
 
@@ -408,6 +412,61 @@ Recent Handoffs            → jobId + prompt hash           git show <hash>:pro
 - `executedWebGitCommitHash` is full-repo execution provenance, not prompt-exact provenance. Dirty suffixes indicate approximate code history, not prompt-specific drift.
 - Runtime prompts are UCM/DB-first. If the active blob differs from the prompt file on disk, file diffs alone do not explain runtime behavior.
 - If PHASE-BLOCKER systemic findings are found, the skill recommends `/audit`. If benchmark regressions are suspected, it recommends `/validate`.
+
+---
+
+## Report Review
+
+**File:** [`.claude/skills/report-review/SKILL.md`](../../.claude/skills/report-review/SKILL.md)
+
+Holistic review workflow for concrete analysis jobs and job families. It compares observed reports
+against benchmark expectations, inspects evidence health and boundary structure, audits verdict
+reasoning and warning severity, and proposes only AGENTS-compliant fixes. It operates on local
+reports, databases, logs, prompts, and git history.
+
+### When to use
+
+- Investigating a specific bad report or `UNVERIFIED` outcome
+- Reviewing one or more supplied job URLs or job IDs before proposing any fix
+- Comparing current-stack job behavior against benchmark expectations
+- Deciding whether a problem is in prompting, code, config, rollout state, or runtime variance
+
+### Invocation
+
+```
+/report-review <optional scope>
+```
+
+Examples:
+```
+/report-review
+/report-review 2369faac2e464221a124a2bf97c5916e
+/report-review https://app.factharbor.ch/jobs/e5e6ec8da824491c8984a18505481ba7
+/report-review input=bolsonaro-en
+/report-review commit=ace3c114463ecfbe56f4f16037bc5c3a65088e50
+```
+
+### What it does
+
+1. Builds scope from explicit jobs, URLs, commit, input slug, or HEAD.
+2. Inspects user-provided jobs first and records each as `INSPECTED` or `NOT-INSPECTABLE`
+   before any same-input or same-commit comparators are loaded.
+3. Reads benchmark expectations, report-quality checks, prior handoffs, and in-scope job payloads
+   from the API DB, `test-output/`, and repo-root result JSONs.
+4. Runs a structured review over evidence, claim boundaries, verdicts, warnings, prompt/runtime
+   provenance, regressions, and rerun stability.
+5. Produces constrained fix proposals that must stay generic, multilingual, and evidence-backed.
+   Prompt edits are allowed only when inspected-job evidence shows prompt behavior is implicated;
+   otherwise they stay provisional-only.
+
+### Key guardrails
+
+- Exact user-supplied jobs are the primary evidence base; nearby jobs are supplemental only.
+- A missing or inaccessible requested job must be reported explicitly rather than substituted away.
+- Prompt changes require inspected-job evidence and may not be stacked speculatively on top of
+  code/config/runtime uncertainty.
+- Autonomous execution remains narrow: read operations plus the pre-gated single reseed or single
+  `/validate` path defined in the skill.
 
 ---
 

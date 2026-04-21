@@ -58,5 +58,6 @@ Documented procedures for recurring tasks. Read the file and follow its instruct
 | Debug log + test analysis | `.claude/skills/debug/SKILL.md` |
 | Explain code | `.claude/skills/explain-code/SKILL.md` |
 | Prompt deficiency diagnosis | `.claude/skills/prompt-diagnosis/SKILL.md` |
+| Job report review | `.claude/skills/report-review/SKILL.md` |
 | Docs cleanup and update | `.claude/skills/docs-update/SKILL.md` |
 | WIP consolidation and backlog sync | `.claude/skills/wip-update/SKILL.md` |
