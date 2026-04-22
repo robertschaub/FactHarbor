@@ -1,0 +1,2613 @@
+{
+  "generatedAt": "2026-04-22T07:16:21.034Z",
+  "stage": 1,
+  "note": "Frozen fixture for Plan v2.1 Stage 1 (Lite-Replay). A1/B1 lanes require a pre-patch worktree and are not part of Stage 1.",
+  "domains": [
+    {
+      "domain": "deeplearning.ai",
+      "isCanonicalControl": false,
+      "originalBaseline": {
+        "score": null,
+        "confidence": 0.35,
+        "category": "insufficient_data",
+        "sourceType": "educational_platform",
+        "biasIndicator": null,
+        "consensusAchieved": true,
+        "modelPrimary": "claude-haiku-4-5-20251001",
+        "modelSecondary": "gpt-4.1-mini",
+        "evaluatedAt": "2026-04-19T13:30:04.679Z"
+      },
+      "currentBaseline": {
+        "score": 0.78,
+        "confidence": 0.87,
+        "category": "reliable",
+        "sourceType": "collaborative_reference",
+        "biasIndicator": "center"
+      },
+      "lanes": {
+        "A2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"deeplearning\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"deeplearning\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"deeplearning.ai\" reliability rating assessment",
+            "\"deeplearning.ai\" media bias rating fact checker",
+            "\"deeplearning\" credibility assessment fact check",
+            "\"deeplearning\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"deeplearning\" press council OR press complaints OR media regulator",
+            "\"deeplearning\" independence politicization political pressure",
+            "\"deeplearning\" scientific integrity compromised OR undermined",
+            "\"deeplearning\" ethics violation OR code violation OR journalistic standards",
+            "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"deeplearning\" political interference OR political influence",
+            "\"deeplearning\" reprimand OR sanction OR condemned OR censured",
+            "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"deeplearning\" staff exodus OR workforce cuts OR mass resignation",
+            "\"deeplearning\" discrimination complaint OR ethics complaint",
+            "\"deeplearning\" \"propaganda outlet\" OR \"government-controlled media\""
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news/2024-10-30-1315/technology-researcher-finds-ai-could-help-improve-city-planning",
+              "title": "Researcher finds AI could help improve city planning | AllSides",
+              "snippet": "By comparing LLM performance with traditional city planning deep learning methods, the study from the College of Natural Resources and ...",
+              "query": "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E2",
+              "url": "https://www.allsides.com/news/2024-10-14-1215/technology-i-was-beta-tester-nobel-prize-winning-alphafold-ai-its-going",
+              "title": "I was a beta tester for the Nobel prize-winning AlphaFold AI—it's ...",
+              "snippet": "Editors have highlighted the following attributes while ensuring the content's credibility: The deep learning machine AlphaFold, which was ...",
+              "query": "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E3",
+              "url": "https://fullfact.org/news/the-distant-future-the-year-2000/",
+              "title": "The word “robot” comes from Czech, not Greek like GPT-3 claims",
+              "snippet": "(GPT-3 is a “deep learning” model created by the US artificial intelligence research laboratory OpenAI, which generates human-like text ...",
+              "query": "\"deeplearning\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Google-CSE+Serper+SerpAPI+Brave"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.disinfo.eu/publications/disinformation-glossary-150-terms-to-understand-the-information-disorder/",
+              "title": "Disinformation glossary: 150+ Terms to Understand the Information ...",
+              "snippet": "Deep learning: Deep learning is a subset of machine learning, which is essentially a neural network (i.e., a model made up of information ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.disinfo.eu/wp-content/uploads/2023/11/Disinfo2023_Day1_Emerging-realities_Thomas-Gouritin.pdf",
+              "title": "[PDF] Disinformation in the AI age - EU DisinfoLab",
+              "snippet": "Deep learning. Medical literature. Cases, papers… Medical imaging. Xk annotated images. EU DisinfoLab 2023 @DisinfoEU @tomg_. Page 6. 6. Example ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E6",
+              "url": "https://euvsdisinfo.eu/research/",
+              "title": "Research Archive - EUvsDisinfo",
+              "snippet": "A study applying a deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E7",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11522648/",
+              "title": "The Dual Nature of AI in Information Dissemination: Ethical ... - PMC",
+              "snippet": "In fact, information literacy (as well as media, digital, and health ... https://www.deeplearning.ai/resources/natural-language-processing/; 16. GPT-3 ...",
+              "query": "\"deeplearning.ai\" media bias rating fact checker",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E8",
+              "url": "https://www.facebook.com/WIONews/posts/truth-deserves-more-than-a-quick-scroll-fake-check-from-wion-and-neural-defend-g/1190188963220276/",
+              "title": "Truth deserves more than a quick scroll. Fake Check from WION and ...",
+              "snippet": "Nov 10, 2025 ... #artificialintelligence #computervision #OpenCV #DeepLearning #machinelearning #fakenews ... credibility assessment. Brand Reputation ...",
+              "query": "\"deeplearning\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.snowflake.com/en/engineering-blog/ai-agent-evaluation-gpa-framework/",
+              "title": "What's Your Agent's GPA? A Framework for Evaluating AI Agent ...",
+              "snippet": "Nov 4, 2025 ... For step-by-step instructions on how to set up and use Agent GPA evaluations, check out these resources: Take the free DeepLearning course: ...",
+              "query": "\"deeplearning\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E10",
+              "url": "https://www.facebook.com/businessinsider/posts/dell-has-existed-for-42-years-but-the-coming-changes-are-the-biggest-transformat/1251922940139321/",
+              "title": "Dell has existed for 42 years, but the coming changes ... - Facebook",
+              "snippet": "Jan 13, 2026 ... ... pressure. Regulatory ... #NVIDIA #AI #Innovations #DigitalTransformation #DeepLearning #GenerativeAI #TechRevolution #JensenHuang.",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E11",
+              "url": "https://library.oapen.org/bitstream/id/61810f6f-bf40-404d-b688-61e9ac3405a4/external_content.pdf",
+              "title": "The Democratization of Artificial Intelligence - Net Politics in the Era ...",
+              "snippet": "resigned from Renaissance in 2017 following political pressure. See ... deep-learning, deeplearning, neural nets, neuralnets, neural-nets, neural ...",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E12",
+              "url": "https://ecpr.eu/Events/AcademicProgramme/DownloadSchedulePDF?eventID=214",
+              "title": "ECPR General Conference, Charles University, 4 – 8 September 2023",
+              "snippet": "Aug 23, 2023 ... ... DeepLearning. FERNÁNDEZ PAREDES, Tatiana (Universitat Oberta de. Catalunya) P. Instagramming politics: Analyzing politicians' day-to-day.",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E13",
+              "url": "https://unesdoc.unesco.org/ark:/48223/pf0000384551",
+              "title": "Reporting on artificial intelligence: a handbook for journalism ...",
+              "snippet": "... political economies work. For example, concerning science, they need to ... deeplearning, #machinelearning) and find out how different user groups tend ...",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E14",
+              "url": "https://journals.law.harvard.edu/jlpp/wp-content/uploads/sites/90/2022/10/JLPP-V45-Issue-2.pdf",
+              "title": "HARVARD JOURNAL LAW & PUBLIC POLICY",
+              "snippet": "just as much economic pressure as a secondary political boycott. More ... Adam Thorne (Deeplearning. Scientist at PhysicsAI; B.S. in Biomechanical ...",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.linkedin.com/posts/andrewyng_openai-licenses-news-archives-generative-activity-7194414186548928513-gG_M",
+              "title": "Why open source is crucial for national security | Andrew Ng posted ...",
+              "snippet": "May 9, 2024 ... ... OpenAI Licenses News Archives, Generative Coding From Plan to Pull Request, and more deeplearning.ai · 1,601 56 Comments · Like Comment. Share.",
+              "query": "\"deeplearning\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E16",
+              "url": "https://www.facebook.com/wired/posts/chatgpt-gemini-deepseek-and-grok-are-serving-users-propaganda-from-russian-backe/1195435259118731/",
+              "title": "ChatGPT, Gemini, DeepSeek, and Grok are serving users ...",
+              "snippet": "Oct 27, 2025 ... ... States, and criticisms of the Chinese government by Chinese dissidents and foreign governments. ... DeepLearning #AIResearch #SustainableAI # ...",
+              "query": "\"deeplearning\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E17",
+              "url": "https://www.reddit.com/r/deeplearning/comments/12wxrrd/can_an_average_person_learn_how_to_build_a_llm/",
+              "title": "Can an average person learn how to build a LLM model? - Reddit",
+              "snippet": "Apr 24, 2023 ... ... deeplearning with Tensorflow from feed forward neural networks up to the Transformer architecture . Then you would need computing power an ...",
+              "query": "\"deeplearning\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E18",
+              "url": "https://www.linkedin.com/posts/andrewyng_releasing-a-new-agentic-reviewer-for-research-activity-7398773018317074432-vMct",
+              "title": "Andrew Ng's Post - LinkedIn",
+              "snippet": "Nov 24, 2025 ... DeepLearning.AI, AI Fund and AI Aspire. 4mo. Releasing a new \"Agentic ... They reject papers when academic integrity is compromised. The ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.sciencedirect.com/science/article/pii/S0925753521003015",
+              "title": "An integrated safety and security analysis for cyber-physical harm ...",
+              "snippet": "... integrity, alignment and calibration that the PLC can check automatically ... Retrieved February 5, 2019, from https://deeplearning.mit.edu. Google ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E20",
+              "url": "https://www.linkedin.com/posts/emmamhouse_stm-boss-caroline-sutton-dont-let-a-crisis-activity-7340246575761289216-wQse",
+              "title": "STM CEO on challenges of funding, integrity, and AI - LinkedIn",
+              "snippet": "Jun 15, 2025 ... https://lnkd.in/drRn9Qrq #AI #DeepLearning #Innovation #LLM #Technology #Research #Newsletter #EderSpark ... science are being undermined.",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E21",
+              "url": "https://www.facebook.com/IcahnMountSinai/posts/a-new-study-published-in-radiology-highlights-a-growing-challenge-at-the-interse/1362416135914921/",
+              "title": "Icahn School of Medicine at Mount Sinai - Facebook",
+              "snippet": "Apr 11, 2026 ... #DeepLearning #AI #radiology #CNN Chest radiograph interpretation is critical for the detection of thoracic diseases, including tuberculosis ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.linkedin.com/posts/giacomo-tarroni_icml2025-peerreview-activity-7336002443392040960-ormC",
+              "title": "Rebuttal ignored: questions on ICML's review process - LinkedIn",
+              "snippet": "Jun 4, 2025 ... ... compromised? 3) What is the point of ... #Day16 #ReinforcementLearning #DoubleDQN #DeepLearning #MachineLearning #AIResearch #90DaysOfRL.",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E23",
+              "url": "https://euvsdisinfo.eu/by/research_types/book/",
+              "title": "Research Archive - EU vs Disinfo",
+              "snippet": "... deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant emotional themes ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E24",
+              "url": "https://euvsdisinfo.eu/ka/research_languages/policy-recommendations/",
+              "title": "Research Archive - EU vs Disinfo",
+              "snippet": "A study applying a deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E25",
+              "url": "https://x.com/DeepLearningAI/status/2025937436899979359",
+              "title": "DeepLearning.AI",
+              "snippet": "Feb 23, 2026 ... The New Open-Weights Leader, Big AI's Political Influence, Predicting Illness, and more... www.deeplearning.ai. 4. 4. 30. 4344.",
+              "query": "\"deeplearning\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E26",
+              "url": "https://www.linkedin.com/posts/andrewyng_i-recently-received-an-email-titled-an-18-activity-7394769800234766336-KQwS",
+              "title": "I recently received an email titled “An 18-year-old's dilemma: Too ...",
+              "snippet": "Nov 13, 2025 ... ... condemned to uselessness, or emotional or social collapse. ... DeepLearning.AI, AI Fund and AI Aspire. 5mo. I recently received an ...",
+              "query": "\"deeplearning\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E27",
+              "url": "https://www.instagram.com/reel/DUAhhsSikn0/",
+              "title": "Grok AI generated 3 million sexualised images in just two weeks ...",
+              "snippet": "Jan 27, 2026 ... ... DeepLearning #FutureofAI ... The use of artificial intelligence in political campaigns raises critical questions about disinformation ...",
+              "query": "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.instagram.com/p/DLXjI5ss7qb/",
+              "title": "AI's role in #HumanDevelopment hinges on #PolicyChoices—not ...",
+              "snippet": "Jun 26, 2025 ... Photo by DeepLearning.AI on March 23, 2026. May be an illustration ... The Digital Mirage: Navigating AI, Deepfakes, and Disinformation",
+              "query": "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.linkedin.com/in/larson-kurt-execute-ai",
+              "title": "Larson, Kurt - USDOJ - LinkedIn",
+              "snippet": "Licenses & Certifications ; AI in National Security: Microcredential Edition. Special Competitive Studies Project · Oct 2025 ; AI For Everyone. DeepLearning.AI.",
+              "query": "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.facebook.com/EconomicTimes/posts/%EF%B8%8F-when-a-resignation-letter-becomes-a-viral-sensation-a-microsoft-engineers-bold/1280701737419065/",
+              "title": "Microsoft engineer's resignation letter to thousands of ... - Facebook",
+              "snippet": "Oct 13, 2025 ... ... workforce and terminated employees to cut annual costs. Was this ... deeplearning #machinelearning #ml #mlops #softwaredevelopment ...",
+              "query": "\"deeplearning\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Google-CSE"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        },
+        "B2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"deeplearning\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"deeplearning\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"deeplearning.ai\" reliability rating assessment",
+            "\"deeplearning.ai\" media bias rating fact checker",
+            "\"deeplearning\" credibility assessment fact check",
+            "\"deeplearning\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"deeplearning\" press council OR press complaints OR media regulator",
+            "\"deeplearning\" independence politicization political pressure",
+            "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"deeplearning\" scientific integrity compromised OR undermined",
+            "\"deeplearning\" ethics violation OR code violation OR journalistic standards",
+            "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"deeplearning\" political interference OR political influence",
+            "\"deeplearning\" reprimand OR sanction OR condemned OR censured",
+            "\"deeplearning\" \"propaganda outlet\" OR \"government-controlled media\""
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news/2024-10-30-1315/technology-researcher-finds-ai-could-help-improve-city-planning",
+              "title": "Researcher finds AI could help improve city planning | AllSides",
+              "snippet": "By comparing LLM performance with traditional city planning deep learning methods, the study from the College of Natural Resources and ...",
+              "query": "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE (cached)"
+            },
+            {
+              "id": "E2",
+              "url": "https://www.allsides.com/blog/ai-may-disrupt-2024-election-heres-how-you-can-prepare",
+              "title": "AI May Disrupt the 2024 Election. Here's How You Can Prepare ...",
+              "snippet": "AI as we know it today is due in large part to advancements within a subset of machine learning called deep learning. Deep learning, simply put, is a type ...",
+              "query": "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE (cached)"
+            },
+            {
+              "id": "E3",
+              "url": "https://www.allsides.com/news/2024-10-14-1215/technology-i-was-beta-tester-nobel-prize-winning-alphafold-ai-its-going",
+              "title": "I was a beta tester for the Nobel prize-winning AlphaFold AI—it's ...",
+              "snippet": "Editors have highlighted the following attributes while ensuring the content's credibility: The deep learning machine AlphaFold, which was ...",
+              "query": "\"deeplearning\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE (cached)"
+            },
+            {
+              "id": "E4",
+              "url": "https://fullfact.org/news/the-distant-future-the-year-2000/",
+              "title": "The word “robot” comes from Czech, not Greek like GPT-3 claims",
+              "snippet": "(GPT-3 is a “deep learning” model created by the US artificial intelligence research laboratory OpenAI, which generates human-like text ...",
+              "query": "\"deeplearning\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Google-CSE (cached)"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.disinfo.eu/publications/disinformation-glossary-150-terms-to-understand-the-information-disorder/",
+              "title": "Disinformation glossary: 150+ Terms to Understand the Information ...",
+              "snippet": "Deep learning: Deep learning is a subset of machine learning, which is essentially a neural network (i.e., a model made up of information ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.disinfo.eu/wp-content/uploads/2023/11/Disinfo2023_Day1_Emerging-realities_Thomas-Gouritin.pdf",
+              "title": "[PDF] Disinformation in the AI age - EU DisinfoLab",
+              "snippet": "Deep learning. Medical literature. Cases, papers… Medical imaging. Xk annotated images. EU DisinfoLab 2023 @DisinfoEU @tomg_. Page 6. 6. Example ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E7",
+              "url": "https://euvsdisinfo.eu/research/",
+              "title": "Research Archive - EUvsDisinfo",
+              "snippet": "A study applying a deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E8",
+              "url": "https://www.linkedin.com/posts/andrewyng_new-short-course-evaluating-ai-agents-evals-activity-7298024219433451521-PXow",
+              "title": "New short course: Evaluating AI Agents! Evals are important for ...",
+              "snippet": "DeepLearning.AI, AI Fund and AI Aspire. 1y. Report this post; Close ... Assessing LLM Reliability in Straight Through Processing. Show more",
+              "query": "\"deeplearning.ai\" reliability rating assessment",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.trustpilot.com/review/deeplearning.ai",
+              "title": "Read Customer Service Reviews of deeplearning.ai - Trustpilot",
+              "snippet": "1 person has already reviewed deeplearning.ai. Read about their experiences and share your own!",
+              "query": "\"deeplearning.ai\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E10",
+              "url": "https://medium.com/data-science/review-of-deeplearning-ai-courses-aed1328e4ffe",
+              "title": "Review of Deeplearning.ai Courses | by Thomas Treml - Medium",
+              "snippet": "What to Expect. On a professional level, when you are rather new to the topic, you can learn a lot of doing the deeplearning.ai specialization.",
+              "query": "\"deeplearning.ai\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E11",
+              "url": "https://www.facebook.com/Local4/posts/its-international-fact-checking-day-refresh-your-ai-identification-skills/1388667689972463/",
+              "title": "It's International Fact-Checking Day. Refresh your AI identification ...",
+              "snippet": "A single hallucinated “fact” can sink credibility, research, even lives. ... deeplearning https://www.linkedin. com/pulse/aimldlnnsllmschatgpt ...",
+              "query": "\"deeplearning\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E12",
+              "url": "https://www.linkedin.com/posts/sahil-kasliwal_github-sahilk710misinformation-aware-research-intelligence-system-activity-7446633694901137409-GxLo",
+              "title": "AI-Generated Content vs Fact-Checking with Misinformation-Aware ...",
+              "snippet": "... DeepLearning #DataScience #MathematicalProgramming.",
+              "query": "\"deeplearning\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E13",
+              "url": "https://www.facebook.com/statetimes/posts/deepfakes-significant-threat-to-democracy-presidenthttpsstatetimesindeepfakes-si/1200764522254655/",
+              "title": "Deepfakes significant threat to democracy: President https ...",
+              "snippet": "... political party. Prof Martin Innes, director ... #artificialintelligence #computervision #OpenCV #DeepLearning #machinelearning #fakenews.",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E14",
+              "url": "https://library.oapen.org/bitstream/id/61810f6f-bf40-404d-b688-61e9ac3405a4/external_content.pdf",
+              "title": "[PDF] The Democratization of Artificial Intelligence - Net Politics in the Era ...",
+              "snippet": "resigned from Renaissance in 2017 following political pressure. See ... deep-learning, deeplearning, neural nets, neuralnets, neural-nets, neural ...",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.facebook.com/SenatorTedCruz/posts/president-trump-took-an-important-step-today-to-promote-american-leadership-in-a/1408469203977183/",
+              "title": "President Trump took an important step today to promote American ...",
+              "snippet": "... DeepLearning #DL #Innovation #paralleldots #AIResearch ... Paul Aaron ▻ The Liberal, Conservative and independent forum (political talk and news).",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E16",
+              "url": "https://www.linkedin.com/posts/amanbandvi_siliconvalley-claude-departmentofwar-activity-7434966094840369152-kCzK",
+              "title": "Digital Colonialism in AI: US Gov't Targets Anthropic Over ... - LinkedIn",
+              "snippet": "Currently, I am deep-diving into the DeepLearning.AI framework to ensure the firms I advise are not just adopting AI, but doing so in a way ...",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E17",
+              "url": "https://www.facebook.com/cnbc/posts/president-donald-trump-ordered-us-government-agencies-to-immediately-cease-using/1311250070876383/",
+              "title": "President Donald Trump ordered U.S. government agencies to ...",
+              "snippet": "... DeepLearning #DL #Innovation #paralleldots #AIResearch ... Paul Aaron ▻ The Liberal, Conservative and independent forum (political talk and news).",
+              "query": "\"deeplearning\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E18",
+              "url": "https://time.com/collections/time100-voices/7016134/california-sb-1047-ai/",
+              "title": "The Problem With California's SB 1047 - Time Magazine",
+              "snippet": "Andrew Ng is the founder of DeepLearning.AI, managing general partner at AI Fund, executive chairman of LandingAI, chairman and co-founder of Coursera, and ...",
+              "query": "\"deeplearning\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E19",
+              "url": "https://euvsdisinfo.eu/by/research_types/book/",
+              "title": "Research Archive - EU vs Disinfo",
+              "snippet": "... deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant emotional themes ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E20",
+              "url": "https://euvsdisinfo.eu/ka/research_languages/policy-recommendations/",
+              "title": "Research Archive - EU vs Disinfo",
+              "snippet": "A study applying a deep learning model to classify sentiment in over 400,000 tweets about the Ukraine-Russia war, revealing shifts in public mood and dominant ...",
+              "query": "\"deeplearning\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E21",
+              "url": "https://www.linkedin.com/posts/martin-ciupa-76418b17_science-is-drowning-in-ai-slop-summary-activity-7429084067498721280-arvS",
+              "title": "AI-generated papers threaten scientific integrity: responsible use ...",
+              "snippet": "Used carelessly (or dishonestly), it scales bad science—especially through fake citations, fabricated content, and compromised ... DeepLearning # ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.nature.com/articles/s44387-025-00019-5",
+              "title": "Exploring the role of large language models in the scientific method",
+              "snippet": "... compromising scientific integrity. Ultimately, LLMs and ... DeepLearning.AI https://www.deeplearning.ai/short-courses/chatgpt ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E23",
+              "url": "https://www.instagram.com/p/DNpj-Vkh7PC/",
+              "title": "ReKappa — Generative AI & Assessment: A Closer Look at ...",
+              "snippet": "#AIInEducation #ArtificialIntelligence #HigherEducation #AcademicPublishing #StructuredLearning #DeepLearning #CriticalThinking #Educators #TeachersLife ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.facebook.com/groups/reviewer2/posts/10163482642580469/",
+              "title": "The number of unfortunate, misguided individuals who ... - Facebook",
+              "snippet": "But in reality, they undermine scientific integrity. ... #ai #community #data #socialmedia #automation #machinelearning #deeplearning ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E25",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11522648/",
+              "title": "The Dual Nature of AI in Information Dissemination: Ethical ... - PMC",
+              "snippet": "https://www.deeplearning.ai/resources/natural-language-processing/; 16. GPT-3 powers the next generation of apps. [2023-09-20]. https://openai.com/blog/gpt-3 ...",
+              "query": "\"deeplearning\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E26",
+              "url": "https://sites.google.com/deeplearning.ai/deeplearningaifaq/policies/code-of-conduct",
+              "title": "Code of Conduct",
+              "snippet": "You should not share code or your solutions to homework, quizzes, or exams with anyone other than a DeepLearning.AI mentor or staff member. This includes ...",
+              "query": "\"deeplearning\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E27",
+              "url": "https://github.com/shantanu1109/Coursera-DeepLearning.AI-Stanford-University-Machine-Learning-Specialization/blob/main/CODE_OF_CONDUCT.md",
+              "title": "Coursera-DeepLearning.AI-Stanford-University-Machine-Learning ...",
+              "snippet": "This Repository contains Solutions to the Quizes & Lab Assignments of the Machine Learning Specialization (2022) from Deeplearning.",
+              "query": "\"deeplearning\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.facebook.com/CITEZW/posts/deepfakes-are-getting-dangerously-convincingfake-voices-fake-celebrity-endorseme/1293693372792504/",
+              "title": "Deepfakes are getting dangerously convincing. Fake voices, fake ...",
+              "snippet": "Today we will discuss “deepfakes” (deeplearning+fakes) and how they can be used against you. ... state-backed operations to deceive ...",
+              "query": "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.linkedin.com/posts/alberto-martinez-aranda_detecting-and-preventing-distillation-attacks-activity-7431942953243402240-ZD5A",
+              "title": "Chinese Labs Distill Claude Capabilities with 24,000 Fake Accounts ...",
+              "snippet": "... state-backed lab with advanced chips and 24000 ... disinformation campaigns, and mass surveillance ... #AI #CyberSecurity #Anthropic #ClaudeAI #DeepLearning # ...",
+              "query": "\"deeplearning\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E30",
+              "url": "https://x.com/DeepLearningAI/status/2026779233196838947",
+              "title": "Major tech and AI firms collectively spent over $100 million on U.S. ...",
+              "snippet": "DeepLearning.AI (@DeepLearningAI). 25 likes 3 replies. Major tech and AI firms collectively spent over $100 million on U.S. lobbying in 2025 ...",
+              "query": "\"deeplearning\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        }
+      }
+    },
+    {
+      "domain": "siemens.com",
+      "isCanonicalControl": false,
+      "originalBaseline": {
+        "score": 0.7,
+        "confidence": 0.67,
+        "category": "leaning_reliable",
+        "sourceType": "corporate_publisher",
+        "biasIndicator": "center",
+        "consensusAchieved": true,
+        "modelPrimary": "claude-haiku-4-5-20251001",
+        "modelSecondary": "gpt-4.1-mini",
+        "evaluatedAt": "2026-04-04T17:28:49.545Z"
+      },
+      "currentBaseline": {
+        "score": 0.68,
+        "confidence": 0.85,
+        "category": "leaning_reliable",
+        "sourceType": "collaborative_reference",
+        "biasIndicator": null
+      },
+      "lanes": {
+        "A2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"siemens.com\" reliability rating assessment",
+            "\"siemens.com\" media bias rating fact checker",
+            "\"siemens\" credibility assessment fact check",
+            "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"siemens\" press council OR press complaints OR media regulator",
+            "\"siemens\" independence politicization political pressure",
+            "\"siemens\" ethics violation OR code violation OR journalistic standards",
+            "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"siemens\" scientific integrity compromised OR undermined",
+            "\"siemens\" reprimand OR sanction OR condemned OR censured"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news/2022-06-29-0700/joe-biden-volkswagen-siemens-among-companies-investing-over-700-million-boost-ev-charger-production",
+              "title": "Volkswagen, Siemens Among Companies Investing Over $700 ...",
+              "snippet": "Jun 29, 2022 ... Private companies including Volkswagen and Siemens have pledged to invest more than $700 million to boost U.S. manufacturing capacity for ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E2",
+              "url": "https://www.allsides.com/news/2024-12-18-0500/banking-and-finance-siemens-eyes-selling-6-siemens-energy-stake-fund-altair",
+              "title": "Siemens Eyes Selling 6% Siemens Energy Stake to Fund Altair Deal",
+              "snippet": "Siemens AG plans to sell a €2.5 billion ($2.6 billion) stake in Siemens Energy AG in the coming months to help fund its $10 billion ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E3",
+              "url": "https://www.allsides.com/news/2025-05-14-2315/business-siemens-revenue-rises-rebound-factory-automation-china",
+              "title": "Siemens' Revenue Rises on Rebound in Factory Automation in China",
+              "snippet": "Siemens AG's revenues rose in the first three months of the year, driven by a recovery in factory-automation sales in China and larger ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.snopes.com/fact-check/zantac-causes-false-positive-for-meth/",
+              "title": "Does Zantac Cause False Positives for Methamphetamines?",
+              "snippet": "Feb 7, 2018 ... ... Siemens EMIT II Plus assay [the new version of the Syva test] is free from such interference. Advertisement: The possible mechanism for ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.snopes.com/fact-check/baggage-denver-airport/",
+              "title": "Was a Gigantic Pile of Baggage Spotted at the Denver Airport?",
+              "snippet": "Dec 17, 2020 ... ... Siemens, to test a new baggage handling system that is under construction. When the photos were taken, the bags were being stored in a ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.snopes.com/fact-check/female-time-traveler-cellphone/",
+              "title": "1938 Video Shows Female 'Time Traveler' Talking on a Cellphone?",
+              "snippet": "May 18, 2024 ... \"It's a Siemens hearing instrument, patented in 1924 or a Western Electric Model 34A Audiphone Carbon Hearing Aid,\" one YouTube user ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E7",
+              "url": "https://fullfact.org/news/starmer-wind-farm/",
+              "title": "Keir Starmer wrong to say turbines at UK's largest onshore wind ...",
+              "snippet": "Aug 1, 2023 ... Siemens Gamesa, the wind turbine division of Siemens Energy, told Full Fact the 140 wind turbines they provided in the initial phase of ...",
+              "query": "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E8",
+              "url": "https://fullfact.org/news/BBCQT-22-Feb-2018/",
+              "title": "BBC Question Time: factchecked – Full Fact",
+              "snippet": "Question Time was in Uttoxeter this week. The panelists were: Conservative Party Chair Brandon Lewis MP, Labour peer Lord Prescott, Siemens UK CEO Juergen ...",
+              "query": "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E9",
+              "url": "https://euvsdisinfo.eu/report/operating-nord-stream-i-would-be-dangerous/",
+              "title": "Disinfo: Operating Nord Stream I would be dangerous - EUvsDisinfo",
+              "snippet": "This narrative plays into the Kremlin's claims that the West is collapsing. Siemens noted that it did not believe such leakage is sufficient ground to stop the ...",
+              "query": "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper+SerpAPI+Brave"
+            },
+            {
+              "id": "E10",
+              "url": "https://www.fda.gov/media/138753/download",
+              "title": "Dimension Vista SARS-CoV-2 Total Antibody Assay (COV2T) - FDA",
+              "snippet": "Under exigent circumstances, other appropriate methods for disseminating these Fact Sheets may be used, which may include mass media. ... siemens.com/healthineers.",
+              "query": "\"siemens.com\" media bias rating fact checker",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E11",
+              "url": "https://www.trustpilot.com/review/www.siemens.com?page=3",
+              "title": "Read Customer Service Reviews of www.siemens.com | 3 of 6",
+              "snippet": "Apr 11, 2024 ... ... fact-check reviews. While we don't verify specific claims ... Contact info. Munich, Germany. www.siemens.com. 1.6. Bad. TrustScore 1.5 ...",
+              "query": "\"siemens.com\" media bias rating fact checker",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E12",
+              "url": "https://www.continental.com/en/press/press-releases/20210729-ces-siemens-ehighway/",
+              "title": "Continental and Siemens Mobility to Supply Trucks Across Europe ...",
+              "snippet": "Press Release. July 29, 2021. New Partnership: Continental and Siemens Mobility to Supply Trucks Across Europe with Electricity from Overhead Lines.",
+              "query": "\"siemens\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E13",
+              "url": "https://europa.eu/rapid/press-release_IP-19-881_en.htm",
+              "title": "Mergers: Commission prohibits Siemens-Alstom merger",
+              "snippet": "Feb 5, 2019 ... Contacts for media. The European Commission has prohibited Siemens' proposed acquisition of Alstom under the EU Merger Regulation. The merger ...",
+              "query": "\"siemens\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E14",
+              "url": "https://www.linkedin.com/in/correamariana",
+              "title": "Mariana Correa - Siemens Healthineers | LinkedIn",
+              "snippet": "Mariana Correa. Siemens Healthineers ESPM Escola Superior de Propaganda e Marketing. Landenberg, Pennsylvania, United States ... Columbus, Ohio, United States. - ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.tandfonline.com/doi/full/10.1080/07075332.2025.2600933",
+              "title": "German Symphony Orchestras Touring Nazi 'New Europe' During ...",
+              "snippet": "Following the model of similar performances for Siemens or AEG in the Reich ... 5 Friedrich Geiger, 'Conducting the Masses: State Propaganda and ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E16",
+              "url": "https://spectrum.ieee.org/inside-the-third-reichs-radio",
+              "title": "Inside the Third Reich's Radio - IEEE Spectrum",
+              "snippet": "Mar 30, 2021 ... The government pressured 28 German radio manufacturers, including Philips, Siemens, and Telefunken, into producing the VE301. They were ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E17",
+              "url": "https://en.wikipedia.org/wiki/Propaganda_in_Iran",
+              "title": "Propaganda in Iran - Wikipedia",
+              "snippet": "Aided by Western technology from Nokia and Siemens, the Iranian government has created one of the most sophisticated censorship platforms created in modern ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E18",
+              "url": "https://www.facebook.com/groups/68135024700/posts/10163783517739701/",
+              "title": "Dear friends! Singer Nidia Gongora (Colombia) is coming to State ...",
+              "snippet": "Sep 23, 2025 ... ... propaganda project organized by the aggressor state that has ... Professionally, I served for three years as the Siemens Medical ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.clearygottlieb.com/-/media/files/how-the-draghi-report-may-impact-eu-merger-control.pdf",
+              "title": "II. How the Draghi report may impact EU merger control",
+              "snippet": "Siemens/Alstom?, Concurrences No. 2-2019, art. No. 89966, pp. 2–5. 105. See ... Commission's independence from political pressure;. (iii) to ensure that ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E20",
+              "url": "https://www.tba.org/?pg=Articles&blAction=showEntry&blogEntry=93325",
+              "title": "The Code of Judicial Conduct Meets the Challenge to Judicial ...",
+              "snippet": "Jul 1, 2023 ... Siemens, Melanie, Silva, Edward, Simerlein, Steven, Simmons, Scott ... politics, the judiciary must be “free from partisan pressure.",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E21",
+              "url": "https://awards.concurrences.com/IMG/pdf/15._european_champions_why_politics_should_stay_out_of_eu_merger_control.pdf",
+              "title": "Why politics should stay out of EU merger control - Concurrences",
+              "snippet": "Vestager, Independence is non-negotiable, Chatham House conference on Politicization ... One assumes, given the context of Siemens/Alstom, that Franco-. German ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E22",
+              "url": "https://bti-project.org/en/reports/country-report/AGO",
+              "title": "Angola Country Report 2026 - bti-project.org",
+              "snippet": "... politically independent. ... In its current form, the project is envisioned as a public-private partnership with Siemens, with an estimated total cost of $3 ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E23",
+              "url": "https://thecapitolforum.com/weakened-macron-fight-for-european-champions/",
+              "title": "Despite a Weakened Macron, His Fight for European 'Champions ...",
+              "snippet": "Jul 23, 2024 ... Still, she dispelled any notion that the revisions were in response to pressure to greenlight deals like Siemens/Alstom. The commission ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.siemensgovt.com/compliance/code-of-conduct",
+              "title": "Code of Conduct | Siemens Government Technologies",
+              "snippet": "Siemens Government Technologies (SGT) is committed to conducting our operations with the highest standards of business conduct and ethics.",
+              "query": "\"siemens\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E25",
+              "url": "https://violationtracker.goodjobsfirst.org/",
+              "title": "Violation Tracker",
+              "snippet": "Siemens, Siemens Energy, Sierra Nevada, Sierra Pacific Industries, Sigma ... Standard Chartered, Standard General LP, Standard Industries Inc. Standard Motor ...",
+              "query": "\"siemens\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E26",
+              "url": "https://iovs.arvojournals.org/article.aspx?articleid=2631950",
+              "title": "Compromised Integrity of Central Visual Pathways in Patients ... - IOVS",
+              "snippet": "... research. SD-OCT ... We collected all MRI data with a scanner (3T head-only Allegra; Siemens, Erlangen, Germany) using a one-channel whole head coil.",
+              "query": "\"siemens\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E27",
+              "url": "https://www.frontiersin.org/journals/neurology/articles/10.3389/fneur.2018.00221/full",
+              "title": "Compromised Blood–Brain Barrier Integrity Is Associated With Total ...",
+              "snippet": "All participants underwent structural brain MRI on a 3T MRI scanner (Prisma; Siemens AG, Erlangen, Germany). ... research integrity and scientific quality. Learn ...",
+              "query": "\"siemens\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.siemens-healthineers.com/en-us/poct-urinalysis/clinitek-status-connect",
+              "title": "CLINITEK Status® Connect System - Siemens Healthineers",
+              "snippet": "Prevents false-positive results if test strip integrity is compromised by humidity overexposure. · Ensures that only validated Siemens Healthineers test strips ...",
+              "query": "\"siemens\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.sciencedirect.com/science/article/pii/S2213158221000024",
+              "title": "Fronto-parietal involvement in chronic stroke motor performance ...",
+              "snippet": "... integrity, while absence (MEP−) suggests integrity is compromised. ... Magnetic resonance imaging was performed using a Siemens 3T MAGNETOM Skyra scanner (Siemens ...",
+              "query": "\"siemens\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.jacc.org/doi/10.1016/j.jcmg.2019.12.020",
+              "title": "Myocardial Injury and Compromised Cardiomyocyte Integrity ... - JACC",
+              "snippet": "Mar 18, 2020 ... cTnI concentrations were determined using a contemporary troponin I assay (ADVIA Centaur TnI-Ultra, Siemens ... Scientific Research (project ...",
+              "query": "\"siemens\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        },
+        "B2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"siemens.com\" reliability rating assessment",
+            "\"siemens.com\" media bias rating fact checker",
+            "\"siemens\" credibility assessment fact check",
+            "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"siemens\" press council OR press complaints OR media regulator",
+            "\"siemens\" independence politicization political pressure",
+            "\"siemens\" scientific integrity compromised OR undermined",
+            "\"siemens\" ethics violation OR code violation OR journalistic standards"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news/2024-12-18-0500/banking-and-finance-siemens-eyes-selling-6-siemens-energy-stake-fund-altair",
+              "title": "Siemens Eyes Selling 6% Siemens Energy Stake to Fund Altair Deal",
+              "snippet": "Siemens AG plans to sell a €2.5 billion ($2.6 billion) stake in Siemens Energy AG in the coming months to help fund its $10 billion ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E2",
+              "url": "https://www.allsides.com/news/2025-05-14-2315/business-siemens-revenue-rises-rebound-factory-automation-china",
+              "title": "Siemens' Revenue Rises on Rebound in Factory Automation in ...",
+              "snippet": "Siemens AG's revenues rose in the first three months of the year, driven by a recovery in factory-automation sales in China and larger orders for trains in ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E3",
+              "url": "https://www.allsides.com/news/09252025-0405/siemens-picks-square-exclusive-talks-sale-lisbon-hub",
+              "title": "Siemens Picks Square for Exclusive Talks on Sale of Lisbon Hub ...",
+              "snippet": "Siemens AG has entered into exclusive talks with Square Asset Management for the sale and leaseback of a building complex in Lisbon, according to people ...",
+              "query": "\"siemens\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.snopes.com/fact-check/female-time-traveler-cellphone/",
+              "title": "1938 Video Shows Female 'Time Traveler' Talking on a Cellphone?",
+              "snippet": "\"It's a Siemens hearing instrument, patented in 1924 or a Western Electric Model 34A Audiphone Carbon Hearing Aid,\" one YouTube user ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.snopes.com/fact-check/zantac-causes-false-positive-for-meth/",
+              "title": "Does Zantac Cause False Positives for Methamphetamines? - Snopes",
+              "snippet": "... Siemens EMIT II Plus assay [the new version of the Syva test] is free from such interference. Advertisement: The possible mechanism for ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.snopes.com/fact-check/overcharged/",
+              "title": "Does Using a Recharging Cell Phone Pose a Serious Threat of ...",
+              "snippet": "In September 2004, a report out of southern Vietnam stated that a two-year-old Siemens C45 left charging for 30 minutes had exploded, slightly ...",
+              "query": "\"siemens\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E7",
+              "url": "https://fullfact.org/news/starmer-wind-farm/",
+              "title": "Keir Starmer wrong to say turbines at UK's largest onshore ...",
+              "snippet": "The turbines for the Neart na Gaoithe project will be provided by Siemens Gamesa, and the blades are being produced in Hull. A Siemens Gamesa ...",
+              "query": "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E8",
+              "url": "https://fullfact.org/news/BBCQT-22-Feb-2018/",
+              "title": "BBC Question Time: factchecked",
+              "snippet": "Question Time was in Uttoxeter this week. The panelists were: Conservative Party Chair Brandon Lewis MP, Labour peer Lord Prescott, Siemens UK CEO Juergen ...",
+              "query": "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E9",
+              "url": "https://fullfact.org/sites/fullfact.org/files/2012/04/CPRE_wind_data_22_03.xls",
+              "title": "Operational",
+              "snippet": "Mainstream Renewable Power, Siemens Project Venture, 54 00 35N, 00 15 15W. 132, Jan-10, Consented, Tedder Hill, East Riding of Yorkshire, 2.3, 3, 6.9, 3858, E.",
+              "query": "\"siemens\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E10",
+              "url": "https://euvsdisinfo.eu/report/operating-nord-stream-i-would-be-dangerous/",
+              "title": "Disinfo: Operating Nord Stream I would be dangerous - EUvsDisinfo",
+              "snippet": "This narrative plays into the Kremlin's claims that the West is collapsing. Siemens noted that it did not believe such leakage is sufficient ground to stop the ...",
+              "query": "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E11",
+              "url": "https://euvsdisinfo.eu/it/report/european-leaders-have-accepted-the-loss-of-crimea/",
+              "title": "Disinfo: I leader europei hanno accettato la perdita della Crimea.",
+              "snippet": "... Siemens tedesca erano state dirottate nella regione della Crimea, annessa dalla Russia. Leggi di più: eeas.europa.eu/headquarters/headquarters-homepage_en ...",
+              "query": "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E12",
+              "url": "https://euvsdisinfo.eu/fr/report/european-leaders-have-accepted-the-loss-of-crimea/",
+              "title": "Disinfo: Les dirigeants européens ont accepté la perte de la Crimée.",
+              "snippet": "... Siemens en Allemagne ont été détournées vers la région de Crimée annexée par la Russie. Lire la suite : eeas.europa.eu/headquarters ...",
+              "query": "\"siemens\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E13",
+              "url": "https://www.gartner.com/reviews/market/analytics-business-intelligence-platforms/vendor/siemens",
+              "title": "Siemens Reviews, Ratings & Features 2026 | Gartner Peer Insights",
+              "snippet": "Siemens Reviews ; Service & Support. 4.5 ; Company Type · Public ; Year Founded · 1847 ; Annual Revenue · 30B+ USD ; Website · http://www.siemens.com.",
+              "query": "\"siemens.com\" reliability rating assessment",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E14",
+              "url": "https://www.trustpilot.com/review/www.siemens.com",
+              "title": "Read Customer Service Reviews of www.siemens.com - Trustpilot",
+              "snippet": "www.siemens.com. 1.6. Bad. TrustScore 1.5 out of 5. 638 reviews. 5-star. 4-star. 3-star. 2-star. 1-star. How is the TrustScore calculated? Hasn't replied to ...",
+              "query": "\"siemens.com\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E15",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8128142/",
+              "title": "Digital Twins for Multiple Sclerosis - PMC - NIH",
+              "snippet": "Siemens . (2020). Available at: https://new.siemens.com/global/en/company/stories/industry/the-digital-twin ...",
+              "query": "\"siemens.com\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E16",
+              "url": "https://www.mcgrawcenter.org/stories/slammed-for-bribery-siemens-continued-to-ignore-red-flags/",
+              "title": "Slammed for Bribery, Siemens Continued to Ignore Red Flags",
+              "snippet": "German engineering giant Siemens, one of the world's biggest multinational companies, ignored its own red flags for foreign bribery.",
+              "query": "\"siemens\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E17",
+              "url": "https://www.instagram.com/bridgit_training/reel/DUh8QAEDn01/?__d=1https%3A%2F%2Fwww.instagram.com%2Fsyjobodygoals%2F",
+              "title": "Siemens rebuilt credibility by strengthening anti-bribery controls and ...",
+              "snippet": "Siemens rebuilt credibility by strengthening anti-bribery controls and governance worldwide. ABMS turns ethics into a system, not a ...",
+              "query": "\"siemens\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E18",
+              "url": "https://baselgovernance.org/sites/default/files/2019-02/compliance_system_en.pdf",
+              "title": "[PDF] The Siemens Compliance System - Basel Institute on Governance",
+              "snippet": "All business partners performing an inter- mediary role between Siemens and the customer must undergo a uniform, Company-wide, tool-supported risk assessment.",
+              "query": "\"siemens\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.jstor.org/stable/25071954",
+              "title": "Corporate Morality Called in Question: The Case of Cabora Bassa",
+              "snippet": "ABSTRACT. This article presents a case study of a big. German enterprise (Siemens) facing a large wave of public critique and protest activities.",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E20",
+              "url": "https://journal-redescriptions.org/articles/10.33134/rds.312",
+              "title": "The Justicization of Politics: Constitutionalism and Democracy in ...",
+              "snippet": "München: Carl Friedrich von Siemens Stiftung. Waldron, Jeremy. [2009] 2016. Political Political Theory. Cambridge (Mass.): Harvard University Press. Weber ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E21",
+              "url": "https://www.tandfonline.com/doi/full/10.1080/01402382.2024.2355812",
+              "title": "Intergovernmentalism in a supranational field: France, Germany ...",
+              "snippet": "... Siemens – a merger strongly favoured by the French and German governments. Externally, Europe was increasingly confronted with global-power ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E22",
+              "url": "https://onlinelibrary.wiley.com/doi/10.1111/gove.70068",
+              "title": "Learning From the Past? EU Industrial Policy Challenges - Zurstrassen",
+              "snippet": "The failure of Unidata (a joint venture between French CII, Dutch Philips, and German Siemens) ... political independence at stake”.",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E23",
+              "url": "https://socialhistoryportal.org/sites/default/files/raf/en/0019860709%2520EN_2.pdf",
+              "title": "[PDF] Attack the current strategic projects of the political, economic and ...",
+              "snippet": "the history of siemens is the history of the continuity of germany's fascism and imperialism: the frg. siemens helped to put hitler into power – as, they ...",
+              "query": "\"siemens\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.siemens-energy.com/global/en/home/company/compliance/reporting-channels.html",
+              "title": "Reporting Channels „Speak Up” and Ombudsperson",
+              "snippet": "Siemens Energy offers the compliance reporting channels “Speak Up” and “Ombudsperson” to raise concerns about possible violations.",
+              "query": "\"siemens\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E25",
+              "url": "https://competition-cases.ec.europa.eu/cases/M.3653",
+              "title": "M.3653 - SIEMENS / VA TECH - Competition case search",
+              "snippet": "SIEMENS / VA TECH. Companies: SIEMENS |. VA TECH. Last decision date: 13.07.2005. Regulation: Council Regulation 139/2004. Notification date: 10.01.2005.",
+              "query": "\"siemens\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E26",
+              "url": "https://collections.ushmm.org/search/catalog/irn1000378",
+              "title": "Hitler at Siemens factory - USHMM Collections",
+              "snippet": "Description: Hitler's speech to Siemens factory workers. Hitler (on circular platform) starts off calmly, becoming more emphatic: \"I want ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E27",
+              "url": "https://history.state.gov/historicaldocuments/frus1933v02/d181",
+              "title": "Historical Documents - Office of the Historian",
+              "snippet": "Hitler's speech to the workmen at the Siemens factory in Berlin on Friday preceding the election was the culminating point in the campaign. This speech was ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.instagram.com/reel/DXLXI_-ATXz/",
+              "title": "Follow us @unmasked_politics for more When Adolf Hitler stepped ...",
+              "snippet": "... propaganda, and fear. The Siemens speech was not just about industry—it was about influence, about capturing belief, and about turning a ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E29",
+              "url": "https://en.wikipedia.org/wiki/Themes_in_Nazi_propaganda",
+              "title": "Themes in Nazi propaganda - Wikipedia",
+              "snippet": "Communists were the first group attacked as enemies of the state when Nazis ascended to power. ... ^ Daniel Siemens, The Making of a Nazi Hero: The Murder and ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.theholocaustexplained.org/life-in-nazi-occupied-europe/controlling-everyday-life/propaganda/",
+              "title": "Propaganda – The Holocaust Explained: Designed for schools",
+              "snippet": "The programme was relatively popular, and some groups, such as the 28,500 workers from Siemens in Berlin, were able to take a holiday. However, smaller ...",
+              "query": "\"siemens\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        }
+      }
+    },
+    {
+      "domain": "accelerazero.com",
+      "isCanonicalControl": false,
+      "originalBaseline": {
+        "score": 0.62,
+        "confidence": 0.6,
+        "category": "leaning_reliable",
+        "sourceType": "corporate_interest",
+        "biasIndicator": null,
+        "consensusAchieved": true,
+        "modelPrimary": "claude-haiku-4-5-20251001",
+        "modelSecondary": "gpt-4.1-mini",
+        "evaluatedAt": "2026-04-16T05:35:51.421Z"
+      },
+      "currentBaseline": {
+        "score": 0.68,
+        "confidence": 0.65,
+        "category": "leaning_reliable",
+        "sourceType": "unknown",
+        "biasIndicator": null
+      },
+      "lanes": {
+        "A2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"accelerazero\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"accelerazero\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"accelerazero\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"accelerazero\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"accelerazero.com\" reliability rating assessment",
+            "\"accelerazero.com\" media bias rating fact checker",
+            "\"accelerazero\" credibility assessment fact check",
+            "\"accelerazero\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"accelerazero\" press council OR press complaints OR media regulator",
+            "\"accelerazero\" independence politicization political pressure",
+            "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+            "\"accelerazero\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"accelerazero\" reprimand OR sanction OR condemned OR censured",
+            "\"accelerazero\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"accelerazero\" discrimination complaint OR ethics complaint",
+            "\"accelerazero\" \"propaganda outlet\" OR \"government-controlled media\"",
+            "\"accelerazero\" retraction OR correction demanded",
+            "\"accelerazero\" \"state narrative\" OR \"government narrative\"",
+            "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+            "\"accelerazero\" scientific integrity compromised OR undermined",
+            "\"accelerazero\" political interference OR political influence",
+            "\"accelerazero\" staff exodus OR workforce cuts OR mass resignation",
+            "\"accelerazero\" credibility crisis OR trust crisis",
+            "\"accelerazero\" leadership change controversy OR new leadership concerns"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.sciencedirect.com/science/article/pii/S0360319925044829",
+              "title": "Technical review of commercial LT-PEMFC technologies",
+              "snippet": "Oct 8, 2025 ... This review has provided a cross-sectoral assessment of ... https://www.accelerazero.com/news/hyrdogen-fuel-cell-trains-heading ...",
+              "query": "\"accelerazero.com\" reliability rating assessment",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E2",
+              "url": "https://flore.unifi.it/retrieve/7ddecbfb-a9ca-4027-930b-35efc9fa469f/Alessandro_Mati_XXXVI_PhD_Thesis.pdf",
+              "title": "[PDF] Hydrogen potential in industry decarbonisation - FLORE",
+              "snippet": "//www.accelerazero.com/news/atura-power-selects-accelera-design- · manufacture-20mw-electrolyzer-system (visited on 08/07/2024). [200] M. S. Thomassen, A. H. ...",
+              "query": "\"accelerazero.com\" media bias rating fact checker",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            },
+            {
+              "id": "E3",
+              "url": "https://d21zja6o12zyp0.cloudfront.net/9781644903216.pdf",
+              "title": "[PDF] Renewable Energy: Generation and Application - ICREGA'24",
+              "snippet": "... fact, the sustainability discourse demands a critical evaluation of our ... accelerazero.com/news/what-is an-electrolyzer-and-what-is-it-used-for ...",
+              "query": "\"accelerazero.com\" media bias rating fact checker",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.facebook.com/groups/341871730272007/posts/1136643304128175/",
+              "title": "How long lasting is the BYD EV battery? - Facebook",
+              "snippet": "Mar 18, 2024 ... Sean Hayat check your facts. https://www.accelerazero. com/news/5-facts-about-lfp-batteries And I m also a battery practitioner in industry.",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E5",
+              "url": "https://h2meet.com/html/download/H2%20MEET%202024_Conference_Tech%20Talk.pdf",
+              "title": "Tech Talk - H2 MEET",
+              "snippet": "Sep 25, 2024 ... REALITY CHECK ON GW SCALE WATER ELECTROLYSER CLAIMS. Page 219 ... https://www.accelerazero.com/sites/default/files/styles/max_325x325 ...",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E6",
+              "url": "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC133726/JRC133726_01.pdf",
+              "title": "EU harmonised accelerated stress testing protocols for low ...",
+              "snippet": "... accelerazero.com,. - page 5, CEA logo, source: https://www.cea.fr,. - page 5 ... ISO, 'Pneumatic fluid power — Assessment of component reliability by ...",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E7",
+              "url": "https://www.cummins.com/en-na/news/2024/01/11/how-does-fuel-delivery-system-work-hydrogen-ice-hydrogen-fuel-cell-and-natural-gas",
+              "title": "How does the fuel delivery system work for hydrogen ICE ... - Cummins",
+              "snippet": "Jan 11, 2024 ... Press Releases and Media Contacts ... For more information on the diverse Accelera portfolio of zero-emission solutions please visit accelerazero.",
+              "query": "\"accelerazero\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E8",
+              "url": "https://kommunikasjon.ntb.no/pressemelding/18441697/accelera-and-gail-partner-to-advance-green-hydrogen-production-transportation-and-storage?publisherId=90063&lang=en",
+              "title": "Accelera and GAIL Partner to Advance Green Hydrogen Production ...",
+              "snippet": "Mar 3, 2025 ... To learn more about Accelera by Cummins, visit accelerazero.com. View source version on businesswire.com: https://www.businesswire.com/news ...",
+              "query": "\"accelerazero\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.facebook.com/accelerazero/posts/accelera-by-cummins-alongside-daimler-truck-ag-and-paccar-is-proud-to-announce-w/395325730159578/",
+              "title": "Accelera by Cummins - Facebook",
+              "snippet": "Read the full press release to learn more about Amplify Cell Technologies: https://www.accelerazero. com/news/battery-cell-jv-complete-ceo- ...",
+              "query": "\"accelerazero\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE+Serper+SerpAPI+Brave"
+            },
+            {
+              "id": "E10",
+              "url": "https://ttujelp.org/wp-content/uploads/2024/06/JELP-VOL.-3-BOOK-.pdf",
+              "title": "Texas Tech Law Review Shell Document",
+              "snippet": "Jun 3, 2024 ... CODE. ANN. § 15-76-315 (2015). Page 32. 26 ... What is an Electrolyzer and what is it used for?, ACCELERA, https://www.accelerazero.com/.",
+              "query": "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE+Serper+SerpAPI+Brave"
+            },
+            {
+              "id": "E11",
+              "url": "https://belgianeconomicmission.be/sites/default/files/content/pages/documents/BEM%20Australia%202023%20-%20Brochure%20participants.pdf",
+              "title": "AUSTRALIA - Belgian Economic Mission",
+              "snippet": "Jun 19, 2023 ... WWW.ACCELERAZERO.COM. Accelera is an energy technology brand that ... ESG reporting and Global Sanction Compliance, as well as actively.",
+              "query": "\"accelerazero\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            },
+            {
+              "id": "E12",
+              "url": "https://accelerazero.snapon.com/Legal/PrivacyPolicy.aspx",
+              "title": "Accelera: Legal - Privacy Policy - Accelera: Login - Snap-on",
+              "snippet": "The protection of your personal information is an important concern to which we pay special attention. This privacy policy answers frequently asked questions ...",
+              "query": "\"accelerazero\" discrimination complaint OR ethics complaint",
+              "provider": "Google-CSE+Serper+SerpAPI+Brave"
+            },
+            {
+              "id": "E13",
+              "url": "https://seekingalpha.com/article/4828705-cummins-stock-watch-this-dividend-aristocrat-in-making-now",
+              "title": "Cummins: Watch This Dividend Aristocrat In The Making Now",
+              "snippet": "Oct 9, 2025 ... ... accelerazero.com/...). Even if the price has gotten a bit ahead of ... @Hugh Arhue market correction OR sector/narrative correction. I ...",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E14",
+              "url": "https://d15k2d11r6t6rl.cloudfront.net/pub/bfra/la2h29b2/ndi/6f2/6ba/Coolest%20Thing%20Look%20Book%202024.pdf",
+              "title": "Your guide to the top 64 “coolest” things made in Minnesota",
+              "snippet": "Oct 9, 2024 ... www.accelerazero.com. Presented by. Accelera by Cummins. HyLYZER1000 - PEM Electrolyzer. Page 8. 6. Action Manufacturing. Action Trackchair®.",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E15",
+              "url": "https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P101A93R.TXT",
+              "title": "Greenhouse Gas Emissions Standards for Heavy-Duty Vehicles",
+              "snippet": "... demanded over a given month (discussed in Chapter 1.6.2.4). As noted in a ... Available online: https://www.accelerazero.com/fuel-cells.; Shepard, Paul.",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E16",
+              "url": "https://www.powerbaseproject.eu/wp-content/uploads/D2.5-SOTA-report-actors-map-V2-with-annexes.pdf",
+              "title": "[PDF] D2.5 SOTA report & actors map v2 | POWERBASE project",
+              "snippet": "active scientific investigation and continues to receive significant research attention and ... https://www.accelerazero.com/fuel- cells/fce150 ( ...",
+              "query": "\"accelerazero\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E17",
+              "url": "https://nepis.epa.gov/Exe/ZyNET.exe/P101A93R.txt?ZyActionW=Download&Client=EPA&Index=2016%20Thru%202020%7C2011%20Thru%202015%7C2000%20Thru%202005%7C2006%20Thru%202010%7CPrior%20to%201976%7C1976%20Thru%201980%7C1981%20Thru%201985%7C1986%20Thru%201990%7C1991%20Thru%201994%7C1995%20Thru%201999%7CHardcopy%20Publications&Docs=&Query=transportation%20trucks%20duty%20c02%20ghg&Time=&EndTime=&SearchMethod=2&TocRestrict=n&Toc=&TocEntry=&QField=&QFieldYear=&QFieldMonth=&QFieldDay=&UseQField=&IntQFieldOp=0&ExtQFieldOp=0&XmlQuery=&File=D%3A%5CZYFILES%5CINDEX%20DATA%5C16THRU20%5CTXT%5C00000042%5CP101A93R.txt&User=ANONYMOUS&Password=anonymous&SortMethod=h%7C-&MaximumDocuments=15&FuzzyDegree=0&ImageQuality=r85g16/r85g16/x150y150g16/i500&Display=hpfr&DefSeekPage=x&SearchBack=ZyActionE&Back=ZyActionS&BackDesc=Results%20page",
+              "title": "P101A93R.txt - epa nepis",
+              "snippet": "... accelerazero.com/fuel-cells.; Shepard, Paul. \"News: Cummins Acquires Hydrogenics for Fuel Cell and Hydrogen Production Tech\". September 2019. Available ...",
+              "query": "\"accelerazero\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E18",
+              "url": "https://www.sciencedirect.com/science/article/pii/S221462962500427X",
+              "title": "50 shades of hydrogen: A perspective on definitions in science and ...",
+              "snippet": "... politics and political communication should be investigated. ... Decoding the hydrogen rainbow: what is it and why is it useful? https://www.accelerazero ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.waterstofnet.eu/_asset/_public/BHC/BHC-company-directory-web.pdf",
+              "title": "COMPANY DIRECTORY - WaterstofNet",
+              "snippet": "https://www.accelerazero.com/. Guillermo Idanez guillermo.idanez@accelerazero ... TWEED along with political decision-makers, industrial players, R&D ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E20",
+              "url": "https://www.daimlertruck.com/fileadmin/user_upload/documents/investors/capital-market-releases/financial-news/20230906_Investor_Relations_Release_Accelera_-_Joint_venture_to_advance_battery_cell_production_in_the_US.pdf",
+              "title": "Accelera by Cummins, Daimler Truck and PACCAR form a joint ...",
+              "snippet": "Sep 6, 2023 ... To learn more about Accelera by Cummins, visit accelerazero.com. ... political unrest, armed conflicts, industrial accidents and their ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E21",
+              "url": "https://ttu-ir.tdl.org/bitstreams/b4093286-71f3-42d7-b4e9-2cb96929a9eb/download",
+              "title": "HYDROGEN, A TEXAS-SIZED ENDEAVOR",
+              "snippet": "Feb 18, 2026 ... crisis.1 1 3 Ongoing necessary power for maintaining pressurized ... accelerazero.com/ news/what-is-an-electrolyzer-and-what-is-it-used ...",
+              "query": "\"accelerazero\" credibility crisis OR trust crisis",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.cummins.com/sites/default/files/2025-06/cummins-climate-transition-plan.pdf",
+              "title": "Climate Transition Plan | Cummins Inc.",
+              "snippet": "More information available on cummins.com; accelerazero.com. Page 8. CLIMATE ... the global water crisis and empowers communities by engaging in ...",
+              "query": "\"accelerazero\" credibility crisis OR trust crisis",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E23",
+              "url": "https://www.linkedin.com/company/accelerazero",
+              "title": "Accelera by Cummins | LinkedIn",
+              "snippet": "http://accelerazero.com. External link for Accelera by Cummins. Industry ... new frontier in industry leadership. Accelera's latest joint venture with ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.paccar.com/news/current-news/2024/amplify-cell-technologies-begins-construction-of-mississippi-battery-cell-factory/",
+              "title": "Amplify Cell Technologies Begins Construction of Mississippi ...",
+              "snippet": "Jul 1, 2024 ... ... new battery cell manufacturing plant in Marshall County, Mississippi. ... To learn more about Accelera, visit accelerazero.com. About Daimler ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E25",
+              "url": "https://www.facebook.com/accelerazero/",
+              "title": "Accelera by Cummins (@accelerazero) - Facebook",
+              "snippet": "Read the full press release to learn more about Amplify Cell Technologies: https://www.accelerazero. com/news/battery-cell-jv-complete-ceo-announced # ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E26",
+              "url": "https://investor.cummins.com/news/detail/676/accelera-to-unveil-zero-emissions-integrated-battery",
+              "title": "Accelera to Unveil Zero-Emissions Integrated Battery Electric ...",
+              "snippet": "Mar 27, 2025 ... To learn more about Accelera by Cummins, visit accelerazero.com. About Isuzu. Isuzu is a leading global automobile company, based in Yokohama ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E27",
+              "url": "https://decarbonfuse.com/posts/cummins-launches-accelera-by-cummins-to-advance-the-transition-to-a-zero-emissions-future",
+              "title": "Cummins Launches Accelera by Cummins to Advance the",
+              "snippet": "Mar 10, 2023 ... ... accelerazero.com. About Cummins Inc. Cummins Inc., a global power leader, is a corporation of complementary business segments that design ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.tiktok.com/@uclengineering/video/7247113058097581338",
+              "title": "Find out how Prof Eva Sorensen (UCL Chemical Engineering) is ...",
+              "snippet": "much quicker than doing it in the laps good. accelerazero. Accelera. Fit ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.tiktok.com/@wearenovation/video/7247902513939107098",
+              "title": "Happy International Women in Engineering Day! ⚙️🛠️ Today we ...",
+              "snippet": "much quicker than doing it in the laps good. accelerazero. Accelera. Fit ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.tiktok.com/@ferrovial_es/video/7247851491443100955",
+              "title": "‍♀️ We are proud of our women engineers whose talent ... - TikTok",
+              "snippet": "accelerazero. Accelera. Fit check!! But make it safe #INWED2023 ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Google-CSE+Serper+SerpAPI"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        },
+        "B2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"accelerazero\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"accelerazero\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"accelerazero\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"accelerazero\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"accelerazero.com\" reliability rating assessment",
+            "\"accelerazero.com\" media bias rating fact checker",
+            "\"accelerazero\" credibility assessment fact check",
+            "\"accelerazero\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"accelerazero\" press council OR press complaints OR media regulator",
+            "\"accelerazero\" independence politicization political pressure",
+            "\"accelerazero\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+            "\"accelerazero\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"accelerazero\" reprimand OR sanction OR condemned OR censured",
+            "\"accelerazero\" \"propaganda outlet\" OR \"government-controlled media\"",
+            "\"accelerazero\" discrimination complaint OR ethics complaint",
+            "\"accelerazero\" retraction OR correction demanded",
+            "\"accelerazero\" \"state narrative\" OR \"government narrative\"",
+            "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+            "\"accelerazero\" \"influence operation\" OR \"information operation\" OR \"influence campaign\"",
+            "\"accelerazero\" \"coordinated inauthentic behavior\" OR \"state-sponsored\" OR astroturf",
+            "\"accelerazero\" conspiracy OR \"conspiracy theory\" OR hoax",
+            "\"accelerazero\" \"disinformation network\" OR \"propaganda network\"",
+            "\"accelerazero\" scientific integrity compromised OR undermined",
+            "\"accelerazero\" political interference OR political influence",
+            "\"accelerazero\" staff exodus OR workforce cuts OR mass resignation",
+            "\"accelerazero\" credibility crisis OR trust crisis",
+            "\"accelerazero\" leadership change controversy OR new leadership concerns"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://flore.unifi.it/retrieve/7ddecbfb-a9ca-4027-930b-35efc9fa469f/Alessandro_Mati_XXXVI_PhD_Thesis.pdf",
+              "title": "[PDF] Hydrogen potential in industry decarbonisation - FLORE",
+              "snippet": "//www.accelerazero.com/news/atura-power-selects-accelera-design- · manufacture-20mw-electrolyzer-system (visited on 08/07/2024). [200] M. S. Thomassen, A. H. ...",
+              "query": "\"accelerazero.com\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E2",
+              "url": "https://d21zja6o12zyp0.cloudfront.net/9781644903216.pdf",
+              "title": "[PDF] Renewable Energy: Generation and Application - ICREGA'24",
+              "snippet": "... fact, the sustainability discourse demands a critical evaluation of our ... accelerazero.com/news/what-is an-electrolyzer-and-what-is-it-used-for ...",
+              "query": "\"accelerazero.com\" media bias rating fact checker",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E3",
+              "url": "https://www.facebook.com/accelerazero/posts/breaking-news-accelera-by-cummins-just-unveiled-a-new-product-at-iaa-transportat/462828713409279/",
+              "title": "Br(e)aking news! Accelera by Cummins just unveiled a new product ...",
+              "snippet": "... accelerazero.com/Accelera-launches-new-endurance-braking-system-for-commercial-electric-vehicles #AccelerateTheShift #IAATransporation2024 ...",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E4",
+              "url": "https://ww2.arb.ca.gov/sites/default/files/2025-01/SWITCH%20BAAQMD%20Final%20Report_2024%2007_08_final_rev%20clean_2.pdf",
+              "title": "[PDF] Zero-Emission Hydrogen Ferry Demonstration Project Final Report",
+              "snippet": "More at: https://www.accelerazero.com/. Project Role: Hydrogen Fuel Cell Power Package Provider. ... This methodology section outlines the steps taken during the ...",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E5",
+              "url": "https://publications.jrc.ec.europa.eu/repository/bitstream/JRC133726/JRC133726_01.pdf",
+              "title": "[PDF] EU harmonised accelerated stress testing protocols for low ...",
+              "snippet": "... accelerazero.com,. - page 5, CEA logo, source: https://www.cea.fr,. - page 5 ... ISO, 'Pneumatic fluid power — Assessment of component reliability by accelerated ...",
+              "query": "\"accelerazero\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.facebook.com/accelerazero/posts/accelera-by-cummins-alongside-daimler-truck-ag-and-paccar-is-proud-to-announce-w/395325730159578/",
+              "title": "Accelera by Cummins - Facebook",
+              "snippet": "Read the full press release to learn more about Amplify Cell Technologies: https://www.accelerazero. com/news/battery-cell-jv-complete-ceo- ...",
+              "query": "\"accelerazero\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E7",
+              "url": "https://kommunikasjon.ntb.no/pressemelding/18460736/accelera-hosts-spanish-prime-minister-and-industry-leaders-for-tour-and-meeting-at-guadalajara-electrolyzer-facility?publisherId=90063&lang=en",
+              "title": "Accelera hosts Spanish Prime Minister and industry leaders for tour ...",
+              "snippet": "To learn more about Accelera by Cummins, visit accelerazero.com. View source version on businesswire.com: https://www.businesswire.com/news ...",
+              "query": "\"accelerazero\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E8",
+              "url": "https://www.sciencedirect.com/science/article/pii/S0360319925044829",
+              "title": "Technical review of commercial LT-PEMFC technologies",
+              "snippet": "Hydrogen fuel cell trains Heading further down the track in Austria [press release]. Available from: https://www.accelerazero.com/news ...",
+              "query": "\"accelerazero\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E9",
+              "url": "https://ttabvue.uspto.gov/ttabvue/ttabvue-91288559-OPP-22.pdf",
+              "title": "[PDF] ESTTA1447059 07/03/2025 IN THE UNITED STATES PATENT AND ...",
+              "snippet": "... <accelerazero.com> (registered on June 23, 2022) – which incorporates the word element of the Opponent's Mark i.e., 'ACCELERA' in its entirety, thus again ...",
+              "query": "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E10",
+              "url": "https://ttujelp.org/wp-content/uploads/2025/01/JELP-Volume3-2025.pdf",
+              "title": "[PDF] Volume 3, Issue 1 - June 2024 - Journal of the Energy Law Practitioner",
+              "snippet": "What is an Electrolyzer and what is it used for?, ACCELERA, https://www.accelerazero.com/ news/what-is-an-electrolyzer-and-what-is-it-used-for (last visited Oct ...",
+              "query": "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E11",
+              "url": "https://www.researchgate.net/publication/387098594_Environmental_Risk_Assessment_of_Alkaline_Electrolyser's_Global_Value_Chain_Actors",
+              "title": "(PDF) Environmental Risk Assessment of Alkaline Electrolyser's ...",
+              "snippet": "These strategies can support businesses in meeting new sustainability reporting standards and adapting to evolving value chains. ... Accelerazero (6), SunGrow (3) ...",
+              "query": "\"accelerazero\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E12",
+              "url": "https://belgianeconomicmission.be/sites/default/files/content/pages/documents/BEM%20Australia%202023%20-%20Brochure%20participants.pdf",
+              "title": "[PDF] AUSTRALIA - Belgian Economic Mission",
+              "snippet": "WWW.ACCELERAZERO.COM. Accelera is an energy technology brand that provides a diverse portfolio of zero-emission solutions for the world's ...",
+              "query": "\"accelerazero\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E13",
+              "url": "https://meritor.snapon.com/Legal/PrivacyPolicy.aspx",
+              "title": "Legal - Privacy Policy - Meritor",
+              "snippet": "https://AcceleraZero.snapon.com. For Accelera Diagnostics tool support, please call 1 800 CUMMINS or email servicetoolsupport@cummins.com. Javascript ...",
+              "query": "\"accelerazero\" discrimination complaint OR ethics complaint",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E14",
+              "url": "https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P101A93R.TXT",
+              "title": "Greenhouse Gas Emissions Standards for Heavy-Duty Vehicles",
+              "snippet": "Available online: https://www.accelerazero.com/fuel-cells.; Shepard, Paul. \"News: Cummins Acquires Hydrogenics for Fuel Cell and Hydrogen Production Tech ...",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.researchgate.net/publication/396682510_Comprehensive_Investigation_of_the_Solvent-Ionomer_Interactions_on_the_Fabrication_of_the_Catalyst_Layer_for_Proton_Exchange_Membrane_Fuel_Cells",
+              "title": "Comprehensive Investigation of the Solvent-Ionomer Interactions on ...",
+              "snippet": "E-mail addresses: jennie.eastcott@accelerazero.com (J. Eastcott), Samaneh.Shahgaldi@uqtr.ca (S. Shahgaldi). Contents lists available at ...",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E16",
+              "url": "https://seekingalpha.com/article/4828705-cummins-stock-watch-this-dividend-aristocrat-in-making-now",
+              "title": "Cummins: Watch This Dividend Aristocrat In The Making Now",
+              "snippet": "... accelerazero.com/...). Even if the price has gotten a bit ahead of itself, my advice is, \"meh\". If the past is prologue this dividend ...",
+              "query": "\"accelerazero\" retraction OR correction demanded",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E17",
+              "url": "https://www.tiktok.com/@uclengineering/video/7247113058097581338",
+              "title": "Find out how Prof Eva Sorensen (UCL Chemical Engineering) is ...",
+              "snippet": "much quicker than doing it in the laps good. accelerazero. Accelera. Fit ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E18",
+              "url": "https://www.tiktok.com/@wearenovation/video/7247902513939107098",
+              "title": "Happy International Women in Engineering Day! ⚙️🛠️ Today we ...",
+              "snippet": "much quicker than doing it in the laps good. accelerazero. Accelera. Fit ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.tiktok.com/@ferrovial_es/video/7247851491443100955",
+              "title": "‍♀️ We are proud of our women engineers whose talent ... - TikTok",
+              "snippet": "accelerazero. Accelera. Fit check!! But make it safe #INWED2023 ... \" By fostering inclusivity, amplifying women's voices, and ...",
+              "query": "\"accelerazero\" \"echo chamber\" OR \"amplifies\" OR \"amplifying\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E20",
+              "url": "https://singletrackworld.com/forum/off-topic/hydrogen-cars-something-doesnt-smell-right/paged/2/",
+              "title": "Hydrogen Cars – something doesn't smell right – Page 2 – Chat Forum",
+              "snippet": "No - because it's the internet: It'll be a conspiracy by the big evil EV manufacturers. ... https://www.accelerazero.com/fuel-cells · https ...",
+              "query": "\"accelerazero\" conspiracy OR \"conspiracy theory\" OR hoax",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E21",
+              "url": "https://singletrackworld.com/forum/off-topic/hydrogen-cars-something-doesnt-smell-right/",
+              "title": "Hydrogen Cars – something doesn't smell right – Chat Forum",
+              "snippet": "It's not a conspiracy it's simply business. As petrol and diesel are ... https://www.accelerazero.com/. Battery tech still looks like ...",
+              "query": "\"accelerazero\" conspiracy OR \"conspiracy theory\" OR hoax",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.reddit.com/r/energy/comments/12bwhuq/michael_liebreichs_hydrogen_ladder_debunked/",
+              "title": "Michael Liebreich's Hydrogen Ladder Debunked. ...",
+              "snippet": "https://www.accelerazero.com/. When it comes to ... Michigan hones in on energy costs, suing oil majors over climate 'conspiracy'.",
+              "query": "\"accelerazero\" conspiracy OR \"conspiracy theory\" OR hoax",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E23",
+              "url": "https://www.powerbaseproject.eu/wp-content/uploads/D2.5-SOTA-report-actors-map-V2-with-annexes.pdf",
+              "title": "[PDF] D2.5 SOTA report & actors map v2 | POWERBASE project",
+              "snippet": "active scientific investigation and continues to receive significant research attention and ... https://www.accelerazero.com/fuel- cells/fce150 ( ...",
+              "query": "\"accelerazero\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E24",
+              "url": "https://nepis.epa.gov/Exe/ZyNET.exe/P101A93R.txt?ZyActionW=Download&Client=EPA&Index=2016%20Thru%202020%7C2011%20Thru%202015%7C2000%20Thru%202005%7C2006%20Thru%202010%7CPrior%20to%201976%7C1976%20Thru%201980%7C1981%20Thru%201985%7C1986%20Thru%201990%7C1991%20Thru%201994%7C1995%20Thru%201999%7CHardcopy%20Publications&Docs=&Query=transportation%20trucks%20duty%20c02%20ghg&Time=&EndTime=&SearchMethod=2&TocRestrict=n&Toc=&TocEntry=&QField=&QFieldYear=&QFieldMonth=&QFieldDay=&UseQField=&IntQFieldOp=0&ExtQFieldOp=0&XmlQuery=&File=D%3A%5CZYFILES%5CINDEX%20DATA%5C16THRU20%5CTXT%5C00000042%5CP101A93R.txt&User=ANONYMOUS&Password=anonymous&SortMethod=h%7C-&MaximumDocuments=15&FuzzyDegree=0&ImageQuality=r85g16/r85g16/x150y150g16/i500&Display=hpfr&DefSeekPage=x&SearchBack=ZyActionE&Back=ZyActionS&BackDesc=Results%20page",
+              "title": "P101A93R.txt - epa nepis",
+              "snippet": "... accelerazero.com/fuel-cells.; Shepard, Paul. \"News: Cummins Acquires Hydrogenics for Fuel Cell and Hydrogen Production Tech\". September 2019. Available ...",
+              "query": "\"accelerazero\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E25",
+              "url": "https://www.actresearch.net/resources/blog/alternative-to-diesel-h2-ice",
+              "title": "On The Road With Accelera By Cummins: FCEV - ACT Research",
+              "snippet": "... political considerations, the end result might not be what you first expected. ... H2 Rescue-Flyer (accelerazero.com) · H2Rescue | Fuel Cell Emergency Relief ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E26",
+              "url": "https://www.daimlertruck.com/fileadmin/user_upload/documents/investors/capital-market-releases/financial-news/20230906_Investor_Relations_Release_Accelera_-_Joint_venture_to_advance_battery_cell_production_in_the_US.pdf",
+              "title": "[PDF] Accelera by Cummins, Daimler Truck and PACCAR form a joint ...",
+              "snippet": "To learn more about Accelera by Cummins, visit accelerazero.com. ... political unrest, armed conflicts, industrial accidents and their ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E27",
+              "url": "https://ttujelp.org/wp-content/uploads/2024/06/JELP-VOL.-3-BOOK-.pdf",
+              "title": "[PDF] Texas Tech Law Review Shell Document",
+              "snippet": "What is an Electrolyzer and what is it used for?, ACCELERA, https://www.accelerazero.com/ ... government regulations, and the impact the cars ...",
+              "query": "\"accelerazero\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E28",
+              "url": "https://ttu-ir.tdl.org/bitstreams/b4093286-71f3-42d7-b4e9-2cb96929a9eb/download",
+              "title": "[PDF] HYDROGEN, A TEXAS-SIZED ENDEAVOR",
+              "snippet": "... accelerazero.com/ news/what-is-an-electrolyzer-and-what-is-it-used-for (last visited Oct. 19, 2023). 122. Praveen Bains et al., Energy ...",
+              "query": "\"accelerazero\" credibility crisis OR trust crisis",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.cummins.com/sites/default/files/2025-06/cummins-climate-transition-plan.pdf",
+              "title": "[PDF] Climate Transition Plan | Cummins Inc.",
+              "snippet": "More information available on cummins.com; accelerazero.com. Page 8. CLIMATE TRANSITION PLAN. Return to Contents | Cummins Inc. | 8. FOREWORD. ENVIRONMENTAL ...",
+              "query": "\"accelerazero\" credibility crisis OR trust crisis",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.instagram.com/p/DVi8Z0iDfU2/",
+              "title": "It was great to welcome the team from @cummins @accelerazero in ...",
+              "snippet": "It was great to welcome the team from @cummins @accelerazero in ... new GWM 4WD dual cab ute This promotion reflects the leadership ...",
+              "query": "\"accelerazero\" leadership change controversy OR new leadership concerns",
+              "provider": "Serper (cached)"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        }
+      }
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "isCanonicalControl": false,
+      "originalBaseline": {
+        "score": 0.74,
+        "confidence": 0.8,
+        "category": "reliable",
+        "sourceType": "editorial_publisher",
+        "biasIndicator": "center-right",
+        "consensusAchieved": true,
+        "modelPrimary": "claude-haiku-4-5-20251001",
+        "modelSecondary": "gpt-4.1-mini",
+        "evaluatedAt": "2026-04-19T17:14:00.360Z"
+      },
+      "currentBaseline": {
+        "score": 0.8,
+        "confidence": 0.87,
+        "category": "reliable",
+        "sourceType": "editorial_publisher",
+        "biasIndicator": "center"
+      },
+      "lanes": {
+        "A2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"theglobeandmail\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"theglobeandmail\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"theglobeandmail.com\" reliability rating assessment",
+            "\"theglobeandmail.com\" media bias rating fact checker",
+            "\"theglobeandmail\" credibility assessment fact check",
+            "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"theglobeandmail\" press council OR press complaints OR media regulator",
+            "\"theglobeandmail\" independence politicization political pressure",
+            "\"theglobeandmail\" ethics violation OR code violation OR journalistic standards",
+            "\"theglobeandmail\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"theglobeandmail\" scientific integrity compromised OR undermined",
+            "\"theglobeandmail\" political interference OR political influence",
+            "\"theglobeandmail\" reprimand OR sanction OR condemned OR censured",
+            "\"theglobeandmail\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"theglobeandmail\" discrimination complaint OR ethics complaint",
+            "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news-source/globe-and-mail-media-bias",
+              "title": "The Globe and Mail Media Bias Rating - AllSides",
+              "snippet": "The Globe and Mail ; Bias Rating, Center ; Type, News Media ; Website, www.theglobeandmail.com ; Twitter, @globeandmail ; Facebook, theglobeandmail.",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E2",
+              "url": "https://mediabiasfactcheck.com/the-globe-and-mail/",
+              "title": "The Globe and Mail - Bias and Credibility - Media Bias/Fact Check",
+              "snippet": "Source: https://www.theglobeandmail.com/. [wpforms id=”117651″]. Last Updated on December 20, 2024 by Media Bias Fact Check. Do you appreciate our work? Please ...",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E3",
+              "url": "https://mediabiasfactcheck.com/right-center/",
+              "title": "Right-Center Bias - Media Bias/Fact Check",
+              "snippet": "The Globe and Mail (Toronto) (theglobeandmail.com) · The Graphic Leader (thegraphicleader.com) · The Great Task (greattask.com) · The Hub (thehub.ca) · The ...",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.snopes.com/fact-check/wef-order-governments-ration-water/",
+              "title": "Did World Economic Forum Order Governments to Begin Rationing ...",
+              "snippet": "Apr 14, 2023 ... 2022. www.theglobeandmail.com, https://www.theglobeandmail.com/opinion/article-world-economic-forum-misinformation/. \"Rainwater Reservoirs Net ...",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.snopes.com/fact-check/photos-black-monday-1987/",
+              "title": "Photos depicting 1987 'Black Monday' stock market crash ... - Snopes",
+              "snippet": "Apr 20, 2025 ... www.theglobeandmail.com, https://www.theglobeandmail.com/report-on-business/black-monday-gave-just-a-taste-of-what-was-to-come/article535399/.",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.snopes.com/news/2025/04/11/canada-mark-carney-treasurys-sell-off/",
+              "title": "Unpacking claims that Canadian PM Mark Carney orchestrated a ...",
+              "snippet": "Apr 11, 2025 ... www.theglobeandmail.com, https://www.theglobeandmail.com/sports/dean-blundell-has-show-cancelled-in-sportsnet-590-the-fan-shakeup/ ...",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E7",
+              "url": "https://www.linkedin.com/posts/julie-dabrusin-412938a3_canada-and-alberta-reach-agreement-in-principle-activity-7435841254959190025-YVn8",
+              "title": "Julie Dabrusin's Post - LinkedIn",
+              "snippet": "Mar 6, 2026 ... ... assessment process that delivers major projects faster, while ... theglobeandmail.com. Like Comment. Share. Copy; LinkedIn; Facebook; X",
+              "query": "\"theglobeandmail.com\" reliability rating assessment",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E8",
+              "url": "https://www.act.org/content/dam/act/unsecured/documents/pdfs/R1658_students-checking-the-news-2017-10.pdf",
+              "title": "Checking What Students Know about Checking the News | ACT",
+              "snippet": "https://www.theglobeandmail.com · /community/digital-lab/fake-news-quiz-how ... Otero, “The Reasoning and Methodology”; see also Media Bias/Fact Check, https:// ...",
+              "query": "\"theglobeandmail.com\" media bias rating fact checker",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.irb-cisr.gc.ca/en/transparency/reviews-audit-evaluations/Pages/sogie-guideline-implementation-review.aspx?=undefined&wbdisable=true",
+              "title": "Review of the implementation of the Sexual Orientation and Gender ...",
+              "snippet": "Nov 26, 2020 ... ... credibility assessments) or hands-on training on credibility assessment approaches. ... https://www.theglobeandmail.com/life/relationships/after- ...",
+              "query": "\"theglobeandmail\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E10",
+              "url": "https://www.facebook.com/katharine.hayhoe/posts/for-a-long-time-twitter-was-the-best-place-to-share-and-find-the-latest-science-/1450720883084626/",
+              "title": "For a long time, Twitter was the best place to share and ... - Facebook",
+              "snippet": "Feb 13, 2026 ... ... fact-check climate denialism. The company recently overruled a fact ... theglobeandmail. com/canada/article-interview-katharine-hayhoe ...",
+              "query": "\"theglobeandmail\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E11",
+              "url": "https://ndupress.ndu.edu/Media/News/News-Article-View/Article/2217673/chinas-private-military-and-security-companies-chinese-muscle-and-the-reasons-f/",
+              "title": "China's Private Military and Security Companies: “Chinese Muscle ...",
+              "snippet": "Jun 11, 2020 ... ... theglobeandmail.com/news/world/chinese-front-line-overseas-workers-coming-under-increasing-attack/article2330273/>. 12 “Asia Needs ...",
+              "query": "\"theglobeandmail\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E12",
+              "url": "https://scholarlypublishingcollective.org/psup/information-policy/article/doi/10.5325/jinfopoli.9.2019.0307/314502/Algorithmic-Regulation-in-Media-and-Cultural",
+              "title": "Algorithmic Regulation in Media and Cultural Policy: A Framework to ...",
+              "snippet": "Dec 1, 2019 ... ... Media Ratings Council. A shift to external review has not yet ... https://www.theglobeandmail.com/world/article-facebook-gave-rbc ...",
+              "query": "\"theglobeandmail\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E13",
+              "url": "https://foreigninterferencecommission.ca/fileadmin/foreign_interference_commission/Documents/Exhibits_and_Presentations/Exhibits/HRC0000039.pdf",
+              "title": "Tigray conflict sparks a war of fake tweets and intense propaganda",
+              "snippet": "May 23, 2024 ... https://www.theglobeandmail.com/world/article-tigray-conflict-sparks ... One state-run newspaper, the Ethiopian Herald, claimed that the U.S. ...",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E14",
+              "url": "https://freedomhouse.org/report/special-report/2020/beijings-global-megaphone",
+              "title": "Beijing's Global Megaphone | Freedom House",
+              "snippet": "... foreign personnel and technology transfers to foreign state-owned media outlets. ... theglobeandmail.com/news/world/media-agenda-china-buys-newsr…. 109Azad Essa ...",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E15",
+              "url": "https://demtech.oii.ox.ac.uk/wp-content/uploads/sites/12/2017/06/Comprop-Canada.pdf",
+              "title": "Computational Propaganda in Canada: The Use of Political Bots",
+              "snippet": "Jun 17, 2017 ... political movements and foreign governments, as seen in the United States and ... http://www.theglobeandmail.com/news/politics/government-policy-.",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E16",
+              "url": "https://www.journalcswb.ca/index.php/cswb/article/view/440/1200",
+              "title": "Police operational independence and the rule of law in Canada",
+              "snippet": "Mar 20, 2025 ... https://www.theglobeandmail.com/...article4168561/. C Freeze. Police Union and Politics a Volatile Mix The Globe and Mail: 2000. Reference.",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E17",
+              "url": "https://law.yale.edu/sites/default/files/area/conference/compadmin/compadmin16_sossin_puzzle.pdf",
+              "title": "The Puzzle of Independence and Parliamentary Democracy in the ...",
+              "snippet": "cannot appear to, exert political pressure on the judiciary, and conversely, that ... History” at http://www.theglobeandmail.com/news/politics/natynczyk-in-the ...",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E18",
+              "url": "https://freedomhouse.org/sites/default/files/2021-02/Complete_FH_TransnationalRepressionReport2021_rev020221.pdf",
+              "title": "Out of Sight, Not Out of Reach - Freedom House",
+              "snippet": "exerting other forms of pressure on anyone involved in opposition politics or independent journalism. ... theglobeandmail.com/world/ article-assassination-in- ...",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E19",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11264564/",
+              "title": "The politics of politicization: Climate change debates in Canadian ...",
+              "snippet": "... independence, if it is to be politically relevant at all. This, in turn ... Available at: https://www.theglobeandmail.com/news/national/are-scientists ...",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E20",
+              "url": "https://bush.tamu.edu/wp-content/uploads/2025/06/Gamache_EMPSA-Final-Report_Safeguarding-Research-Integrity-Security_24-25.pdf",
+              "title": "Safeguarding Research Integrity and Security in the Global ...",
+              "snippet": "Jun 30, 2025 ... examples where security failures led to compromised research integrity, IP theft, or other adverse outcomes. ... https://www.theglobeandmail.com/ ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E21",
+              "url": "https://cdnsciencepub.com/doi/10.1139/cjfas-2022-0286",
+              "title": "Is scientific inquiry still incompatible with government information ...",
+              "snippet": "Jul 31, 2023 ... DFO has a policy on science integrity, which attempts to ensure that “any research ... Available from https://www.theglobeandmail.com/politics/ ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E22",
+              "url": "https://researchsecurity.org/wp-content/uploads/2024/09/CRSITransparencyIntegrity_web.pdf",
+              "title": "Transparency and Integrity Risks in China's Research Ecosystem",
+              "snippet": "... compromised in their integrity, can make their ... as RCMP probe continues,” The Globe and Mail, March 20, 2024, https://www.theglobeandmail.com/politics/.",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E23",
+              "url": "https://www.facebook.com/theglobeandmail/posts/opinion-when-others-pose-as-journalists-even-with-the-best-of-intentions-trust-i/10155742488943904/",
+              "title": "When others pose as journalists – even with the best of intentions",
+              "snippet": "Oct 18, 2017 ... BETA.THEGLOBEANDMAIL.COM. Police should not pose as journalists – it ... Journalists with compromised integrity and ethics. Folajimi ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.reddit.com/r/CanadaPublicServants/comments/1snky5n/opinion_a_deputy_ministers_ethics_violation_will/",
+              "title": "Opinion: A deputy minister's ethics violation will further sap morale in ...",
+              "snippet": "3 days ago ... ... theglobeandmail.com/opinion/article-deputy-minister-ethics-violation ... standards is wrong, it's that they have to make far more multifaceted ...",
+              "query": "\"theglobeandmail\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E25",
+              "url": "https://journals.lib.unb.ca/index.php/unblj/article/view/29035/1882524225",
+              "title": "View of What is Islamophobia?",
+              "snippet": "4National newspapers have condemned Islamophobia.5Legislatures have ... theglobeandmail.com/opinion/editorials/globe-editorial-while-quebec-muslims ...",
+              "query": "\"theglobeandmail\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E26",
+              "url": "https://foreigninterferencecommission.ca/fileadmin/foreign_interference_commission/Documents/Exhibits_and_Presentations/Exhibits/COM0000034.pdf",
+              "title": "China views Canada as a 'high priority' for interference: CSIS report",
+              "snippet": "May 1, 2023 ... https://www.theglobeandmail.com/politics/article-china-targets-mps ... effort to bolster Chinese political influence and extend the country's ...",
+              "query": "\"theglobeandmail\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E27",
+              "url": "https://influenceindustry.org/en/learn/resources/data-as-political-influence/",
+              "title": "Data as Political Influence",
+              "snippet": "'Google to Ban Political Ads Ahead of Federal Election, Citing New Transparency Rules', accessed 7 March 2019, https://www.theglobeandmail.com/politics ...",
+              "query": "\"theglobeandmail\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.reddit.com/r/toronto/comments/1bnee7w/hot_docs_programmers_in_shock_mass_exit_from/",
+              "title": "Hot Docs programmers in shock mass exit from festival : r/toronto",
+              "snippet": "Mar 25, 2024 ... Even before this programming mass exodus, there was another staff exodus of about 50 people over a year or two. ... theglobeandmail. 216. 68. What ...",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E29",
+              "url": "https://www.linkedin.com/posts/sylvester-obong-o-phd-mbs-7344413_the-public-service-workforce-dilemma-the-activity-7327987084726554624-olT8",
+              "title": "THE PUBLIC SERVICE WORKFORCE DILEMMA | Sylvester Obong ...",
+              "snippet": "May 13, 2025 ... ... theglobeandmail.com · 1 · Like Comment. Share. Copy; LinkedIn ... resign simultaneously, marking the largest mass resignation in U.S. history.",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.reddit.com/r/ontario/comments/1q5icxd/the_end_of_hybrid_fulltime_office_return_sparks/",
+              "title": "r/ontario - The end of hybrid? Full-time office return sparks warning ...",
+              "snippet": "Jan 6, 2026 ... ... mass resignation because there's no work from home jobs available! ... theglobeandmail. 1K. 156. Work is forcing us back in office after seven ...",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Google-CSE"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        },
+        "B2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"theglobeandmail\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"theglobeandmail\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"theglobeandmail.com\" reliability rating assessment",
+            "\"theglobeandmail.com\" media bias rating fact checker",
+            "\"theglobeandmail\" credibility assessment fact check",
+            "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"theglobeandmail\" press council OR press complaints OR media regulator",
+            "\"theglobeandmail\" independence politicization political pressure",
+            "\"theglobeandmail\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"theglobeandmail\" scientific integrity compromised OR undermined",
+            "\"theglobeandmail\" ethics violation OR code violation OR journalistic standards",
+            "\"theglobeandmail\" reprimand OR sanction OR condemned OR censured",
+            "\"theglobeandmail\" \"disinformation\" \"state media\" OR \"state-backed\"",
+            "\"theglobeandmail\" political interference OR political influence",
+            "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+            "\"theglobeandmail\" discrimination complaint OR ethics complaint",
+            "\"theglobeandmail\" \"propaganda outlet\" OR \"government-controlled media\"",
+            "\"theglobeandmail\" \"state narrative\" OR \"government narrative\"",
+            "\"theglobeandmail\" credibility crisis OR trust crisis",
+            "\"theglobeandmail\" retraction OR correction demanded"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.allsides.com/news-source/globe-and-mail-media-bias",
+              "title": "The Globe and Mail Media Bias Rating - AllSides",
+              "snippet": "The Globe and Mail ; Bias Rating, Center ; Type, News Media ; Website, www.theglobeandmail.com ; Twitter, @globeandmail ; Facebook, theglobeandmail.",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E2",
+              "url": "https://mediabiasfactcheck.com/the-globe-and-mail/",
+              "title": "The Globe and Mail - Bias and Credibility - Media Bias/Fact Check",
+              "snippet": "Source: https://www.theglobeandmail.com/. [wpforms id=”117651″]. Last Updated on December 20, 2024 by Media Bias Fact Check. Do you appreciate our work? Please ...",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E3",
+              "url": "https://mediabiasfactcheck.com/general-news-sources/",
+              "title": "General News Sources - Media Bias/Fact Check",
+              "snippet": "The Globe and Mail (Toronto) (theglobeandmail.com), High. The Good Men Project (goodmenproject.com), High. The Guardian (theguardian.com), High.",
+              "query": "\"theglobeandmail\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E4",
+              "url": "https://www.snopes.com/fact-check/mullin-chevron-stock-us-venezuela/",
+              "title": "Markwayne Mullin bought Chevron, Raytheon stock days before ...",
+              "snippet": "The Globe and Mail, https://www.theglobeandmail.com/investing/markets/stocks/RTX/pressreleases/36950640/crisis-in-the-caribbean-the-defense- ...",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E5",
+              "url": "https://www.snopes.com/news/2025/04/11/canada-mark-carney-treasurys-sell-off/",
+              "title": "Unpacking claims that Canadian PM Mark Carney orchestrated a ...",
+              "snippet": "www.theglobeandmail.com, https://www.theglobeandmail.com/sports/dean-blundell-has-show-cancelled-in-sportsnet-590-the-fan-shakeup/ ...",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E6",
+              "url": "https://www.snopes.com/fact-check/photos-black-monday-1987/",
+              "title": "Photos depicting 1987 'Black Monday' stock market crash ... - Snopes",
+              "snippet": "www.theglobeandmail.com, https://www.theglobeandmail.com/report-on-business/black-monday-gave-just-a-taste-of-what-was-to-come/article535399/.",
+              "query": "\"theglobeandmail\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E7",
+              "url": "https://www.facebook.com/groups/TwinCitiesGeeks/posts/9821704804525491/",
+              "title": "What media sources are people following now that traditional media ...",
+              "snippet": "France24 and TheGlobeAndMail. 6mo. Anj Olsen. BBC Reuters Associated ... Entertainment breakdown: Estimated 100% fact- checking and analysis- ...",
+              "query": "\"theglobeandmail\" credibility assessment fact check",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E8",
+              "url": "https://www.facebook.com/theglobeandmail/posts/the-locations-connection-to-foreign-journalists-and-volunteers-is-being-used-by-/667062692121866/",
+              "title": "The location's connection to foreign journalists and volunteers is ...",
+              "snippet": "THEGLOBEANDMAIL.COM. At least 10 killed in Russian missile attack on popular meeting place for Canadian volunteers in ... The location's ...",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.facebook.com/theglobeandmail/posts/tehrans-propaganda-campaign-portrays-us-president-as-incompetent-fool-who-cannot/1422837786544349/",
+              "title": "Tehran's propaganda campaign portrays U.S. President ... - Facebook",
+              "snippet": "THEGLOBEANDMAIL.COM. Iran continues to mock Trump with AI-generated social media posts. Tehran's propaganda campaign portrays U.S. Presid...",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E10",
+              "url": "https://x.com/kolga/status/2016865981356757451",
+              "title": "Engler's NDP candidacy was apparently rejected for “echoing ...",
+              "snippet": "... state propaganda ... Engler's NDP candidacy was apparently rejected for “echoing 'Russian state propaganda'” about Ukraine + NATO. ... theglobeandmail.com/gift/ ...",
+              "query": "\"theglobeandmail\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E11",
+              "url": "https://www.facebook.com/theglobeandmail/posts/us-treasury-secretary-said-fed-chairs-attendance-would-undermine-efforts-to-not-/1345989357562526/",
+              "title": "U.S. Treasury Secretary said Fed Chair's attendance would ...",
+              "snippet": "THEGLOBEANDMAIL.COM. Bessent says it would be a 'mistake' for Powell ... political pressure masquerading as oversight. That is not law ...",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E12",
+              "url": "https://www.linkedin.com/posts/benzinga_global-central-bank-leaders-have-publicly-activity-7416947162527199232-Kg0C",
+              "title": "Central Bank Leaders Back Powell Amid Fed Independence Concerns",
+              "snippet": "... independence portends his vision as Fed chair theglobeandmail.com. 1 ... political pressures. But the moment a sitting Treasury ...",
+              "query": "\"theglobeandmail\" independence politicization political pressure",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E13",
+              "url": "https://www.facebook.com/theglobeandmail/posts/the-decision-comes-after-meta-began-blocking-canadian-news-content-on-its-facebo/671718488322953/",
+              "title": "The decision comes after Meta began blocking Canadian news ...",
+              "snippet": "THEGLOBEANDMAIL.COM. Ottawa suspends advertising on Facebook, Instagram in wake of Bill C-18. The decision comes after Meta began blocking Can... Gina ...",
+              "query": "\"theglobeandmail\" press council OR press complaints OR media regulator",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E14",
+              "url": "https://www.reddit.com/r/CanadaPublicServants/comments/1snky5n/opinion_a_deputy_ministers_ethics_violation_will/",
+              "title": "Opinion: A deputy minister's ethics violation will further sap morale in ...",
+              "snippet": "News / Nouvelles · r/CanadaPublicServants - Opinion: A deputy minister's ethics violation will further sap morale in · theglobeandmail.com. Open.",
+              "query": "\"theglobeandmail\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.facebook.com/theglobeandmail/posts/phac-head-says-questions-about-rcmp-investigation-into-fired-scientists-should-b/10158950701363904/",
+              "title": "PHAC head says questions about RCMP investigation into fired ...",
+              "snippet": "THEGLOBEANDMAIL.COM. PHAC head says Privacy Act prevents explanation for firing of two scientists. PHAC head says questions about RCMP investigati... Steven ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E16",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4610828/",
+              "title": "We deserve a government that respects scientific integrity - PMC",
+              "snippet": "Federal scientists and professionals union to campaign against Harper Tories. Globe and Mail [Toronto] 2014. Nov. 7 Available: www.theglobeandmail.com/news ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E17",
+              "url": "https://cdnsciencepub.com/doi/full/10.1139/cjfas-2022-0286",
+              "title": "Is scientific inquiry still incompatible with government information ...",
+              "snippet": "... breach of scientific integrity (Supplementary data, pp. 52–79 ... Available from https://www.theglobeandmail.com/politics/article-scientist ...",
+              "query": "\"theglobeandmail\" scientific integrity compromised OR undermined",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E18",
+              "url": "https://en.wikipedia.org/wiki/The_Globe_and_Mail",
+              "title": "The Globe and Mail - Wikipedia",
+              "snippet": "Globe and Mail Centre 351 King Street East Toronto, Ontario M5A 1L1 · 65,749 Daily 117,955 Saturday (as of 2022) · 0319-0714 · 61312660 · theglobeandmail.com ...",
+              "query": "\"theglobeandmail\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.facebook.com/theglobeandmail/posts/the-recommendation-is-anticipated-to-be-included-in-an-initial-report-about-how-/641178601376942/",
+              "title": "The recommendation is anticipated to be included in an initial report ...",
+              "snippet": "THEGLOBEANDMAIL.COM. Special rapporteur David Johnston's advice on public inquiry about foreign interference expected ... The recommendation is anticipated ...",
+              "query": "\"theglobeandmail\" political interference OR political influence",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E20",
+              "url": "https://www.facebook.com/theglobeandmail/posts/kelly-was-censured-for-calling-on-troops-to-resist-unlawful-orders-us-defense-se/1339651451529650/",
+              "title": "Kelly was censured for calling on troops to resist unlawful orders ...",
+              "snippet": "THEGLOBEANDMAIL.COM. Democratic Sen. Mark Kelly sues Pentagon over attempts to punish him for warning troops of unlaw... Kelly was censured ...",
+              "query": "\"theglobeandmail\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E21",
+              "url": "https://www.facebook.com/theglobeandmail/posts/choose-clarity-in-a-world-of-noise-with-trusted-canadian-journalism-from-the-glo/1407809961380465/",
+              "title": "Choose clarity in a world of noise with trusted Canadian journalism ...",
+              "snippet": "... disinformation, Justice Marie-Josée Hogue isn't playing around. Her ... state-backed institution—demands consequences. Canadians ...",
+              "query": "\"theglobeandmail\" \"disinformation\" \"state media\" OR \"state-backed\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.reddit.com/r/alberta/comments/1m9gvls/the_targeting_of_a_globe_reporter_needs_to_be/",
+              "title": "The targeting of a Globe reporter needs to be fully investigated",
+              "snippet": "theglobeandmail.com. Open. Locked post. New comments cannot be ... It's basically just a propaganda outlet now, no hyperbole. Parking ...",
+              "query": "\"theglobeandmail\" \"propaganda outlet\" OR \"government-controlled media\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E23",
+              "url": "https://x.com/giantgio/status/2024835050131374097",
+              "title": "out of nowhere” Laziest propaganda outlet, the CBC has more ...",
+              "snippet": ">”out of nowhere” Laziest propaganda outlet, the CBC has more scruples than the G&M. The Globe and Mail profile. The Globe and Mail. ✓. globeandmail.",
+              "query": "\"theglobeandmail\" \"propaganda outlet\" OR \"government-controlled media\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.facebook.com/groups/1610492656334266/posts/1751861875530676/",
+              "title": "Is Globe and Mail promoting biased article? - Facebook",
+              "snippet": "If you ever doubted the influence of government controlled media doubt no more! ... THEGLOBEANDMAIL.COM COM Opinion: The ostrich saga was for the ...",
+              "query": "\"theglobeandmail\" \"propaganda outlet\" OR \"government-controlled media\"",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E25",
+              "url": "https://www.facebook.com/theglobeandmail/posts/office-of-personnel-management-proposed-ending-the-right-of-fired-employees-to-d/1363717125789749/",
+              "title": "Office of Personnel Management proposed ending the right of fired ...",
+              "snippet": "Office of Personnel Management proposed ending the right of fired employees to dispute their dismissal before the independent Merit Systems ...",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E26",
+              "url": "https://www.reddit.com/r/CanadaPublicServants/comments/1oq82cx/what_are_all_the_laidoff_ps_employees_as_a_result/",
+              "title": "What are all the laid-off PS employees as a result of this new budget ...",
+              "snippet": "40,000 job cuts does not mean there will be 40,000 involuntarily ... theglobeandmail. 36. 5. Considering leaving the public service, any ...",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E27",
+              "url": "https://texascityattorneys.org/wp-content/uploads/2022/06/T3.-Liz-Fraley-and-Stephen-Rispoli-Paper.pdf",
+              "title": "[PDF] The Great Resignation and Managing a Multigenerational Workforce",
+              "snippet": "The Great Resignation refers to the voluntary mass exodus of workers from their present ... https://www.theglobeandmail.com/report-on-business/careers/leadership- ...",
+              "query": "\"theglobeandmail\" staff exodus OR workforce cuts OR mass resignation",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.facebook.com/theglobeandmail/posts/you-may-have-a-claim-for-human-rights-discrimination-if-you-can-prove-that-you-f/481857137309090/",
+              "title": "You may have a claim for human-rights discrimination if ... - Facebook",
+              "snippet": "To establish a claim of retaliation, the employee has to demonstrate that: 1) they engaged in protected activity, such as, complaining about discrimination; 2) ...",
+              "query": "\"theglobeandmail\" discrimination complaint OR ethics complaint",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E29",
+              "url": "https://myhub.ai/items/crisis-of-trust-as-sponsored-content-puts-media-credibility-into-question-the-globe-and-mail",
+              "title": "Crisis of trust as sponsored content puts media credibility into ...",
+              "snippet": "Crisis of trust as sponsored content puts media credibility into question - The Globe and Mail ... Curated: 23/07/2014 from www.theglobeandmail.com ... Crisis of ...",
+              "query": "\"theglobeandmail\" credibility crisis OR trust crisis",
+              "provider": "Serper (cached)"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.facebook.com/theglobeandmail/posts/colin-horgan-the-fact-that-crisis-communications-is-tough-is-probably-the-easies/446318734196264/",
+              "title": "Colin Horgan: The fact that crisis communications is tough is ...",
+              "snippet": "Colin Horgan: The fact that crisis ... THEGLOBEANDMAIL.COM. Mixed messages: What Bell ... If the media have a problem with credibility, they have no one to blame ...",
+              "query": "\"theglobeandmail\" credibility crisis OR trust crisis",
+              "provider": "Serper (cached)"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        }
+      }
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "isCanonicalControl": true,
+      "originalBaseline": {
+        "score": 0.89,
+        "confidence": 0.95,
+        "category": "highly_reliable",
+        "sourceType": "collaborative_reference",
+        "biasIndicator": null,
+        "consensusAchieved": true,
+        "modelPrimary": "claude-haiku-4-5-20251001",
+        "modelSecondary": "gpt-4.1-mini",
+        "evaluatedAt": "2026-04-18T22:30:47.010Z"
+      },
+      "currentBaseline": null,
+      "lanes": {
+        "A2": {
+          "enabled": true,
+          "providersUsed": [
+            "Google-CSE",
+            "SerpAPI",
+            "Serper",
+            "Brave"
+          ],
+          "queries": [
+            "\"ushmm\" site:mediabiasfactcheck.com OR site:adfontesmedia.com OR site:allsides.com",
+            "\"ushmm\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+            "\"ushmm\" site:newsguardtech.com OR site:fullfact.org OR site:bbc.co.uk/news/reality_check",
+            "\"ushmm\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"encyclopedia.ushmm.org\" reliability rating assessment",
+            "\"encyclopedia.ushmm.org\" media bias rating fact checker",
+            "\"ushmm\" credibility assessment fact check",
+            "\"ushmm\" state propaganda OR foreign propaganda OR government propaganda",
+            "\"ushmm\" press council OR press complaints OR media regulator",
+            "\"ushmm\" independence politicization political pressure",
+            "\"ushmm\" site:euvsdisinfo.eu OR site:disinfo.eu",
+            "\"ushmm\" ethics violation OR code violation OR journalistic standards",
+            "\"ushmm\" scientific integrity compromised OR undermined",
+            "\"ushmm\" reprimand OR sanction OR condemned OR censured",
+            "\"ushmm\" political interference OR political influence",
+            "\"ushmm\" staff exodus OR workforce cuts OR mass resignation"
+          ],
+          "items": [
+            {
+              "id": "E1",
+              "url": "https://www.snopes.com/fact-check/sign-adolf-hitler-soldier/",
+              "title": "Real Pic of US Soldier Removing 'Adolf Hitler' Street Sign in Germany?",
+              "snippet": "Oct 5, 2024 ... One copy of the photo is currently in the collection of the United States Holocaust Memorial Museum (USHMM), which described the scene ...",
+              "query": "\"ushmm\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E2",
+              "url": "https://www.snopes.com/fact-check/trump-pink-triangle-nazis-gay/",
+              "title": "Yes, Trump posted link that included Nazi symbol for gay men in ...",
+              "snippet": "Mar 11, 2025 ... \"Classification System in Nazi Concentration Camps.\" Ushmm.org, 2019, encyclopedia.ushmm.org/content/en/article/classification-system-in ...",
+              "query": "\"ushmm\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E3",
+              "url": "https://www.snopes.com/fact-check/musk-hitler-mao-stalin-post/",
+              "title": "Musk reposted post that said, 'Stalin, Mao and Hitler didn't murder ...",
+              "snippet": "Mar 14, 2025 ... Regarding Hitler's leadership of Nazi Germany, the U.S. Holocaust Memorial Museum (USHMM) hosts detailed pages offering a wealth of information ...",
+              "query": "\"ushmm\" site:snopes.com OR site:politifact.com OR site:factcheck.org",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E4",
+              "url": "https://euvsdisinfo.eu/report/russian-soldiers-saved-50-000-bulgarian-jews-during-wwii/",
+              "title": "Soviet soldiers saved 50 000 Bulgarian Jews during WWII - Disinfo",
+              "snippet": "... ushmm.org/wlc/en/article.php?ModuleId=10005451, , edition.cnn.com/videos/world/2015/07/24/intv-amanpour-bulgaria-king-a.cnn, , www ...",
+              "query": "\"ushmm\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E5",
+              "url": "https://euvsdisinfo.eu/report/west-manipulates-history-and-reduces-the-number-of-victims-of-the-jasenovac-extermination-camp-in-croatia-extermination-camp-in-jugoslavia/",
+              "title": "West manipulates history and reduces the number of victims ... - Disinfo",
+              "snippet": "... ushmm.org/wlc/en/article.php?ModuleId=10005449, www.navychod.cz/articles.php?id=15a7fcf2-8dad-11df-aa30-00304830bcc4,. Also recommended. article ...",
+              "query": "\"ushmm\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E6",
+              "url": "https://euvsdisinfo.eu/bg/report/russian-soldiers-saved-50-000-bulgarian-jews-during-wwii/",
+              "title": "Disinfo: Съветските войници спасиха 50 000 български евреи по ...",
+              "snippet": "... ushmm.org/wlc/en/article.php?ModuleId=10005451, , edition.cnn.com/videos/world/2015/07/24/intv-amanpour-bulgaria-king-a.cnn, , www.washingtonpost.com ...",
+              "query": "\"ushmm\" site:euvsdisinfo.eu OR site:disinfo.eu",
+              "provider": "Google-CSE+Serper"
+            },
+            {
+              "id": "E7",
+              "url": "https://www.uttyler.edu/archive/syllabi/college-of-arts-and-sciences/history/spring2025/hist-3397-5397-wwii-and-the-holocaust-in-poland-stith.pdf",
+              "title": "World War II and the Holocaust in Poland (Study Abroad ... - UT Tyler",
+              "snippet": "https://encyclopedia.ushmm.org/content/en/gallery/poland-maps. Required ... Grade Scale: 500-450 = A. 449-400 = B. 399-350 = C. 349-300 = D. 299-000 = F.",
+              "query": "\"encyclopedia.ushmm.org\" reliability rating assessment",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E8",
+              "url": "https://runway.airforce.gov.au/the-difference-between-nazism-and-fascism--oped",
+              "title": "The Difference Between Nazism And Fascism – OpEd - The Runway",
+              "snippet": "Apr 14, 2024 ... | Holocaust Encyclopedia (ushmm.org) · READ: The Difference Between ... References. Media Check: Eurasia Review - Media Bias/Fact Check (HIGH ...",
+              "query": "\"encyclopedia.ushmm.org\" media bias rating fact checker",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E9",
+              "url": "https://www.ushmm.org/antisemitism/holocaust-denial-and-distortion/evidence-documentation-holocaust",
+              "title": "Evidence and Documentation of the Holocaust",
+              "snippet": "Holocaust denial, distortion, and misuse are strategies used to undermine or cast doubt upon the historical truth of the Holocaust.",
+              "query": "\"ushmm\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E10",
+              "url": "https://www.ushmm.org/m/pdfs/20160229-Defusing-Hate-Guide.pdf",
+              "title": "Defusing Hate - United States Holocaust Memorial Museum",
+              "snippet": "Nov 3, 2014 ... dangerousspeech@ushmm.org. @. Page 4. 3. 1. Become familiar with ... Nyhan and Reifler, New America Foundation, “Misinformation and Fact-Checking:.",
+              "query": "\"ushmm\" credibility assessment fact check",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E11",
+              "url": "https://www.ushmm.org/propaganda/",
+              "title": "Teaching Materials on Propaganda",
+              "snippet": "These lesson plans explore how propaganda and hate speech were used by the Nazis during the Holocaust. ... This lesson explores the online exhibition State of ...",
+              "query": "\"ushmm\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E12",
+              "url": "https://exhibitions.ushmm.org/propaganda/home/state-of-deception-the-power-of-nazi-propaganda",
+              "title": "State of Deception: The Power of Nazi Propaganda",
+              "snippet": "Propaganda is a truly terrible weapon in the hands of an expert. —Adolf Hitler, Mein Kampf (1924). During a span of two decades, Nazi leaders showed the world ...",
+              "query": "\"ushmm\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E13",
+              "url": "https://exhibitions.ushmm.org/propaganda/1933-1939-dictatorship/the-weapons-of-dictatorship-terror-and-propaganda",
+              "title": "The Weapons of Dictatorship: Terror and Propaganda 1933-1939 ...",
+              "snippet": "Soon after becoming chancellor, Hitler used the power of the state to crack down on political opponents. He primarily targeted those on the left.",
+              "query": "\"ushmm\" state propaganda OR foreign propaganda OR government propaganda",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E14",
+              "url": "https://www.ushmm.org/m/pdfs/2023_Sudikoff_Interdisciplinary_Seminar_on_Genocide_Prevention_-_Background_Paper.pdf",
+              "title": "Social Media, Mass Atrocities, and Atrocity Prevention",
+              "snippet": "Apr 4, 2023 ... Learn more at ushmm.org/genocide-prevention. DANIEL SOLOMON, Associate Research Fellow at the. Simon-Skjodt Center for the Prevention of ...",
+              "query": "\"ushmm\" press council OR press complaints OR media regulator",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E15",
+              "url": "https://www.ushmm.org/m/pdfs/TheRoleofCivilians.pdf",
+              "title": "The Role of Civilians and Civil Society in Preventing Mass Atrocities",
+              "snippet": "https://www.ushmm.org/genocide-prevention/simon-skjodt-center. 6 Lee Ann ... the head of a closed political community that lends them both the moral stature and ...",
+              "query": "\"ushmm\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E16",
+              "url": "https://anatomypubs.onlinelibrary.wiley.com/doi/10.1002/ar.70018",
+              "title": "Dr. Hans Kohn and the political takeover of the Berlin Medical ...",
+              "snippet": "Jul 22, 2025 ... The politicization of science is a common theme that often arises under totalitarian rule. ... https://encyclopedia.ushmm.org/content/en/article/ ...",
+              "query": "\"ushmm\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E17",
+              "url": "https://www.ushmm.org/m/pdfs/Publication_OP_2004-02.pdf",
+              "title": "Forced and Slave Labor in Nazi-Dominated Europe",
+              "snippet": "ideological and political pressures exerted by Nazi Germany. The Forced Labor Service System: The First Phase (1939–1941). The forced labor ... ushmm.org.",
+              "query": "\"ushmm\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E18",
+              "url": "https://connect.apsanet.org/apsa2025/theme-panels/",
+              "title": "2025 Theme Panels - APSA Connect",
+              "snippet": "The Effect of Memorial Museums: A Field Experiment at the USHMM. Laia ... Together, these papers demonstrate the far-reaching political, social, and economic ...",
+              "query": "\"ushmm\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E19",
+              "url": "https://www.ushmm.org/m/pdfs/20161116-Zimbabwe-Early-Warning-Report.pdf",
+              "title": "SCENARIOS OF REPRESSION",
+              "snippet": "Nov 16, 2016 ... 2016), https://www.ushmm.org/confront-genocide/take-action-against-genocide/resources/fundamentals-of-genocide-and-mass-atrocity- prevention.",
+              "query": "\"ushmm\" independence politicization political pressure",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E20",
+              "url": "https://www.ushmm.org/m/pdfs/20170626-ushmm-standards-of-ethical-conduct.pdf",
+              "title": "Standards of Ethical Conduct",
+              "snippet": "Jun 26, 2017 ... These employees should consult the Ethics Officer before leaving Museum employment to avoid a violation of applicable post-employment ...",
+              "query": "\"ushmm\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E21",
+              "url": "https://vault.ushmm.org/adaptivemedia/rendition/id_00e4c6137556681f3d473f9052c4bca9f6afd98e",
+              "title": "United States Holocaust Memorial Museum",
+              "snippet": "Standards of Ethical Conduct. Appendix 2. UNITED STATES HOLOCAUST MEMORIAL ... violation of his or her official duty. 18 U.S.C. §201(c)(1)(B) prohibits ...",
+              "query": "\"ushmm\" ethics violation OR code violation OR journalistic standards",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E22",
+              "url": "https://www.ushmm.org/m/pdfs/Fundamentals-of-Genocide-and-Mass-Atrocity-Prevention.pdf",
+              "title": "Fundamentals-of-Genocide-and-Mass-Atrocity-Prevention.pdf",
+              "snippet": "around the decision to go to war undermined later prevention efforts. In ... ushmm.org/confront-genocide/speakers-and-events/all-speakers-and-events ...",
+              "query": "\"ushmm\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E23",
+              "url": "https://www.aacnnursing.org/Portals/0/PDFs/Position-Statements/Nursing-Research.pdf",
+              "title": "AACN Position Statement on Nursing Research",
+              "snippet": "Scientific integrity and the ethics of investigation transcend and are part of all nursing ... http://www.ushmm.org/research/doctors/Nuremberg_Code.htm. Potempa, ...",
+              "query": "\"ushmm\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E24",
+              "url": "https://www.ushmm.org/m/pdfs/USHMM-Pursuing-Justice-for-Mass-Atrocities.pdf",
+              "title": "PURSUING JUSTICE FOR MASS ATROCITIES",
+              "snippet": "Nov 9, 2020 ... research, policy engagement, education, and outreach activities. Learn more at ushmm.org/genocide-prevention. This educational Handbook ...",
+              "query": "\"ushmm\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E25",
+              "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7122250/",
+              "title": "Why Human Subjects Research Protection Is Important - PMC - NIH",
+              "snippet": "... compromised subjects in research. The Declaration of Helsinki serves as a ... encyclopedia.ushmm.org/content/en/article/the-nuremberg-code. Accessed ...",
+              "query": "\"ushmm\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E26",
+              "url": "https://collections.ushmm.org/search/catalog/irn1004791",
+              "title": "Yehuda Bauer - USHMM Collections",
+              "snippet": "... USHMM and Yad Vashem. Contributor: Director: Claude Lanzmann Cinematographer ... undermined. It was also a deal they thought doomed to fail because they ...",
+              "query": "\"ushmm\" scientific integrity compromised OR undermined",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E27",
+              "url": "https://www.ushmm.org/teach/teaching-materials/roles-of-individuals/ethical-leadership/causes-and-motivations",
+              "title": "Causes and Motivations - United States Holocaust Memorial Museum",
+              "snippet": "The hope that cooperating with the Nazis might yield special rewards, from plunder to political independence (say, for Ukraine or Lithuania) also influenced ...",
+              "query": "\"ushmm\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E28",
+              "url": "https://www.ushmm.org/information/press/press-releases/why-holocaust-analogies-are-dangerous",
+              "title": "Why Holocaust Analogies Are Dangerous",
+              "snippet": "Dec 12, 2018 ... ahollinger@ushmm.org · Museum Press Kit. Edna Friedberg, Ph.D., is a ... American politicians from across the ideological spectrum, influential ...",
+              "query": "\"ushmm\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E29",
+              "url": "https://collections.ushmm.org/search/catalog/pa1182394",
+              "title": "Collections Search - United States Holocaust Memorial Museum",
+              "snippet": "Nazi propaganda targeting Prussian political figures who had challenged Hitler's influence over German politics. ... http:​/​/collections.ushmm.org​/search​/ ...",
+              "query": "\"ushmm\" political interference OR political influence",
+              "provider": "Google-CSE"
+            },
+            {
+              "id": "E30",
+              "url": "https://www.ushmm.org/information/press/press-releases/museum-condemns-russias-invasion-of-ukraine",
+              "title": "Museum Condemns Russia's Invasion of Ukraine",
+              "snippet": "Feb 24, 2022 ... ahollinger@ushmm.org · Museum Press Kit. UNITED STATES HOLOCAUST ... For more information, visit ushmm.org. ###. Tags: Ukraine · View All ...",
+              "query": "\"ushmm\" reprimand OR sanction OR condemned OR censured",
+              "provider": "Google-CSE"
+            }
+          ],
+          "qualityAssessment": {
+            "status": "skipped",
+            "model": "claude-haiku-4-5-20251001",
+            "skippedReason": "budget_guard"
+          }
+        }
+      }
+    }
+  ]
+}

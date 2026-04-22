@@ -1,0 +1,9 @@
+---
+### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Failed Attempt Recovery Rule Draft
+**Task:** Turn the additive-repair-drift problem framing into a narrow AGENTS-level workflow rule draft, with matching Copilot summary guidance.
+**Files touched:** `AGENTS.md`, `.github/copilot-instructions.md`, `Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Failed_Attempt_Recovery_Rule_Draft.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Landed the rule in `AGENTS.md` rather than a skill file because the concern is repo-wide post-validation recovery behavior, not one workflow. Kept the scope narrow: only failed focused validation, explicit `keep/quarantine/revert` classification, verifier-backed scope broadening, and a clear warning that this is bounded backtracking rather than blanket rollback-first behavior.
+**Open items:** If this guidance proves useful in practice, the next step would be selective skill-level reinforcement in workflows that commonly iterate after failures (`/debug`, `/report-review`, possibly `/pipeline`) rather than broadening the AGENTS rule further.
+**Warnings:** This is governance guidance, not mechanical enforcement. It helps only if agents actually follow it. Do not reinterpret it as permission to revert unrelated or user-owned work without clear ownership and local evidence.
+**For next agent:** Start with [AGENTS.md](/c:/DEV/FactHarbor/AGENTS.md) at the new Failed-Attempt Recovery section and the synced summary in [.github/copilot-instructions.md](/c:/DEV/FactHarbor/.github/copilot-instructions.md). If you later push this down into skill files, keep the same narrow posture: post-failure recovery discipline, not a generalized rollback doctrine.
+**Learnings:** Appended to Role_Learnings.md? **No** — the rule is new and should be observed in use before promoting a learning.

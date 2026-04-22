@@ -1,0 +1,1635 @@
+{
+  "generatedAt": "2026-04-22T07:28:52.684Z",
+  "plan": "Plan v2.1 Stage 1 — Lite-Replay (same-commit, pinned evidence packs)",
+  "commitUnderReview": "403e905ad6b4d0713ee283b758cdfc433b327375",
+  "cacheIsolatedAt": "C:\\DEV\\FactHarbor\\apps\\web\\sr-replay-cache-stage1.db",
+  "config": {
+    "repeatsPerCell": 3,
+    "noiseFloor": 0.03,
+    "modes": [
+      "multi",
+      "single"
+    ],
+    "confidenceThreshold": 0.8,
+    "openaiModel": "gpt-4.1-mini"
+  },
+  "fixture": {
+    "path": "../../Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Replay_Stage1_Fixture.json",
+    "domains": [
+      {
+        "domain": "deeplearning.ai",
+        "isCanonicalControl": false,
+        "lanes": {
+          "A2": {
+            "items": 30
+          },
+          "B2": {
+            "items": 30
+          }
+        }
+      },
+      {
+        "domain": "siemens.com",
+        "isCanonicalControl": false,
+        "lanes": {
+          "A2": {
+            "items": 30
+          },
+          "B2": {
+            "items": 30
+          }
+        }
+      },
+      {
+        "domain": "accelerazero.com",
+        "isCanonicalControl": false,
+        "lanes": {
+          "A2": {
+            "items": 30
+          },
+          "B2": {
+            "items": 30
+          }
+        }
+      },
+      {
+        "domain": "theglobeandmail.com",
+        "isCanonicalControl": false,
+        "lanes": {
+          "A2": {
+            "items": 30
+          },
+          "B2": {
+            "items": 30
+          }
+        }
+      },
+      {
+        "domain": "encyclopedia.ushmm.org",
+        "isCanonicalControl": true,
+        "lanes": {
+          "A2": {
+            "items": 30
+          },
+          "B2": null
+        }
+      }
+    ]
+  },
+  "runs": [
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.4,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842181567,
+      "durationMs": 15291
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.75,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842196858,
+      "durationMs": 16758
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.65,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842213616,
+      "durationMs": 20794
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.72,
+      "confidence": 0.65,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": "center",
+      "refinementApplied": false,
+      "startedAtMs": 1776842234410,
+      "durationMs": 18483
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": 0.75,
+      "confidence": 0.72,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": "center",
+      "refinementApplied": true,
+      "startedAtMs": 1776842252893,
+      "durationMs": 17316
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.78,
+      "confidence": 0.77,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": "center",
+      "refinementApplied": true,
+      "startedAtMs": 1776842270209,
+      "durationMs": 16705
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842286914,
+      "durationMs": 7679
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.25,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842294593,
+      "durationMs": 5271
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842299864,
+      "durationMs": 7326
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.76,
+      "confidence": 0.68,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": "center",
+      "refinementApplied": null,
+      "startedAtMs": 1776842307190,
+      "durationMs": 7628
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.38,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842314818,
+      "durationMs": 7817
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": 0.74,
+      "confidence": 0.62,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": "center",
+      "refinementApplied": null,
+      "startedAtMs": 1776842322635,
+      "durationMs": 13836
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.85,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842336471,
+      "durationMs": 15931
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.75,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842352402,
+      "durationMs": 17167
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.75,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842369569,
+      "durationMs": 15124
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.65,
+      "category": "leaning_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842384693,
+      "durationMs": 16605
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": 0.72,
+      "confidence": 0.7,
+      "category": "reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842401298,
+      "durationMs": 18897
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.65,
+      "confidence": 0.87,
+      "category": "leaning_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": true,
+      "startedAtMs": 1776842420195,
+      "durationMs": 27045
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.28,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842447240,
+      "durationMs": 6149
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.28,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842453389,
+      "durationMs": 6757
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842460146,
+      "durationMs": 6830
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.58,
+      "category": "leaning_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842466976,
+      "durationMs": 8369
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.58,
+      "category": "leaning_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842475345,
+      "durationMs": 8170
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.58,
+      "category": "leaning_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842483515,
+      "durationMs": 9160
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.85,
+      "category": "leaning_reliable",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842492675,
+      "durationMs": 51620
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.85,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842544295,
+      "durationMs": 17672
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.85,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842561967,
+      "durationMs": 16157
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.85,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842578124,
+      "durationMs": 18836
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.75,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842596960,
+      "durationMs": 18126
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.43,
+      "confidence": 0.85,
+      "category": "mixed",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": true,
+      "startedAtMs": 1776842615086,
+      "durationMs": 32061
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": null,
+      "confidence": 0.45,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842647147,
+      "durationMs": 8448
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842655595,
+      "durationMs": 8728
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842664323,
+      "durationMs": 14365
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.62,
+      "category": "leaning_reliable",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842678688,
+      "durationMs": 7826
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": 0.68,
+      "confidence": 0.62,
+      "category": "leaning_reliable",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842686514,
+      "durationMs": 9300
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": null,
+      "confidence": 0.35,
+      "category": "insufficient_data",
+      "sourceType": "unknown",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842695814,
+      "durationMs": 8795
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.78,
+      "confidence": 0.87,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": true,
+      "startedAtMs": 1776842704609,
+      "durationMs": 19509
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": 0.78,
+      "confidence": 0.87,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": true,
+      "startedAtMs": 1776842724118,
+      "durationMs": 17380
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.74,
+      "confidence": 0.8,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": false,
+      "startedAtMs": 1776842741498,
+      "durationMs": 13515
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.8,
+      "confidence": 0.92,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": true,
+      "startedAtMs": 1776842755013,
+      "durationMs": 21941
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": 0.8,
+      "confidence": 0.92,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": true,
+      "startedAtMs": 1776842776954,
+      "durationMs": 14870
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.8,
+      "confidence": 0.92,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": true,
+      "startedAtMs": 1776842791824,
+      "durationMs": 15743
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.74,
+      "confidence": 0.78,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": null,
+      "startedAtMs": 1776842807567,
+      "durationMs": 10065
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": 0.74,
+      "confidence": 0.78,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": null,
+      "startedAtMs": 1776842817632,
+      "durationMs": 7569
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": 0.74,
+      "confidence": 0.78,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center_right",
+      "refinementApplied": null,
+      "startedAtMs": 1776842825201,
+      "durationMs": 11466
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.76,
+      "confidence": 0.82,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": null,
+      "startedAtMs": 1776842836668,
+      "durationMs": 7459
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": 0.76,
+      "confidence": 0.82,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": null,
+      "startedAtMs": 1776842844127,
+      "durationMs": 6743
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": 0.76,
+      "confidence": 0.82,
+      "category": "reliable",
+      "sourceType": "editorial_publisher",
+      "biasIndicator": "center",
+      "refinementApplied": null,
+      "startedAtMs": 1776842850870,
+      "durationMs": 6941
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 1,
+      "success": true,
+      "score": 0.9,
+      "confidence": 0.95,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": true,
+      "startedAtMs": 1776842857811,
+      "durationMs": 13620
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 2,
+      "success": true,
+      "score": 0.89,
+      "confidence": 0.95,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842871431,
+      "durationMs": 21133
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "multi",
+      "rep": 3,
+      "success": true,
+      "score": 0.92,
+      "confidence": 0.95,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": false,
+      "startedAtMs": 1776842892564,
+      "durationMs": 16049
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 1,
+      "success": true,
+      "score": 0.89,
+      "confidence": 0.88,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842908613,
+      "durationMs": 7667
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 2,
+      "success": true,
+      "score": 0.92,
+      "confidence": 0.88,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842916280,
+      "durationMs": 9412
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "single",
+      "rep": 3,
+      "success": true,
+      "score": 0.92,
+      "confidence": 0.88,
+      "category": "highly_reliable",
+      "sourceType": "collaborative_reference",
+      "biasIndicator": null,
+      "refinementApplied": null,
+      "startedAtMs": 1776842925692,
+      "durationMs": 6989
+    }
+  ],
+  "summaries": [
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": null,
+        "min": null,
+        "max": null,
+        "spread": null,
+        "values": [
+          null,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.65,
+        "values": [
+          0.4,
+          0.75,
+          0.65
+        ]
+      },
+      "categories": [
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.75,
+        "min": 0.72,
+        "max": 0.78,
+        "spread": 0.06,
+        "values": [
+          0.72,
+          0.75,
+          0.78
+        ]
+      },
+      "confidence": {
+        "median": 0.72,
+        "values": [
+          0.65,
+          0.72,
+          0.77
+        ]
+      },
+      "categories": [
+        "reliable"
+      ],
+      "sourceTypes": [
+        "collaborative_reference"
+      ],
+      "biasIndicators": [
+        "center"
+      ]
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "A2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": null,
+        "min": null,
+        "max": null,
+        "spread": null,
+        "values": [
+          null,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.35,
+        "values": [
+          0.35,
+          0.25,
+          0.35
+        ]
+      },
+      "categories": [
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "deeplearning.ai",
+      "lane": "B2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.75,
+        "min": 0.74,
+        "max": 0.76,
+        "spread": 0.02,
+        "values": [
+          0.76,
+          null,
+          0.74
+        ]
+      },
+      "confidence": {
+        "median": 0.62,
+        "values": [
+          0.68,
+          0.38,
+          0.62
+        ]
+      },
+      "categories": [
+        "reliable",
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "collaborative_reference",
+        "unknown"
+      ],
+      "biasIndicators": [
+        "center",
+        "(null)"
+      ]
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": null,
+        "min": null,
+        "max": null,
+        "spread": null,
+        "values": [
+          null,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.75,
+        "values": [
+          0.85,
+          0.75,
+          0.75
+        ]
+      },
+      "categories": [
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.68,
+        "min": 0.65,
+        "max": 0.72,
+        "spread": 0.07,
+        "values": [
+          0.68,
+          0.72,
+          0.65
+        ]
+      },
+      "confidence": {
+        "median": 0.7,
+        "values": [
+          0.65,
+          0.7,
+          0.87
+        ]
+      },
+      "categories": [
+        "leaning_reliable",
+        "reliable"
+      ],
+      "sourceTypes": [
+        "collaborative_reference"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "A2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": null,
+        "min": null,
+        "max": null,
+        "spread": null,
+        "values": [
+          null,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.28,
+        "values": [
+          0.28,
+          0.28,
+          0.35
+        ]
+      },
+      "categories": [
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "siemens.com",
+      "lane": "B2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.68,
+        "min": 0.68,
+        "max": 0.68,
+        "spread": 0,
+        "values": [
+          0.68,
+          0.68,
+          0.68
+        ]
+      },
+      "confidence": {
+        "median": 0.58,
+        "values": [
+          0.58,
+          0.58,
+          0.58
+        ]
+      },
+      "categories": [
+        "leaning_reliable"
+      ],
+      "sourceTypes": [
+        "collaborative_reference"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.68,
+        "min": 0.68,
+        "max": 0.68,
+        "spread": 0,
+        "values": [
+          0.68,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.85,
+        "values": [
+          0.85,
+          0.85,
+          0.85
+        ]
+      },
+      "categories": [
+        "leaning_reliable",
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.43,
+        "min": 0.43,
+        "max": 0.43,
+        "spread": 0,
+        "values": [
+          null,
+          null,
+          0.43
+        ]
+      },
+      "confidence": {
+        "median": 0.85,
+        "values": [
+          0.85,
+          0.75,
+          0.85
+        ]
+      },
+      "categories": [
+        "insufficient_data",
+        "mixed"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "A2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": null,
+        "min": null,
+        "max": null,
+        "spread": null,
+        "values": [
+          null,
+          null,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.35,
+        "values": [
+          0.45,
+          0.35,
+          0.35
+        ]
+      },
+      "categories": [
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "accelerazero.com",
+      "lane": "B2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.68,
+        "min": 0.68,
+        "max": 0.68,
+        "spread": 0,
+        "values": [
+          0.68,
+          0.68,
+          null
+        ]
+      },
+      "confidence": {
+        "median": 0.62,
+        "values": [
+          0.62,
+          0.62,
+          0.35
+        ]
+      },
+      "categories": [
+        "leaning_reliable",
+        "insufficient_data"
+      ],
+      "sourceTypes": [
+        "unknown"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.78,
+        "min": 0.74,
+        "max": 0.78,
+        "spread": 0.04,
+        "values": [
+          0.78,
+          0.78,
+          0.74
+        ]
+      },
+      "confidence": {
+        "median": 0.87,
+        "values": [
+          0.87,
+          0.87,
+          0.8
+        ]
+      },
+      "categories": [
+        "reliable"
+      ],
+      "sourceTypes": [
+        "editorial_publisher"
+      ],
+      "biasIndicators": [
+        "center_right"
+      ]
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "multi",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.8,
+        "min": 0.8,
+        "max": 0.8,
+        "spread": 0,
+        "values": [
+          0.8,
+          0.8,
+          0.8
+        ]
+      },
+      "confidence": {
+        "median": 0.92,
+        "values": [
+          0.92,
+          0.92,
+          0.92
+        ]
+      },
+      "categories": [
+        "reliable"
+      ],
+      "sourceTypes": [
+        "editorial_publisher"
+      ],
+      "biasIndicators": [
+        "center"
+      ]
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "A2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.74,
+        "min": 0.74,
+        "max": 0.74,
+        "spread": 0,
+        "values": [
+          0.74,
+          0.74,
+          0.74
+        ]
+      },
+      "confidence": {
+        "median": 0.78,
+        "values": [
+          0.78,
+          0.78,
+          0.78
+        ]
+      },
+      "categories": [
+        "reliable"
+      ],
+      "sourceTypes": [
+        "editorial_publisher"
+      ],
+      "biasIndicators": [
+        "center_right"
+      ]
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "lane": "B2",
+      "mode": "single",
+      "isCanonicalControl": false,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.76,
+        "min": 0.76,
+        "max": 0.76,
+        "spread": 0,
+        "values": [
+          0.76,
+          0.76,
+          0.76
+        ]
+      },
+      "confidence": {
+        "median": 0.82,
+        "values": [
+          0.82,
+          0.82,
+          0.82
+        ]
+      },
+      "categories": [
+        "reliable"
+      ],
+      "sourceTypes": [
+        "editorial_publisher"
+      ],
+      "biasIndicators": [
+        "center"
+      ]
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "multi",
+      "isCanonicalControl": true,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.9,
+        "min": 0.89,
+        "max": 0.92,
+        "spread": 0.03,
+        "values": [
+          0.9,
+          0.89,
+          0.92
+        ]
+      },
+      "confidence": {
+        "median": 0.95,
+        "values": [
+          0.95,
+          0.95,
+          0.95
+        ]
+      },
+      "categories": [
+        "highly_reliable"
+      ],
+      "sourceTypes": [
+        "collaborative_reference"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    },
+    {
+      "domain": "encyclopedia.ushmm.org",
+      "lane": "A2",
+      "mode": "single",
+      "isCanonicalControl": true,
+      "runs": 3,
+      "successes": 3,
+      "score": {
+        "median": 0.92,
+        "min": 0.89,
+        "max": 0.92,
+        "spread": 0.03,
+        "values": [
+          0.89,
+          0.92,
+          0.92
+        ]
+      },
+      "confidence": {
+        "median": 0.88,
+        "values": [
+          0.88,
+          0.88,
+          0.88
+        ]
+      },
+      "categories": [
+        "highly_reliable"
+      ],
+      "sourceTypes": [
+        "collaborative_reference"
+      ],
+      "biasIndicators": [
+        "(null)"
+      ]
+    }
+  ],
+  "crossLaneDeltas": [
+    {
+      "domain": "deeplearning.ai",
+      "mode": "multi",
+      "medianA2": null,
+      "medianB2": 0.75,
+      "delta": null,
+      "categoryStableA2": true,
+      "categoryStableB2": true,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "deeplearning.ai",
+      "mode": "single",
+      "medianA2": null,
+      "medianB2": 0.75,
+      "delta": null,
+      "categoryStableA2": true,
+      "categoryStableB2": false,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "siemens.com",
+      "mode": "multi",
+      "medianA2": null,
+      "medianB2": 0.68,
+      "delta": null,
+      "categoryStableA2": true,
+      "categoryStableB2": false,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "siemens.com",
+      "mode": "single",
+      "medianA2": null,
+      "medianB2": 0.68,
+      "delta": null,
+      "categoryStableA2": true,
+      "categoryStableB2": true,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "accelerazero.com",
+      "mode": "multi",
+      "medianA2": 0.68,
+      "medianB2": 0.43,
+      "delta": -0.25,
+      "categoryStableA2": false,
+      "categoryStableB2": false,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "accelerazero.com",
+      "mode": "single",
+      "medianA2": null,
+      "medianB2": 0.68,
+      "delta": null,
+      "categoryStableA2": true,
+      "categoryStableB2": false,
+      "crossLaneCategoryMatch": false
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "mode": "multi",
+      "medianA2": 0.78,
+      "medianB2": 0.8,
+      "delta": 0.02,
+      "categoryStableA2": true,
+      "categoryStableB2": true,
+      "crossLaneCategoryMatch": true
+    },
+    {
+      "domain": "theglobeandmail.com",
+      "mode": "single",
+      "medianA2": 0.74,
+      "medianB2": 0.76,
+      "delta": 0.02,
+      "categoryStableA2": true,
+      "categoryStableB2": true,
+      "crossLaneCategoryMatch": true
+    }
+  ],
+  "canonicalGate": {
+    "withinNoiseFloor": true,
+    "escalateToStage2": false,
+    "reasons": []
+  }
+}

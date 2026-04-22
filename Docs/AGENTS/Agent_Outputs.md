@@ -7,6 +7,31 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-22 | Senior Developer | GitHub Copilot (GPT-5.4) | Article Gate1 Contract Preservation And Iran URL Rerun -- [Standard] [open-items: yes]
+**For next agent:** Stage 1 now uses `selectClaimsForGate1(...)` in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` to keep clean contract-approved article claim sets intact for Gate 1; commit `424b9652` is live and rerun `9164bcf79cb04df2a0f308d933aed8ac` is running on that commit for the Iran URL.
+→ Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_Article_Gate1_Contract_Preservation_And_Iran_URL_Rerun.md
+
+---
+### 2026-04-21 | Senior Developer | GitHub Copilot (GPT-5.4) | Unverified Validator Retry Hardening -- [Standard] [open-items: yes]
+**For next agent:** Stage 1 now retries contract-validator structured-output once at every validation seam in [apps/web/src/lib/analyzer/claim-extraction-stage.ts](apps/web/src/lib/analyzer/claim-extraction-stage.ts#L2602). This targets the new `validator_unavailable` UNVERIFIED jobs (`d433c56e...`, `bc6325e6...`) and also stops exact-match retry salience from reordering an already-authoritative anchor inventory. Residual PDF/article drift remains open.
+→ Docs/AGENTS/Handoffs/2026-04-21_Senior_Developer_Unverified_Validator_Retry_Hardening.md
+
+---
+### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Skill-Level Failed Attempt Recovery Reinforcement -- [Standard] [open-items: yes]
+**For next agent:** The new Failed-Attempt Recovery rule was reinforced in [.claude/skills/report-review/SKILL.md](/c:/DEV/FactHarbor/.claude/skills/report-review/SKILL.md), [.claude/skills/debug/SKILL.md](/c:/DEV/FactHarbor/.claude/skills/debug/SKILL.md), and [.claude/skills/pipeline/SKILL.md](/c:/DEV/FactHarbor/.claude/skills/pipeline/SKILL.md). `report-review` is the most important copy because its Phase 4 sub-agents inherit the non-negotiable constraints verbatim.
+→ Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Skill_Level_Failed_Attempt_Recovery_Reinforcement.md
+
+---
+### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Failed Attempt Recovery Rule Draft -- [Standard] [open-items: yes]
+**For next agent:** [AGENTS.md](/c:/DEV/FactHarbor/AGENTS.md) now carries a narrow Failed-Attempt Recovery rule: after failed focused validation, classify the earlier attempt as `keep`, `quarantine`, or `revert`, and broaden scope only with a verifier-backed reason. Copilot summary guidance was synced in [.github/copilot-instructions.md](/c:/DEV/FactHarbor/.github/copilot-instructions.md).
+→ Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Failed_Attempt_Recovery_Rule_Draft.md
+
+---
+### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Additive Repair Drift Grounded Review -- [Standard] [open-items: yes]
+**For next agent:** [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) was tightened to better match the evidence bundle behind it: the problem is locally relevant, but prevalence remains unquantified and the “broader than one repo” claim now rests explicitly on external signals rather than repo-local proof.
+→ Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Grounded_Review.md
+
+---
 ### 2026-04-21 | Lead Architect | Codex (GPT-5) | Additive Repair Drift Problem Statement -- [Standard] [open-items: yes]
 **For next agent:** New reference doc at [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md) explains the workflow failure mode behind agents stacking failed code/prompt attempts instead of retiring them. Keep the final framing precise: the problem is real, but the better-supported response is verifier-gated bounded backtracking, hunk quarantine, and explicit scope-approval controls, not automatic rollback-first behavior.
 → Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Problem_Statement.md
@@ -1576,6 +1601,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_Cross_Tool_Publication.md
 
 ---
+### 2026-04-22 | Senior Developer | Codex (GPT-5) | SR Contract Risk Benefit Review -- [Significant] [open-items: yes]
+**For next agent:** The April 20 SR contract-hardening commit should be kept, but not treated as the whole SR quality story. A live four-domain before/after comparison saved to `Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Comparison.json` shows the patch correctly eliminates unsupported runtime tokens like `educational_platform`, `corporate_publisher`, and `corporate_interest`, while also exposing a separate unresolved issue: current SR classification still mis-buckets some corporate/educational sources into `unknown` or `collaborative_reference`, so score changes are partly live-evidence variance and partly broader semantic classification drift.
+→ Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Review.md
+
+---
 ### 2026-04-21 | Unassigned | Codex (GPT-5) | Daily Bug Scan Report Review Publication No Regression -- [Standard] [open-items: no]
 **For next agent:** Commit `51ede468` is the only post-`2026-04-21T06:00:17Z` change in scope and it is docs/workflow-only. `git show`, `git diff --check`, and cross-file reference checks found no concrete regression to fix; excluded uncommitted analyzer/test work remains out of scope for this run.
 → Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_Report_Review_Publication_No_Regression.md
@@ -1614,3 +1644,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-21 | LLM Expert | Codex (GPT-5) | Debate Skill Structural Hardening -- [Significant] [open-items: yes]
 **For next agent:** `/debate` now keeps its core adversarial architecture but adds a mandatory intake/structural-audit layer, manifest-based routing instead of proposition-keyword routing, structural-first role outputs, and auditable final sections (`Structural Audit`, `Rejected Arguments`, `Skipped Roles`). If another workflow calls it, pass `CONTEXT_MANIFEST` with evidence IDs and known gaps rather than a free-form context blob.
 → Docs/AGENTS/Handoffs/2026-04-21_LLM_Expert_Debate_Skill_Structural_Hardening.md
+
+---
+### 2026-04-22 | Senior Developer | Claude (Opus 4.7) | SR Contract Controlled Replay Stage 1 -- [Significant] [open-items: no]
+**For next agent:** Plan v2.1 Stage 1 (Lite-Replay) executed. 54 runs (4 report domains × A2/B2 × 2 modes × 3 reps, plus `encyclopedia.ushmm.org` canonical × A2 × 2 modes × 3 reps) against the patched engine with frozen evidence packs and an isolated SR cache. Canonical control held at `highly_reliable` every run with score spread **0.03** (at the declared noise floor, zero category oscillation) — so the Stage 1 gate closes: **keep `403e905a`, do not escalate to Stage 2**. All 54 runs returned contract-valid payloads (canonical `sourceType` and `biasIndicator` tokens only). A2↔B2 deltas are pack-driven, not code-driven (`theglobeandmail.com` A2→B2 delta +0.02 in both modes, category match). Engine change is minimal and additive: `evaluateSourceWithPinnedEvidencePack` is now exported from `sr-eval-engine.ts`; `evaluateSourceWithConsensus` delegates after `buildEvidencePack` + enrichment (no production behavior change). Residual uncertainty: prompt-correction vs. evidence-change attribution requires Stage 2 (pre-patch worktree) and is deferred.
+→ Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Replay_Stage1_Outcome.md

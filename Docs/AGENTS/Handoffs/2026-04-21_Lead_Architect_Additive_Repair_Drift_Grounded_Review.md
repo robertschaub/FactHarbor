@@ -1,0 +1,9 @@
+---
+### 2026-04-21 | Lead Architect | GitHub Copilot (GPT-5.4) | Additive Repair Drift Grounded Review
+**Task:** Review `Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md` with a debate-style architect pass and make only evidence-grounded wording changes.
+**Files touched:** `Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md`, `Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Grounded_Review.md`, `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Preserved the core thesis. Tightened wording where the local evidence supports architectural relevance but not measured prevalence: softened universal language in the problem statement, reframed Section 4 from a causal claim to a working explanation, clarified that the broader-than-one-repo point is supported by external signals rather than repo-local proof, and made the response section explicitly bounded and verifier-led.
+**Open items:** If this reference is later elevated into AGENTS.md policy or workflow tooling, re-check the external citations directly and add a stronger local evidence bundle before turning the framing into binding guidance.
+**Warnings:** Do not collapse the distinction between repo-local evidence and external directional support. The document is now better calibrated, but it still remains a problem-framing note rather than a measured incident report.
+**For next agent:** Start with [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md). Preserve the current posture: local relevance is established, prevalence is not quantified, and the best-supported design direction remains verifier-gated bounded backtracking rather than blanket rollback-first behavior.
+**Learnings:** Appended to Role_Learnings.md? **No** — this was a document-tightening pass, not a new reusable architecture pattern.
