@@ -14,7 +14,20 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../../styles/common.module.css";
-import type { PipelineVariant } from "@/lib/pipeline-variant";
+import {
+  getAnalyzeInputType,
+  normalizeAnalyzeInputValue,
+} from "@/lib/analyze-input-client";
+import {
+  canUseSessionStorage,
+  getLocalStorageItemSafely,
+  getSessionStorageItemSafely,
+  type ClaimSelectionMode,
+  getStoredClaimSelectionMode,
+  setLocalStorageItemSafely,
+  setStoredClaimSelectionMode,
+  storeDraftAccessToken,
+} from "@/lib/claim-selection-client";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
 
 export default function AnalyzePage() {
@@ -23,7 +36,7 @@ export default function AnalyzePage() {
   const [inviteCode, setInviteCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const pipelineVariant: PipelineVariant = "claimboundary";
+  const [selectionMode, setSelectionMode] = useState<ClaimSelectionMode>("interactive");
   const [quotaStatus, setQuotaStatus] = useState<{
     hourlyLimit: number;
     hourlyRemaining: number;
@@ -38,9 +51,10 @@ export default function AnalyzePage() {
 
   // Load invite code and admin key on mount.
   useEffect(() => {
-    const storedCode = localStorage.getItem("fh_invite_code") || "";
+    const storedCode = getLocalStorageItemSafely("fh_invite_code") || "";
     setInviteCode(storedCode);
-    setAdminKey(sessionStorage.getItem("fh_admin_key"));
+    setAdminKey(getSessionStorageItemSafely("fh_admin_key"));
+    setSelectionMode(getStoredClaimSelectionMode());
   }, []);
 
   const checkQuota = async (code: string) => {
@@ -105,32 +119,6 @@ export default function AnalyzePage() {
     };
   }, []);
 
-  // Auto-detect if input is a URL
-  const isUrl = (text: string): boolean => {
-    const trimmed = text.trim();
-    // Check if it looks like a URL
-    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-      return true;
-    }
-    // Check for common URL patterns without protocol
-    if (/^(www\.)?[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(\/.*)?$/.test(trimmed)) {
-      return true;
-    }
-    return false;
-  };
-
-  const getInputType = (): "url" | "text" => {
-    return isUrl(input) ? "url" : "text";
-  };
-
-  const normalizeUrl = (url: string): string => {
-    const trimmed = url.trim();
-    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-      return "https://" + trimmed;
-    }
-    return trimmed;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -139,13 +127,18 @@ export default function AnalyzePage() {
       return;
     }
 
+    if (!adminKey && !canUseSessionStorage()) {
+      setError(
+        "This browser blocks session storage, which FactHarbor needs to hold the draft access token. Enable session storage or use an admin key.",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const inputType = getInputType();
-      const inputValue = inputType === "url" ? normalizeUrl(input) : input.trim();
-      const pipelineToSend = pipelineVariant;
+      const { inputType, inputValue } = normalizeAnalyzeInputValue(input);
 
       // Guard against the UI getting stuck disabled if the server is under load.
       // If the request doesn't return promptly, abort and allow the user to retry.
@@ -154,20 +147,21 @@ export default function AnalyzePage() {
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       // Update stored invite code
-      localStorage.setItem("fh_invite_code", inviteCode);
+      setLocalStorageItemSafely("fh_invite_code", inviteCode);
+      setStoredClaimSelectionMode(selectionMode);
 
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (adminKey) {
         headers["x-admin-key"] = adminKey;
       }
 
-      const res = await fetch("/api/fh/analyze", {
+      const res = await fetch("/api/fh/claim-selection-drafts", {
         method: "POST",
         headers,
         body: JSON.stringify({
           inputType,
           inputValue,
-          pipelineVariant: pipelineToSend,
+          selectionMode,
           inviteCode: inviteCode.trim() || undefined
         }),
         signal: controller.signal,
@@ -179,7 +173,18 @@ export default function AnalyzePage() {
       }
 
       const data = await res.json();
-      router.push(`/jobs/${data.jobId}`);
+      if (typeof data?.draftId !== "string" || typeof data?.draftAccessToken !== "string") {
+        throw new Error("Draft creation response was incomplete");
+      }
+
+      const storedDraftToken = storeDraftAccessToken(data.draftId, data.draftAccessToken);
+      if (!storedDraftToken && !adminKey) {
+        throw new Error(
+          "Draft was created, but this browser blocked session storage needed to open it. Enable session storage and submit again.",
+        );
+      }
+
+      router.push(`/analyze/select/${data.draftId}`);
     } catch (err: any) {
       const msg =
         err?.name === "AbortError"
@@ -191,7 +196,7 @@ export default function AnalyzePage() {
     }
   };
 
-  const detectedType = getInputType();
+  const detectedType = getAnalyzeInputType(input);
   const hasInput = input.trim().length > 0;
 
   return (
@@ -223,6 +228,49 @@ export default function AnalyzePage() {
             </span>
           </div>
         )}
+
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "14px 16px",
+            border: "1px solid #d9dee5",
+            borderRadius: 12,
+            background: "#f8fafc",
+          }}
+        >
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 10 }}>
+            Claim Selection
+          </div>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectionMode === "automatic"}
+              onChange={(event) => {
+                const nextMode: ClaimSelectionMode = event.target.checked ? "automatic" : "interactive";
+                setSelectionMode(nextMode);
+                setStoredClaimSelectionMode(nextMode);
+              }}
+              style={{ marginTop: 2 }}
+            />
+            <span style={{ display: "grid", gap: 4 }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
+                Auto-continue with recommended claims
+              </span>
+              <span style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>
+                FactHarbor prepares candidate atomic claims first. In automatic mode it continues
+                directly when the recommendation step returns a non-empty subset; otherwise it falls
+                back to the manual selection page.
+              </span>
+            </span>
+          </label>
+        </div>
 
 
 
@@ -317,7 +365,7 @@ export default function AnalyzePage() {
             className={`${styles.submitButton} ${isSubmitting || !hasInput || (!adminKey && !inviteCode.trim()) ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
-              <>⏳ Starting Analysis...</>
+              <>⏳ Preparing Claim Selection...</>
             ) : (
               <>🔍 Check</>
             )}
