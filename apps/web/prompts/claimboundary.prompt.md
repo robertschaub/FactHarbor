@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-20T18:20:00Z"
+lastModified: "2026-04-22T19:30:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -19,6 +19,7 @@ variables:
   - impliedClaim
   - articleThesis
   - atomicClaimsJson
+  - maxRecommendedClaims
   - anchorText
   - salienceBindingContextJson
 requiredSections:
@@ -29,6 +30,7 @@ requiredSections:
   - "CLAIM_CONTRACT_VALIDATION"
   - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
+  - "CLAIM_SELECTION_RECOMMENDATION"
   - "CLAIM_CONTRACT_REPAIR"
   - "CLAIM_VALIDATION"
   - "GENERATE_QUERIES"
@@ -720,6 +722,85 @@ Binding-mode audit rules:
 - Tiebreaker: prefer the thesis-direct anchor whose predicate fuses the modifier with the input's original action. An anchor that stands alone or only describes an effect does not qualify over an anchor fused to the original action.
 - Use `preservedInClaimIds` and `preservedByQuotes` only for that chosen precommitted anchor.
 - Keep the rest of the validator behavior unchanged: you are still auditing fidelity, anti-inference, and whole-set coherence. Binding mode changes the source of the anchor inventory, not the validator's role.
+
+---
+
+## CLAIM_SELECTION_RECOMMENDATION
+
+You are an atomic-claim selection recommendation engine. Your task is to evaluate the final Stage 1 candidate set jointly, rank the claims for Atomic Claim Selection, and recommend the strongest small subset for default preselection or automatic continuation.
+
+### Task
+
+Assess every candidate claim together. For each claim, assign one primary treatment label, assess thesis directness and expected evidence yield, note whether it covers a distinct relevant dimension, and identify only materially redundant competing claims. Then rank the full set and recommend the strongest subset.
+
+### Rules
+
+1. **Recommendation only.** Do not judge truth, source reliability, or verdict direction. Assume the claims have already survived Stage 1 extraction and Gate 1 validity checks. Your role is only post-Gate-1 recommendation over the surviving candidate set.
+2. **Joint reasoning is mandatory.** Evaluate the full candidate set together so you can reason about redundancy, coverage, and ranking across claims. Do not treat each claim independently.
+3. **Use exactly one primary treatment label per claim.**
+   - `fact_check_worthy`: factual and worth prioritizing for fact-checking.
+   - `fact_non_check_worthy`: factual but not strong enough for v1 recommendation priority.
+   - `opinion_or_subjective`: primarily evaluative, rhetorical, or subjective for v1 treatment.
+   - `unclear`: control state when you cannot safely place the claim into the other buckets.
+4. **Rank the entire candidate set.** `rankedClaimIds` must contain every input claim exactly once, ordered from strongest overall recommendation candidate to weakest.
+5. **Recommendation cap.** `recommendedClaimIds` must contain at most `${maxRecommendedClaims}` claims.
+6. **Normal recommendation rule.** Recommend from `fact_check_worthy` first.
+7. **Limited `unclear` promotion.** Recommend an `unclear` claim only when higher-ranked `fact_check_worthy` claims would otherwise leave a distinct thesis-relevant dimension uncovered.
+8. **Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.** They may stay in the ranked list and in the assessments, but they should not appear in `recommendedClaimIds`.
+9. **Coverage means thesis-relevant distinctness.** `coversDistinctRelevantDimension` should be `true` only when the claim preserves a materially different thesis-relevant dimension from the stronger claims already competing for recommendation.
+10. **Redundancy must stay narrow.** `redundancyWithClaimIds` should name only materially competing claims from the same candidate set. Do not generate broad noisy cross-links.
+11. **No omissions, no duplicates.** Every input claim must appear once in `assessments` and once in `rankedClaimIds`. Use the exact provided claim IDs.
+12. **Non-empty rationale fields.** `rationale` and every `recommendationRationale` must be non-empty, concise, and grounded in ranking, coverage, redundancy, and expected evidence yield.
+13. **Language discipline.** Reason from semantic content, not English-specific wording. Keep the output usable for multilingual inputs.
+
+### Input
+
+Original input:
+`${analysisInput}`
+
+Implied claim:
+`${impliedClaim}`
+
+Article thesis:
+`${articleThesis}`
+
+Atomic claims:
+`${atomicClaimsJson}`
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "rankedClaimIds": ["AC_01"],
+  "recommendedClaimIds": ["AC_01"],
+  "assessments": [
+    {
+      "claimId": "AC_01",
+      "triageLabel": "fact_check_worthy",
+      "thesisDirectness": "high",
+      "expectedEvidenceYield": "high",
+      "coversDistinctRelevantDimension": true,
+      "redundancyWithClaimIds": [],
+      "recommendationRationale": "short explanation"
+    }
+  ],
+  "rationale": "short explanation"
+}
+```
+
+Field constraints:
+- `rankedClaimIds`: unique ordered permutation of all input claim IDs.
+- `recommendedClaimIds`: unique ordered subset of `rankedClaimIds`, size `0..${maxRecommendedClaims}`.
+- `assessments`: one entry for each input claim, with unique `claimId` values matching the input claim IDs exactly.
+- `triageLabel`: `"fact_check_worthy"` | `"fact_non_check_worthy"` | `"opinion_or_subjective"` | `"unclear"`.
+- `thesisDirectness`: `"high"` | `"medium"` | `"low"`.
+- `expectedEvidenceYield`: `"high"` | `"medium"` | `"low"`.
+- `coversDistinctRelevantDimension`: boolean.
+- `redundancyWithClaimIds`: only exact claim IDs from the input set, never the claim's own ID.
+- `recommendationRationale`: non-empty; max 160 characters.
+- `rationale`: non-empty; max 240 characters.
+- If no claim should be recommended, return an empty `recommendedClaimIds` array while still returning the full ranking and full assessment set.
 
 ---
 

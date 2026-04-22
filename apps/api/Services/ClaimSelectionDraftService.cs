@@ -256,7 +256,7 @@ public sealed class ClaimSelectionDraftService
         await _db.SaveChangesAsync();
     }
 
-    public async Task StoreFailureAsync(string draftId, string errorCode, string errorMessage)
+    public async Task StoreFailureAsync(string draftId, string errorCode, string errorMessage, string? draftStateJson = null)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
         if (draft is null) return;
@@ -265,13 +265,13 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
             return;
         }
-        if (IsTerminalDraftState(draft))
+        if (IsTerminalDraftState(draft) || draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
         draft.Status = "FAILED";
         draft.UpdatedUtc = DateTime.UtcNow;
 
-        var stateNode = ParseDraftStateNode(draft.DraftStateJson);
+        var stateNode = ParseDraftStateNode(string.IsNullOrWhiteSpace(draftStateJson) ? draft.DraftStateJson : draftStateJson);
         stateNode["lastError"] = new JsonObject
         {
             ["code"] = errorCode,

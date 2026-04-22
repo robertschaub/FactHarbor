@@ -6,7 +6,7 @@ namespace FactHarbor.Api.Controllers;
 
 public sealed record DraftStatusUpdateRequest(string status, int? progress, string? eventMessage);
 public sealed record DraftPreparedRequest(string draftStateJson);
-public sealed record DraftFailedRequest(string errorCode, string errorMessage);
+public sealed record DraftFailedRequest(string errorCode, string errorMessage, string? draftStateJson = null);
 
 [ApiController]
 [Route("internal/v1/claim-selection-drafts")]
@@ -42,7 +42,7 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
     {
         if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
 
-        await _drafts.StoreFailureAsync(draftId, req.errorCode, req.errorMessage);
+        await _drafts.StoreFailureAsync(draftId, req.errorCode, req.errorMessage, req.draftStateJson);
         return Ok(new { ok = true });
     }
 

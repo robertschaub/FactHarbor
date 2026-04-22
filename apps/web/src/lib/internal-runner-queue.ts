@@ -1,5 +1,6 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { prepareStage1Snapshot } from "@/lib/analyzer/claimboundary-pipeline";
+import { generateClaimSelectionRecommendation } from "@/lib/analyzer/claim-selection-recommendation";
 import { debugLog } from "@/lib/analyzer/debug";
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import { classifyError, isNetworkConnectivityFailureText } from "@/lib/error-classification";
@@ -14,6 +15,7 @@ import {
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 import { getWebGitCommitHash } from "@/lib/build-info";
+import { loadPipelineConfig } from "@/lib/config-loader";
 import type {
   ClaimSelectionMetadata,
   ClaimSelectionDraftState,
@@ -787,6 +789,8 @@ async function runDraftPreparationBackground(draftId: string) {
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
   let preparedPersisted = false;
+  let failureCode: "stage1_failed" | "recommendation_failed" = "stage1_failed";
+  let failureDraftState: ClaimSelectionDraftState | null = null;
 
   try {
     const draft = await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`);
@@ -804,23 +808,28 @@ async function runDraftPreparationBackground(draftId: string) {
       throw new Error("Draft is missing active input value for preparation");
     }
 
+    const { config: pipelineConfig } = await loadPipelineConfig("default");
+
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
       status: "PREPARING",
       progress: 5,
       eventMessage: "Draft preparation started",
     });
 
-    const { preparedStage1 } = await prepareStage1Snapshot({
-      inputType,
-      inputValue,
-      onEvent: async (message, progress) => {
-        await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
-          status: "PREPARING",
-          progress,
-          eventMessage: message,
-        });
+    const { preparedStage1 } = await prepareStage1Snapshot(
+      {
+        inputType,
+        inputValue,
+        onEvent: async (message, progress) => {
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+            status: "PREPARING",
+            progress,
+            eventMessage: message,
+          });
+        },
       },
-    });
+      pipelineConfig,
+    );
 
     if (preparedStage1.preparedUnderstanding.contractValidationSummary?.preservesContract === false) {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
@@ -839,34 +848,57 @@ async function runDraftPreparationBackground(draftId: string) {
       return;
     }
 
-    const draftState: ClaimSelectionDraftState = {
+    failureCode = "recommendation_failed";
+    failureDraftState = {
       version: 1,
       preparedStage1,
-      rankedClaimIds: candidateIds,
+      rankedClaimIds: [],
       recommendedClaimIds: [],
       selectedClaimIds: [],
       assessments: [],
     };
 
-    if (selectionMode === "automatic" && candidateIds.length <= 5) {
-      draftState.selectedClaimIds = candidateIds;
-    }
+    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+      status: "PREPARING",
+      progress: 32,
+      eventMessage: "Generating claim-selection recommendations",
+    });
+
+    const recommendation = await generateClaimSelectionRecommendation({
+      originalInput: preparedStage1.resolvedInputText,
+      impliedClaim: preparedStage1.preparedUnderstanding.impliedClaim,
+      articleThesis: preparedStage1.preparedUnderstanding.articleThesis,
+      atomicClaims: preparedStage1.preparedUnderstanding.atomicClaims,
+      pipelineConfig,
+    });
+
+    const selectedClaimIds = [...recommendation.recommendedClaimIds];
+    const draftState: ClaimSelectionDraftState = {
+      version: 1,
+      preparedStage1,
+      rankedClaimIds: recommendation.rankedClaimIds,
+      recommendedClaimIds: recommendation.recommendedClaimIds,
+      selectedClaimIds,
+      recommendationRationale: recommendation.rationale,
+      assessments: recommendation.assessments,
+    };
+    failureDraftState = draftState;
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
       draftStateJson: JSON.stringify(draftState),
     });
     preparedPersisted = true;
 
-    if (selectionMode === "automatic" && candidateIds.length <= 5) {
+    if (selectionMode === "automatic" && selectedClaimIds.length > 0) {
       await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
-        selectedClaimIds: candidateIds,
+        selectedClaimIds,
       });
       return;
     }
 
-    if (selectionMode === "automatic" && candidateIds.length > 5) {
+    if (selectionMode === "automatic" && selectedClaimIds.length === 0) {
       console.warn(
-        `[Runner] Draft ${draftId} requested automatic selection but ${candidateIds.length} claims survived Stage 1. Leaving draft awaiting manual confirmation.`,
+        `[Runner] Draft ${draftId} requested automatic selection but the recommendation module returned no recommended claims. Leaving draft awaiting manual confirmation.`,
       );
     }
   } catch (e: any) {
@@ -879,8 +911,9 @@ async function runDraftPreparationBackground(draftId: string) {
       return;
     }
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
-      errorCode: "stage1_failed",
+      errorCode: failureCode,
       errorMessage: msg,
+      draftStateJson: failureDraftState ? JSON.stringify(failureDraftState) : undefined,
     }).catch(() => {});
   } finally {
     const qs2 = getRunnerQueueState();
