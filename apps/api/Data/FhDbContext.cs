@@ -11,6 +11,7 @@ public sealed class FhDbContext : DbContext
     public DbSet<Models.AnalysisMetrics> AnalysisMetrics => Set<Models.AnalysisMetrics>();
     public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
     public DbSet<InviteCodeUsageEntity> InviteCodeUsage => Set<InviteCodeUsageEntity>();
+    public DbSet<ClaimSelectionDraftEntity> ClaimSelectionDrafts => Set<ClaimSelectionDraftEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +40,7 @@ public sealed class FhDbContext : DbContext
             e.Property(x => x.JobId).ValueGeneratedNever();
             e.Property(x => x.Status).HasMaxLength(32);
             e.Property(x => x.InputType).HasMaxLength(16);
+            e.HasIndex(x => x.ClaimSelectionDraftId).IsUnique();
         });
 
         modelBuilder.Entity<JobEventEntity>(e =>
@@ -46,6 +48,17 @@ public sealed class FhDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.JobId, x.Id });
             e.Property(x => x.Level).HasMaxLength(16);
+        });
+
+        modelBuilder.Entity<ClaimSelectionDraftEntity>(e =>
+        {
+            e.HasKey(x => x.DraftId);
+            e.Property(x => x.DraftId).ValueGeneratedNever();
+            e.Property(x => x.Status).HasMaxLength(32);
+            e.Property(x => x.SelectionMode).HasMaxLength(16);
+            e.Property(x => x.OriginalInputType).HasMaxLength(16);
+            e.Property(x => x.ActiveInputType).HasMaxLength(16);
+            e.HasIndex(x => x.Status);
         });
 
         modelBuilder.Entity<Models.AnalysisMetrics>(e =>

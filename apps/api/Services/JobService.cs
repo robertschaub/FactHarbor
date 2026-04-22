@@ -273,7 +273,10 @@ public sealed class JobService
                     if (invite.HourlyLimit > 0)
                     {
                         var hourCutoff = DateTime.UtcNow.AddHours(-1);
-                        var hourlyUsed = await _db.Jobs.CountAsync(j => j.InviteCode == code && j.CreatedUtc >= hourCutoff);
+                        var hourlyUsed = await _db.Jobs.CountAsync(j =>
+                            j.InviteCode == code &&
+                            j.CreatedUtc >= hourCutoff &&
+                            j.ClaimSelectionDraftId == null);
                         if (hourlyUsed >= invite.HourlyLimit)
                             { await tx.RollbackAsync(); return (false, $"Hourly limit reached ({invite.HourlyLimit}/hour). Try again in a few minutes.", false); }
                     }
@@ -419,7 +422,12 @@ public sealed class JobService
         if (invite == null) return null;
 
         var hourCutoff = DateTime.UtcNow.AddHours(-1);
-        var hourlyUsed = await _db.Jobs.CountAsync(j => j.InviteCode == code && j.CreatedUtc >= hourCutoff);
+        var hourlyDirectJobs = await _db.Jobs.CountAsync(j =>
+            j.InviteCode == code &&
+            j.CreatedUtc >= hourCutoff &&
+            j.ClaimSelectionDraftId == null);
+        var hourlyDrafts = await _db.ClaimSelectionDrafts.CountAsync(d => d.InviteCode == code && d.CreatedUtc >= hourCutoff);
+        var hourlyUsed = hourlyDirectJobs + hourlyDrafts;
 
         var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
         var usage = await _db.InviteCodeUsage.FindAsync(code, today);
@@ -532,6 +540,117 @@ public sealed class JobService
 
         await _db.SaveChangesAsync();
         return retryJob;
+    }
+
+    public async Task<(JobEntity? job, string? error)> CreateJobFromDraftAsync(
+        Data.ClaimSelectionDraftEntity draft,
+        string[] selectedClaimIds)
+    {
+        var existingJob = await _db.Jobs.FirstOrDefaultAsync(j => j.ClaimSelectionDraftId == draft.DraftId);
+        if (existingJob is not null)
+            return (existingJob, null);
+
+        string? preparedStage1Json = null;
+        var rankedClaimIds = Array.Empty<string>();
+        var recommendedClaimIds = Array.Empty<string>();
+        string? recommendationRationale = null;
+        var assessments = Array.Empty<object>();
+
+        if (!string.IsNullOrWhiteSpace(draft.DraftStateJson))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(draft.DraftStateJson);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("preparedStage1", out var preparedProp) && preparedProp.ValueKind == JsonValueKind.Object)
+                    preparedStage1Json = preparedProp.GetRawText();
+                if (root.TryGetProperty("rankedClaimIds", out var rp) && rp.ValueKind == JsonValueKind.Array)
+                    rankedClaimIds = rp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
+                if (root.TryGetProperty("recommendedClaimIds", out var rcp) && rcp.ValueKind == JsonValueKind.Array)
+                    recommendedClaimIds = rcp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
+                if (root.TryGetProperty("recommendationRationale", out var rrp) && rrp.ValueKind == JsonValueKind.String)
+                    recommendationRationale = rrp.GetString();
+                if (root.TryGetProperty("assessments", out var ap) && ap.ValueKind == JsonValueKind.Array)
+                    assessments = ap.EnumerateArray().Select(e => (object)e.GetRawText()).ToArray();
+            }
+            catch (JsonException) { }
+        }
+
+        if (string.IsNullOrWhiteSpace(preparedStage1Json))
+            return (null, "Draft is missing preparedStage1 snapshot");
+
+        // Build assessments as raw JSON array elements for proper serialization
+        var assessmentJsonElements = new List<object>();
+        foreach (var a in assessments)
+        {
+            if (a is string raw)
+                assessmentJsonElements.Add(JsonSerializer.Deserialize<object>(raw)!);
+            else
+                assessmentJsonElements.Add(a);
+        }
+
+        var selectionJson = JsonSerializer.Serialize(new
+        {
+            version = 1,
+            selectionMode = draft.SelectionMode,
+            restartedViaOther = draft.RestartedViaOther,
+            restartCount = draft.RestartCount,
+            rankedClaimIds,
+            recommendedClaimIds,
+            selectedClaimIds,
+            recommendationRationale,
+            assessments = assessmentJsonElements,
+        }, new JsonSerializerOptions { WriteIndented = false });
+
+        var job = new JobEntity
+        {
+            JobId = Guid.NewGuid().ToString("N"),
+            Status = "QUEUED",
+            Progress = 0,
+            InputType = draft.ActiveInputType,
+            InputValue = draft.ActiveInputValue,
+            InputPreview = MakePreview(draft.ActiveInputType, draft.ActiveInputValue),
+            PipelineVariant = draft.PipelineVariant,
+            InviteCode = draft.InviteCode,
+            ClaimSelectionDraftId = draft.DraftId,
+            PreparedStage1Json = preparedStage1Json,
+            ClaimSelectionJson = selectionJson,
+            GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+        };
+
+        _db.Jobs.Add(job);
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = job.JobId,
+            Level = "info",
+            Message = $"Job created from claim selection draft {draft.DraftId}",
+            TsUtc = DateTime.UtcNow,
+        });
+
+        try
+        {
+            await _db.SaveChangesAsync();
+            return (job, null);
+        }
+        catch (DbUpdateException ex) when (IsDraftJobUniqueConstraintViolation(ex))
+        {
+            _db.Entry(job).State = EntityState.Detached;
+
+            var concurrentJob = await _db.Jobs.FirstOrDefaultAsync(j => j.ClaimSelectionDraftId == draft.DraftId);
+            if (concurrentJob is not null)
+                return (concurrentJob, null);
+
+            throw;
+        }
+    }
+
+    private static bool IsDraftJobUniqueConstraintViolation(DbUpdateException ex)
+    {
+        return ex.InnerException is SqliteException sqliteEx &&
+               sqliteEx.SqliteErrorCode == 19 &&
+               sqliteEx.Message.Contains("Jobs.ClaimSelectionDraftId", StringComparison.Ordinal);
     }
 
     private static string MakePreview(string inputType, string inputValue)

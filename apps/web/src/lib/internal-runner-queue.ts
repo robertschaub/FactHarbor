@@ -1,4 +1,5 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import { prepareStage1Snapshot } from "@/lib/analyzer/claimboundary-pipeline";
 import { debugLog } from "@/lib/analyzer/debug";
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import { classifyError, isNetworkConnectivityFailureText } from "@/lib/error-classification";
@@ -13,6 +14,11 @@ import {
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 import { getWebGitCommitHash } from "@/lib/build-info";
+import type {
+  ClaimSelectionMetadata,
+  ClaimSelectionDraftState,
+  PreparedStage1Snapshot,
+} from "@/lib/analyzer/types";
 
 type PipelineVariant = "claimboundary";
 
@@ -152,11 +158,8 @@ function ensureQueueWatchdogStarted(): void {
 
   const intervalMs = getRunnerWatchdogIntervalMs();
   qs.watchdogTimer = setInterval(() => {
-    const state = getRunnerQueueState();
-    if (state.queue.length === 0 && state.runningJobIds.size === 0) {
-      return;
-    }
     void drainRunnerQueue();
+    void drainDraftQueue();
   }, intervalMs);
 
   const timer = qs.watchdogTimer as { unref?: () => void };
@@ -190,6 +193,20 @@ async function apiPutInternal(apiBase: string, adminKey: string | null, path: st
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`API PUT failed ${res.status}: ${await res.text()}`);
+}
+
+async function apiPost(apiBase: string, adminKey: string | null, path: string, payload: any) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(buildAdminHeaders(adminKey) ?? {}),
+  };
+  const res = await fetch(`${apiBase}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`API POST failed ${res.status}: ${await res.text()}`);
+  return res.json();
 }
 
 export function normalizeRunningProgress(progress?: number): number | undefined {
@@ -228,6 +245,42 @@ async function runJobBackground(jobId: string) {
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
     const requestedVariant = (job.pipelineVariant || "claimboundary") as string;
+    const hasPreparedStage1Json =
+      typeof job.preparedStage1Json === "string" && job.preparedStage1Json.trim().length > 0;
+    const hasClaimSelectionJson =
+      typeof job.claimSelectionJson === "string" && job.claimSelectionJson.trim().length > 0;
+    const preparedStage1 = parseOptionalJson<PreparedStage1Snapshot>(job.preparedStage1Json);
+    const claimSelection = parseOptionalJson<ClaimSelectionMetadata>(job.claimSelectionJson);
+    const selectedClaimIds = Array.isArray(claimSelection?.selectedClaimIds)
+      ? claimSelection.selectedClaimIds
+      : undefined;
+
+    if (hasPreparedStage1Json && !preparedStage1) {
+      throw new Error("Job contains PreparedStage1Json but it could not be parsed");
+    }
+
+    if (hasPreparedStage1Json) {
+      if (!hasClaimSelectionJson || !claimSelection || !selectedClaimIds || selectedClaimIds.length === 0) {
+        throw new Error("Draft-backed job is missing valid claim-selection metadata");
+      }
+      if (new Set(selectedClaimIds).size !== selectedClaimIds.length) {
+        throw new Error("Draft-backed job contains duplicate selected claim IDs");
+      }
+      const candidateClaimIds = new Set(
+        Array.isArray(preparedStage1?.preparedUnderstanding?.atomicClaims)
+          ? preparedStage1.preparedUnderstanding.atomicClaims.map((claim) => claim.id)
+          : [],
+      );
+      if (candidateClaimIds.size === 0) {
+        throw new Error("Draft-backed job is missing prepared candidate claims");
+      }
+      const invalidSelectedClaimIds = selectedClaimIds.filter((claimId) => !candidateClaimIds.has(claimId));
+      if (invalidSelectedClaimIds.length > 0) {
+        throw new Error(
+          `Draft-backed job contains selected claim IDs outside the prepared candidate set: ${invalidSelectedClaimIds.join(", ")}`,
+        );
+      }
+    }
 
     await emit("info", "Preparing input (pipeline: claimboundary)", 5);
 
@@ -237,6 +290,8 @@ async function runJobBackground(jobId: string) {
       jobId,
       inputType,
       inputValue,
+      preparedStage1,
+      selectedClaimIds,
       onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
     });
 
@@ -340,6 +395,15 @@ async function runJobBackground(jobId: string) {
     }
     qs2.runningJobIds.delete(jobId);
     void drainRunnerQueue();
+  }
+}
+
+function parseOptionalJson<T>(value: unknown): T | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return undefined;
   }
 }
 
@@ -595,9 +659,243 @@ export async function drainRunnerQueue() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// DRAFT PREPARATION QUEUE (ACS-1)
+// Shares the same concurrency budget as jobs via getRunnerQueueState().runningCount.
+// ---------------------------------------------------------------------------
+
+type DraftQueueState = {
+  queue: Array<{ draftId: string; enqueuedAt: number }>;
+  runningDraftIds: Set<string>;
+  isDraining: boolean;
+  drainRequested: boolean;
+};
+
+function getDraftQueueState(): DraftQueueState {
+  const g = globalThis as any;
+  if (!g.__fhDraftQueueState) {
+    g.__fhDraftQueueState = {
+      queue: [],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    } satisfies DraftQueueState;
+  }
+  const st = g.__fhDraftQueueState as DraftQueueState;
+  if (!(st as any).runningDraftIds || typeof (st as any).runningDraftIds.has !== "function") {
+    (st as any).runningDraftIds = new Set<string>();
+  }
+  if (!Array.isArray((st as any).queue)) {
+    (st as any).queue = [];
+  }
+  return st;
+}
+
+export function enqueueDraftPreparation(draftId: string): { alreadyQueued: boolean; alreadyRunning: boolean } {
+  const ds = getDraftQueueState();
+  ensureQueueWatchdogStarted();
+  const alreadyQueued = ds.queue.some((x) => x.draftId === draftId);
+  const alreadyRunning = ds.runningDraftIds.has(draftId);
+  if (!alreadyQueued && !alreadyRunning) {
+    ds.queue.push({ draftId, enqueuedAt: Date.now() });
+  }
+  return { alreadyQueued, alreadyRunning };
+}
+
+export async function drainDraftQueue() {
+  const ds = getDraftQueueState();
+  const qs = getRunnerQueueState();
+  ensureQueueWatchdogStarted();
+
+  if (ds.isDraining) {
+    ds.drainRequested = true;
+    return;
+  }
+  ds.isDraining = true;
+
+  try {
+    if (isSystemPaused()) {
+      if (ds.queue.length > 0) {
+        const recovered = await probeAndMaybeResume();
+        if (!recovered) return;
+      } else {
+        return;
+      }
+    }
+
+    const maxConcurrency = getMaxConcurrency();
+    const apiBase = getApiBaseOrThrow();
+    const adminKey = getAdminKeyOrNull();
+
+    try {
+      const payload = await apiGet(apiBase, adminKey, `/internal/v1/claim-selection-drafts/recoverable`);
+      const recoverableDrafts = Array.isArray(payload?.drafts) ? payload.drafts : [];
+      const inMemoryQueuedIds = new Set(ds.queue.map((item) => item.draftId));
+      const sortedDrafts = [...recoverableDrafts].sort((a, b) => {
+        const aMs = parseApiUtcTimestampMs(a?.createdUtc) ?? 0;
+        const bMs = parseApiUtcTimestampMs(b?.createdUtc) ?? 0;
+        return aMs - bMs;
+      });
+
+      for (const draft of sortedDrafts) {
+        const draftId = String(draft?.draftId || "");
+        if (!draftId) continue;
+        if (ds.runningDraftIds.has(draftId) || inMemoryQueuedIds.has(draftId)) continue;
+
+        const status = String(draft?.status || "").toUpperCase();
+        if (status === "PREPARING") {
+          try {
+            await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+              status: "QUEUED",
+              progress: 0,
+              eventMessage: "Re-queued after application restart (previous draft preparation lost)",
+            });
+          } catch (err) {
+            console.warn(`[Runner] Failed to reset PREPARING draft ${draftId} to QUEUED:`, err);
+            continue;
+          }
+        }
+
+        const enqueuedAt =
+          parseApiUtcTimestampMs(status === "PREPARING" ? draft?.updatedUtc : draft?.createdUtc) ?? Date.now();
+        ds.queue.push({ draftId, enqueuedAt });
+        inMemoryQueuedIds.add(draftId);
+      }
+    } catch (err) {
+      console.error("[Runner] Draft recovery check failed:", err);
+    }
+
+    while (qs.runningCount < maxConcurrency && ds.queue.length > 0) {
+      const next = ds.queue.shift();
+      if (!next) break;
+      if (ds.runningDraftIds.has(next.draftId)) continue;
+
+      qs.runningCount++;
+      ds.runningDraftIds.add(next.draftId);
+      void runDraftPreparationBackground(next.draftId);
+    }
+  } finally {
+    ds.isDraining = false;
+    if (ds.drainRequested) {
+      ds.drainRequested = false;
+      void drainDraftQueue();
+    }
+  }
+}
+
+async function runDraftPreparationBackground(draftId: string) {
+  const apiBase = getApiBaseOrThrow();
+  const adminKey = getAdminKeyOrNull();
+  let preparedPersisted = false;
+
+  try {
+    const draft = await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`);
+    const status = String(draft.status || "").toUpperCase();
+    if (status !== "QUEUED") {
+      console.info(`[Runner] Skipping draft ${draftId}: current status is ${status}, not QUEUED.`);
+      return;
+    }
+
+    const inputType = draft.activeInputType as "text" | "url";
+    const inputValue = draft.activeInputValue as string | null;
+    const selectionMode = String(draft.selectionMode || "interactive");
+
+    if (!inputValue) {
+      throw new Error("Draft is missing active input value for preparation");
+    }
+
+    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+      status: "PREPARING",
+      progress: 5,
+      eventMessage: "Draft preparation started",
+    });
+
+    const { preparedStage1 } = await prepareStage1Snapshot({
+      inputType,
+      inputValue,
+      onEvent: async (message, progress) => {
+        await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+          status: "PREPARING",
+          progress,
+          eventMessage: message,
+        });
+      },
+    });
+
+    if (preparedStage1.preparedUnderstanding.contractValidationSummary?.preservesContract === false) {
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
+        errorCode: "stage1_failed",
+        errorMessage: "Stage 1 preparation failed contract preservation and cannot continue.",
+      });
+      return;
+    }
+
+    const candidateIds = preparedStage1.preparedUnderstanding.atomicClaims.map((claim) => claim.id);
+    if (candidateIds.length === 0) {
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
+        errorCode: "no_candidate_claims",
+        errorMessage: "Stage 1 produced no selectable atomic claims for this draft.",
+      });
+      return;
+    }
+
+    const draftState: ClaimSelectionDraftState = {
+      version: 1,
+      preparedStage1,
+      rankedClaimIds: candidateIds,
+      recommendedClaimIds: [],
+      selectedClaimIds: [],
+      assessments: [],
+    };
+
+    if (selectionMode === "automatic" && candidateIds.length <= 5) {
+      draftState.selectedClaimIds = candidateIds;
+    }
+
+    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
+      draftStateJson: JSON.stringify(draftState),
+    });
+    preparedPersisted = true;
+
+    if (selectionMode === "automatic" && candidateIds.length <= 5) {
+      await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
+        selectedClaimIds: candidateIds,
+      });
+      return;
+    }
+
+    if (selectionMode === "automatic" && candidateIds.length > 5) {
+      console.warn(
+        `[Runner] Draft ${draftId} requested automatic selection but ${candidateIds.length} claims survived Stage 1. Leaving draft awaiting manual confirmation.`,
+      );
+    }
+  } catch (e: any) {
+    const msg = e?.message ?? String(e);
+    debugLog("runDraftPreparationBackground: ERROR", { draftId, message: msg });
+    if (preparedPersisted) {
+      console.warn(
+        `[Runner] Automatic continuation failed after draft ${draftId} was prepared. Leaving the prepared draft available for recovery: ${msg}`,
+      );
+      return;
+    }
+    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
+      errorCode: "stage1_failed",
+      errorMessage: msg,
+    }).catch(() => {});
+  } finally {
+    const qs2 = getRunnerQueueState();
+    qs2.runningCount = Math.max(0, qs2.runningCount - 1);
+    const ds2 = getDraftQueueState();
+    ds2.runningDraftIds.delete(draftId);
+    void drainDraftQueue();
+    void drainRunnerQueue();
+  }
+}
+
 // Bootstrap: start watchdog on module load so persisted QUEUED jobs are
 // recovered after a process restart without waiting for a new job trigger.
 // Short delay lets the server finish initializing before the first drain
 // attempts API calls (failures are non-fatal and retry on next watchdog tick).
 ensureQueueWatchdogStarted();
 setTimeout(() => void drainRunnerQueue(), 5_000);
+setTimeout(() => void drainDraftQueue(), 5_000);

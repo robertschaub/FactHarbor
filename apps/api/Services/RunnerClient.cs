@@ -77,6 +77,67 @@ public sealed class RunnerClient
         }
     }
 
+    public async Task TriggerDraftPreparationAsync(string draftId, CancellationToken ct = default)
+    {
+        var baseUrl = _cfg["Runner:BaseUrl"]?.TrimEnd('/');
+        var runnerKey = _cfg["Runner:RunnerKey"];
+
+        if (string.IsNullOrWhiteSpace(baseUrl)) throw new InvalidOperationException("Runner:BaseUrl not set");
+        if (string.IsNullOrWhiteSpace(runnerKey) && !_env.IsDevelopment())
+            throw new InvalidOperationException("Runner:RunnerKey not set");
+
+        var url = $"{baseUrl}/api/internal/run-claim-selection-draft";
+        Exception? lastException = null;
+
+        for (var attempt = 1; attempt <= _maxRetries; attempt++)
+        {
+            try
+            {
+                var payload = JsonSerializer.Serialize(new { draftId });
+                using var req = new HttpRequestMessage(HttpMethod.Post, url);
+                if (!string.IsNullOrWhiteSpace(runnerKey))
+                    req.Headers.Add("X-Runner-Key", runnerKey);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                using var res = await _http.SendAsync(req, ct);
+                if (!res.IsSuccessStatusCode)
+                {
+                    var txt = await res.Content.ReadAsStringAsync(ct);
+                    var statusCode = (int)res.StatusCode;
+                    if (statusCode >= 500 || statusCode == 408 || statusCode == 429)
+                        throw new HttpRequestException($"Runner returned {res.StatusCode}: {txt}", null, res.StatusCode);
+                    throw new InvalidOperationException($"Draft preparation trigger failed {res.StatusCode}: {txt}");
+                }
+
+                if (attempt > 1)
+                    _log.LogInformation("Draft preparation trigger succeeded on attempt {Attempt} for DraftId={DraftId}", attempt, draftId);
+                return;
+            }
+            catch (Exception ex) when (IsTransientError(ex) && attempt < _maxRetries)
+            {
+                lastException = ex;
+                var delay = CalculateRetryDelay(attempt);
+                _log.LogWarning(ex,
+                    "Draft preparation trigger failed (attempt {Attempt}/{MaxRetries}), retrying in {DelayMs}ms. DraftId={DraftId}",
+                    attempt, _maxRetries, delay, draftId);
+                await Task.Delay(delay, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                if (attempt == _maxRetries)
+                    throw new InvalidOperationException(
+                        $"Draft preparation trigger failed after {_maxRetries} attempts: {ex.Message}", ex);
+            }
+        }
+
+        throw lastException ?? new InvalidOperationException("Draft preparation trigger failed with unknown error");
+    }
+
     /// <summary>
     /// Triggers the runner with automatic retry on transient failures.
     /// Uses exponential backoff with jitter.

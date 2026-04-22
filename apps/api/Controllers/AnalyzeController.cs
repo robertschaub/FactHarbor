@@ -48,55 +48,7 @@ public sealed class AnalyzeController : ControllerBase
     }
 
     private static (bool valid, string? error) ValidateRequest(CreateJobRequest req)
-    {
-        // inputType must be "url" or "text"
-        if (req.inputType != "url" && req.inputType != "text")
-            return (false, "Invalid inputType: must be 'url' or 'text'");
-
-        // pipelineVariant validation
-        var validPipelines = new[] { "claimboundary" };
-        if (req.pipelineVariant != null && !validPipelines.Contains(req.pipelineVariant))
-            return (false, $"Invalid pipelineVariant: must be one of {string.Join(", ", validPipelines.Select(p => $"'{p}'"))}");
-
-        // inputValue must be non-empty
-        if (string.IsNullOrWhiteSpace(req.inputValue))
-            return (false, "Input cannot be empty");
-
-        // Max size limits
-        const int maxTextChars = 32_000;
-        const int maxUrlChars = 2_000;
-        var maxChars = req.inputType == "url" ? maxUrlChars : maxTextChars;
-        if (req.inputValue.Length > maxChars)
-            return (false, $"Input too long: max {maxChars} characters allowed for {req.inputType} input");
-
-        // URL scheme enforcement
-        if (req.inputType == "url")
-        {
-            var url = req.inputValue.Trim();
-            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
-                !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                return (false, "URL must use http or https scheme");
-        }
-
-        // Control character density check (allow \r \n \t; reject heavy binary/obfuscation payloads)
-        var nonSpaceLen = req.inputValue.Count(c => !char.IsWhiteSpace(c));
-        if (nonSpaceLen > 0)
-        {
-            var controlCount = req.inputValue.Count(c => char.IsControl(c) && c != '\r' && c != '\n' && c != '\t');
-            if ((double)controlCount / nonSpaceLen > 0.05)
-                return (false, "Input contains too many control characters");
-        }
-
-        // Prevent link-heavy free text (>3 embedded URLs is unusual for a factual claim)
-        if (req.inputType == "text")
-        {
-            var urlMatches = System.Text.RegularExpressions.Regex.Matches(req.inputValue, @"https?://", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(1));
-            if (urlMatches.Count > 3)
-                return (false, "Free-text input may not contain more than 3 embedded URLs");
-        }
-
-        return (true, null);
-    }
+        => AnalyzeInputValidator.Validate(req.inputType, req.inputValue, req.pipelineVariant);
 
     [HttpPost]
     [EnableRateLimiting("AnalyzePerIp")]

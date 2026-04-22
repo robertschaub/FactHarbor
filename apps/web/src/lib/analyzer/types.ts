@@ -710,8 +710,72 @@ export type AnalysisInput = {
   jobId?: string;
   inputType: "text" | "url";
   inputValue: string;
+  preparedStage1?: PreparedStage1Snapshot;
+  selectedClaimIds?: string[];
   onEvent?: (message: string, progress: number) => void;
 };
+
+// ============================================================================
+// CLAIM SELECTION TYPES (ACS-1 / ACS-CW-1)
+// ============================================================================
+
+export interface PreparedStage1Snapshot {
+  version: 1;
+  resolvedInputText: string;
+  preparedUnderstanding: CBClaimUnderstanding;
+}
+
+export interface ClaimSelectionRecommendationAssessment {
+  claimId: string;
+  triageLabel:
+    | "fact_check_worthy"
+    | "fact_non_check_worthy"
+    | "opinion_or_subjective"
+    | "unclear";
+  thesisDirectness: "high" | "medium" | "low";
+  expectedEvidenceYield: "high" | "medium" | "low";
+  coversDistinctRelevantDimension: boolean;
+  redundancyWithClaimIds: string[];
+  recommendationRationale: string;
+}
+
+export interface ClaimSelectionRecommendation {
+  rankedClaimIds: string[];
+  recommendedClaimIds: string[]; // max 3
+  assessments: ClaimSelectionRecommendationAssessment[];
+  rationale: string;
+}
+
+export interface ClaimSelectionDraftState {
+  version: 1;
+  preparedStage1?: PreparedStage1Snapshot;
+  rankedClaimIds: string[];
+  recommendedClaimIds: string[];
+  selectedClaimIds: string[];
+  recommendationRationale?: string;
+  assessments: ClaimSelectionRecommendationAssessment[];
+  lastError?: {
+    code:
+      | "stage1_failed"
+      | "recommendation_failed"
+      | "invalid_selection"
+      | "draft_token_invalid"
+      | "draft_expired";
+    message: string;
+  };
+}
+
+export interface ClaimSelectionMetadata {
+  version: 1;
+  selectionMode: "interactive" | "automatic";
+  restartedViaOther: boolean;
+  restartCount: number;
+  rankedClaimIds: string[];
+  recommendedClaimIds: string[];
+  selectedClaimIds: string[];
+  recommendationRationale?: string;
+  assessments: ClaimSelectionRecommendationAssessment[];
+}
 
 // ============================================================================
 // ANALYSIS WARNINGS TYPES (v3.1)

@@ -33,6 +33,7 @@ import type {
   FetchedSource,
   AnalysisInput,
   OverallAssessment,
+  PreparedStage1Snapshot,
   SourceType,
 } from "./types";
 
@@ -353,6 +354,231 @@ export function buildClaimBoundaryResultJson(params: {
   };
 }
 
+function createInitialResearchState(params: {
+  jobId?: string;
+  inputType: "text" | "url";
+  originalInput: string;
+  pipelineConfig: PipelineConfig;
+  onEvent?: (message: string, progress: number) => void;
+}): CBResearchState {
+  const { jobId, inputType, originalInput, pipelineConfig, onEvent } = params;
+  return {
+    jobId,
+    originalInput,
+    inputType,
+    pipelineStartMs: Date.now(),
+    languageIntent: null,
+    understanding: null,
+    evidenceItems: [],
+    sources: [],
+    searchQueries: [],
+    claimAcquisitionLedger: {},
+    queryBudgetUsageByClaim: {},
+    researchedIterationsByClaim: {},
+    mainIterationsUsed: 0,
+    contradictionIterationsReserved: pipelineConfig.contradictionReservedIterations ?? 1,
+    contradictionIterationsUsed: 0,
+    contradictionSourcesFound: 0,
+    claimBoundaries: [],
+    llmCalls: 0,
+    onEvent,
+    warnings: [],
+  };
+}
+
+function deriveLanguageIntent(understanding: CBClaimUnderstanding) {
+  const inputLanguage = understanding.detectedLanguage ?? "en";
+  return {
+    inputLanguage,
+    reportLanguage: inputLanguage,
+    retrievalLanguages: [{ language: inputLanguage, lane: "primary" as const }],
+    sourceLanguagePolicy: "preserve_original" as const,
+  };
+}
+
+async function resolveAnalysisText(params: {
+  inputType: "text" | "url";
+  inputValue: string;
+  pipelineConfig: PipelineConfig;
+  onEvent?: (message: string, progress: number) => void;
+}): Promise<{ analysisText: string; detectedUrl?: string }> {
+  const { inputType, inputValue, pipelineConfig, onEvent } = params;
+
+  let analysisText = inputValue;
+  let detectedUrl: string | undefined;
+
+  if (inputType === "url") {
+    onEvent?.("Fetching URL content...", 3);
+    let fetched: { text: string; title: string; contentType: string };
+    try {
+      fetched = await extractTextFromUrl(inputValue, {
+        pdfParseTimeoutMs: pipelineConfig.pdfParseTimeoutMs ?? 60000,
+      });
+    } catch (fetchError) {
+      const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      throw new Error(`Failed to fetch URL content: ${msg}`);
+    }
+    if (!fetched.text || fetched.text.trim().length === 0) {
+      throw new Error("URL returned no extractable text content");
+    }
+    analysisText = fetched.text;
+    console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
+  }
+
+  if (inputType !== "url" && /^https?:\/\/\S+$/.test(analysisText.trim())) {
+    detectedUrl = analysisText.trim();
+    onEvent?.("Detected URL input — fetching content...", 3);
+    try {
+      const fetched = await extractTextFromUrl(detectedUrl, {
+        pdfParseTimeoutMs: pipelineConfig.pdfParseTimeoutMs ?? 60000,
+      });
+      if (!fetched.text || fetched.text.trim().length === 0) {
+        throw new Error("URL returned no extractable text content");
+      }
+      analysisText = fetched.text;
+      console.log(`[Pipeline] Auto-fetched URL (text input): ${analysisText.length} chars, type: ${fetched.contentType}`);
+    } catch (fetchError) {
+      const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+      throw new Error(`Failed to fetch URL content: ${msg}`);
+    }
+  }
+
+  return { analysisText, detectedUrl };
+}
+
+function buildPreparedResearchState(params: {
+  input: AnalysisInput;
+  pipelineConfig: PipelineConfig;
+  preparedStage1: PreparedStage1Snapshot;
+}): { state: CBResearchState; detectedUrl?: string } {
+  const { input, pipelineConfig, preparedStage1 } = params;
+  const state = createInitialResearchState({
+    jobId: input.jobId,
+    inputType: input.inputType,
+    originalInput: preparedStage1.resolvedInputText,
+    pipelineConfig,
+    onEvent: input.onEvent,
+  });
+
+  const understanding = structuredClone(preparedStage1.preparedUnderstanding);
+  const selectedClaimIds = input.selectedClaimIds ?? [];
+  if (selectedClaimIds.length > 0) {
+    const selectedOrder = new Map(selectedClaimIds.map((claimId, index) => [claimId, index]));
+    const invalidClaimIds = selectedClaimIds.filter((claimId) => !understanding.atomicClaims.some((claim) => claim.id === claimId));
+    if (invalidClaimIds.length > 0) {
+      throw new Error(`Prepared Stage 1 snapshot is missing selected claim IDs: ${invalidClaimIds.join(", ")}`);
+    }
+    filterPreparedUnderstandingForSelectedClaims(understanding, selectedOrder);
+    if (understanding.atomicClaims.length === 0) {
+      throw new Error("Prepared Stage 1 snapshot yielded no surviving claims for the selected claim IDs");
+    }
+  }
+
+  state.understanding = understanding;
+  state.languageIntent = deriveLanguageIntent(understanding);
+
+  const detectedUrl =
+    input.inputType === "url"
+      ? input.inputValue
+      : /^https?:\/\/\S+$/.test(input.inputValue.trim())
+        ? input.inputValue.trim()
+        : undefined;
+
+  return { state, detectedUrl };
+}
+
+function filterPreparedUnderstandingForSelectedClaims(
+  understanding: CBClaimUnderstanding,
+  selectedOrder: Map<string, number>,
+): void {
+  const selectedClaimIds = new Set(selectedOrder.keys());
+  const sortBySelectionOrder = <T extends { id: string }>(items: T[]) =>
+    items.sort((a, b) => (selectedOrder.get(a.id) ?? 0) - (selectedOrder.get(b.id) ?? 0));
+
+  understanding.atomicClaims = sortBySelectionOrder(
+    understanding.atomicClaims.filter((claim) => selectedClaimIds.has(claim.id)),
+  );
+
+  if (understanding.preFilterAtomicClaims) {
+    understanding.preFilterAtomicClaims = sortBySelectionOrder(
+      understanding.preFilterAtomicClaims.filter((claim) => selectedClaimIds.has(claim.id)),
+    );
+  }
+
+  if (understanding.gate1Reasoning) {
+    understanding.gate1Reasoning = understanding.gate1Reasoning
+      .filter((entry) => selectedClaimIds.has(entry.claimId))
+      .sort((a, b) => (selectedOrder.get(a.claimId) ?? 0) - (selectedOrder.get(b.claimId) ?? 0));
+  }
+
+  understanding.preliminaryEvidence = understanding.preliminaryEvidence.flatMap((entry) => {
+    const relevantClaimIds = Array.isArray(entry.relevantClaimIds)
+      ? entry.relevantClaimIds.filter((claimId) => selectedClaimIds.has(claimId))
+      : [];
+    const claimId = selectedClaimIds.has(entry.claimId) ? entry.claimId : relevantClaimIds[0];
+    if (!claimId) {
+      return [];
+    }
+
+    return [{
+      ...entry,
+      claimId,
+      relevantClaimIds: relevantClaimIds.length > 0 ? relevantClaimIds : undefined,
+    }];
+  });
+
+  const truthConditionAnchor = understanding.contractValidationSummary?.truthConditionAnchor;
+  if (truthConditionAnchor) {
+    truthConditionAnchor.preservedInClaimIds = truthConditionAnchor.preservedInClaimIds
+      .filter((claimId) => selectedClaimIds.has(claimId))
+      .sort((a, b) => (selectedOrder.get(a) ?? 0) - (selectedOrder.get(b) ?? 0));
+    truthConditionAnchor.validPreservedIds = truthConditionAnchor.validPreservedIds
+      .filter((claimId) => selectedClaimIds.has(claimId))
+      .sort((a, b) => (selectedOrder.get(a) ?? 0) - (selectedOrder.get(b) ?? 0));
+  }
+}
+
+export async function prepareStage1Snapshot(
+  input: Pick<AnalysisInput, "jobId" | "inputType" | "inputValue" | "onEvent">,
+  pipelineConfig?: PipelineConfig,
+): Promise<{
+  preparedStage1: PreparedStage1Snapshot;
+  detectedUrl?: string;
+  state: CBResearchState;
+}> {
+  const effectivePipelineConfig =
+    pipelineConfig ?? (await loadPipelineConfig("default", input.jobId)).config;
+
+  const { analysisText, detectedUrl } = await resolveAnalysisText({
+    inputType: input.inputType,
+    inputValue: input.inputValue,
+    pipelineConfig: effectivePipelineConfig,
+    onEvent: input.onEvent,
+  });
+
+  const state = createInitialResearchState({
+    jobId: input.jobId,
+    inputType: input.inputType,
+    originalInput: analysisText,
+    pipelineConfig: effectivePipelineConfig,
+    onEvent: input.onEvent,
+  });
+
+  const understanding = await extractClaims(state);
+  state.understanding = understanding;
+  state.languageIntent = deriveLanguageIntent(understanding);
+
+  return {
+    preparedStage1: {
+      version: 1,
+      resolvedInputText: analysisText,
+      preparedUnderstanding: understanding,
+    },
+    detectedUrl,
+    state,
+  };
+}
+
 // ============================================================================
 // MAIN ENTRY POINT
 // ============================================================================
@@ -424,71 +650,8 @@ export async function runClaimBoundaryAnalysis(
     async () => {
 
   try {
-    // --- URL content pre-fetch (restored from v2.x pipeline) ---
-    let analysisText = input.inputValue;
-    let detectedUrl: string | undefined; // populated when auto-fetch fires on a URL-looking text input
-    if (input.inputType === "url") {
-      onEvent("Fetching URL content...", 3);
-      let fetched: { text: string; title: string; contentType: string };
-      try {
-        fetched = await extractTextFromUrl(input.inputValue, {
-          pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
-        });
-      } catch (fetchError) {
-        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
-        throw new Error(`Failed to fetch URL content: ${msg}`);
-      }
-      if (!fetched.text || fetched.text.trim().length === 0) {
-        throw new Error("URL returned no extractable text content");
-      }
-      analysisText = fetched.text;
-      console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
-    }
-
-    // Guard: bare URL submitted as text type — auto-fetch so PDFs and web pages are analysed
-    // correctly instead of sending the raw URL string to Stage 1 where impliedClaim would be empty.
-    // Structural format check (not semantic analysis) — allowed per AGENTS.md.
-    if (input.inputType !== "url" && /^https?:\/\/\S+$/.test(analysisText.trim())) {
-      detectedUrl = analysisText.trim();
-      onEvent("Detected URL input — fetching content...", 3);
-      try {
-        const fetched = await extractTextFromUrl(detectedUrl, {
-          pdfParseTimeoutMs: initialPipelineConfig.pdfParseTimeoutMs ?? 60000,
-        });
-        if (!fetched.text || fetched.text.trim().length === 0) {
-          throw new Error("URL returned no extractable text content");
-        }
-        analysisText = fetched.text;
-        console.log(`[Pipeline] Auto-fetched URL (text input): ${analysisText.length} chars, type: ${fetched.contentType}`);
-      } catch (fetchError) {
-        const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
-        throw new Error(`Failed to fetch URL content: ${msg}`);
-      }
-    }
-
-    // Initialize research state
-    const state: CBResearchState = {
-      jobId: input.jobId,
-      originalInput: analysisText,
-      inputType: input.inputType,
-      pipelineStartMs: Date.now(),
-      languageIntent: null,
-      understanding: null,
-      evidenceItems: [],
-      sources: [],
-      searchQueries: [],
-      claimAcquisitionLedger: {},
-      queryBudgetUsageByClaim: {},
-      researchedIterationsByClaim: {},
-      mainIterationsUsed: 0,
-      contradictionIterationsReserved: initialPipelineConfig.contradictionReservedIterations ?? 1,
-      contradictionIterationsUsed: 0,
-      contradictionSourcesFound: 0,
-      claimBoundaries: [],
-      llmCalls: 0,
-      onEvent: input.onEvent, // Thread progress callback through to research stage
-      warnings: [],
-    };
+    let detectedUrl: string | undefined;
+    let state: CBResearchState;
     const runtimeModelsUsed = new Set<string>();
     const recordRuntimeModelUsage = (provider?: string, modelName?: string): void => {
       if (!modelName) return;
@@ -514,21 +677,30 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // Stage 1: Extract Claims
-    checkAbortSignal(input.jobId);
-    onEvent("Extracting claims from input...", 10);
-    startPhase("understand");
-    const understanding = await extractClaims(state);
-    state.understanding = understanding;
-    const inputLanguage = understanding.detectedLanguage ?? "en";
-    state.languageIntent = {
-      inputLanguage,
-      reportLanguage: inputLanguage,
-      retrievalLanguages: [{ language: inputLanguage, lane: "primary" as const }],
-      sourceLanguagePolicy: "preserve_original" as const,
-    };
-
-    endPhase("understand");
+    let understanding: CBClaimUnderstanding;
+    if (input.preparedStage1) {
+      checkAbortSignal(input.jobId);
+      onEvent("Reusing prepared Stage 1 snapshot...", 10);
+      startPhase("understand");
+      const prepared = buildPreparedResearchState({
+        input,
+        pipelineConfig: initialPipelineConfig,
+        preparedStage1: input.preparedStage1,
+      });
+      state = prepared.state;
+      detectedUrl = prepared.detectedUrl;
+      understanding = state.understanding!;
+      endPhase("understand");
+    } else {
+      checkAbortSignal(input.jobId);
+      onEvent("Extracting claims from input...", 10);
+      startPhase("understand");
+      const prepared = await prepareStage1Snapshot(input, initialPipelineConfig);
+      state = prepared.state;
+      detectedUrl = prepared.detectedUrl;
+      understanding = prepared.preparedStage1.preparedUnderstanding;
+      endPhase("understand");
+    }
 
     // Wave 1A: Early termination for claim contract failure
     // If Pass 2 extraction repeatedly fails to preserve the user's original claim contract

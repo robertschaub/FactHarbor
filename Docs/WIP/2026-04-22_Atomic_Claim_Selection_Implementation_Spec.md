@@ -143,6 +143,8 @@ Concrete rule:
 - `Other` restarts within the same draft do not claim another slot
 - abandoned or expired drafts are not refunded automatically, because Stage 1 preparation has already consumed resources
 - failed preparation or recommendation may be retried within the same non-expired draft without claiming another invite slot
+- the current `JobService.TryClaimInviteSlotAsync(...)` logic cannot be reused unchanged for drafts, because its rolling hourly limit currently counts rows in `Jobs` only
+- ACS v1 must therefore extract or adapt that slot-claiming logic so lifetime/daily usage is claimed at draft creation time and the rolling hourly limit is enforced against draft creation records rather than only confirmed jobs
 
 This is stricter than "charge only on final job creation", but it matches the actual resource cost and avoids a free repeated-Stage-1 abuse vector.
 
@@ -182,14 +184,16 @@ Concrete rule:
 - that panel shows the full candidate set, recommendation, final selected set, mode, and `restartedViaOther`
 - the main verdict narrative, claim cards, and aggregate scoring only use the selected claims
 
-### 5.6 One authoritative payload per layer
+### 5.6 Queryable row truth plus one rich payload per layer
 
-The first version of this spec duplicated too much overlapping JSON across draft state, prepared job state, and claim-selection metadata. v1 should use one authoritative payload per layer.
+The first version of this spec duplicated too much overlapping JSON across draft state, prepared job state, and claim-selection metadata. v1 should keep queryable lifecycle fields on the draft row and use JSON only for rich detail that should not be split into many columns.
 
 Concrete rule:
 
-- at the draft layer, `DraftStateJson` is authoritative and contains the prepared Stage 1 snapshot plus selection state
-- at the job layer, `PreparedStage1Json` is authoritative for the full candidate set and Stage 1 provenance
+- at the draft layer, row columns such as `Status`, `Progress`, `SelectionMode`, `RestartedViaOther`, `RestartCount`, `OriginalInputType`, `ActiveInputType`, `OriginalInputValue`, `ActiveInputValue`, `ExpiresUtc`, and `FinalJobId` are the queryable lifecycle truth
+- `DraftStateJson` is the authoritative rich-detail store for the prepared Stage 1 snapshot, resolved input text, selection state, recommendation output, and draft-local errors
+- draft writes must update the row projection and `DraftStateJson` in the same transaction; if a merged API response ever sees drift, row values win for lifecycle fields and JSON values win for rich detail
+- at the job layer, `PreparedStage1Json` is authoritative for the prepared Stage 1 snapshot and Stage 1 provenance needed to start at Stage 2 without re-fetching the input
 - `ClaimSelectionJson` stores only the selection-specific metadata not already structurally carried by `PreparedStage1Json`
 - `resultJson.claimSelection` is a report-facing projection, not a second primary persistence contract
 
@@ -249,25 +253,26 @@ Recommended draft statuses:
 
 ### 6.2 Draft JSON contract
 
-`DraftStateJson` is the authoritative draft payload and should serialize a TypeScript contract in [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts):
+`DraftStateJson` is the authoritative rich-detail payload and should serialize TypeScript contracts in [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts):
 
 ```ts
+export interface PreparedStage1Snapshot {
+  version: 1;
+  // Exact analysis text that cold-start Stage 1 used after URL fetch /
+  // auto-fetch normalization. For plain text inputs this equals the active
+  // input text. Prepared jobs must use this instead of re-fetching URLs.
+  resolvedInputText: string;
+  preparedUnderstanding: CBClaimUnderstanding;
+}
+
 export interface ClaimSelectionDraftState {
   version: 1;
-  status: "QUEUED" | "PREPARING" | "AWAITING_CLAIM_SELECTION" | "AUTO_CONTINUING" | "COMPLETED" | "FAILED" | "CANCELLED" | "EXPIRED";
-  selectionMode: "interactive" | "automatic";
-  restartedViaOther: boolean;
-  restartCount: number;
-  originalInputType: "text" | "url";
-  activeInputType: "text" | "url";
-  preparedUnderstanding?: CBClaimUnderstanding;
+  preparedStage1?: PreparedStage1Snapshot;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
   selectedClaimIds: string[];
   recommendationRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
-  expiresUtc: string;
-  finalJobId?: string;
   lastError?: {
     code:
       | "stage1_failed"
@@ -280,9 +285,9 @@ export interface ClaimSelectionDraftState {
 }
 ```
 
-The candidate set for selection is always `draftState.preparedUnderstanding.atomicClaims`. No second candidate-claim blob is needed at the draft layer.
+The candidate set for selection is always `draftState.preparedStage1.preparedUnderstanding.atomicClaims`. No second candidate-claim blob is needed at the draft layer.
 
-On every create and `Other` restart, the server recomputes `activeInputType` from `activeInputValue` using the same parsing rules as the current `/analyze` flow, then persists that value into the draft state.
+On every create and `Other` restart, the server recomputes `activeInputType` from `activeInputValue` using the same parsing rules as the current `/analyze` flow, then persists that value on the draft row. Lifecycle fields such as `status`, `selectionMode`, and `restartCount` stay on the row rather than being duplicated inside `DraftStateJson`.
 
 ### 6.3 Job entity additions
 
@@ -297,10 +302,10 @@ public string? ClaimSelectionJson { get; set; }
 Use them as follows:
 
 - `ClaimSelectionDraftId` = provenance link back to the draft
-- `PreparedStage1Json` = the full `CBClaimUnderstanding` snapshot copied from the confirmed draft
+- `PreparedStage1Json` = the immutable prepared Stage 1 snapshot copied from the confirmed draft (`resolvedInputText` + `preparedUnderstanding`)
 - `ClaimSelectionJson` = immutable selection metadata plus recommendation audit snapshot used by the runner and report UI
 
-`PreparedStage1Json` makes the final job self-contained. The runner does not need to read the draft again after job creation.
+`PreparedStage1Json` makes the final job self-contained. The runner does not need to read the draft again after job creation, and prepared jobs do not need to re-fetch URL content.
 
 ### 6.4 Job-level claim-selection metadata
 
@@ -325,6 +330,7 @@ Persistence rule:
 - the draft remains the authoritative pre-confirmation record
 - on confirm, the full recommendation snapshot (`rankedClaimIds`, `recommendedClaimIds`, `recommendationRationale`, and `assessments`) is copied unchanged into `ClaimSelectionJson`
 - the job copy is immutable audit history for the final report and must not be recomputed from the draft later
+- if job creation succeeds and `FinalJobId` is persisted but a later draft-status write lags or fails, `FinalJobId != null` is the completion witness for reads and recovery logic
 
 This satisfies the persistence requirement together with `PreparedStage1Json`: the full candidate claim set lives in the prepared Stage 1 snapshot, while the selection metadata and recommendation audit snapshot live in `ClaimSelectionJson`.
 
@@ -392,6 +398,11 @@ Recovery contract for v1:
 - opening the draft URL in a new tab or new browser session without an admin key is not guaranteed to work and is out of scope for v1
 - if draft access is lost client-side, the supported recovery path is to restart from `/analyze` unless the viewer is an admin
 
+Day-2 UX note:
+
+- storing draft tokens in `localStorage` keyed by `draftId` is a reasonable post-v1 improvement if multi-tab recovery becomes a common support issue
+- that change does not alter the server-side security model; it is a client persistence improvement only
+
 This gives the draft flow minimal access control without requiring a full user-account model.
 
 ### 7.4 Draft expiry and quota semantics
@@ -404,6 +415,8 @@ Concrete rule:
 - expired drafts move to `EXPIRED` and cannot be confirmed, restarted, or retried
 - retries of failed preparation or recommendation inside the same non-expired draft do not consume another invite slot
 - creating a brand-new draft after expiry, cancellation, or explicit abandonment claims a new invite slot
+- expiry is enforced lazily on read or mutation in v1: any GET or mutation that observes `ExpiresUtc < UtcNow` transitions the draft to `EXPIRED` before returning
+- a proactive background expiry sweep is deferred to post-v1
 
 This keeps quota behavior explicit while still allowing recovery from transient preparation failures.
 
@@ -415,10 +428,32 @@ The candidate set must be identical to what the current pipeline would analyze t
 
 Concrete refactor:
 
-1. Extract the current Stage 1 orchestration from [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) into a shared helper such as `prepareStage1Understanding(...)`.
-2. Use that helper in two places:
+1. Extract the current **Stage 1 preparation boundary** from [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts) into a shared helper such as `prepareStage1Snapshot(...)`.
+2. That helper boundary is broader than `extractClaims(state)` alone. It must cover:
+   - startup config loading needed before URL fetch and runtime provenance capture
+   - URL pre-fetch / URL-looking-text auto-fetch normalization to produce the exact `analysisText`
+   - construction of a minimal Stage-1 `CBResearchState`
+   - `extractClaims(state)`
+   - the same post-extract contract-preservation gate used by the cold-start path
+3. The helper should return the prepared snapshot needed later by ACS:
+
+```ts
+export interface PreparedStage1Snapshot {
+  version: 1;
+  resolvedInputText: string;
+  preparedUnderstanding: CBClaimUnderstanding;
+}
+```
+
+4. Use that helper in two places:
    - the normal cold-start pipeline path
    - the new draft-preparation runner path
+5. If `preparedStage1.preparedUnderstanding.contractValidationSummary?.preservesContract === false`, draft preparation must stop at that same boundary and mark the draft `FAILED` with `lastError.code = "stage1_failed"`; recommendation does not run on a damaged Stage 1 result.
+
+Implementation note:
+
+- The first implementation does not need to fully untangle all current config loads inside `extractClaims(...)`. The hard requirement is behavioral parity with the cold-start path, not zero-duplication of config access on day 1.
+- The Stage-2-only parts of `CBResearchState` (ledgers, iteration counters, boundaries, evidence pool) can stay empty/minimal during draft preparation. They become meaningful only when the pipeline continues into research.
 
 This guarantees that the Stage 1 candidate set and the real pipeline stay aligned by construction.
 
@@ -460,6 +495,8 @@ Input:
 
 Output:
 
+Canonical type definitions for `PreparedStage1Snapshot`, `ClaimSelectionRecommendationAssessment`, and `ClaimSelectionRecommendation` must live in [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts). The inline shapes below document the expected contract and must not become a second divergent source of truth relative to `types.ts` or [2026-04-22_Check_Worthiness_Recommendation_Design.md](2026-04-22_Check_Worthiness_Recommendation_Design.md).
+
 ```ts
 export interface ClaimSelectionRecommendationAssessment {
   claimId: string;
@@ -491,6 +528,7 @@ Model tier: `context_refinement`.
 Execution rules:
 
 - use one structured LLM call over the whole candidate set so the model can reason about redundancy and coverage jointly
+- keep routing details aligned with [2026-04-22_Check_Worthiness_Recommendation_Design.md](2026-04-22_Check_Worthiness_Recommendation_Design.md); if the configured `context_refinement` route is not strong enough for this joint reasoning task, promote it before rollout
 - no deterministic keyword/regex/score fusion is allowed for semantic selection logic
 - no fallback that silently substitutes the extracted `checkWorthiness` field if the recommendation call fails; draft preparation should fail cleanly instead
 
@@ -548,7 +586,7 @@ runClaimBoundaryAnalysis({
   jobId,
   inputType,
   inputValue,
-  preparedUnderstanding,
+  preparedStage1,
   claimSelection,
   onEvent,
 })
@@ -556,11 +594,20 @@ runClaimBoundaryAnalysis({
 
 Execution rule:
 
-- if `preparedUnderstanding` is absent: current cold-start behavior
-- if `preparedUnderstanding` is present:
-  - hydrate `CBClaimUnderstanding`
+- if `preparedStage1` is absent: current cold-start behavior
+- if `preparedStage1` is present:
+  - load configs once using the same startup path as cold-start analysis
+  - hydrate the prepared snapshot (`resolvedInputText` + `preparedUnderstanding`)
+  - initialize a fresh `CBResearchState` with:
+    - `originalInput = preparedStage1.resolvedInputText`
+    - `inputType = inputType`
+    - `pipelineStartMs = Date.now()`
+    - empty Stage 2+ accumulators (`evidenceItems`, `sources`, `searchQueries`, ledgers, iteration counters, boundaries, warnings)
+  - set `state.understanding = preparedStage1.preparedUnderstanding`
+  - derive `state.languageIntent` from `preparedStage1.preparedUnderstanding.detectedLanguage` using the same logic the cold-start path currently applies after Stage 1
   - filter `atomicClaims` to `selectedClaimIds`
   - preserve claim-selection provenance separately in `claimSelection`
+  - do **not** re-fetch the URL or re-run input normalization; `resolvedInputText` is the prepared-job source of truth
   - skip Stage 1 and start at Stage 2 research
 
 The first emitted progress event for prepared jobs should jump directly to the Stage 2 watermark instead of replaying Stage 1 progress messages.
@@ -630,13 +677,13 @@ This ensures that initial submit and `Other` restart cannot drift.
 
 - [apps/api/Data/Entities.cs](../../apps/api/Data/Entities.cs)
 - [apps/api/Data/FhDbContext.cs](../../apps/api/Data/FhDbContext.cs)
-- new EF migration for `ClaimSelectionDraftEntity` plus the new `JobEntity` columns
+- new manual migration under `apps/api/migrations/` for `ClaimSelectionDraftEntity` plus the new `JobEntity` columns; follow the repo's existing handwritten migration convention rather than assuming `dotnet ef migrations add`
 - [apps/api/Controllers/AnalyzeController.cs](../../apps/api/Controllers/AnalyzeController.cs) - extract shared validation helper only
 - new `ClaimSelectionDraftsController.cs`
 - new `InternalClaimSelectionDraftsController.cs`
-- new `ClaimSelectionDraftService.cs`
+- new `ClaimSelectionDraftService.cs` - create/get/confirm/restart/cancel/retry, lazy expiry enforcement, and draft-time invite-slot claiming
 - [apps/api/Services/JobService.cs](../../apps/api/Services/JobService.cs) - create jobs from confirmed drafts and store claim-selection metadata
-- [apps/api/Services/RunnerClient.cs](../../apps/api/Services/RunnerClient.cs) - add a trigger method for draft preparation
+- [apps/api/Services/RunnerClient.cs](../../apps/api/Services/RunnerClient.cs) - add `TriggerDraftPreparationAsync(...)` parallel to `TriggerRunnerAsync(...)`
 
 ### 11.2 Web app and runner
 
@@ -648,7 +695,7 @@ This ensures that initial submit and `Other` restart cannot drift.
 - [apps/web/src/lib/analyzer/types.ts](../../apps/web/src/lib/analyzer/types.ts)
 - [apps/web/src/lib/analyzer/claimboundary-pipeline.ts](../../apps/web/src/lib/analyzer/claimboundary-pipeline.ts)
 - new `apps/web/src/lib/analyzer/claim-selection-recommendation.ts`
-- shared Stage 1 preparation helper extracted from the current cold-start path
+- shared `prepareStage1Snapshot(...)` helper extracted from the current cold-start path, including URL pre-fetch normalization and contract-failure parity
 - [apps/web/src/app/jobs/[id]/page.tsx](../../apps/web/src/app/jobs/[id]/page.tsx) for the audit panel
 
 ## 12. Test plan
@@ -657,18 +704,24 @@ This ensures that initial submit and `Other` restart cannot drift.
 
 - create draft validates the same limits as `/v1/analyze`
 - draft creation claims invite slot once
+- invite hourly limits are enforced against draft creation, not only confirmed jobs
 - `Other` restart does not claim an additional invite slot
 - failed draft retry does not claim an additional invite slot before expiry
 - confirm rejects more than 5 selected IDs
-- confirm rejects IDs not present in `preparedUnderstanding.atomicClaims`
+- confirm rejects IDs not present in `preparedStage1.preparedUnderstanding.atomicClaims`
 - draft token required for non-admin draft access
 - expired drafts reject confirm, restart, and retry
+- expiry is enforced lazily on read/mutation without a required background sweep
 - confirmed job stores `PreparedStage1Json` and `ClaimSelectionJson`
+- if `FinalJobId` is present, draft reads treat the draft as effectively complete even if a later status update lagged
 
 ### 12.2 Runner/pipeline
 
 - prepared jobs skip Stage 1 and begin at Stage 2
+- shared preparation helper reproduces cold-start Stage 1 candidate sets, including URL pre-fetch behavior and contract-failure early termination
 - prepared jobs use only `selectedClaimIds` for downstream research and verdicts
+- prepared jobs use persisted `resolvedInputText`; they do not re-fetch URL content
+- prepared jobs reconstruct `CBResearchState` and `languageIntent` without needing a cold-start Stage 1 run
 - recommendation failure yields draft `FAILED` without deterministic fallback
 - recommendation runs as one batched call over the full final candidate set
 - recommendation persists its full audit snapshot into `ClaimSelectionJson` when the final job is created
@@ -692,6 +745,7 @@ Use the already-approved examples from the handovers:
 - Iran/WMD job: candidate set must remain 22 claims
 - Bolsonaro job: candidate set must remain 3 claims
 - Bundesrat job: candidate set must remain 1 claim
+- the same three anchors must produce identical candidate sets through the draft-preparation path and the cold-start path
 
 ### 12.5 Recommendation-specific validation
 

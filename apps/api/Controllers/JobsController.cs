@@ -127,6 +127,9 @@ public sealed class JobsController : ControllerBase
             analysisIssueMessage = analysisIssue.message,
             // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
             gitCommitHash = isAdmin ? visibleGitCommitHash : null,
+            claimSelectionDraftId = isAdmin ? j.ClaimSelectionDraftId : null,
+            preparedStage1Json = isAdmin ? j.PreparedStage1Json : null,
+            claimSelectionJson = isAdmin ? j.ClaimSelectionJson : null,
             resultJson = resultObj,
             reportMarkdown = j.ReportMarkdown
         });

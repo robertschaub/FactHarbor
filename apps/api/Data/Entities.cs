@@ -68,6 +68,11 @@ public sealed class JobEntity
     /// </summary>
     public string? ExecutedWebGitCommitHash { get; set; }
 
+    // Claim selection (ACS-1)
+    public string? ClaimSelectionDraftId { get; set; }
+    public string? PreparedStage1Json { get; set; }
+    public string? ClaimSelectionJson { get; set; }
+
     // Stored outputs
     public string? ResultJson { get; set; }
     public string? ReportMarkdown { get; set; }
@@ -93,6 +98,36 @@ public sealed class JobEntity
     /// Only admins can see and toggle hidden jobs.
     /// </summary>
     public bool IsHidden { get; set; } = false;
+}
+
+public sealed class ClaimSelectionDraftEntity
+{
+    [Key]
+    public string DraftId { get; set; } = Guid.NewGuid().ToString("N");
+
+    public string Status { get; set; } = "QUEUED";
+    public int Progress { get; set; } = 0;
+
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedUtc { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresUtc { get; set; } = DateTime.UtcNow.AddHours(24);
+
+    public string OriginalInputType { get; set; } = "text";
+    public string ActiveInputType { get; set; } = "text";
+    public string OriginalInputValue { get; set; } = "";
+    public string ActiveInputValue { get; set; } = "";
+
+    public string PipelineVariant { get; set; } = "claimboundary";
+    public string? InviteCode { get; set; }
+
+    public string SelectionMode { get; set; } = "interactive";
+    public bool RestartedViaOther { get; set; } = false;
+    public int RestartCount { get; set; } = 0;
+
+    public string? DraftStateJson { get; set; }
+
+    public string? DraftAccessTokenHash { get; set; }
+    public string? FinalJobId { get; set; }
 }
 
 public sealed class JobEventEntity

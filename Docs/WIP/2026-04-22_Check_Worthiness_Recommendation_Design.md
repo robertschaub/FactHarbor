@@ -132,6 +132,8 @@ In the current CB contract this means the full `AtomicClaim` objects are passed,
 
 ### Output contract
 
+Canonical definitions for `ClaimSelectionRecommendationAssessment` and `ClaimSelectionRecommendation` must live in `apps/web/src/lib/analyzer/types.ts`. The inline shapes below document the expected contract and must not become a second divergent source of truth relative to the ACS spec.
+
 ```ts
 export interface ClaimSelectionRecommendationAssessment {
   claimId: string;

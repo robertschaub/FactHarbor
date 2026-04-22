@@ -125,6 +125,7 @@ builder.Services.AddDbContext<FhDbContext>(opt =>
 });
 
 builder.Services.AddScoped<JobService>();
+builder.Services.AddScoped<ClaimSelectionDraftService>();
 builder.Services.AddSingleton<FactHarbor.Api.Helpers.AppBuildInfo>();
 
 // Configure HttpClient for RunnerClient with resilient settings
@@ -146,6 +147,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
     EnsureJobsColumn(db, "GitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
+    EnsureJobsColumn(db, "ClaimSelectionDraftId", "TEXT");
+    EnsureJobsColumn(db, "PreparedStage1Json", "TEXT");
+    EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");
+    EnsureClaimSelectionDraftsTable(db);
+    EnsureUniqueJobDraftIndex(db);
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
     // QUEUED jobs are left as-is — they were never started and the runner will pick
@@ -222,6 +228,48 @@ app.MapControllers();
 
 app.Run();
 
+static void EnsureClaimSelectionDraftsTable(FhDbContext db)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    if (shouldClose) connection.Open();
+    try
+    {
+        using var check = connection.CreateCommand();
+        check.CommandText = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ClaimSelectionDrafts' LIMIT 1;";
+        if (check.ExecuteScalar() is not null) return;
+
+        using var create = connection.CreateCommand();
+        create.CommandText = @"
+            CREATE TABLE ClaimSelectionDrafts (
+                DraftId TEXT NOT NULL PRIMARY KEY,
+                Status TEXT NOT NULL DEFAULT 'QUEUED',
+                Progress INTEGER NOT NULL DEFAULT 0,
+                CreatedUtc TEXT NOT NULL,
+                UpdatedUtc TEXT NOT NULL,
+                ExpiresUtc TEXT NOT NULL,
+                OriginalInputType TEXT NOT NULL DEFAULT 'text',
+                ActiveInputType TEXT NOT NULL DEFAULT 'text',
+                OriginalInputValue TEXT NOT NULL DEFAULT '',
+                ActiveInputValue TEXT NOT NULL DEFAULT '',
+                PipelineVariant TEXT NOT NULL DEFAULT 'claimboundary',
+                InviteCode TEXT,
+                SelectionMode TEXT NOT NULL DEFAULT 'interactive',
+                RestartedViaOther INTEGER NOT NULL DEFAULT 0,
+                RestartCount INTEGER NOT NULL DEFAULT 0,
+                DraftStateJson TEXT,
+                DraftAccessTokenHash TEXT,
+                FinalJobId TEXT
+            );
+            CREATE INDEX IX_ClaimSelectionDrafts_Status ON ClaimSelectionDrafts (Status);";
+        create.ExecuteNonQuery();
+    }
+    finally
+    {
+        if (shouldClose) connection.Close();
+    }
+}
+
 static void EnsureJobsColumn(FhDbContext db, string columnName, string sqlType)
 {
     var connection = db.Database.GetDbConnection();
@@ -245,6 +293,31 @@ static void EnsureJobsColumn(FhDbContext db, string columnName, string sqlType)
         using var alter = connection.CreateCommand();
         alter.CommandText = $"ALTER TABLE Jobs ADD COLUMN \"{columnName}\" {sqlType}";
         alter.ExecuteNonQuery();
+    }
+    finally
+    {
+        if (shouldClose)
+            connection.Close();
+    }
+}
+
+static void EnsureUniqueJobDraftIndex(FhDbContext db)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    if (shouldClose)
+        connection.Open();
+
+    try
+    {
+        using var check = connection.CreateCommand();
+        check.CommandText = "SELECT 1 FROM sqlite_master WHERE type='index' AND name='IX_Jobs_ClaimSelectionDraftId' LIMIT 1;";
+        if (check.ExecuteScalar() is not null)
+            return;
+
+        using var create = connection.CreateCommand();
+        create.CommandText = "CREATE UNIQUE INDEX IX_Jobs_ClaimSelectionDraftId ON Jobs (ClaimSelectionDraftId);";
+        create.ExecuteNonQuery();
     }
     finally
     {
