@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Report Review e95bd017 Non-Inspectable Hosted Job -- [Standard] [open-items: yes]
+**For next agent:** Exact-job inspection failed cleanly: hosted job `e95bd017e955433d897fab04342f45e1` serves the `/jobs/<id>` shell but both public JSON endpoints return `404 {"error":"Job not found"}`, local `apps/api/factharbor.db` has no matching row, and no local artifact was found. No substantive report-quality diagnosis is confirmed until the exact payload is made inspectable.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Report_Review_e95bd017_Non_Inspectable_Hosted_Job.md
+
+---
 ### 2026-04-22 | Senior Developer | GitHub Copilot (GPT-5.4) | Article Gate1 Contract Preservation And Iran URL Rerun -- [Standard] [open-items: yes]
 **For next agent:** Stage 1 now uses `selectClaimsForGate1(...)` in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` to keep clean contract-approved article claim sets intact for Gate 1; commit `424b9652` is live and rerun `9164bcf79cb04df2a0f308d933aed8ac` is running on that commit for the Iran URL.
 → Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_Article_Gate1_Contract_Preservation_And_Iran_URL_Rerun.md
@@ -1649,3 +1654,23 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-22 | Senior Developer | Claude (Opus 4.7) | SR Contract Controlled Replay Stage 1 -- [Significant] [open-items: no]
 **For next agent:** Plan v2.1 Stage 1 (Lite-Replay) executed. 54 runs (4 report domains × A2/B2 × 2 modes × 3 reps, plus `encyclopedia.ushmm.org` canonical × A2 × 2 modes × 3 reps) against the patched engine with frozen evidence packs and an isolated SR cache. Canonical control held at `highly_reliable` every run with score spread **0.03** (at the declared noise floor, zero category oscillation) — so the Stage 1 gate closes: **keep `403e905a`, do not escalate to Stage 2**. All 54 runs returned contract-valid payloads (canonical `sourceType` and `biasIndicator` tokens only). A2↔B2 deltas are pack-driven, not code-driven (`theglobeandmail.com` A2→B2 delta +0.02 in both modes, category match). Engine change is minimal and additive: `evaluateSourceWithPinnedEvidencePack` is now exported from `sr-eval-engine.ts`; `evaluateSourceWithConsensus` delegates after `buildEvidencePack` + enrichment (no production behavior change). Residual uncertainty: prompt-correction vs. evidence-change attribution requires Stage 2 (pre-patch worktree) and is deferred.
 → Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Replay_Stage1_Outcome.md
+
+---
+### 2026-04-22 | Lead Architect / LLM Expert | Codex (GPT-5) | Atomic Claim Selection Requirement Refinement -- [Standard] [open-items: yes]
+**For next agent:** The improved requirement now fixes the main ambiguities: the chooser sits after today’s final Stage 1 claim set and before Stage 2, its candidates must be the exact current `understanding.atomicClaims`, LLM recommendation drives semantic preselection (max 3), user selection is capped at 5, and `Other` is a restart-before-claim-extraction path. Use hosted job `a59e4a6e1e184c22ad8055e34a52beeb` as the main acceptance anchor because the current live run produced 22 claims but only 6 non-`UNVERIFIED` verdicts.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Requirement_Refinement.md
+
+---
+### 2026-04-22 | Lead Architect / LLM Expert | Codex (GPT-5) | Atomic Claim Selection Debate -- [Standard] [open-items: yes]
+**For next agent:** `/debate` resolved the architecture as `MODIFY`: keep the requirement semantics, but do not make the chooser a live post-Stage-1 job wait state. The safer v1 baseline is a pre-job draft/intake selection step over the exact current final `atomicClaims`. Important caveat from validation: the debate did not fully justify “non-interactive default,” only that interactive default is not yet proven.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Debate.md
+
+---
+### 2026-04-22 | Lead Architect | GitHub Copilot (GPT-5.4) | Atomic Claim Selection Interactive Default Resolved -- [Standard] [open-items: yes]
+**For next agent:** Treat the earlier default-choice open item as settled: v1 is interactive by default, with `automatic` mode available only as an explicit non-interactive override. Keep the debate baseline intact: pre-job/intake chooser over the exact final `CBClaimUnderstanding.atomicClaims`, no live post-Stage-1 wait state, and `Other` as a fresh pre-Stage-1 restart.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Interactive_Default.md
+
+---
+### 2026-04-22 | Senior Developer / DevOps Expert | GitHub Copilot (GPT-5.4) | Runner Admin Reads For Hidden Jobs -- [Standard] [open-items: yes]
+**For next agent:** `internal-runner-queue.ts` now forwards `X-Admin-Key` on every runner-owned `/v1/jobs` read, closing the hidden-job 404 gap both at execution start and in queue recovery/orphan refresh paths. After rollout, restart the web runner and retry the exact failed asylum job; if it still fails, verify deployed `FH_ADMIN_KEY` first.
+→ Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_DevOps_Expert_Runner_Admin_Reads_For_Hidden_Jobs.md

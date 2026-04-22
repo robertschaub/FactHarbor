@@ -1,0 +1,9 @@
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Report Review e95bd017 Non-Inspectable Hosted Job
+**Task:** Run `/report-review` on hosted job `e95bd017e955433d897fab04342f45e1`.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Report_Review_e95bd017_Non_Inspectable_Hosted_Job.md`; `Docs/AGENTS/Agent_Outputs.md`
+**Key decisions:** Stopped at exact-job inspection, per `/report-review` rule 9. The provided public job URL returns a generic Next.js shell (`200`) but the underlying public JSON detail and event-history endpoints both return `404 {"error":"Job not found"}`. Local API DB lookup for the same job ID returned no row, and no matching artifact was found in `test-output/` or indexed handoffs. Because the exact job is not inspectable, no verdict, evidence, boundary, or warning-quality diagnosis was confirmed for that job.
+**Open items:** To review this report substantively, Captain/user must provide an inspectable artifact: unhide the job, provide exported job JSON / HTML / report markdown, or provide a local artifact containing the exact job payload.
+**Warnings:** Do not treat the successful `/jobs/<id>` page shell response as proof the report is readable; the client route loads even when the backing job API returns not found. The likely causes are hidden or deleted/missing job state, but the public surface intentionally does not distinguish them.
+**For next agent:** Start with the exact-job evidence, not comparators. Anchors: hosted detail `https://app.factharbor.ch/api/fh/jobs/e95bd017e955433d897fab04342f45e1` and history `https://app.factharbor.ch/api/fh/jobs/e95bd017e955433d897fab04342f45e1/events/history` both return 404; the proxy path in `apps/web/src/app/api/fh/jobs/[id]/route.ts` forwards directly to `/v1/jobs/{jobId}`, and `apps/api/Controllers/JobsController.cs` returns the same `Job not found` payload for both missing jobs and hidden jobs when the caller is not admin.
+**Learnings:** no

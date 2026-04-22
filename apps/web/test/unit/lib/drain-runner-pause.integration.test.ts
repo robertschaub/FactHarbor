@@ -321,6 +321,89 @@ describe("drainRunnerQueue pause integration", () => {
       );
     });
 
+    it("sends X-Admin-Key on runner-owned job list and detail reads", async () => {
+      const jobId = "job-hidden-queued-1";
+      const observedHeaders: Array<{ url: string; adminKey: string | null }> = [];
+      let detailReads = 0;
+      process.env.FH_ADMIN_KEY = "runner-admin-key";
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+        const headers = new Headers(init?.headers as HeadersInit | undefined);
+
+        if (method === "GET" && url.includes("/v1/jobs")) {
+          observedHeaders.push({
+            url,
+            adminKey: headers.get("X-Admin-Key"),
+          });
+        }
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          return new Response(JSON.stringify({
+            jobs: [],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${jobId}`)) {
+          detailReads++;
+          if (detailReads === 1) {
+            return new Response(JSON.stringify({
+              jobId,
+              status: "QUEUED",
+              pipelineVariant: "claimboundary",
+            }), { status: 200 });
+          }
+
+          if (detailReads === 2) {
+            return new Response(JSON.stringify({
+              jobId,
+              status: "RUNNING",
+              pipelineVariant: "claimboundary",
+              inputType: "text",
+              inputValue: "hidden job payload",
+            }), { status: 200 });
+          }
+
+          return new Response(JSON.stringify({
+            jobId,
+            status: "RUNNING",
+            pipelineVariant: "claimboundary",
+          }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${jobId}/status`)) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        if (method === "PUT" && url.includes(`/internal/v1/jobs/${jobId}/result`)) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [{ jobId, enqueuedAt: Date.now() }],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      expect(observedHeaders.length).toBeGreaterThanOrEqual(3);
+      expect(observedHeaders.every((entry) => entry.adminKey === "runner-admin-key")).toBe(true);
+    });
+
     it("re-queues orphaned RUNNING jobs after restart and picks them up in the same drain cycle", async () => {
       const orphanJobId = "job-orphan-1";
       const snapshotUpdatedUtc = new Date(Date.now() - 60_000).toISOString();

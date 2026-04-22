@@ -190,6 +190,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** On this Windows setup, an inline PowerShell `Invoke-RestMethod` / `Invoke-WebRequest` POST can silently degrade non-ASCII input in the stored job payload (`Flüchtlinge` became `Fl??chtlinge`). That breaks Captain-defined exact-input validation for multilingual runs even when the visible command text looks right. For approved non-English inputs, submit through Node (or another explicitly UTF-8-safe path) and confirm the stored `inputValue` before trusting the run.
 **Files:** local live submission path to `apps/web/src/app/api/fh/analyze/route.ts`, observed on jobs `d87c15b0ffba42b7a21520fd9cb331e7` and `25dea04fb0da4ab5ad12fd5dbf76896a`
 
+### 2026-04-22 — Runner-owned reads must inherit hidden-job admin semantics too
+**Role:** Senior Developer  **Agent/Tool:** GitHub Copilot (GPT-5.4)
+**Category:** useful-pattern
+**Learning:** When the web runner uses public `/v1/jobs` endpoints as its internal source of truth, those reads are still subject to the API's hidden/admin gating rules. Forwarding `X-Admin-Key` only on write paths is not enough: execution-start detail loads, queue scans, orphan refreshes, and late status guards also need the admin header or hidden jobs can fail before Stage 1 with a misleading `Job not found`.
+**Files:** `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

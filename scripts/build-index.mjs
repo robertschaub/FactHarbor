@@ -164,10 +164,86 @@ const KNOWN_ROLES = new Set([
   'captain', 'unassigned',
 ]);
 
+const ROLE_ALIASES = new Map([
+  ['lead_architect', 'lead_architect'],
+  ['senior_architect', 'lead_architect'],
+  ['principal_architect', 'lead_architect'],
+  ['lead_developer', 'lead_developer'],
+  ['senior_developer', 'senior_developer'],
+  ['technical_writer', 'technical_writer'],
+  ['tech_writer', 'technical_writer'],
+  ['xwiki_expert', 'technical_writer'],
+  ['xwiki_developer', 'technical_writer'],
+  ['llm_expert', 'llm_expert'],
+  ['fh_analysis_expert', 'llm_expert'],
+  ['ai_consultant', 'llm_expert'],
+  ['product_strategist', 'product_strategist'],
+  ['product_manager', 'product_strategist'],
+  ['product_owner', 'product_strategist'],
+  ['sponsor', 'product_strategist'],
+  ['code_reviewer', 'code_reviewer'],
+  ['security_expert', 'security_expert'],
+  ['devops_expert', 'devops_expert'],
+  ['git_expert', 'devops_expert'],
+  ['github_expert', 'devops_expert'],
+  ['agents_supervisor', 'agents_supervisor'],
+  ['ai_supervisor', 'agents_supervisor'],
+  ['investigator', 'investigator'],
+  ['captain', 'captain'],
+  ['unassigned', 'unassigned'],
+]);
+
+function normalizeRoleToken(role) {
+  const normalized = role
+    .trim()
+    .replace(/^['"]|['"]$/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+
+  return ROLE_ALIASES.get(normalized) ?? normalized;
+}
+
+function parseRoleList(rawRoles) {
+  return [...new Set(
+    rawRoles
+      .split(/\s*(?:\+|\/|,|&)\s*|\s+and\s+/i)
+      .map(normalizeRoleToken)
+      .filter(Boolean)
+  )];
+}
+
+function extractLeadingRoleTokens(tokens) {
+  const roles = [];
+  let nextIndex = 0;
+
+  while (nextIndex < tokens.length) {
+    const two = tokens.slice(nextIndex, nextIndex + 2).join('_').toLowerCase();
+    const one = tokens[nextIndex]?.toLowerCase() ?? '';
+
+    if (KNOWN_ROLES.has(two)) {
+      roles.push(two);
+      nextIndex += 2;
+      continue;
+    }
+
+    if (KNOWN_ROLES.has(one)) {
+      roles.push(one);
+      nextIndex += 1;
+      continue;
+    }
+
+    break;
+  }
+
+  return { roles, nextIndex };
+}
+
 function parseHandoff(file, content) {
   const nameNoExt = basename(file, '.md');
   const parts     = nameNoExt.split('_');
   const date      = parts[0]; // YYYY-MM-DD
+  const tail      = parts.slice(1); // tokens after YYYY-MM-DD
+  const filenameRoleInfo = extractLeadingRoleTokens(tail);
 
   let roles = [], topics = [], files_touched = [], summary = '';
 
@@ -177,8 +253,7 @@ function parseHandoff(file, content) {
     const yaml = fmMatch[1];
 
     const rMatch = yaml.match(/^roles:\s*\[([^\]]*)\]/m);
-    if (rMatch) roles = rMatch[1].split(',').map(s =>
-      s.trim().replace(/^['"]|['"]$/g, '').toLowerCase().replace(/\s+/g, '_'));
+    if (rMatch) roles = rMatch[1].split(',').map(normalizeRoleToken).filter(Boolean);
 
     const tMatch = yaml.match(/^topics:\s*\[([^\]]*)\]/m);
     if (tMatch) topics = tMatch[1].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '').toLowerCase());
@@ -193,34 +268,24 @@ function parseHandoff(file, content) {
   if (roles.length === 0) {
     const headerMatch = content.match(/^###?\s+\d{4}-\d{2}-\d{2}\s*\|\s*([^|]+)\|/m);
     if (headerMatch) {
-      // Strip "Review Board:" prefix, then split on ' + ' or ', '
+      // Strip "Review Board:" prefix, then split multi-role labels generically.
       const roleField = headerMatch[1].trim().replace(/^Review Board:\s*/i, '');
-      roles = roleField
-        .split(/\s*\+\s*|\s*,\s*/)
-        .map(r => r.trim().toLowerCase().replace(/\s+/g, '_'))
-        .filter(Boolean);
+      roles = parseRoleList(roleField);
     }
   }
 
   // ── Strategy C: filename tokens ──────────────────────────────────────────
   if (roles.length === 0) {
-    const tail = parts.slice(1); // tokens after YYYY-MM-DD
-    let roleEndIdx = 1;
-    if (tail.length >= 2) {
-      const two = tail.slice(0, 2).join('_').toLowerCase();
-      if (KNOWN_ROLES.has(two)) { roles = [two]; roleEndIdx = 2; }
-    }
-    if (roles.length === 0) {
-      roles = [tail[0]?.toLowerCase() ?? 'unknown'];
-    }
-    topics = tail.slice(roleEndIdx).map(t => t.toLowerCase());
+    roles = filenameRoleInfo.roles.length > 0
+      ? filenameRoleInfo.roles
+      : [tail[0]?.toLowerCase() ?? 'unknown'];
+    topics = tail.slice(filenameRoleInfo.nextIndex || 1).map(t => t.toLowerCase());
   }
 
   // Topics fallback from filename when YAML/header provided roles
   if (topics.length === 0) {
-    const tail = parts.slice(1);
-    const roleWordCount = roles[0]?.split(/[\s_]/).length ?? 1;
-    topics = tail.slice(roleWordCount).map(t => t.toLowerCase());
+    const roleTokenCount = filenameRoleInfo.nextIndex || (roles[0]?.split(/[\s_]/).length ?? 1);
+    topics = tail.slice(roleTokenCount).map(t => t.toLowerCase());
   }
 
   // ── files_touched: extract backtick paths from **Files touched:** line ───
