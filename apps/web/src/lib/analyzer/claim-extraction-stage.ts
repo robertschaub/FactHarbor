@@ -706,6 +706,25 @@ export async function extractClaims(
     protectedAnchorCarrierIds,
   );
 
+  const currentSetIsContractApproved =
+    contractValidationSummary?.preservesContract === true
+    && contractValidationSummary?.rePromptRequired === false;
+
+  const gate1InputClaims = selectClaimsForGate1(
+    activePass2.atomicClaims as unknown as AtomicClaim[],
+    centralityThreshold,
+    effectiveMax,
+    contractValidationSummary,
+    activePass2.inputClassification,
+    protectedAnchorCarrierIds,
+  );
+
+  if (currentSetIsContractApproved && gate1InputClaims.length !== filteredClaims.length) {
+    console.info(
+      `[Stage1] Current claim set is contract-approved; preserving all ${gate1InputClaims.length} claims for Gate 1 instead of centrality-truncating to ${filteredClaims.length}.`,
+    );
+  }
+
   // ------------------------------------------------------------------
   // Dimension decomposition tagging (structural routing on LLM outputs)
   // This checks LLM-assigned fields (centrality, claimDirection) to route claims —
@@ -730,7 +749,7 @@ export async function extractClaims(
   state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
   state.onEvent?.(`LLM call: Gate 1 validation — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   let gate1Result = await runGate1Validation(
-    filteredClaims,
+    gate1InputClaims,
     pipelineConfig,
     currentDate,
     state.originalInput,
@@ -757,10 +776,6 @@ export async function extractClaims(
   // produced a replacement that the final revalidator could not re-authorize.
   // A contract-approved claim set is sacred; do not regenerate it to hit a
   // count minimum.
-  const currentSetIsContractApproved =
-    contractValidationSummary?.preservesContract === true &&
-    contractValidationSummary?.rePromptRequired === false;
-
   if (
     gate1Result.filteredClaims.length < minCoreClaims &&
     maxRepromptAttempts > 0 &&
@@ -2510,6 +2525,26 @@ export function filterByCentrality(
       return true;
     })
     .map((entry) => entry.claim);
+}
+
+export function selectClaimsForGate1(
+  claims: AtomicClaim[],
+  threshold: "high" | "medium",
+  maxClaims: number,
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+  inputClassification?: string,
+  requiredClaimIds: string[] = [],
+): AtomicClaim[] {
+  if (
+    inputClassification === "article"
+    &&
+    contractValidationSummary?.preservesContract === true
+    && contractValidationSummary.rePromptRequired === false
+  ) {
+    return claims;
+  }
+
+  return filterByCentrality(claims, threshold, maxClaims, requiredClaimIds);
 }
 
 // ============================================================================

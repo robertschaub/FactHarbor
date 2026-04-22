@@ -13,6 +13,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   buildCoverageMatrix,
   filterByCentrality,
+  selectClaimsForGate1,
   detectInputType,
   generateSearchQueries,
   runPass1,
@@ -785,6 +786,63 @@ describe("filterByCentrality", () => {
   it("should return empty array for empty input", () => {
     const result = filterByCentrality([], "medium", 10);
     expect(result).toHaveLength(0);
+  });
+});
+
+describe("selectClaimsForGate1", () => {
+  const makeClaims = (centralities: string[]) =>
+    centralities.map((c, i) => ({
+      id: `AC_${String(i + 1).padStart(2, "0")}`,
+      centrality: c,
+      statement: `Claim ${i + 1}`,
+    }));
+
+  it("preserves a clean contract-approved set even when it exceeds the centrality cap", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean retry output",
+        stageAttribution: "retry",
+      },
+      "article",
+    );
+
+    expect(result).toHaveLength(5);
+    expect(result.map((claim) => claim.id)).toEqual([
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+    ]);
+  });
+
+  it("still applies centrality filtering when the contract is not approved", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean claim-mode output",
+        stageAttribution: "retry",
+      },
+      "single_atomic_claim",
+    );
+
+    expect(result).toHaveLength(3);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
   });
 });
 

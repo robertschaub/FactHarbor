@@ -190,6 +190,7 @@ export {
   runPreliminarySearch,
   runGate1Validation,
   filterByCentrality,
+  selectClaimsForGate1,
   shouldProtectValidatedAnchorCarriers,
   getAtomicityGuidance,
   generateSearchQueries,
