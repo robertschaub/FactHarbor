@@ -212,6 +212,54 @@ function parseRoleList(rawRoles) {
   )];
 }
 
+const ROLE_VARIANTS = (() => {
+  const variants = new Map();
+
+  for (const role of KNOWN_ROLES) {
+    variants.set(role, new Set([role]));
+  }
+
+  for (const [alias, canonical] of ROLE_ALIASES) {
+    if (!variants.has(canonical)) {
+      variants.set(canonical, new Set([canonical]));
+    }
+    variants.get(canonical).add(alias);
+  }
+
+  return new Map(
+    [...variants.entries()].map(([role, names]) => [
+      role,
+      [...names]
+        .map(name => name.split('_'))
+        .sort((a, b) => b.length - a.length || b.join('_').length - a.join('_').length),
+    ])
+  );
+})();
+
+function countLeadingRoleTokens(tokens, roles) {
+  let nextIndex = 0;
+
+  for (const role of roles) {
+    const variants = ROLE_VARIANTS.get(role) ?? [[role]];
+    let matched = false;
+
+    for (const variant of variants) {
+      const candidate = tokens.slice(nextIndex, nextIndex + variant.length)
+        .map(token => token.toLowerCase());
+
+      if (candidate.length === variant.length && candidate.every((token, idx) => token === variant[idx])) {
+        nextIndex += variant.length;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) break;
+  }
+
+  return nextIndex;
+}
+
 function extractLeadingRoleTokens(tokens) {
   const roles = [];
   let nextIndex = 0;
@@ -246,6 +294,7 @@ function parseHandoff(file, content) {
   const filenameRoleInfo = extractLeadingRoleTokens(tail);
 
   let roles = [], topics = [], files_touched = [], summary = '';
+  let roleSource = 'filename';
 
   // ── Strategy A: YAML frontmatter (new handoffs) ─────────────────────────
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n/);
@@ -253,7 +302,10 @@ function parseHandoff(file, content) {
     const yaml = fmMatch[1];
 
     const rMatch = yaml.match(/^roles:\s*\[([^\]]*)\]/m);
-    if (rMatch) roles = rMatch[1].split(',').map(normalizeRoleToken).filter(Boolean);
+    if (rMatch) {
+      roles = rMatch[1].split(',').map(normalizeRoleToken).filter(Boolean);
+      if (roles.length > 0) roleSource = 'yaml';
+    }
 
     const tMatch = yaml.match(/^topics:\s*\[([^\]]*)\]/m);
     if (tMatch) topics = tMatch[1].split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '').toLowerCase());
@@ -271,6 +323,7 @@ function parseHandoff(file, content) {
       // Strip "Review Board:" prefix, then split multi-role labels generically.
       const roleField = headerMatch[1].trim().replace(/^Review Board:\s*/i, '');
       roles = parseRoleList(roleField);
+      if (roles.length > 0) roleSource = 'header';
     }
   }
 
@@ -284,7 +337,9 @@ function parseHandoff(file, content) {
 
   // Topics fallback from filename when YAML/header provided roles
   if (topics.length === 0) {
-    const roleTokenCount = filenameRoleInfo.nextIndex || (roles[0]?.split(/[\s_]/).length ?? 1);
+    const roleTokenCount = roleSource === 'filename'
+      ? (filenameRoleInfo.nextIndex || 1)
+      : countLeadingRoleTokens(tail, roles);
     topics = tail.slice(roleTokenCount).map(t => t.toLowerCase());
   }
 
