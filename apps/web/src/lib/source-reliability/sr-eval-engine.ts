@@ -527,6 +527,36 @@ export async function evaluateSourceWithConsensus(
     );
   }
 
+  return evaluateSourceWithPinnedEvidencePack(
+    domain,
+    evidencePack,
+    multiModel,
+    confidenceThreshold,
+    config,
+  );
+}
+
+/**
+ * Run the LLM evaluation + refinement pipeline against an already-built,
+ * already-quality-assessed evidence pack.
+ *
+ * This is the same STEP 1–4 logic used inside `evaluateSourceWithConsensus`,
+ * exposed so controlled-replay harnesses can pin both the evidence pack AND
+ * its quality assessment — isolating LLM / prompt / normalization changes
+ * from live search-acquisition variance.
+ *
+ * Callers are responsible for:
+ *   - Building / freezing the `EvidencePack` (including `qualityAssessment`).
+ *   - Isolating any caches (e.g. `FH_SR_CACHE_PATH`) so replay does not
+ *     contaminate or read from the production SR cache.
+ */
+export async function evaluateSourceWithPinnedEvidencePack(
+  domain: string,
+  evidencePack: EvidencePack,
+  multiModel: boolean,
+  confidenceThreshold: number,
+  config: SrEvalConfig,
+): Promise<{ success: true; data: ResponsePayload } | { success: false; error: EvaluationError }> {
   // ============================================================================
   // STEP 1: Primary evaluation (Anthropic Claude)
   // ============================================================================
