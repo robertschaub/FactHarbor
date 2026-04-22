@@ -1676,6 +1676,86 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Interactive_Default.md
 
 ---
+### 2026-04-22 | Lead Architect | GitHub Copilot (GPT-5.4) | Atomic Claim Selection Implementation Spec -- [Standard] [open-items: yes]
+**For next agent:** The April 22 handovers are now consolidated into one build-ready design: a pre-job `ClaimSelectionDraftEntity`, shared Stage 1 preparation reused by both draft prep and cold-start analysis, browser-local automatic-mode preference, same-draft `Other` restarts, invite-slot claim at draft creation, and prepared jobs that start at Stage 2 with persisted selection provenance. Start with `Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md` and implement backend draft scaffolding before touching the UI.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec.md
+
+---
+### 2026-04-22 | Lead Architect | GitHub Copilot (GPT-5.4) | Atomic Claim Selection Implementation Spec Debate -- [Standard] [open-items: yes]
+**For next agent:** A full-tier `/debate` on adopting the implementation spec as-is returned `MODIFY`. The baseline architecture stands, but the spec is now tightened to use one authoritative draft payload, minimal job-side selection metadata, explicit active-input typing on `Other` restarts, a 24-hour draft TTL, retry-within-same-quota semantics, and shared runner concurrency without requiring a full queue-generalization refactor.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec_Debate.md
+
+---
 ### 2026-04-22 | Senior Developer / DevOps Expert | GitHub Copilot (GPT-5.4) | Runner Admin Reads For Hidden Jobs -- [Standard] [open-items: yes]
 **For next agent:** `internal-runner-queue.ts` now forwards `X-Admin-Key` on every runner-owned `/v1/jobs` read, closing the hidden-job 404 gap both at execution start and in queue recovery/orphan refresh paths. After rollout, restart the web runner and retry the exact failed asylum job; if it still fails, verify deployed `FH_ADMIN_KEY` first.
 → Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_DevOps_Expert_Runner_Admin_Reads_For_Hidden_Jobs.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Atomic Claim Selection Check-Worthiness Proposal -- [Standard] [open-items: yes]
+**For next agent:** The spec now makes current `AtomicClaim.checkWorthiness` advisory only and replaces “use check-worthiness for preselection” with a dedicated batched LLM triage in section 8.2 of `Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md`. Implement recommendation as FCW/FNC/OPN-style triage plus ranking, not as a binary scalar or deterministic fallback.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Proposal.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Atomic Claim Selection Check-Worthiness Review Follow-up -- [Standard] [open-items: yes]
+**For next agent:** The spec was narrowed after review: current Gate 1 is now described accurately, the four-label triage is explicitly provisional rather than a direct ZHAW transfer, the separate post-Gate-1 batched call is justified on audit/contract grounds, and the full recommendation snapshot must persist into `ClaimSelectionJson`.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Review_Followup.md
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Implementation Order For Check-Worthiness Atomic Claim Selection And Dominant Claim -- [Standard] [open-items: yes]
+**For next agent:** Treat the dependency chain as asymmetric: current Dominant Atomic Claim work is the most independent item because Stage 5 `articleAdjudication`/`dominanceAssessment` already exists in [aggregation-stage.ts](apps/web/src/lib/analyzer/aggregation-stage.ts) and the matching prompt/config surfaces already exist; Atomic Claim Selection is a new draft/prepared-job intake path over the exact current `CBClaimUnderstanding.atomicClaims`; and the approved Check-worthiness improvement is not a standalone Gate 1 rewrite but a post-Gate-1 batched ACS recommendation layer over that final candidate set. If “Dominant Atomic Claim” actually means the separate `topLevelProposition` proposal, move that to the end because ACS v1 explicitly excludes it.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Implementation_Order_CheckWorthiness_AtomicClaimSelection_DominantClaim.md
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Clarified Order For ACS Check-Worthiness And TopLevelProposition -- [Standard] [open-items: yes]
+**For next agent:** The ambiguity is now resolved: “Dominant Atomic Claim” means the separate `topLevelProposition` proposal, not the existing Stage 5 `dominanceAssessment` path. The recommended order is therefore [Atomic Claim Selection](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) first, Check-worthiness recommendation second as the ACS ranking layer, and [topLevelProposition](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md) third in Phase A detection-only form. Keep parent-aware aggregation out of the first wave.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Clarified_Order_ACS_CheckWorthiness_TopLevelProposition.md
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Debate On Check-Worthiness Before ACS -- [Standard] [open-items: yes]
+**For next agent:** `/debate` returned `MODIFY`, not `ADOPT`: keep the non-Gate-1 part, reject the separately shipped pre-ACS service part. The winning shape is: recommendation remains a post-Stage-1 batched signal over final `CBClaimUnderstanding.atomicClaims`, but it should ship inside the ACS draft/prepared-job flow rather than as a standalone external contract; any earlier work should stay internal telemetry/prototyping only.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Debate_CheckWorthiness_Before_ACS.md
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Documentation Update For ACS Check-Worthiness And TopLevelProposition -- [Standard] [open-items: yes]
+**For next agent:** The canonical docs are now aligned: the ACS spec explicitly says automatic mode makes the recommendation layer the effective post-Stage-1 selection filter while keeping Gate 1 authority unchanged; the same spec now rejects a standalone pre-ACS external Check-worthiness rollout; the dominant-proposition plan now explicitly follows ACS + recommendation rather than preceding it; and [Backlog.md](Docs/STATUS/Backlog.md) now carries the staged work as `ACS-1`, `ACS-CW-1`, and `TOPPROP-1`.
+→ Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Documentation_Update_ACS_CheckWorthiness_TopLevelProposition.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Atomic Claim Selection Spec Sequencing Reconcile -- [Standard] [open-items: yes]
+**For next agent:** The spec was re-aligned with the newer ACS planning docs: it now treats itself as the canonical design for `ACS-1` plus in-flow `ACS-CW-1`, makes the internal build order foundation-first then recommendation-second, and keeps `TOPPROP-1` explicitly later and out of ACS semantics.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Spec_Sequencing_Reconcile.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Recommendation Design Consolidation -- [Standard] [open-items: yes]
+**For next agent:** A new consolidated design doc now exists at [2026-04-22_Check_Worthiness_Recommendation_Design.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md). It fixes the topic around `ACS-CW-1`: advisory live field, post-Gate-1 ACS recommendation contract, `ACS-1` foundation as prerequisite, fail-closed behavior, and `TOPPROP-1` explicitly later.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Recommendation_Design_Consolidation.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Service Reuse Refinement -- [Standard] [open-items: yes]
+**For next agent:** The consolidated check-worthiness doc now explicitly says the new ACS recommendation module should be shaped as an internal reusable service for later Atomic Claim Extraction reuse, and it now makes the semantic mapping to ZHAW/ViClaim FCW/FNC/OPN explicit while keeping `unclear` as a FactHarbor control state and preserving the ACS-first rollout.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Service_Reuse_Refinement.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Lead Developer Review Disposition -- [Standard] [open-items: yes]
+**For next agent:** The consolidated design doc was tightened after Lead Developer review: field wording now says “coarse extraction-time signal” rather than “advisory only,” model-tier use of `context_refinement` now carries an escalation gate, inputs now explicitly require full `AtomicClaim` objects, automatic `max 3` vs interactive `max 5` is now justified, `unclear` promotion now uses an uncovered-dimension rule, and retry is now bounded. I did not rewrite the doc around `applyGate1Lite()` as an active path because repo search found no live call sites for that helper.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Lead_Developer_Review_Disposition.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Senior Architect LLM Expert Findings Disposition -- [Standard] [open-items: yes]
+**For next agent:** The consolidated design doc now hardens fail-closed behavior at the contract level: the recommendation module must enforce one assessment per candidate, a full ranked permutation of candidate ids, ordered-subset rules for `recommendedClaimIds`, and non-empty rationales before persistence or downstream use. Soft-refusal-shaped empty/partial outputs now explicitly count as recommendation failure and follow the bounded retry/fail-closed path.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Senior_Architect_LLM_Expert_Findings_Disposition.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Review Disposition Appendix -- [Standard] [open-items: no]
+**For next agent:** The consolidated design doc now includes a short in-document review-disposition appendix summarizing accepted findings, resulting contract changes, the intentional flexibility around empty `recommendedClaimIds`, and links to the full review-disposition handoffs.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Review_Disposition_Appendix.md
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Final Review Of ACS Check-Worthiness And TopLevelProposition Documentation -- [Standard] [open-items: yes]
+**For next agent:** The high-level sequencing is now coherent across the ACS spec, dominant-proposition plan, and backlog: ACS foundation first, Check-worthiness as the in-flow recommendation layer second, and `topLevelProposition` later. Two document-level gaps remain before implementation starts: the ACS spec lists a public `/retry` draft route but omits the matching Next.js proxy route in section 7.2, and the backlog now places the new medium-urgency `ACS-1` / `ACS-CW-1` rows below a low-urgency architecture row despite declaring urgency-sorted ordering.
+→ review references: [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md), [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md), [Backlog.md](/c:/DEV/FactHarbor/Docs/STATUS/Backlog.md)
+
+---
+### 2026-04-22 | Lead Architect | Codex (GPT-5) | Review Findings Disposition For ACS Docs -- [Standard] [open-items: no]
+**For next agent:** The two final-review findings are now closed. The ACS spec now mirrors the documented public retry endpoint with `app/api/fh/claim-selection-drafts/[id]/retry/route.ts` in section 7.2, and the backlog’s technical-debt section now places `ACS-1` / `ACS-CW-1` ahead of the low-urgency architecture rows so the file’s stated urgency ordering is true again.
+→ updated docs: [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md), [Backlog.md](/c:/DEV/FactHarbor/Docs/STATUS/Backlog.md)
