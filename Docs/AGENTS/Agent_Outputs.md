@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-22 | Senior Developer | GitHub Copilot (GPT-5.4) | Build Index Parser Regression Tests -- [Standard] [open-items: no]
+**For next agent:** [scripts/build-index.mjs](scripts/build-index.mjs) now exports `parseHandoff(...)` behind an `IS_MAIN` guard, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) locks in the role/topic fallback cases that previously dropped slug tokens like `captain` from `handoff-index.json`.
+→ Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_Build_Index_Parser_Regression_Tests.md
+
+---
 ### 2026-04-22 | Unassigned | Codex (GPT-5) | Report Review e95bd017 Non-Inspectable Hosted Job -- [Standard] [open-items: yes]
 **For next agent:** Exact-job inspection failed cleanly: hosted job `e95bd017e955433d897fab04342f45e1` serves the `/jobs/<id>` shell but both public JSON endpoints return `404 {"error":"Job not found"}`, local `apps/api/factharbor.db` has no matching row, and no local artifact was found. No substantive report-quality diagnosis is confirmed until the exact payload is made inspectable.
 → Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Report_Review_e95bd017_Non_Inspectable_Hosted_Job.md

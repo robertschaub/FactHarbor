@@ -20,9 +20,10 @@ import {
   mkdirSync, renameSync, unlinkSync, existsSync,
 } from 'node:fs';
 import { resolve, join, dirname, basename } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const THIS_FILE = fileURLToPath(import.meta.url);
+const __dirname = dirname(THIS_FILE);
 const REPO      = resolve(__dirname, '..');
 const INDEX_DIR = join(REPO, 'Docs/AGENTS/index');
 const HANDOFFS  = join(REPO, 'Docs/AGENTS/Handoffs');
@@ -34,8 +35,9 @@ const tier      = tierArg ? parseInt(tierArg.split('=')[1], 10) : null;
 
 const RUN1 = !tier || tier === 1;
 const RUN2 = !tier || tier === 2;
-
-mkdirSync(INDEX_DIR, { recursive: true });
+const IS_MAIN = process.argv[1]
+  ? pathToFileURL(resolve(process.argv[1])).href === import.meta.url
+  : false;
 
 const generatedAt = new Date().toISOString();
 
@@ -286,7 +288,7 @@ function extractLeadingRoleTokens(tokens) {
   return { roles, nextIndex };
 }
 
-function parseHandoff(file, content) {
+export function parseHandoff(file, content) {
   const nameNoExt = basename(file, '.md');
   const parts     = nameNoExt.split('_');
   const date      = parts[0]; // YYYY-MM-DD
@@ -395,20 +397,28 @@ function buildHandoffIndex() {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-if (RUN1) {
-  const manifest = buildStageManifestSafely();
-  writeAtomic(join(INDEX_DIR, 'stage-manifest.json'), manifest);
-  console.log(`stage-manifest.json  ${Object.keys(manifest.tasks).length} tasks`);
+function main() {
+  mkdirSync(INDEX_DIR, { recursive: true });
 
-  const stageMap = buildStageMapSafely();
-  writeAtomic(join(INDEX_DIR, 'stage-map.json'), stageMap);
-  console.log(`stage-map.json       ${Object.keys(stageMap.stages).length} stages`);
+  if (RUN1) {
+    const manifest = buildStageManifestSafely();
+    writeAtomic(join(INDEX_DIR, 'stage-manifest.json'), manifest);
+    console.log(`stage-manifest.json  ${Object.keys(manifest.tasks).length} tasks`);
+
+    const stageMap = buildStageMapSafely();
+    writeAtomic(join(INDEX_DIR, 'stage-map.json'), stageMap);
+    console.log(`stage-map.json       ${Object.keys(stageMap.stages).length} stages`);
+  }
+
+  if (RUN2) {
+    const handoffIndex = buildHandoffIndex();
+    writeAtomic(join(INDEX_DIR, 'handoff-index.json'), handoffIndex);
+    console.log(`handoff-index.json   ${handoffIndex.count} handoffs`);
+  }
+
+  console.log(`Done. generatedAt=${generatedAt}`);
 }
 
-if (RUN2) {
-  const handoffIndex = buildHandoffIndex();
-  writeAtomic(join(INDEX_DIR, 'handoff-index.json'), handoffIndex);
-  console.log(`handoff-index.json   ${handoffIndex.count} handoffs`);
+if (IS_MAIN) {
+  main();
 }
-
-console.log(`Done. generatedAt=${generatedAt}`);
