@@ -403,4 +403,75 @@
   .selectionHeader {
     flex-direction: column;
   }
+
+  .counterBadge {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    gap: 16px;
+  }
+
+  .heroCard,
+  .infoCard,
+  .selectionCard,
+  .otherCard {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .metaBadge {
+    max-width: 100%;
+    word-break: break-word;
+  }
+
+  .selectionTitle,
+  .otherTitle,
+  .infoTitle {
+    font-size: 0.98rem;
+  }
+
+  .selectionSubtitle,
+  .infoText,
+  .otherText,
+  .recommendationRationale,
+  .claimStatement,
+  .claimRationale {
+    font-size: 14px;
+  }
+
+  .claimCard {
+    padding: 12px;
+  }
+
+  .claimCardHeader {
+    gap: 10px;
+  }
+
+  .claimSignals {
+    gap: 6px;
+  }
+
+  .signalPill,
+  .recommendedBadge,
+  .triageBadge,
+  .claimId,
+  .claimRank {
+    font-size: 11px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton,
+  .dangerButton,
+  .linkButton {
+    width: 100%;
+    justify-content: center;
+  }
 }

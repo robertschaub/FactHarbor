@@ -45,6 +45,21 @@ type DraftResponse = {
 
 const POLL_INTERVAL_MS = 2000;
 
+function clampProgress(progress: number | null | undefined): number {
+  if (typeof progress !== "number" || !Number.isFinite(progress)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.trunc(progress)));
+}
+
+function normalizeDraftResponse(draft: DraftResponse): DraftResponse {
+  return {
+    ...draft,
+    progress: clampProgress(draft.progress),
+  };
+}
+
 function parseDraftState(draftStateJson: string | null): ClaimSelectionDraftState | null {
   if (!draftStateJson) return null;
   try {
@@ -118,7 +133,7 @@ function getStatusSummary(draft: DraftResponse, candidateCount: number, recommen
       if (draft.selectionMode === "automatic") {
         return "Automatic mode paused before job creation. Review the prepared claim set and continue manually if needed.";
       }
-      return "Review the prepared candidate claims, keep up to five, or replace them with a new input via Other.";
+      return "Review the prepared candidate claims, keep the most useful subset, or replace them with a new input via Other.";
     case "FAILED":
       return "The prepared Stage 1 snapshot was not accepted. You can retry preparation or cancel the draft.";
     case "CANCELLED":
@@ -197,7 +212,7 @@ export default function ClaimSelectionDraftPage() {
           return;
         }
 
-        const data = (await response.json()) as DraftResponse;
+        const data = normalizeDraftResponse((await response.json()) as DraftResponse);
         setDraft(data);
         setError(null);
         setIsLoading(false);
@@ -260,7 +275,7 @@ export default function ClaimSelectionDraftPage() {
       ? draftState.selectedClaimIds
       : draftState?.recommendedClaimIds ?? [])
       .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-      .slice(0, 5);
+      .slice(0, Math.min(5, Math.max(candidateClaims.length, 1)));
 
     setSelectedClaimIds(defaultSelection);
     setSelectionSeed(nextSeed);
@@ -270,7 +285,9 @@ export default function ClaimSelectionDraftPage() {
   const statusSummary = draft
     ? getStatusSummary(draft, candidateClaims.length, draftState?.recommendedClaimIds.length ?? 0)
     : "Loading draft state.";
-  const selectionLimitReached = selectedClaimIds.length >= 5;
+  const selectionCap = Math.min(5, Math.max(candidateClaims.length, 1));
+  const selectionLimitReached = selectedClaimIds.length >= selectionCap;
+  const displayProgress = clampProgress(draft?.progress);
 
   const handleToggleClaim = (claimId: string) => {
     if (useOtherMode) return;
@@ -279,8 +296,8 @@ export default function ClaimSelectionDraftPage() {
       if (current.includes(claimId)) {
         return current.filter((id) => id !== claimId);
       }
-      if (current.length >= 5) {
-        setError("You can select at most five claims.");
+      if (current.length >= selectionCap) {
+        setError(`You can select at most ${selectionCap} claim${selectionCap === 1 ? "" : "s"}.`);
         return current;
       }
       return [...current, claimId];
@@ -288,8 +305,8 @@ export default function ClaimSelectionDraftPage() {
   };
 
   const handleConfirm = async () => {
-    if (!draftId || selectedClaimIds.length < 1 || selectedClaimIds.length > 5) {
-      setError("Select between one and five claims.");
+    if (!draftId || selectedClaimIds.length < 1 || selectedClaimIds.length > selectionCap) {
+      setError(`Select between one and ${selectionCap} claim${selectionCap === 1 ? "" : "s"}.`);
       return;
     }
 
@@ -475,10 +492,10 @@ export default function ClaimSelectionDraftPage() {
 
       {draft?.status === "QUEUED" || draft?.status === "PREPARING" || (draft?.status === "COMPLETED" && !draft.finalJobId) ? (
         <div className={styles.infoCard}>
-          <h2 className={styles.infoTitle}>Preparation in progress</h2>
-          <p className={styles.infoText}>
-            Progress: {draft.progress ?? 0}%.
-            {draft.selectionMode === "automatic"
+            <h2 className={styles.infoTitle}>Preparation in progress</h2>
+            <p className={styles.infoText}>
+              Progress: {displayProgress}%.
+              {draft.selectionMode === "automatic"
               ? " If recommendation returns a non-empty subset, FactHarbor will create the job automatically."
               : " You will be able to review the prepared claim set once Stage 1 and recommendation finish."}
           </p>
@@ -547,11 +564,11 @@ export default function ClaimSelectionDraftPage() {
               <div className={styles.selectionHeaderText}>
                 <h2 className={styles.selectionTitle}>Prepared candidate claims</h2>
                 <p className={styles.selectionSubtitle}>
-                  Keep one to five claims. Recommendation order is already applied below, and
+                  Keep one to {selectionCap} claim{selectionCap === 1 ? "" : "s"}. Recommendation order is already applied below, and
                   auto-recommended claims are preselected.
                 </p>
               </div>
-              <div className={styles.counterBadge}>{selectedClaimIds.length} / 5 selected</div>
+              <div className={styles.counterBadge}>{selectedClaimIds.length} / {selectionCap} selected</div>
             </div>
 
             {draftState?.recommendationRationale && (
@@ -579,7 +596,13 @@ export default function ClaimSelectionDraftPage() {
                 type="button"
                 className={styles.primaryButton}
                 onClick={handleConfirm}
-                disabled={isConfirming || useOtherMode || selectedClaimIds.length < 1 || candidateClaims.length === 0}
+                disabled={
+                  isConfirming ||
+                  useOtherMode ||
+                  selectedClaimIds.length < 1 ||
+                  selectedClaimIds.length > selectionCap ||
+                  candidateClaims.length === 0
+                }
               >
                 {isConfirming ? "Creating job..." : "Continue with selected claims"}
               </button>
@@ -596,7 +619,7 @@ export default function ClaimSelectionDraftPage() {
                         ? draftState.selectedClaimIds
                         : draftState?.recommendedClaimIds ?? [])
                         .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-                        .slice(0, 5);
+                        .slice(0, selectionCap);
                       setSelectedClaimIds(defaultSelection);
                     }
                     return nextValue;
