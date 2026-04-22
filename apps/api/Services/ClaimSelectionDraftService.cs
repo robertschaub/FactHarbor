@@ -229,6 +229,8 @@ public sealed class ClaimSelectionDraftService
         }
         if (IsTerminalDraftState(draft))
             return;
+        if (draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
+            return;
 
         draft.Status = status;
         if (progress.HasValue) draft.Progress = progress.Value;
@@ -245,7 +247,7 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
             return;
         }
-        if (IsTerminalDraftState(draft))
+        if (IsTerminalDraftState(draft) || draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
         draft.DraftStateJson = draftStateJson;
