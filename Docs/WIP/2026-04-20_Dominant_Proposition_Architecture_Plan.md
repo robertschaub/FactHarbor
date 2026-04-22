@@ -6,6 +6,7 @@
 - Scope: Stage 1 structure, Stage 5 aggregation, report/UI shape, rollout controls
 - Goal: introduce an optional parent/top-level proposition without damaging the current flat-claim pipeline
 - Rollout posture: detection first, verdict semantics second
+- External sequencing note: this track follows ACS v1 and its Check-worthiness recommendation layer. ACS v1 is intentionally defined over the current flat `CBClaimUnderstanding.atomicClaims` seam and explicitly excludes `topLevelProposition`; do not reopen ACS semantics by introducing the parent early.
 
 ## Consolidated Solution
 
@@ -77,6 +78,7 @@ Do now:
 - Add post-retry Stage 1 structural validation that every `componentClaimId` resolves to a current `atomicClaims` entry and `componentClaimIds.length >= 2`; otherwise null out `topLevelProposition`
 - Add final Stage 1 semantic re-authorization of `topLevelProposition` against the final accepted claim set during the same end-state LLM validation pass that refreshes claim-contract fidelity after Gate 1 changes
 - If the final accepted child set survives structurally but the parent is no longer semantically justified relative to that final set, null out `topLevelProposition`
+- Keep ACS semantics unchanged: claim selection and any Check-worthiness recommendation continue to operate on the flat final `atomicClaims` set only
 - Keep Stages 2-4 unchanged
 - Keep child-claim research, clustering, and per-claim verdicting unchanged
 - Keep current report internals child-claim based
@@ -266,6 +268,11 @@ Recommended rollback behavior:
 
 ## Recommended Implementation Order
 
+Precondition:
+
+- finish ACS v1 and its Check-worthiness recommendation layer first
+- treat `topLevelProposition` as the next Stage-1 contract extension after that work, not as an input to ACS v1
+
 1. Add `topLevelProposition` to types and Stage 1 schemas
 2. Update Stage 1 prompts so the parent is explicit, outside `atomicClaims`, distinguishable from `articleThesis`, and blocked on alternative-dimension cases
 3. Add Stage 1 output validation that nulls invalid `componentClaimIds` after retries settle
@@ -276,6 +283,11 @@ Recommended rollback behavior:
 8. Define the parent-aware `AdjudicationPath` / `OverallAssessment` extension contract before writing Stage 5 code
 9. Only after observing detection quality, add the Stage 5 parent-aware path
 10. Update report/UI rendering
+
+Sequence guard:
+
+- do not couple parent detection to ACS chooser ordering, `recommendedClaimIds`, or `selectedClaimIds`
+- parent structure is a later analysis contract, not part of the ACS v1 candidate model
 
 Tests to add:
 

@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-21
-**Status**: Consolidation #12 complete. 48 files archived. 43 active markdown docs remain.
+**Last Updated**: 2026-04-22
+**Status**: Consolidation #12 complete. 48 files archived. 44 active markdown docs remain.
 
 ---
 
@@ -73,11 +73,13 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Future Plans / Design Proposals
 
 ### Quality / analyzer
+- [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) - implementation-ready v1 spec for pre-job AtomicClaim selection over the current Stage 1 final claim set
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md) — Stage 4.5 SR calibration. Feature-flagged/off.
 - [LLM_Triangulation_Assessment_Plan_2026-03-17.md](LLM_Triangulation_Assessment_Plan_2026-03-17.md) — LLM-assessed aggregation weight factors (v4 ready for implementation approval)
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — long-run retrieval-first roadmap
 - [2026-04-04_Source_Provenance_Tracking_Design.md](2026-04-04_Source_Provenance_Tracking_Design.md) — source provenance extraction design (v2, post-GPT review). PARKED.
 - [2026-04-10_Claim_Clarification_Gate_Design.md](2026-04-10_Claim_Clarification_Gate_Design.md) — claim clarification gate design (out of scope for current track)
+
 
 ### Search / provider integration
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — Wikipedia shipped; deeper Semantic Scholar / Fact Check integration future scope
