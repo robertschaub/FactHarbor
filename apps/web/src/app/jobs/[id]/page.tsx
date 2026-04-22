@@ -946,7 +946,7 @@ export default function JobPage() {
     });
 
     return () => { alive = false; };
-  }, [jobId, isVisible]);
+  }, [jobId, isVisible, job?.status]);
 
   useEffect(() => {
     if (!jobId || !isVisible || !job?.status) return;

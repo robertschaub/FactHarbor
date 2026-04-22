@@ -182,6 +182,11 @@ async function apiPutInternal(apiBase: string, adminKey: string | null, path: st
   if (!res.ok) throw new Error(`API PUT failed ${res.status}: ${await res.text()}`);
 }
 
+export function normalizeRunningProgress(progress?: number): number | undefined {
+  if (typeof progress !== "number") return progress;
+  return progress >= 100 ? 99 : progress;
+}
+
 async function runJobBackground(jobId: string) {
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
@@ -192,7 +197,7 @@ async function runJobBackground(jobId: string) {
   const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
     await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
       status: "RUNNING",
-      progress,
+      progress: normalizeRunningProgress(progress),
       level,
       message,
     });
