@@ -147,6 +147,9 @@ scripts/.deploy.env
 # Local test run output files
 run_*.json
 
+# Local SR scratch scripts (investigation/replay one-offs)
+apps/web/scripts/tmp-sr-*
+
 /.vscode/settings.json
 /apps/web/config.db.backup-20260326-092015
 .index-rebuild-stamp-tier*
