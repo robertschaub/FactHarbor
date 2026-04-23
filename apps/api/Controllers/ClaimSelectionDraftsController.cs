@@ -15,6 +15,7 @@ public sealed record CreateDraftRequest(
     string? inviteCode = null);
 
 public sealed record ConfirmDraftRequest(string[] selectedClaimIds);
+public sealed record UpdateSelectionStateRequest(string[] selectedClaimIds, DateTimeOffset? interactionUtc = null);
 public sealed record RestartDraftRequest(string inputType, string inputValue);
 
 [ApiController]
@@ -82,6 +83,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             draftId = draft.DraftId,
             status = draft.Status,
             progress = draft.Progress,
+            isHidden = draft.IsHidden,
             lastEventMessage = draft.LastEventMessage,
             selectionMode = draft.SelectionMode,
             originalInputType = draft.OriginalInputType,
@@ -159,6 +161,29 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         }
     }
 
+    [HttpPost("{draftId}/selection-state")]
+    [EnableRateLimiting("AnalyzePerIp")]
+    public async Task<IActionResult> UpdateSelectionState(string draftId, [FromBody] UpdateSelectionStateRequest req)
+    {
+        var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
+        if (authError is not null) return authError;
+
+        var interactionUtc = req.interactionUtc?.UtcDateTime ?? DateTime.UtcNow;
+        var (draft, error, statusCode) = await _drafts.UpdateSelectionStateAsync(
+            draftId,
+            req.selectedClaimIds ?? Array.Empty<string>(),
+            interactionUtc);
+        if (draft is null)
+            return StatusCode(statusCode, new { error });
+
+        return Ok(new
+        {
+            draftId = draft.DraftId,
+            status = draft.Status,
+            finalJobId = draft.FinalJobId,
+        });
+    }
+
     [HttpPost("{draftId}/restart")]
     [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> Restart(string draftId, [FromBody] RestartDraftRequest req)
@@ -186,6 +211,28 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             return StatusCode(statusCode, new { error });
 
         return Ok(new { draftId = draft.DraftId, status = draft.Status });
+    }
+
+    [HttpPost("{draftId}/hide")]
+    public async Task<IActionResult> HideDraft(string draftId)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var draft = await _drafts.SetHiddenAsync(draftId, true);
+        if (draft is null) return NotFound(new { error = "Draft not found" });
+        return Ok(new { ok = true, isHidden = draft.IsHidden });
+    }
+
+    [HttpPost("{draftId}/unhide")]
+    public async Task<IActionResult> UnhideDraft(string draftId)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var draft = await _drafts.SetHiddenAsync(draftId, false);
+        if (draft is null) return NotFound(new { error = "Draft not found" });
+        return Ok(new { ok = true, isHidden = draft.IsHidden });
     }
 
     [HttpPost("{draftId}/retry")]

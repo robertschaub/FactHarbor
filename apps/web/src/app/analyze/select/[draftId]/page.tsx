@@ -16,18 +16,23 @@ import {
   clearStoredDraftAccessToken,
   getSessionStorageItemSafely,
 } from "@/lib/claim-selection-client";
+import { InputBanner } from "../../../jobs/[id]/components/InputBanner";
 import {
+  getClaimSelectionIdleRemainingMs,
   getClaimSelectionCap,
+  isValidClaimSelection,
   normalizeClaimSelectionCap,
+  normalizeClaimSelectionIdleAutoProceedMs,
+  resolveIdleAutoProceedSelection,
   shouldAutoContinueWithoutSelection,
   shouldRequireClaimSelectionUi,
 } from "@/lib/claim-selection-flow";
 import commonStyles from "../../../../styles/common.module.css";
+import jobStyles from "../../../jobs/[id]/page.module.css";
 import { ClaimSelectionPanel } from "./ClaimSelectionPanel";
 import {
   formatClaimCount,
   getDraftPageTitle,
-  getStatusHeadline,
   getStatusSummary,
   type DraftStatus,
 } from "./page-helpers";
@@ -37,6 +42,7 @@ type DraftResponse = {
   draftId: string;
   status: DraftStatus;
   progress: number;
+  isHidden: boolean;
   lastEventMessage: string | null;
   selectionMode: "interactive" | "automatic";
   originalInputType: string | null;
@@ -53,6 +59,7 @@ type DraftResponse = {
 };
 
 const POLL_INTERVAL_MS = 2000;
+const COUNTDOWN_TICK_INTERVAL_MS = 1000;
 
 function clampProgress(progress: number | null | undefined): number {
   if (typeof progress !== "number" || !Number.isFinite(progress)) {
@@ -119,14 +126,26 @@ function formatDateTime(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-GB", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: false,
   }).format(parsed);
+}
+
+function formatCountdownDuration(durationMs: number | null | undefined): string | null {
+  if (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0) {
+    return null;
+  }
+
+  const totalSeconds = Math.ceil(durationMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 function orderClaims(claims: AtomicClaim[], rankedClaimIds: string[]): AtomicClaim[] {
@@ -170,10 +189,16 @@ export default function ClaimSelectionDraftPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isTogglingHidden, setIsTogglingHidden] = useState(false);
   const [showRawJson, setShowRawJson] = useState(false);
   const [autoContinueAttemptSeed, setAutoContinueAttemptSeed] = useState<string | null>(null);
   const [autoContinueFailed, setAutoContinueFailed] = useState(false);
+  const [lastSelectionInteractionAtMs, setLastSelectionInteractionAtMs] = useState<number | null>(null);
+  const [lastValidSelectedClaimIds, setLastValidSelectedClaimIds] = useState<string[]>([]);
+  const [manualIdleAutoProceedAttemptSeed, setManualIdleAutoProceedAttemptSeed] = useState<string | null>(null);
+  const [manualIdleInitializationSeed, setManualIdleInitializationSeed] = useState<string | null>(null);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
     setAdminKey(getSessionStorageItemSafely("fh_admin_key"));
@@ -268,6 +293,20 @@ export default function ClaimSelectionDraftPage() {
   const selectionThreshold = normalizeClaimSelectionCap(draftState?.selectionCap);
   const selectionCap = getClaimSelectionCap(candidateClaims.length, selectionThreshold);
   const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold);
+  const idleAutoProceedMs =
+    typeof draftState?.selectionIdleAutoProceedMs === "number"
+      ? normalizeClaimSelectionIdleAutoProceedMs(draftState.selectionIdleAutoProceedMs)
+      : 0;
+  const persistedLastSelectionInteractionAtMs = useMemo(() => {
+    const value = draftState?.lastSelectionInteractionUtc;
+    if (!value) return null;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [draftState?.lastSelectionInteractionUtc]);
+  const effectiveLastSelectionInteractionAtMs =
+    lastSelectionInteractionAtMs ?? persistedLastSelectionInteractionAtMs;
+  const manualIdleAutoProceedEnabled =
+    draft?.status === "AWAITING_CLAIM_SELECTION" && requiresSelectionUi && idleAutoProceedMs > 0;
   const autoContinueClaimIds = useMemo(
     () =>
       shouldAutoContinueWithoutSelection(candidateClaims.length, selectionThreshold)
@@ -275,6 +314,19 @@ export default function ClaimSelectionDraftPage() {
         : [],
     [candidateClaims, selectionCap, selectionThreshold],
   );
+  const persistedSelectedClaimIds = draftState?.selectedClaimIds ?? [];
+  const idleAutoProceedClaimIds = useMemo(
+    () => resolveIdleAutoProceedSelection(selectedClaimIds, lastValidSelectedClaimIds, selectionCap),
+    [lastValidSelectedClaimIds, selectedClaimIds, selectionCap],
+  );
+  const idleAutoProceedRemainingMs = manualIdleAutoProceedEnabled
+    ? getClaimSelectionIdleRemainingMs(effectiveLastSelectionInteractionAtMs, idleAutoProceedMs, nowMs)
+    : null;
+  const idleAutoProceedCountdownLabel = formatCountdownDuration(idleAutoProceedRemainingMs);
+  const hasPersistedValidSelection = isValidClaimSelection(persistedSelectedClaimIds, selectionCap);
+  const manualIdleAutoProceedArmed =
+    manualIdleAutoProceedEnabled &&
+    (hasPersistedValidSelection || isValidClaimSelection(lastValidSelectedClaimIds, selectionCap));
 
   useEffect(() => {
     if (!draft || draft.status !== "AWAITING_CLAIM_SELECTION") {
@@ -282,9 +334,11 @@ export default function ClaimSelectionDraftPage() {
     }
 
     const nextSeed = [
-      draft.updatedUtc,
-      draftState?.selectedClaimIds.join("|") ?? "",
-      draftState?.recommendedClaimIds.join("|") ?? "",
+      draft.status,
+      candidateClaims.map((claim) => claim.id).join("|"),
+      draftState?.selectedClaimIds?.join("|") ?? "",
+      draftState?.recommendedClaimIds?.join("|") ?? "",
+      draftState?.lastSelectionInteractionUtc ?? "",
     ].join("::");
 
     if (selectionSeed === nextSeed) {
@@ -302,8 +356,85 @@ export default function ClaimSelectionDraftPage() {
           .slice(0, selectionCap);
 
     setSelectedClaimIds(defaultSelection);
+    setLastValidSelectedClaimIds(
+      isValidClaimSelection(draftState?.selectedClaimIds ?? [], selectionCap)
+        ? [...(draftState?.selectedClaimIds ?? [])]
+        : isValidClaimSelection(defaultSelection, selectionCap)
+          ? defaultSelection
+          : [],
+    );
+    setLastSelectionInteractionAtMs(persistedLastSelectionInteractionAtMs);
     setSelectionSeed(nextSeed);
-  }, [candidateClaims, draft, draftState, selectionCap, selectionSeed, selectionThreshold]);
+  }, [
+    candidateClaims,
+    draft,
+    draftState,
+    persistedLastSelectionInteractionAtMs,
+    selectionCap,
+    selectionSeed,
+    selectionThreshold,
+  ]);
+
+  useEffect(() => {
+    if (!manualIdleAutoProceedEnabled || effectiveLastSelectionInteractionAtMs === null) {
+      return;
+    }
+
+    setNowMs(Date.now());
+    const intervalId = setInterval(() => {
+      setNowMs(Date.now());
+    }, COUNTDOWN_TICK_INTERVAL_MS);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [effectiveLastSelectionInteractionAtMs, manualIdleAutoProceedEnabled]);
+
+  useEffect(() => {
+    if (!draftId || draft?.status !== "AWAITING_CLAIM_SELECTION" || !requiresSelectionUi) {
+      return;
+    }
+    if (idleAutoProceedMs <= 0 || persistedLastSelectionInteractionAtMs !== null) {
+      return;
+    }
+    if (!isValidClaimSelection(selectedClaimIds, selectionCap)) {
+      return;
+    }
+
+    const nextSeed = [
+      draft.updatedUtc,
+      selectedClaimIds.join("|"),
+      selectionCap,
+    ].join("::");
+    if (manualIdleInitializationSeed === nextSeed) {
+      return;
+    }
+
+    const interactionAtMs = Date.now();
+    setManualIdleInitializationSeed(nextSeed);
+    setLastSelectionInteractionAtMs(interactionAtMs);
+
+    void persistSelectionInteraction(selectedClaimIds, interactionAtMs).catch((interactionError: any) => {
+      setManualIdleInitializationSeed(null);
+      setError(
+        interactionError?.message
+          ? `Failed to start inactivity auto-continue: ${interactionError.message}`
+          : "Failed to start inactivity auto-continue",
+      );
+    });
+  }, [
+    adminKey,
+    draft?.status,
+    draft?.updatedUtc,
+    draftId,
+    idleAutoProceedMs,
+    manualIdleInitializationSeed,
+    persistedLastSelectionInteractionAtMs,
+    requiresSelectionUi,
+    router,
+    selectedClaimIds,
+    selectionCap,
+  ]);
 
   const confirmDraft = async (claimIds: string[]) => {
     const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/confirm`, {
@@ -326,6 +457,32 @@ export default function ClaimSelectionDraftPage() {
 
     clearStoredDraftAccessToken(draftId);
     router.replace(`/jobs/${data.finalJobId}`);
+  };
+
+  const persistSelectionInteraction = async (claimIds: string[], interactionAtMs: number) => {
+    if (!draftId) return;
+
+    const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/selection-state`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...buildDraftAccessHeaders(draftId, adminKey),
+      },
+      body: JSON.stringify({
+        selectedClaimIds: claimIds,
+        interactionUtc: new Date(interactionAtMs).toISOString(),
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.error || `Failed to update selection activity (${response.status})`);
+    }
+
+    if (typeof data?.finalJobId === "string" && data.finalJobId) {
+      clearStoredDraftAccessToken(draftId);
+      router.replace(`/jobs/${data.finalJobId}`);
+    }
   };
 
   useEffect(() => {
@@ -381,8 +538,71 @@ export default function ClaimSelectionDraftPage() {
     router,
   ]);
 
+  useEffect(() => {
+    if (!draftId || draft?.status !== "AWAITING_CLAIM_SELECTION" || !requiresSelectionUi) {
+      return;
+    }
+    if (!manualIdleAutoProceedArmed || draft.finalJobId || isConfirming) {
+      return;
+    }
+    if (idleAutoProceedRemainingMs === null || idleAutoProceedRemainingMs > 0) {
+      return;
+    }
+    if (idleAutoProceedClaimIds.length === 0) {
+      return;
+    }
+
+    const nextSeed = [
+      draft.updatedUtc,
+      effectiveLastSelectionInteractionAtMs ?? "none",
+      idleAutoProceedClaimIds.join("|"),
+    ].join("::");
+    if (manualIdleAutoProceedAttemptSeed === nextSeed) {
+      return;
+    }
+
+    let cancelled = false;
+    setManualIdleAutoProceedAttemptSeed(nextSeed);
+    setIsConfirming(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        await confirmDraft(idleAutoProceedClaimIds);
+      } catch (confirmError: any) {
+        if (cancelled) return;
+        setError(
+          confirmError?.message
+            ? `Automatic continuation failed: ${confirmError.message}`
+            : "Automatic continuation failed",
+        );
+      } finally {
+        if (!cancelled) {
+          setIsConfirming(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    adminKey,
+    draft?.finalJobId,
+    draft?.status,
+    draft?.updatedUtc,
+    draftId,
+    effectiveLastSelectionInteractionAtMs,
+    idleAutoProceedClaimIds,
+    idleAutoProceedRemainingMs,
+    isConfirming,
+    manualIdleAutoProceedAttemptSeed,
+    manualIdleAutoProceedArmed,
+    requiresSelectionUi,
+    router,
+  ]);
+
   const pageTitle = draft ? getDraftPageTitle(draft.status, requiresSelectionUi) : "Preparing Analysis";
-  const statusHeadline = draft ? getStatusHeadline(draft.status, requiresSelectionUi) : "Loading session";
   const statusSummary = draft
     ? getStatusSummary(
       draft.status,
@@ -402,6 +622,7 @@ export default function ClaimSelectionDraftPage() {
       draftId: draft.draftId,
       status: draft.status,
       progress: draft.progress,
+      isHidden: draft.isHidden,
       lastEventMessage: draft.lastEventMessage,
       selectionMode: draft.selectionMode,
       originalInputType: draft.originalInputType,
@@ -422,22 +643,57 @@ export default function ClaimSelectionDraftPage() {
   const formattedCreatedAt = formatDateTime(draft?.createdUtc);
   const formattedUpdatedAt = formatDateTime(draft?.updatedUtc);
   const formattedExpiresAt = formatDateTime(draft?.expiresUtc);
+  const canCancelSession = draft
+    ? !["CANCELLED", "COMPLETED", "EXPIRED"].includes(draft.status)
+    : false;
+  const canRetryPreparation = draft?.status === "FAILED";
+  const canToggleHidden = Boolean(draft && adminKey);
+  const headerCardStatusClass =
+    draft?.status === "FAILED" || draft?.status === "EXPIRED"
+      ? jobStyles.statusFailed
+      : draft?.status === "COMPLETED"
+        ? jobStyles.statusSuccess
+        : jobStyles.statusWarning;
 
   const handleToggleClaim = (claimId: string) => {
     setError(null);
+    const interactionAtMs = Date.now();
+    setLastSelectionInteractionAtMs(interactionAtMs);
     setSelectedClaimIds((current) => {
+      let nextSelection: string[];
       if (current.includes(claimId)) {
-        return current.filter((id) => id !== claimId);
-      }
-      if (current.length >= selectionCap) {
+        nextSelection = current.filter((id) => id !== claimId);
+      } else if (current.length >= selectionCap) {
+        void persistSelectionInteraction(current, interactionAtMs).catch((interactionError: any) => {
+          setError(
+            interactionError?.message
+              ? `Failed to sync selection activity: ${interactionError.message}`
+              : "Failed to sync selection activity",
+          );
+        });
         setError(
           selectionCap === 1
             ? "You can select exactly one claim."
             : `You can select at most ${selectionCap} claims.`,
         );
         return current;
+      } else {
+        nextSelection = [...current, claimId];
       }
-      return [...current, claimId];
+
+      if (isValidClaimSelection(nextSelection, selectionCap)) {
+        setLastValidSelectedClaimIds(nextSelection);
+      }
+
+      void persistSelectionInteraction(nextSelection, interactionAtMs).catch((interactionError: any) => {
+        setError(
+          interactionError?.message
+            ? `Failed to sync selection activity: ${interactionError.message}`
+            : "Failed to sync selection activity",
+        );
+      });
+
+      return nextSelection;
     });
   };
 
@@ -512,87 +768,136 @@ export default function ClaimSelectionDraftPage() {
     }
   };
 
+  const handleToggleHidden = async () => {
+    if (!draftId || !draft || !adminKey) return;
+
+    setIsTogglingHidden(true);
+    setError(null);
+    try {
+      const endpoint = draft.isHidden ? "unhide" : "hide";
+      const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/${endpoint}`, {
+        method: "POST",
+        headers: buildDraftAccessHeaders(draftId, adminKey),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || `Failed to ${endpoint} session (${response.status})`);
+      }
+
+      setDraft((current) => current ? { ...current, isHidden: Boolean(data?.isHidden) } : current);
+    } catch (toggleError: any) {
+      setError(toggleError?.message ?? "Failed to update session visibility");
+    } finally {
+      setIsTogglingHidden(false);
+    }
+  };
+
   return (
     <div className={`${commonStyles.container} ${styles.page}`}>
-      {draft && (
-        <div className={styles.toolbar}>
-          <Link href="/analyze" className={styles.toolbarButton}>
-            ← Back
-          </Link>
-          <button
-            type="button"
-            className={styles.toolbarButton}
-            onClick={() => setShowRawJson((current) => !current)}
-          >
-            {showRawJson ? "Hide JSON" : "View JSON"}
-          </button>
-        </div>
-      )}
-
-      <div className={styles.heroCard}>
-        <h1 className={commonStyles.title}>{pageTitle}</h1>
-        <p className={commonStyles.subtitle}>{statusHeadline}</p>
-        <p className={styles.infoText}>{statusSummary}</p>
-        {draft && (
-          <div className={styles.metaGrid}>
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Session</span>
-              <div className={styles.metaValueRow}>
-                <span className={styles.metaValueCode}>{draft.draftId}</span>
-                <CopyButton text={draft.draftId} title="Copy session id" />
-              </div>
-            </div>
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Created</span>
-              <span className={styles.metaValue}>{formattedCreatedAt ?? "Unknown"}</span>
-            </div>
-            <div className={styles.metaCard}>
-              <span className={styles.metaLabel}>Mode</span>
-              <span className={styles.metaValue}>
-                {draft.selectionMode === "automatic" ? "Automatic" : "Interactive"}
-              </span>
-            </div>
-          </div>
-        )}
-        <div className={styles.heroMeta}>
-          {draft && (
-            <>
-          <span className={styles.metaBadge}>Session {draft.draftId}</span>
-              <span
-                className={`${styles.metaBadge} ${
-                  draft.status === "FAILED" || draft.status === "EXPIRED"
-                    ? styles.statusBadgeError
-                    : draft.status === "QUEUED" || draft.status === "PREPARING"
-                      ? styles.statusBadgeWaiting
-                      : styles.statusBadge
-                }`}
-              >
-                {draft.status}
-              </span>
-              {draft.restartedViaOther ? (
-                <span className={styles.metaBadge}>Restarted via other input</span>
-              ) : null}
-            </>
-          )}
-        </div>
+      <div className={jobStyles.pageHeader}>
+        <h1 className={`${commonStyles.title} ${jobStyles.pageTitle}`}>{pageTitle}</h1>
       </div>
 
-      {error && <div className={commonStyles.errorBox}>{error}</div>}
-
-      {draft && activeInputValue ? (
-        <div className={styles.inputCard}>
-          <div className={styles.inputCardHeader}>
-            <div>
-              <div className={styles.inputLabel}>Analysis input</div>
-              <div className={styles.inputSubLabel}>
-                {draft.activeInputType ?? draft.originalInputType ?? "text"}
-              </div>
-            </div>
-            <CopyButton text={activeInputValue} title="Copy analysis input" />
+      <div className={jobStyles.tabsContainer}>
+        <Link href="/analyze" className={jobStyles.backToList} aria-label="Back to analyze" title="Back to analyze">
+          <span className={jobStyles.backToListIcon} aria-hidden="true">←</span>
+        </Link>
+        <button
+          type="button"
+          className={`${jobStyles.tab} ${showRawJson ? jobStyles.tabActive : ""}`}
+          onClick={() => setShowRawJson((current) => !current)}
+        >
+          🔧 JSON
+        </button>
+        {draft && (
+          <div className={jobStyles.exportButtons}>
+            {canToggleHidden ? (
+              <button
+                type="button"
+                className={`${jobStyles.tab} ${jobStyles.hideTab}`}
+                onClick={handleToggleHidden}
+                disabled={isTogglingHidden}
+                title={
+                  draft.isHidden
+                    ? (isTogglingHidden ? "Unhiding" : "Unhide session")
+                    : (isTogglingHidden ? "Hiding" : "Hide session")
+                }
+                aria-label={
+                  draft.isHidden
+                    ? (isTogglingHidden ? "Unhiding" : "Unhide session")
+                    : (isTogglingHidden ? "Hiding" : "Hide session")
+                }
+              >
+                {isTogglingHidden ? "⏳" : draft.isHidden ? "👁" : "🙈"}
+              </button>
+            ) : null}
+            {canRetryPreparation ? (
+              <button
+                type="button"
+                className={`${jobStyles.tab} ${jobStyles.hideTab}`}
+                onClick={handleRetry}
+                disabled={isRetrying}
+                title={isRetrying ? "Retrying" : "Retry preparation"}
+                aria-label={isRetrying ? "Retrying" : "Retry preparation"}
+              >
+                {isRetrying ? "⏳" : "↻"}
+              </button>
+            ) : null}
+            {canCancelSession ? (
+              <button
+                type="button"
+                className={`${jobStyles.tab} ${jobStyles.deleteTab}`}
+                onClick={handleCancel}
+                disabled={isCancelling}
+                title={isCancelling ? "Cancelling" : "Cancel session"}
+                aria-label={isCancelling ? "Cancelling" : "Cancel session"}
+              >
+                {isCancelling ? "⏳" : "🗑"}
+              </button>
+            ) : null}
           </div>
-          <div className={styles.inputText}>{activeInputValue}</div>
+        )}
+      </div>
+
+      {draft ? (
+        <div className={`${jobStyles.jobInfoCard} ${jobStyles.reportSurfaceCard} ${jobStyles.reportMetaCard}`}>
+          <div className={jobStyles.metaInlineRow}>
+            <span className={jobStyles.metaInlineItem}>
+              <b>ID:</b>{" "}
+              <code title={draft.draftId}>
+                {draft.draftId.length > 10 ? `${draft.draftId.slice(0, 10)}...` : draft.draftId}
+              </code>
+              <CopyButton text={draft.draftId} title="Copy session id" className={jobStyles.metaCopyButton} />
+            </span>
+            <span className={jobStyles.metaInlineItem}>
+              <b>Created:</b> <code>{formattedCreatedAt ?? "Unknown"}</code>
+            </span>
+            <span className={jobStyles.metaInlineItem}>
+              <b>Expires:</b> <code>{formattedExpiresAt ?? "Unknown"}</code>
+            </span>
+          </div>
+          <div className={styles.headerStatusRow}>
+            <b>Status:</b>{" "}
+            <code className={headerCardStatusClass}>{draft.status}</code> ({displayProgress}%)
+            {draft.isHidden ? <span className={styles.headerStatusNote}>Hidden from default lists</span> : null}
+            {draft.restartedViaOther ? <span className={styles.headerStatusNote}>Restarted via other input</span> : null}
+          </div>
+          <p className={styles.headerSummary}>{statusSummary}</p>
+          {activeInputValue ? (
+            <div className={styles.headerInputWrap}>
+              <InputBanner
+                inputType={draft.activeInputType ?? draft.originalInputType ?? "text"}
+                inputValue={activeInputValue}
+                textColor="#1565c0"
+                textBackgroundColor="#e3f2fd"
+                textBorderColor="#90caf9"
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
+
+      {error && <div className={commonStyles.errorBox}>{error}</div>}
 
       {isLoading && !draft ? (
         <div className={styles.infoCard}>
@@ -623,12 +928,6 @@ export default function ClaimSelectionDraftPage() {
             <div className={styles.summaryLabel}>Expires</div>
             <div className={styles.summaryValueSmall}>{formattedExpiresAt ?? "Unknown"}</div>
           </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Selection mode</div>
-            <div className={styles.summaryValueSmall}>
-              {draft.selectionMode === "automatic" ? "Automatic" : "Interactive"}
-            </div>
-          </div>
         </div>
       )}
 
@@ -654,16 +953,6 @@ export default function ClaimSelectionDraftPage() {
           {livePreparationMessage ? (
             <p className={styles.infoText}>Current step: {livePreparationMessage}</p>
           ) : null}
-          <div className={styles.actions} style={{ marginTop: 16 }}>
-            <button
-              type="button"
-              className={styles.dangerButton}
-              onClick={handleCancel}
-              disabled={isCancelling}
-            >
-              {isCancelling ? "Cancelling..." : "Cancel session"}
-            </button>
-          </div>
         </div>
       ) : null}
 
@@ -684,14 +973,6 @@ export default function ClaimSelectionDraftPage() {
               disabled={isRetrying}
             >
               {isRetrying ? "Retrying..." : "Retry preparation"}
-            </button>
-            <button
-              type="button"
-              className={styles.dangerButton}
-              onClick={handleCancel}
-              disabled={isCancelling}
-            >
-              {isCancelling ? "Cancelling..." : "Cancel session"}
             </button>
           </div>
         </div>
@@ -744,6 +1025,16 @@ export default function ClaimSelectionDraftPage() {
             {preparationTimingSummary ? (
               <p className={styles.infoText}>Preparation summary: {preparationTimingSummary}</p>
             ) : null}
+            {manualIdleAutoProceedArmed && idleAutoProceedCountdownLabel ? (
+              <p className={styles.idleAutoProceedNote}>
+                Auto-continue in <strong>{idleAutoProceedCountdownLabel}</strong> without checkbox changes.
+                FactHarbor will use the last valid saved selection even if the browser is closed.
+              </p>
+            ) : manualIdleAutoProceedEnabled ? (
+              <p className={styles.idleAutoProceedNote}>
+                Inactivity auto-continue is waiting for a valid saved selection. Select at least one claim to arm it.
+              </p>
+            ) : null}
 
             {candidateClaims.length > 0 && requiresSelectionUi ? (
               <ClaimSelectionPanel
@@ -792,14 +1083,6 @@ export default function ClaimSelectionDraftPage() {
                   Creating job...
                 </button>
               ) : null}
-              <button
-                type="button"
-                className={styles.dangerButton}
-                onClick={handleCancel}
-                disabled={isCancelling}
-              >
-                {isCancelling ? "Cancelling..." : "Cancel session"}
-              </button>
             </div>
           </div>
         </div>

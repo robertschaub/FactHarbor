@@ -14,6 +14,7 @@ import type { LLMProviderType } from "./analyzer/types";
 import {
   CLAIM_SELECTION_ABSOLUTE_MAX,
   CLAIM_SELECTION_DEFAULT_CAP,
+  CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
 } from "./claim-selection-flow";
 
 // ============================================================================
@@ -494,6 +495,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum specificity score for Gate 1 pass in ClaimBoundary pipeline (default: 0.6)"),
   claimSelectionCap: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
     .describe("Maximum claims ACS may recommend or continue, and the threshold where manual selection begins (default: 5)."),
+  claimSelectionIdleAutoProceedMs: z.number().int().min(0).max(3600000).optional()
+    .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 180000, 0 disables)."),
   maxAtomicClaims: z.number().int().min(2).max(30).optional()
     .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
   maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()
@@ -852,6 +855,9 @@ export const PipelineConfigSchema = z.object({
   if (data.claimSelectionCap === undefined) {
     data.claimSelectionCap = CLAIM_SELECTION_DEFAULT_CAP;
   }
+  if (data.claimSelectionIdleAutoProceedMs === undefined) {
+    data.claimSelectionIdleAutoProceedMs = CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS;
+  }
   if (data.maxAtomicClaims === undefined) {
     data.maxAtomicClaims = 5;
   }
@@ -1151,6 +1157,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   centralityThreshold: "medium",
   claimSpecificityMinimum: 0.6,
   claimSelectionCap: CLAIM_SELECTION_DEFAULT_CAP,
+  claimSelectionIdleAutoProceedMs: CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
   maxAtomicClaims: 5,
   maxAtomicClaimsBase: 3,
   atomicClaimsInputCharsPerClaim: 500,

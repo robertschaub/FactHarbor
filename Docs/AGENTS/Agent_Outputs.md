@@ -1879,3 +1879,38 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | Preparation UI Info And Utility Pass -- [Significant] [open-items: yes]
 **For next agent:** The preparation page now exposes the active analysis input, basic session metadata, copy actions, and a raw JSON viewer. Draft-token holders can read the input text again, not just admins. The next meaningful UX step would be a real draft-event history API if the page should gain an `Events` view comparable to the job screen.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Preparation_UI_Info_And_Utility_Pass.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Preparation UI Header Parity With Job Page -- [Significant] [open-items: yes]
+**For next agent:** The preparation page’s custom hero was removed. The upper section now reuses the job page’s action-row and report-surface header pattern, drops visible `mode` fields, and uses the shared `InputBanner` for the active analysis input. No fake draft `hide` action was added; only real draft actions (`retry`, `cancel`) were surfaced in the top-right control cluster.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Preparation_UI_Header_Parity_With_Job_Page.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Draft Hide From Start -- [Significant] [open-items: yes]
+**For next agent:** Hide now exists at the claim-selection draft layer and propagates into the eventual job. The preparation page shows an admin-only eye toggle from the start, `ClaimSelectionDraftEntity` persists `IsHidden`, and linked jobs inherit or mirror that state. The first EF-generated migration for this change was wrong and was manually corrected to a minimal `ADD COLUMN IsHidden` migration plus matching SQL.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Draft_Hide_From_Start.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Idle Auto-Proceed Timer -- [Significant] [open-items: yes]
+**For next agent:** Manual atomic-claim selection sessions can now auto-continue after a UCM-configurable idle window via `pipeline.claimSelectionIdleAutoProceedMs` (default `180000`, `0` disables). The session page fetches the normalized timeout from `/api/fh/claim-selection-settings`, resets the countdown on every checkbox interaction attempt, and auto-confirms the last valid selection when the timer expires.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Idle_Auto_Proceed_Timer.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Idle Auto-Proceed Timer Server-Owned Finalization -- [Significant] [open-items: no]
+**For next agent:** The idle auto-proceed path is now server-owned, so manual claim-selection sessions can continue even after the browser closes. `ClaimSelectionDraftState` persists `selectionIdleAutoProceedMs`, `lastSelectionInteractionUtc`, and the last valid `selectedClaimIds`; the public session API accepts selection-activity pings; and the runner watchdog sweeps due `AWAITING_CLAIM_SELECTION` sessions through the internal auto-confirm path. This supersedes the earlier page-only timer design.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Idle_Auto_Proceed_Timer.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Session Code Review Disposition -- [Significant] [open-items: yes]
+**For next agent:** External review found two real idle-timeout issues and one residual test-gap note. The code now blocks stale due-snapshot auto-confirms via timestamp compare-and-confirm in `ClaimSelectionDraftService`, starts the manual inactivity timer when the selection screen is actually opened, and keeps legacy sessions visually honest by disabling the countdown when no persisted timeout exists. The remaining low-risk gap is missing direct backend tests because this repo still has no API test project.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Session_Code_Review_Disposition.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes Challenger Position -- [Standard] [open-items: yes]
+**For next agent:** The challenger conclusion is that the statutes are not "ready as-is" mainly because [Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md) `Art. 24` overreaches beyond the evidence-backed minimum: no official Zurich blessing of the exact open-by-default IP wording, no assignment-template implementation path, and `URG Art. 16-17` cuts against broad automatic vesting. `Art. 18` is comparatively defensible if kept tightly tied to recusal and reasonable compensation controls.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_FactHarbor_Statutes_Challenger_Position.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes Art. 18 / Art. 24 Hardening -- [Standard] [open-items: yes]
+**For next agent:** [DRAFT_Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md) and [DRAFT_Vereinsstatuten_FactHarbor_EN.md](/c:/DEV/FactHarbor/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md) now narrow `Art. 24` from automatic ownership to rights acquisition / written assignment-or-licence mechanics, keep `Open by Default` only where the association actually holds the necessary rights, and harden `Art. 18` with written-contract, pricing, and full-lifecycle recusal guardrails for paid board-member roles. The remaining legal follow-up is contractual implementation, not another statutes-only rewrite.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_FactHarbor_Statutes_Art18_Art24_Hardening.md

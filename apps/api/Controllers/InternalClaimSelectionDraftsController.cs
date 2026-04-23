@@ -133,6 +133,23 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
         });
     }
 
+    [HttpGet("idle-auto-proceed-due")]
+    public async Task<IActionResult> GetIdleAutoProceedDue()
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
+
+        var drafts = await _drafts.ListIdleAutoProceedDueDraftsAsync();
+        return Ok(new
+        {
+            drafts = drafts.Select(d => new
+            {
+                draftId = d.DraftId,
+                draftStateJson = d.DraftStateJson,
+                selectedClaimIds = d.SelectedClaimIds,
+            }),
+        });
+    }
+
     private async Task TriggerRunnerBestEffortAsync(string jobId)
     {
         try

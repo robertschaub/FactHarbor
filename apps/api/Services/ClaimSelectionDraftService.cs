@@ -30,6 +30,11 @@ public sealed class ClaimSelectionDraftService
         string DraftAccessToken,
         string Status);
 
+    public sealed record IdleAutoProceedDueDraft(
+        string DraftId,
+        string DraftStateJson,
+        string[] SelectedClaimIds);
+
     public async Task<(CreateDraftResult? result, string? error, int statusCode)> CreateDraftAsync(
         string inputType,
         string inputValue,
@@ -110,6 +115,126 @@ public sealed class ClaimSelectionDraftService
         }
 
         return drafts;
+    }
+
+    public async Task<List<IdleAutoProceedDueDraft>> ListIdleAutoProceedDueDraftsAsync()
+    {
+        var drafts = await _db.ClaimSelectionDrafts
+            .Where(d =>
+                d.FinalJobId == null &&
+                d.Status == "AWAITING_CLAIM_SELECTION")
+            .OrderBy(d => d.UpdatedUtc)
+            .ToListAsync();
+
+        var mutated = false;
+        var dueDrafts = new List<IdleAutoProceedDueDraft>();
+        var nowUtc = DateTime.UtcNow;
+
+        foreach (var draft in drafts)
+        {
+            if (EnforceLazyExpiry(draft))
+            {
+                mutated = true;
+                continue;
+            }
+
+            if (!TryExtractIdleAutoProceedState(
+                    draft.DraftStateJson,
+                    out var selectionIdleAutoProceedMs,
+                    out var lastSelectionInteractionUtc,
+                    out var selectedClaimIds,
+                    out var candidateClaimIds,
+                    out _))
+            {
+                continue;
+            }
+
+            if (selectionIdleAutoProceedMs <= 0 || selectedClaimIds.Length == 0)
+                continue;
+            if (lastSelectionInteractionUtc == DateTime.MinValue)
+                continue;
+
+            var effectiveSelectionCap = GetEffectiveSelectionCap(draft.DraftStateJson, candidateClaimIds.Count);
+            if (!IsValidSelectedClaimSet(selectedClaimIds, candidateClaimIds, effectiveSelectionCap))
+                continue;
+
+            var dueUtc = lastSelectionInteractionUtc.AddMilliseconds(selectionIdleAutoProceedMs);
+            if (dueUtc > nowUtc)
+                continue;
+
+            dueDrafts.Add(new IdleAutoProceedDueDraft(
+                draft.DraftId,
+                draft.DraftStateJson ?? "{}",
+                selectedClaimIds));
+        }
+
+        if (mutated)
+        {
+            await _db.SaveChangesAsync();
+        }
+
+        return dueDrafts;
+    }
+
+    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> UpdateSelectionStateAsync(
+        string draftId,
+        string[] selectedClaimIds,
+        DateTime interactionUtc)
+    {
+        var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
+        if (draft is null) return (null, "Draft not found", 404);
+        if (EnforceLazyExpiry(draft))
+            await _db.SaveChangesAsync();
+
+        if (draft.Status == "EXPIRED")
+            return (null, "Draft has expired", 410);
+        if (draft.FinalJobId != null || draft.Status == "COMPLETED")
+            return (draft, null, 0);
+        if (draft.Status != "AWAITING_CLAIM_SELECTION")
+            return (null, $"Draft is in {draft.Status} state and cannot update selection state", 409);
+
+        if (!TryExtractIdleAutoProceedState(
+                draft.DraftStateJson,
+                out _,
+                out var currentLastSelectionInteractionUtc,
+                out _,
+                out var candidateClaimIds,
+                out var extractionError))
+        {
+            return (null, extractionError ?? "Draft is missing prepared candidate claims", 409);
+        }
+
+        var normalizedInteractionUtc = DateTime.SpecifyKind(interactionUtc, DateTimeKind.Utc);
+        if (currentLastSelectionInteractionUtc > normalizedInteractionUtc)
+        {
+            return (draft, null, 0);
+        }
+
+        var effectiveSelectionCap = GetEffectiveSelectionCap(draft.DraftStateJson, candidateClaimIds.Count);
+        if (selectedClaimIds.Length > effectiveSelectionCap)
+            return (null, BuildSelectionCapError(effectiveSelectionCap), 400);
+
+        if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
+            return (null, "Duplicate claim IDs", 400);
+
+        var invalid = selectedClaimIds.Where(id => !candidateClaimIds.Contains(id)).ToArray();
+        if (invalid.Length > 0)
+        {
+            return (null, $"Selected claim IDs not in candidate set: {string.Join(", ", invalid)}", 400);
+        }
+
+        var state = ParseDraftStateNode(draft.DraftStateJson);
+        state["lastSelectionInteractionUtc"] = normalizedInteractionUtc.ToString("o");
+        if (selectedClaimIds.Length > 0)
+        {
+            state["selectedClaimIds"] = new JsonArray(selectedClaimIds.Select(id => JsonValue.Create(id)).ToArray());
+        }
+
+        draft.DraftStateJson = state.ToJsonString();
+        draft.UpdatedUtc = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return (draft, null, 0);
     }
 
     public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> ConfirmDraftAsync(
@@ -227,6 +352,33 @@ public sealed class ClaimSelectionDraftService
         return (draft, null, 0);
     }
 
+    public async Task<ClaimSelectionDraftEntity?> SetHiddenAsync(string draftId, bool hidden)
+    {
+        var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
+        if (draft is null) return null;
+        if (EnforceLazyExpiry(draft))
+            await _db.SaveChangesAsync();
+
+        if (draft.IsHidden == hidden)
+            return draft;
+
+        draft.IsHidden = hidden;
+        draft.UpdatedUtc = DateTime.UtcNow;
+
+        if (!string.IsNullOrWhiteSpace(draft.FinalJobId))
+        {
+            var job = await _db.Jobs.FindAsync(draft.FinalJobId);
+            if (job is not null)
+            {
+                job.IsHidden = hidden;
+                job.UpdatedUtc = DateTime.UtcNow;
+            }
+        }
+
+        await _db.SaveChangesAsync();
+        return draft;
+    }
+
     public async Task UpdateStatusAsync(string draftId, string status, int? progress, string? eventMessage)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
@@ -286,13 +438,50 @@ public sealed class ClaimSelectionDraftService
             return (draft, null, 0);
         if (draft.Status == "COMPLETED")
             return (null, "Draft already confirmed", 409);
-        if (draft.Status is not "QUEUED" and not "PREPARING")
+        if (draft.Status is not "QUEUED" and not "PREPARING" and not "AWAITING_CLAIM_SELECTION")
             return (null, $"Draft is in {draft.Status} state and cannot auto-continue", 409);
 
-        if (!TryExtractPreparedCandidateClaimIds(draftStateJson, out var candidateClaimIds, out var extractionError))
+        var mergeSourceDraftStateJson = draftStateJson;
+        if (draft.Status == "AWAITING_CLAIM_SELECTION")
+        {
+            if (!TryExtractIdleAutoProceedState(
+                    draftStateJson,
+                    out _,
+                    out var expectedLastSelectionInteractionUtc,
+                    out _,
+                    out _,
+                    out var expectedStateError))
+            {
+                return (null, expectedStateError ?? "Draft auto-confirm request is missing idle selection state", 409);
+            }
+
+            if (expectedLastSelectionInteractionUtc == DateTime.MinValue)
+                return (null, "Draft auto-confirm request is missing the last selection interaction timestamp", 409);
+
+            if (!TryExtractIdleAutoProceedState(
+                    draft.DraftStateJson,
+                    out _,
+                    out var currentLastSelectionInteractionUtc,
+                    out _,
+                    out _,
+                    out var currentStateError))
+            {
+                return (null, currentStateError ?? "Draft is missing prepared candidate claims", 409);
+            }
+
+            if (currentLastSelectionInteractionUtc == DateTime.MinValue)
+                return (null, "Draft inactivity auto-continue has not been armed yet", 409);
+
+            if (currentLastSelectionInteractionUtc != expectedLastSelectionInteractionUtc)
+                return (null, "Draft selection state changed before automatic continuation could run", 409);
+
+            mergeSourceDraftStateJson = draft.DraftStateJson ?? draftStateJson;
+        }
+
+        if (!TryExtractPreparedCandidateClaimIds(mergeSourceDraftStateJson, out var candidateClaimIds, out var extractionError))
             return (null, extractionError ?? "Draft is missing prepared candidate claims", 409);
 
-        var effectiveSelectionCap = GetEffectiveSelectionCap(draftStateJson, candidateClaimIds.Count);
+        var effectiveSelectionCap = GetEffectiveSelectionCap(mergeSourceDraftStateJson, candidateClaimIds.Count);
         if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > effectiveSelectionCap)
             return (null, BuildSelectionCapError(effectiveSelectionCap), 400);
 
@@ -305,7 +494,7 @@ public sealed class ClaimSelectionDraftService
             return (null, $"Selected claim IDs not in candidate set: {string.Join(", ", invalid)}", 400);
         }
 
-        if (!TryMergeDraftStateSelectedClaims(draftStateJson, selectedClaimIds, out var mergedDraftStateJson))
+        if (!TryMergeDraftStateSelectedClaims(mergeSourceDraftStateJson, selectedClaimIds, out var mergedDraftStateJson))
             return (null, "Draft state could not be updated with selected claims", 409);
 
         draft.DraftStateJson = mergedDraftStateJson;
@@ -520,6 +709,85 @@ public sealed class ClaimSelectionDraftService
             error = "Draft state is malformed";
             return false;
         }
+    }
+
+    private static bool TryExtractIdleAutoProceedState(
+        string? draftStateJson,
+        out int selectionIdleAutoProceedMs,
+        out DateTime lastSelectionInteractionUtc,
+        out string[] selectedClaimIds,
+        out HashSet<string> candidateClaimIds,
+        out string? error)
+    {
+        selectionIdleAutoProceedMs = 0;
+        lastSelectionInteractionUtc = DateTime.MinValue;
+        selectedClaimIds = Array.Empty<string>();
+
+        if (!TryExtractPreparedCandidateClaimIds(draftStateJson, out candidateClaimIds, out error))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+        {
+            error = "Draft state is empty";
+            return false;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(draftStateJson);
+
+            if (doc.RootElement.TryGetProperty("selectionIdleAutoProceedMs", out var timeoutProp) &&
+                timeoutProp.ValueKind == JsonValueKind.Number &&
+                timeoutProp.TryGetInt32(out var parsedTimeout))
+            {
+                selectionIdleAutoProceedMs = Math.Max(0, parsedTimeout);
+            }
+
+            if (doc.RootElement.TryGetProperty("lastSelectionInteractionUtc", out var lastInteractionProp) &&
+                lastInteractionProp.ValueKind == JsonValueKind.String &&
+                DateTime.TryParse(
+                    lastInteractionProp.GetString(),
+                    null,
+                    System.Globalization.DateTimeStyles.RoundtripKind,
+                    out var parsedInteractionUtc))
+            {
+                lastSelectionInteractionUtc = parsedInteractionUtc.Kind == DateTimeKind.Utc
+                    ? parsedInteractionUtc
+                    : parsedInteractionUtc.ToUniversalTime();
+            }
+
+            if (doc.RootElement.TryGetProperty("selectedClaimIds", out var selectedClaimIdsProp) &&
+                selectedClaimIdsProp.ValueKind == JsonValueKind.Array)
+            {
+                selectedClaimIds = selectedClaimIdsProp
+                    .EnumerateArray()
+                    .Select(element => element.GetString())
+                    .Where(value => !string.IsNullOrWhiteSpace(value))
+                    .Cast<string>()
+                    .ToArray();
+            }
+
+            return true;
+        }
+        catch (JsonException)
+        {
+            error = "Draft state is malformed";
+            return false;
+        }
+    }
+
+    private static bool IsValidSelectedClaimSet(
+        string[] selectedClaimIds,
+        HashSet<string> candidateClaimIds,
+        int selectionCap)
+    {
+        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > selectionCap)
+            return false;
+        if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
+            return false;
+        return selectedClaimIds.All(candidateClaimIds.Contains);
     }
 
     private async Task<(bool claimed, string? error, bool contentionExhausted)> TryClaimInviteSlotForDraftAsync(string? code)

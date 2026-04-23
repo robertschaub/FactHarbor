@@ -3,111 +3,33 @@
   gap: 20px;
 }
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+.headerStatusRow {
+  margin-top: 10px;
+  color: var(--text-primary, #0f172a);
 }
 
-.toolbarButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #fff;
-  color: #0f172a;
-  font-weight: 700;
-  text-decoration: none;
-  cursor: pointer;
+.headerStatusRow code {
+  color: var(--text-primary, #0f172a);
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border-subtle, #dbe2ea);
+  padding: 2px 6px;
+  border-radius: 6px;
 }
 
-.toolbarButton:hover {
-  background: #f8fafc;
+.headerStatusNote {
+  margin-left: 10px;
+  color: var(--text-secondary, #475569);
+  font-size: 13px;
 }
 
-.heroCard {
-  border: 1px solid #dbe2ea;
-  border-radius: 16px;
-  padding: 20px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+.headerSummary {
+  margin: 12px 0 0;
+  color: var(--text-secondary, #475569);
+  line-height: 1.6;
 }
 
-.metaGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.metaCard {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid #dbe2ea;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.metaLabel {
-  font-size: 12px;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.metaValue {
-  color: #0f172a;
-  font-weight: 700;
-}
-
-.metaValueRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.metaValueCode {
-  color: #0f172a;
-  font-weight: 700;
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-  word-break: break-all;
-}
-
-.heroMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.headerInputWrap {
   margin-top: 12px;
-}
-
-.metaBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: #eef4ff;
-  color: #1d4ed8;
-}
-
-.statusBadge {
-  background: #e2f8e9;
-  color: #0f766e;
-}
-
-.statusBadgeWaiting {
-  background: #fff7ed;
-  color: #c2410c;
-}
-
-.statusBadgeError {
-  background: #fee2e2;
-  color: #b91c1c;
 }
 
 .infoCard {
@@ -159,42 +81,6 @@
   font-weight: 700;
   color: #0f172a;
   line-height: 1.4;
-}
-
-.inputCard {
-  border: 1px solid #dbe2ea;
-  border-radius: 16px;
-  padding: 18px;
-  background: #eff6ff;
-}
-
-.inputCardHeader {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.inputLabel {
-  font-size: 12px;
-  color: #475569;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.inputSubLabel {
-  margin-top: 4px;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.inputText {
-  font-size: 18px;
-  line-height: 1.5;
-  color: #1d4ed8;
-  font-weight: 700;
-  word-break: break-word;
 }
 
 .jsonHeader {
@@ -275,6 +161,16 @@
   color: #334155;
   line-height: 1.55;
   border: 1px solid #e2e8f0;
+}
+
+.idleAutoProceedNote {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1e3a8a;
+  line-height: 1.55;
 }
 
 .claimList {
@@ -488,7 +384,6 @@
 }
 
 @media (max-width: 860px) {
-  .metaGrid,
   .summaryGrid {
     grid-template-columns: 1fr;
   }
@@ -507,25 +402,10 @@
     gap: 16px;
   }
 
-  .toolbar {
-    flex-direction: column;
-  }
-
-  .toolbarButton {
-    width: 100%;
-  }
-
-  .heroCard,
   .infoCard,
-  .selectionCard,
-  .inputCard {
+  .selectionCard {
     padding: 16px;
     border-radius: 14px;
-  }
-
-  .metaBadge {
-    max-width: 100%;
-    word-break: break-word;
   }
 
   .selectionTitle,
@@ -537,16 +417,10 @@
   .infoText,
   .recommendationRationale,
   .claimStatement,
-  .claimRationale,
-  .inputText {
+  .claimRationale {
     font-size: 14px;
   }
 
-  .metaValueCode {
-    font-size: 12px;
-  }
-
-  .inputCardHeader,
   .jsonHeader {
     flex-direction: column;
     align-items: flex-start;

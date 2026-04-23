@@ -623,6 +623,7 @@ public sealed class JobService
             ClaimSelectionDraftId = draft.DraftId,
             PreparedStage1Json = preparedStage1Json,
             ClaimSelectionJson = selectionJson,
+            IsHidden = draft.IsHidden,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow,

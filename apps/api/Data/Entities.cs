@@ -129,6 +129,12 @@ public sealed class ClaimSelectionDraftEntity
 
     public string? DraftAccessTokenHash { get; set; }
     public string? FinalJobId { get; set; }
+
+    /// <summary>
+    /// When true, the eventual report created from this draft should start hidden.
+    /// Draft visibility is admin-controlled; hiding a draft also propagates to the linked job.
+    /// </summary>
+    public bool IsHidden { get; set; } = false;
 }
 
 public sealed class JobEventEntity

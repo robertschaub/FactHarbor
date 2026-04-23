@@ -18,6 +18,7 @@ import { getWebGitCommitHash } from "@/lib/build-info";
 import {
   getClaimSelectionCap,
   normalizeClaimSelectionCap,
+  normalizeClaimSelectionIdleAutoProceedMs,
   shouldAutoContinueWithoutSelection,
 } from "@/lib/claim-selection-flow";
 import { loadPipelineConfig } from "@/lib/config-loader";
@@ -799,6 +800,39 @@ export async function drainDraftQueue() {
       console.error("[Runner] Draft recovery check failed:", err);
     }
 
+    try {
+      const payload = await apiGet(apiBase, adminKey, `/internal/v1/claim-selection-drafts/idle-auto-proceed-due`);
+      const dueDrafts = Array.isArray(payload?.drafts) ? payload.drafts : [];
+
+      for (const draft of dueDrafts) {
+        const draftId = typeof draft?.draftId === "string" ? draft.draftId : "";
+        const draftStateJson = typeof draft?.draftStateJson === "string" ? draft.draftStateJson : "";
+        const selectedClaimIds = Array.isArray(draft?.selectedClaimIds)
+          ? draft.selectedClaimIds.filter(
+            (claimId: unknown): claimId is string => typeof claimId === "string" && claimId.trim().length > 0,
+          )
+          : [];
+
+        if (!draftId || !draftStateJson || selectedClaimIds.length === 0) {
+          continue;
+        }
+
+        try {
+          await apiPost(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/auto-confirm`, {
+            draftStateJson,
+            selectedClaimIds,
+          });
+        } catch (err) {
+          console.warn(
+            `[Runner] Idle auto-proceed failed for claim-selection draft ${draftId}:`,
+            err,
+          );
+        }
+      }
+    } catch (err) {
+      console.error("[Runner] Idle auto-proceed sweep failed:", err);
+    }
+
     while (qs.runningCount < maxConcurrency && ds.queue.length > 0) {
       const next = ds.queue.shift();
       if (!next) break;
@@ -830,6 +864,7 @@ async function runDraftPreparationBackground(draftId: string) {
   let preparationStartedAt: number | undefined;
   let lastPreparationEventMessage = "Draft preparation started";
   let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
+  let configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(undefined);
 
   const buildObservability = (params: {
     phaseCode: ClaimSelectionDraftObservability["phaseCode"];
@@ -860,6 +895,7 @@ async function runDraftPreparationBackground(draftId: string) {
     rankedClaimIds: string[];
     recommendedClaimIds: string[];
     selectedClaimIds: string[];
+    lastSelectionInteractionUtc?: string;
     recommendationRationale?: string;
     assessments?: ClaimSelectionDraftState["assessments"];
     observability: ClaimSelectionDraftObservability;
@@ -867,9 +903,11 @@ async function runDraftPreparationBackground(draftId: string) {
     version: 1,
     ...(preparedStage1 ? { preparedStage1 } : {}),
     selectionCap: configuredSelectionCap,
+    selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
     rankedClaimIds: params.rankedClaimIds,
     recommendedClaimIds: params.recommendedClaimIds,
     selectedClaimIds: params.selectedClaimIds,
+    lastSelectionInteractionUtc: params.lastSelectionInteractionUtc,
     recommendationRationale: params.recommendationRationale,
     assessments: params.assessments ?? [],
     observability: params.observability,
@@ -893,6 +931,9 @@ async function runDraftPreparationBackground(draftId: string) {
 
     const { config: pipelineConfig } = await loadPipelineConfig("default");
     configuredSelectionCap = normalizeClaimSelectionCap(pipelineConfig.claimSelectionCap);
+    configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(
+      pipelineConfig.claimSelectionIdleAutoProceedMs,
+    );
     preparationStartedAt = Date.now();
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
@@ -1138,9 +1179,11 @@ async function runDraftPreparationBackground(draftId: string) {
           version: 1 as const,
           ...(preparedStage1 ? { preparedStage1 } : {}),
           selectionCap: configuredSelectionCap,
+          selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
           rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
           recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
           selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],
+          lastSelectionInteractionUtc: failureDraftState?.lastSelectionInteractionUtc,
           recommendationRationale: failureDraftState?.recommendationRationale,
           assessments: failureDraftState?.assessments ?? [],
           observability: failureObservability,

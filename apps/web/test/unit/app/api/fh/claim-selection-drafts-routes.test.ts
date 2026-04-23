@@ -163,4 +163,52 @@ describe("claim-selection draft proxy routes", () => {
       }),
     );
   });
+
+  it("allows empty selectedClaimIds when persisting selection activity", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ ok: true }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/selection-state", {
+        method: "POST",
+        body: JSON.stringify({
+          selectedClaimIds: [],
+          interactionUtc: "2026-04-23T15:00:00.000Z",
+        }),
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/selection-state",
+      expect.objectContaining({
+        body: JSON.stringify({
+          selectedClaimIds: [],
+          interactionUtc: "2026-04-23T15:00:00.000Z",
+        }),
+      }),
+    );
+  });
+
+  it("rejects duplicate selection-state claim ids before forwarding upstream", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/selection-state", {
+        method: "POST",
+        body: JSON.stringify({
+          selectedClaimIds: ["AC-1", "AC-1"],
+        }),
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "selectedClaimIds must not contain duplicates",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

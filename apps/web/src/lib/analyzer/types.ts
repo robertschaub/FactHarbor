@@ -790,9 +790,14 @@ export interface ClaimSelectionDraftState {
   preparedStage1?: PreparedStage1Snapshot;
   // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
   selectionCap?: number;
+  // Persisted inactivity timeout for manual claim-selection sessions (0 disables auto-proceed).
+  selectionIdleAutoProceedMs?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
+  // Persisted last valid selection. Invalid transient UI states must not overwrite this.
   selectedClaimIds: string[];
+  // ISO timestamp of the last checkbox interaction considered by the inactivity timer.
+  lastSelectionInteractionUtc?: string;
   recommendationRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
   observability?: ClaimSelectionDraftObservability;
