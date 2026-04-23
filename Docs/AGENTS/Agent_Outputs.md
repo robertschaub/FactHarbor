@@ -1861,6 +1861,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_UCM_Selection_Cap.md
 
 ---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Runner Queue Split For Session Preparation -- [Significant] [open-items: yes]
+**For next agent:** Session preparation no longer shares the exact same runner lane as full report jobs. [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts) now resolves separate job and prep concurrency budgets, with the prep lane defaulting to `1` unless `FH_RUNNER_PREP_MAX_CONCURRENCY` says otherwise. This means queued sessions can start Stage 1 preparation even while the report-job lane is saturated. Remember that this is a runtime/env change: restart the web runner to activate it, and if total parallel load should stay tighter than “jobs + 1 prep lane”, set the explicit split env vars rather than relying on legacy fallback behavior.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Runner_Queue_Split_For_Session_Preparation.md
+
+---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | Code Review Disposition - Claim Selection And Check Worthiness -- [Standard] [open-items: no]
 **For next agent:** External code review for the Claim Selection Draft and Check-Worthiness slices came back as approve-only with low-severity positive observations and no actionable defects. No product code changes were needed; this handoff is the repository-local approval record.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Code_Review_Disposition_Claim_Selection_Check_Worthiness.md
@@ -1931,3 +1936,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes Finalization And Draft-Status Removal -- [Standard] [open-items: yes]
 **For next agent:** The statutes were finalized as separate governing documents and renamed to [Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md) and [Vereinsstatuten_FactHarbor_EN.md](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_EN.md). The embedded founding-record and draft-review sections were removed from the statutes because the founding protocol now lives separately in [Gruendungsprotokoll_FactHarbor_2026-04-23.md](/c:/DEV/FactHarbor/Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.md) / `.pdf`, the German file no longer carries `ENTWURF`, and the English reference translation now points to the final German filename and has the adopted date filled in. Live references in the legal/checklist/xwiki docs were updated to the final filenames and post-founding status. Remaining legal follow-up is limited to operational matters such as Handelsregister / tax filing package completeness and whether the 2-person board should later be expanded for governance resilience.
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes PDF Export And Signature Clarification -- [Standard] [open-items: yes]
+**For next agent:** PDF exports were generated at [Vereinsstatuten_FactHarbor_DE.pdf](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.pdf) and [Vereinsstatuten_FactHarbor_EN.pdf](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_EN.pdf), with the checklist status kept aligned to the already-held founding package. Zurich Handelsregister guidance confirms that the statutes must be dated and signed by one board member for filing, but it does not require every page to be signed; the remaining practical follow-up is whether to add a visible signature block to the statutes source or sign the printed/PDF final version manually before submission.
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes Signature Block And Updated DE PDF -- [Standard] [open-items: yes]
+**For next agent:** The binding German statutes now include a formal end-of-document signature block in [Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md). The original `Vereinsstatuten_FactHarbor_DE.pdf` could not be overwritten because another process had the file open, so the refreshed PDF with the signature block was emitted as [Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf). If the canonical filename matters later, close the open PDF handle and re-render or rename deliberately.

@@ -87,11 +87,37 @@ function getAdminKeyOrNull(): string | null {
   return getEnv("FH_ADMIN_KEY");
 }
 
-function getMaxConcurrency(): number {
-  return Math.max(
-    1,
-    Number.parseInt(process.env.FH_RUNNER_MAX_CONCURRENCY ?? "3", 10) || 3,
-  );
+function parsePositiveConcurrency(rawValue: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(rawValue ?? "", 10);
+  if (Number.isFinite(parsed) && parsed >= 1) {
+    return parsed;
+  }
+  return fallback;
+}
+
+export function resolveRunnerConcurrencyBudget(env: NodeJS.ProcessEnv = process.env): {
+  jobMaxConcurrency: number;
+  draftPreparationMaxConcurrency: number;
+} {
+  const legacySharedMaxConcurrency = parsePositiveConcurrency(env.FH_RUNNER_MAX_CONCURRENCY, 3);
+  return {
+    jobMaxConcurrency: parsePositiveConcurrency(
+      env.FH_RUNNER_JOB_MAX_CONCURRENCY,
+      legacySharedMaxConcurrency,
+    ),
+    draftPreparationMaxConcurrency: parsePositiveConcurrency(
+      env.FH_RUNNER_PREP_MAX_CONCURRENCY,
+      1,
+    ),
+  };
+}
+
+function getJobMaxConcurrency(): number {
+  return resolveRunnerConcurrencyBudget().jobMaxConcurrency;
+}
+
+function getDraftPreparationMaxConcurrency(): number {
+  return resolveRunnerConcurrencyBudget().draftPreparationMaxConcurrency;
 }
 
 function getMaxQueueWaitMs(): number {
@@ -481,7 +507,7 @@ export async function drainRunnerQueue() {
 
     const apiBase = getApiBaseOrThrow();
     const adminKey = getAdminKeyOrNull();
-    const maxConcurrency = getMaxConcurrency();
+    const maxConcurrency = getJobMaxConcurrency();
 
     const now = Date.now();
     let effectiveRunningCount = qs.runningCount;
@@ -696,10 +722,11 @@ export async function drainRunnerQueue() {
 
 // ---------------------------------------------------------------------------
 // DRAFT PREPARATION QUEUE (ACS-1)
-// Shares the same concurrency budget as jobs via getRunnerQueueState().runningCount.
+// Uses its own preparation lane so Stage 1 work is not starved by long-running report jobs.
 // ---------------------------------------------------------------------------
 
 type DraftQueueState = {
+  runningCount: number;
   queue: Array<{ draftId: string; enqueuedAt: number }>;
   runningDraftIds: Set<string>;
   isDraining: boolean;
@@ -710,6 +737,7 @@ function getDraftQueueState(): DraftQueueState {
   const g = globalThis as any;
   if (!g.__fhDraftQueueState) {
     g.__fhDraftQueueState = {
+      runningCount: 0,
       queue: [],
       runningDraftIds: new Set<string>(),
       isDraining: false,
@@ -719,6 +747,9 @@ function getDraftQueueState(): DraftQueueState {
   const st = g.__fhDraftQueueState as DraftQueueState;
   if (!(st as any).runningDraftIds || typeof (st as any).runningDraftIds.has !== "function") {
     (st as any).runningDraftIds = new Set<string>();
+  }
+  if (typeof (st as any).runningCount !== "number") {
+    (st as any).runningCount = 0;
   }
   if (!Array.isArray((st as any).queue)) {
     (st as any).queue = [];
@@ -739,7 +770,6 @@ export function enqueueDraftPreparation(draftId: string): { alreadyQueued: boole
 
 export async function drainDraftQueue() {
   const ds = getDraftQueueState();
-  const qs = getRunnerQueueState();
   ensureQueueWatchdogStarted();
 
   if (ds.isDraining) {
@@ -758,7 +788,7 @@ export async function drainDraftQueue() {
       }
     }
 
-    const maxConcurrency = getMaxConcurrency();
+    const maxConcurrency = getDraftPreparationMaxConcurrency();
     const apiBase = getApiBaseOrThrow();
     const adminKey = getAdminKeyOrNull();
 
@@ -833,12 +863,12 @@ export async function drainDraftQueue() {
       console.error("[Runner] Idle auto-proceed sweep failed:", err);
     }
 
-    while (qs.runningCount < maxConcurrency && ds.queue.length > 0) {
+    while (ds.runningCount < maxConcurrency && ds.queue.length > 0) {
       const next = ds.queue.shift();
       if (!next) break;
       if (ds.runningDraftIds.has(next.draftId)) continue;
 
-      qs.runningCount++;
+      ds.runningCount++;
       ds.runningDraftIds.add(next.draftId);
       void runDraftPreparationBackground(next.draftId);
     }
@@ -1195,9 +1225,8 @@ async function runDraftPreparationBackground(draftId: string) {
       draftStateJson: resolvedFailureDraftState ? JSON.stringify(resolvedFailureDraftState) : undefined,
     }).catch(() => {});
   } finally {
-    const qs2 = getRunnerQueueState();
-    qs2.runningCount = Math.max(0, qs2.runningCount - 1);
     const ds2 = getDraftQueueState();
+    ds2.runningCount = Math.max(0, ds2.runningCount - 1);
     ds2.runningDraftIds.delete(draftId);
     void drainDraftQueue();
     void drainRunnerQueue();

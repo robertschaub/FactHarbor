@@ -4,6 +4,7 @@ import {
   getAutomaticRecommendationSelection,
   normalizeDraftPreparationProgress,
   normalizeRunningProgress,
+  resolveRunnerConcurrencyBudget,
 } from "@/lib/internal-runner-queue";
 
 describe("normalizeRunningProgress", () => {
@@ -48,5 +49,44 @@ describe("getAutomaticRecommendationSelection", () => {
     expect(
       getAutomaticRecommendationSelection("automatic", ["AC_01", "AC_02", "AC_01", "AC_03"], 2),
     ).toEqual(["AC_01", "AC_02"]);
+  });
+});
+
+describe("resolveRunnerConcurrencyBudget", () => {
+  it("uses the legacy shared runner limit for jobs and a dedicated prep lane by default", () => {
+    expect(
+      resolveRunnerConcurrencyBudget({
+        FH_RUNNER_MAX_CONCURRENCY: "3",
+      } as NodeJS.ProcessEnv),
+    ).toEqual({
+      jobMaxConcurrency: 3,
+      draftPreparationMaxConcurrency: 1,
+    });
+  });
+
+  it("lets explicit job and prep lane env vars override the legacy shared value", () => {
+    expect(
+      resolveRunnerConcurrencyBudget({
+        FH_RUNNER_MAX_CONCURRENCY: "3",
+        FH_RUNNER_JOB_MAX_CONCURRENCY: "4",
+        FH_RUNNER_PREP_MAX_CONCURRENCY: "2",
+      } as NodeJS.ProcessEnv),
+    ).toEqual({
+      jobMaxConcurrency: 4,
+      draftPreparationMaxConcurrency: 2,
+    });
+  });
+
+  it("falls back safely when split env vars are invalid", () => {
+    expect(
+      resolveRunnerConcurrencyBudget({
+        FH_RUNNER_MAX_CONCURRENCY: "2",
+        FH_RUNNER_JOB_MAX_CONCURRENCY: "0",
+        FH_RUNNER_PREP_MAX_CONCURRENCY: "-1",
+      } as NodeJS.ProcessEnv),
+    ).toEqual({
+      jobMaxConcurrency: 2,
+      draftPreparationMaxConcurrency: 1,
+    });
   });
 });
