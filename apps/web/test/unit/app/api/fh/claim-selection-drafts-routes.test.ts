@@ -164,6 +164,48 @@ describe("claim-selection draft proxy routes", () => {
     );
   });
 
+  it("forwards hide requests to the upstream draft visibility endpoint", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/hide/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ isHidden: true }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/hide", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/hide",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
+  it("forwards unhide requests to the upstream draft visibility endpoint", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/unhide/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ isHidden: false }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/unhide", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/unhide",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
+  });
+
   it("allows empty selectedClaimIds when persisting selection activity", async () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route");
 
