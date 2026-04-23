@@ -1874,3 +1874,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | Bundesrat MT-5(C) Recovery And Preparing UI Copy -- [Significant] [open-items: yes]
 **For next agent:** The Bundesrat under-splitting was not caused by ACS. The live failure path was Stage 1 skipping `MT-5(C)` after a contract-approved one-claim set, even though `distinctEvents` stayed high. `claim-extraction-stage.ts` now reopens that path only when salience commitment succeeded, reruns the retry in binding mode, and accepts the expanded set only after clean contract revalidation. The `/analyze/select/[draftId]` page also now uses `Preparing Analysis` during `PREPARING`/auto-continue states and reserves `Atomic Claim Selection` for true manual selection.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Bundesrat_MT5C_Recovery_And_Preparing_UI_Copy.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Preparation UI Info And Utility Pass -- [Significant] [open-items: yes]
+**For next agent:** The preparation page now exposes the active analysis input, basic session metadata, copy actions, and a raw JSON viewer. Draft-token holders can read the input text again, not just admins. The next meaningful UX step would be a real draft-event history API if the page should gain an `Events` view comparable to the job screen.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Preparation_UI_Info_And_Utility_Pass.md

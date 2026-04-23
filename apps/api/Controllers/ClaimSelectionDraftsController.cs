@@ -74,7 +74,6 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
     [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> Get(string draftId)
     {
-        var isAdmin = AuthHelper.IsAdminKeyValid(Request);
         var (draft, authError) = await AuthorizeDraftAccessAsync(draftId);
         if (draft is null) return authError!;
 
@@ -86,9 +85,9 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             lastEventMessage = draft.LastEventMessage,
             selectionMode = draft.SelectionMode,
             originalInputType = draft.OriginalInputType,
-            originalInputValue = isAdmin ? draft.OriginalInputValue : null,
+            originalInputValue = draft.OriginalInputValue,
             activeInputType = draft.ActiveInputType,
-            activeInputValue = isAdmin ? draft.ActiveInputValue : null,
+            activeInputValue = draft.ActiveInputValue,
             restartedViaOther = draft.RestartedViaOther,
             restartCount = draft.RestartCount,
             draftStateJson = draft.DraftStateJson,

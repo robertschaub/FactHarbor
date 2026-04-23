@@ -3,11 +3,77 @@
   gap: 20px;
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #0f172a;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.toolbarButton:hover {
+  background: #f8fafc;
+}
+
 .heroCard {
   border: 1px solid #dbe2ea;
   border-radius: 16px;
   padding: 20px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.metaCard {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #dbe2ea;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.metaLabel {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metaValue {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.metaValueRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metaValueCode {
+  color: #0f172a;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  word-break: break-all;
 }
 
 .heroMeta {
@@ -86,6 +152,69 @@
   font-size: 1.1rem;
   font-weight: 700;
   color: #0f172a;
+}
+
+.summaryValueSmall {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.inputCard {
+  border: 1px solid #dbe2ea;
+  border-radius: 16px;
+  padding: 18px;
+  background: #eff6ff;
+}
+
+.inputCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.inputLabel {
+  font-size: 12px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inputSubLabel {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.inputText {
+  font-size: 18px;
+  line-height: 1.5;
+  color: #1d4ed8;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.jsonHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.jsonBlock {
+  margin: 12px 0 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow: auto;
+  max-height: 420px;
 }
 
 .selectionLayout {
@@ -359,6 +488,7 @@
 }
 
 @media (max-width: 860px) {
+  .metaGrid,
   .summaryGrid {
     grid-template-columns: 1fr;
   }
@@ -377,9 +507,18 @@
     gap: 16px;
   }
 
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .toolbarButton {
+    width: 100%;
+  }
+
   .heroCard,
   .infoCard,
-  .selectionCard {
+  .selectionCard,
+  .inputCard {
     padding: 16px;
     border-radius: 14px;
   }
@@ -398,8 +537,19 @@
   .infoText,
   .recommendationRationale,
   .claimStatement,
-  .claimRationale {
+  .claimRationale,
+  .inputText {
     font-size: 14px;
+  }
+
+  .metaValueCode {
+    font-size: 12px;
+  }
+
+  .inputCardHeader,
+  .jsonHeader {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .claimCard {

@@ -10,6 +10,7 @@ import type {
   ClaimSelectionDraftObservability,
   ClaimSelectionRecommendationAssessment,
 } from "@/lib/analyzer/types";
+import { CopyButton } from "@/components/CopyButton";
 import {
   buildDraftAccessHeaders,
   clearStoredDraftAccessToken,
@@ -38,6 +39,10 @@ type DraftResponse = {
   progress: number;
   lastEventMessage: string | null;
   selectionMode: "interactive" | "automatic";
+  originalInputType: string | null;
+  originalInputValue: string | null;
+  activeInputType: string | null;
+  activeInputValue: string | null;
   restartedViaOther: boolean;
   restartCount: number;
   draftStateJson: string | null;
@@ -110,6 +115,20 @@ function buildPreparationTimingSummary(observability: ClaimSelectionDraftObserva
   return parts.length > 0 ? parts.join(" | ") : null;
 }
 
+function formatDateTime(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(parsed);
+}
+
 function orderClaims(claims: AtomicClaim[], rankedClaimIds: string[]): AtomicClaim[] {
   if (claims.length <= 1 || rankedClaimIds.length === 0) return claims;
 
@@ -151,6 +170,7 @@ export default function ClaimSelectionDraftPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showRawJson, setShowRawJson] = useState(false);
   const [autoContinueAttemptSeed, setAutoContinueAttemptSeed] = useState<string | null>(null);
   const [autoContinueFailed, setAutoContinueFailed] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -376,6 +396,32 @@ export default function ClaimSelectionDraftPage() {
   const preparationObservability = draftState?.observability;
   const preparationTimingSummary = buildPreparationTimingSummary(preparationObservability);
   const livePreparationMessage = draft?.lastEventMessage ?? preparationObservability?.eventMessage ?? null;
+  const rawDraftJson = useMemo(() => {
+    if (!draft) return null;
+    const payload = {
+      draftId: draft.draftId,
+      status: draft.status,
+      progress: draft.progress,
+      lastEventMessage: draft.lastEventMessage,
+      selectionMode: draft.selectionMode,
+      originalInputType: draft.originalInputType,
+      originalInputValue: draft.originalInputValue,
+      activeInputType: draft.activeInputType,
+      activeInputValue: draft.activeInputValue,
+      restartedViaOther: draft.restartedViaOther,
+      restartCount: draft.restartCount,
+      createdUtc: draft.createdUtc,
+      updatedUtc: draft.updatedUtc,
+      expiresUtc: draft.expiresUtc,
+      finalJobId: draft.finalJobId,
+      draftState: draftState ?? null,
+    };
+    return JSON.stringify(payload, null, 2);
+  }, [draft, draftState]);
+  const activeInputValue = draft?.activeInputValue?.trim() || draft?.originalInputValue?.trim() || "";
+  const formattedCreatedAt = formatDateTime(draft?.createdUtc);
+  const formattedUpdatedAt = formatDateTime(draft?.updatedUtc);
+  const formattedExpiresAt = formatDateTime(draft?.expiresUtc);
 
   const handleToggleClaim = (claimId: string) => {
     setError(null);
@@ -468,10 +514,46 @@ export default function ClaimSelectionDraftPage() {
 
   return (
     <div className={`${commonStyles.container} ${styles.page}`}>
+      {draft && (
+        <div className={styles.toolbar}>
+          <Link href="/analyze" className={styles.toolbarButton}>
+            ← Back
+          </Link>
+          <button
+            type="button"
+            className={styles.toolbarButton}
+            onClick={() => setShowRawJson((current) => !current)}
+          >
+            {showRawJson ? "Hide JSON" : "View JSON"}
+          </button>
+        </div>
+      )}
+
       <div className={styles.heroCard}>
         <h1 className={commonStyles.title}>{pageTitle}</h1>
         <p className={commonStyles.subtitle}>{statusHeadline}</p>
         <p className={styles.infoText}>{statusSummary}</p>
+        {draft && (
+          <div className={styles.metaGrid}>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Session</span>
+              <div className={styles.metaValueRow}>
+                <span className={styles.metaValueCode}>{draft.draftId}</span>
+                <CopyButton text={draft.draftId} title="Copy session id" />
+              </div>
+            </div>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Created</span>
+              <span className={styles.metaValue}>{formattedCreatedAt ?? "Unknown"}</span>
+            </div>
+            <div className={styles.metaCard}>
+              <span className={styles.metaLabel}>Mode</span>
+              <span className={styles.metaValue}>
+                {draft.selectionMode === "automatic" ? "Automatic" : "Interactive"}
+              </span>
+            </div>
+          </div>
+        )}
         <div className={styles.heroMeta}>
           {draft && (
             <>
@@ -487,12 +569,30 @@ export default function ClaimSelectionDraftPage() {
               >
                 {draft.status}
               </span>
+              {draft.restartedViaOther ? (
+                <span className={styles.metaBadge}>Restarted via other input</span>
+              ) : null}
             </>
           )}
         </div>
       </div>
 
       {error && <div className={commonStyles.errorBox}>{error}</div>}
+
+      {draft && activeInputValue ? (
+        <div className={styles.inputCard}>
+          <div className={styles.inputCardHeader}>
+            <div>
+              <div className={styles.inputLabel}>Analysis input</div>
+              <div className={styles.inputSubLabel}>
+                {draft.activeInputType ?? draft.originalInputType ?? "text"}
+              </div>
+            </div>
+            <CopyButton text={activeInputValue} title="Copy analysis input" />
+          </div>
+          <div className={styles.inputText}>{activeInputValue}</div>
+        </div>
+      ) : null}
 
       {isLoading && !draft ? (
         <div className={styles.infoCard}>
@@ -515,8 +615,32 @@ export default function ClaimSelectionDraftPage() {
             <div className={styles.summaryLabel}>Restart count</div>
             <div className={styles.summaryValue}>{draft.restartCount}</div>
           </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Updated</div>
+            <div className={styles.summaryValueSmall}>{formattedUpdatedAt ?? "Unknown"}</div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Expires</div>
+            <div className={styles.summaryValueSmall}>{formattedExpiresAt ?? "Unknown"}</div>
+          </div>
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Selection mode</div>
+            <div className={styles.summaryValueSmall}>
+              {draft.selectionMode === "automatic" ? "Automatic" : "Interactive"}
+            </div>
+          </div>
         </div>
       )}
+
+      {draft && showRawJson && rawDraftJson ? (
+        <div className={styles.infoCard}>
+          <div className={styles.jsonHeader}>
+            <h2 className={styles.infoTitle}>Session JSON</h2>
+            <CopyButton text={rawDraftJson} title="Copy session JSON" />
+          </div>
+          <pre className={styles.jsonBlock}>{rawDraftJson}</pre>
+        </div>
+      ) : null}
 
       {draft?.status === "QUEUED" || draft?.status === "PREPARING" || (draft?.status === "COMPLETED" && !draft.finalJobId) ? (
         <div className={styles.infoCard}>
