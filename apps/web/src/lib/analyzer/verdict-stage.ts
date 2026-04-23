@@ -514,7 +514,12 @@ export async function runVerdictStage(
   );
 
   // Step 4b-2: Strip phantom evidence IDs (deterministic — Fix 5)
-  const cleanedVerdicts = stripPhantomEvidenceIds(enforcedVerdicts, evidence, warnings);
+  const cleanedVerdicts = stripPhantomEvidenceIds(
+    enforcedVerdicts,
+    evidence,
+    warnings,
+    advocateVerdicts,
+  );
 
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
   // Recompute verdict label after confidence change to prevent stale MIXED
@@ -2452,8 +2457,34 @@ export function stripPhantomEvidenceIds(
   verdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
   warnings?: AnalysisWarning[],
+  advocateVerdicts?: CBClaimVerdict[],
 ): CBClaimVerdict[] {
   const validIds = new Set(evidence.map((e) => e.id));
+  const advocateByClaim = new Map((advocateVerdicts ?? []).map((verdict) => [verdict.claimId, verdict]));
+
+  const revertToAdvocate = (
+    verdict: CBClaimVerdict,
+    advocate: CBClaimVerdict,
+  ): CBClaimVerdict => ({
+    ...verdict,
+    truthPercentage: advocate.truthPercentage,
+    confidence: advocate.confidence,
+    confidenceTier: advocate.confidenceTier,
+    verdict: advocate.verdict,
+    reasoning: advocate.reasoning,
+    isContested: advocate.isContested,
+    supportingEvidenceIds: advocate.supportingEvidenceIds.filter((id) => validIds.has(id)),
+    contradictingEvidenceIds: advocate.contradictingEvidenceIds.filter((id) => validIds.has(id)),
+    challengeResponses: verdict.challengeResponses.map((response) =>
+      response.verdictAdjusted
+        ? {
+            ...response,
+            verdictAdjusted: false,
+            response: "Challenge-driven adjustment reverted after citation sanitation removed the decisive evidence support.",
+          }
+        : response,
+    ),
+  });
 
   return verdicts.map((v) => {
     const phantomSupporting = v.supportingEvidenceIds.filter((id) => !validIds.has(id));
@@ -2466,6 +2497,14 @@ export function stripPhantomEvidenceIds(
     const cleanedSupporting = v.supportingEvidenceIds.filter((id) => validIds.has(id));
     const cleanedContradicting = v.contradictingEvidenceIds.filter((id) => validIds.has(id));
     const allSupportingPhantom = v.supportingEvidenceIds.length > 0 && cleanedSupporting.length === 0;
+    const allContradictingPhantom = v.contradictingEvidenceIds.length > 0 && cleanedContradicting.length === 0;
+    const challengeAdjusted = v.challengeResponses.some((response) => response.verdictAdjusted);
+    const decisiveSideCollapsed = (
+      (v.truthPercentage > 50 && allSupportingPhantom) ||
+      (v.truthPercentage < 50 && allContradictingPhantom) ||
+      (v.truthPercentage === 50 && cleanedSupporting.length + cleanedContradicting.length === 0)
+    );
+    const advocate = challengeAdjusted ? advocateByClaim.get(v.claimId) : undefined;
 
     if (allSupportingPhantom) {
       warnings?.push({
@@ -2485,6 +2524,21 @@ export function stripPhantomEvidenceIds(
           strippedContradicting: phantomContradicting,
         },
       });
+    }
+
+    if (advocate && decisiveSideCollapsed) {
+      warnings?.push({
+        type: "phantom_evidence_stripped",
+        severity: "info",
+        message: `Verdict ${v.claimId}: reverted challenge-driven adjustment after phantom citation cleanup removed the decisive evidence side.`,
+        details: {
+          claimId: v.claimId,
+          revertedToAdvocate: true,
+          strippedSupporting: phantomSupporting,
+          strippedContradicting: phantomContradicting,
+        },
+      });
+      return revertToAdvocate(v, advocate);
     }
 
     return {

@@ -165,6 +165,22 @@ function applyPostProcessing(result: EvaluationResult, evidencePack: EvidencePac
   return processed;
 }
 
+function shouldSkipRefinementForSparseEvidence(
+  result: EvaluationResult,
+  evidencePack: EvidencePack,
+): boolean {
+  if (result.factualRating !== "insufficient_data" && result.score !== null) {
+    return false;
+  }
+
+  if (!evidencePack.enabled || evidencePack.items.length === 0) {
+    return true;
+  }
+
+  const groundedEvidenceCount = countUniqueEvidenceIds(result, evidencePack);
+  return evidencePack.items.length === 1 && groundedEvidenceCount === 0;
+}
+
 // ============================================================================
 // MODEL EVALUATION
 // ============================================================================
@@ -572,10 +588,16 @@ export async function evaluateSourceWithPinnedEvidencePack(
     };
   }
 
-  // Handle insufficient_data case - skip refinement only if evidence pack is empty
-  if ((primary.result.factualRating === "insufficient_data" || primary.result.score === null)
-      && evidencePack.items.length === 0) {
-    debugLog(`[SR-Eval] Insufficient data (no evidence) for ${domain}`);
+  // Handle insufficient-data cases with clearly weak grounding.
+  // If the primary pass already returns null / insufficient_data and the evidence
+  // pack is effectively sparse (empty, a single item, or no grounded citations),
+  // a refinement pass is unlikely to add signal and just burns latency.
+  if (shouldSkipRefinementForSparseEvidence(primary.result, evidencePack)) {
+    debugLog(`[SR-Eval] Skipping refinement for sparse insufficient-data case`, {
+      domain,
+      evidenceItemCount: evidencePack.items.length,
+      groundedEvidenceCount: countUniqueEvidenceIds(primary.result, evidencePack),
+    });
     const payload = buildResponsePayload(primary.result, primary.modelName, null, true, evidencePack);
     applyLanguageDetectionCaveat(payload, domain);
     applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
