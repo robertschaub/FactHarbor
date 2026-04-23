@@ -1,6 +1,6 @@
 # Statuten des Vereins FactHarbor
 
-**ENTWURF — Verbindliche Fassung in deutscher Sprache**
+**Verbindliche Fassung in deutscher Sprache**
 
 ---
 
@@ -15,14 +15,15 @@ Der Sitz des Vereins ist in **Dietlikon, Kanton Zürich, Schweiz**.
 ### Art. 3 — Zweck
 1. Der Verein bezweckt die Förderung der Allgemeinbildung und der informierten Meinungsbildung, indem er Menschen dabei unterstützt, komplexe, unklare und umstrittene Informationen auf evidenzbasierter Grundlage zu verstehen, einzuordnen und zu bewerten.
 2. Der Verein verfolgt ausschliesslich **gemeinnützige Zwecke** im Sinne von Art. 56 lit. g DBG.
-3. Zur Verfolgung seines Zwecks kann der Verein insbesondere:
+3. Die Tätigkeit des Vereins kommt grundsätzlich der Allgemeinheit oder einem offenen Kreis von Begünstigten zugute und ist nicht auf die Mitglieder des Vereins beschränkt.
+4. Zur Verfolgung seines Zwecks kann der Verein insbesondere:
    a. Open-Source-Software und Plattformen für evidenzbasierte Informationsanalyse und verwandte Anwendungen im Bereich der digitalen Allgemeinbildung entwickeln und betreiben;
    b. Forschung zu Informationsqualität, Medienkompetenz, Evidenzbewertung und verwandten Themen durchführen und veröffentlichen;
    c. offene Datensätze, offene Protokolle, offene Standards und offene Dokumentation pflegen und publizieren;
    d. mit Bildungseinrichtungen, Medienorganisationen, Forschungsinstitutionen und der Zivilgesellschaft zusammenarbeiten;
    e. Bildungsveranstaltungen, Schulungen, Publikationen und gemeinschaftsfördernde Aktivitäten organisieren;
    f. weitere Tätigkeiten ausüben, die dem Vereinszweck dienen.
-4. Der Verein ist politisch und konfessionell neutral. Er betreibt keine wesentlichen politischen Aktivitäten und kein Lobbying.
+5. Der Verein ist politisch und konfessionell neutral. Er betreibt keine wesentlichen politischen Aktivitäten und kein Lobbying.
 
 ### Art. 4 — Gemeinnützigkeit und Gewinnverwendung
 1. Der Verein ist gemeinnützig und nicht gewinnorientiert. Er schüttet keine Gewinne an Mitglieder, Gründer, Organe oder Spender aus.
@@ -109,7 +110,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 ### B. Vorstand
 
 ### Art. 13 — Zusammensetzung
-1. Der Vorstand besteht aus mindestens **drei (3)** und höchstens **sieben (7)** Mitgliedern.
+1. Der Vorstand besteht aus mindestens **zwei (2)** und höchstens **sieben (7)** Mitgliedern.
 2. Der Vorstand setzt sich mindestens zusammen aus:
    a. einem/einer **Präsident/in**;
    b. einem/einer **Kassier/in** (Schatzmeister/in).
@@ -152,6 +153,7 @@ Die Mitgliederversammlung ist das oberste Organ des Vereins. Ihr stehen folgende
 1. Die Vorstandsmitglieder üben ihr Amt **ehrenamtlich** aus.
 2. Tatsächlich angefallene Auslagen, die im Zusammenhang mit der Vereinstätigkeit stehen, werden gegen Vorlage von Belegen erstattet.
 3. Weitere Entschädigungen an Vorstandsmitglieder über den Spesenersatz gemäss Abs. 2 hinaus sind ausgeschlossen.
+4. Vorstandsmitglieder dürfen während ihrer Amtsdauer keine entgeltlichen operativen Tätigkeiten ausserhalb ihrer Vorstandsfunktion in einem Anstellungs-, Auftrags- oder vergleichbaren Verhältnis für den Verein ausüben.
 
 ### C. Revisionsstelle
 
@@ -195,9 +197,15 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 
 ---
 
-## V. Haftung
+## V. Geistiges Eigentum und Haftung
 
-### Art. 24 — Haftung
+
+### Art. 24 — Geistiges Eigentum und offene Standards
+1. Der Verein strebt an, an Software, Daten, Inhalten, Namen und sonstigen Arbeitsergebnissen, die vom Verein oder in dessen Auftrag für den Vereinszweck entwickelt, erstellt oder beschafft werden, die für den Vereinszweck erforderlichen Rechte oder Nutzungsrechte zu erwerben bzw. sich einräumen zu lassen.
+2. Soweit solche Rechte nicht bereits von Gesetzes wegen beim Verein liegen, werden sie dem Verein durch schriftliche Vereinbarung übertragen oder in dem für den Vereinszweck erforderlichen Umfang eingeräumt. Vorbehalten bleiben zwingende gesetzliche Rechte der Urheberinnen und Urheber.
+3. Der Verein verfolgt bei der Lizenzierung und Veröffentlichung eigener Arbeitsergebnisse das Prinzip "Open by Default". Er strebt an, seine wesentlichen Plattformen, Datensätze und Dokumentationen unter offene Lizenzen (z.B. Open Source, Open Data, offene Dokumentation) zu stellen, soweit er über die hierfür erforderlichen Rechte verfügt. Der Vorstand kann im Einzelfall beschliessen, bestimmte Entwicklungen, Daten, Namen (Markenrechte) oder sensible Infrastrukturkomponenten nicht offen zu lizenzieren, zurückzuhalten oder spezifisch zu lizenzieren, wenn dies der Sicherheit der Systeme, der finanziellen Nachhaltigkeit des Vereins oder dem Schutz vor Missbrauch dient.
+
+### Art. 25 — Haftung
 1. Für die Verbindlichkeiten des Vereins haftet ausschliesslich das Vereinsvermögen.
 2. **Eine persönliche Haftung der Mitglieder ist ausgeschlossen.** Kein Mitglied haftet persönlich für Schulden oder Verpflichtungen des Vereins.
 3. Die Pflicht zur Bezahlung ausstehender Mitgliederbeiträge gemäss Art. 7 bleibt vorbehalten.
@@ -206,11 +214,11 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 
 ## VI. Auflösung und Liquidation
 
-### Art. 25 — Auflösung
+### Art. 26 — Auflösung
 1. Die Auflösung des Vereins kann von der Mitgliederversammlung mit einer **Zweidrittelmehrheit (2/3)** der abgegebenen Stimmen beschlossen werden.
 2. Die Auflösung muss als Traktandum in der Einladung zur Mitgliederversammlung aufgeführt sein.
 
-### Art. 26 — Verwendung des Restvermögens
+### Art. 27 — Verwendung des Restvermögens
 1. Bei Auflösung des Vereins wird das nach Tilgung sämtlicher Verbindlichkeiten verbleibende Vermögen **unwiderruflich** an **eine oder mehrere gemeinnützige Organisationen mit einem gleichartigen oder verwandten gemeinnützigen Zweck** übertragen, wie von der Mitgliederversammlung bestimmt.
 2. **Die Verteilung des Restvermögens an die Mitglieder ist ausgeschlossen.**
 3. Bestimmt die Mitgliederversammlung keine Empfängerorganisation, wird das Restvermögen einer von der ESTV oder dem kantonalen Steueramt anerkannten gemeinnützigen Organisation im Bereich digitale Bildung oder Informationsfreiheit übertragen, wie vom Vorstand bestimmt.
@@ -221,71 +229,27 @@ Das Geschäftsjahr entspricht dem Kalenderjahr (1. Januar bis 31. Dezember).
 
 ## VII. Schlussbestimmungen
 
-### Art. 27 — Anwendbares Recht
+### Art. 28 — Anwendbares Recht
 Für diese Statuten und alle darin nicht geregelten Belange gilt **schweizerisches Recht**, insbesondere Art. 60–79 ZGB.
 
-### Art. 28 — Gerichtsstand
+### Art. 29 — Gerichtsstand
 Ausschliesslicher Gerichtsstand für alle Streitigkeiten aus oder im Zusammenhang mit diesen Statuten oder der Vereinstätigkeit ist der Sitz des Vereins.
 
-### Art. 29 — Sprachen
+### Art. 30 — Sprachen
 1. Diese Statuten sind in **deutscher Sprache** abgefasst.
 2. Bei Abweichungen zwischen der deutschen Fassung und allfälligen Übersetzungen ist die deutsche Fassung massgebend.
 3. Die offizielle Kommunikation des Vereins kann in Deutsch, Englisch, Französisch oder Italienisch erfolgen.
 
-### Art. 30 — Inkrafttreten
-Diese Statuten wurden an der Gründungsversammlung vom **[DATUM]** angenommen und treten sofort in Kraft.
+### Art. 31 — Inkrafttreten
+Diese Statuten wurden an der Gründungsversammlung vom **23. April 2026** angenommen und treten sofort in Kraft.
 
 ---
 
-## Gründungsprotokoll
+**Für den Verein FactHarbor**
 
-**Datum**: [DATUM]
+Dietlikon, 23. April 2026
 
-**Ort**: [ORT / oder «Per Videokonferenz»]
+&nbsp;
 
-**Anwesende Gründungsmitglieder**:
-1. Robert Schaub, [GEBURTSDATUM], von [HEIMATORT], In Lederäcker 11, 8305 Dietlikon, Schweiz
-2. [VOLLSTÄNDIGER NAME 2], [GEBURTSDATUM], von [HEIMATORT/STAATSANGEHÖRIGKEIT], [ADRESSE]
-3. [VOLLSTÄNDIGER NAME 3], [GEBURTSDATUM], von [HEIMATORT/STAATSANGEHÖRIGKEIT], [ADRESSE]
-
-**Feststellung der Beschlussfähigkeit**: Alle Gründungsmitglieder sind anwesend. Die Versammlung ist beschlussfähig.
-
-**Wahl der Versammlungsleitung**: Robert Schaub wird als Versammlungsleiter gewählt. [NAME] wird als Protokollführer/in gewählt.
-
-**Gefasste Beschlüsse**:
-1. Die vorstehenden Statuten werden einstimmig angenommen.
-2. Folgende Personen werden in den Vorstand gewählt:
-   - **Präsident/in**: Robert Schaub
-   - **Kassier/in**: [NAME]
-   - **Beisitzer/in**: [NAME]
-3. Der jährliche Mitgliederbeitrag wird auf **CHF 20** festgesetzt.
-4. Das Geschäftsjahr entspricht dem Kalenderjahr.
-5. Auf die Bestellung einer Revisionsstelle wird zum jetzigen Zeitpunkt verzichtet.
-6. Der Verein wird freiwillig ins Handelsregister des Kantons Zürich eingetragen.
-
-**Unterschriften der Gründungsmitglieder**:
-
-```
-_________________________    _________________________    _________________________
-Robert Schaub                [Name 2]                     [Name 3]
-```
-
----
-
-## Hinweise
-
-> **Dies ist ein Entwurf. Er wurde auf Grundlage der FactHarbor-Projektdokumentation erstellt.**
-
-Besondere Prüfpunkte:
-
-1. **Zweckartikel (Art. 3)**: Muss klar als «gemeinnützig» im Sinne der kantonalen Steuerpraxis formuliert sein — weit genug für die Vereinstätigkeit, spezifisch genug für die Steuerbehörden.
-
-2. **Auflösungsklausel (Art. 26)**: Entscheidend für die Steuerbefreiung. Die unwiderrufliche Zweckbindung des Vermögens muss den kantonalen Anforderungen genügen.
-
-3. **Gemeinnützigkeit (Art. 4)**: Muss den Anforderungen an die Steuerbefreiung genügen (kein Gewinnausschüttungsverbot).
-
-4. **Entschädigung (Art. 18)**: Einige Kantone sind bei jeglicher Vorstandsentschädigung streng — mit den kantonalen Vorgaben abgleichen.
-
-5. **Handelsregistereintrag**: Für die Goodstack/Claude-for-Nonprofits-Verifizierung ist ein freiwilliger Eintrag empfehlenswert (UID-Nummer, Auffindbarkeit auf zefix.ch).
-
-6. **Vermögensübertragung (Asset Transfer)**: Falls der Gründer bereits Vermögenswerte besitzt (Domains, Code, Markenrechte), sollte die Übertragung an den Verein dokumentiert werden.
+______________________________
+**Robert Schaub** — Präsident

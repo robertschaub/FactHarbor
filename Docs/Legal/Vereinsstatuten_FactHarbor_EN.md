@@ -1,7 +1,7 @@
 # Statutes of FactHarbor (Vereinsstatuten) — English Reference Translation
 
-**DRAFT — Non-binding English translation for reference only.**
-**The legally binding version is the German text: `DRAFT_Vereinsstatuten_FactHarbor_DE.md`**
+**Non-binding English translation for reference only.**
+**The legally binding version is the German text: `Vereinsstatuten_FactHarbor_DE.md`**
 
 ---
 
@@ -16,14 +16,15 @@ The registered office (Sitz) of the association is in **Dietlikon, Canton of Zü
 ### Article 3 — Purpose
 1. The purpose of FactHarbor is to promote general education and informed opinion-forming by helping people understand, contextualise, and evaluate complex, unclear, and contested information on an evidence-based foundation.
 2. The association pursues exclusively **non-profit and public-benefit purposes** (gemeinnützige Zwecke) within the meaning of Art. 56 lit. g DBG.
-3. In furtherance of its purpose, the association may in particular:
+3. The association's activities are intended to benefit the general public or an open circle of beneficiaries and are not limited to the association's members.
+4. In furtherance of its purpose, the association may in particular:
    a. Develop and operate open-source software and platforms for evidence-based information analysis and related applications in the field of digital general education;
    b. Conduct and publish research on information quality, media literacy, evidence evaluation, and related topics;
    c. Maintain and publish open datasets, open protocols, open standards, and open documentation;
    d. Collaborate with educational institutions, media organisations, research institutions, and civil society;
    e. Organise educational events, training, publications, and community engagement activities;
    f. Undertake further activities that serve the association's purpose.
-4. The association is politically and religiously neutral. It does not engage in substantial political activities or lobbying.
+5. The association is politically and religiously neutral. It does not engage in substantial political activities or lobbying.
 
 ### Article 4 — Non-Profit Status and Use of Surplus
 1. The association is non-profit (nicht gewinnorientiert). It does not distribute profits to its members, founders, governing bodies, or donors.
@@ -110,7 +111,7 @@ The General Assembly is the supreme governing body of the association. It has th
 ### B. Board (Vorstand)
 
 ### Article 13 — Composition
-1. The Board consists of at least **three (3)** and at most **seven (7)** members.
+1. The Board consists of at least **two (2)** and at most **seven (7)** members.
 2. The Board is composed of at least:
    a. a **President** (Präsident/in);
    b. a **Treasurer** (Kassier/in).
@@ -153,6 +154,7 @@ The General Assembly is the supreme governing body of the association. It has th
 1. Members of the Board serve on a **voluntary basis** (ehrenamtlich).
 2. Reasonable out-of-pocket expenses incurred in the performance of duties for the association shall be reimbursed upon submission of receipts.
 3. Compensation to Board members beyond the expense reimbursement under paragraph 2 is excluded.
+4. During their term of office, Board members may not perform paid operational activities for the association outside their Board function under an employment, contractor, or comparable arrangement.
 
 ### C. Auditor
 
@@ -196,9 +198,15 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 
 ---
 
-## V. Liability
+## V. Intellectual Property and Liability
 
-### Article 24 — Liability
+
+### Article 24 — Intellectual Property and Open Standards
+1. The association seeks to acquire, or have granted to it, the rights or usage rights needed for its purpose in relation to software, data, content, names, and other work products developed, created, or procured by or on behalf of the association for the association's purpose.
+2. To the extent such rights do not already vest in the association by operation of law, they shall be assigned to the association, or granted to it to the extent required for its purpose, by written agreement. Mandatory statutory rights of the authors remain reserved.
+3. The association follows an "Open by Default" principle when licensing and publishing its own work products. It aims to make its core platforms, datasets, and documentation available under open licenses (e.g., Open Source, Open Data, open documentation), insofar as it holds the rights required to do so. In individual cases, the Board may decide not to license certain developments, data, names (trademarks), or sensitive infrastructure components openly, to withhold them, or to license them specifically, if this serves system security, the association's financial sustainability, or protection against misuse.
+
+### Article 25 — Liability
 1. The association's obligations are secured solely by the assets of the association.
 2. **Personal liability of members is excluded.** No member is personally liable for the debts or obligations of the association.
 3. The obligation to pay outstanding membership fees pursuant to Article 7 is reserved.
@@ -207,11 +215,11 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 
 ## VI. Dissolution and Liquidation
 
-### Article 25 — Dissolution
+### Article 26 — Dissolution
 1. The dissolution of the association may be decided by the General Assembly with a **two-thirds (2/3) majority** of the votes cast.
 2. Dissolution must be listed as an agenda item in the invitation to the General Assembly.
 
-### Article 26 — Use of Remaining Assets
+### Article 27 — Use of Remaining Assets
 1. In the event of dissolution, remaining assets — after settlement of all liabilities — shall be **irrevocably** transferred to **one or more non-profit organisations with a similar or compatible public-benefit purpose**, as determined by the General Assembly.
 2. **Distribution of remaining assets to members is excluded.**
 3. If the General Assembly does not designate a recipient, remaining assets shall be transferred to a non-profit organisation recognised by the ESTV or the cantonal tax authority, active in the field of digital education or freedom of information, as determined by the Board.
@@ -222,79 +230,16 @@ The fiscal year corresponds to the calendar year (1 January to 31 December).
 
 ## VII. Final Provisions
 
-### Article 27 — Applicable Law
+### Article 28 — Applicable Law
 These statutes and all matters not regulated herein are governed by **Swiss law**, in particular Articles 60–79 ZGB.
 
-### Article 28 — Jurisdiction
+### Article 29 — Jurisdiction
 The exclusive place of jurisdiction for all disputes arising from or in connection with these statutes or the activities of the association is the registered office of the association.
 
-### Article 29 — Languages
+### Article 30 — Languages
 1. These statutes are drafted in **German**.
 2. In the event of any discrepancy between the German version and any translation, the **German version prevails**.
 3. Official communications of the association may be conducted in German, English, French, or Italian.
 
-### Article 30 — Entry into Force
-These statutes were adopted at the founding assembly on **[DATE]** and enter into force immediately.
-
----
-
-## Founding Assembly Record
-
-**Date**: [DATE]
-
-**Location**: [LOCATION / or "Held via video conference"]
-
-**Founding Members Present**:
-1. Robert Schaub, [DATE OF BIRTH], of [PLACE OF ORIGIN], In Lederäcker 11, 8305 Dietlikon, Switzerland
-2. [FULL NAME 2], [DATE OF BIRTH], of [PLACE OF ORIGIN / NATIONALITY], [ADDRESS]
-3. [FULL NAME 3], [DATE OF BIRTH], of [PLACE OF ORIGIN / NATIONALITY], [ADDRESS]
-
-**Quorum**: All founding members are present. The assembly has a quorum.
-
-**Election of Chairperson**: Robert Schaub is elected as chairperson of the assembly. [NAME] is elected as minute-taker.
-
-**Resolutions Adopted**:
-1. The statutes above were unanimously adopted.
-2. The following persons were elected to the Board:
-   - **President**: Robert Schaub
-   - **Treasurer**: [NAME]
-   - **Member-at-large**: [NAME]
-3. The annual membership fee is set at **CHF 20** per year.
-4. The fiscal year is the calendar year.
-5. No Auditor is appointed at this time.
-6. The association shall be voluntarily registered in the Commercial Register (Handelsregister) of the Canton of Zürich.
-
-**Signatures of Founding Members**:
-
-```
-_________________________    _________________________    _________________________
-Robert Schaub                [Name 2]                     [Name 3]
-```
-
----
-
-## Notes for Legal Review
-
-> **IMPORTANT: This is a DRAFT prepared from the FactHarbor project documentation. It must be reviewed and adapted by a qualified Swiss legal advisor (Rechtsanwalt / Avocat) before adoption.**
-
-Key points for legal counsel to review:
-
-1. **Purpose clause (Art. 3)**: Confirm it is broad enough for tax-exempt status but specific enough for cantonal authorities. The purpose must be clearly "gemeinnützig" (public-benefit).
-
-2. **Dissolution clause (Art. 26)**: Critical for tax-exempt status. Verify the "irrevocable dedication" language satisfies cantonal requirements.
-
-3. **Non-profit constraint (Art. 4)**: Confirm this meets the "no profit distribution" test for Steuerbefreiung.
-
-4. **Compensation provisions (Art. 18)**: Verify compatibility with tax-exempt status — some cantons are strict about any board compensation.
-
-5. **Membership fees (Art. 7)**: Confirm symbolic fees do not create issues with cantonal tax authorities regarding genuine public-benefit character.
-
-6. **Representation / Signing authority (Art. 17)**: Confirm the collective signature requirement is appropriate for the initial phase.
-
-7. **Remote participation (Art. 11.4)**: Confirm this complies with current Swiss association law and practice.
-
-8. **Handelsregister registration**: Advise whether voluntary registration is recommended at founding (for Goodstack/NPO verification purposes).
-
-9. **Tax-exempt application**: Advise on the specific cantonal process and any additional documentation needed beyond these statutes.
-
-10. **Asset Transfer Protocol**: If the founder has pre-existing assets (domains, code, trademarks), advise on documenting the transfer to the Verein.
+### Article 31 — Entry into Force
+These statutes were adopted at the founding assembly on **23 April 2026** and enter into force immediately.

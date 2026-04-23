@@ -2,16 +2,52 @@
 
 **Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) ASAP**
 
+## What "Internationally Recognized NPO" Means In Practice
+
+There is **no single global NPO registration**.
+
+For FactHarbor, the practical recognition stack is:
+
+1. **Swiss legal existence**: entry in the Zurich Commercial Register (`Handelsregister`)
+2. **Swiss public-benefit / nonprofit recognition**: tax exemption for public-benefit purposes (`Steuerbefreiung wegen Gemeinnützigkeit`)
+3. **International platform / donor verification**: Goodstack, TechSoup, Candid
+4. **U.S. grantmaker recognition when needed**: NGOsource equivalency determination (`ED`)
+
+## Exact Registration Order From Current State (23 April 2026)
+
+1. **Complete the founding package**
+   - Fill in the missing `Beginn` / `Ende` times in `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.md`
+   - Sign the binding German statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`
+   - For printing/signing, use: `Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf`
+   - Sign the founding minutes / protocol
+2. **File the association in the Zurich Commercial Register**
+   - Prepare the registration application in **German**
+   - Attach the statutes and the protocol of the founding assembly
+   - Arrange **signature certification** for the new signatories if required for the filing path used
+   - Submit to the Zurich Commercial Register (`Handelsregisteramt`)
+3. **After the Commercial Register entry**
+   - Download the commercial register excerpt / confirm the Zefix entry
+   - Use the excerpt plus the founding documents to finalize the Verein bank account
+4. **File for Zurich tax exemption**
+   - Submit the tax-exemption form for public-benefit purposes
+   - Attach: statutes, founding protocol, activity concept, and budget
+   - Aim for inclusion in the Zurich list of tax-exempt institutions after approval
+5. **Start the international recognition track**
+   - **Goodstack** after commercial-register visibility and with an organization email
+   - **TechSoup** after the Swiss legal setup is stable
+   - **Candid** once mission, leadership, programs, and basic financial information are present
+   - **NGOsource ED** only if you actively target U.S. foundations or U.S.-based institutional funders
+
 ## Critical Path (Blocking Claude for Nonprofits Application)
 
 ### Phase 1: Formation (Target: Week 1)
 
 - [X] **Secure Swiss address** for Verein Sitz (personal, co-working, or registered office)
-- [ ] **Find one co-founder** (any nationality, age 18+, supports mission)
+- [X] **Find one co-founder** (any nationality, age 18+, supports mission)
 - [ ] **Have statutes reviewed by Swiss lawyer** (~CHF 500–1,500)
-  - Draft: `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md`
+  - Statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md` and `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`
   - Lawyer must confirm: purpose clause, dissolution clause, non-profit constraint
-- [ ] **Hold founding assembly** (can be via video conference)
+- [X] **Hold founding assembly** (can be via video conference)
   - Adopt statutes
   - Elect Governing Team (minimum: President + Treasurer)
   - Set membership fee
@@ -22,23 +58,59 @@
 ### Phase 2: Official Registration (Target: Weeks 1–3)
 
 - [ ] **Register in Handelsregister** (Commercial Register)
-  - Submit: statutes, founding minutes, ID copies of Vorstand
-  - Fee: ~CHF 150
-  - Processing: 1–2 weeks
+  - Official Zurich filing page: https://www.zh.ch/de/wirtschaft-arbeit/handelsregister/verein/neu-eintragen.html
+  - Official Zurich factsheet: https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/wirtschaft-arbeit/handelsregister/verein/verein_merkblatt_neueintragung.pdf
+  - Submit: German registration application, statutes, founding minutes / protocol, and signature-certification documents for new signatories as required
+  - Filing path: paper or qualified electronic submission (`PDF/A`)
+  - Processing: usually about 1 working week for review, then a few additional working days until visible in Zefix
   - Result: UID number + entry visible on [zefix.ch](https://www.zefix.ch)
-  - **This is likely required for Goodstack to find you in official registries**
+  - **This is practically required for Goodstack verification**
 - [ ] **Open bank account** for the Verein
   - Swiss bank (PostFinance, Raiffeisen, cantonal bank)
-  - Bring: statutes, founding minutes, ID of signatories (Handelsregister excerpt NOT required — most banks accept founding documents directly)
-  - Get: bank statement PDF (needed for Goodstack, must be 30+ days old at application time)
+  - Bring: statutes, founding minutes / protocol, ID of signatories, and ideally the commercial-register excerpt once available
+  - Get: bank statement or official bank document in PDF form (needed later for some Goodstack checks)
+
+#### Exact Handelsregister Filing Pack For FactHarbor
+
+- `Create`: **Anmeldung Verein, Neueintragung** (official Zurich form, in German)
+- `Use`: **final signed German statutes PDF**
+  - Current source: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`
+  - Current print/sign base: `Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf`
+- `Use`: **final signed founding protocol PDF**
+  - Base file: `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf`
+  - Before filing, make sure the final version includes the actual `Beginn` / `Ende` times and signatures
+- `Create`: **Wahlannahmeerklärung Vorstand**
+  - Can be omitted only if the board members' acceptance of election is already clearly documented in the founding protocol in a way accepted by the Handelsregisteramt
+- `Create`: **Protokoll Vorstandsitzung, Konstituierung und Zeichnungsberechtigung**
+  - This is the safest route because the Zurich filing page lists it explicitly
+  - Use it to confirm the board constitution and the signatory rule (`Kollektivunterschrift zu zweien`)
+- `Create`: **Erklärung der Vereinsnatur**
+- `Prepare`: **ID copies** for each person to be entered in the register
+  - For FactHarbor currently: Robert Schaub and Stefanie Schaub-Hehr
+- `Prepare`: **beglaubigte Unterschriftenmuster** for each new signatory
+  - Can be certified by Notariat, Stadt- oder Gemeindeammannamt, or at the Handelsregisteramt counter
+- `Only if needed`: **Domizilannahmeerklärung**
+  - Only if the registered address is a `c/o` address rather than your own actual legal domicile
+- `Only if needed`: **members list**
+  - Only if the statutes provided for personal liability or additional contribution obligations of members
+
+#### Recommended Order For Assembly
+
+1. Finalize and sign the German statutes
+2. Finalize and sign the founding protocol
+3. Prepare the board acceptance and constituting-board documents
+4. Get signature certifications for the signatories
+5. Complete the Zurich registration form
+6. Submit the full package together
 
 ### Phase 3: Tax-Exempt Status (Target: Weeks 2–12, parallel)
 
 - [ ] **Prepare tax-exemption application** (Gesuch um Steuerbefreiung)
   - Submit to cantonal Steueramt of your Sitz canton
-  - Documents: application letter, statutes, founding minutes, activity description, budget projection
+  - Documents: completed form, statutes, founding minutes, activity description / concept, budget projection
   - Processing: 4–12 weeks
-  - **Not a blocker for Goodstack** but strengthens your application and is needed long-term
+  - Result: stronger legal nonprofit status and possible inclusion in the public Zurich list of tax-exempt institutions
+  - **Not a blocker for Goodstack** but strongly recommended for long-term donor and foundation credibility
 
 ### Phase 4: Claude for Nonprofits Application (Target: ~Week 5-6)
 
@@ -59,6 +131,18 @@
 - [ ] Sign up using verified email — select "With my team" (minimum 5 seats)
 - [ ] Complete Team plan setup ($8/user/month with 75% discount)
 
+### Phase 5: International Verification And Funder Visibility (Target: after Swiss base is stable)
+
+- [ ] **Claim Goodstack nonprofit profile**
+  - Needs an officially verifiable organization and representative
+  - Use the legal name exactly as registered
+- [ ] **Apply for TechSoup validation**
+  - Useful for software programs and broader NGO validation
+- [ ] **Claim Candid profile**
+  - Add mission, leadership, programs, website, and later financials / impact data
+- [ ] **Prepare NGOsource ED package if U.S. foundation fundraising becomes a priority**
+  - Relevant mainly for U.S. institutional philanthropy, not for Swiss legal formation itself
+
 ---
 
 ## Document Inventory
@@ -66,9 +150,9 @@
 
 | Document                    | Status      | Location                                            |
 | ----------------------------- | ------------- | ----------------------------------------------------- |
-| Draft Statutes (EN)         | **READY**   | `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md` |
-| Draft Statutes (DE)         | **READY**   | `Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md` |
-| Founding Assembly Minutes   | Not started | —                                                  |
+| Statutes (EN)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`      |
+| Statutes (DE)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`      |
+| Founding Assembly Minutes   | **READY**   | `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf` |
 | Handelsregister Application | Not started | —                                                  |
 | Tax-Exemption Application   | Not started | —                                                  |
 | Budget Projection           | Not started | —                                                  |
@@ -81,7 +165,7 @@
 | Who                         | Why                                      | When                             |
 | ----------------------------- | ------------------------------------------ | ---------------------------------- |
 | Swiss lawyer (Rechtsanwalt) | Review statutes, advise on tax exemption | ASAP — Week 1                   |
-| Co-founder                  | Second founding member                   | ASAP — before founding assembly |
+| Notariat / Gemeindeammannamt / HRA Schalter | Signature certification for signatories | Before Handelsregister filing |
 | Swiss bank                  | Verein account opening                   | After founding assembly          |
 | Cantonal Steueramt          | Tax-exempt application                   | After founding + Handelsregister |
 | Goodstack support           | If verification issues arise             | After applying                   |
@@ -108,3 +192,24 @@ Week 3:  [Handelsregister processing...] [Tax-exempt application filed]
 Week 4:  [Handelsregister confirmed → visible on zefix.ch]
 Week 5+: [30-day doc age met] → [Apply via Goodstack] → [Verified in 1-72 hours]
 ```
+
+## Key Official Sources
+
+- Zurich Commercial Register, new association registration:
+  https://www.zh.ch/de/wirtschaft-arbeit/handelsregister/verein/neu-eintragen.html
+- Zurich Commercial Register factsheet for new association registration:
+  https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/wirtschaft-arbeit/handelsregister/verein/verein_merkblatt_neueintragung.pdf
+- Zurich tax exemption for legal entities:
+  https://www.zh.ch/de/steuern-finanzen/steuern/steuern-juristische-personen/steuerwissen-juristische-personen/steuerbefreiung-fuer-eine-juristische-person-beantragen.html
+- Zurich practice note `ZStB 61.1`:
+  https://www.zh.ch/de/steuern-finanzen/steuern/treuhaender/steuerbuch/steuerbuch-definition/zstb-61-1.html
+- Zurich list of tax-exempt institutions:
+  https://www.zh.ch/de/steuern-finanzen/steuern/steuern-juristische-personen/steuerwissen-juristische-personen.html
+- Goodstack verification requirements:
+  https://help.goodstack.org/hc/en-us/articles/28236947821585-What-documents-does-Goodstack-require-to-verify-my-organization-s-nonprofit-status
+- TechSoup validation overview:
+  https://page.techsoup.org/validation-services2
+- Candid profile / transparency:
+  https://candid.org/claim-nonprofit-profile/how-to-earn-a-candid-seal-of-transparency/
+- NGOsource background / ED ecosystem:
+  https://tenyears.ngosource.org/
