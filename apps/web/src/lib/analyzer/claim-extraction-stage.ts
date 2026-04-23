@@ -24,6 +24,7 @@ import type {
   AtomicClaim,
   CBClaimUnderstanding,
   CBResearchState,
+  ClaimSelectionStage1Observability,
   SourceType,
 } from "./types";
 
@@ -238,6 +239,8 @@ export async function extractClaims(
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
   const calcConfig = calcResult.config;
+  const stage1Observability: ClaimSelectionStage1Observability = {};
+  state.stage1Observability = stage1Observability;
 
   // Log config load status for extract stage
   if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
@@ -341,6 +344,7 @@ export async function extractClaims(
   if (contractValidationEnabled) {
     state.onEvent?.("Validating claim contract fidelity...", 24);
     state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+    const contractValidationStartedAt = Date.now();
 
     const {
       result: contractResult,
@@ -411,6 +415,7 @@ export async function extractClaims(
         stageAttribution,
       };
     }
+    stage1Observability.contractValidationMs = Date.now() - contractValidationStartedAt;
 
     const shouldRetryAfterValidation =
       contractMaxRetries > 0 && (
@@ -475,19 +480,25 @@ export async function extractClaims(
       }
 
       try {
-        state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 24);
-        const retryPass2 = await runPass2(
-          state.originalInput,
-          preliminaryEvidence,
-          pipelineConfig,
-          currentDate,
-          state,
-          contractGuidance,
-          pass1.inferredGeography,
-          pass1.detectedLanguage,
-          "context_refinement",
-          retrySalienceCommitment,
-        );
+        state.onEvent?.("Retrying Pass 2 with claim contract guidance...", 25);
+        const retryPass2StartedAt = Date.now();
+        let retryPass2;
+        try {
+          retryPass2 = await runPass2(
+            state.originalInput,
+            preliminaryEvidence,
+            pipelineConfig,
+            currentDate,
+            state,
+            contractGuidance,
+            pass1.inferredGeography,
+            pass1.detectedLanguage,
+            "context_refinement",
+            retrySalienceCommitment,
+          );
+        } finally {
+          stage1Observability.retryPass2Ms = Date.now() - retryPass2StartedAt;
+        }
         state.llmCalls++;
 
         console.info(
@@ -495,6 +506,8 @@ export async function extractClaims(
         );
 
         let retryContractResult: ClaimContractValidationResult | undefined;
+        state.onEvent?.("Validating retry claim contract fidelity...", 26);
+        const retryContractValidationStartedAt = Date.now();
         try {
           const {
             result,
@@ -509,7 +522,7 @@ export async function extractClaims(
               pipelineConfig,
               retrySalienceCommitment,
             )
-          );
+              );
           retryContractResult = result;
           state.llmCalls += retryContractValidationAttempts;
 
@@ -522,6 +535,8 @@ export async function extractClaims(
           }
         } catch {
           // Re-validation failure is non-fatal — keep original Pass 2 output.
+        } finally {
+          stage1Observability.retryValidationMs = Date.now() - retryContractValidationStartedAt;
         }
 
         let evaluatedRetryContract = retryContractResult
@@ -537,7 +552,7 @@ export async function extractClaims(
             retryPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
             state,
-            24,
+            26,
             retrySalienceCommitment,
           )
           : undefined;
@@ -598,36 +613,50 @@ export async function extractClaims(
           );
         }
 
-        state.onEvent?.(`Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`, 25);
+        state.onEvent?.(`Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`, 27);
         try {
-          const repairedPass2 = await runContractRepair(
-            currentClaims,
-            repairAnchorText,
-            state.originalInput,
-            activePass2.impliedClaim ?? "",
-            activePass2.articleThesis ?? "",
-            pipelineConfig,
-            state,
-          );
+          const repairPassStartedAt = Date.now();
+          let repairedPass2;
+          try {
+            repairedPass2 = await runContractRepair(
+              currentClaims,
+              repairAnchorText,
+              state.originalInput,
+              activePass2.impliedClaim ?? "",
+              activePass2.articleThesis ?? "",
+              pipelineConfig,
+              state,
+            );
+          } finally {
+            stage1Observability.repairPassMs = Date.now() - repairPassStartedAt;
+          }
           if (repairedPass2) {
             state.llmCalls++;
 
             // C17 [BLOCKER FIX]: mandatory re-validation refresh after repair.
             // Decoupled from Gate 1 to ensure structural and semantic correctness.
-            const {
-              result: repairValidationResult,
-              attempts: repairValidationAttempts,
-            } = await runClaimContractValidationWithRetry(() =>
-              validateClaimContract(
-                repairedPass2.atomicClaims as unknown as AtomicClaim[],
-                state.originalInput,
-                activePass2.impliedClaim ?? "",
-                activePass2.articleThesis ?? "",
-                activePass2.inputClassification ?? "single_atomic_claim",
-                pipelineConfig,
-                salienceCommitment,
-              )
-            );
+            state.onEvent?.("Validating repaired claim contract fidelity...", 28);
+            const repairValidationStartedAt = Date.now();
+            let repairValidationResult: ClaimContractValidationResult | undefined;
+            let repairValidationAttempts = 0;
+            try {
+              ({
+                result: repairValidationResult,
+                attempts: repairValidationAttempts,
+              } = await runClaimContractValidationWithRetry(() =>
+                validateClaimContract(
+                  repairedPass2.atomicClaims as unknown as AtomicClaim[],
+                  state.originalInput,
+                  activePass2.impliedClaim ?? "",
+                  activePass2.articleThesis ?? "",
+                  activePass2.inputClassification ?? "single_atomic_claim",
+                  pipelineConfig,
+                  salienceCommitment,
+                )
+              ));
+            } finally {
+              stage1Observability.repairValidationMs = Date.now() - repairValidationStartedAt;
+            }
             state.llmCalls += repairValidationAttempts;
 
             if (repairValidationAttempts > 1) {
@@ -651,7 +680,7 @@ export async function extractClaims(
                 activePass2.inputClassification ?? "single_atomic_claim",
                 pipelineConfig,
                 state,
-                25,
+                28,
                 salienceCommitment,
               );
               if (!evaluatedRepair.effectiveRePromptRequired) {
@@ -746,7 +775,7 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   // Gate 1: Claim validation (Haiku, batched) — actively filters claims
   // ------------------------------------------------------------------
-  state.onEvent?.("Extracting claims: Gate 1 validation...", 26);
+  state.onEvent?.("Extracting claims: Gate 1 validation...", 29);
   state.onEvent?.(`LLM call: Gate 1 validation — ${getModelForTask("understand", undefined, pipelineConfig).modelName}`, -1);
   let gate1Result = await runGate1Validation(
     gate1InputClaims,
@@ -800,7 +829,7 @@ export async function extractClaims(
     let bestAttemptPass2 = activePass2;
 
     for (let attempt = 1; attempt <= maxRepromptAttempts; attempt++) {
-      state.onEvent?.(`Extracting claims: reprompt attempt ${attempt}/${maxRepromptAttempts}...`, 24);
+      state.onEvent?.(`Extracting claims: reprompt attempt ${attempt}/${maxRepromptAttempts}...`, 29);
 
       const guidance =
         `DECOMPOSITION GUIDANCE: Prior extraction produced ${bestPostGate1Count} claim(s), ` +
@@ -919,7 +948,7 @@ export async function extractClaims(
       `[Stage1] MT-5(C): ${distinctEventCount} distinct events detected but only 1 claim post-Gate-1. ` +
       `Triggering multi-event reprompt.`
     );
-    state.onEvent?.("Extracting claims: multi-event reprompt...", 25);
+    state.onEvent?.("Extracting claims: multi-event reprompt...", 30);
 
     const multiEventGuidance =
       `DECOMPOSITION GUIDANCE: The input references ${distinctEventCount} distinct events or proceedings. ` +
@@ -1007,7 +1036,7 @@ export async function extractClaims(
       };
       console.info("[Stage1] Final accepted claims are empty after Gate 1; contract summary refreshed to reflect the final claim set.");
     } else {
-      state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 26);
+      state.onEvent?.("Refreshing claim contract summary for final accepted claims...", 30);
       state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
       const previousContractValidationSummary = contractValidationSummary;
 
@@ -1028,7 +1057,7 @@ export async function extractClaims(
       state.llmCalls += finalContractValidationAttempts;
 
       if (finalContractValidationAttempts > 1) {
-        state.onEvent?.("Retrying final contract revalidation...", 27);
+        state.onEvent?.("Retrying final contract revalidation...", 31);
         console.info(
           finalContractResult
             ? "[Stage1] Final contract revalidation recovered on a second structured-output attempt."
@@ -1049,7 +1078,7 @@ export async function extractClaims(
           bestPass2.inputClassification ?? "single_atomic_claim",
           pipelineConfig,
           state,
-          26,
+          30,
           salienceCommitment,
         );
         contractValidationSummary = evaluatedFinalContract.summary;
@@ -1092,6 +1121,10 @@ export async function extractClaims(
       }
     }
   }
+
+  stage1Observability.candidateClaimCount = finalAcceptedClaims.length;
+  stage1Observability.contractValidationFailureMode = contractValidationSummary?.failureMode;
+  stage1Observability.stageAttribution = contractValidationSummary?.stageAttribution;
 
   // Assemble CBClaimUnderstanding
   // ------------------------------------------------------------------

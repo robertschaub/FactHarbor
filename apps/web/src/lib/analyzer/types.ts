@@ -746,6 +746,45 @@ export interface ClaimSelectionRecommendation {
   rationale: string;
 }
 
+export type ClaimSelectionDraftPreparationPhaseCode =
+  | "queued"
+  | "stage1_preparation"
+  | "recommendation"
+  | "auto_continue"
+  | "awaiting_claim_selection"
+  | "failed_stage1"
+  | "failed_recommendation";
+
+export type ClaimSelectionDraftPreparationBranch =
+  | "in_progress"
+  | "awaiting_claim_selection"
+  | "auto_continue"
+  | "failed_stage1"
+  | "failed_recommendation";
+
+export interface ClaimSelectionStage1Observability {
+  candidateClaimCount?: number;
+  contractValidationFailureMode?: "contract_violated" | "validator_unavailable";
+  stageAttribution?: "initial" | "retry" | "repair";
+  contractValidationMs?: number;
+  retryPass2Ms?: number;
+  retryValidationMs?: number;
+  repairPassMs?: number;
+  repairValidationMs?: number;
+}
+
+export interface ClaimSelectionDraftObservability {
+  phaseCode: ClaimSelectionDraftPreparationPhaseCode;
+  phaseLabel: string;
+  eventMessage?: string;
+  branch: ClaimSelectionDraftPreparationBranch;
+  totalPrepMs?: number;
+  stage1Ms?: number;
+  recommendationMs?: number;
+  candidateClaimCount?: number;
+  stage1?: ClaimSelectionStage1Observability;
+}
+
 export interface ClaimSelectionDraftState {
   version: 1;
   preparedStage1?: PreparedStage1Snapshot;
@@ -754,10 +793,12 @@ export interface ClaimSelectionDraftState {
   selectedClaimIds: string[];
   recommendationRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
+  observability?: ClaimSelectionDraftObservability;
   lastError?: {
     code:
       | "stage1_failed"
       | "recommendation_failed"
+      | "no_candidate_claims"
       | "invalid_selection"
       | "draft_token_invalid"
       | "draft_expired";
@@ -1354,6 +1395,8 @@ export interface CBResearchState {
   llmCalls: number;
   // Progress callback (for Stage 2 incremental updates)
   onEvent?: (message: string, progress: number) => void;
+  // Stage 1 draft-preparation observability carried to the draft runner.
+  stage1Observability?: ClaimSelectionStage1Observability;
   // Quality warnings accumulated during pipeline execution
   warnings: AnalysisWarning[];
 }

@@ -31,6 +31,50 @@ export interface ExtractedUrlContent {
   discoveredFollowUpUrls?: string[];
 }
 
+const HTML_CONTENT_REMOVAL_SELECTORS =
+  "script, style, nav, footer, header, aside, .sidebar, .menu, .nav, .advertisement, .ad";
+
+const MAIN_CONTENT_SELECTORS = [
+  "article",
+  "main",
+  "[role='main']",
+  ".post-content",
+  ".article-content",
+  ".entry-content",
+  ".content",
+  "#content",
+  ".post",
+  ".article",
+] as const;
+
+const BLOCK_TEXT_SELECTORS = [
+  "p",
+  "li",
+  "section",
+  "article",
+  "main",
+  "div",
+  "blockquote",
+  "pre",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "td",
+  "th",
+  "ul",
+  "ol",
+  "dl",
+  "dt",
+  "dd",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+].join(", ");
+
 /**
  * Returns true if the hostname resolves to a private, loopback, link-local, or
  * otherwise reserved address range. Used to block SSRF attempts.
@@ -588,50 +632,196 @@ export function buildDistributedExcerpt(
   return segments.join(separator).slice(0, maxLength);
 }
 
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function collapseAdjacentDuplicateLines(lines: string[]): string[] {
+  const deduplicated: string[] = [];
+  for (const rawLine of lines) {
+    const line = normalizeWhitespace(rawLine);
+    if (!line) continue;
+    if (deduplicated[deduplicated.length - 1] === line) continue;
+    deduplicated.push(line);
+  }
+  return deduplicated;
+}
+
+function selectPrimaryContentRoot($: cheerio.CheerioAPI): cheerio.Cheerio<any> {
+  for (const selector of MAIN_CONTENT_SELECTORS) {
+    const candidate = $(selector).first();
+    if (candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  const body = $("body").first();
+  return body.length > 0 ? body : $.root();
+}
+
+function extractStructuredTextFromRoot(root: cheerio.Cheerio<any>): string {
+  if (root.length === 0) return "";
+
+  const clone = root.clone();
+  clone.find(HTML_CONTENT_REMOVAL_SELECTORS).remove();
+  clone.find("br").replaceWith("\n");
+  clone.find(BLOCK_TEXT_SELECTORS).append("\n");
+
+  const lines = collapseAdjacentDuplicateLines(clone.text().split(/\n+/));
+  return lines.join("\n").trim();
+}
+
+function getRequestedFragmentIds(requestedUrl?: string): string[] {
+  if (!requestedUrl) return [];
+
+  try {
+    const parsed = new URL(requestedUrl);
+    const rawFragment = parsed.hash.startsWith("#")
+      ? parsed.hash.slice(1)
+      : parsed.hash;
+    if (!rawFragment || rawFragment.startsWith(":~:")) {
+      return [];
+    }
+
+    const fragmentIds = new Set<string>();
+    const normalizedRaw = rawFragment.trim();
+    if (normalizedRaw) {
+      fragmentIds.add(normalizedRaw);
+    }
+
+    try {
+      const decoded = decodeURIComponent(rawFragment).trim();
+      if (decoded) {
+        fragmentIds.add(decoded);
+      }
+    } catch {
+      // Keep the raw hash if decoding fails.
+    }
+
+    return Array.from(fragmentIds);
+  } catch {
+    return [];
+  }
+}
+
+function findFragmentTarget(
+  $: cheerio.CheerioAPI,
+  fragmentIds: string[],
+): cheerio.Cheerio<any> | null {
+  if (fragmentIds.length === 0) return null;
+
+  for (const fragmentId of fragmentIds) {
+    const exact = $("[id],[name]")
+      .filter((_, element) => {
+        const id = $(element).attr("id");
+        const name = $(element).attr("name");
+        return id === fragmentId || name === fragmentId;
+      })
+      .first();
+
+    if (exact.length > 0) {
+      return exact;
+    }
+  }
+
+  const normalizedIds = new Set(fragmentIds.map((fragmentId) => fragmentId.trim().toLowerCase()));
+  const normalizedMatch = $("[id],[name]")
+    .filter((_, element) => {
+      const id = ($(element).attr("id") ?? "").trim().toLowerCase();
+      const name = ($(element).attr("name") ?? "").trim().toLowerCase();
+      return normalizedIds.has(id) || normalizedIds.has(name);
+    })
+    .first();
+
+  return normalizedMatch.length > 0 ? normalizedMatch : null;
+}
+
+function isUsefulFragmentCandidate(candidateText: string, fullTextLength: number): boolean {
+  const lines = candidateText.split(/\n+/).filter(Boolean);
+  if (candidateText.length >= fullTextLength) return false;
+  if (candidateText.length >= 180) return true;
+  return candidateText.length >= 120 && lines.length >= 2;
+}
+
+function tryExtractFragmentScopedText(
+  $: cheerio.CheerioAPI,
+  contentRoot: cheerio.Cheerio<any>,
+  requestedUrl?: string,
+): { text: string; strategy: string } | null {
+  const fragmentIds = getRequestedFragmentIds(requestedUrl);
+  if (fragmentIds.length === 0) return null;
+
+  const fragmentTarget = findFragmentTarget($, fragmentIds);
+  if (!fragmentTarget || fragmentTarget.length === 0) {
+    return null;
+  }
+
+  const contentRootNode = contentRoot.get(0);
+  if (!contentRootNode) {
+    return null;
+  }
+
+  const fullText = extractStructuredTextFromRoot(contentRoot);
+  if (!fullText) {
+    return null;
+  }
+
+  const ancestorNodes = [fragmentTarget.get(0), ...fragmentTarget.parents().toArray()];
+  const seen = new Set<any>();
+
+  for (const node of ancestorNodes) {
+    if (!node || seen.has(node)) continue;
+    seen.add(node);
+
+    if (node === contentRootNode) {
+      break;
+    }
+
+    const isInsideRoot = contentRoot.find(node).length > 0;
+    if (!isInsideRoot) {
+      continue;
+    }
+
+    const candidateText = extractStructuredTextFromRoot($(node));
+    if (!candidateText) {
+      continue;
+    }
+
+    if (!isUsefulFragmentCandidate(candidateText, fullText.length)) {
+      continue;
+    }
+
+    const tagName = String((node as { tagName?: unknown }).tagName ?? "node").toLowerCase();
+    return {
+      text: candidateText,
+      strategy: `fragment:${tagName}`,
+    };
+  }
+
+  return null;
+}
+
 /**
  * Extract text from HTML
  */
-function extractTextFromHtml(html: string): string {
+export function extractTextFromHtml(
+  html: string,
+  options: { requestedUrl?: string } = {},
+): string {
   const $ = cheerio.load(html);
-  
-  // Remove script, style, nav, footer, header elements
-  $("script, style, nav, footer, header, aside, .sidebar, .menu, .nav, .advertisement, .ad").remove();
-  
-  // Try to find main content
-  let content = "";
-  
-  // Priority selectors for main content
-  const contentSelectors = [
-    "article",
-    "main",
-    "[role='main']",
-    ".post-content",
-    ".article-content",
-    ".entry-content",
-    ".content",
-    "#content",
-    ".post",
-    ".article",
-  ];
-  
-  for (const selector of contentSelectors) {
-    const el = $(selector);
-    if (el.length > 0) {
-      content = el.text();
-      break;
-    }
+
+  $(HTML_CONTENT_REMOVAL_SELECTORS).remove();
+  const contentRoot = selectPrimaryContentRoot($);
+
+  const fragmentScoped = tryExtractFragmentScopedText($, contentRoot, options.requestedUrl);
+  if (fragmentScoped) {
+    console.log(
+      `[Retrieval] Applied fragment-scoped HTML extraction (${fragmentScoped.strategy}) for ${options.requestedUrl}`,
+    );
+    return fragmentScoped.text;
   }
-  
-  // Fallback to body
-  if (!content) {
-    content = $("body").text();
-  }
-  
-  // Clean up whitespace
-  return content
-    .replace(/\s+/g, " ")
-    .replace(/\n\s*\n/g, "\n")
-    .trim();
+
+  return extractStructuredTextFromRoot(contentRoot);
 }
 
 /**
@@ -775,7 +965,7 @@ export async function extractTextFromUrl(
     }
     
     // Extract text
-    const text = extractTextFromHtml(html);
+    const text = extractTextFromHtml(html, { requestedUrl: url });
     const discoveredDocumentUrls = extractSameFamilyPdfUrlsFromHtml(html, response.url || url);
     
     return {

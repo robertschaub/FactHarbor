@@ -124,6 +124,7 @@ public sealed class ClaimSelectionDraftEntity
     public bool RestartedViaOther { get; set; } = false;
     public int RestartCount { get; set; } = 0;
 
+    public string? LastEventMessage { get; set; }
     public string? DraftStateJson { get; set; }
 
     public string? DraftAccessTokenHash { get; set; }

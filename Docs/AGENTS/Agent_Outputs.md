@@ -7,6 +7,26 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Fragment Root-Cause Debate -- [Standard] [open-items: yes]
+**For next agent:** Full-tier debate result was `MODIFY`: the live Grander ACS case does prove fragment URL expansion into duplicated whole-page FAQ text before Stage 1, and it does rule out recommendation tuning as the first fix for that incident. But the current bundle still does not prove fragment-aware bounded extraction should ship ahead of Stage 1 final revalidation hardening without an exact same-URL A/B rerun.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Fragment_Root_Cause_Debate.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Slow Dialog Real Issue: Fragment URL Expansion -- [Standard] [open-items: yes]
+**For next agent:** The main defect behind the “slow checkworthiness dialog” is not recommendation itself. Fragment-scoped FAQ URLs are currently expanded into whole-page duplicated article text before Stage 1. On the live Grander case, a `#fragment` subsection of about `1332` chars became a `7364`-char whole-article input, producing `20` candidate claims and a late Stage 1 revalidation failure before recommendation started.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Slow_Dialog_Real_Issue_Fragment_URL_Expansion.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Live Monitoring Grander Draft -- [Standard] [open-items: yes]
+**For next agent:** Live monitoring of draft `6f18f926e2a2443f96afa097429ec146` confirmed the observability patch is working end to end: `lastEventMessage` persisted during prep, failure state carried `draftStateJson.observability`, and the run died in Stage 1 after Gate 1 when final contract revalidation returned no usable result twice. Measured prep time was ~`330s`, all effectively Stage 1; recommendation never started.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Live_Monitoring_Grander_Draft.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Draft Observability Implementation -- [Significant] [open-items: yes]
+**For next agent:** ACS draft prep now persists live milestone text via `LastEventMessage` and canonical prep telemetry via `ClaimSelectionDraftState.observability`; Stage 1 contract validation / retry / repair are split into distinct progress milestones and timed separately. Restart the services and run a fresh 5+ claim draft to verify the live UI path end to end, because only build/targeted-test verification was completed here.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Draft_Observability_Implementation.md
+
+---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Draft Slowness Challenger Position -- [Standard] [open-items: yes]
 **For next agent:** Prefer a no-schema first slice: instrument `prepareStage1Snapshot(...)` and expose a derived draft-preparation projection from `DraftStateJson.observability` rather than adding a `LastEventMessage` row column. Main anchors: `internal-runner-queue.ts`, `claim-extraction-stage.ts`, `ClaimSelectionDraftService.cs`, and ACS spec section 5.6.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Draft_Slowness_Challenger_Position.md
@@ -1754,6 +1774,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Recommendation Design Consolidation -- [Standard] [open-items: yes]
 **For next agent:** A new consolidated design doc now exists at [2026-04-22_Check_Worthiness_Recommendation_Design.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md). It fixes the topic around `ACS-CW-1`: advisory live field, post-Gate-1 ACS recommendation contract, `ACS-1` foundation as prerequisite, fail-closed behavior, and `TOPPROP-1` explicitly later.
 → Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Recommendation_Design_Consolidation.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Fragment-Aware HTML Extraction Fix -- [Standard] [open-items: yes]
+**For next agent:** The shared retrieval path now preserves `#fragment` scope for HTML pages by bounding extraction to the first meaningful ancestor inside the main-content root and collapsing adjacent duplicate lines, which fixes the real Grander FAQ failure class without site-specific rules. Unit test `apps/web/test/unit/lib/retrieval.test.ts` and `next build` both passed, and a live retrieval-only probe on the Grander URL dropped extracted text to `1249` chars with only one copy of the targeted heading and no earlier FAQ entries.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Fragment_Aware_HTML_Extraction_Fix.md
 
 ---
 ### 2026-04-22 | Unassigned | Codex (GPT-5) | Check-Worthiness Service Reuse Refinement -- [Standard] [open-items: yes]

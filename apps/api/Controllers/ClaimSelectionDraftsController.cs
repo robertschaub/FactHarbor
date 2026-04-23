@@ -83,6 +83,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             draftId = draft.DraftId,
             status = draft.Status,
             progress = draft.Progress,
+            lastEventMessage = draft.LastEventMessage,
             selectionMode = draft.SelectionMode,
             originalInputType = draft.OriginalInputType,
             originalInputValue = isAdmin ? draft.OriginalInputValue : null,

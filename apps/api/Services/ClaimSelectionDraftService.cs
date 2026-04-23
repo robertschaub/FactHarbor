@@ -175,6 +175,7 @@ public sealed class ClaimSelectionDraftService
         draft.Status = "QUEUED";
         draft.Progress = 0;
         draft.DraftStateJson = null;
+        draft.LastEventMessage = null;
         draft.UpdatedUtc = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -194,6 +195,7 @@ public sealed class ClaimSelectionDraftService
         }
 
         draft.Status = "CANCELLED";
+        draft.LastEventMessage = "Draft cancelled.";
         draft.UpdatedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return (draft, null, 0);
@@ -213,6 +215,7 @@ public sealed class ClaimSelectionDraftService
 
         draft.Status = "QUEUED";
         draft.Progress = 0;
+        draft.LastEventMessage = null;
         draft.UpdatedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return (draft, null, 0);
@@ -234,6 +237,7 @@ public sealed class ClaimSelectionDraftService
 
         draft.Status = status;
         if (progress.HasValue) draft.Progress = progress.Value;
+        if (!string.IsNullOrWhiteSpace(eventMessage)) draft.LastEventMessage = eventMessage;
         draft.UpdatedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
@@ -252,6 +256,10 @@ public sealed class ClaimSelectionDraftService
 
         draft.DraftStateJson = draftStateJson;
         draft.Status = "AWAITING_CLAIM_SELECTION";
+        draft.Progress = 100;
+        draft.LastEventMessage =
+            TryExtractObservabilityEventMessage(draftStateJson)
+            ?? "Prepared claim set awaiting selection.";
         draft.UpdatedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
     }
@@ -269,6 +277,7 @@ public sealed class ClaimSelectionDraftService
             return;
 
         draft.Status = "FAILED";
+        draft.LastEventMessage = errorMessage;
         draft.UpdatedUtc = DateTime.UtcNow;
 
         var stateNode = ParseDraftStateNode(string.IsNullOrWhiteSpace(draftStateJson) ? draft.DraftStateJson : draftStateJson);
@@ -330,6 +339,22 @@ public sealed class ClaimSelectionDraftService
             return new JsonObject();
 
         return JsonNode.Parse(draftStateJson)?.AsObject() ?? new JsonObject();
+    }
+
+    private static string? TryExtractObservabilityEventMessage(string? draftStateJson)
+    {
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+            return null;
+
+        try
+        {
+            var state = JsonNode.Parse(draftStateJson)?.AsObject();
+            return state?["observability"]?["eventMessage"]?.GetValue<string>();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static bool TryExtractPreparedCandidateClaimIds(

@@ -151,6 +151,7 @@ using (var scope = app.Services.CreateScope())
     EnsureJobsColumn(db, "PreparedStage1Json", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");
     EnsureClaimSelectionDraftsTable(db);
+    EnsureClaimSelectionDraftsColumn(db, "LastEventMessage", "TEXT");
     EnsureUniqueJobDraftIndex(db);
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
@@ -257,6 +258,7 @@ static void EnsureClaimSelectionDraftsTable(FhDbContext db)
                 SelectionMode TEXT NOT NULL DEFAULT 'interactive',
                 RestartedViaOther INTEGER NOT NULL DEFAULT 0,
                 RestartCount INTEGER NOT NULL DEFAULT 0,
+                LastEventMessage TEXT,
                 DraftStateJson TEXT,
                 DraftAccessTokenHash TEXT,
                 FinalJobId TEXT
@@ -267,6 +269,37 @@ static void EnsureClaimSelectionDraftsTable(FhDbContext db)
     finally
     {
         if (shouldClose) connection.Close();
+    }
+}
+
+static void EnsureClaimSelectionDraftsColumn(FhDbContext db, string columnName, string sqlType)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    if (shouldClose)
+        connection.Open();
+
+    try
+    {
+        using var check = connection.CreateCommand();
+        check.CommandText = "SELECT 1 FROM pragma_table_info('ClaimSelectionDrafts') WHERE name = $name LIMIT 1;";
+        var parameter = check.CreateParameter();
+        parameter.ParameterName = "$name";
+        parameter.Value = columnName;
+        check.Parameters.Add(parameter);
+
+        var exists = check.ExecuteScalar() is not null;
+        if (exists)
+            return;
+
+        using var alter = connection.CreateCommand();
+        alter.CommandText = $"ALTER TABLE ClaimSelectionDrafts ADD COLUMN \"{columnName}\" {sqlType}";
+        alter.ExecuteNonQuery();
+    }
+    finally
+    {
+        if (shouldClose)
+            connection.Close();
     }
 }
 

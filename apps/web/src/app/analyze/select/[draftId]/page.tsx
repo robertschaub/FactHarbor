@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import type {
   AtomicClaim,
   ClaimSelectionDraftState,
+  ClaimSelectionDraftObservability,
   ClaimSelectionRecommendationAssessment,
 } from "@/lib/analyzer/types";
 import {
@@ -37,6 +38,7 @@ type DraftResponse = {
   draftId: string;
   status: DraftStatus;
   progress: number;
+  lastEventMessage: string | null;
   selectionMode: "interactive" | "automatic";
   restartedViaOther: boolean;
   restartCount: number;
@@ -71,6 +73,43 @@ function parseDraftState(draftStateJson: string | null): ClaimSelectionDraftStat
   } catch {
     return null;
   }
+}
+
+function formatDurationMs(durationMs: number | null | undefined): string | null {
+  if (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0) {
+    return null;
+  }
+
+  if (durationMs < 1000) {
+    return `${Math.round(durationMs)} ms`;
+  }
+
+  const totalSeconds = durationMs / 1000;
+  if (totalSeconds < 60) {
+    return `${totalSeconds.toFixed(1)} s`;
+  }
+
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds - minutes * 60;
+  if (minutes < 60) {
+    return `${minutes} m ${seconds.toFixed(seconds >= 10 ? 0 : 1)} s`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours} h ${remainingMinutes} m`;
+}
+
+function buildPreparationTimingSummary(observability: ClaimSelectionDraftObservability | undefined): string | null {
+  if (!observability) return null;
+
+  const parts = [
+    observability.stage1Ms ? `Stage 1 ${formatDurationMs(observability.stage1Ms)}` : null,
+    observability.recommendationMs ? `recommendation ${formatDurationMs(observability.recommendationMs)}` : null,
+    observability.totalPrepMs ? `total ${formatDurationMs(observability.totalPrepMs)}` : null,
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.length > 0 ? parts.join(" | ") : null;
 }
 
 function orderClaims(claims: AtomicClaim[], rankedClaimIds: string[]): AtomicClaim[] {
@@ -294,6 +333,9 @@ export default function ClaimSelectionDraftPage() {
   const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length);
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
+  const preparationObservability = draftState?.observability;
+  const preparationTimingSummary = buildPreparationTimingSummary(preparationObservability);
+  const livePreparationMessage = draft?.lastEventMessage ?? preparationObservability?.eventMessage ?? null;
 
   const handleToggleClaim = (claimId: string) => {
     setError(null);
@@ -455,6 +497,9 @@ export default function ClaimSelectionDraftPage() {
             {" "}If Stage 1 yields four or fewer claims, FactHarbor continues automatically. If five or
             more survive, you will review the prepared claim set before analysis starts.
           </p>
+          {livePreparationMessage ? (
+            <p className={styles.infoText}>Current step: {livePreparationMessage}</p>
+          ) : null}
           <div className={styles.actions} style={{ marginTop: 16 }}>
             <button
               type="button"
@@ -474,6 +519,9 @@ export default function ClaimSelectionDraftPage() {
           <p className={styles.infoText}>
             {draftState?.lastError?.message ?? "FactHarbor could not finish preparing this draft."}
           </p>
+          {preparationTimingSummary ? (
+            <p className={styles.infoText}>Preparation summary: {preparationTimingSummary}</p>
+          ) : null}
           <div className={styles.actions} style={{ marginTop: 16 }}>
             <button
               type="button"
@@ -535,6 +583,9 @@ export default function ClaimSelectionDraftPage() {
             {draftState?.recommendationRationale && (
               <p className={styles.recommendationRationale}>{draftState.recommendationRationale}</p>
             )}
+            {preparationTimingSummary ? (
+              <p className={styles.infoText}>Preparation summary: {preparationTimingSummary}</p>
+            ) : null}
 
             {candidateClaims.length > 0 && requiresSelectionUi ? (
               <ClaimSelectionPanel

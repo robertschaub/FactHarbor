@@ -3,6 +3,7 @@ import {
   buildDistributedExcerpt,
   extractSameFamilyFollowUpUrlsFromHtml,
   extractSameFamilyPdfUrlsFromHtml,
+  extractTextFromHtml,
 } from "@/lib/retrieval";
 
 describe("retrieval linked-document discovery", () => {
@@ -79,5 +80,76 @@ describe("retrieval linked-document discovery", () => {
       "https://news.admin.ch/de/newnsb/usCV50HNHTFP",
       "https://news.admin.ch/de/newnsb/iiAHV0k5TFjK",
     ]);
+  });
+
+  it("bounds HTML extraction to a fragment-scoped ancestor section when the target is a nested anchor", () => {
+    const html = `
+      <html>
+        <body>
+          <article>
+            <section>
+              <h2>Overview</h2>
+              <p>This intro should not survive fragment scoping.</p>
+            </section>
+            <section class="faq-item">
+              <h2><a id="target-section"></a>Question B</h2>
+              <h2>Question B</h2>
+              <p>
+                Answer B explains the targeted topic in enough detail to form a
+                meaningful bounded extraction. It should stay in the result while
+                unrelated neighboring FAQ entries are dropped from the extracted text.
+              </p>
+            </section>
+            <section>
+              <h2>Question C</h2>
+              <p>This unrelated section should also be excluded.</p>
+            </section>
+          </article>
+        </body>
+      </html>
+    `;
+
+    const text = extractTextFromHtml(html, {
+      requestedUrl: "https://example.com/faq#target-section",
+    });
+
+    expect(text).toContain("Question B");
+    expect(text).toContain("Answer B explains the targeted topic");
+    expect(text).not.toContain("Overview");
+    expect(text).not.toContain("Question C");
+    expect(text.match(/Question B/g)?.length ?? 0).toBe(1);
+  });
+
+  it("falls back to the primary content root when no fragment target is found", () => {
+    const html = `
+      <html>
+        <body>
+          <article>
+            <section>
+              <h2>Overview</h2>
+              <p>This intro stays when no fragment match exists.</p>
+            </section>
+            <section>
+              <h2>Question B</h2>
+              <h2>Question B</h2>
+              <p>Duplicate adjacent headings should still collapse to one line.</p>
+            </section>
+            <section>
+              <h2>Question C</h2>
+              <p>This content stays in the whole-page fallback.</p>
+            </section>
+          </article>
+        </body>
+      </html>
+    `;
+
+    const text = extractTextFromHtml(html, {
+      requestedUrl: "https://example.com/faq#missing-fragment",
+    });
+
+    expect(text).toContain("Overview");
+    expect(text).toContain("Question B");
+    expect(text).toContain("Question C");
+    expect(text.match(/Question B/g)?.length ?? 0).toBe(1);
   });
 });

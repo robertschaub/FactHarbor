@@ -18,8 +18,10 @@ import { getWebGitCommitHash } from "@/lib/build-info";
 import { shouldAutoContinueWithoutSelection } from "@/lib/claim-selection-flow";
 import { loadPipelineConfig } from "@/lib/config-loader";
 import type {
+  ClaimSelectionDraftObservability,
   ClaimSelectionMetadata,
   ClaimSelectionDraftState,
+  ClaimSelectionStage1Observability,
   PreparedStage1Snapshot,
 } from "@/lib/analyzer/types";
 
@@ -796,8 +798,57 @@ async function runDraftPreparationBackground(draftId: string) {
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
   let preparedPersisted = false;
-  let failureCode: "stage1_failed" | "recommendation_failed" = "stage1_failed";
+  let failureCode: "stage1_failed" | "recommendation_failed" | "no_candidate_claims" = "stage1_failed";
   let failureDraftState: ClaimSelectionDraftState | null = null;
+  let preparedStage1: PreparedStage1Snapshot | undefined;
+  let stage1Observability: ClaimSelectionStage1Observability | undefined;
+  let stage1Ms: number | undefined;
+  let recommendationMs: number | undefined;
+  let preparationStartedAt: number | undefined;
+  let lastPreparationEventMessage = "Draft preparation started";
+
+  const buildObservability = (params: {
+    phaseCode: ClaimSelectionDraftObservability["phaseCode"];
+    phaseLabel: string;
+    branch: ClaimSelectionDraftObservability["branch"];
+    eventMessage?: string;
+    candidateClaimCount?: number;
+  }): ClaimSelectionDraftObservability => {
+    const stage1Snapshot =
+      stage1Observability && Object.keys(stage1Observability).length > 0
+        ? { ...stage1Observability }
+        : undefined;
+
+    return {
+      phaseCode: params.phaseCode,
+      phaseLabel: params.phaseLabel,
+      eventMessage: params.eventMessage ?? lastPreparationEventMessage,
+      branch: params.branch,
+      totalPrepMs: typeof preparationStartedAt === "number" ? Date.now() - preparationStartedAt : undefined,
+      stage1Ms,
+      recommendationMs,
+      candidateClaimCount: params.candidateClaimCount ?? stage1Snapshot?.candidateClaimCount,
+      stage1: stage1Snapshot,
+    };
+  };
+
+  const buildDraftState = (params: {
+    rankedClaimIds: string[];
+    recommendedClaimIds: string[];
+    selectedClaimIds: string[];
+    recommendationRationale?: string;
+    assessments?: ClaimSelectionDraftState["assessments"];
+    observability: ClaimSelectionDraftObservability;
+  }): ClaimSelectionDraftState => ({
+    version: 1,
+    ...(preparedStage1 ? { preparedStage1 } : {}),
+    rankedClaimIds: params.rankedClaimIds,
+    recommendedClaimIds: params.recommendedClaimIds,
+    selectedClaimIds: params.selectedClaimIds,
+    recommendationRationale: params.recommendationRationale,
+    assessments: params.assessments ?? [],
+    observability: params.observability,
+  });
 
   try {
     const draft = await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`);
@@ -816,54 +867,105 @@ async function runDraftPreparationBackground(draftId: string) {
     }
 
     const { config: pipelineConfig } = await loadPipelineConfig("default");
+    preparationStartedAt = Date.now();
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
       status: "PREPARING",
       progress: 5,
-      eventMessage: "Draft preparation started",
+      eventMessage: lastPreparationEventMessage,
     });
 
-    const { preparedStage1 } = await prepareStage1Snapshot(
-      {
-        inputType,
-        inputValue,
-        onEvent: async (message, progress) => {
-          await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
-            status: "PREPARING",
-            progress: normalizeDraftPreparationProgress(progress),
-            eventMessage: message,
-          });
+    let stage1Snapshot;
+    const stage1StartedAt = Date.now();
+    try {
+      stage1Snapshot = await prepareStage1Snapshot(
+        {
+          inputType,
+          inputValue,
+          onEvent: async (message, progress) => {
+            lastPreparationEventMessage = message;
+            await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+              status: "PREPARING",
+              progress: normalizeDraftPreparationProgress(progress),
+              eventMessage: message,
+            });
+          },
         },
-      },
-      pipelineConfig,
-    );
+        pipelineConfig,
+      );
+    } finally {
+      stage1Ms = Date.now() - stage1StartedAt;
+    }
+
+    preparedStage1 = stage1Snapshot.preparedStage1;
+    stage1Observability = stage1Snapshot.state.stage1Observability
+      ? { ...stage1Snapshot.state.stage1Observability }
+      : undefined;
 
     if (preparedStage1.preparedUnderstanding.contractValidationSummary?.preservesContract === false) {
+      const errorMessage = "Stage 1 preparation failed contract preservation and cannot continue.";
+      failureCode = "stage1_failed";
+      failureDraftState = buildDraftState({
+        rankedClaimIds: [],
+        recommendedClaimIds: [],
+        selectedClaimIds: [],
+        assessments: [],
+        observability: buildObservability({
+          phaseCode: "failed_stage1",
+          phaseLabel: "Stage 1 failed",
+          branch: "failed_stage1",
+          eventMessage: errorMessage,
+          candidateClaimCount: preparedStage1.preparedUnderstanding.atomicClaims.length,
+        }),
+      });
       await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
-        errorCode: "stage1_failed",
-        errorMessage: "Stage 1 preparation failed contract preservation and cannot continue.",
+        errorCode: failureCode,
+        errorMessage,
+        draftStateJson: JSON.stringify(failureDraftState),
       });
       return;
     }
 
     const candidateIds = preparedStage1.preparedUnderstanding.atomicClaims.map((claim) => claim.id);
     if (candidateIds.length === 0) {
+      const errorMessage = "Stage 1 produced no selectable atomic claims for this draft.";
+      failureCode = "no_candidate_claims";
+      failureDraftState = buildDraftState({
+        rankedClaimIds: [],
+        recommendedClaimIds: [],
+        selectedClaimIds: [],
+        assessments: [],
+        observability: buildObservability({
+          phaseCode: "failed_stage1",
+          phaseLabel: "Stage 1 failed",
+          branch: "failed_stage1",
+          eventMessage: errorMessage,
+          candidateClaimCount: 0,
+        }),
+      });
       await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
-        errorCode: "no_candidate_claims",
-        errorMessage: "Stage 1 produced no selectable atomic claims for this draft.",
+        errorCode: failureCode,
+        errorMessage,
+        draftStateJson: JSON.stringify(failureDraftState),
       });
       return;
     }
 
     if (shouldAutoContinueWithoutSelection(candidateIds.length)) {
-      const draftState: ClaimSelectionDraftState = {
-        version: 1,
-        preparedStage1,
+      lastPreparationEventMessage =
+        `Stage 1 produced ${candidateIds.length} candidate claim(s); draft will auto-continue without manual selection.`;
+      const draftState = buildDraftState({
         rankedClaimIds: [...candidateIds],
         recommendedClaimIds: [...candidateIds],
         selectedClaimIds: [...candidateIds],
         assessments: [],
-      };
+        observability: buildObservability({
+          phaseCode: "auto_continue",
+          phaseLabel: "Draft auto-continued",
+          branch: "auto_continue",
+          candidateClaimCount: candidateIds.length,
+        }),
+      });
       failureDraftState = draftState;
 
       await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
@@ -878,38 +980,55 @@ async function runDraftPreparationBackground(draftId: string) {
     }
 
     failureCode = "recommendation_failed";
-    failureDraftState = {
-      version: 1,
-      preparedStage1,
+    lastPreparationEventMessage = "Generating claim-selection recommendations";
+    failureDraftState = buildDraftState({
       rankedClaimIds: [],
       recommendedClaimIds: [],
       selectedClaimIds: [],
       assessments: [],
-    };
+      observability: buildObservability({
+        phaseCode: "recommendation",
+        phaseLabel: "Generating recommendations",
+        branch: "in_progress",
+        candidateClaimCount: candidateIds.length,
+      }),
+    });
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
       status: "PREPARING",
       progress: 32,
-      eventMessage: "Generating claim-selection recommendations",
+      eventMessage: lastPreparationEventMessage,
     });
 
-    const recommendation = await generateClaimSelectionRecommendation({
-      originalInput: preparedStage1.resolvedInputText,
-      impliedClaim: preparedStage1.preparedUnderstanding.impliedClaim,
-      articleThesis: preparedStage1.preparedUnderstanding.articleThesis,
-      atomicClaims: preparedStage1.preparedUnderstanding.atomicClaims,
-      pipelineConfig,
-    });
+    let recommendation;
+    const recommendationStartedAt = Date.now();
+    try {
+      recommendation = await generateClaimSelectionRecommendation({
+        originalInput: preparedStage1.resolvedInputText,
+        impliedClaim: preparedStage1.preparedUnderstanding.impliedClaim,
+        articleThesis: preparedStage1.preparedUnderstanding.articleThesis,
+        atomicClaims: preparedStage1.preparedUnderstanding.atomicClaims,
+        pipelineConfig,
+      });
+    } finally {
+      recommendationMs = Date.now() - recommendationStartedAt;
+    }
 
-    const draftState: ClaimSelectionDraftState = {
-      version: 1,
-      preparedStage1,
+    lastPreparationEventMessage =
+      `Prepared ${candidateIds.length} candidate claim(s) and ${recommendation.recommendedClaimIds.length} recommendation(s). Awaiting user selection.`;
+    const draftState = buildDraftState({
       rankedClaimIds: recommendation.rankedClaimIds,
       recommendedClaimIds: recommendation.recommendedClaimIds,
       selectedClaimIds: recommendation.recommendedClaimIds,
       recommendationRationale: recommendation.rationale,
       assessments: recommendation.assessments,
-    };
+      observability: buildObservability({
+        phaseCode: "awaiting_claim_selection",
+        phaseLabel: "Awaiting claim selection",
+        branch: "awaiting_claim_selection",
+        candidateClaimCount: candidateIds.length,
+      }),
+    });
     failureDraftState = draftState;
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
@@ -931,10 +1050,29 @@ async function runDraftPreparationBackground(draftId: string) {
       );
       return;
     }
+    const failureObservability = buildObservability({
+      phaseCode: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
+      phaseLabel: failureCode === "recommendation_failed" ? "Recommendation failed" : "Stage 1 failed",
+      branch: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
+      eventMessage: msg,
+    });
+    const resolvedFailureDraftState =
+      preparedStage1 || failureDraftState
+        ? {
+          version: 1 as const,
+          ...(preparedStage1 ? { preparedStage1 } : {}),
+          rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
+          recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
+          selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],
+          recommendationRationale: failureDraftState?.recommendationRationale,
+          assessments: failureDraftState?.assessments ?? [],
+          observability: failureObservability,
+        }
+        : null;
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
       errorCode: failureCode,
       errorMessage: msg,
-      draftStateJson: failureDraftState ? JSON.stringify(failureDraftState) : undefined,
+      draftStateJson: resolvedFailureDraftState ? JSON.stringify(resolvedFailureDraftState) : undefined,
     }).catch(() => {});
   } finally {
     const qs2 = getRunnerQueueState();
