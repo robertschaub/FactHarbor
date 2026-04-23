@@ -11,6 +11,11 @@ namespace FactHarbor.Api.Services;
 
 public sealed class ClaimSelectionDraftService
 {
+    // Compatibility fallback for legacy drafts created before selectionCap was persisted.
+    // Current drafts must carry their configured threshold in DraftStateJson.
+    private const int LegacyDraftSelectionCap = 5;
+    private const int AbsoluteClaimSelectionCap = 5;
+
     private readonly FhDbContext _db;
     private readonly ILogger<ClaimSelectionDraftService> _log;
 
@@ -125,14 +130,15 @@ public sealed class ClaimSelectionDraftService
         if (draft.Status != "AWAITING_CLAIM_SELECTION")
             return (null, $"Draft is in {draft.Status} state and cannot be confirmed", 409);
 
-        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > 5)
-            return (null, "Must select between 1 and 5 claims", 400);
+        if (!TryExtractPreparedCandidateClaimIds(draft.DraftStateJson, out var candidateClaimIds, out var extractionError))
+            return (null, extractionError ?? "Draft is missing prepared candidate claims", 409);
+
+        var effectiveSelectionCap = GetEffectiveSelectionCap(draft.DraftStateJson, candidateClaimIds.Count);
+        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > effectiveSelectionCap)
+            return (null, BuildSelectionCapError(effectiveSelectionCap), 400);
 
         if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
             return (null, "Duplicate claim IDs", 400);
-
-        if (!TryExtractPreparedCandidateClaimIds(draft.DraftStateJson, out var candidateClaimIds, out var extractionError))
-            return (null, extractionError ?? "Draft is missing prepared candidate claims", 409);
 
         var invalid = selectedClaimIds.Where(id => !candidateClaimIds.Contains(id)).ToArray();
         if (invalid.Length > 0)
@@ -339,6 +345,42 @@ public sealed class ClaimSelectionDraftService
             return new JsonObject();
 
         return JsonNode.Parse(draftStateJson)?.AsObject() ?? new JsonObject();
+    }
+
+    private static int ExtractSelectionCap(string? draftStateJson)
+    {
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+            return LegacyDraftSelectionCap;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(draftStateJson);
+            if (!doc.RootElement.TryGetProperty("selectionCap", out var selectionCapProp) ||
+                selectionCapProp.ValueKind != JsonValueKind.Number ||
+                !selectionCapProp.TryGetInt32(out var selectionCap))
+            {
+                return LegacyDraftSelectionCap;
+            }
+
+            return Math.Clamp(selectionCap, 1, AbsoluteClaimSelectionCap);
+        }
+        catch (JsonException)
+        {
+            return LegacyDraftSelectionCap;
+        }
+    }
+
+    private static int GetEffectiveSelectionCap(string? draftStateJson, int candidateClaimCount)
+    {
+        var thresholdCap = ExtractSelectionCap(draftStateJson);
+        return Math.Max(1, Math.Min(candidateClaimCount, thresholdCap));
+    }
+
+    private static string BuildSelectionCapError(int selectionCap)
+    {
+        return selectionCap == 1
+            ? "Must select exactly 1 claim"
+            : $"Must select between 1 and {selectionCap} claims";
     }
 
     private static string? TryExtractObservabilityEventMessage(string? draftStateJson)

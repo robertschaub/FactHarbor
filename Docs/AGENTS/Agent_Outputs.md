@@ -1849,3 +1849,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Auto-Continue Recovery Fix -- [Significant] [open-items: yes]
 **For next agent:** Drafts with four or fewer prepared claims no longer stop on the selection page if they leak into `AWAITING_CLAIM_SELECTION`. The page now auto-confirms once on load and redirects into the job, and only shows a retry continuation button if that automatic continuation actually fails. The broader Grander follow-up options are documented in `Docs/WIP/2026-04-23_Grander_Runtime_Followup_Options.md`.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Continue_Recovery_Fix.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS UCM Selection Cap -- [Significant] [open-items: no]
+**For next agent:** `pipeline.claimSelectionCap` is now the single runtime knob for ACS manual-review threshold, max selected claims, and max LLM recommendations. The resolved value is persisted in `ClaimSelectionDraftState.selectionCap`, consumed by [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts), [page.tsx](/c:/DEV/FactHarbor/apps/web/src/app/analyze/select/[draftId]/page.tsx), and enforced on confirm in [ClaimSelectionDraftService.cs](/c:/DEV/FactHarbor/apps/api/Services/ClaimSelectionDraftService.cs).
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_UCM_Selection_Cap.md

@@ -2,6 +2,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import type { PipelineConfig } from "../config-schemas";
+import { getClaimSelectionCap } from "../claim-selection-flow";
 import {
   extractStructuredOutput,
   getModelForTask,
@@ -52,6 +53,7 @@ export interface GenerateClaimSelectionRecommendationParams {
   impliedClaim: string;
   articleThesis: string;
   atomicClaims: AtomicClaim[];
+  selectionCap?: number | null;
   pipelineConfig?: PipelineConfig;
 }
 
@@ -143,9 +145,10 @@ function validateRecommendationAssessment(
 export function validateClaimSelectionRecommendation(
   recommendation: ClaimSelectionRecommendation,
   candidateClaimIds: string[],
+  selectionCap?: number | null,
 ): ClaimSelectionRecommendation {
   const candidateSet = new Set(candidateClaimIds);
-  const maxRecommendedClaims = Math.min(3, candidateClaimIds.length);
+  const maxRecommendedClaims = getClaimSelectionCap(candidateClaimIds.length, selectionCap);
 
   if (recommendation.assessments.length !== candidateClaimIds.length) {
     throw new ClaimSelectionRecommendationInvariantError(
@@ -229,15 +232,17 @@ export async function generateClaimSelectionRecommendation({
   impliedClaim,
   articleThesis,
   atomicClaims,
+  selectionCap,
   pipelineConfig,
 }: GenerateClaimSelectionRecommendationParams): Promise<ClaimSelectionRecommendation> {
   const candidateClaimIds = assertValidCandidateSet(atomicClaims);
+  const maxRecommendedClaims = getClaimSelectionCap(candidateClaimIds.length, selectionCap);
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_SELECTION_RECOMMENDATION", {
     analysisInput: originalInput,
     impliedClaim,
     articleThesis,
     atomicClaimsJson: JSON.stringify(atomicClaims, null, 2),
-    maxRecommendedClaims: String(Math.min(3, atomicClaims.length)),
+    maxRecommendedClaims: String(maxRecommendedClaims),
   });
 
   if (!rendered) {
@@ -282,7 +287,11 @@ export async function generateClaimSelectionRecommendation({
       }
 
       const validated = ClaimSelectionRecommendationOutputSchema.parse(parsed);
-      const normalized = validateClaimSelectionRecommendation(validated, candidateClaimIds);
+      const normalized = validateClaimSelectionRecommendation(
+        validated,
+        candidateClaimIds,
+        selectionCap,
+      );
 
       recordLLMCall({
         taskType: "other",

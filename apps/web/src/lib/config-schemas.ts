@@ -11,6 +11,10 @@
 import { z } from "zod";
 import crypto from "crypto";
 import type { LLMProviderType } from "./analyzer/types";
+import {
+  CLAIM_SELECTION_ABSOLUTE_MAX,
+  CLAIM_SELECTION_DEFAULT_CAP,
+} from "./claim-selection-flow";
 
 // ============================================================================
 // TYPES
@@ -488,6 +492,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum centrality to keep a claim in ClaimBoundary pipeline (default: medium)"),
   claimSpecificityMinimum: z.number().min(0).max(1).optional()
     .describe("Minimum specificity score for Gate 1 pass in ClaimBoundary pipeline (default: 0.6)"),
+  claimSelectionCap: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
+    .describe("Maximum claims ACS may recommend or continue, and the threshold where manual selection begins (default: 5)."),
   maxAtomicClaims: z.number().int().min(2).max(30).optional()
     .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
   maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()
@@ -843,6 +849,9 @@ export const PipelineConfigSchema = z.object({
   if (data.claimSpecificityMinimum === undefined) {
     data.claimSpecificityMinimum = 0.6;
   }
+  if (data.claimSelectionCap === undefined) {
+    data.claimSelectionCap = CLAIM_SELECTION_DEFAULT_CAP;
+  }
   if (data.maxAtomicClaims === undefined) {
     data.maxAtomicClaims = 5;
   }
@@ -1141,6 +1150,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // ClaimBoundary Stage 1 defaults
   centralityThreshold: "medium",
   claimSpecificityMinimum: 0.6,
+  claimSelectionCap: CLAIM_SELECTION_DEFAULT_CAP,
   maxAtomicClaims: 5,
   maxAtomicClaimsBase: 3,
   atomicClaimsInputCharsPerClaim: 500,

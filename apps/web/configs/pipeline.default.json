@@ -124,6 +124,7 @@
   "gapResearchMaxQueries": 8,
   "centralityThreshold": "medium",
   "claimSpecificityMinimum": 0.6,
+  "claimSelectionCap": 5,
   "maxAtomicClaims": 5,
   "maxAtomicClaimsBase": 3,
   "atomicClaimsInputCharsPerClaim": 500,

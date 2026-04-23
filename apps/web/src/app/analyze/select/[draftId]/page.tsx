@@ -17,6 +17,7 @@ import {
 } from "@/lib/claim-selection-client";
 import {
   getClaimSelectionCap,
+  normalizeClaimSelectionCap,
   shouldAutoContinueWithoutSelection,
   shouldRequireClaimSelectionUi,
 } from "@/lib/claim-selection-flow";
@@ -100,6 +101,10 @@ function formatDurationMs(durationMs: number | null | undefined): string | null 
   return `${hours} h ${remainingMinutes} m`;
 }
 
+function formatClaimCount(count: number): string {
+  return `${count} claim${count === 1 ? "" : "s"}`;
+}
+
 function buildPreparationTimingSummary(observability: ClaimSelectionDraftObservability | undefined): string | null {
   if (!observability) return null;
 
@@ -160,18 +165,23 @@ function getStatusHeadline(status: DraftStatus): string {
   }
 }
 
-function getStatusSummary(draft: DraftResponse, candidateCount: number, recommendedCount: number): string {
+function getStatusSummary(
+  draft: DraftResponse,
+  candidateCount: number,
+  recommendedCount: number,
+  selectionThreshold: number,
+): string {
   switch (draft.status) {
     case "QUEUED":
       return "FactHarbor has accepted the session and is waiting for a runner slot.";
     case "PREPARING":
       return "FactHarbor is preparing the final Stage 1 claim set for this session.";
     case "AWAITING_CLAIM_SELECTION":
-      if (shouldRequireClaimSelectionUi(candidateCount)) {
-        return "Stage 1 produced five or more candidate claims. Review the ranked list below and choose the final subset before analysis continues.";
+      if (shouldRequireClaimSelectionUi(candidateCount, selectionThreshold)) {
+        return `Stage 1 reached the manual-review threshold (${formatClaimCount(selectionThreshold)}) and produced ${formatClaimCount(candidateCount)}. Review the ranked list below and choose the final subset before analysis continues.`;
       }
-      if (shouldAutoContinueWithoutSelection(candidateCount)) {
-        return "Stage 1 produced four or fewer candidate claims. FactHarbor can continue directly into the full analysis with all prepared claims.";
+      if (shouldAutoContinueWithoutSelection(candidateCount, selectionThreshold)) {
+        return `Stage 1 stayed below the manual-review threshold (${formatClaimCount(selectionThreshold)}), so FactHarbor can continue directly into the full analysis with all prepared claims.`;
       }
       if (recommendedCount === 0) {
         return "The prepared session is waiting for the next continuation step.";
@@ -298,14 +308,15 @@ export default function ClaimSelectionDraftPage() {
     return Object.fromEntries(entries) as Record<string, ClaimSelectionRecommendationAssessment | undefined>;
   }, [draftState?.assessments]);
 
-  const selectionCap = getClaimSelectionCap(candidateClaims.length);
-  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length);
+  const selectionThreshold = normalizeClaimSelectionCap(draftState?.selectionCap);
+  const selectionCap = getClaimSelectionCap(candidateClaims.length, selectionThreshold);
+  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold);
   const autoContinueClaimIds = useMemo(
     () =>
-      shouldAutoContinueWithoutSelection(candidateClaims.length)
+      shouldAutoContinueWithoutSelection(candidateClaims.length, selectionThreshold)
         ? candidateClaims.map((claim) => claim.id).slice(0, selectionCap)
         : [],
-    [candidateClaims, selectionCap],
+    [candidateClaims, selectionCap, selectionThreshold],
   );
 
   useEffect(() => {
@@ -323,19 +334,19 @@ export default function ClaimSelectionDraftPage() {
       return;
     }
 
-    const defaultSelection = shouldRequireClaimSelectionUi(candidateClaims.length)
+    const defaultSelection = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold)
       ? (draftState?.selectedClaimIds?.length
           ? draftState.selectedClaimIds
           : draftState?.recommendedClaimIds ?? [])
           .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-          .slice(0, getClaimSelectionCap(candidateClaims.length))
+          .slice(0, selectionCap)
       : candidateClaims
           .map((claim) => claim.id)
-          .slice(0, getClaimSelectionCap(candidateClaims.length));
+          .slice(0, selectionCap);
 
     setSelectedClaimIds(defaultSelection);
     setSelectionSeed(nextSeed);
-  }, [candidateClaims, draft, draftState, selectionCap, selectionSeed]);
+  }, [candidateClaims, draft, draftState, selectionCap, selectionSeed, selectionThreshold]);
 
   const confirmDraft = async (claimIds: string[]) => {
     const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/confirm`, {
@@ -419,7 +430,12 @@ export default function ClaimSelectionDraftPage() {
       : getStatusHeadline(draft.status)
     : "Loading session";
   const statusSummary = draft
-    ? getStatusSummary(draft, candidateClaims.length, draftState?.recommendedClaimIds.length ?? 0)
+    ? getStatusSummary(
+      draft,
+      candidateClaims.length,
+      draftState?.recommendedClaimIds.length ?? 0,
+      selectionThreshold,
+    )
     : "Loading session state.";
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
@@ -434,7 +450,11 @@ export default function ClaimSelectionDraftPage() {
         return current.filter((id) => id !== claimId);
       }
       if (current.length >= selectionCap) {
-        setError(`You can select at most ${selectionCap} claim${selectionCap === 1 ? "" : "s"}.`);
+        setError(
+          selectionCap === 1
+            ? "You can select exactly one claim."
+            : `You can select at most ${selectionCap} claims.`,
+        );
         return current;
       }
       return [...current, claimId];
@@ -443,7 +463,11 @@ export default function ClaimSelectionDraftPage() {
 
   const handleConfirm = async () => {
     if (!draftId || selectedClaimIds.length < 1 || selectedClaimIds.length > selectionCap) {
-      setError(`Select between one and ${selectionCap} claim${selectionCap === 1 ? "" : "s"}.`);
+      setError(
+        selectionCap === 1
+          ? "Select exactly one claim."
+          : `Select between one and ${selectionCap} claims.`,
+      );
       return;
     }
 
@@ -565,8 +589,9 @@ export default function ClaimSelectionDraftPage() {
           <h2 className={styles.infoTitle}>Preparation in progress</h2>
           <p className={styles.infoText}>
             Progress: {displayProgress}%.
-            {" "}If Stage 1 yields four or fewer claims, FactHarbor continues automatically. If five or
-            more survive, you will review the prepared claim set before analysis starts.
+            {" "}If Stage 1 stays below the manual-review threshold ({formatClaimCount(selectionThreshold)}),
+            FactHarbor continues automatically. At that threshold or above, you will review the
+            prepared claim set before analysis starts.
           </p>
           {livePreparationMessage ? (
             <p className={styles.infoText}>Current step: {livePreparationMessage}</p>
@@ -640,10 +665,12 @@ export default function ClaimSelectionDraftPage() {
                 <h2 className={styles.selectionTitle}>Prepared candidate claims</h2>
                 <p className={styles.selectionSubtitle}>
                   {requiresSelectionUi
-                    ? `Keep one to ${selectionCap} claim${selectionCap === 1 ? "" : "s"}. Recommendation order is already applied below, and recommended claims are preselected.`
+                    ? selectionCap === 1
+                      ? "Keep exactly one claim. Recommendation order is already applied below, and the recommended claim is preselected."
+                      : `Keep one to ${selectionCap} claims. Recommendation order is already applied below, and recommended claims are preselected.`
                     : autoContinueFailed
                       ? "Automatic continuation failed. Retry the continuation below or cancel the session."
-                      : "Stage 1 produced four or fewer claims, so FactHarbor is continuing directly into the full analysis with all prepared claims."}
+                      : `Stage 1 stayed below the manual-review threshold (${formatClaimCount(selectionThreshold)}), so FactHarbor is continuing directly into the full analysis with all prepared claims.`}
                 </p>
               </div>
               <div className={styles.counterBadge}>

@@ -111,7 +111,7 @@ describe("claim-selection draft proxy routes", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
-      error: "selectedClaimIds must contain 1 to 5 non-empty strings",
+      error: "selectedClaimIds must contain one or more non-empty strings",
     });
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -134,6 +134,32 @@ describe("claim-selection draft proxy routes", () => {
       "http://api.local/v1/claim-selection-drafts/draft-1/confirm",
       expect.objectContaining({
         body: JSON.stringify({ selectedClaimIds: ["AC-1", "AC-2"] }),
+      }),
+    );
+  });
+
+  it("does not enforce the configured selection cap in the proxy route", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/confirm/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ error: "upstream validation" }, { status: 400 }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          selectedClaimIds: ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+        }),
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/confirm",
+      expect.objectContaining({
+        body: JSON.stringify({
+          selectedClaimIds: ["AC-1", "AC-2", "AC-3", "AC-4", "AC-5", "AC-6"],
+        }),
       }),
     );
   });

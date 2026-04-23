@@ -231,6 +231,16 @@ describe("validateClaimSelectionRecommendation", () => {
     ).toThrow(/not present in rankedClaimIds/i);
   });
 
+  it("rejects recommendations that exceed the configured claim-selection cap", () => {
+    const recommendation = createRecommendation({
+      recommendedClaimIds: ["AC_01", "AC_02"],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"], 1),
+    ).toThrow(/at most 1 claims/i);
+  });
+
   it("rejects self-referential redundancy ids", () => {
     const recommendation = createRecommendation({
       assessments: [
@@ -324,5 +334,34 @@ describe("generateClaimSelectionRecommendation", () => {
     ).rejects.toThrow(/explicitly refused/i);
 
     expect(mockGenerateText).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the effective recommendation cap to the prompt renderer", async () => {
+    mockGenerateText.mockResolvedValue({
+      structured: createRecommendation(),
+      usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22 },
+    } as any);
+
+    await generateClaimSelectionRecommendation({
+      originalInput: "Entity A made claim X under condition Y",
+      impliedClaim: "Entity A asserts claim X.",
+      articleThesis: "The input presents claim X for verification.",
+      atomicClaims: [
+        createAtomicClaim(),
+        createAtomicClaim({
+          id: "AC_02",
+          statement: "Entity A also claimed related condition Z",
+          thesisRelevance: "indirect",
+          checkWorthiness: "medium",
+        }),
+      ],
+      selectionCap: 1,
+    });
+
+    expect(mockLoadAndRenderSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "CLAIM_SELECTION_RECOMMENDATION",
+      expect.objectContaining({ maxRecommendedClaims: "1" }),
+    );
   });
 });

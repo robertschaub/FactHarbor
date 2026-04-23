@@ -553,6 +553,7 @@ public sealed class JobService
         string? preparedStage1Json = null;
         var rankedClaimIds = Array.Empty<string>();
         var recommendedClaimIds = Array.Empty<string>();
+        int? selectionCap = null;
         string? recommendationRationale = null;
         var assessments = Array.Empty<object>();
 
@@ -568,6 +569,12 @@ public sealed class JobService
                     rankedClaimIds = rp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
                 if (root.TryGetProperty("recommendedClaimIds", out var rcp) && rcp.ValueKind == JsonValueKind.Array)
                     recommendedClaimIds = rcp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
+                if (root.TryGetProperty("selectionCap", out var scp) &&
+                    scp.ValueKind == JsonValueKind.Number &&
+                    scp.TryGetInt32(out var parsedSelectionCap))
+                {
+                    selectionCap = parsedSelectionCap;
+                }
                 if (root.TryGetProperty("recommendationRationale", out var rrp) && rrp.ValueKind == JsonValueKind.String)
                     recommendationRationale = rrp.GetString();
                 if (root.TryGetProperty("assessments", out var ap) && ap.ValueKind == JsonValueKind.Array)
@@ -595,6 +602,7 @@ public sealed class JobService
             selectionMode = draft.SelectionMode,
             restartedViaOther = draft.RestartedViaOther,
             restartCount = draft.RestartCount,
+            selectionCap,
             rankedClaimIds,
             recommendedClaimIds,
             selectedClaimIds,

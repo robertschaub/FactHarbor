@@ -741,7 +741,7 @@ export interface ClaimSelectionRecommendationAssessment {
 
 export interface ClaimSelectionRecommendation {
   rankedClaimIds: string[];
-  recommendedClaimIds: string[]; // max 3
+  recommendedClaimIds: string[]; // max = effective claim-selection cap
   assessments: ClaimSelectionRecommendationAssessment[];
   rationale: string;
 }
@@ -788,6 +788,8 @@ export interface ClaimSelectionDraftObservability {
 export interface ClaimSelectionDraftState {
   version: 1;
   preparedStage1?: PreparedStage1Snapshot;
+  // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
+  selectionCap?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
   selectedClaimIds: string[];
@@ -811,6 +813,8 @@ export interface ClaimSelectionMetadata {
   selectionMode: "interactive" | "automatic";
   restartedViaOther: boolean;
   restartCount: number;
+  // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
+  selectionCap?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
   selectedClaimIds: string[];

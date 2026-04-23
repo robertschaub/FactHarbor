@@ -15,7 +15,11 @@ import {
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 import { getWebGitCommitHash } from "@/lib/build-info";
-import { shouldAutoContinueWithoutSelection } from "@/lib/claim-selection-flow";
+import {
+  getClaimSelectionCap,
+  normalizeClaimSelectionCap,
+  shouldAutoContinueWithoutSelection,
+} from "@/lib/claim-selection-flow";
 import { loadPipelineConfig } from "@/lib/config-loader";
 import type {
   ClaimSelectionDraftObservability,
@@ -806,6 +810,7 @@ async function runDraftPreparationBackground(draftId: string) {
   let recommendationMs: number | undefined;
   let preparationStartedAt: number | undefined;
   let lastPreparationEventMessage = "Draft preparation started";
+  let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
 
   const buildObservability = (params: {
     phaseCode: ClaimSelectionDraftObservability["phaseCode"];
@@ -842,6 +847,7 @@ async function runDraftPreparationBackground(draftId: string) {
   }): ClaimSelectionDraftState => ({
     version: 1,
     ...(preparedStage1 ? { preparedStage1 } : {}),
+    selectionCap: configuredSelectionCap,
     rankedClaimIds: params.rankedClaimIds,
     recommendedClaimIds: params.recommendedClaimIds,
     selectedClaimIds: params.selectedClaimIds,
@@ -867,6 +873,7 @@ async function runDraftPreparationBackground(draftId: string) {
     }
 
     const { config: pipelineConfig } = await loadPipelineConfig("default");
+    configuredSelectionCap = normalizeClaimSelectionCap(pipelineConfig.claimSelectionCap);
     preparationStartedAt = Date.now();
 
     await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
@@ -951,13 +958,17 @@ async function runDraftPreparationBackground(draftId: string) {
       return;
     }
 
-    if (shouldAutoContinueWithoutSelection(candidateIds.length)) {
+    if (shouldAutoContinueWithoutSelection(candidateIds.length, configuredSelectionCap)) {
+      const autoContinueClaimIds = candidateIds.slice(
+        0,
+        getClaimSelectionCap(candidateIds.length, configuredSelectionCap),
+      );
       lastPreparationEventMessage =
         `Stage 1 produced ${candidateIds.length} candidate claim(s); draft will auto-continue without manual selection.`;
       const draftState = buildDraftState({
         rankedClaimIds: [...candidateIds],
-        recommendedClaimIds: [...candidateIds],
-        selectedClaimIds: [...candidateIds],
+        recommendedClaimIds: [...autoContinueClaimIds],
+        selectedClaimIds: [...autoContinueClaimIds],
         assessments: [],
         observability: buildObservability({
           phaseCode: "auto_continue",
@@ -974,7 +985,7 @@ async function runDraftPreparationBackground(draftId: string) {
       preparedPersisted = true;
 
       await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
-        selectedClaimIds: candidateIds,
+        selectedClaimIds: autoContinueClaimIds,
       });
       return;
     }
@@ -1008,6 +1019,7 @@ async function runDraftPreparationBackground(draftId: string) {
         impliedClaim: preparedStage1.preparedUnderstanding.impliedClaim,
         articleThesis: preparedStage1.preparedUnderstanding.articleThesis,
         atomicClaims: preparedStage1.preparedUnderstanding.atomicClaims,
+        selectionCap: configuredSelectionCap,
         pipelineConfig,
       });
     } finally {
@@ -1061,6 +1073,7 @@ async function runDraftPreparationBackground(draftId: string) {
         ? {
           version: 1 as const,
           ...(preparedStage1 ? { preparedStage1 } : {}),
+          selectionCap: configuredSelectionCap,
           rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
           recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
           selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],

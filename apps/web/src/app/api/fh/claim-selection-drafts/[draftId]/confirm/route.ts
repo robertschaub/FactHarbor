@@ -37,7 +37,7 @@ export async function POST(request: Request, context: DraftRouteContext) {
 
   if (!Array.isArray(parsedBody.selectedClaimIds)) {
     return NextResponse.json(
-      { error: "selectedClaimIds must contain 1 to 5 non-empty strings" },
+      { error: "selectedClaimIds must contain one or more non-empty strings" },
       { status: 400 },
     );
   }
@@ -48,11 +48,10 @@ export async function POST(request: Request, context: DraftRouteContext) {
 
   if (
     selectedClaimIds.length < 1 ||
-    selectedClaimIds.length > 5 ||
     selectedClaimIds.some((claimId) => claimId.length === 0)
   ) {
     return NextResponse.json(
-      { error: "selectedClaimIds must contain 1 to 5 non-empty strings" },
+      { error: "selectedClaimIds must contain one or more non-empty strings" },
       { status: 400 },
     );
   }
