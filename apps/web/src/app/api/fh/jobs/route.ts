@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkAdminKey, getClientIp } from "@/lib/auth";
+import { drainRunnerQueue } from "@/lib/internal-runner-queue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Job/report pages already poll this route. Use those reads as a best-effort queue recovery kick
+    // so stale RUNNING/QUEUED states are not solely dependent on the background watchdog.
+    void drainRunnerQueue();
+
     const { searchParams } = new URL(request.url);
     const page = searchParams.get("page") || "1";
     const pageSize = searchParams.get("pageSize") || "50";

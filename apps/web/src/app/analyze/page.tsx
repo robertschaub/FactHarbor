@@ -19,13 +19,15 @@ import {
   normalizeAnalyzeInputValue,
 } from "@/lib/analyze-input-client";
 import {
-  canUseSessionStorage,
+  buildStoredClaimSelectionSessionLabel,
   getLocalStorageItemSafely,
   getSessionStorageItemSafely,
   setLocalStorageItemSafely,
   storeDraftAccessToken,
+  upsertStoredActiveClaimSelectionSession,
 } from "@/lib/claim-selection-client";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
+import { ActiveClaimSelectionSessions } from "./ActiveClaimSelectionSessions";
 
 export default function AnalyzePage() {
   const router = useRouter();
@@ -122,13 +124,6 @@ export default function AnalyzePage() {
       return;
     }
 
-    if (!adminKey && !canUseSessionStorage()) {
-      setError(
-                      "This browser blocks session storage, which FactHarbor needs to hold the session access token. Enable session storage or use an admin key.",
-      );
-      return;
-    }
-
     setIsSubmitting(true);
     setError(null);
 
@@ -171,12 +166,18 @@ export default function AnalyzePage() {
                     throw new Error("Session creation response was incomplete");
       }
 
-      const storedDraftToken = storeDraftAccessToken(data.draftId, data.draftAccessToken);
-      if (!storedDraftToken && !adminKey) {
-        throw new Error(
-                        "Session was created, but this browser blocked session storage needed to open it. Enable session storage and submit again.",
-        );
-      }
+      storeDraftAccessToken(data.draftId, data.draftAccessToken);
+      upsertStoredActiveClaimSelectionSession({
+        draftId: data.draftId,
+        createdUtc: typeof data?.createdUtc === "string" ? data.createdUtc : new Date().toISOString(),
+        inputType,
+        inputPreview: buildStoredClaimSelectionSessionLabel(inputType),
+        selectionMode: "automatic",
+        lastKnownStatus: typeof data?.status === "string" ? data.status : "QUEUED",
+        lastKnownFinalJobId: null,
+        lastKnownUpdatedUtc: null,
+        hidden: false,
+      });
 
       router.push(`/analyze/select/${data.draftId}`);
     } catch (err: any) {
@@ -356,6 +357,8 @@ export default function AnalyzePage() {
           </a>
         </p>
       </form>
+
+      <ActiveClaimSelectionSessions adminKey={adminKey} />
 
     </div>
   );

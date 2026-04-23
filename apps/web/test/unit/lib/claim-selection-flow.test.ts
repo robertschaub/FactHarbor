@@ -82,9 +82,9 @@ describe("claim-selection-flow", () => {
   });
 
   it("computes the remaining idle countdown from the last interaction timestamp", () => {
-    expect(getClaimSelectionIdleRemainingMs(undefined, 180_000, 10_000)).toBe(180_000);
-    expect(getClaimSelectionIdleRemainingMs(10_000, 180_000, 70_000)).toBe(120_000);
-    expect(getClaimSelectionIdleRemainingMs(10_000, 180_000, 200_500)).toBe(0);
+    expect(getClaimSelectionIdleRemainingMs(undefined, 900_000, 10_000)).toBe(900_000);
+    expect(getClaimSelectionIdleRemainingMs(10_000, 900_000, 70_000)).toBe(840_000);
+    expect(getClaimSelectionIdleRemainingMs(10_000, 900_000, 910_500)).toBe(0);
     expect(getClaimSelectionIdleRemainingMs(10_000, 0, 70_000)).toBe(0);
   });
 });

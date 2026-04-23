@@ -12,9 +12,12 @@ import type {
 } from "@/lib/analyzer/types";
 import { CopyButton } from "@/components/CopyButton";
 import {
+  buildStoredClaimSelectionSessionLabel,
   buildDraftAccessHeaders,
   clearStoredDraftAccessToken,
   getSessionStorageItemSafely,
+  removeStoredActiveClaimSelectionSession,
+  upsertStoredActiveClaimSelectionSession,
 } from "@/lib/claim-selection-client";
 import { InputBanner } from "../../../jobs/[id]/components/InputBanner";
 import {
@@ -206,6 +209,42 @@ export default function ClaimSelectionDraftPage() {
   }, []);
 
   useEffect(() => {
+    if (!draft) return;
+
+    if (draft.status === "CANCELLED" || draft.status === "EXPIRED") {
+      removeStoredActiveClaimSelectionSession(draft.draftId);
+      return;
+    }
+
+    const inputType = draft.activeInputType?.trim() || draft.originalInputType?.trim() || "text";
+    const inputValue = draft.activeInputValue?.trim() || draft.originalInputValue?.trim() || draft.draftId;
+
+    upsertStoredActiveClaimSelectionSession({
+      draftId: draft.draftId,
+      createdUtc: draft.createdUtc,
+      inputType,
+      inputPreview: buildStoredClaimSelectionSessionLabel(inputType),
+      selectionMode: draft.selectionMode,
+      lastKnownStatus: draft.status,
+      lastKnownFinalJobId: draft.finalJobId ?? null,
+      lastKnownUpdatedUtc: draft.updatedUtc,
+      hidden: draft.isHidden,
+    });
+  }, [
+    draft?.activeInputType,
+    draft?.activeInputValue,
+    draft?.createdUtc,
+    draft?.draftId,
+    draft?.finalJobId,
+    draft?.isHidden,
+    draft?.originalInputType,
+    draft?.originalInputValue,
+    draft?.selectionMode,
+    draft?.status,
+    draft?.updatedUtc,
+  ]);
+
+  useEffect(() => {
     if (!draftId) {
       setError("Missing session id");
       setIsLoading(false);
@@ -237,7 +276,7 @@ export default function ClaimSelectionDraftPage() {
           }
 
           if (response.status === 401) {
-            message = "Session access token missing or invalid. Reopen this session from the original browser session or use an admin key.";
+            message = "Session access is no longer available in this browser profile. Reopen it from the original browser profile or use an admin key.";
           } else if (response.status === 410) {
             message = "Session expired before it could be confirmed.";
           }
@@ -735,6 +774,7 @@ export default function ClaimSelectionDraftPage() {
       }
 
       clearStoredDraftAccessToken(draftId);
+      removeStoredActiveClaimSelectionSession(draftId);
       setDraft((current) => current ? { ...current, status: data.status ?? "CANCELLED" } : current);
     } catch (cancelError: any) {
       setError(cancelError?.message ?? "Failed to cancel session");

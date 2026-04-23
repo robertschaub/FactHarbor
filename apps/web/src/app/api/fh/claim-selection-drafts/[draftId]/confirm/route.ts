@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import {
   buildClaimSelectionDraftForwardHeaders,
+  clearDraftAccessCookie,
   DraftRouteContext,
-  forwardTextResponse,
   getClaimSelectionDraftApiBase,
   resolveDraftId,
 } from "@/lib/claim-selection-draft-proxy";
@@ -63,10 +63,23 @@ export async function POST(request: Request, context: DraftRouteContext) {
       headers: buildClaimSelectionDraftForwardHeaders(request, {
         includeContentType: true,
         forwardDraftToken: true,
+        draftId,
       }),
       body: JSON.stringify({ selectedClaimIds }),
     },
   );
 
-  return forwardTextResponse(upstreamResponse);
+  const text = await upstreamResponse.text();
+  const response = new NextResponse(text, {
+    status: upstreamResponse.status,
+    headers: {
+      "Content-Type": upstreamResponse.headers.get("content-type") ?? "application/json",
+    },
+  });
+
+  if (upstreamResponse.ok) {
+    clearDraftAccessCookie(response, draftId);
+  }
+
+  return response;
 }

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import {
   buildClaimSelectionDraftForwardHeaders,
+  clearDraftAccessCookie,
   DraftRouteContext,
-  forwardTextResponse,
   getClaimSelectionDraftApiBase,
   resolveDraftId,
 } from "@/lib/claim-selection-draft-proxy";
@@ -72,6 +72,7 @@ export async function POST(request: Request, context: DraftRouteContext) {
       headers: buildClaimSelectionDraftForwardHeaders(request, {
         includeContentType: true,
         forwardDraftToken: true,
+        draftId,
       }),
       body: JSON.stringify({
         selectedClaimIds,
@@ -80,5 +81,22 @@ export async function POST(request: Request, context: DraftRouteContext) {
     },
   );
 
-  return forwardTextResponse(upstreamResponse);
+  const text = await upstreamResponse.text();
+  const response = new NextResponse(text, {
+    status: upstreamResponse.status,
+    headers: {
+      "Content-Type": upstreamResponse.headers.get("content-type") ?? "application/json",
+    },
+  });
+
+  try {
+    const payload = JSON.parse(text) as { finalJobId?: string | null };
+    if (upstreamResponse.ok && typeof payload.finalJobId === "string" && payload.finalJobId) {
+      clearDraftAccessCookie(response, draftId);
+    }
+  } catch {
+    // Preserve upstream body without cookie changes when the payload is not JSON.
+  }
+
+  return response;
 }

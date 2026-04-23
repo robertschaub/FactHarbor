@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   buildClaimSelectionDraftForwardHeaders,
-  forwardTextResponse,
+  persistDraftAccessCookie,
   getClaimSelectionDraftApiBase,
 } from "@/lib/claim-selection-draft-proxy";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
@@ -64,5 +64,34 @@ export async function POST(request: Request) {
     }),
   });
 
-  return forwardTextResponse(upstreamResponse);
+  const text = await upstreamResponse.text();
+  let payload: Record<string, unknown> | null = null;
+
+  try {
+    payload = JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return new NextResponse(text, {
+      status: upstreamResponse.status,
+      headers: {
+        "Content-Type": upstreamResponse.headers.get("content-type") ?? "application/json",
+      },
+    });
+  }
+
+  const response = NextResponse.json(payload, { status: upstreamResponse.status });
+
+  if (
+    upstreamResponse.ok &&
+    typeof payload.draftId === "string" &&
+    typeof payload.draftAccessToken === "string"
+  ) {
+    persistDraftAccessCookie(
+      response,
+      payload.draftId,
+      payload.draftAccessToken,
+      typeof payload.expiresUtc === "string" ? payload.expiresUtc : null,
+    );
+  }
+
+  return response;
 }

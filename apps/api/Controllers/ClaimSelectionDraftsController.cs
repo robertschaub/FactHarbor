@@ -68,6 +68,8 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             draftId = result.DraftId,
             draftAccessToken = result.DraftAccessToken,
             status = result.Status,
+            createdUtc = result.CreatedUtc,
+            expiresUtc = result.ExpiresUtc,
         });
     }
 

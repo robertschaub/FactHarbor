@@ -61,6 +61,7 @@ export async function POST(request: Request, context: DraftRouteContext) {
       headers: buildClaimSelectionDraftForwardHeaders(request, {
         includeContentType: true,
         forwardDraftToken: true,
+        draftId,
       }),
       body: JSON.stringify({
         inputType,

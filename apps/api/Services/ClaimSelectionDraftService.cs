@@ -28,7 +28,9 @@ public sealed class ClaimSelectionDraftService
     public sealed record CreateDraftResult(
         string DraftId,
         string DraftAccessToken,
-        string Status);
+        string Status,
+        DateTime CreatedUtc,
+        DateTime ExpiresUtc);
 
     public sealed record IdleAutoProceedDueDraft(
         string DraftId,
@@ -78,7 +80,7 @@ public sealed class ClaimSelectionDraftService
         _db.ClaimSelectionDrafts.Add(draft);
         await _db.SaveChangesAsync();
 
-        return (new CreateDraftResult(draft.DraftId, accessToken, draft.Status), null, 0);
+        return (new CreateDraftResult(draft.DraftId, accessToken, draft.Status, draft.CreatedUtc, draft.ExpiresUtc), null, 0);
     }
 
     public async Task<ClaimSelectionDraftEntity?> GetDraftAsync(string draftId)

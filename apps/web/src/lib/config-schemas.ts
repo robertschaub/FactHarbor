@@ -496,7 +496,7 @@ export const PipelineConfigSchema = z.object({
   claimSelectionCap: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
     .describe("Maximum claims ACS may recommend or continue, and the threshold where manual selection begins (default: 5)."),
   claimSelectionIdleAutoProceedMs: z.number().int().min(0).max(3600000).optional()
-    .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 180000, 0 disables)."),
+    .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 900000, 0 disables)."),
   maxAtomicClaims: z.number().int().min(2).max(30).optional()
     .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
   maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()

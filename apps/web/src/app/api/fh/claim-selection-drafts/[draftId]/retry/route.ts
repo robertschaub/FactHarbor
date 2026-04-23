@@ -25,7 +25,7 @@ export async function POST(request: Request, context: DraftRouteContext) {
     `${base.replace(/\/$/, "")}/v1/claim-selection-drafts/${draftId}/retry`,
     {
       method: "POST",
-      headers: buildClaimSelectionDraftForwardHeaders(request, { forwardDraftToken: true }),
+      headers: buildClaimSelectionDraftForwardHeaders(request, { forwardDraftToken: true, draftId }),
     },
   );
 

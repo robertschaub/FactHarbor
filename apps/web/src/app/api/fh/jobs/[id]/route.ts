@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { checkAdminKey, getClientIp } from "@/lib/auth";
+import { drainRunnerQueue } from "@/lib/internal-runner-queue";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,9 @@ export async function GET(request: Request, context: RouteContext) {
   if (!jobId) {
     return NextResponse.json({ ok: false, error: "Missing job id" }, { status: 400 });
   }
+
+  // A user watching a single job is the highest-signal time to try stale-job recovery.
+  void drainRunnerQueue();
 
   const upstreamUrl = `${base.replace(/\/$/, "")}/v1/jobs/${jobId}`;
   // Always forward client IP so the API can rate-limit by real IP (not proxy IP).

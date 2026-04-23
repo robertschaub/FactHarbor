@@ -2,6 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockEvaluateInputPolicy = vi.fn();
 const mockBuildClaimSelectionDraftForwardHeaders = vi.fn(() => ({ "Content-Type": "application/json" }));
+const mockPersistDraftAccessCookie = vi.fn((response: Response, draftId: string, token: string) => {
+  response.headers.set("set-cookie", `fh_claim_selection_draft_${draftId}=${token}`);
+});
+const mockClearDraftAccessCookie = vi.fn((response: Response, draftId: string) => {
+  response.headers.set("set-cookie", `fh_claim_selection_draft_${draftId}=; Max-Age=0`);
+});
 const mockForwardTextResponse = vi.fn(async (response: Response) => {
   const text = await response.text();
   return new Response(text, {
@@ -13,6 +19,7 @@ const mockForwardTextResponse = vi.fn(async (response: Response) => {
 });
 const mockGetClaimSelectionDraftApiBase = vi.fn(() => "http://api.local");
 const mockResolveDraftId = vi.fn(async () => "draft-1");
+const mockDrainDraftQueue = vi.fn();
 const mockFetch = vi.fn();
 
 vi.mock("@/lib/input-policy-gate", () => ({
@@ -22,9 +29,15 @@ vi.mock("@/lib/input-policy-gate", () => ({
 vi.mock("@/lib/claim-selection-draft-proxy", () => ({
   buildClaimSelectionDraftForwardHeaders: (...args: unknown[]) =>
     mockBuildClaimSelectionDraftForwardHeaders(...args),
+  clearDraftAccessCookie: (...args: unknown[]) => mockClearDraftAccessCookie(...args),
   forwardTextResponse: (...args: unknown[]) => mockForwardTextResponse(...args),
   getClaimSelectionDraftApiBase: (...args: unknown[]) => mockGetClaimSelectionDraftApiBase(...args),
+  persistDraftAccessCookie: (...args: unknown[]) => mockPersistDraftAccessCookie(...args),
   resolveDraftId: (...args: unknown[]) => mockResolveDraftId(...args),
+}));
+
+vi.mock("@/lib/internal-runner-queue", () => ({
+  drainDraftQueue: (...args: unknown[]) => mockDrainDraftQueue(...args),
 }));
 
 function createJsonResponse(body: unknown, init: ResponseInit = {}): Response {
@@ -47,6 +60,7 @@ describe("claim-selection draft proxy routes", () => {
     mockEvaluateInputPolicy.mockResolvedValue({ decision: "allow" });
     mockGetClaimSelectionDraftApiBase.mockReturnValue("http://api.local");
     mockResolveDraftId.mockResolvedValue("draft-1");
+    mockDrainDraftQueue.mockReset();
     mockFetch.mockResolvedValue(createJsonResponse({ ok: true }));
   });
 
@@ -74,6 +88,77 @@ describe("claim-selection draft proxy routes", () => {
     });
     expect(mockEvaluateInputPolicy).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("persists a draft access cookie when session creation succeeds", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    mockFetch.mockResolvedValueOnce(
+      createJsonResponse({
+        draftId: "draft-1",
+        draftAccessToken: "token-1",
+        status: "QUEUED",
+        expiresUtc: "2026-04-24T12:00:00.000Z",
+      }),
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          inputType: "text",
+          inputValue: "hello world",
+          selectionMode: "automatic",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockPersistDraftAccessCookie).toHaveBeenCalledWith(
+      expect.any(Response),
+      "draft-1",
+      "token-1",
+      "2026-04-24T12:00:00.000Z",
+    );
+    expect(response.headers.get("set-cookie")).toContain("fh_claim_selection_draft_draft-1=token-1");
+  });
+
+  it("kicks draft queue recovery when loading an existing session", async () => {
+    const { GET } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ draftId: "draft-1", status: "QUEUED" }));
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1"),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDrainDraftQueue).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store",
+      }),
+    );
+  });
+
+  it("clears the draft access cookie when the session has a final job", async () => {
+    const { GET } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/route");
+
+    mockFetch.mockResolvedValueOnce(
+      createJsonResponse({ draftId: "draft-1", status: "COMPLETED", finalJobId: "job-1" }),
+    );
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1"),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockClearDraftAccessCookie).toHaveBeenCalledWith(expect.any(Response), "draft-1");
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 
   it("rejects empty restart input before policy evaluation or upstream fetch", async () => {
@@ -136,6 +221,24 @@ describe("claim-selection draft proxy routes", () => {
         body: JSON.stringify({ selectedClaimIds: ["AC-1", "AC-2"] }),
       }),
     );
+    expect(mockClearDraftAccessCookie).toHaveBeenCalledWith(expect.any(Response), "draft-1");
+  });
+
+  it("clears the draft access cookie when cancellation succeeds", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/cancel/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ cancelled: true }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/cancel", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockClearDraftAccessCookie).toHaveBeenCalledWith(expect.any(Response), "draft-1");
+    expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
   });
 
   it("does not enforce the configured selection cap in the proxy route", async () => {
@@ -232,6 +335,26 @@ describe("claim-selection draft proxy routes", () => {
         }),
       }),
     );
+  });
+
+  it("clears the draft access cookie when selection-state auto-confirms into a job", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route");
+
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ finalJobId: "job-1" }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts/draft-1/selection-state", {
+        method: "POST",
+        body: JSON.stringify({
+          selectedClaimIds: ["AC-1"],
+          interactionUtc: "2026-04-23T15:00:00.000Z",
+        }),
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockClearDraftAccessCookie).toHaveBeenCalledWith(expect.any(Response), "draft-1");
   });
 
   it("rejects duplicate selection-state claim ids before forwarding upstream", async () => {
