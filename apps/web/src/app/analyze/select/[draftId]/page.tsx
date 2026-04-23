@@ -23,17 +23,14 @@ import {
 } from "@/lib/claim-selection-flow";
 import commonStyles from "../../../../styles/common.module.css";
 import { ClaimSelectionPanel } from "./ClaimSelectionPanel";
+import {
+  formatClaimCount,
+  getDraftPageTitle,
+  getStatusHeadline,
+  getStatusSummary,
+  type DraftStatus,
+} from "./page-helpers";
 import styles from "./page.module.css";
-
-type DraftStatus =
-  | "QUEUED"
-  | "PREPARING"
-  | "AWAITING_CLAIM_SELECTION"
-  | "FAILED"
-  | "COMPLETED"
-  | "CANCELLED"
-  | "EXPIRED"
-  | string;
 
 type DraftResponse = {
   draftId: string;
@@ -101,10 +98,6 @@ function formatDurationMs(durationMs: number | null | undefined): string | null 
   return `${hours} h ${remainingMinutes} m`;
 }
 
-function formatClaimCount(count: number): string {
-  return `${count} claim${count === 1 ? "" : "s"}`;
-}
-
 function buildPreparationTimingSummary(observability: ClaimSelectionDraftObservability | undefined): string | null {
   if (!observability) return null;
 
@@ -142,62 +135,6 @@ function orderClaims(claims: AtomicClaim[], rankedClaimIds: string[]): AtomicCla
 function shouldKeepPolling(draft: DraftResponse): boolean {
   if (draft.finalJobId) return false;
   return draft.status === "QUEUED" || draft.status === "PREPARING" || draft.status === "COMPLETED";
-}
-
-function getStatusHeadline(status: DraftStatus): string {
-  switch (status) {
-    case "QUEUED":
-      return "Session queued";
-    case "PREPARING":
-      return "Preparing atomic claims";
-    case "AWAITING_CLAIM_SELECTION":
-      return "Choose the atomic claims to continue";
-    case "FAILED":
-      return "Session preparation failed";
-    case "CANCELLED":
-      return "Session cancelled";
-    case "EXPIRED":
-      return "Session expired";
-    case "COMPLETED":
-      return "Session completed";
-    default:
-      return status;
-  }
-}
-
-function getStatusSummary(
-  draft: DraftResponse,
-  candidateCount: number,
-  recommendedCount: number,
-  selectionThreshold: number,
-): string {
-  switch (draft.status) {
-    case "QUEUED":
-      return "FactHarbor has accepted the session and is waiting for a runner slot.";
-    case "PREPARING":
-      return "FactHarbor is preparing the final Stage 1 claim set for this session.";
-    case "AWAITING_CLAIM_SELECTION":
-      if (shouldRequireClaimSelectionUi(candidateCount, selectionThreshold)) {
-        return `Stage 1 reached the manual-review threshold (${formatClaimCount(selectionThreshold)}) and produced ${formatClaimCount(candidateCount)}. Review the ranked list below and choose the final subset before analysis continues.`;
-      }
-      if (shouldAutoContinueWithoutSelection(candidateCount, selectionThreshold)) {
-        return `Stage 1 stayed below the manual-review threshold (${formatClaimCount(selectionThreshold)}), so FactHarbor can continue directly into the full analysis with all prepared claims.`;
-      }
-      if (recommendedCount === 0) {
-        return "The prepared session is waiting for the next continuation step.";
-      }
-      return "The prepared session is ready for continuation.";
-    case "FAILED":
-      return "The prepared Stage 1 snapshot was not accepted. You can retry preparation or cancel the session.";
-    case "CANCELLED":
-      return "This session will not create a job unless you start over from the analyze page.";
-    case "EXPIRED":
-      return "The 24-hour session window elapsed before confirmation.";
-    case "COMPLETED":
-      return "The session has already been confirmed and is handing off to the job runner.";
-    default:
-      return "FactHarbor is processing this session.";
-  }
 }
 
 export default function ClaimSelectionDraftPage() {
@@ -424,19 +361,16 @@ export default function ClaimSelectionDraftPage() {
     router,
   ]);
 
-  const statusHeadline = draft
-    ? draft.status === "AWAITING_CLAIM_SELECTION" && !requiresSelectionUi
-      ? "Continuing into analysis"
-      : getStatusHeadline(draft.status)
-    : "Loading session";
+  const pageTitle = draft ? getDraftPageTitle(draft.status, requiresSelectionUi) : "Preparing Analysis";
+  const statusHeadline = draft ? getStatusHeadline(draft.status, requiresSelectionUi) : "Loading session";
   const statusSummary = draft
     ? getStatusSummary(
-      draft,
+      draft.status,
       candidateClaims.length,
       draftState?.recommendedClaimIds.length ?? 0,
       selectionThreshold,
     )
-    : "Loading session state.";
+      : "Loading session state.";
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
   const preparationObservability = draftState?.observability;
@@ -535,7 +469,7 @@ export default function ClaimSelectionDraftPage() {
   return (
     <div className={`${commonStyles.container} ${styles.page}`}>
       <div className={styles.heroCard}>
-        <h1 className={commonStyles.title}>Atomic Claim Selection</h1>
+        <h1 className={commonStyles.title}>{pageTitle}</h1>
         <p className={commonStyles.subtitle}>{statusHeadline}</p>
         <p className={styles.infoText}>{statusSummary}</p>
         <div className={styles.heroMeta}>
