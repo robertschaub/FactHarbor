@@ -272,43 +272,6 @@
   line-height: 1.55;
 }
 
-.otherCard {
-  border: 1px dashed #cbd5e1;
-  border-radius: 16px;
-  padding: 18px;
-  background: #fcfdff;
-}
-
-.otherTitle {
-  margin: 0 0 8px;
-  font-size: 1rem;
-  color: #0f172a;
-}
-
-.otherText {
-  margin: 0 0 12px;
-  color: #475569;
-  line-height: 1.55;
-}
-
-.otherTextarea {
-  width: 100%;
-  min-height: 120px;
-  padding: 14px;
-  resize: vertical;
-  font: inherit;
-  line-height: 1.5;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  box-sizing: border-box;
-}
-
-.otherTextarea:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-}
-
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -416,8 +379,7 @@
 
   .heroCard,
   .infoCard,
-  .selectionCard,
-  .otherCard {
+  .selectionCard {
     padding: 16px;
     border-radius: 14px;
   }
@@ -428,14 +390,12 @@
   }
 
   .selectionTitle,
-  .otherTitle,
   .infoTitle {
     font-size: 0.98rem;
   }
 
   .selectionSubtitle,
   .infoText,
-  .otherText,
   .recommendationRationale,
   .claimStatement,
   .claimRationale {

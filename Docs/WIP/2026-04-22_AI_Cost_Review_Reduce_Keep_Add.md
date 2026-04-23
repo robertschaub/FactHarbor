@@ -1,9 +1,15 @@
-# FactHarbor AI Cost Review — Reduce / Keep / Add
+# FactHarbor AI Cost Review — Split Tracks
 
-**Date:** 2026-04-22
-**Role:** LLM Expert
-**Status:** Draft recommendation — awaiting Captain decision before any subscription cancellations or code work. Revised after adversarial review (GPT-5.4 critique + `/debate` STANDARD-tier reconciliation).
-**Scope:** Both development AI tooling (subscriptions) and runtime pipeline APIs.
+**Date:** 2026-04-22  
+**Last updated:** 2026-04-22 — **Claude Max** explicitly confirmed in stack + Max vs API vs Cline BYOK overlap note; primary **ChatGPT Pro (Codex)**; **Cline** BYOK/credits; **§A1b** FactHarbor pairing.  
+**Role:** LLM Expert  
+**Status:** Draft recommendation — awaiting Captain decision before any subscription cancellations or code work.  
+**Scope:** Explicitly split into two independent tracks:
+1. Developer tools (your personal coding workflow)
+2. FactHarbor runtime (product execution costs)
+
+**Do not mix the tracks:** developer tool choices should not automatically change runtime provider decisions, and runtime provider decisions should not be based on personal model preference alone.
+
 **Related:**
 - [API_Cost_Reduction_Strategy_2026-02-13.md](API_Cost_Reduction_Strategy_2026-02-13.md) — external funding / Batch API / credits track
 - [LLM_Allocation_and_Cost_fwd.md](LLM_Allocation_and_Cost_fwd.md) — residual allocation ideas
@@ -12,136 +18,158 @@
 
 ---
 
-## 1. Why this plan is short
+## Track A — Developer Tools (Personal Workflow Only)
 
-The obvious runtime levers are already done or explicitly deferred:
+This track optimizes your own coding productivity and subscription spend. It is independent of FactHarbor runtime behavior.
 
-- Tiered routing (Haiku for extract/understand, Sonnet for verdict/context refinement) is live in `apps/web/src/lib/analyzer/model-tiering.ts`. The baked-in expectation was 50-70% cost reduction, which is already being captured.
-- Prompt caching is wired in the hot stages **and in `grounding-check.ts`** (verified during debate: grounding-check already calls `getPromptCachingOptions` in both its LLM call sites). See [Prompt_Caching_Debate_Consolidation](../AGENTS/Handoffs/2026-04-15_LLM_Expert_Prompt_Caching_Debate_Consolidation.md).
-- Broader token-reduction via chunking was debated with a split outcome in [2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md](2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md). Three wins were **approved**: instrumentation, preliminary chunking, and boilerplate truncation. Verdict-evidence filtering was rejected on fair-trial grounds. Extraction sub-chunking was deferred pending measurement.
-- Phase-1 pipeline speed/cost work is mostly shipped; `P1-A` clustering downgrade is the only remaining quality-sensitive runtime lever ([Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md)).
+### A1. Current stack and operator signal
 
-So the remaining real cost levers are: **subscription-stack rationalization, three approved-but-unshipped safe wins, a provider-preserving runtime mechanism (Batch API), a quality-gated provider-routing experiment (Gemini Flash), and free credit programs.** Not more pipeline surgery.
+- **Primary developer lane (KEEP as anchor):** **ChatGPT Pro** — Codex coding agent and maximum Codex access on the plan you use (ChatGPT pricing UI: Pro ~CHF 83/mo with 5x vs 20x usage tier; Plus ~CHF 20/mo includes Codex at a lower cap). This is your stated default for day-to-day coding.
+- **Other paid tools (reconcile against primary lane):**
+  - Cursor Pro (~USD 20/mo — separate from ChatGPT billing)
+  - **Claude Max (confirmed active)** — USD ~$100 (5×) / ~$200 (20×): Claude Code (terminal), claude.ai web/app, Sonnet/Opus within plan limits. **This is not the same product as Anthropic API billing** for FactHarbor jobs — Max credits do not pay pipeline `ANTHROPIC_API_KEY` usage (Track B).
+  - GitHub Copilot Pro (~USD 10/mo)
+  - **Cline (VS Code extension)** — **no monthly Cline subscription** for the OSS extension itself; cost is **usage-based** via **(a)** your own API keys (BYOK → you pay Anthropic/OpenAI/Google/OpenRouter per token) and/or **(b)** **Cline credits** if you use Cline’s hosted inference. Treat Cline as **variable spend**, not a flat line item like Cursor Pro. **If Cline is BYOK’d to Anthropic**, you can pay **both** Claude Max (flat) **and** API metered usage for the same model family — watch that stack.
+- **Operator signal:** Codex (via ChatGPT) is primary; Claude Opus perceived as degraded for *your* coding use cases — so Claude Max is a **reassess / likely cut** candidate unless you still get weekly value from **Claude Code** or claude.ai workflows that Codex + Cursor do not replace.
 
----
+### A1b — FactHarbor repo: recommended coding assistant pairing
 
-## 2. What you are actually paying for
+FactHarbor is a **split codebase** (Next.js under `apps/web`, ASP.NET Core under `apps/api`) with **heavy repo conventions** (`AGENTS.md`, `Docs/AGENTS/Handoffs/`, pipeline stages under `apps/web/src/lib/analyzer/`). That shape favors **two complementary surfaces**, not four overlapping subscriptions.
 
-### Development (monthly subscriptions, user-confirmed)
+| Role | Tool | Why it fits FactHarbor |
+|------|------|-------------------------|
+| **Primary (reasoning + agent outside the tree)** | **ChatGPT Pro + Codex (GPT‑5.4)** | Long threads, design/debate, reading handoffs, cross-cutting questions where the chat/agent UX is the main surface. |
+| **Complement (in-repo editing)** | **Cursor Pro** | Multi-file edits across `apps/web` + `apps/api`, `@`-context into `AGENTS.md` and specific stage files, Composer-style refactors. |
 
-- **Cursor Pro** — $20 (credit pool, unlimited Tab, auto mode)
-- **Claude Max** — $100 (5x) or $200 (20x); includes unlimited Claude Code + Sonnet 4.6 + Opus 4.6 on 5-hour windows
-- **GitHub Copilot Pro** — $10 (300 premium requests/mo)
-- All three provide Claude Sonnet 4.x access, which is the material model overlap. The workflow overlap is narrower — see §3.
+**Default stance for FactHarbor:** **ChatGPT Pro + Cursor Pro** is enough for day-to-day development. **Do not add** another paid coding assistant for this repo unless a **named weekly workflow** breaks without it (see Copilot lanes in §A2).
 
-### Runtime (pay-as-you-go)
+**Explicitly out of this pairing:** pipeline **runtime** API keys (Anthropic/OpenAI/Google for jobs) — those belong to **Track B** only; billing and decisions stay separate from “which IDE/chat assistant I use to write code.”
 
-- **Anthropic API** — drives 100% of the default pipeline (`"llmProvider": "anthropic"` in `apps/web/configs/pipeline.default.json`). This is the single largest runtime cost line.
-- **Provider keys to reassess individually:**
-  - `OPENAI_API_KEY` — used by the debate **challenger** role (`pipeline.default.json:109`) and the TPM guard fallback (`openaiTpmGuardFallbackModel: "gpt-4.1-mini"`). Captain did not list an OpenAI account — either he has one not listed, the challenger is silently failing, or the fallback path never fires. Investigate before acting.
-  - `GOOGLE_GENERATIVE_AI_API_KEY` — only used if the `llmProvider` is switched or Google models are added via UCM; the Gemini experiment in §4 would activate this.
-  - `MISTRAL_API_KEY` — Mistral is a **supported provider surface** in `llm.ts`, `model-resolver.ts`, `config-schemas.ts`, admin routes, and tests. Unused by current defaults but **not dead code**. Treat the key as local-env hygiene only.
-- **Search:** Google CSE (primary, 8k/day free cap) + Serper (secondary, paid beyond free tier). Brave + SerpAPI keys set but providers disabled in `apps/web/configs/search.default.json`. Note: `"provider": "auto"` + `"autoMode": "accumulate"` means Serper **contributes to recall**, not just fallback.
+### A2. Recommendations — Reduce / Keep / Reassess
 
----
+#### Keep (primary lane)
 
-## 3. Development Tooling — Reduce / Keep / Add
+- **ChatGPT Pro (or the minimum tier that still covers your Codex usage).** Do not downgrade until you confirm Codex limits on Plus/Go still meet your weekly agent workload. If Pro is required for “maximum Codex,” treat it as the non-negotiable anchor until measured otherwise.
 
-### 3.1 REDUCE — verify-then-decide, not blanket cancel
+#### Reduce first (highest overlap, lowest risk)
 
-- **GitHub Copilot Pro — conditional cancel ($120/yr).** Cursor Pro covers the same Sonnet models and has a stronger multi-file agent; Claude Max covers Claude Code (terminal) and the Claude Sonnet + Opus web UI. Copilot's distinct remaining lanes per [Tool_Strengths.md](../AGENTS/Policies/Tool_Strengths.md) are:
-  - (a) inline completion in non-VS-Code IDEs (JetBrains, Neovim),
-  - (b) PR summaries / Copilot Workspace on github.com,
-  - (c) the GitHub Copilot coding agent triggered from issues.
+- **GitHub Copilot Pro — conditional cancel ($120/yr).**
+  - Keep only if you rely on one of these lanes regularly:
+    1. inline completion in non-VS-Code IDEs
+    2. PR summary/workflow features on github.com
+    3. GitHub-native coding-agent flows tied to issues/PRs
+  - If none of the above are daily/weekly critical, cancel first.
 
-  **Only cancel if none of those three lanes is in your daily workflow.** If you use any, keep it.
-- **Cursor Pro — keep unless Claude Code covers agent needs.** Daily use of Cursor Composer / multi-file Agent / Tab autocomplete makes $20/mo a straight win. If you have migrated entirely to Claude Code (terminal) for agent work, Cursor Hobby may suffice.
+#### Reassess second (largest monthly delta after Copilot)
 
-### 3.2 KEEP
+- **Claude Max — strong candidate to downgrade or cancel.**
+  - Primary coding is Codex (ChatGPT Pro); keep Max only if Claude still delivers weekly value *outside* what Codex + Cursor already cover (e.g. long Opus-only reasoning sessions you still run on purpose).
+  - If not, canceling Max is typically the largest single subscription saving after Copilot.
 
-- **Claude Max (5x or 20x).** Best $/capability in the stack. Flat-rate includes cache reads which is where the real value lives; using Claude Code via raw API at this intensity typically runs $500-$2000/mo per industry data.
-- **Anthropic API (pay-as-you-go).** Required for the FactHarbor runtime. Max credits do NOT transfer to the API — separate billing systems.
+#### Cursor — editor complement, not a second “primary brain”
 
-### 3.3 ADD — free / discounted programs (verify terms at primary source first)
+- **Keep Cursor Pro** if Composer / Tab / multi-file edits remain daily; it pairs with Codex rather than replacing it.
+- **Downgrade or drop Cursor** only if essentially all editing happens inside Codex workflows and you rarely open the IDE agent.
 
-- **Claude for Open Source Maintainers — 6 months of Max 20x free (~$1,200 value)**, reportedly closing June 30, 2026. Verify current terms at `claude.com/contact-sales/claude-for-oss` (or Anthropic's current canonical URL) **before** investing application time. If valid, FactHarbor is the target audience.
-- **Anthropic AI for Science Program — up to $20–50k in API credits** if a research framing applies, reportedly evaluated monthly. Verify at `anthropic.com/ai-for-science-program-rules` before applying. FactHarbor's input-neutrality / multilingual-robustness methodology is a plausible research angle.
-- **Claude for Nonprofits — up to 75% off Team/Enterprise** if you register a 501(c)(3) or international equivalent. Only relevant if you formalize legally.
+#### Avoid triple overlap
 
----
+- **ChatGPT Pro (Codex)** + **Cursor** + **Claude Max** + **Copilot** (+ **Cline** variable) is a heavy stack — target **one primary + one editor complement** (e.g. ChatGPT Pro + Cursor), then **drop Copilot** if GitHub-native lanes are unused, then **reassess Claude Max** unless Claude Code / claude.ai remains weekly-critical. **Cline:** prefer routing Cline to keys that are *not* double-billing alongside Max (e.g. OpenAI if that’s already in your ChatGPT ecosystem), or accept Max + Anthropic API as two meters if you need both.
 
-## 4. Runtime Pipeline — Reduce / Keep / Add
+### A3. Developer-tool decision checklist (14-day rule)
 
-### 4.1 REDUCE
+- [ ] Confirm minimum ChatGPT tier (Go / Plus / Pro) that still satisfies Codex usage; document actual CHF/month once stable.
+- [ ] Track actual session share for 14 days (ChatGPT+Codex / Cursor / Copilot / Claude Max & Claude Code / Cline-driven API spend).
+- [ ] If Claude usage is below 20-25% of coding sessions, downgrade/cancel Claude Max.
+- [ ] If Copilot-specific lanes are not missed after one week without it, keep Copilot canceled.
+- [ ] Keep **ChatGPT + Codex** as primary; at most one extra paid assistant (usually Cursor) unless a lane proves essential.
 
-- **Clarify OpenAI spend before acting.** Inspect runtime logs for challenger-role activity. Then choose:
-  1. **Fund OpenAI and swap to GPT-4.1-mini** (`$0.40/$1.60` vs GPT-4.1's `$2/$8`) in `pipeline.default.json:109`. Cheaper challenger, preserves cross-family adversarial pressure. Recommended.
-  2. **DO NOT swap the challenger to Anthropic** without a debate-symmetry audit. LLM Expert role learnings ([Roles/LLM_Expert.md](../AGENTS/Roles/LLM_Expert.md)) explicitly warn: *"Debate model symmetry — never upgrade only the challenger"* and *"LLM self-eval bias — LLMs rate same-family output higher on correlated dimensions."* Collapsing challenger onto Anthropic risks the reconciler rubber-stamping same-family advocate output. The prior `~$0.024/analysis` savings estimate ([LLM_Allocation_and_Cost_fwd_arch.md](../ARCHIVE/LLM_Allocation_and_Cost_fwd_arch.md) Rec-B) does not pay for analytical-quality regression.
-- **Local env hygiene — remove `MISTRAL_API_KEY` from local `.env.local`** if not actively running Mistral experiments. Do NOT remove Mistral from `.env.example`, `llm.ts`, `model-resolver.ts`, or `config-schemas.ts` — it is a supported provider surface.
-- **Serper — verify-then-disable, do not blanket-cut.** `search.default.json` uses `provider: "auto"` with `autoMode: "accumulate"` — Serper is not a rare fallback; it contributes to recall every time it accumulates. Before disabling in UCM, run a small benchmark-family batch with and without Serper and compare evidence-count / source-diversity deltas. Disable only if recall holds.
+### A4. Developer-tool guardrails
 
-### 4.2 KEEP
-
-- **Tiered routing + prompt caching** — already optimal. Do not regress.
-- **Google CSE as primary search** — cheapest + fastest + 8k/day free is enough for solo-dev volume.
-- **Wikipedia provider** — free, high-quality, keep enabled.
-
-### 4.3 ADD — four approved runtime levers (priority order)
-
-1. **Token instrumentation per stage (Phase 0, prerequisite for everything below).** Add input/output token counters keyed by stage + job. Cannot prioritize the rest without this. Approved by the 2026-04-20 token debate.
-2. **Preliminary chunking + boilerplate truncation (approved safe wins, not yet shipped).** Both were explicitly approved in [2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md](2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md) §6 as Phase-1 items but have not landed. Both are low-risk:
-   - Header-based preliminary chunking at 3-4K chars in `claim-extraction-stage.ts:1703-1705`
-   - Better boilerplate stripping at fetch time in `research-acquisition-stage.ts` before the 8K char cap (structural plumbing, not analytical — allowed by AGENTS.md)
-3. **Anthropic Batch API integration — 50% off input AND output (primary runtime lever).** Provider-preserving; no re-calibration risk. Best fit: self-consistency calls (2 per claim) and validation/summary calls, which are not latency-critical. Blocker is queue management in the AI SDK wrapper. Prior estimate: 20-30% total job cost reduction.
-4. **Gemini 2.5 Flash routing experiment — quality-gated, BUDGET tier only.** The pricing delta is material: Gemini Flash `$0.15/$0.60` vs Haiku 4.5 `$1.00/$5.00` per MTok per `model-tiering.ts` — roughly 6-8x cheaper. Infrastructure is already wired. **But this is NOT a flagship lever**: FactHarbor's prompts, confidence calibration, neutrality testing, and multilingual-robustness work are calibrated against Anthropic Haiku+Sonnet. Provider changes are quality-sensitive per AGENTS.md. Run as a scoped experiment with mandatory gates:
-   - **Scope:** budget tier tasks only (`understand`, `extract_evidence`) — do NOT touch verdict/context-refinement.
-   - **Gate A:** neutrality test (≤4% tolerance per AGENTS.md input-neutrality rule).
-   - **Gate B:** multilingual validation across en/fr/de/pt inputs (AGENTS.md multilingual robustness rule).
-   - **Gate C:** benchmark-family run vs current Anthropic baseline — no regression on evidence-count, high-probativeValue ratio, or verdict stability beyond run-to-run noise.
-   - Only promote to default if all three gates pass. Leave as per-task config flag otherwise.
+- Do not use runtime quality arguments to justify keeping redundant personal subscriptions.
+- Do not use personal model preference as evidence that runtime provider should change.
 
 ---
 
-## 5. Bottom-line recommendations (priority order)
+## Track B — FactHarbor Runtime (Product Costs Only)
 
-### 5.1 Immediate — deadline-driven or zero-risk
+This track optimizes production-like analysis execution costs while preserving AGENTS.md quality constraints.
 
-- [ ] Verify Claude OSS Maintainers program terms at primary source; if valid, apply before the stated June 30, 2026 deadline (~$1,200 value).
-- [ ] Verify Copilot workflow lanes; cancel only if none are in daily use ($120/yr if yes).
-- [ ] Remove `MISTRAL_API_KEY` from local `.env.local` (keep provider code path).
-- [ ] Decide OpenAI: fund + swap to GPT-4.1-mini, OR investigate silent-failure — explicitly DO NOT collapse onto Anthropic.
+### B1. Runtime baseline and constraints
 
-### 5.2 Near-term — one focused code session each
+- Default runtime provider remains Anthropic (`"llmProvider": "anthropic"` in `apps/web/configs/pipeline.default.json`).
+- Tiered routing and prompt caching are already active and should not be regressed.
+- Runtime changes must remain quality-gated:
+  - input neutrality tolerance <= 4%
+  - multilingual robustness
+  - benchmark-family stability
 
-- [ ] Add per-stage token instrumentation (Phase 0 unlock).
-- [ ] Ship preliminary chunking + boilerplate truncation (both already approved).
-- [ ] Run a benchmark-family Serper-on-vs-off recall comparison before disabling.
+### B2. Runtime recommendations — Reduce / Keep / Add
 
-### 5.3 Medium-term — bigger effort, biggest provider-preserving return
+#### Reduce (targeted and validated)
 
-- [ ] Wire Anthropic Batch API for non-latency-sensitive calls. Target 20-30% total job cost reduction.
-- [ ] Verify and apply for Anthropic AI for Science credits.
+- **Clarify OpenAI spend path.** Challenger role is configured to OpenAI. Verify actual usage and failure/success path before changing spend.
+- **Do not switch challenger to Anthropic without a symmetry audit.** Role learnings warn about same-family self-eval bias in debate patterns.
+- **Serper: verify-then-disable only.** `auto` + `accumulate` means Serper contributes to recall, not only fallback.
+- **Mistral key hygiene:** remove local `MISTRAL_API_KEY` only if unused in your environment; keep provider surface in code.
 
-### 5.4 Experimental — only with calibration budget
+#### Keep
 
-- [ ] Gemini 2.5 Flash routing on budget-tier tasks, behind neutrality + multilingual + benchmark-family gates. Promote only if all gates pass.
+- Tiered routing + caching baseline.
+- Google CSE primary search lane.
+- Wikipedia provider.
 
-### 5.5 Do NOT
+#### Add (priority order)
 
-- Cut Claude Max — best $/value dev tool.
-- Switch the debate challenger to Anthropic without a symmetry audit — violates LLM Expert role learnings.
-- Treat Gemini Flash as a drop-in flagship lever — it is a quality-sensitive experiment.
-- Disable Serper blindly — `auto/accumulate` means it contributes to recall every run.
-- Remove Mistral provider code — it is a supported surface.
-- Revisit evidence-filtering for verdict cost — rejected on fair-trial grounds.
-- Revisit prompt caching refactor in hot stages or grounding-check — already wired.
+1. **Per-stage token instrumentation (Phase 0 prerequisite).**
+2. **Approved safe wins from token debate:**
+   - preliminary chunking
+   - boilerplate stripping before cap
+3. **Anthropic Batch API integration** for non-latency-sensitive calls (provider-preserving cost lever).
+4. **Gemini Flash experiment** (budget-tier tasks only, behind strict quality gates; not default by assumption).
+
+### B3. Runtime execution checklist
+
+- [ ] Add token telemetry by stage and job.
+- [ ] Implement the two approved safe wins (preliminary chunking + boilerplate stripping).
+- [ ] Run Serper-on vs Serper-off recall comparison before any provider disable.
+- [ ] Implement Batch API where asynchronous flow is acceptable.
+- [ ] Run Gemini budget-tier experiment only with neutrality + multilingual + benchmark gates.
+- [ ] Promote runtime provider changes only after evidence, not preference.
+
+### B4. Runtime guardrails
+
+- Never optimize runtime by weakening fair-trial evidence handling.
+- Never bypass AGENTS.md quality constraints for cost wins.
+- Never treat personal tool preference as runtime validation.
 
 ---
 
-## 6. Provenance
+## Combined Priority Map (Separated by Track)
 
-- **Author:** LLM Expert role (Claude Opus 4.7, via Cursor).
-- **Adversarial review:** GPT-5.4-medium via Task subagent flagged staleness on `grounding-check.ts`, weak scoping on Copilot/Serper/Mistral cuts, and a self-contradiction on the challenger-Anthropic swap. See this session's chat transcript for the critique.
-- **Reconciliation:** `/debate` STANDARD tier with Advocate/Challenger/Reconciler roles. Verdict: MODIFY (surgical patch, not wholesale rewrite). This document is the post-debate revised version.
-- **Items dropped from the original draft:** `grounding-check.ts` caching patch (already shipped — verified); blanket Copilot cancel (softened to workflow-conditional); blanket Serper disable (softened to recall-verified); blanket Mistral removal (narrowed to local env only); challenger-to-Anthropic swap (explicitly forbidden without symmetry audit).
-- **Items added to the original draft:** preliminary chunking + boilerplate truncation (approved safe wins that were missed); Gemini 2.5 Flash routing as quality-gated experiment; credit-program "verify at source" guard.
+### Immediate (Developer Tools)
+
+- [ ] Confirm ChatGPT Pro vs Plus for Codex caps (avoid accidental downgrade that blocks agent work).
+- [ ] Run 14-day usage audit (Codex vs Cursor vs Claude vs Copilot).
+- [ ] Decide Copilot retain/cancel.
+- [ ] Decide Claude Max retain/downgrade — default stance **downgrade/cancel** if Codex+Cursor covers coding.
+
+### Immediate (Runtime)
+
+- [ ] Add token instrumentation.
+- [ ] Validate OpenAI challenger spend path.
+- [ ] Queue safe wins for implementation.
+
+### Medium-term (Runtime)
+
+- [ ] Batch API integration.
+- [ ] Gemini Flash budget-tier experiment with mandatory gates.
+
+---
+
+## Provenance
+
+- Original document reviewed and revised after GPT-5.4 critique and `/debate` reconciliation.
+- This version restructures the entire document into two non-overlapping decision tracks at user request.
+- **2026-04-22:** Track A updated so **ChatGPT Pro + Codex** is the explicit primary developer anchor; CHF pricing taken from Captain’s ChatGPT pricing screenshot (Go / Plus / Pro); Claude Max framed as reassess-first after Copilot.
+- **2026-04-22:** Added **§A1b — FactHarbor repo: recommended coding assistant pairing** (ChatGPT Pro + Codex primary, Cursor Pro complement; no third paid assistant for the repo unless a named workflow requires it; runtime APIs stay Track B).
+- **2026-04-22:** Captain confirmed **Claude Max** is in the active stack; doc now states **Max ≠ Anthropic API** for pipeline jobs, and flags **Claude Max + Cline Anthropic BYOK** as a possible double meter.

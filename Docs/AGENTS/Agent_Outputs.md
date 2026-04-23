@@ -7,6 +7,31 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Draft Slowness Challenger Position -- [Standard] [open-items: yes]
+**For next agent:** Prefer a no-schema first slice: instrument `prepareStage1Snapshot(...)` and expose a derived draft-preparation projection from `DraftStateJson.observability` rather than adding a `LastEventMessage` row column. Main anchors: `internal-runner-queue.ts`, `claim-extraction-stage.ts`, `ClaimSelectionDraftService.cs`, and ACS spec section 5.6.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Draft_Slowness_Challenger_Position.md
+
+---
+### 2026-04-22 | Unassigned | GitHub Copilot (GPT-5.4) | Internal Agent Knowledge Query Layer CLI-First Realignment -- [Standard] [open-items: yes]
+**For next agent:** The active spec at [Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) now matches the multi-model debate result: shared query core, local cache, and committed index substrate remain, but v1 is CLI-first and both the MCP adapter and `publish_handoff` are deferred.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_Query_Layer_CLI_First_Realignment.md
+
+---
+### 2026-04-22 | Unassigned | GitHub Copilot (GPT-5.4) | Internal Agent Knowledge MCP v1 Publish Handoff Atomicity Pass -- [Standard] [open-items: yes]
+**For next agent:** The active spec at [Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) now has an explicit Section 9.4 for `publish_handoff`: required `topics` frontmatter, publish-lock plus idempotency check, handoff temp-write before `Agent_Outputs.md` rewrite, best-effort rollback on second-write failure, and immediate cache/index refresh so newly published handoffs are discoverable right away.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Publish_Handoff_Atomicity_Pass.md
+
+---
+### 2026-04-22 | Unassigned | GitHub Copilot (GPT-5.4) | Internal Agent Knowledge MCP v1 Review Refinement -- [Standard] [open-items: yes]
+**For next agent:** The active spec at [Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) now replaces `scaffold_handoff` with protocol-complete `publish_handoff`, adds authoritative source coverage for analyzer/model-tier inputs, strengthens cache freshness tracking, and assumes a root `/.cache/` ignore rule.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Review_Refinement.md
+
+---
+### 2026-04-22 | Unassigned | GitHub Copilot (GPT-5.4) | Internal Agent Knowledge MCP v1 Spec -- [Standard] [open-items: yes]
+**For next agent:** New WIP spec at [Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) turns the earlier indexing/MCP discussions into a concrete rollout shape: shared query core in a new `packages/fh-agent-knowledge/`, MCP plus first-class CLI adapters, gitignored local cache as primary serving layer, and current `Docs/AGENTS/index/*.json` files kept only as rollout-time compatibility inputs.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Spec.md
+
+---
 ### 2026-04-22 | Senior Developer | GitHub Copilot (GPT-5.4) | Build Index Parser Regression Tests -- [Standard] [open-items: no]
 **For next agent:** [scripts/build-index.mjs](scripts/build-index.mjs) now exports `parseHandoff(...)` behind an `IS_MAIN` guard, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) locks in the role/topic fallback cases that previously dropped slug tokens like `captain` from `handoff-index.json`.
 → Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_Build_Index_Parser_Regression_Tests.md
@@ -1759,3 +1784,33 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-22 | Lead Architect | Codex (GPT-5) | Review Findings Disposition For ACS Docs -- [Standard] [open-items: no]
 **For next agent:** The two final-review findings are now closed. The ACS spec now mirrors the documented public retry endpoint with `app/api/fh/claim-selection-drafts/[id]/retry/route.ts` in section 7.2, and the backlog’s technical-debt section now places `ACS-1` / `ACS-CW-1` ahead of the low-urgency architecture rows so the file’s stated urgency ordering is true again.
 → updated docs: [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md), [Backlog.md](/c:/DEV/FactHarbor/Docs/STATUS/Backlog.md)
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | Atomic Claim Selection Lead Developer Review Disposition -- [Standard] [open-items: yes]
+**For next agent:** The Lead Developer implementation review is now reflected in the ACS spec: Stage 1 prep is defined as the full cold-start boundary, prepared jobs must persist and reuse `PreparedStage1Snapshot.resolvedInputText`, draft-row lifecycle columns are the queryable truth while `DraftStateJson` is the rich-detail store, expiry is lazy in v1, and the spec now explicitly warns that draft-time invite-slot claiming cannot reuse the current jobs-only hourly count in `TryClaimInviteSlotAsync(...)` unchanged. The ACS spec and CW design doc also now point to `apps/web/src/lib/analyzer/types.ts` as the canonical home for recommendation contract types.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Lead_Developer_Review_Disposition.md
+
+---
+### 2026-04-22 | Unassigned | Codex (GPT-5) | ACS-1 Implementation Takeover Fixes -- [Standard] [open-items: yes]
+**For next agent:** The ACS-1 takeover patch replaces the draft worker TODO with a real Stage 1 preparation path, adds prepared-job reuse via `PreparedStage1Snapshot`, makes draft confirm/job creation transactional, validates selected IDs against `preparedStage1.preparedUnderstanding.atomicClaims`, and splits `PreparedStage1Json` from `ClaimSelectionJson` correctly. Invite hourly accounting now counts draft creations plus direct jobs without double-counting confirmed drafts. Remaining intentional gap: `ACS-CW-1` still needs to replace the temporary automatic-mode fallback for drafts with more than 5 surviving claims.
+→ Docs/AGENTS/Handoffs/2026-04-22_Unassigned_ACS1_Implementation_Takeover_Fixes.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Dialog Slow Path Diagnosis -- [Standard] [open-items: yes]
+**For next agent:** The current ACS dialog slowdown is upstream of recommendation. Live draft `2698064e48b446aa8b6a7d69d40ce504` stayed at progress `24` for >200s on the Iran Wikipedia URL while Stage 1 contract validation failed twice and forced a conservative Pass 2 retry; recommendation does not start until progress `32` in `internal-runner-queue.ts`.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Dialog_Slow_Path_Diagnosis.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Slow Path Debate -- [Standard] [open-items: yes]
+**For next agent:** Debate result was `MODIFY`: keep Stage 1 retry cost plus coarse progress visibility as the primary root cause, but widen the first fix to measure both Stage 1 sub-steps and recommendation in the same patch while surfacing Stage 1 milestones in the UI.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Debate.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Claude Opus Slow Path Review Verification -- [Standard] [open-items: yes]
+**For next agent:** Claude Opus was directionally right on the root cause, but one review claim was too optimistic: `recordLLMCall(...)` exists in the recommendation module, yet draft preparation does not run inside `runWithMetrics(...)`, so persisted recommendation timings are not established for drafts. More importantly, draft `eventMessage` text is accepted by the internal API but dropped by `ClaimSelectionDraftService.UpdateStatusAsync(...)`, so milestone visibility requires API/service/UI work, not just progress-bar tuning.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claude_Opus_Slow_Path_Review_Verification.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Slow Path Implementation Plan Review -- [Standard] [open-items: yes]
+**For next agent:** The debated plan landed as `MODIFY`: keep the instrumentation-first slice, but make `ClaimSelectionDraftState.observability` the authoritative prep-telemetry contract and keep row-level `LastEventMessage` as live UI convenience only. First patch should add truthful Stage 1 milestones, separated draft timings, and a surfaced latest milestone message, while deferring recommendation optimization and polling/SSE changes until measurements exist.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Implementation_Plan_Review.md

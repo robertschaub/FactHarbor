@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-04-22
-**Status**: Consolidation #12 complete. 48 files archived. 44 active markdown docs remain.
+**Status**: Consolidation #12 complete. 48 files archived. 45 active markdown docs remain.
 
 ---
 
@@ -58,6 +58,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ### Agent tooling
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; partially executed (JSON artifacts exist, MCP layer pending)
+- [2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) — implementation-ready CLI-first v1 spec for a local developer-workflow knowledge layer with shared query core, gitignored local cache, and deferred MCP follow-up
 - [2026-04-13_Agent_Outputs_Purpose_Review.md](2026-04-13_Agent_Outputs_Purpose_Review.md) — Agent_Outputs migration design (approved, migration PR not yet executed)
 - [2026-04-13_Migration_Case_C_Review.md](2026-04-13_Migration_Case_C_Review.md) — Case-C decision record for Agent_Outputs migration (decisions made, execution pending)
 - [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](2026-04-21_Additive_Repair_Drift_Problem_Statement.md) — problem framing for additive repair drift in agent workflows; explains why agents keep stacking failed changes and why bounded backtracking is preferred over blanket rollback

@@ -15,6 +15,7 @@ import {
 import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 import { getWebGitCommitHash } from "@/lib/build-info";
+import { shouldAutoContinueWithoutSelection } from "@/lib/claim-selection-flow";
 import { loadPipelineConfig } from "@/lib/config-loader";
 import type {
   ClaimSelectionMetadata,
@@ -214,6 +215,12 @@ async function apiPost(apiBase: string, adminKey: string | null, path: string, p
 export function normalizeRunningProgress(progress?: number): number | undefined {
   if (typeof progress !== "number") return progress;
   return progress >= 100 ? 99 : progress;
+}
+
+export function normalizeDraftPreparationProgress(progress?: number): number | undefined {
+  const normalized = normalizeRunningProgress(progress);
+  if (typeof normalized !== "number") return normalized;
+  return normalized > 0 ? normalized : undefined;
 }
 
 async function runJobBackground(jobId: string) {
@@ -823,7 +830,7 @@ async function runDraftPreparationBackground(draftId: string) {
         onEvent: async (message, progress) => {
           await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
             status: "PREPARING",
-            progress,
+            progress: normalizeDraftPreparationProgress(progress),
             eventMessage: message,
           });
         },
@@ -844,6 +851,28 @@ async function runDraftPreparationBackground(draftId: string) {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
         errorCode: "no_candidate_claims",
         errorMessage: "Stage 1 produced no selectable atomic claims for this draft.",
+      });
+      return;
+    }
+
+    if (shouldAutoContinueWithoutSelection(candidateIds.length)) {
+      const draftState: ClaimSelectionDraftState = {
+        version: 1,
+        preparedStage1,
+        rankedClaimIds: [...candidateIds],
+        recommendedClaimIds: [...candidateIds],
+        selectedClaimIds: [...candidateIds],
+        assessments: [],
+      };
+      failureDraftState = draftState;
+
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
+        draftStateJson: JSON.stringify(draftState),
+      });
+      preparedPersisted = true;
+
+      await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
+        selectedClaimIds: candidateIds,
       });
       return;
     }
@@ -872,13 +901,12 @@ async function runDraftPreparationBackground(draftId: string) {
       pipelineConfig,
     });
 
-    const selectedClaimIds = [...recommendation.recommendedClaimIds];
     const draftState: ClaimSelectionDraftState = {
       version: 1,
       preparedStage1,
       rankedClaimIds: recommendation.rankedClaimIds,
       recommendedClaimIds: recommendation.recommendedClaimIds,
-      selectedClaimIds,
+      selectedClaimIds: recommendation.recommendedClaimIds,
       recommendationRationale: recommendation.rationale,
       assessments: recommendation.assessments,
     };
@@ -889,16 +917,9 @@ async function runDraftPreparationBackground(draftId: string) {
     });
     preparedPersisted = true;
 
-    if (selectionMode === "automatic" && selectedClaimIds.length > 0) {
-      await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
-        selectedClaimIds,
-      });
-      return;
-    }
-
-    if (selectionMode === "automatic" && selectedClaimIds.length === 0) {
-      console.warn(
-        `[Runner] Draft ${draftId} requested automatic selection but the recommendation module returned no recommended claims. Leaving draft awaiting manual confirmation.`,
+    if (selectionMode === "automatic") {
+      console.info(
+        `[Runner] Draft ${draftId} produced ${candidateIds.length} candidate claims, so manual claim selection is required before analysis continues.`,
       );
     }
   } catch (e: any) {

@@ -97,6 +97,7 @@ apps/web/prompts/*Good*.prompt.md
 apps/web/prompts/*Test*.prompt.md
 /tmp*
 /temp*
+/.cache/
 
 /Workflows.txt
 /POC1.txt

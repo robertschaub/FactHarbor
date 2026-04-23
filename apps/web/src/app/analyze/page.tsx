@@ -22,10 +22,7 @@ import {
   canUseSessionStorage,
   getLocalStorageItemSafely,
   getSessionStorageItemSafely,
-  type ClaimSelectionMode,
-  getStoredClaimSelectionMode,
   setLocalStorageItemSafely,
-  setStoredClaimSelectionMode,
   storeDraftAccessToken,
 } from "@/lib/claim-selection-client";
 import { SystemHealthBanner } from "@/components/SystemHealthBanner";
@@ -36,7 +33,6 @@ export default function AnalyzePage() {
   const [inviteCode, setInviteCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectionMode, setSelectionMode] = useState<ClaimSelectionMode>("interactive");
   const [quotaStatus, setQuotaStatus] = useState<{
     hourlyLimit: number;
     hourlyRemaining: number;
@@ -54,7 +50,6 @@ export default function AnalyzePage() {
     const storedCode = getLocalStorageItemSafely("fh_invite_code") || "";
     setInviteCode(storedCode);
     setAdminKey(getSessionStorageItemSafely("fh_admin_key"));
-    setSelectionMode(getStoredClaimSelectionMode());
   }, []);
 
   const checkQuota = async (code: string) => {
@@ -148,7 +143,6 @@ export default function AnalyzePage() {
 
       // Update stored invite code
       setLocalStorageItemSafely("fh_invite_code", inviteCode);
-      setStoredClaimSelectionMode(selectionMode);
 
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (adminKey) {
@@ -161,7 +155,7 @@ export default function AnalyzePage() {
         body: JSON.stringify({
           inputType,
           inputValue,
-          selectionMode,
+          selectionMode: "automatic",
           inviteCode: inviteCode.trim() || undefined
         }),
         signal: controller.signal,
@@ -228,51 +222,6 @@ export default function AnalyzePage() {
             </span>
           </div>
         )}
-
-        <div
-          style={{
-            marginBottom: 16,
-            padding: "14px 16px",
-            border: "1px solid #d9dee5",
-            borderRadius: 12,
-            background: "#f8fafc",
-          }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#334155", marginBottom: 10 }}>
-            Claim Selection
-          </div>
-          <label
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: 10,
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={selectionMode === "automatic"}
-              onChange={(event) => {
-                const nextMode: ClaimSelectionMode = event.target.checked ? "automatic" : "interactive";
-                setSelectionMode(nextMode);
-                setStoredClaimSelectionMode(nextMode);
-              }}
-              style={{ marginTop: 2 }}
-            />
-            <span style={{ display: "grid", gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>
-                Auto-continue with recommended claims
-              </span>
-              <span style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>
-                FactHarbor prepares candidate atomic claims first. In automatic mode it continues
-                directly when the recommendation step returns a non-empty subset; otherwise it falls
-                back to the manual selection page.
-              </span>
-            </span>
-          </label>
-        </div>
-
-
 
         {/* Invite Code — hidden for logged-in admins */}
         {adminKey ? (
@@ -365,7 +314,7 @@ export default function AnalyzePage() {
             className={`${styles.submitButton} ${isSubmitting || !hasInput || (!adminKey && !inviteCode.trim()) ? styles.submitButtonDisabled : styles.submitButtonEnabled}`}
           >
             {isSubmitting ? (
-              <>⏳ Preparing Claim Selection...</>
+              <>⏳ Preparing Atomic Claims...</>
             ) : (
               <>🔍 Check</>
             )}

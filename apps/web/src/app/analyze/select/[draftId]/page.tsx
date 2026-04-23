@@ -9,12 +9,16 @@ import type {
   ClaimSelectionDraftState,
   ClaimSelectionRecommendationAssessment,
 } from "@/lib/analyzer/types";
-import { normalizeAnalyzeInputValue } from "@/lib/analyze-input-client";
 import {
   buildDraftAccessHeaders,
   clearStoredDraftAccessToken,
   getSessionStorageItemSafely,
 } from "@/lib/claim-selection-client";
+import {
+  getClaimSelectionCap,
+  shouldAutoContinueWithoutSelection,
+  shouldRequireClaimSelectionUi,
+} from "@/lib/claim-selection-flow";
 import commonStyles from "../../../../styles/common.module.css";
 import { ClaimSelectionPanel } from "./ClaimSelectionPanel";
 import styles from "./page.module.css";
@@ -122,18 +126,18 @@ function getStatusSummary(draft: DraftResponse, candidateCount: number, recommen
     case "QUEUED":
       return "FactHarbor has accepted the draft and is waiting for a runner slot.";
     case "PREPARING":
-      return "Stage 1 extraction and recommendation are running against this draft.";
+      return "FactHarbor is preparing the final Stage 1 claim set for this draft.";
     case "AWAITING_CLAIM_SELECTION":
-      if (draft.selectionMode === "automatic" && recommendedCount === 0) {
-        return "Automatic mode did not produce a non-empty recommended subset. Review the candidate claims manually below.";
+      if (shouldRequireClaimSelectionUi(candidateCount)) {
+        return "Stage 1 produced five or more candidate claims. Review the ranked list below and choose the final subset before analysis continues.";
       }
-      if (draft.selectionMode === "automatic" && candidateCount > 5) {
-        return "Automatic mode paused because more than five candidate claims survived Stage 1. Review the ranked claims below.";
+      if (shouldAutoContinueWithoutSelection(candidateCount)) {
+        return "Stage 1 produced four or fewer candidate claims. FactHarbor can continue directly into the full analysis with all prepared claims.";
       }
-      if (draft.selectionMode === "automatic") {
-        return "Automatic mode paused before job creation. Review the prepared claim set and continue manually if needed.";
+      if (recommendedCount === 0) {
+        return "The prepared draft is waiting for the next continuation step.";
       }
-      return "Review the prepared candidate claims, keep the most useful subset, or replace them with a new input via Other.";
+      return "The prepared draft is ready for continuation.";
     case "FAILED":
       return "The prepared Stage 1 snapshot was not accepted. You can retry preparation or cancel the draft.";
     case "CANCELLED":
@@ -156,12 +160,9 @@ export default function ClaimSelectionDraftPage() {
   const [draft, setDraft] = useState<DraftResponse | null>(null);
   const [selectedClaimIds, setSelectedClaimIds] = useState<string[]>([]);
   const [selectionSeed, setSelectionSeed] = useState<string | null>(null);
-  const [useOtherMode, setUseOtherMode] = useState(false);
-  const [otherInput, setOtherInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
-  const [isRestarting, setIsRestarting] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
@@ -257,7 +258,7 @@ export default function ClaimSelectionDraftPage() {
   }, [draftState?.assessments]);
 
   useEffect(() => {
-    if (!draft || draft.status !== "AWAITING_CLAIM_SELECTION" || useOtherMode) {
+    if (!draft || draft.status !== "AWAITING_CLAIM_SELECTION") {
       return;
     }
 
@@ -271,26 +272,30 @@ export default function ClaimSelectionDraftPage() {
       return;
     }
 
-    const defaultSelection = (draftState?.selectedClaimIds?.length
-      ? draftState.selectedClaimIds
-      : draftState?.recommendedClaimIds ?? [])
-      .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-      .slice(0, Math.min(5, Math.max(candidateClaims.length, 1)));
+    const defaultSelection = shouldRequireClaimSelectionUi(candidateClaims.length)
+      ? (draftState?.selectedClaimIds?.length
+          ? draftState.selectedClaimIds
+          : draftState?.recommendedClaimIds ?? [])
+          .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
+          .slice(0, getClaimSelectionCap(candidateClaims.length))
+      : candidateClaims
+          .map((claim) => claim.id)
+          .slice(0, getClaimSelectionCap(candidateClaims.length));
 
     setSelectedClaimIds(defaultSelection);
     setSelectionSeed(nextSeed);
-  }, [candidateClaims, draft, draftState, selectionSeed, useOtherMode]);
+  }, [candidateClaims, draft, draftState, selectionSeed]);
 
   const statusHeadline = draft ? getStatusHeadline(draft.status) : "Loading draft";
   const statusSummary = draft
     ? getStatusSummary(draft, candidateClaims.length, draftState?.recommendedClaimIds.length ?? 0)
     : "Loading draft state.";
-  const selectionCap = Math.min(5, Math.max(candidateClaims.length, 1));
+  const selectionCap = getClaimSelectionCap(candidateClaims.length);
+  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length);
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
 
   const handleToggleClaim = (claimId: string) => {
-    if (useOtherMode) return;
     setError(null);
     setSelectedClaimIds((current) => {
       if (current.includes(claimId)) {
@@ -341,6 +346,30 @@ export default function ClaimSelectionDraftPage() {
     }
   };
 
+  const handleCancel = async () => {
+    if (!draftId) return;
+
+    setIsCancelling(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/cancel`, {
+        method: "POST",
+        headers: buildDraftAccessHeaders(draftId, adminKey),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.error || `Failed to cancel draft (${response.status})`);
+      }
+
+      clearStoredDraftAccessToken(draftId);
+      setDraft((current) => current ? { ...current, status: data.status ?? "CANCELLED" } : current);
+    } catch (cancelError: any) {
+      setError(cancelError?.message ?? "Failed to cancel draft");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const handleRetry = async () => {
     if (!draftId) return;
 
@@ -366,75 +395,6 @@ export default function ClaimSelectionDraftPage() {
     }
   };
 
-  const handleCancel = async () => {
-    if (!draftId) return;
-
-    setIsCancelling(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/cancel`, {
-        method: "POST",
-        headers: buildDraftAccessHeaders(draftId, adminKey),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data?.error || `Failed to cancel draft (${response.status})`);
-      }
-
-      clearStoredDraftAccessToken(draftId);
-      setDraft((current) => current ? { ...current, status: data.status ?? "CANCELLED" } : current);
-    } catch (cancelError: any) {
-      setError(cancelError?.message ?? "Failed to cancel draft");
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-
-  const handleRestartWithOther = async () => {
-    if (!draftId) return;
-    if (!otherInput.trim()) {
-      setError("Enter replacement text or a URL before restarting.");
-      return;
-    }
-
-    const { inputType, inputValue } = normalizeAnalyzeInputValue(otherInput);
-
-    setIsRestarting(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/restart`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildDraftAccessHeaders(draftId, adminKey),
-        },
-        body: JSON.stringify({ inputType, inputValue }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data?.error || `Failed to restart draft (${response.status})`);
-      }
-
-      setUseOtherMode(false);
-      setOtherInput("");
-      setSelectedClaimIds([]);
-      setSelectionSeed(null);
-      setDraft((current) => current ? {
-        ...current,
-        status: data.status ?? "QUEUED",
-        restartCount: data.restartCount ?? current.restartCount + 1,
-        restartedViaOther: true,
-        progress: 0,
-      } : current);
-      setRefreshNonce((current) => current + 1);
-      setIsLoading(true);
-    } catch (restartError: any) {
-      setError(restartError?.message ?? "Failed to restart draft");
-    } finally {
-      setIsRestarting(false);
-    }
-  };
-
   return (
     <div className={`${commonStyles.container} ${styles.page}`}>
       <div className={styles.heroCard}>
@@ -445,9 +405,6 @@ export default function ClaimSelectionDraftPage() {
           {draft && (
             <>
               <span className={styles.metaBadge}>Draft {draft.draftId}</span>
-              <span className={styles.metaBadge}>
-                Mode: {draft.selectionMode === "automatic" ? "Automatic" : "Interactive"}
-              </span>
               <span
                 className={`${styles.metaBadge} ${
                   draft.status === "FAILED" || draft.status === "EXPIRED"
@@ -492,12 +449,11 @@ export default function ClaimSelectionDraftPage() {
 
       {draft?.status === "QUEUED" || draft?.status === "PREPARING" || (draft?.status === "COMPLETED" && !draft.finalJobId) ? (
         <div className={styles.infoCard}>
-            <h2 className={styles.infoTitle}>Preparation in progress</h2>
-            <p className={styles.infoText}>
-              Progress: {displayProgress}%.
-              {draft.selectionMode === "automatic"
-              ? " If recommendation returns a non-empty subset, FactHarbor will create the job automatically."
-              : " You will be able to review the prepared claim set once Stage 1 and recommendation finish."}
+          <h2 className={styles.infoTitle}>Preparation in progress</h2>
+          <p className={styles.infoText}>
+            Progress: {displayProgress}%.
+            {" "}If Stage 1 yields four or fewer claims, FactHarbor continues automatically. If five or
+            more survive, you will review the prepared claim set before analysis starts.
           </p>
           <div className={styles.actions} style={{ marginTop: 16 }}>
             <button
@@ -564,30 +520,42 @@ export default function ClaimSelectionDraftPage() {
               <div className={styles.selectionHeaderText}>
                 <h2 className={styles.selectionTitle}>Prepared candidate claims</h2>
                 <p className={styles.selectionSubtitle}>
-                  Keep one to {selectionCap} claim{selectionCap === 1 ? "" : "s"}. Recommendation order is already applied below, and
-                  auto-recommended claims are preselected.
+                  {requiresSelectionUi
+                    ? `Keep one to ${selectionCap} claim${selectionCap === 1 ? "" : "s"}. Recommendation order is already applied below, and recommended claims are preselected.`
+                    : "Stage 1 produced four or fewer claims, so FactHarbor will analyze all of them directly without a manual selection step."}
                 </p>
               </div>
-              <div className={styles.counterBadge}>{selectedClaimIds.length} / {selectionCap} selected</div>
+              <div className={styles.counterBadge}>
+                {requiresSelectionUi
+                  ? `${selectedClaimIds.length} / ${selectionCap} selected`
+                  : `${candidateClaims.length} / ${candidateClaims.length} prepared`}
+              </div>
             </div>
 
             {draftState?.recommendationRationale && (
               <p className={styles.recommendationRationale}>{draftState.recommendationRationale}</p>
             )}
 
-            {candidateClaims.length > 0 ? (
+            {candidateClaims.length > 0 && requiresSelectionUi ? (
               <ClaimSelectionPanel
                 claims={candidateClaims}
                 assessmentsByClaimId={assessmentsByClaimId}
                 recommendedClaimIds={recommendedClaimSet}
                 selectedClaimIds={selectedClaimSet}
-                selectionDisabled={useOtherMode}
                 selectionLimitReached={selectionLimitReached}
                 onToggleClaim={handleToggleClaim}
               />
+            ) : candidateClaims.length > 0 ? (
+              <ol className={styles.claimList} style={{ paddingLeft: 20 }}>
+                {candidateClaims.map((claim) => (
+                  <li key={claim.id} className={styles.claimStatement} style={{ marginBottom: 12 }}>
+                    {claim.statement}
+                  </li>
+                ))}
+              </ol>
             ) : (
               <div className={commonStyles.errorBox}>
-                Prepared draft state is missing candidate claims. Retry preparation or restart with Other.
+                Prepared draft state is missing candidate claims. Cancel this draft and start a fresh analysis.
               </div>
             )}
 
@@ -598,36 +566,16 @@ export default function ClaimSelectionDraftPage() {
                 onClick={handleConfirm}
                 disabled={
                   isConfirming ||
-                  useOtherMode ||
                   selectedClaimIds.length < 1 ||
                   selectedClaimIds.length > selectionCap ||
                   candidateClaims.length === 0
                 }
               >
-                {isConfirming ? "Creating job..." : "Continue with selected claims"}
-              </button>
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => {
-                  setUseOtherMode((current) => {
-                    const nextValue = !current;
-                    if (nextValue) {
-                      setSelectedClaimIds([]);
-                    } else {
-                      const defaultSelection = (draftState?.selectedClaimIds?.length
-                        ? draftState.selectedClaimIds
-                        : draftState?.recommendedClaimIds ?? [])
-                        .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-                        .slice(0, selectionCap);
-                      setSelectedClaimIds(defaultSelection);
-                    }
-                    return nextValue;
-                  });
-                }}
-                disabled={isRestarting}
-              >
-                {useOtherMode ? "Back to claim checklist" : "Use Other instead"}
+                {isConfirming
+                  ? "Creating job..."
+                  : requiresSelectionUi
+                    ? "Continue with selected claims"
+                    : "Continue to analysis"}
               </button>
               <button
                 type="button"
@@ -636,32 +584,6 @@ export default function ClaimSelectionDraftPage() {
                 disabled={isCancelling}
               >
                 {isCancelling ? "Cancelling..." : "Cancel draft"}
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.otherCard}>
-            <h2 className={styles.otherTitle}>Other</h2>
-            <p className={styles.otherText}>
-              Replace the current prepared claim set with a new input. This clears the existing
-              selections and reruns Stage 1 using the same text-or-URL parsing rules as the main
-              analyze page.
-            </p>
-            <textarea
-              className={styles.otherTextarea}
-              placeholder="Enter replacement text or a URL"
-              value={otherInput}
-              onChange={(event) => setOtherInput(event.target.value)}
-              disabled={!useOtherMode || isRestarting}
-            />
-            <div className={styles.actions} style={{ marginTop: 16 }}>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleRestartWithOther}
-                disabled={!useOtherMode || isRestarting || !otherInput.trim()}
-              >
-                {isRestarting ? "Restarting..." : "Restart with Other"}
               </button>
             </div>
           </div>
