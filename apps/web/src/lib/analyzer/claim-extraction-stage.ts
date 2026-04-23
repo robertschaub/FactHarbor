@@ -925,25 +925,37 @@ export async function extractClaims(
   // ------------------------------------------------------------------
   // MT-5(C): Multi-event collapse guard — if Stage 1 detected multiple
   // distinct events but we still have only 1 claim after Gate 1 (and any
-  // prior reprompts), trigger one targeted reprompt. This is structural
-  // plumbing (count check + conditional retry), not text interpretation.
+  // prior reprompts), trigger one targeted reprompt. Contract-approved
+  // one-claim sets usually stay sacred; the one safe exception is when we
+  // have a trustworthy salience inventory, can retry in binding mode, and
+  // require the expanded set to re-authorize cleanly before acceptance.
   // ------------------------------------------------------------------
   const distinctEventCount = (bestPass2.distinctEvents ?? []).length;
+  const shouldRunMt5Reprompt = shouldRunMultiEventReprompt(
+    distinctEventCount,
+    gate1Result.filteredClaims.length,
+    maxRepromptAttempts,
+    contractValidationSummary,
+    salienceCommitment,
+  );
+  const usingContractApprovedMt5Exception =
+    shouldRunMt5Reprompt &&
+    currentSetIsContractApproved &&
+    salienceCommitment?.success === true &&
+    (salienceCommitment.anchors?.length ?? 0) > 0;
+
   if (
     distinctEventCount >= 2 &&
     gate1Result.filteredClaims.length === 1 &&
     maxRepromptAttempts > 0 &&
-    currentSetIsContractApproved
+    !shouldRunMt5Reprompt
   ) {
     console.info(
       `[Stage1] MT-5(C): ${distinctEventCount} distinct events detected but the surviving ` +
-      `1-claim set is contract-approved (C14 applied to MT-5(C)). Skipping multi-event reprompt.`
+      `1-claim set is contract-approved and no trustworthy salience-backed retry path is available. ` +
+      `Skipping multi-event reprompt.`
     );
-  } else if (
-    distinctEventCount >= 2 &&
-    gate1Result.filteredClaims.length === 1 &&
-    maxRepromptAttempts > 0
-  ) {
+  } else if (shouldRunMt5Reprompt) {
     console.info(
       `[Stage1] MT-5(C): ${distinctEventCount} distinct events detected but only 1 claim post-Gate-1. ` +
       `Triggering multi-event reprompt.`
@@ -957,6 +969,16 @@ export async function extractClaims(
       `Each claim should be independently verifiable with distinct evidence.`;
 
     try {
+      const mt5RetrySalienceCommitment = usingContractApprovedMt5Exception
+        ? toBindingSalienceCommitment(salienceCommitment) ?? salienceCommitment
+        : salienceCommitment;
+
+      if (usingContractApprovedMt5Exception) {
+        console.info(
+          "[Stage1] MT-5(C): contract-approved single-claim set will retry under binding salience and must re-validate cleanly before acceptance.",
+        );
+      }
+
       const retryPass2 = await runPass2(
         state.originalInput,
         preliminaryEvidence,
@@ -967,7 +989,7 @@ export async function extractClaims(
         pass1.inferredGeography,
         pass1.detectedLanguage,
         undefined,
-        salienceCommitment,
+        mt5RetrySalienceCommitment,
       );
       state.llmCalls++;
 
@@ -998,11 +1020,76 @@ export async function extractClaims(
         `[Stage1] MT-5(C) reprompt: ${retryCount} claims post-Gate-1 (was 1).`
       );
 
-      // Accept if we got more claims than before
-      if (retryCount > gate1Result.filteredClaims.length) {
+      // Accept if we got more claims than before. Contract-approved 1-claim
+      // sets only switch to the MT-5(C) retry when the expanded set also
+      // re-authorizes cleanly under the same contract validator.
+      let acceptRetry = retryCount > gate1Result.filteredClaims.length;
+      let evaluatedMt5Contract: EvaluatedClaimContractValidation | undefined;
+
+      if (acceptRetry && usingContractApprovedMt5Exception) {
+        state.onEvent?.("Validating multi-event retry claim contract fidelity...", 31);
+        state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+
+        const {
+          result: mt5ContractResult,
+          attempts: mt5ContractValidationAttempts,
+        } = await runClaimContractValidationWithRetry(() =>
+          validateClaimContract(
+            retryGate1.filteredClaims as AtomicClaim[],
+            state.originalInput,
+            retryPass2.impliedClaim ?? "",
+            retryPass2.articleThesis ?? "",
+            retryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            mt5RetrySalienceCommitment,
+          )
+        );
+        state.llmCalls += mt5ContractValidationAttempts;
+
+        if (mt5ContractValidationAttempts > 1) {
+          console.info(
+            mt5ContractResult
+              ? "[Stage1] MT-5(C) retry contract validation recovered on a second structured-output attempt."
+              : "[Stage1] MT-5(C) retry contract validation returned no usable result after two attempts.",
+          );
+        }
+
+        if (mt5ContractResult) {
+          evaluatedMt5Contract = await applyApprovedSingleClaimChallenges(
+            retryGate1.filteredClaims as AtomicClaim[],
+            evaluateClaimContractValidation(
+              mt5ContractResult,
+              retryGate1.filteredClaims as AtomicClaim[],
+            ),
+            state.originalInput,
+            retryPass2.impliedClaim ?? "",
+            retryPass2.articleThesis ?? "",
+            retryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            state,
+            31,
+            mt5RetrySalienceCommitment,
+          );
+          acceptRetry = !evaluatedMt5Contract.effectiveRePromptRequired;
+        } else {
+          acceptRetry = false;
+        }
+      }
+
+      if (acceptRetry) {
         gate1Result = retryGate1;
         bestPass2 = retryPass2;
+        if (evaluatedMt5Contract) {
+          stageAttribution = "retry";
+          lastContractValidatedClaims = retryGate1.filteredClaims as AtomicClaim[];
+          contractValidationSummary = evaluatedMt5Contract.summary;
+          contractValidationSummary.stageAttribution = stageAttribution;
+        }
         console.info(`[Stage1] MT-5(C) recovered: ${retryCount} claims.`);
+      } else if (usingContractApprovedMt5Exception) {
+        console.info(
+          "[Stage1] MT-5(C) retry did not re-validate cleanly; keeping the existing contract-approved single-claim set.",
+        );
       }
     } catch (repromptErr) {
       console.warn("[Stage1] MT-5(C) reprompt failed (non-fatal):", repromptErr);
@@ -2804,6 +2891,30 @@ export function shouldProtectValidatedAnchorCarriers(
     contractValidationSummary?.preservesContract === true
     && contractValidationSummary?.rePromptRequired === false
   );
+}
+
+function canSafelyRetryContractApprovedMultiEventSet(
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): boolean {
+  return salienceCommitment?.success === true && (salienceCommitment.anchors?.length ?? 0) > 0;
+}
+
+export function shouldRunMultiEventReprompt(
+  distinctEventCount: number,
+  survivingClaimCount: number,
+  maxRepromptAttempts: number,
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+): boolean {
+  if (distinctEventCount < 2 || survivingClaimCount !== 1 || maxRepromptAttempts <= 0) {
+    return false;
+  }
+
+  if (!shouldProtectValidatedAnchorCarriers(contractValidationSummary)) {
+    return true;
+  }
+
+  return canSafelyRetryContractApprovedMultiEventSet(salienceCommitment);
 }
 
 function normalizeClaimContractValidationResult(

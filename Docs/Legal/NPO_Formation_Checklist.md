@@ -29,7 +29,7 @@
   - **This is likely required for Goodstack to find you in official registries**
 - [ ] **Open bank account** for the Verein
   - Swiss bank (PostFinance, Raiffeisen, cantonal bank)
-  - Bring: statutes, founding minutes, Handelsregister excerpt, ID of signatories
+  - Bring: statutes, founding minutes, ID of signatories (Handelsregister excerpt NOT required — most banks accept founding documents directly)
   - Get: bank statement PDF (needed for Goodstack, must be 30+ days old at application time)
 
 ### Phase 3: Tax-Exempt Status (Target: Weeks 2–12, parallel)

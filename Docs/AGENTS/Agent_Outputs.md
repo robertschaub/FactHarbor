@@ -1869,3 +1869,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Auto-Confirm And Job Progress Polling Fix -- [Significant] [open-items: no]
 **For next agent:** Auto-continue drafts no longer commit a leaked `AWAITING_CLAIM_SELECTION` stop state before creating the final job. The runner now uses the internal atomic auto-confirm path, and the jobs list/detail pages merge polled snapshots defensively so stale responses cannot drag visible progress backward or keep it pinned at `0%`.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Confirm_And_Job_Progress_Polling_Fix.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Bundesrat MT-5(C) Recovery And Preparing UI Copy -- [Significant] [open-items: yes]
+**For next agent:** The Bundesrat under-splitting was not caused by ACS. The live failure path was Stage 1 skipping `MT-5(C)` after a contract-approved one-claim set, even though `distinctEvents` stayed high. `claim-extraction-stage.ts` now reopens that path only when salience commitment succeeded, reruns the retry in binding mode, and accepts the expanded set only after clean contract revalidation. The `/analyze/select/[draftId]` page also now uses `Preparing Analysis` during `PREPARING`/auto-continue states and reserves `Atomic Claim Selection` for true manual selection.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Bundesrat_MT5C_Recovery_And_Preparing_UI_Copy.md
