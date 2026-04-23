@@ -48,6 +48,7 @@ import { scoreToFactualRating } from "../../../lib/source-reliability-config";
 import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
+import { mergePolledJobSnapshot } from "@/lib/job-polling";
 import FallbackReport from "@/components/FallbackReport";
 import {
   classifyWarningForDisplay,
@@ -892,7 +893,7 @@ export default function JobPage() {
       }
       const data = (await res.json()) as Job;
       if (alive) {
-        setJob(data);
+        setJob((prev) => mergePolledJobSnapshot(prev, data));
         setMaintenance(false);
         setErr(null);
         const isTerminal = ["SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"].includes(data.status);

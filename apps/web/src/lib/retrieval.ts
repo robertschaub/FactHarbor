@@ -231,6 +231,14 @@ function cleanupPdfText(text: string): string {
   return cleaned.trim();
 }
 
+export function requireExtractedPdfText(text: string): string {
+  const normalizedText = text.trim();
+  if (!normalizedText) {
+    throw new Error("Extracted PDF text is empty");
+  }
+  return normalizedText;
+}
+
 const PDF2JSON_WORKER_CODE = `
 /* eslint-disable */
 const { parentPort, workerData } = require("worker_threads");
@@ -937,7 +945,9 @@ export async function extractTextFromUrl(
 
       console.log("[Retrieval] Downloaded PDF buffer size:", buffer.length, "bytes");
 
-      const text = await extractTextFromPdfBuffer(buffer, pdfParseTimeoutMs);
+      const text = requireExtractedPdfText(
+        await extractTextFromPdfBuffer(buffer, pdfParseTimeoutMs),
+      );
 
       // Extract title from URL (last path segment before .pdf)
       const urlPath = new URL(url).pathname;

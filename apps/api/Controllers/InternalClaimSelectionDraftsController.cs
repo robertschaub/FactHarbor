@@ -7,16 +7,30 @@ namespace FactHarbor.Api.Controllers;
 public sealed record DraftStatusUpdateRequest(string status, int? progress, string? eventMessage);
 public sealed record DraftPreparedRequest(string draftStateJson);
 public sealed record DraftFailedRequest(string errorCode, string errorMessage, string? draftStateJson = null);
+public sealed record DraftAutoConfirmRequest(string draftStateJson, string[] selectedClaimIds);
 
 [ApiController]
 [Route("internal/v1/claim-selection-drafts")]
 public sealed class InternalClaimSelectionDraftsController : ControllerBase
 {
     private readonly ClaimSelectionDraftService _drafts;
+    private readonly JobService _jobs;
+    private readonly RunnerClient _runner;
+    private readonly FactHarbor.Api.Data.FhDbContext _db;
+    private readonly ILogger<InternalClaimSelectionDraftsController> _log;
 
-    public InternalClaimSelectionDraftsController(ClaimSelectionDraftService drafts)
+    public InternalClaimSelectionDraftsController(
+        ClaimSelectionDraftService drafts,
+        JobService jobs,
+        RunnerClient runner,
+        FactHarbor.Api.Data.FhDbContext db,
+        ILogger<InternalClaimSelectionDraftsController> log)
     {
         _drafts = drafts;
+        _jobs = jobs;
+        _runner = runner;
+        _db = db;
+        _log = log;
     }
 
     [HttpPut("{draftId}/status")]
@@ -35,6 +49,61 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
 
         await _drafts.StorePreparedResultAsync(draftId, req.draftStateJson);
         return Ok(new { ok = true });
+    }
+
+    [HttpPost("{draftId}/auto-confirm")]
+    public async Task<IActionResult> PostAutoConfirm(string draftId, [FromBody] DraftAutoConfirmRequest req)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var (draft, error, statusCode) = await _drafts.PrepareAutoContinueAsync(
+                draftId,
+                req.draftStateJson,
+                req.selectedClaimIds);
+            if (draft is null)
+            {
+                await tx.RollbackAsync();
+                return StatusCode(statusCode, new { error });
+            }
+
+            if (draft.FinalJobId != null)
+            {
+                if (draft.Status != "COMPLETED")
+                {
+                    draft.Status = "COMPLETED";
+                    draft.UpdatedUtc = DateTime.UtcNow;
+                    await _db.SaveChangesAsync();
+                }
+
+                await tx.CommitAsync();
+                return Ok(new { draftId = draft.DraftId, status = draft.Status, finalJobId = draft.FinalJobId });
+            }
+
+            var (job, jobError) = await _jobs.CreateJobFromDraftAsync(draft, req.selectedClaimIds);
+            if (job is null)
+            {
+                await tx.RollbackAsync();
+                return StatusCode(500, new { error = jobError ?? "Failed to create job from draft" });
+            }
+
+            draft.FinalJobId = job.JobId;
+            draft.Status = "COMPLETED";
+            draft.UpdatedUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            _ = TriggerRunnerBestEffortAsync(job.JobId);
+
+            return Ok(new { draftId = draft.DraftId, status = draft.Status, finalJobId = job.JobId });
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
     }
 
     [HttpPut("{draftId}/failed")]
@@ -62,5 +131,25 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
                 updatedUtc = d.UpdatedUtc.ToString("o"),
             }),
         });
+    }
+
+    private async Task TriggerRunnerBestEffortAsync(string jobId)
+    {
+        try
+        {
+            await _runner.TriggerRunnerAsync(jobId);
+        }
+        catch (Exception ex)
+        {
+            _log.LogError(ex, "Runner trigger failed for auto-confirmed draft job. JobId={JobId}", jobId);
+            try
+            {
+                await _jobs.UpdateStatusAsync(jobId, "FAILED", 100, "error", $"Runner trigger failed: {ex.Message}");
+            }
+            catch
+            {
+                // Best-effort only.
+            }
+        }
     }
 }

@@ -79,7 +79,11 @@ export function classifySourceFetchFailure(
   if ((typeof status === "number" && status >= 500) || normalized.includes("http 5")) {
     return { type: "http_5xx", status, message };
   }
-  if (normalized.includes("invalid pdf") || normalized.includes("failed to extract pdf text")) {
+  if (
+    normalized.includes("invalid pdf")
+    || normalized.includes("failed to extract pdf text")
+    || normalized.includes("extracted pdf text is empty")
+  ) {
     return { type: "pdf_parse_failure", status, message };
   }
   if (normalized.includes("econnrefused")) {

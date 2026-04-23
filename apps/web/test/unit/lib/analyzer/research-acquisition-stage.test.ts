@@ -393,6 +393,169 @@ describe("research-acquisition-stage", () => {
       expect(fetchWarning!.message).toContain("dead link");
     });
 
+    it("should reuse already-fetched same-job document sources instead of fetching them again", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        return {
+          text: "Fresh content ".repeat(20),
+          title: "Fresh title",
+          contentType: "text/html",
+        };
+      });
+
+      const state = createMinimalState();
+      state.sources.push({
+        id: "S_001",
+        url: "https://cached.example/source.pdf",
+        title: "Cached title",
+        trackRecordScore: null,
+        fullText: "Cached content ".repeat(20),
+        fetchedAt: new Date().toISOString(),
+        category: "application/pdf",
+        fetchSuccess: true,
+        searchQuery: "prior query",
+        relevanceScore: 0.91,
+      } as CBResearchState["sources"][number]);
+
+      const result = await fetchSources(
+        [
+          { url: "https://cached.example/source.pdf", relevanceScore: 0.91 },
+          { url: "https://fresh.example/source", relevanceScore: 0.82 },
+        ],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual(["https://fresh.example/source"]);
+      expect(result.map((source) => source.url)).toEqual([
+        "https://cached.example/source.pdf",
+        "https://fresh.example/source",
+      ]);
+      expect(result[0]?.text).toContain("Cached content");
+      expect(state.sources.map((source) => source.url)).toEqual([
+        "https://cached.example/source.pdf",
+        "https://fresh.example/source",
+      ]);
+    });
+
+    it("should deduplicate duplicate relevant URLs within the same fetch pass", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        return {
+          text: "Fetched content ".repeat(20),
+          title: "Fetched title",
+          contentType: "text/html",
+        };
+      });
+
+      const state = createMinimalState();
+      const result = await fetchSources(
+        [
+          { url: "https://dup.example/source", relevanceScore: 0.9 },
+          { url: "https://dup.example/source", relevanceScore: 0.8 },
+          { url: "https://other.example/source", relevanceScore: 0.7 },
+        ],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual([
+        "https://dup.example/source",
+        "https://other.example/source",
+      ]);
+      expect(result.map((source) => source.url)).toEqual(attemptedUrls);
+      expect(state.sources.map((source) => source.url)).toEqual(attemptedUrls);
+    });
+
+    it("should preserve the best relevance score when coalescing duplicate relevant URLs", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      vi.mocked(extractTextFromUrl).mockResolvedValue({
+        text: "Fetched content ".repeat(20),
+        title: "Fetched title",
+        contentType: "text/html",
+      });
+
+      const state = createMinimalState();
+      await fetchSources(
+        [
+          { url: "https://dup.example/source", relevanceScore: 0.4 },
+          { url: "https://dup.example/source", relevanceScore: 0.9 },
+        ],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(state.sources).toHaveLength(1);
+      expect(state.sources[0]?.relevanceScore).toBe(0.9);
+    });
+
+    it("should refetch cached HTML pages so follow-up discovery remains available per claim", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        return {
+          text: "Refetched HTML content ".repeat(20),
+          title: "HTML title",
+          contentType: "text/html",
+        };
+      });
+
+      const state = createMinimalState();
+      state.sources.push({
+        id: "S_001",
+        url: "https://cached.example/page",
+        title: "Cached HTML title",
+        trackRecordScore: null,
+        fullText: "Cached HTML content ".repeat(20),
+        fetchedAt: new Date().toISOString(),
+        category: "text/html",
+        fetchSuccess: true,
+        searchQuery: "prior query",
+        relevanceScore: 0.91,
+      } as CBResearchState["sources"][number]);
+
+      const result = await fetchSources(
+        [{ url: "https://cached.example/page", relevanceScore: 0.91 }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual(["https://cached.example/page"]);
+      expect(result.map((source) => source.url)).toEqual(["https://cached.example/page"]);
+      expect(state.sources).toHaveLength(1);
+      expect(state.sources[0]?.searchQuery).toBe("test query");
+      expect(state.sources[0]?.fullText).toContain("Refetched HTML content");
+    });
+
+    it("should classify empty-PDF extraction failures as PDF parse errors", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      vi.mocked(extractTextFromUrl).mockRejectedValue(
+        new Error("Failed to extract PDF text: Extracted PDF text is empty"),
+      );
+
+      const state = createMinimalState();
+      await fetchSources(
+        [{ url: "https://example.com/scan.pdf", relevanceScore: 0.91 }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      const fetchWarning = state.warnings.find((warning) => warning.type === "source_fetch_failure");
+      expect(fetchWarning).toBeDefined();
+      expect(fetchWarning!.message).toContain("PDF parse error");
+      expect(fetchWarning!.details?.errorByType?.pdf_parse_failure).toBe(1);
+    });
+
     it("should follow discovered linked PDFs from already-relevant HTML pages", async () => {
       const { extractTextFromUrl } = await import("@/lib/retrieval");
       const attemptedUrls: string[] = [];

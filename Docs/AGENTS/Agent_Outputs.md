@@ -1826,6 +1826,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Dialog_Slow_Path_Diagnosis.md
 
 ---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Automatic Mode Auto-Confirm And Safe Source Reuse -- [Significant] [open-items: yes]
+**For next agent:** Automatic mode now skips the chooser UI after recommendation when a non-empty recommended set exists, empty extracted PDFs classify as `pdf_parse_failure`, and same-job exact-match reuse is enabled only for document/data sources while HTML refetch still preserves follow-up discovery. The first review found two regressions in the new code path; both were fixed, and the reviewer re-pass reported no remaining findings.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Automatic_Mode_Auto_Confirm_And_Safe_Source_Reuse.md
+
+---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Slow Path Debate -- [Standard] [open-items: yes]
 **For next agent:** Debate result was `MODIFY`: keep Stage 1 retry cost plus coarse progress visibility as the primary root cause, but widen the first fix to measure both Stage 1 sub-steps and recommendation in the same patch while surfacing Stage 1 milestones in the UI.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Debate.md
@@ -1854,3 +1859,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS UCM Selection Cap -- [Significant] [open-items: no]
 **For next agent:** `pipeline.claimSelectionCap` is now the single runtime knob for ACS manual-review threshold, max selected claims, and max LLM recommendations. The resolved value is persisted in `ClaimSelectionDraftState.selectionCap`, consumed by [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts), [page.tsx](/c:/DEV/FactHarbor/apps/web/src/app/analyze/select/[draftId]/page.tsx), and enforced on confirm in [ClaimSelectionDraftService.cs](/c:/DEV/FactHarbor/apps/api/Services/ClaimSelectionDraftService.cs).
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_UCM_Selection_Cap.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Code Review Disposition - Claim Selection And Check Worthiness -- [Standard] [open-items: no]
+**For next agent:** External code review for the Claim Selection Draft and Check-Worthiness slices came back as approve-only with low-severity positive observations and no actionable defects. No product code changes were needed; this handoff is the repository-local approval record.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Code_Review_Disposition_Claim_Selection_Check_Worthiness.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Auto-Confirm And Job Progress Polling Fix -- [Significant] [open-items: no]
+**For next agent:** Auto-continue drafts no longer commit a leaked `AWAITING_CLAIM_SELECTION` stop state before creating the final job. The runner now uses the internal atomic auto-confirm path, and the jobs list/detail pages merge polled snapshots defensively so stale responses cannot drag visible progress backward or keep it pinned at `0%`.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Confirm_And_Job_Progress_Polling_Fix.md

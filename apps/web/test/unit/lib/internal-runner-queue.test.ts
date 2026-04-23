@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getAutomaticRecommendationSelection,
   normalizeDraftPreparationProgress,
   normalizeRunningProgress,
 } from "@/lib/internal-runner-queue";
@@ -30,5 +31,22 @@ describe("normalizeDraftPreparationProgress", () => {
   it("preserves positive progress and still caps 100 at 99", () => {
     expect(normalizeDraftPreparationProgress(22)).toBe(22);
     expect(normalizeDraftPreparationProgress(100)).toBe(99);
+  });
+});
+
+describe("getAutomaticRecommendationSelection", () => {
+  it("returns undefined outside automatic mode", () => {
+    expect(getAutomaticRecommendationSelection("interactive", ["AC_01", "AC_02"], 5)).toBeUndefined();
+  });
+
+  it("returns undefined when there is no safe recommendation to auto-confirm", () => {
+    expect(getAutomaticRecommendationSelection("automatic", [], 5)).toBeUndefined();
+    expect(getAutomaticRecommendationSelection("automatic", ["", "  "], 5)).toBeUndefined();
+  });
+
+  it("deduplicates and caps automatic recommendations to the configured selection cap", () => {
+    expect(
+      getAutomaticRecommendationSelection("automatic", ["AC_01", "AC_02", "AC_01", "AC_03"], 2),
+    ).toEqual(["AC_01", "AC_02"]);
   });
 });

@@ -229,6 +229,25 @@ export function normalizeDraftPreparationProgress(progress?: number): number | u
   return normalized > 0 ? normalized : undefined;
 }
 
+export function getAutomaticRecommendationSelection(
+  selectionMode: string,
+  recommendedClaimIds: string[],
+  selectionCap?: number,
+): string[] | undefined {
+  if (selectionMode !== "automatic") return undefined;
+
+  const uniqueRecommendedClaimIds = Array.from(
+    new Set(
+      recommendedClaimIds.filter(
+        (claimId): claimId is string => typeof claimId === "string" && claimId.trim().length > 0,
+      ),
+    ),
+  );
+  if (uniqueRecommendedClaimIds.length === 0) return undefined;
+
+  return uniqueRecommendedClaimIds.slice(0, normalizeClaimSelectionCap(selectionCap));
+}
+
 async function runJobBackground(jobId: string) {
   const apiBase = getApiBaseOrThrow();
   const adminKey = getAdminKeyOrNull();
@@ -979,14 +998,19 @@ async function runDraftPreparationBackground(draftId: string) {
       });
       failureDraftState = draftState;
 
-      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/prepared`, {
-        draftStateJson: JSON.stringify(draftState),
-      });
-      preparedPersisted = true;
+      const autoContinueResult = await apiPost(
+        apiBase,
+        adminKey,
+        `/internal/v1/claim-selection-drafts/${draftId}/auto-confirm`,
+        {
+          draftStateJson: JSON.stringify(draftState),
+          selectedClaimIds: autoContinueClaimIds,
+        },
+      );
 
-      await apiPost(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}/confirm`, {
-        selectedClaimIds: autoContinueClaimIds,
-      });
+      if (typeof autoContinueResult?.finalJobId !== "string" || autoContinueResult.finalJobId.length === 0) {
+        throw new Error("Automatic continuation did not return a job id");
+      }
       return;
     }
 
@@ -1026,6 +1050,46 @@ async function runDraftPreparationBackground(draftId: string) {
       recommendationMs = Date.now() - recommendationStartedAt;
     }
 
+    const automaticRecommendedClaimIds = getAutomaticRecommendationSelection(
+      selectionMode,
+      recommendation.recommendedClaimIds,
+      configuredSelectionCap,
+    );
+
+    if (automaticRecommendedClaimIds && automaticRecommendedClaimIds.length > 0) {
+      lastPreparationEventMessage =
+        `Prepared ${candidateIds.length} candidate claim(s) and auto-selected ${automaticRecommendedClaimIds.length} recommended claim(s). Continuing analysis automatically.`;
+      const draftState = buildDraftState({
+        rankedClaimIds: recommendation.rankedClaimIds,
+        recommendedClaimIds: automaticRecommendedClaimIds,
+        selectedClaimIds: automaticRecommendedClaimIds,
+        recommendationRationale: recommendation.rationale,
+        assessments: recommendation.assessments,
+        observability: buildObservability({
+          phaseCode: "auto_continue",
+          phaseLabel: "Draft auto-continued",
+          branch: "auto_continue",
+          candidateClaimCount: candidateIds.length,
+        }),
+      });
+      failureDraftState = draftState;
+
+      const autoContinueResult = await apiPost(
+        apiBase,
+        adminKey,
+        `/internal/v1/claim-selection-drafts/${draftId}/auto-confirm`,
+        {
+          draftStateJson: JSON.stringify(draftState),
+          selectedClaimIds: automaticRecommendedClaimIds,
+        },
+      );
+
+      if (typeof autoContinueResult?.finalJobId !== "string" || autoContinueResult.finalJobId.length === 0) {
+        throw new Error("Automatic continuation did not return a job id");
+      }
+      return;
+    }
+
     lastPreparationEventMessage =
       `Prepared ${candidateIds.length} candidate claim(s) and ${recommendation.recommendedClaimIds.length} recommendation(s). Awaiting user selection.`;
     const draftState = buildDraftState({
@@ -1050,7 +1114,7 @@ async function runDraftPreparationBackground(draftId: string) {
 
     if (selectionMode === "automatic") {
       console.info(
-        `[Runner] Draft ${draftId} produced ${candidateIds.length} candidate claims, so manual claim selection is required before analysis continues.`,
+        `[Runner] Draft ${draftId} produced ${candidateIds.length} candidate claims but no safe automatic recommendation, so manual claim selection is required before analysis continues.`,
       );
     }
   } catch (e: any) {

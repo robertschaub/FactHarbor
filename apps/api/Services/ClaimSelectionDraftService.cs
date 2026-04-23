@@ -270,6 +270,54 @@ public sealed class ClaimSelectionDraftService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> PrepareAutoContinueAsync(
+        string draftId,
+        string draftStateJson,
+        string[] selectedClaimIds)
+    {
+        var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
+        if (draft is null) return (null, "Draft not found", 404);
+        if (EnforceLazyExpiry(draft))
+            await _db.SaveChangesAsync();
+
+        if (draft.Status == "EXPIRED")
+            return (null, "Draft has expired", 410);
+        if (draft.FinalJobId != null)
+            return (draft, null, 0);
+        if (draft.Status == "COMPLETED")
+            return (null, "Draft already confirmed", 409);
+        if (draft.Status is not "QUEUED" and not "PREPARING")
+            return (null, $"Draft is in {draft.Status} state and cannot auto-continue", 409);
+
+        if (!TryExtractPreparedCandidateClaimIds(draftStateJson, out var candidateClaimIds, out var extractionError))
+            return (null, extractionError ?? "Draft is missing prepared candidate claims", 409);
+
+        var effectiveSelectionCap = GetEffectiveSelectionCap(draftStateJson, candidateClaimIds.Count);
+        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > effectiveSelectionCap)
+            return (null, BuildSelectionCapError(effectiveSelectionCap), 400);
+
+        if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
+            return (null, "Duplicate claim IDs", 400);
+
+        var invalid = selectedClaimIds.Where(id => !candidateClaimIds.Contains(id)).ToArray();
+        if (invalid.Length > 0)
+        {
+            return (null, $"Selected claim IDs not in candidate set: {string.Join(", ", invalid)}", 400);
+        }
+
+        if (!TryMergeDraftStateSelectedClaims(draftStateJson, selectedClaimIds, out var mergedDraftStateJson))
+            return (null, "Draft state could not be updated with selected claims", 409);
+
+        draft.DraftStateJson = mergedDraftStateJson;
+        draft.Progress = 100;
+        draft.LastEventMessage =
+            TryExtractObservabilityEventMessage(mergedDraftStateJson)
+            ?? "Prepared claim set handed off for automatic continuation.";
+        draft.UpdatedUtc = DateTime.UtcNow;
+
+        return (draft, null, 0);
+    }
+
     public async Task StoreFailureAsync(string draftId, string errorCode, string errorMessage, string? draftStateJson = null)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
@@ -309,11 +357,24 @@ public sealed class ClaimSelectionDraftService
 
     private static bool TryMergeDraftStateSelectedClaims(ClaimSelectionDraftEntity draft, string[] selectedClaimIds)
     {
+        if (!TryMergeDraftStateSelectedClaims(draft.DraftStateJson, selectedClaimIds, out var mergedDraftStateJson))
+            return false;
+
+        draft.DraftStateJson = mergedDraftStateJson;
+        return true;
+    }
+
+    private static bool TryMergeDraftStateSelectedClaims(
+        string? draftStateJson,
+        string[] selectedClaimIds,
+        out string mergedDraftStateJson)
+    {
+        mergedDraftStateJson = draftStateJson ?? "{}";
         try
         {
-            var state = ParseDraftStateNode(draft.DraftStateJson);
+            var state = ParseDraftStateNode(draftStateJson);
             state["selectedClaimIds"] = new JsonArray(selectedClaimIds.Select(id => JsonValue.Create(id)).ToArray());
-            draft.DraftStateJson = state.ToJsonString();
+            mergedDraftStateJson = state.ToJsonString();
             return true;
         }
         catch (JsonException)

@@ -4,9 +4,20 @@ import {
   extractSameFamilyFollowUpUrlsFromHtml,
   extractSameFamilyPdfUrlsFromHtml,
   extractTextFromHtml,
+  requireExtractedPdfText,
 } from "@/lib/retrieval";
 
 describe("retrieval linked-document discovery", () => {
+  it("rejects PDFs whose extracted text is empty after cleanup", () => {
+    expect(() => requireExtractedPdfText("   \n\t  ")).toThrow(
+      "Extracted PDF text is empty",
+    );
+  });
+
+  it("preserves extracted PDF text when content is present", () => {
+    expect(requireExtractedPdfText("  Important paragraph  ")).toBe("Important paragraph");
+  });
+
   it("keeps same-family PDF links and prioritizes newer artifacts", () => {
     const html = `
       <html>

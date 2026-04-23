@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
+import { mergePolledJobSummaries } from "@/lib/job-polling";
 import styles from "./page.module.css";
 
 type JobSummary = {
@@ -138,7 +139,7 @@ export default function JobsPage() {
         setError(null);
         setMaintenance(false);
         setPollIntervalMs(DEFAULT_POLL_INTERVAL_MS);
-        setJobs(data.jobs || []);
+        setJobs((prev) => mergePolledJobSummaries(prev, data.jobs || []));
         if (data.pagination) {
           setTotalCount(data.pagination.totalCount);
           setTotalPages(data.pagination.totalPages);

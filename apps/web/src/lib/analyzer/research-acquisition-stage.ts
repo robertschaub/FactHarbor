@@ -167,10 +167,70 @@ export async function fetchSources(
   const domainSkipThreshold = pipelineConfig?.fetchDomainSkipThreshold ?? 2;
   const domainFailureCounts = new Map<string, number>();
 
-  // Filter out already-fetched URLs
-  const toFetch: FetchCandidate[] = relevantSources
-    .filter((source) => !state.sources.some((s) => s.url === source.url))
-    .map((source) => ({ ...source, depth: 0 }));
+  const existingSourcesByUrl = new Map(
+    state.sources.map((source) => [source.url, source] as const),
+  );
+  const toFetch: FetchCandidate[] = [];
+  const deduplicatedRelevantSources = new Map<string, { url: string; relevanceScore?: number }>();
+  let duplicateRelevantSourceCount = 0;
+  let reusedSourceCount = 0;
+
+  for (const source of relevantSources) {
+    const existingRelevantSource = deduplicatedRelevantSources.get(source.url);
+    if (existingRelevantSource) {
+      duplicateRelevantSourceCount++;
+      const existingScore =
+        typeof existingRelevantSource.relevanceScore === "number"
+          ? existingRelevantSource.relevanceScore
+          : Number.NEGATIVE_INFINITY;
+      const incomingScore =
+        typeof source.relevanceScore === "number"
+          ? source.relevanceScore
+          : Number.NEGATIVE_INFINITY;
+      if (incomingScore > existingScore) {
+        deduplicatedRelevantSources.set(source.url, {
+          url: source.url,
+          relevanceScore: source.relevanceScore,
+        });
+      }
+      continue;
+    }
+    deduplicatedRelevantSources.set(source.url, {
+      url: source.url,
+      relevanceScore: source.relevanceScore,
+    });
+  }
+
+  for (const source of deduplicatedRelevantSources.values()) {
+    const existingSource = existingSourcesByUrl.get(source.url);
+    if (
+      existingSource
+      && existingSource.category !== "text/html"
+      && typeof existingSource.fullText === "string"
+      && existingSource.fullText.length > 0
+    ) {
+      fetched.push({
+        url: existingSource.url,
+        title: existingSource.title || existingSource.url,
+        text: existingSource.fullText.slice(0, 8000),
+      });
+      reusedSourceCount++;
+      continue;
+    }
+
+    toFetch.push({ ...source, depth: 0 });
+  }
+
+  if (reusedSourceCount > 0) {
+    debugLog(
+      `[Acquisition] Reusing ${reusedSourceCount} already-fetched document/data source(s) for query "${searchQuery.slice(0, 120)}"`,
+    );
+  }
+  if (duplicateRelevantSourceCount > 0) {
+    debugLog(
+      `[Acquisition] Deduplicated ${duplicateRelevantSourceCount} duplicate relevant source URL(s) before fetch`,
+    );
+  }
   const queuedUrls = new Set<string>([
     ...state.sources.map((source) => source.url),
     ...toFetch.map((source) => source.url),
@@ -326,19 +386,31 @@ export async function fetchSources(
         }
         if (result.content.text.length < minContentLength) continue;
 
-        const fetchedSource: FetchedSource = {
-          id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
-          url: result.source.url,
-          title: result.content.title || result.source.url,
-          trackRecordScore: null, // Backfilled after SR prefetch (Step 4)
-          fullText: result.content.text,
-          fetchedAt: new Date().toISOString(),
-          category: result.content.contentType || "text/html",
-          fetchSuccess: true,
-          searchQuery,
-          relevanceScore: result.source.relevanceScore ?? null,
-        };
-        state.sources.push(fetchedSource);
+        const existingSource = existingSourcesByUrl.get(result.source.url);
+        if (existingSource) {
+          existingSource.title = result.content.title || result.source.url;
+          existingSource.fullText = result.content.text;
+          existingSource.fetchedAt = new Date().toISOString();
+          existingSource.category = result.content.contentType || "text/html";
+          existingSource.fetchSuccess = true;
+          existingSource.searchQuery = searchQuery;
+          existingSource.relevanceScore = result.source.relevanceScore ?? null;
+        } else {
+          const fetchedSource: FetchedSource = {
+            id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
+            url: result.source.url,
+            title: result.content.title || result.source.url,
+            trackRecordScore: null, // Backfilled after SR prefetch (Step 4)
+            fullText: result.content.text,
+            fetchedAt: new Date().toISOString(),
+            category: result.content.contentType || "text/html",
+            fetchSuccess: true,
+            searchQuery,
+            relevanceScore: result.source.relevanceScore ?? null,
+          };
+          state.sources.push(fetchedSource);
+          existingSourcesByUrl.set(fetchedSource.url, fetchedSource);
+        }
 
         fetched.push({
           url: result.source.url,
