@@ -33,6 +33,7 @@ import { ClaimSelectionPanel } from "./ClaimSelectionPanel";
 import {
   formatClaimCount,
   getDraftPageTitle,
+  getStatusHeadline,
   getStatusSummary,
   type DraftStatus,
 } from "./page-helpers";
@@ -603,6 +604,7 @@ export default function ClaimSelectionDraftPage() {
   ]);
 
   const pageTitle = draft ? getDraftPageTitle(draft.status, requiresSelectionUi) : "Preparing Analysis";
+  const statusHeadline = draft ? getStatusHeadline(draft.status, requiresSelectionUi) : "Loading session";
   const statusSummary = draft
     ? getStatusSummary(
       draft.status,
@@ -641,8 +643,6 @@ export default function ClaimSelectionDraftPage() {
   }, [draft, draftState]);
   const activeInputValue = draft?.activeInputValue?.trim() || draft?.originalInputValue?.trim() || "";
   const formattedCreatedAt = formatDateTime(draft?.createdUtc);
-  const formattedUpdatedAt = formatDateTime(draft?.updatedUtc);
-  const formattedExpiresAt = formatDateTime(draft?.expiresUtc);
   const canCancelSession = draft
     ? !["CANCELLED", "COMPLETED", "EXPIRED"].includes(draft.status)
     : false;
@@ -872,9 +872,6 @@ export default function ClaimSelectionDraftPage() {
             <span className={jobStyles.metaInlineItem}>
               <b>Created:</b> <code>{formattedCreatedAt ?? "Unknown"}</code>
             </span>
-            <span className={jobStyles.metaInlineItem}>
-              <b>Expires:</b> <code>{formattedExpiresAt ?? "Unknown"}</code>
-            </span>
           </div>
           <div className={styles.headerStatusRow}>
             <b>Status:</b>{" "}
@@ -906,31 +903,6 @@ export default function ClaimSelectionDraftPage() {
         </div>
       ) : null}
 
-      {draft && (
-        <div className={styles.summaryGrid}>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Candidate claims</div>
-            <div className={styles.summaryValue}>{candidateClaims.length}</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Recommended claims</div>
-            <div className={styles.summaryValue}>{draftState?.recommendedClaimIds.length ?? 0}</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Restart count</div>
-            <div className={styles.summaryValue}>{draft.restartCount}</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Updated</div>
-            <div className={styles.summaryValueSmall}>{formattedUpdatedAt ?? "Unknown"}</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Expires</div>
-            <div className={styles.summaryValueSmall}>{formattedExpiresAt ?? "Unknown"}</div>
-          </div>
-        </div>
-      )}
-
       {draft && showRawJson && rawDraftJson ? (
         <div className={styles.infoCard}>
           <div className={styles.jsonHeader}>
@@ -943,13 +915,20 @@ export default function ClaimSelectionDraftPage() {
 
       {draft?.status === "QUEUED" || draft?.status === "PREPARING" || (draft?.status === "COMPLETED" && !draft.finalJobId) ? (
         <div className={styles.infoCard}>
-          <h2 className={styles.infoTitle}>Preparation in progress</h2>
-          <p className={styles.infoText}>
-            Progress: {displayProgress}%.
-            {" "}If Stage 1 stays below the manual-review threshold ({formatClaimCount(selectionThreshold)}),
-            FactHarbor continues automatically. At that threshold or above, you will review the
-            prepared claim set before analysis starts.
-          </p>
+          <h2 className={styles.infoTitle}>{statusHeadline}</h2>
+          {draft.status === "QUEUED" ? (
+            <p className={styles.infoText}>
+              This analysis session is waiting for a preparation slot. It remains on this session page and
+              does not appear in the global reports list until preparation finishes and a real report job is created.
+            </p>
+          ) : (
+            <p className={styles.infoText}>
+              Progress: {displayProgress}%.
+              {" "}If Stage 1 stays below the manual-review threshold ({formatClaimCount(selectionThreshold)}),
+              FactHarbor continues automatically. At that threshold or above, you will review the
+              prepared claim set before analysis starts.
+            </p>
+          )}
           {livePreparationMessage ? (
             <p className={styles.infoText}>Current step: {livePreparationMessage}</p>
           ) : null}

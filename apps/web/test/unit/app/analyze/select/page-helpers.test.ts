@@ -14,12 +14,16 @@ describe("claim-selection draft page helpers", () => {
   });
 
   it("keeps the preparing headline focused on Stage 1 preparation", () => {
+    expect(getStatusHeadline("QUEUED", false)).toBe("Waiting to start preparation");
     expect(getStatusHeadline("PREPARING", false)).toBe("Preparing the Stage 1 claim set");
     expect(getStatusHeadline("AWAITING_CLAIM_SELECTION", false)).toBe("Continuing into analysis");
     expect(getStatusHeadline("AWAITING_CLAIM_SELECTION", true)).toBe("Choose the atomic claims to continue");
   });
 
   it("describes preparing sessions as analysis preparation rather than a selection step", () => {
+    expect(getStatusSummary("QUEUED", 0, 0, 5)).toContain(
+      "No report job exists yet, so it does not appear in the reports list.",
+    );
     expect(getStatusSummary("PREPARING", 0, 0, 5)).toBe(
       "FactHarbor is preparing the final Stage 1 claim set for this analysis.",
     );

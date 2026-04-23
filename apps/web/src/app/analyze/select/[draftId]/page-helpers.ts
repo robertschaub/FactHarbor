@@ -40,7 +40,7 @@ export function getStatusHeadline(
 ): string {
   switch (status) {
     case "QUEUED":
-      return "Session queued";
+      return "Waiting to start preparation";
     case "PREPARING":
       return "Preparing the Stage 1 claim set";
     case "AWAITING_CLAIM_SELECTION":
@@ -68,7 +68,7 @@ export function getStatusSummary(
 ): string {
   switch (status) {
     case "QUEUED":
-      return "FactHarbor has accepted the session and is waiting for a runner slot.";
+      return "FactHarbor has accepted this analysis session and queued Stage 1 preparation. No report job exists yet, so it does not appear in the reports list.";
     case "PREPARING":
       return "FactHarbor is preparing the final Stage 1 claim set for this analysis.";
     case "AWAITING_CLAIM_SELECTION":

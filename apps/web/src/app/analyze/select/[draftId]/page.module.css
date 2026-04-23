@@ -51,38 +51,6 @@
   line-height: 1.6;
 }
 
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.summaryCard {
-  border: 1px solid #dbe2ea;
-  border-radius: 12px;
-  padding: 14px;
-  background: #fff;
-}
-
-.summaryLabel {
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 6px;
-}
-
-.summaryValue {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.summaryValueSmall {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.4;
-}
-
 .jsonHeader {
   display: flex;
   align-items: center;
@@ -384,10 +352,6 @@
 }
 
 @media (max-width: 860px) {
-  .summaryGrid {
-    grid-template-columns: 1fr;
-  }
-
   .selectionHeader {
     flex-direction: column;
   }
