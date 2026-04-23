@@ -1839,3 +1839,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | Claim Selection Slow Path Implementation Plan Review -- [Standard] [open-items: yes]
 **For next agent:** The debated plan landed as `MODIFY`: keep the instrumentation-first slice, but make `ClaimSelectionDraftState.observability` the authoritative prep-telemetry contract and keep row-level `LastEventMessage` as live UI convenience only. First patch should add truthful Stage 1 milestones, separated draft timings, and a surfaced latest milestone message, while deferring recommendation optimization and polling/SSE changes until measurements exist.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Implementation_Plan_Review.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Deferred Stage 2 URL Content Reuse Note -- [Standard] [open-items: yes]
+**For next agent:** The backlog now records Stage 2 URL/content reuse as a deferred production optimization, not an Alpha verification change. The first allowed slice is tightly scoped: UCM-gated and default-off, exact canonical-URL matches only within the same job, reuse limited to fetched raw content and parsed artifacts, required hit/miss observability, and explicit exclusion of cross-job cache plus heuristic/semantic dedupe in v1.
+→ updated backlog: [Backlog.md](/c:/DEV/FactHarbor/Docs/STATUS/Backlog.md)
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Auto-Continue Recovery Fix -- [Significant] [open-items: yes]
+**For next agent:** Drafts with four or fewer prepared claims no longer stop on the selection page if they leak into `AWAITING_CLAIM_SELECTION`. The page now auto-confirms once on load and redirects into the job, and only shows a retry continuation button if that automatic continuation actually fails. The broader Grander follow-up options are documented in `Docs/WIP/2026-04-23_Grander_Runtime_Followup_Options.md`.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Continue_Recovery_Fix.md

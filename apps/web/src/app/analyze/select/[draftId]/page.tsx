@@ -142,19 +142,19 @@ function shouldKeepPolling(draft: DraftResponse): boolean {
 function getStatusHeadline(status: DraftStatus): string {
   switch (status) {
     case "QUEUED":
-      return "Draft queued";
+      return "Session queued";
     case "PREPARING":
       return "Preparing atomic claims";
     case "AWAITING_CLAIM_SELECTION":
       return "Choose the atomic claims to continue";
     case "FAILED":
-      return "Draft preparation failed";
+      return "Session preparation failed";
     case "CANCELLED":
-      return "Draft cancelled";
+      return "Session cancelled";
     case "EXPIRED":
-      return "Draft expired";
+      return "Session expired";
     case "COMPLETED":
-      return "Draft completed";
+      return "Session completed";
     default:
       return status;
   }
@@ -163,9 +163,9 @@ function getStatusHeadline(status: DraftStatus): string {
 function getStatusSummary(draft: DraftResponse, candidateCount: number, recommendedCount: number): string {
   switch (draft.status) {
     case "QUEUED":
-      return "FactHarbor has accepted the draft and is waiting for a runner slot.";
+      return "FactHarbor has accepted the session and is waiting for a runner slot.";
     case "PREPARING":
-      return "FactHarbor is preparing the final Stage 1 claim set for this draft.";
+      return "FactHarbor is preparing the final Stage 1 claim set for this session.";
     case "AWAITING_CLAIM_SELECTION":
       if (shouldRequireClaimSelectionUi(candidateCount)) {
         return "Stage 1 produced five or more candidate claims. Review the ranked list below and choose the final subset before analysis continues.";
@@ -174,19 +174,19 @@ function getStatusSummary(draft: DraftResponse, candidateCount: number, recommen
         return "Stage 1 produced four or fewer candidate claims. FactHarbor can continue directly into the full analysis with all prepared claims.";
       }
       if (recommendedCount === 0) {
-        return "The prepared draft is waiting for the next continuation step.";
+        return "The prepared session is waiting for the next continuation step.";
       }
-      return "The prepared draft is ready for continuation.";
+      return "The prepared session is ready for continuation.";
     case "FAILED":
-      return "The prepared Stage 1 snapshot was not accepted. You can retry preparation or cancel the draft.";
+      return "The prepared Stage 1 snapshot was not accepted. You can retry preparation or cancel the session.";
     case "CANCELLED":
-      return "This draft will not create a job unless you start over from the analyze page.";
+      return "This session will not create a job unless you start over from the analyze page.";
     case "EXPIRED":
-      return "The 24-hour draft window elapsed before confirmation.";
+      return "The 24-hour session window elapsed before confirmation.";
     case "COMPLETED":
-      return "The draft has already been confirmed and is handing off to the job runner.";
+      return "The session has already been confirmed and is handing off to the job runner.";
     default:
-      return "FactHarbor is processing this draft.";
+      return "FactHarbor is processing this session.";
   }
 }
 
@@ -204,6 +204,8 @@ export default function ClaimSelectionDraftPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [autoContinueAttemptSeed, setAutoContinueAttemptSeed] = useState<string | null>(null);
+  const [autoContinueFailed, setAutoContinueFailed] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
 
   useEffect(() => {
@@ -212,7 +214,7 @@ export default function ClaimSelectionDraftPage() {
 
   useEffect(() => {
     if (!draftId) {
-      setError("Missing draft id");
+      setError("Missing session id");
       setIsLoading(false);
       return;
     }
@@ -231,7 +233,7 @@ export default function ClaimSelectionDraftPage() {
         if (disposed) return;
 
         if (!response.ok) {
-          let message = `Failed to load draft (${response.status})`;
+          let message = `Failed to load session (${response.status})`;
           try {
             const data = await response.json();
             if (typeof data?.error === "string" && data.error.trim()) {
@@ -242,9 +244,9 @@ export default function ClaimSelectionDraftPage() {
           }
 
           if (response.status === 401) {
-            message = "Draft access token missing or invalid. Reopen this draft from the original browser session or use an admin key.";
+            message = "Session access token missing or invalid. Reopen this session from the original browser session or use an admin key.";
           } else if (response.status === 410) {
-            message = "Draft expired before it could be confirmed.";
+            message = "Session expired before it could be confirmed.";
           }
 
           setError(message);
@@ -268,7 +270,7 @@ export default function ClaimSelectionDraftPage() {
         }
       } catch (loadError: any) {
         if (disposed) return;
-        setError(loadError?.message ?? "Failed to load draft");
+        setError(loadError?.message ?? "Failed to load session");
         setIsLoading(false);
       }
     };
@@ -295,6 +297,16 @@ export default function ClaimSelectionDraftPage() {
     const entries = (draftState?.assessments ?? []).map((assessment) => [assessment.claimId, assessment]);
     return Object.fromEntries(entries) as Record<string, ClaimSelectionRecommendationAssessment | undefined>;
   }, [draftState?.assessments]);
+
+  const selectionCap = getClaimSelectionCap(candidateClaims.length);
+  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length);
+  const autoContinueClaimIds = useMemo(
+    () =>
+      shouldAutoContinueWithoutSelection(candidateClaims.length)
+        ? candidateClaims.map((claim) => claim.id).slice(0, selectionCap)
+        : [],
+    [candidateClaims, selectionCap],
+  );
 
   useEffect(() => {
     if (!draft || draft.status !== "AWAITING_CLAIM_SELECTION") {
@@ -323,14 +335,92 @@ export default function ClaimSelectionDraftPage() {
 
     setSelectedClaimIds(defaultSelection);
     setSelectionSeed(nextSeed);
-  }, [candidateClaims, draft, draftState, selectionSeed]);
+  }, [candidateClaims, draft, draftState, selectionCap, selectionSeed]);
 
-  const statusHeadline = draft ? getStatusHeadline(draft.status) : "Loading draft";
+  const confirmDraft = async (claimIds: string[]) => {
+    const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...buildDraftAccessHeaders(draftId, adminKey),
+      },
+      body: JSON.stringify({ selectedClaimIds: claimIds }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data?.error || `Failed to confirm draft (${response.status})`);
+    }
+
+    if (typeof data?.finalJobId !== "string" || !data.finalJobId) {
+      throw new Error("Draft confirmation did not return a job id");
+    }
+
+    clearStoredDraftAccessToken(draftId);
+    router.replace(`/jobs/${data.finalJobId}`);
+  };
+
+  useEffect(() => {
+    if (!draftId || draft?.status !== "AWAITING_CLAIM_SELECTION" || requiresSelectionUi) {
+      return;
+    }
+    if (autoContinueClaimIds.length === 0 || draft.finalJobId) {
+      return;
+    }
+
+    const nextSeed = [draft.updatedUtc, autoContinueClaimIds.join("|")].join("::");
+    if (autoContinueAttemptSeed === nextSeed || isConfirming) {
+      return;
+    }
+
+    let cancelled = false;
+    setAutoContinueAttemptSeed(nextSeed);
+    setAutoContinueFailed(false);
+    setIsConfirming(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        await confirmDraft(autoContinueClaimIds);
+      } catch (confirmError: any) {
+        if (cancelled) return;
+        setAutoContinueFailed(true);
+        setError(
+          confirmError?.message
+            ? `Automatic continuation failed: ${confirmError.message}`
+            : "Automatic continuation failed",
+        );
+      } finally {
+        if (!cancelled) {
+          setIsConfirming(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    adminKey,
+    autoContinueAttemptSeed,
+    autoContinueClaimIds,
+    draft?.finalJobId,
+    draft?.status,
+    draft?.updatedUtc,
+    draftId,
+    isConfirming,
+    requiresSelectionUi,
+    router,
+  ]);
+
+  const statusHeadline = draft
+    ? draft.status === "AWAITING_CLAIM_SELECTION" && !requiresSelectionUi
+      ? "Continuing into analysis"
+      : getStatusHeadline(draft.status)
+    : "Loading session";
   const statusSummary = draft
     ? getStatusSummary(draft, candidateClaims.length, draftState?.recommendedClaimIds.length ?? 0)
-    : "Loading draft state.";
-  const selectionCap = getClaimSelectionCap(candidateClaims.length);
-  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length);
+    : "Loading session state.";
   const selectionLimitReached = selectedClaimIds.length >= selectionCap;
   const displayProgress = clampProgress(draft?.progress);
   const preparationObservability = draftState?.observability;
@@ -361,28 +451,9 @@ export default function ClaimSelectionDraftPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/fh/claim-selection-drafts/${draftId}/confirm`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...buildDraftAccessHeaders(draftId, adminKey),
-        },
-        body: JSON.stringify({ selectedClaimIds }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data?.error || `Failed to confirm draft (${response.status})`);
-      }
-
-      if (typeof data?.finalJobId !== "string" || !data.finalJobId) {
-        throw new Error("Draft confirmation did not return a job id");
-      }
-
-      clearStoredDraftAccessToken(draftId);
-      router.replace(`/jobs/${data.finalJobId}`);
+      await confirmDraft(selectedClaimIds);
     } catch (confirmError: any) {
-      setError(confirmError?.message ?? "Failed to confirm draft");
+      setError(confirmError?.message ?? "Failed to confirm session");
     } finally {
       setIsConfirming(false);
     }
@@ -400,13 +471,13 @@ export default function ClaimSelectionDraftPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data?.error || `Failed to cancel draft (${response.status})`);
+        throw new Error(data?.error || `Failed to cancel session (${response.status})`);
       }
 
       clearStoredDraftAccessToken(draftId);
       setDraft((current) => current ? { ...current, status: data.status ?? "CANCELLED" } : current);
     } catch (cancelError: any) {
-      setError(cancelError?.message ?? "Failed to cancel draft");
+      setError(cancelError?.message ?? "Failed to cancel session");
     } finally {
       setIsCancelling(false);
     }
@@ -424,14 +495,14 @@ export default function ClaimSelectionDraftPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(data?.error || `Failed to retry draft (${response.status})`);
+        throw new Error(data?.error || `Failed to retry session (${response.status})`);
       }
 
       setDraft((current) => current ? { ...current, status: data.status ?? "QUEUED", progress: 0 } : current);
       setRefreshNonce((current) => current + 1);
       setIsLoading(true);
     } catch (retryError: any) {
-      setError(retryError?.message ?? "Failed to retry draft");
+      setError(retryError?.message ?? "Failed to retry session");
     } finally {
       setIsRetrying(false);
     }
@@ -446,7 +517,7 @@ export default function ClaimSelectionDraftPage() {
         <div className={styles.heroMeta}>
           {draft && (
             <>
-              <span className={styles.metaBadge}>Draft {draft.draftId}</span>
+          <span className={styles.metaBadge}>Session {draft.draftId}</span>
               <span
                 className={`${styles.metaBadge} ${
                   draft.status === "FAILED" || draft.status === "EXPIRED"
@@ -467,7 +538,7 @@ export default function ClaimSelectionDraftPage() {
 
       {isLoading && !draft ? (
         <div className={styles.infoCard}>
-          <h2 className={styles.infoTitle}>Loading draft</h2>
+          <h2 className={styles.infoTitle}>Loading session</h2>
           <p className={styles.infoText}>Fetching the current preparation state.</p>
         </div>
       ) : null}
@@ -507,7 +578,7 @@ export default function ClaimSelectionDraftPage() {
               onClick={handleCancel}
               disabled={isCancelling}
             >
-              {isCancelling ? "Cancelling..." : "Cancel draft"}
+              {isCancelling ? "Cancelling..." : "Cancel session"}
             </button>
           </div>
         </div>
@@ -517,7 +588,7 @@ export default function ClaimSelectionDraftPage() {
         <div className={styles.infoCard}>
           <h2 className={styles.infoTitle}>Preparation failed</h2>
           <p className={styles.infoText}>
-            {draftState?.lastError?.message ?? "FactHarbor could not finish preparing this draft."}
+            {draftState?.lastError?.message ?? "FactHarbor could not finish preparing this session."}
           </p>
           {preparationTimingSummary ? (
             <p className={styles.infoText}>Preparation summary: {preparationTimingSummary}</p>
@@ -537,7 +608,7 @@ export default function ClaimSelectionDraftPage() {
               onClick={handleCancel}
               disabled={isCancelling}
             >
-              {isCancelling ? "Cancelling..." : "Cancel draft"}
+              {isCancelling ? "Cancelling..." : "Cancel session"}
             </button>
           </div>
         </div>
@@ -546,12 +617,12 @@ export default function ClaimSelectionDraftPage() {
       {draft?.status === "CANCELLED" || draft?.status === "EXPIRED" ? (
         <div className={styles.infoCard}>
           <h2 className={styles.infoTitle}>
-            {draft.status === "CANCELLED" ? "Draft cancelled" : "Draft expired"}
+            {draft.status === "CANCELLED" ? "Session cancelled" : "Session expired"}
           </h2>
           <p className={styles.infoText}>
             {draft.status === "CANCELLED"
-              ? "This draft will not continue. Start a new analysis when you are ready."
-              : "Drafts expire after 24 hours. Start a new analysis to prepare a fresh claim set."}
+              ? "This session will not continue. Start a new analysis when you are ready."
+              : "Sessions expire after 24 hours. Start a new analysis to prepare a fresh claim set."}
           </p>
           <div className={styles.actions} style={{ marginTop: 16 }}>
             <Link href="/analyze" className={styles.linkButton}>
@@ -570,7 +641,9 @@ export default function ClaimSelectionDraftPage() {
                 <p className={styles.selectionSubtitle}>
                   {requiresSelectionUi
                     ? `Keep one to ${selectionCap} claim${selectionCap === 1 ? "" : "s"}. Recommendation order is already applied below, and recommended claims are preselected.`
-                    : "Stage 1 produced four or fewer claims, so FactHarbor will analyze all of them directly without a manual selection step."}
+                    : autoContinueFailed
+                      ? "Automatic continuation failed. Retry the continuation below or cancel the session."
+                      : "Stage 1 produced four or fewer claims, so FactHarbor is continuing directly into the full analysis with all prepared claims."}
                 </p>
               </div>
               <div className={styles.counterBadge}>
@@ -606,35 +679,41 @@ export default function ClaimSelectionDraftPage() {
               </ol>
             ) : (
               <div className={commonStyles.errorBox}>
-                Prepared draft state is missing candidate claims. Cancel this draft and start a fresh analysis.
+                Prepared session state is missing candidate claims. Cancel this session and start a fresh analysis.
               </div>
             )}
 
             <div className={styles.actions} style={{ marginTop: 16 }}>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleConfirm}
-                disabled={
-                  isConfirming ||
-                  selectedClaimIds.length < 1 ||
-                  selectedClaimIds.length > selectionCap ||
-                  candidateClaims.length === 0
-                }
-              >
-                {isConfirming
-                  ? "Creating job..."
-                  : requiresSelectionUi
-                    ? "Continue with selected claims"
-                    : "Continue to analysis"}
-              </button>
+              {requiresSelectionUi || autoContinueFailed ? (
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={handleConfirm}
+                  disabled={
+                    isConfirming ||
+                    selectedClaimIds.length < 1 ||
+                    selectedClaimIds.length > selectionCap ||
+                    candidateClaims.length === 0
+                  }
+                >
+                  {isConfirming
+                    ? "Creating job..."
+                    : requiresSelectionUi
+                      ? "Continue with selected claims"
+                      : "Retry continuation"}
+                </button>
+              ) : isConfirming ? (
+                <button type="button" className={styles.primaryButton} disabled>
+                  Creating job...
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={styles.dangerButton}
                 onClick={handleCancel}
                 disabled={isCancelling}
               >
-                {isCancelling ? "Cancelling..." : "Cancel draft"}
+                {isCancelling ? "Cancelling..." : "Cancel session"}
               </button>
             </div>
           </div>

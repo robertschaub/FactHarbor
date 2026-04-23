@@ -124,7 +124,7 @@ export default function AnalyzePage() {
 
     if (!adminKey && !canUseSessionStorage()) {
       setError(
-        "This browser blocks session storage, which FactHarbor needs to hold the draft access token. Enable session storage or use an admin key.",
+                      "This browser blocks session storage, which FactHarbor needs to hold the session access token. Enable session storage or use an admin key.",
       );
       return;
     }
@@ -168,13 +168,13 @@ export default function AnalyzePage() {
 
       const data = await res.json();
       if (typeof data?.draftId !== "string" || typeof data?.draftAccessToken !== "string") {
-        throw new Error("Draft creation response was incomplete");
+                    throw new Error("Session creation response was incomplete");
       }
 
       const storedDraftToken = storeDraftAccessToken(data.draftId, data.draftAccessToken);
       if (!storedDraftToken && !adminKey) {
         throw new Error(
-          "Draft was created, but this browser blocked session storage needed to open it. Enable session storage and submit again.",
+                        "Session was created, but this browser blocked session storage needed to open it. Enable session storage and submit again.",
         );
       }
 
