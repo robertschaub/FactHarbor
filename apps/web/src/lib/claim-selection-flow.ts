@@ -87,6 +87,80 @@ export function isValidClaimSelection(
   return selectedClaimIds.length >= 1 && selectedClaimIds.length <= selectionCap;
 }
 
+function filterCandidateSelection(
+  claimIds: readonly string[] | null | undefined,
+  candidateClaimIds: readonly string[],
+  selectionCap: number,
+): string[] {
+  if (!Array.isArray(claimIds) || claimIds.length === 0) {
+    return [];
+  }
+
+  const candidateClaimIdSet = new Set(candidateClaimIds);
+  const selectedClaimIds: string[] = [];
+  const seen = new Set<string>();
+
+  for (const claimId of claimIds) {
+    if (!candidateClaimIdSet.has(claimId) || seen.has(claimId)) {
+      continue;
+    }
+    selectedClaimIds.push(claimId);
+    seen.add(claimId);
+    if (selectedClaimIds.length >= selectionCap) {
+      break;
+    }
+  }
+
+  return selectedClaimIds;
+}
+
+export function resolveInitialClaimSelection(options: {
+  candidateClaimIds: readonly string[];
+  persistedSelectedClaimIds?: readonly string[] | null;
+  recommendedClaimIds?: readonly string[] | null;
+  configuredCap?: number | null;
+  requiresSelectionUi: boolean;
+  hasUserSelectionInteraction?: boolean;
+}): string[] {
+  const selectionCap = getClaimSelectionCap(
+    options.candidateClaimIds.length,
+    options.configuredCap,
+  );
+
+  if (!options.requiresSelectionUi) {
+    return options.candidateClaimIds.slice(0, selectionCap);
+  }
+
+  const persistedSelection = filterCandidateSelection(
+    options.persistedSelectedClaimIds,
+    options.candidateClaimIds,
+    selectionCap,
+  );
+
+  if (
+    options.hasUserSelectionInteraction &&
+    isValidClaimSelection(persistedSelection, selectionCap)
+  ) {
+    return persistedSelection;
+  }
+
+  const recommendedSelection = filterCandidateSelection(
+    options.recommendedClaimIds,
+    options.candidateClaimIds,
+    selectionCap,
+  );
+
+  if (isValidClaimSelection(recommendedSelection, selectionCap)) {
+    return recommendedSelection;
+  }
+
+  if (isValidClaimSelection(persistedSelection, selectionCap)) {
+    return persistedSelection;
+  }
+
+  return [];
+}
+
 export function resolveIdleAutoProceedSelection(
   currentSelectedClaimIds: readonly string[] | null | undefined,
   lastValidSelectedClaimIds: readonly string[] | null | undefined,

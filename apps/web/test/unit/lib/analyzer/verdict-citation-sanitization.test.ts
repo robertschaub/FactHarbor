@@ -198,7 +198,7 @@ describe("enforceVerdictCitationIntegrity", () => {
     ]);
   });
 
-  it("removes non-direct and misbucketed directional citations before validation", () => {
+  it("removes non-direct and misbucketed directional citations and downgrades final collapsed verdicts", () => {
     const warnings: AnalysisWarning[] = [];
     const verdict = makeVerdict({
       truthPercentage: 75,
@@ -232,6 +232,10 @@ describe("enforceVerdictCitationIntegrity", () => {
 
     const result = enforceVerdictCitationIntegrity([verdict], evidence, undefined, warnings);
 
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(result[0].supportingEvidenceIds).toEqual([]);
     expect(result[0].contradictingEvidenceIds).toEqual(["EV_CONTRADICTS_IN_SUPPORT"]);
     const directionWarning = warnings.find(
@@ -251,6 +255,7 @@ describe("enforceVerdictCitationIntegrity", () => {
       (warning) => warning.type === "verdict_citation_integrity_guard",
     );
     expect(guardWarning?.severity).toBe("error");
+    expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(true);
   });
 
   it("defers collapsed-side errors and re-emits them when final verdict remains collapsed", () => {
@@ -293,7 +298,7 @@ describe("enforceVerdictCitationIntegrity", () => {
     expect(warnings.some((warning) => warning.type === "verdict_direction_issue")).toBe(true);
     expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
 
-    enforceVerdictCitationIntegrity(
+    const finalResult = enforceVerdictCitationIntegrity(
       result,
       evidence,
       undefined,
@@ -301,6 +306,10 @@ describe("enforceVerdictCitationIntegrity", () => {
       { deferredCollapsedSideWarnings },
     );
 
+    expect(finalResult[0].truthPercentage).toBe(50);
+    expect(finalResult[0].verdict).toBe("UNVERIFIED");
+    expect(finalResult[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(finalResult[0].verdictReason).toBe("verdict_integrity_failure");
     const guardWarning = warnings.find(
       (warning) => warning.type === "verdict_citation_integrity_guard",
     );
@@ -406,7 +415,7 @@ describe("enforceVerdictCitationIntegrity", () => {
       contradictingEvidenceIds: [],
     };
 
-    enforceVerdictCitationIntegrity(
+    const finalResult = enforceVerdictCitationIntegrity(
       [changedButStillDegraded],
       evidence,
       undefined,
@@ -414,6 +423,8 @@ describe("enforceVerdictCitationIntegrity", () => {
       { deferredCollapsedSideWarnings },
     );
 
+    expect(finalResult[0].truthPercentage).toBe(50);
+    expect(finalResult[0].verdictReason).toBe("verdict_integrity_failure");
     const guardWarning = warnings.find(
       (warning) => warning.type === "verdict_citation_integrity_guard",
     );
@@ -441,6 +452,10 @@ describe("enforceVerdictCitationIntegrity", () => {
 
     const result = enforceVerdictCitationIntegrity([verdict], evidence, undefined, warnings);
 
+    expect(result[0].truthPercentage).toBe(50);
+    expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(result[0].confidenceTier).toBe("INSUFFICIENT");
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
     expect(result[0].supportingEvidenceIds).toEqual([]);
     expect(result[0].contradictingEvidenceIds).toEqual([]);
     const guardWarning = warnings.find(

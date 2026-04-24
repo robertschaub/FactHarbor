@@ -27,6 +27,7 @@ import {
   normalizeClaimSelectionCap,
   normalizeClaimSelectionIdleAutoProceedMs,
   resolveIdleAutoProceedSelection,
+  resolveInitialClaimSelection,
   shouldAutoContinueWithoutSelection,
   shouldRequireClaimSelectionUi,
 } from "@/lib/claim-selection-flow";
@@ -383,7 +384,9 @@ export default function ClaimSelectionDraftPage() {
     ? getClaimSelectionIdleRemainingMs(effectiveLastSelectionInteractionAtMs, idleAutoProceedMs, nowMs)
     : null;
   const idleAutoProceedCountdownLabel = formatCountdownDuration(idleAutoProceedRemainingMs);
-  const hasPersistedValidSelection = isValidClaimSelection(persistedSelectedClaimIds, selectionCap);
+  const hasPersistedUserSelection = persistedLastSelectionInteractionAtMs !== null;
+  const hasPersistedValidSelection =
+    hasPersistedUserSelection && isValidClaimSelection(persistedSelectedClaimIds, selectionCap);
   const manualIdleAutoProceedArmed =
     manualIdleAutoProceedEnabled &&
     (hasPersistedValidSelection || isValidClaimSelection(lastValidSelectedClaimIds, selectionCap));
@@ -405,18 +408,18 @@ export default function ClaimSelectionDraftPage() {
       return;
     }
 
-    const defaultSelection = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold)
-      ? (persistedSelectedClaimIds.length
-          ? persistedSelectedClaimIds
-          : recommendedClaimIds)
-          .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
-          .slice(0, selectionCap)
-      : candidateClaims
-          .map((claim) => claim.id)
-          .slice(0, selectionCap);
+    const defaultSelection = resolveInitialClaimSelection({
+      candidateClaimIds: candidateClaims.map((claim) => claim.id),
+      persistedSelectedClaimIds,
+      recommendedClaimIds,
+      configuredCap: selectionThreshold,
+      requiresSelectionUi: shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold),
+      hasUserSelectionInteraction: persistedLastSelectionInteractionAtMs !== null,
+    });
 
     setSelectedClaimIds(defaultSelection);
     setLastValidSelectedClaimIds(
+      persistedLastSelectionInteractionAtMs !== null &&
       isValidClaimSelection(persistedSelectedClaimIds, selectionCap)
         ? [...persistedSelectedClaimIds]
         : isValidClaimSelection(defaultSelection, selectionCap)

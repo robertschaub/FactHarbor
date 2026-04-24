@@ -43,7 +43,7 @@ import {
   type TriangulationScore,
 } from "./types";
 
-import { percentageToClaimVerdict } from "./truth-scale";
+import { percentageToClaimVerdict, VERDICT_BANDS } from "./truth-scale";
 import type { CalcConfig } from "@/lib/config-schemas";
 import { DEFAULT_CALC_CONFIG } from "@/lib/config-schemas";
 
@@ -1629,6 +1629,7 @@ export async function validateVerdicts(
     warnings,
     {
       deferredCollapsedSideWarnings: repairContext?.deferredCitationIntegrityCollapses,
+      mixedConfidenceThreshold: config.mixedConfidenceThreshold,
     },
   );
 }
@@ -2030,7 +2031,7 @@ function normalizeVerdictCitationDirections(
 
 function safeDowngradeVerdict(
   verdict: CBClaimVerdict,
-  reason: "grounding" | "direction",
+  reason: "grounding" | "direction" | "citation",
   issues: string[],
   warnings: AnalysisWarning[] | undefined,
   mixedConfidenceThreshold: number,
@@ -2612,6 +2613,8 @@ interface VerdictCitationMove {
 interface VerdictCitationIntegrityOptions {
   emitCollapsedSideWarnings?: boolean;
   deferredCollapsedSideWarnings?: DeferredCitationIntegrityCollapse[];
+  downgradeCollapsedCitationSides?: boolean;
+  mixedConfidenceThreshold?: number;
 }
 
 interface DeferredCitationIntegrityCollapse {
@@ -2751,8 +2754,9 @@ function decisiveCitationSideCollapsed(
   cleanedSupportingIds: string[],
   cleanedContradictingIds: string[],
 ): VerdictCitationCollapsedSide | null {
+  const decisiveSide = decisiveCitationSideForVerdict(original);
   if (
-    original.truthPercentage > 50
+    decisiveSide === "supporting"
     && original.supportingEvidenceIds.length > 0
     && cleanedSupportingIds.length === 0
   ) {
@@ -2760,19 +2764,25 @@ function decisiveCitationSideCollapsed(
   }
 
   if (
-    original.truthPercentage < 50
+    decisiveSide === "contradicting"
     && original.contradictingEvidenceIds.length > 0
     && cleanedContradictingIds.length === 0
   ) {
     return "contradicting";
   }
 
-  if (
-    original.truthPercentage === 50
-    && original.supportingEvidenceIds.length + original.contradictingEvidenceIds.length > 0
-    && cleanedSupportingIds.length + cleanedContradictingIds.length === 0
-  ) {
-    return "all";
+  return null;
+}
+
+function decisiveCitationSideForVerdict(
+  verdict: CBClaimVerdict,
+): VerdictCitationBucket | null {
+  if (verdict.truthPercentage >= VERDICT_BANDS.LEANING_TRUE) {
+    return "supporting";
+  }
+
+  if (verdict.truthPercentage < VERDICT_BANDS.MIXED) {
+    return "contradicting";
   }
 
   return null;
@@ -2781,19 +2791,13 @@ function decisiveCitationSideCollapsed(
 function missingCurrentDecisiveCitationSide(
   verdict: CBClaimVerdict,
 ): VerdictCitationCollapsedSide | null {
-  if (verdict.truthPercentage > 50 && verdict.supportingEvidenceIds.length === 0) {
+  const decisiveSide = decisiveCitationSideForVerdict(verdict);
+  if (decisiveSide === "supporting" && verdict.supportingEvidenceIds.length === 0) {
     return "supporting";
   }
 
-  if (verdict.truthPercentage < 50 && verdict.contradictingEvidenceIds.length === 0) {
+  if (decisiveSide === "contradicting" && verdict.contradictingEvidenceIds.length === 0) {
     return "contradicting";
-  }
-
-  if (
-    verdict.truthPercentage === 50
-    && verdict.supportingEvidenceIds.length + verdict.contradictingEvidenceIds.length === 0
-  ) {
-    return "all";
   }
 
   return null;
@@ -2919,6 +2923,31 @@ function emitFinalCitationIntegrityWarnings(
     }, { finalStateOnly: true }));
     emitted.add(key);
   }
+}
+
+function safeDowngradeCollapsedCitationVerdicts(
+  verdicts: CBClaimVerdict[],
+  warnings: AnalysisWarning[] | undefined,
+  mixedConfidenceThreshold: number,
+): CBClaimVerdict[] {
+  return verdicts.map((verdict) => {
+    const collapsedSide = missingCurrentDecisiveCitationSide(verdict);
+    if (!collapsedSide || collapsedSide === "all") {
+      return verdict;
+    }
+
+    if (verdict.verdictReason === "verdict_integrity_failure") {
+      return verdict;
+    }
+
+    return safeDowngradeVerdict(
+      verdict,
+      "citation",
+      [`final verdict has no ${collapsedSide} decisive citation side after citation sanitation`],
+      warnings,
+      mixedConfidenceThreshold,
+    );
+  });
 }
 
 function emitCitationIntegrityWarnings(
@@ -3066,6 +3095,13 @@ export function enforceVerdictCitationIntegrity(
       warnings,
     );
     emitFinalCitationIntegrityWarnings(cleanedVerdicts, warnings);
+    if (options.downgradeCollapsedCitationSides ?? true) {
+      return safeDowngradeCollapsedCitationVerdicts(
+        cleanedVerdicts,
+        warnings,
+        options.mixedConfidenceThreshold ?? DEFAULT_VERDICT_STAGE_CONFIG.mixedConfidenceThreshold,
+      );
+    }
   }
 
   return cleanedVerdicts;

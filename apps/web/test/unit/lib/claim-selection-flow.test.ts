@@ -11,6 +11,7 @@ import {
   normalizeClaimSelectionIdleAutoProceedMs,
   normalizeClaimSelectionMode,
   resolveIdleAutoProceedSelection,
+  resolveInitialClaimSelection,
   shouldAutoContinueWithoutSelection,
   shouldRequireClaimSelectionUi,
 } from "@/lib/claim-selection-flow";
@@ -88,6 +89,45 @@ describe("claim-selection-flow", () => {
     expect(
       resolveIdleAutoProceedSelection(["AC_1", "AC_1"], [], 3),
     ).toEqual([]);
+  });
+
+  it("prefers recommendations over seeded persisted defaults before user interaction", () => {
+    expect(
+      resolveInitialClaimSelection({
+        candidateClaimIds: ["AC_27", "AC_24", "AC_25", "AC_04", "AC_03", "AC_12"],
+        persistedSelectedClaimIds: ["AC_27", "AC_24", "AC_25", "AC_04", "AC_12"],
+        recommendedClaimIds: ["AC_27", "AC_24", "AC_04", "AC_03", "AC_12"],
+        configuredCap: 5,
+        requiresSelectionUi: true,
+        hasUserSelectionInteraction: false,
+      }),
+    ).toEqual(["AC_27", "AC_24", "AC_04", "AC_03", "AC_12"]);
+  });
+
+  it("keeps a proven user selection over recommendations", () => {
+    expect(
+      resolveInitialClaimSelection({
+        candidateClaimIds: ["AC_27", "AC_24", "AC_25", "AC_04", "AC_03", "AC_12"],
+        persistedSelectedClaimIds: ["AC_27", "AC_24", "AC_25", "AC_04", "AC_12"],
+        recommendedClaimIds: ["AC_27", "AC_24", "AC_04", "AC_03", "AC_12"],
+        configuredCap: 5,
+        requiresSelectionUi: true,
+        hasUserSelectionInteraction: true,
+      }),
+    ).toEqual(["AC_27", "AC_24", "AC_25", "AC_04", "AC_12"]);
+  });
+
+  it("uses prepared candidates directly when manual selection is not required", () => {
+    expect(
+      resolveInitialClaimSelection({
+        candidateClaimIds: ["AC_1", "AC_2", "AC_3"],
+        persistedSelectedClaimIds: ["AC_3"],
+        recommendedClaimIds: ["AC_2"],
+        configuredCap: 5,
+        requiresSelectionUi: false,
+        hasUserSelectionInteraction: true,
+      }),
+    ).toEqual(["AC_1", "AC_2", "AC_3"]);
   });
 
   it("computes the remaining idle countdown from the last interaction timestamp", () => {
