@@ -1387,6 +1387,7 @@ describe("validateVerdicts (Step 5)", () => {
       }),
     ];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
 
     let directionValidationCalls = 0;
     const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
@@ -1538,6 +1539,7 @@ describe("validateVerdicts (Step 5)", () => {
       createEvidenceItem({ id: "EV_02", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_02"], claimDirection: "supports", applicability: "contextual" }),
     ];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
 
     let directionValidationCalls = 0;
     const mockLLM = vi.fn(async (key: string) => {
@@ -1570,13 +1572,14 @@ describe("validateVerdicts (Step 5)", () => {
       evidence,
       mockLLM,
       config,
-      [],
+      warnings,
       { claims, boundaries, coverageMatrix },
     );
 
     expect(result[0].truthPercentage).toBe(35);
     expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
     expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+    expect(warnings.some((w) => w.type === "verdict_direction_issue" && w.message.includes("Initial mismatch"))).toBe(false);
   });
 
   it("safe-downgrades when repaired verdict still fails direction re-validation", async () => {

@@ -395,6 +395,10 @@ function resolveClaimDisplayText(resultJson: any, claimVerdict: any): string {
   return typeof statement === "string" ? statement.trim() : "";
 }
 
+function isUserVisibleReportWarning(warning: any): boolean {
+  return warning?.severity === "warning" || warning?.severity === "error";
+}
+
 export function formatClaimBoundaryReportMarkdown(resultJson: any): string {
   const meta = resultJson?.meta ?? {};
   const narrative = resultJson?.verdictNarrative ?? {};
@@ -404,6 +408,7 @@ export function formatClaimBoundaryReportMarkdown(resultJson: any): string {
   const warnings = Array.isArray(resultJson?.analysisWarnings)
     ? resultJson.analysisWarnings
     : [];
+  const userVisibleWarnings = warnings.filter(isUserVisibleReportWarning);
   const sources = Array.isArray(resultJson?.sources) ? resultJson.sources : [];
   const evidenceItems = Array.isArray(resultJson?.evidenceItems) ? resultJson.evidenceItems : [];
   const searchQueries = Array.isArray(resultJson?.searchQueries) ? resultJson.searchQueries : [];
@@ -473,16 +478,16 @@ export function formatClaimBoundaryReportMarkdown(resultJson: any): string {
 
   lines.push("");
   lines.push("## Quality Signals");
-  if (warnings.length === 0) {
-    lines.push("No analysis warnings were emitted.");
+  if (userVisibleWarnings.length === 0) {
+    lines.push("No user-visible quality warnings were emitted.");
   } else {
-    for (const warning of warnings.slice(0, 20)) {
+    for (const warning of userVisibleWarnings.slice(0, 20)) {
       lines.push(
         `- [${warning?.severity ?? "info"}] ${warning?.type ?? "warning"}: ${compactMarkdownText(warning?.message, 500)}`,
       );
     }
-    if (warnings.length > 20) {
-      lines.push(`- ${warnings.length - 20} additional warning(s) omitted from this markdown summary.`);
+    if (userVisibleWarnings.length > 20) {
+      lines.push(`- ${userVisibleWarnings.length - 20} additional user-visible warning(s) omitted from this markdown summary.`);
     }
   }
 
@@ -505,6 +510,7 @@ export function formatClaimBoundaryReportMarkdown(resultJson: any): string {
   lines.push(`- Prompt content hash: ${meta.promptContentHash ?? "unknown"}`);
   lines.push(`- Models: ${modelsUsed || "unknown"}`);
   lines.push(`- LLM calls: ${typeof meta.llmCalls === "number" ? meta.llmCalls : "unknown"}`);
+  lines.push(`- Admin diagnostic signals: ${warnings.length - userVisibleWarnings.length}`);
   lines.push(`- Search queries: ${searchQueries.length}`);
   lines.push(`- Main research iterations: ${typeof meta.mainIterationsUsed === "number" ? meta.mainIterationsUsed : "unknown"}`);
   lines.push(

@@ -723,6 +723,11 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
         ],
         analysisWarnings: [
           {
+            type: "verdict_grounding_issue",
+            severity: "info",
+            message: "Internal grounding diagnostic for admin review.",
+          },
+          {
             type: "budget_exceeded",
             severity: "warning",
             message: "Research time budget reached.",
@@ -747,6 +752,9 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
       expect(markdown).toContain("- Evidence items: 2");
       expect(markdown).toContain("- Sources: 1");
       expect(markdown).toContain("[warning] budget_exceeded");
+      expect(markdown).not.toContain("verdict_grounding_issue");
+      expect(markdown).not.toContain("Internal grounding diagnostic");
+      expect(markdown).toContain("- Admin diagnostic signals: 1");
       expect(markdown).toContain("## Technical Notes");
       expect(markdown).not.toContain("(Report generation not yet implemented)");
     });

@@ -1367,19 +1367,23 @@ export async function validateVerdicts(
     let current = verdict;
     const grounding = groundingByClaim.get(verdict.claimId);
     const direction = directionByClaim.get(verdict.claimId);
-
-    if (grounding && grounding.valid === false) {
-      console.warn(`[VerdictStage] Grounding issue for claim ${verdict.claimId}:`, grounding.issues);
+    const pendingGroundingIssues = grounding?.valid === false ? grounding.issues : [];
+    const emitGroundingIssue = () => {
+      console.warn(`[VerdictStage] Grounding issue for claim ${verdict.claimId}:`, pendingGroundingIssues);
       warnings?.push({
         type: "verdict_grounding_issue",
         severity: "info",
-        message: `Claim ${verdict.claimId}: grounding check found issues: ${joinIssues(grounding.issues)}`,
+        message: `Claim ${verdict.claimId}: grounding check found issues: ${joinIssues(pendingGroundingIssues)}`,
       });
+    };
+
+    if (pendingGroundingIssues.length > 0) {
       if (config.verdictGroundingPolicy === "safe_downgrade") {
+        emitGroundingIssue();
         current = safeDowngradeVerdict(
           current,
           "grounding",
-          grounding.issues,
+          pendingGroundingIssues,
           warnings,
           config.mixedConfidenceThreshold,
         );
@@ -1395,6 +1399,14 @@ export async function validateVerdicts(
       ...(direction?.valid === false ? direction.issues : []),
       ...deterministicDirectionIssues,
     ]));
+    const emitDirectionIssue = () => {
+      console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, mergedDirectionIssues);
+      warnings?.push({
+        type: "verdict_direction_issue",
+        severity: "info",
+        message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(mergedDirectionIssues)}`,
+      });
+    };
 
     if (mergedDirectionIssues.length > 0) {
       // Deterministic safety net: if the LLM flags a direction issue, check if the
@@ -1420,13 +1432,6 @@ export async function validateVerdicts(
           },
         });
       } else {
-        console.warn(`[VerdictStage] Direction issue for claim ${verdict.claimId}:`, mergedDirectionIssues);
-        warnings?.push({
-          type: "verdict_direction_issue",
-          severity: "info",
-          message: `Claim ${verdict.claimId}: direction check found issues: ${joinIssues(mergedDirectionIssues)}`,
-        });
-
         if (
           config.verdictDirectionPolicy === "retry_once_then_safe_downgrade"
           && current.verdictReason !== "verdict_integrity_failure"
@@ -1534,6 +1539,7 @@ export async function validateVerdicts(
           );
 
           if (!repaired) {
+            emitDirectionIssue();
             current = safeDowngradeVerdict(
               current,
               "direction",
@@ -1557,6 +1563,7 @@ export async function validateVerdicts(
             || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
 
           if (!repairedPlausible) {
+            emitDirectionIssue();
             current = safeDowngradeVerdict(
               normalizedRepaired,
               "direction",
@@ -1615,8 +1622,14 @@ export async function validateVerdicts(
             warnings,
             config.mixedConfidenceThreshold,
           );
+        } else {
+          emitDirectionIssue();
         }
       }
+    }
+
+    if (pendingGroundingIssues.length > 0 && config.verdictGroundingPolicy !== "safe_downgrade") {
+      emitGroundingIssue();
     }
 
     validated.push(current);
