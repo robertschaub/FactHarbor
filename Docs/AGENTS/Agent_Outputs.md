@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-24 | Senior Developer | Codex (GPT-5) | Claim Selection Draft State And Salience Runtime Guards -- [Standard] [open-items: no]
+**For next agent:** [page.tsx](/c:/DEV/FactHarbor/apps/web/src/app/analyze/select/[draftId]/page.tsx) now normalizes parsed draft JSON before rendering, so older or partial draft states no longer crash on missing `recommendedClaimIds.length`. [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) now fail-opens leaked salience commitment schema errors, preserving the documented non-fatal behavior and allowing Stage 1 to continue to Pass 2.
+→ Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_Claim_Selection_Draft_State_Runtime_Guard.md
+
+---
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | ACS Session Preparation Challenger Review -- [Standard] [open-items: yes]
 **For next agent:** Block cross-session prepared-result reuse for now: current Stage 1 semantics still include live URL fetch plus live preliminary search, and `PreparedStage1Snapshot` only persists `resolvedInputText` + `preparedUnderstanding`, so exact public-URL equality is not a safe reuse contract. Narrow current scope to attribution cleanup in `internal-runner-queue.ts` / analyzer logging and truthful prep wording in `page.tsx` / `page-helpers.ts` without weakening the per-draft token boundary.
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_ACS_Session_Preparation_Challenger_Review.md

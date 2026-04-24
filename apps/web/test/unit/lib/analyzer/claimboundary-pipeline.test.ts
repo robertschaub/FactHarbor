@@ -9809,6 +9809,86 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(state.llmCalls).toBe(3);
   });
 
+  it("should fail open when salience commitment leaks a structured-output error", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: false, maxRetries: 1 },
+        salienceCommitment: { enabled: true, mode: "audit" },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => {
+      if (section === "CLAIM_SALIENCE_COMMITMENT") {
+        throw new Error("No object generated: response did not match schema.");
+      }
+      return { content: `section:${section}`, variables: {} } as any;
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return makePass2(1, {
+            inputClassification: "single_atomic_claim",
+            statementPrefix: "Original",
+          });
+        case 3:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The original claim.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    expect(result.atomicClaims).toHaveLength(1);
+    expect(result.salienceCommitment).toEqual({
+      ran: true,
+      enabled: true,
+      mode: "audit",
+      success: false,
+      errorMessage: "No object generated: response did not match schema.",
+      anchors: [],
+    });
+    expect(state.llmCalls).toBe(4);
+  });
+
   it("should load the binding-mode contract appendix when salience binding is active", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");

@@ -271,12 +271,25 @@ export async function extractClaims(
   let salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]>;
   if (salienceEnabled) {
     state.onEvent?.(`Extracting claims: salience commitment (${salienceConfig.mode})...`, 14);
-    salienceCommitment = await runSalienceCommitment(
-      state.originalInput,
-      pipelineConfig,
-      salienceConfig,
-      state,
-    );
+    try {
+      salienceCommitment = await runSalienceCommitment(
+        state.originalInput,
+        pipelineConfig,
+        salienceConfig,
+        state,
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn("[Stage1] Salience commitment leaked a non-fatal error:", errorMessage);
+      salienceCommitment = {
+        ran: true,
+        enabled: true,
+        mode: salienceConfig.mode,
+        success: false,
+        errorMessage,
+        anchors: [],
+      };
+    }
     if (salienceCommitment.ran) {
       state.llmCalls++;
       console.info(

@@ -89,6 +89,14 @@ function parseDraftState(draftStateJson: string | null): ClaimSelectionDraftStat
   }
 }
 
+function getDraftStateStringArray(
+  draftState: ClaimSelectionDraftState | null,
+  key: "rankedClaimIds" | "recommendedClaimIds" | "selectedClaimIds",
+): string[] {
+  const value = draftState?.[key];
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 function formatDurationMs(durationMs: number | null | undefined): string | null {
   if (typeof durationMs !== "number" || !Number.isFinite(durationMs) || durationMs < 0) {
     return null;
@@ -316,19 +324,32 @@ export default function ClaimSelectionDraftPage() {
   }, [adminKey, draftId, refreshNonce, router]);
 
   const draftState = useMemo(() => parseDraftState(draft?.draftStateJson ?? null), [draft?.draftStateJson]);
+  const rankedClaimIds = useMemo(
+    () => getDraftStateStringArray(draftState, "rankedClaimIds"),
+    [draftState],
+  );
+  const recommendedClaimIds = useMemo(
+    () => getDraftStateStringArray(draftState, "recommendedClaimIds"),
+    [draftState],
+  );
+  const persistedSelectedClaimIds = useMemo(
+    () => getDraftStateStringArray(draftState, "selectedClaimIds"),
+    [draftState],
+  );
   const candidateClaims = useMemo(() => {
-    const claims = draftState?.preparedStage1?.preparedUnderstanding.atomicClaims ?? [];
-    return orderClaims(claims, draftState?.rankedClaimIds ?? []);
-  }, [draftState]);
+    const claims = draftState?.preparedStage1?.preparedUnderstanding?.atomicClaims ?? [];
+    return orderClaims(claims, rankedClaimIds);
+  }, [draftState, rankedClaimIds]);
   const selectedClaimSet = useMemo(() => new Set(selectedClaimIds), [selectedClaimIds]);
   const recommendedClaimSet = useMemo(
-    () => new Set(draftState?.recommendedClaimIds ?? []),
-    [draftState?.recommendedClaimIds],
+    () => new Set(recommendedClaimIds),
+    [recommendedClaimIds],
   );
   const assessmentsByClaimId = useMemo(() => {
-    const entries = (draftState?.assessments ?? []).map((assessment) => [assessment.claimId, assessment]);
+    const assessments = Array.isArray(draftState?.assessments) ? draftState.assessments : [];
+    const entries = assessments.map((assessment) => [assessment.claimId, assessment]);
     return Object.fromEntries(entries) as Record<string, ClaimSelectionRecommendationAssessment | undefined>;
-  }, [draftState?.assessments]);
+  }, [draftState]);
 
   const selectionThreshold = normalizeClaimSelectionCap(draftState?.selectionCap);
   const selectionCap = getClaimSelectionCap(candidateClaims.length, selectionThreshold);
@@ -354,7 +375,6 @@ export default function ClaimSelectionDraftPage() {
         : [],
     [candidateClaims, selectionCap, selectionThreshold],
   );
-  const persistedSelectedClaimIds = draftState?.selectedClaimIds ?? [];
   const idleAutoProceedClaimIds = useMemo(
     () => resolveIdleAutoProceedSelection(selectedClaimIds, lastValidSelectedClaimIds, selectionCap),
     [lastValidSelectedClaimIds, selectedClaimIds, selectionCap],
@@ -376,8 +396,8 @@ export default function ClaimSelectionDraftPage() {
     const nextSeed = [
       draft.status,
       candidateClaims.map((claim) => claim.id).join("|"),
-      draftState?.selectedClaimIds?.join("|") ?? "",
-      draftState?.recommendedClaimIds?.join("|") ?? "",
+      persistedSelectedClaimIds.join("|"),
+      recommendedClaimIds.join("|"),
       draftState?.lastSelectionInteractionUtc ?? "",
     ].join("::");
 
@@ -386,9 +406,9 @@ export default function ClaimSelectionDraftPage() {
     }
 
     const defaultSelection = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold)
-      ? (draftState?.selectedClaimIds?.length
-          ? draftState.selectedClaimIds
-          : draftState?.recommendedClaimIds ?? [])
+      ? (persistedSelectedClaimIds.length
+          ? persistedSelectedClaimIds
+          : recommendedClaimIds)
           .filter((claimId) => candidateClaims.some((claim) => claim.id === claimId))
           .slice(0, selectionCap)
       : candidateClaims
@@ -397,8 +417,8 @@ export default function ClaimSelectionDraftPage() {
 
     setSelectedClaimIds(defaultSelection);
     setLastValidSelectedClaimIds(
-      isValidClaimSelection(draftState?.selectedClaimIds ?? [], selectionCap)
-        ? [...(draftState?.selectedClaimIds ?? [])]
+      isValidClaimSelection(persistedSelectedClaimIds, selectionCap)
+        ? [...persistedSelectedClaimIds]
         : isValidClaimSelection(defaultSelection, selectionCap)
           ? defaultSelection
           : [],
@@ -410,6 +430,8 @@ export default function ClaimSelectionDraftPage() {
     draft,
     draftState,
     persistedLastSelectionInteractionAtMs,
+    persistedSelectedClaimIds,
+    recommendedClaimIds,
     selectionCap,
     selectionSeed,
     selectionThreshold,
@@ -648,7 +670,7 @@ export default function ClaimSelectionDraftPage() {
     ? getStatusSummary(
       draft.status,
       candidateClaims.length,
-      draftState?.recommendedClaimIds.length ?? 0,
+      recommendedClaimIds.length,
       selectionThreshold,
     )
       : "Loading session state.";
