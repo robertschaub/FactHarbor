@@ -76,6 +76,18 @@ claude mcp add-json fhAgentKnowledge ("{`"type`":`"stdio`",`"command`":`"cmd`",`
 
 After setup, ask Claude Code to use `preflight_task` first.
 
+## Gemini CLI
+
+Gemini CLI stores MCP configurations in its workspace `.gemini/settings.json`.
+
+You can automatically add the project-scoped configuration by running this command from the root of the project:
+
+```powershell
+gemini mcp add fhAgentKnowledge node scripts/fh-knowledge-mcp.mjs
+```
+
+After adding, you can verify it in the CLI with `/mcp list`. The CLI will automatically use it for tool calls.
+
 ## Cursor
 
 Project-scoped config is already committed at [.cursor/mcp.json](../../.cursor/mcp.json).
