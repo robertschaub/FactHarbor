@@ -70,7 +70,7 @@ export function getStatusSummary(
     case "QUEUED":
       return "FactHarbor has accepted this analysis session and queued Stage 1 preparation. No report job exists yet, so it does not appear in the reports list.";
     case "PREPARING":
-      return "FactHarbor is preparing the final Stage 1 claim set for this analysis.";
+      return "FactHarbor is preparing the final Stage 1 candidate set for this analysis. If the manual-review threshold is reached, FactHarbor then generates claim-selection recommendations before the selection screen appears.";
     case "AWAITING_CLAIM_SELECTION":
       if (shouldRequireClaimSelectionUi(candidateCount, selectionThreshold)) {
         return `Stage 1 reached the manual-review threshold (${formatClaimCount(selectionThreshold)}) and produced ${formatClaimCount(candidateCount)}. Review the ranked list below and choose the final subset before analysis continues.`;

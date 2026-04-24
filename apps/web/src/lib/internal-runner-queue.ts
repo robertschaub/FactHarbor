@@ -1,7 +1,7 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { prepareStage1Snapshot } from "@/lib/analyzer/claimboundary-pipeline";
 import { generateClaimSelectionRecommendation } from "@/lib/analyzer/claim-selection-recommendation";
-import { debugLog } from "@/lib/analyzer/debug";
+import { debugLog, runWithDebugLogContext } from "@/lib/analyzer/debug";
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import { classifyError, isNetworkConnectivityFailureText } from "@/lib/error-classification";
 import {
@@ -276,31 +276,32 @@ export function getAutomaticRecommendationSelection(
 }
 
 async function runJobBackground(jobId: string) {
-  const apiBase = getApiBaseOrThrow();
-  const adminKey = getAdminKeyOrNull();
-  const qs = getRunnerQueueState();
-  const executedWebGitCommitHash = getWebGitCommitHash();
-  let acquiredSlot = false;
+  return runWithDebugLogContext(`[job:${jobId}|analysis]`, async () => {
+    const apiBase = getApiBaseOrThrow();
+    const adminKey = getAdminKeyOrNull();
+    const qs = getRunnerQueueState();
+    const executedWebGitCommitHash = getWebGitCommitHash();
+    let acquiredSlot = false;
 
-  const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
-      status: "RUNNING",
-      progress: normalizeRunningProgress(progress),
-      level,
-      message,
-    });
-  };
+    const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+        status: "RUNNING",
+        progress: normalizeRunningProgress(progress),
+        level,
+        message,
+      });
+    };
 
-  try {
-    acquiredSlot = true;
+    try {
+      acquiredSlot = true;
 
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
-      status: "RUNNING",
-      progress: 1,
-      level: "info",
-      message: "Runner started",
-      executedWebGitCommitHash,
-    });
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+        status: "RUNNING",
+        progress: 1,
+        level: "info",
+        message: "Runner started",
+        executedWebGitCommitHash,
+      });
 
     const job = await apiGet(apiBase, adminKey, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
@@ -399,64 +400,65 @@ async function runJobBackground(jobId: string) {
         guardErr,
       );
     }
-  } catch (e: any) {
-    const msg = e?.message ?? String(e);
-    const stack = typeof e?.stack === "string" ? e.stack : null;
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      const stack = typeof e?.stack === "string" ? e.stack : null;
 
-    debugLog("runJobBackground: ERROR", {
-      jobId,
-      message: msg,
-      stack: stack ? stack.split("\n").slice(0, 30).join("\n") : undefined,
-    });
-
-    const classified = classifyError(e);
-    if (classified.shouldCountAsProviderFailure && classified.provider) {
-      const { circuitOpened } = recordProviderFailure(classified.provider, msg);
-      if (circuitOpened) {
-        const reason = `${classified.provider} provider failed ${classified.category}: ${msg.substring(0, 200)}`;
-        pauseSystem(reason);
-        void fireWebhook({
-          type: "system_paused",
-          reason,
-          provider: classified.provider,
-          timestamp: new Date().toISOString(),
-          healthState: getHealthState(),
-        });
-        debugLog("runJobBackground: SYSTEM PAUSED due to provider failure", {
-          jobId,
-          provider: classified.provider,
-          category: classified.category,
-        });
-      }
-    }
-
-    try {
-      await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
-        status: "FAILED",
-        progress: 100,
-        level: "error",
+      debugLog("runJobBackground: ERROR", {
+        jobId,
         message: msg,
-        executedWebGitCommitHash,
+        stack: stack ? stack.split("\n").slice(0, 30).join("\n") : undefined,
       });
 
-      if (stack) {
+      const classified = classifyError(e);
+      if (classified.shouldCountAsProviderFailure && classified.provider) {
+        const { circuitOpened } = recordProviderFailure(classified.provider, msg);
+        if (circuitOpened) {
+          const reason = `${classified.provider} provider failed ${classified.category}: ${msg.substring(0, 200)}`;
+          pauseSystem(reason);
+          void fireWebhook({
+            type: "system_paused",
+            reason,
+            provider: classified.provider,
+            timestamp: new Date().toISOString(),
+            healthState: getHealthState(),
+          });
+          debugLog("runJobBackground: SYSTEM PAUSED due to provider failure", {
+            jobId,
+            provider: classified.provider,
+            category: classified.category,
+          });
+        }
+      }
+
+      try {
         await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
           status: "FAILED",
           progress: 100,
           level: "error",
-          message: `Stack (truncated):\n${stack.split("\n").slice(0, 30).join("\n")}`,
+          message: msg,
           executedWebGitCommitHash,
         });
+
+        if (stack) {
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+            status: "FAILED",
+            progress: 100,
+            level: "error",
+            message: `Stack (truncated):\n${stack.split("\n").slice(0, 30).join("\n")}`,
+            executedWebGitCommitHash,
+          });
+        }
+      } catch {}
+    } finally {
+      const qs2 = getRunnerQueueState();
+      if (acquiredSlot) {
+        qs2.runningCount = Math.max(0, qs2.runningCount - 1);
       }
-    } catch {}
-  } finally {
-    const qs2 = getRunnerQueueState();
-    if (acquiredSlot) {
-      qs2.runningCount = Math.max(0, qs2.runningCount - 1);
+      qs2.runningJobIds.delete(jobId);
+      void drainRunnerQueue();
     }
-    qs2.runningJobIds.delete(jobId);
-    void drainRunnerQueue();
-  }
+  });
 }
 
 function parseOptionalJson<T>(value: unknown): T | undefined {
@@ -882,68 +884,69 @@ export async function drainDraftQueue() {
 }
 
 async function runDraftPreparationBackground(draftId: string) {
-  const apiBase = getApiBaseOrThrow();
-  const adminKey = getAdminKeyOrNull();
-  let preparedPersisted = false;
-  let failureCode: "stage1_failed" | "recommendation_failed" | "no_candidate_claims" = "stage1_failed";
-  let failureDraftState: ClaimSelectionDraftState | null = null;
-  let preparedStage1: PreparedStage1Snapshot | undefined;
-  let stage1Observability: ClaimSelectionStage1Observability | undefined;
-  let stage1Ms: number | undefined;
-  let recommendationMs: number | undefined;
-  let preparationStartedAt: number | undefined;
-  let lastPreparationEventMessage = "Draft preparation started";
-  let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
-  let configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(undefined);
+  return runWithDebugLogContext(`[draft:${draftId}|prep]`, async () => {
+    const apiBase = getApiBaseOrThrow();
+    const adminKey = getAdminKeyOrNull();
+    let preparedPersisted = false;
+    let failureCode: "stage1_failed" | "recommendation_failed" | "no_candidate_claims" = "stage1_failed";
+    let failureDraftState: ClaimSelectionDraftState | null = null;
+    let preparedStage1: PreparedStage1Snapshot | undefined;
+    let stage1Observability: ClaimSelectionStage1Observability | undefined;
+    let stage1Ms: number | undefined;
+    let recommendationMs: number | undefined;
+    let preparationStartedAt: number | undefined;
+    let lastPreparationEventMessage = "Draft preparation started";
+    let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
+    let configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(undefined);
 
-  const buildObservability = (params: {
-    phaseCode: ClaimSelectionDraftObservability["phaseCode"];
-    phaseLabel: string;
-    branch: ClaimSelectionDraftObservability["branch"];
-    eventMessage?: string;
-    candidateClaimCount?: number;
-  }): ClaimSelectionDraftObservability => {
-    const stage1Snapshot =
-      stage1Observability && Object.keys(stage1Observability).length > 0
-        ? { ...stage1Observability }
-        : undefined;
+    const buildObservability = (params: {
+      phaseCode: ClaimSelectionDraftObservability["phaseCode"];
+      phaseLabel: string;
+      branch: ClaimSelectionDraftObservability["branch"];
+      eventMessage?: string;
+      candidateClaimCount?: number;
+    }): ClaimSelectionDraftObservability => {
+      const stage1Snapshot =
+        stage1Observability && Object.keys(stage1Observability).length > 0
+          ? { ...stage1Observability }
+          : undefined;
 
-    return {
-      phaseCode: params.phaseCode,
-      phaseLabel: params.phaseLabel,
-      eventMessage: params.eventMessage ?? lastPreparationEventMessage,
-      branch: params.branch,
-      totalPrepMs: typeof preparationStartedAt === "number" ? Date.now() - preparationStartedAt : undefined,
-      stage1Ms,
-      recommendationMs,
-      candidateClaimCount: params.candidateClaimCount ?? stage1Snapshot?.candidateClaimCount,
-      stage1: stage1Snapshot,
+      return {
+        phaseCode: params.phaseCode,
+        phaseLabel: params.phaseLabel,
+        eventMessage: params.eventMessage ?? lastPreparationEventMessage,
+        branch: params.branch,
+        totalPrepMs: typeof preparationStartedAt === "number" ? Date.now() - preparationStartedAt : undefined,
+        stage1Ms,
+        recommendationMs,
+        candidateClaimCount: params.candidateClaimCount ?? stage1Snapshot?.candidateClaimCount,
+        stage1: stage1Snapshot,
+      };
     };
-  };
 
-  const buildDraftState = (params: {
-    rankedClaimIds: string[];
-    recommendedClaimIds: string[];
-    selectedClaimIds: string[];
-    lastSelectionInteractionUtc?: string;
-    recommendationRationale?: string;
-    assessments?: ClaimSelectionDraftState["assessments"];
-    observability: ClaimSelectionDraftObservability;
-  }): ClaimSelectionDraftState => ({
-    version: 1,
-    ...(preparedStage1 ? { preparedStage1 } : {}),
-    selectionCap: configuredSelectionCap,
-    selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
-    rankedClaimIds: params.rankedClaimIds,
-    recommendedClaimIds: params.recommendedClaimIds,
-    selectedClaimIds: params.selectedClaimIds,
-    lastSelectionInteractionUtc: params.lastSelectionInteractionUtc,
-    recommendationRationale: params.recommendationRationale,
-    assessments: params.assessments ?? [],
-    observability: params.observability,
-  });
+    const buildDraftState = (params: {
+      rankedClaimIds: string[];
+      recommendedClaimIds: string[];
+      selectedClaimIds: string[];
+      lastSelectionInteractionUtc?: string;
+      recommendationRationale?: string;
+      assessments?: ClaimSelectionDraftState["assessments"];
+      observability: ClaimSelectionDraftObservability;
+    }): ClaimSelectionDraftState => ({
+      version: 1,
+      ...(preparedStage1 ? { preparedStage1 } : {}),
+      selectionCap: configuredSelectionCap,
+      selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
+      rankedClaimIds: params.rankedClaimIds,
+      recommendedClaimIds: params.recommendedClaimIds,
+      selectedClaimIds: params.selectedClaimIds,
+      lastSelectionInteractionUtc: params.lastSelectionInteractionUtc,
+      recommendationRationale: params.recommendationRationale,
+      assessments: params.assessments ?? [],
+      observability: params.observability,
+    });
 
-  try {
+    try {
     const draft = await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`);
     const status = String(draft.status || "").toUpperCase();
     if (status !== "QUEUED") {
@@ -1188,49 +1191,50 @@ async function runDraftPreparationBackground(draftId: string) {
         `[Runner] Draft ${draftId} produced ${candidateIds.length} candidate claims but no safe automatic recommendation, so manual claim selection is required before analysis continues.`,
       );
     }
-  } catch (e: any) {
-    const msg = e?.message ?? String(e);
-    debugLog("runDraftPreparationBackground: ERROR", { draftId, message: msg });
-    if (preparedPersisted) {
-      console.warn(
-        `[Runner] Automatic continuation failed after draft ${draftId} was prepared. Leaving the prepared draft available for recovery: ${msg}`,
-      );
-      return;
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      debugLog("runDraftPreparationBackground: ERROR", { draftId, message: msg });
+      if (preparedPersisted) {
+        console.warn(
+          `[Runner] Automatic continuation failed after draft ${draftId} was prepared. Leaving the prepared draft available for recovery: ${msg}`,
+        );
+        return;
+      }
+      const failureObservability = buildObservability({
+        phaseCode: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
+        phaseLabel: failureCode === "recommendation_failed" ? "Recommendation failed" : "Stage 1 failed",
+        branch: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
+        eventMessage: msg,
+      });
+      const resolvedFailureDraftState =
+        preparedStage1 || failureDraftState
+          ? {
+            version: 1 as const,
+            ...(preparedStage1 ? { preparedStage1 } : {}),
+            selectionCap: configuredSelectionCap,
+            selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
+            rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
+            recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
+            selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],
+            lastSelectionInteractionUtc: failureDraftState?.lastSelectionInteractionUtc,
+            recommendationRationale: failureDraftState?.recommendationRationale,
+            assessments: failureDraftState?.assessments ?? [],
+            observability: failureObservability,
+          }
+          : null;
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
+        errorCode: failureCode,
+        errorMessage: msg,
+        draftStateJson: resolvedFailureDraftState ? JSON.stringify(resolvedFailureDraftState) : undefined,
+      }).catch(() => {});
+    } finally {
+      const ds2 = getDraftQueueState();
+      ds2.runningCount = Math.max(0, ds2.runningCount - 1);
+      ds2.runningDraftIds.delete(draftId);
+      void drainDraftQueue();
+      void drainRunnerQueue();
     }
-    const failureObservability = buildObservability({
-      phaseCode: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
-      phaseLabel: failureCode === "recommendation_failed" ? "Recommendation failed" : "Stage 1 failed",
-      branch: failureCode === "recommendation_failed" ? "failed_recommendation" : "failed_stage1",
-      eventMessage: msg,
-    });
-    const resolvedFailureDraftState =
-      preparedStage1 || failureDraftState
-        ? {
-          version: 1 as const,
-          ...(preparedStage1 ? { preparedStage1 } : {}),
-          selectionCap: configuredSelectionCap,
-          selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
-          rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
-          recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
-          selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],
-          lastSelectionInteractionUtc: failureDraftState?.lastSelectionInteractionUtc,
-          recommendationRationale: failureDraftState?.recommendationRationale,
-          assessments: failureDraftState?.assessments ?? [],
-          observability: failureObservability,
-        }
-        : null;
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
-      errorCode: failureCode,
-      errorMessage: msg,
-      draftStateJson: resolvedFailureDraftState ? JSON.stringify(resolvedFailureDraftState) : undefined,
-    }).catch(() => {});
-  } finally {
-    const ds2 = getDraftQueueState();
-    ds2.runningCount = Math.max(0, ds2.runningCount - 1);
-    ds2.runningDraftIds.delete(draftId);
-    void drainDraftQueue();
-    void drainRunnerQueue();
-  }
+  });
 }
 
 // Bootstrap: start watchdog on module load so persisted QUEUED jobs are

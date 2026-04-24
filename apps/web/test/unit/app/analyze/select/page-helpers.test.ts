@@ -25,7 +25,7 @@ describe("claim-selection draft page helpers", () => {
       "No report job exists yet, so it does not appear in the reports list.",
     );
     expect(getStatusSummary("PREPARING", 0, 0, 5)).toBe(
-      "FactHarbor is preparing the final Stage 1 claim set for this analysis.",
+      "FactHarbor is preparing the final Stage 1 candidate set for this analysis. If the manual-review threshold is reached, FactHarbor then generates claim-selection recommendations before the selection screen appears.",
     );
     expect(getStatusSummary("AWAITING_CLAIM_SELECTION", 3, 3, 5)).toContain(
       "continue directly into the full analysis with all prepared claims",

@@ -723,6 +723,20 @@ export interface PreparedStage1Snapshot {
   version: 1;
   resolvedInputText: string;
   preparedUnderstanding: CBClaimUnderstanding;
+  preparationProvenance?: PreparedStage1Provenance;
+}
+
+export interface PreparedStage1Provenance {
+  pipelineVariant: "claimboundary";
+  sourceInputType: "text" | "url";
+  sourceUrl?: string;
+  resolvedInputSha256: string;
+  executedWebGitCommitHash: string | null;
+  promptContentHash: string | null;
+  pipelineConfigHash: string;
+  searchConfigHash: string;
+  calcConfigHash: string;
+  selectionCap: number;
 }
 
 export interface ClaimSelectionRecommendationAssessment {

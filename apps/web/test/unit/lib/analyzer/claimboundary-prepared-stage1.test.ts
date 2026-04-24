@@ -15,6 +15,10 @@ vi.mock("@/lib/config-storage", () => ({
   getConfig: vi.fn(async () => ({ config: {} })),
 }));
 
+vi.mock("@/lib/build-info", () => ({
+  getWebGitCommitHash: vi.fn(() => "test-web-commit"),
+}));
+
 vi.mock("@/lib/config-snapshots", () => ({
   captureConfigSnapshotAsync: vi.fn(async () => {}),
   getSRConfigSummary: vi.fn(() => ({})),
@@ -215,7 +219,10 @@ vi.mock("ai", () => ({
   Output: { object: vi.fn(() => ({})) },
 }));
 
-import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import {
+  prepareStage1Snapshot,
+  runClaimBoundaryAnalysis,
+} from "@/lib/analyzer/claimboundary-pipeline";
 
 describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
   beforeEach(() => {
@@ -343,4 +350,38 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     expect(mockResearchEvidence).not.toHaveBeenCalled();
     expect(mockExtractClaims).not.toHaveBeenCalled();
   }, 10_000);
+});
+
+describe("prepareStage1Snapshot provenance", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockExtractClaims.mockResolvedValue({
+      detectedLanguage: "en",
+      detectedInputType: "url",
+      impliedClaim: "Implied claim",
+      articleThesis: "Article thesis",
+      atomicClaims: [{ id: "AC_A", statement: "Claim A" }],
+      preliminaryEvidence: [],
+    });
+  });
+
+  it("captures forward-only preparation provenance for future exact reuse decisions", async () => {
+    const prepared = await prepareStage1Snapshot({
+      inputType: "url",
+      inputValue: "https://example.com/article.pdf",
+      onEvent: async () => {},
+    });
+
+    expect(prepared.preparedStage1.preparationProvenance).toMatchObject({
+      pipelineVariant: "claimboundary",
+      sourceInputType: "url",
+      executedWebGitCommitHash: "test-web-commit",
+      promptContentHash: "test-prompt",
+      pipelineConfigHash: "test-pipeline",
+      searchConfigHash: "test-search",
+      calcConfigHash: "test-calc",
+      selectionCap: 5,
+    });
+    expect(prepared.preparedStage1.preparationProvenance?.resolvedInputSha256).toEqual(expect.any(String));
+  });
 });

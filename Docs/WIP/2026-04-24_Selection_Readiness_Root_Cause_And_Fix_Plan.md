@@ -2,7 +2,7 @@
 title: Selection Readiness Root Cause and Fix Plan
 date: 2026-04-24
 authors: Unassigned, Codex (GPT-5)
-status: Draft for review
+status: Reviewed; partially implemented
 scope: Root causes behind delayed or missing Atomic Claim Selection and the recommended fix plan
 related:
   - Docs/WIP/2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md
@@ -161,6 +161,14 @@ These issues should not drive the next implementation cycle:
 3. **Browser-close session recovery**
 - implemented with the session resume surface and token/cookie flow already in place
 
+4. **Order-only ACS recommendation mismatch**
+- a valid recommendation subset no longer fails the whole session when `recommendedClaimIds` arrives out of `rankedClaimIds` order
+- the recommendation validator now normalizes that subset back into ranked order instead of failing the session
+
+5. **Preparation-page wording and concurrent log attribution**
+- preparation copy now explains that recommendation generation follows Stage 1 before the selection screen appears
+- major draft/job log lines now carry scoped prefixes so concurrent preparation and full-analysis activity are easier to distinguish
+
 These areas still need ordinary regression monitoring, but they are not the highest remaining problem.
 
 ## 5. Recommended Fix Plan
@@ -183,8 +191,10 @@ Stage 1 remains the dominant latency source.
 2. Continue same-semantics waste reduction only:
 - duplicate retrieval/retry waste removal
 - exact same-job duplicate work elimination where it does not alter semantics
-3. Keep ACS recommendation on for now because it is not the main delay driver and still supports idle auto-continue with a meaningful preselected set.
-4. Instrument and compare:
+3. Keep cross-session prepared-snapshot reuse **deferred for live behavior** until an exact, auditable reuse contract is approved.
+4. It is acceptable to land provenance-only groundwork for a future reuse decision as long as it does not change runtime behavior.
+5. Keep ACS recommendation on for now because it is not the main delay driver and still supports idle auto-continue with a meaningful preselected set.
+6. Instrument and compare:
 - `stage1Ms`
 - `recommendationMs`
 - total prep time
@@ -196,6 +206,7 @@ Stage 1 remains the dominant latency source.
 - no weakening of evidence-seeded Pass 2
 - no provisional selection before the final Stage 1 candidate set exists
 - do not mix full-analysis optimizations that happen after selection readiness, such as later source-reliability work, into this phase
+- do not enable cross-session prepared reuse on public URLs until prompt/config/commit/input identity and final semantic-safety rules are formally approved
 
 ### Acceptance criteria
 
@@ -267,6 +278,11 @@ Log lines are not consistently attributable when multiple sessions/jobs run conc
 - an operator can read the log tail and identify which session/job each major event belongs to
 - draft and final-job progress are not easily confused during concurrent runs
 
+### Current implementation state
+
+- scoped draft/job log prefixes are already implemented
+- the remaining work here is follow-up monitoring and extension only if uncovered gaps remain
+
 ## Phase 4 — Monitor but do not prioritize extension-driven hydration noise
 
 **Priority:** low
@@ -312,10 +328,29 @@ Reason:
 
 The recommended next implementation order is:
 
-1. Stage 1 same-semantics latency work
+1. continue Stage 1 same-semantics latency work
 2. targeted Stage 1 broad-input quality investigation on concrete failing packets
-3. observability/log attribution cleanup
+3. monitor the newly landed observability and preparation-copy improvements, then extend only if they still leave real ambiguity
 4. only then revisit lower-priority UX polish and dev-noise cleanup
+
+## 9. Consolidated 2026-04-24 Outcome
+
+After the follow-up debate/review, the three concrete threads were consolidated as follows:
+
+1. **Cross-session prepared snapshot reuse**
+- not approved for live behavior yet
+- provenance-only groundwork is acceptable and landed
+- exact runtime reuse remains deferred
+
+2. **Per-draft/per-job log attribution**
+- approved and implemented
+
+3. **Preparation-page wording**
+- approved and implemented
+
+This means the strongest remaining open problem is still the same one identified earlier:
+
+- **time-to-selection on heavy inputs is dominated by Stage 1 under current semantics**
 
 ## 8. Review Request
 

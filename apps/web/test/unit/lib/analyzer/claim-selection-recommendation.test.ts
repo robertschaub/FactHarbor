@@ -231,6 +231,33 @@ describe("validateClaimSelectionRecommendation", () => {
     ).toThrow(/not present in rankedClaimIds/i);
   });
 
+  it("normalizes recommended claims into ranked order", () => {
+    const recommendation = createRecommendation({
+      rankedClaimIds: ["AC_03", "AC_01", "AC_02"],
+      recommendedClaimIds: ["AC_02", "AC_03"],
+      assessments: [
+        {
+          claimId: "AC_03",
+          triageLabel: "fact_check_worthy",
+          thesisDirectness: "high",
+          expectedEvidenceYield: "high",
+          coversDistinctRelevantDimension: true,
+          redundancyWithClaimIds: [],
+          recommendationRationale: "Most thesis-direct and evidence-rich candidate.",
+        },
+        createRecommendation().assessments[0],
+        createRecommendation().assessments[1],
+      ],
+    });
+
+    const validated = validateClaimSelectionRecommendation(
+      recommendation,
+      ["AC_01", "AC_02", "AC_03"],
+    );
+
+    expect(validated.recommendedClaimIds).toEqual(["AC_03", "AC_02"]);
+  });
+
   it("rejects recommendations that exceed the configured claim-selection cap", () => {
     const recommendation = createRecommendation({
       recommendedClaimIds: ["AC_01", "AC_02"],
@@ -363,5 +390,52 @@ describe("generateClaimSelectionRecommendation", () => {
       "CLAIM_SELECTION_RECOMMENDATION",
       expect.objectContaining({ maxRecommendedClaims: "1" }),
     );
+  });
+
+  it("accepts out-of-order recommended claims without retrying", async () => {
+    mockGenerateText.mockResolvedValue({
+      structured: createRecommendation({
+        rankedClaimIds: ["AC_03", "AC_01", "AC_02"],
+        recommendedClaimIds: ["AC_02", "AC_03"],
+        assessments: [
+          {
+            claimId: "AC_03",
+            triageLabel: "fact_check_worthy",
+            thesisDirectness: "high",
+            expectedEvidenceYield: "high",
+            coversDistinctRelevantDimension: true,
+            redundancyWithClaimIds: [],
+            recommendationRationale: "Most thesis-direct and evidence-rich candidate.",
+          },
+          createRecommendation().assessments[0],
+          createRecommendation().assessments[1],
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22 },
+    } as any);
+
+    const result = await generateClaimSelectionRecommendation({
+      originalInput: "Entity A made claim X under condition Y",
+      impliedClaim: "Entity A asserts claim X.",
+      articleThesis: "The input presents claim X for verification.",
+      atomicClaims: [
+        createAtomicClaim(),
+        createAtomicClaim({
+          id: "AC_02",
+          statement: "Entity A also claimed related condition Z",
+          thesisRelevance: "indirect",
+          checkWorthiness: "medium",
+        }),
+        createAtomicClaim({
+          id: "AC_03",
+          statement: "Entity A made a second thesis-direct claim under condition W",
+          thesisRelevance: "direct",
+          checkWorthiness: "high",
+        }),
+      ],
+    });
+
+    expect(result.recommendedClaimIds).toEqual(["AC_03", "AC_02"]);
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
   });
 });

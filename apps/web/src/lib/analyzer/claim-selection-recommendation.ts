@@ -199,25 +199,21 @@ export function validateClaimSelectionRecommendation(
   }
 
   const rankedOrder = new Map(recommendation.rankedClaimIds.map((claimId, index) => [claimId, index]));
-  let lastRank = -1;
   for (const claimId of recommendation.recommendedClaimIds) {
-    const rank = rankedOrder.get(claimId);
-    if (rank === undefined) {
+    if (!rankedOrder.has(claimId)) {
       throw new ClaimSelectionRecommendationInvariantError(
         `recommended claim ${claimId} is not present in rankedClaimIds`,
       );
     }
-    if (rank <= lastRank) {
-      throw new ClaimSelectionRecommendationInvariantError(
-        "recommendedClaimIds must preserve rankedClaimIds order",
-      );
-    }
-    lastRank = rank;
   }
+
+  const normalizedRecommendedClaimIds = [...recommendation.recommendedClaimIds].sort(
+    (left, right) => (rankedOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (rankedOrder.get(right) ?? Number.MAX_SAFE_INTEGER),
+  );
 
   return {
     rankedClaimIds: [...recommendation.rankedClaimIds],
-    recommendedClaimIds: [...recommendation.recommendedClaimIds],
+    recommendedClaimIds: normalizedRecommendedClaimIds,
     assessments: normalizedAssessments,
     rationale: normalizeBoundedText(
       recommendation.rationale,

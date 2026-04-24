@@ -9,6 +9,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 // ============================================================================
 // CONFIGURATION
@@ -70,6 +71,69 @@ const DEBUG_LOG_MAX_DATA_CHARS = 8000;
 const IS_LOCAL_DEV = process.env.NODE_ENV === "development" &&
   (process.env.HOSTNAME === "localhost" || !process.env.VERCEL);
 
+type DebugLogContext = {
+  prefix: string;
+};
+
+const debugLogContextStorage = new AsyncLocalStorage<DebugLogContext>();
+
+const WRAPPED_CONSOLE_MARKER = Symbol.for("factharbor.debug.consoleWrapped");
+const WRAPPED_CONSOLE_METHODS = ["log", "info", "warn", "error"] as const;
+
+function getCurrentDebugLogPrefix(): string {
+  return debugLogContextStorage.getStore()?.prefix ?? "";
+}
+
+export function __internalGetCurrentDebugLogPrefix(): string {
+  return getCurrentDebugLogPrefix();
+}
+
+export function __internalPrefixDebugMessage(message: string, prefix: string): string {
+  if (!prefix) return message;
+  return message
+    .split(/\r?\n/)
+    .map((line) => `${prefix} ${line}`)
+    .join("\n");
+}
+
+function prefixConsoleArgs(args: unknown[], prefix: string): unknown[] {
+  if (!prefix || args.length === 0) {
+    return args;
+  }
+
+  const [first, ...rest] = args;
+  if (typeof first === "string") {
+    return [__internalPrefixDebugMessage(first, prefix), ...rest];
+  }
+
+  return [prefix, ...args];
+}
+
+function ensureConsoleWrapped(): void {
+  const consoleWithMarker = console as Console & { [WRAPPED_CONSOLE_MARKER]?: boolean };
+  if (consoleWithMarker[WRAPPED_CONSOLE_MARKER]) {
+    return;
+  }
+
+  for (const method of WRAPPED_CONSOLE_METHODS) {
+    const original = console[method].bind(console);
+    console[method] = ((...args: unknown[]) => {
+      const prefix = getCurrentDebugLogPrefix();
+      original(...prefixConsoleArgs(args, prefix));
+    }) as typeof console[typeof method];
+  }
+
+  consoleWithMarker[WRAPPED_CONSOLE_MARKER] = true;
+}
+
+export async function runWithDebugLogContext<T>(
+  prefix: string,
+  fn: () => Promise<T>,
+): Promise<T> {
+  ensureConsoleWrapped();
+  return debugLogContextStorage.run({ prefix }, fn);
+}
+
 // ============================================================================
 // DEBUG LOGGING FUNCTIONS
 // ============================================================================
@@ -83,6 +147,7 @@ function writeDebugLog(
   options: { emitToConsole: boolean },
 ): void {
   const timestamp = new Date().toISOString();
+  const prefix = getCurrentDebugLogPrefix();
   let logLine = `[${timestamp}] ${message}`;
   
   if (data !== undefined) {
@@ -102,9 +167,11 @@ function writeDebugLog(
   }
   logLine += "\n";
 
+  const formattedLogLine = prefix ? __internalPrefixDebugMessage(logLine, prefix) : logLine;
+
   // Write to file (append) - async to avoid blocking the Node event loop during long analyses
   if (DEBUG_LOG_FILE_ENABLED) {
-    fs.promises.appendFile(DEBUG_LOG_PATH, logLine).catch(() => {
+    fs.promises.appendFile(DEBUG_LOG_PATH, formattedLogLine).catch(() => {
       // Silently ignore file write errors
     });
   }

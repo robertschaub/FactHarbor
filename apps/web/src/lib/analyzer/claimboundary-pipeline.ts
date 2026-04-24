@@ -17,6 +17,8 @@
  * @see Docs/WIP/ClaimAssessmentBoundary_Pipeline_Architecture_2026-02-15.md
  */
 
+import { createHash } from "node:crypto";
+
 import type {
   AnalysisWarning,
   AtomicClaim,
@@ -67,6 +69,8 @@ import {
   recordProviderFailure,
 } from "@/lib/provider-health";
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
+import { getWebGitCommitHash } from "@/lib/build-info";
+import { normalizeClaimSelectionCap } from "@/lib/claim-selection-flow";
 import {
   checkAbortSignal,
   classifySourceFetchFailure,
@@ -546,8 +550,20 @@ export async function prepareStage1Snapshot(
   detectedUrl?: string;
   state: CBResearchState;
 }> {
+  const [
+    pipelineConfigResult,
+    searchConfigResult,
+    calcConfigResult,
+    promptResult,
+  ] = await Promise.all([
+    loadPipelineConfig("default"),
+    loadSearchConfig("default"),
+    loadCalcConfig("default"),
+    loadPromptConfig("claimboundary"),
+  ]);
+
   const effectivePipelineConfig =
-    pipelineConfig ?? (await loadPipelineConfig("default", input.jobId)).config;
+    pipelineConfig ?? pipelineConfigResult.config;
 
   const { analysisText, detectedUrl } = await resolveAnalysisText({
     inputType: input.inputType,
@@ -573,6 +589,18 @@ export async function prepareStage1Snapshot(
       version: 1,
       resolvedInputText: analysisText,
       preparedUnderstanding: understanding,
+      preparationProvenance: {
+        pipelineVariant: "claimboundary",
+        sourceInputType: input.inputType,
+        sourceUrl: detectedUrl,
+        resolvedInputSha256: createHash("sha256").update(analysisText, "utf8").digest("hex"),
+        executedWebGitCommitHash: getWebGitCommitHash() ?? null,
+        promptContentHash: promptResult?.contentHash ?? null,
+        pipelineConfigHash: pipelineConfigResult.contentHash,
+        searchConfigHash: searchConfigResult.contentHash,
+        calcConfigHash: calcConfigResult.contentHash,
+        selectionCap: normalizeClaimSelectionCap(effectivePipelineConfig.claimSelectionCap),
+      },
     },
     detectedUrl,
     state,
