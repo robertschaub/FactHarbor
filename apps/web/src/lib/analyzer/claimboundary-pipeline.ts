@@ -359,6 +359,161 @@ export function buildClaimBoundaryResultJson(params: {
   };
 }
 
+function compactMarkdownText(value: unknown, maxLength = 700): string {
+  if (typeof value !== "string") return "";
+  const compacted = value
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (compacted.length <= maxLength) return compacted;
+  return `${compacted.slice(0, maxLength).trim()}...`;
+}
+
+function formatMarkdownList(values: unknown, empty = "none"): string {
+  if (!Array.isArray(values) || values.length === 0) return empty;
+  return values
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+    .join(", ") || empty;
+}
+
+function resolveClaimDisplayText(resultJson: any, claimVerdict: any): string {
+  const claimId = claimVerdict?.claimId;
+  const directText =
+    claimVerdict?.claimText
+    ?? claimVerdict?.claim?.statement
+    ?? claimVerdict?.claim?.text;
+  if (typeof directText === "string" && directText.trim().length > 0) {
+    return directText.trim();
+  }
+
+  const atomicClaims = Array.isArray(resultJson?.understanding?.atomicClaims)
+    ? resultJson.understanding.atomicClaims
+    : [];
+  const matchingClaim = atomicClaims.find((claim: any) => claim?.id === claimId);
+  const statement = matchingClaim?.statement ?? matchingClaim?.text;
+  return typeof statement === "string" ? statement.trim() : "";
+}
+
+export function formatClaimBoundaryReportMarkdown(resultJson: any): string {
+  const meta = resultJson?.meta ?? {};
+  const narrative = resultJson?.verdictNarrative ?? {};
+  const claimVerdicts = Array.isArray(resultJson?.claimVerdicts)
+    ? resultJson.claimVerdicts
+    : [];
+  const warnings = Array.isArray(resultJson?.analysisWarnings)
+    ? resultJson.analysisWarnings
+    : [];
+  const sources = Array.isArray(resultJson?.sources) ? resultJson.sources : [];
+  const evidenceItems = Array.isArray(resultJson?.evidenceItems) ? resultJson.evidenceItems : [];
+  const searchQueries = Array.isArray(resultJson?.searchQueries) ? resultJson.searchQueries : [];
+  const modelsUsed = meta.modelsUsed
+    ? Object.entries(meta.modelsUsed)
+      .map(([role, model]) => `${role}: ${model}`)
+      .join("; ")
+    : "";
+
+  const lines: string[] = [
+    "# ClaimAssessmentBoundary Analysis Report",
+    "",
+    "## Verdict",
+    `- Verdict: ${resultJson?.verdict ?? "UNVERIFIED"}`,
+    `- Truth percentage: ${typeof resultJson?.truthPercentage === "number" ? resultJson.truthPercentage : "unknown"}`,
+    `- Confidence: ${typeof resultJson?.confidence === "number" ? resultJson.confidence : "unknown"}`,
+  ];
+
+  if (resultJson?.truthPercentageRange) {
+    lines.push(
+      `- Plausible range: ${resultJson.truthPercentageRange.min}-${resultJson.truthPercentageRange.max}`,
+    );
+  }
+  if (meta.sourceUrl) {
+    lines.push(`- Source URL: ${meta.sourceUrl}`);
+  }
+
+  lines.push("");
+  lines.push("## Summary");
+  if (narrative.headline) lines.push(`- Headline: ${compactMarkdownText(narrative.headline, 500)}`);
+  if (narrative.evidenceBaseSummary) {
+    lines.push(`- Evidence base: ${compactMarkdownText(narrative.evidenceBaseSummary, 500)}`);
+  }
+  if (narrative.keyFinding) {
+    lines.push("");
+    lines.push(compactMarkdownText(narrative.keyFinding, 1200));
+  }
+  if (narrative.limitations) {
+    lines.push("");
+    lines.push(`Limitations: ${compactMarkdownText(narrative.limitations, 900)}`);
+  }
+
+  lines.push("");
+  lines.push("## Atomic Claims");
+  if (claimVerdicts.length === 0) {
+    lines.push("No claim verdicts were produced.");
+  } else {
+    for (const claimVerdict of claimVerdicts) {
+      const claimId = claimVerdict?.claimId ?? "unknown";
+      const claimText = resolveClaimDisplayText(resultJson, claimVerdict);
+      lines.push("");
+      lines.push(`### ${claimId}`);
+      if (claimText) lines.push(compactMarkdownText(claimText, 700));
+      lines.push(`- Verdict: ${claimVerdict?.verdict ?? "UNVERIFIED"}`);
+      lines.push(
+        `- Truth percentage: ${typeof claimVerdict?.truthPercentage === "number" ? claimVerdict.truthPercentage : "unknown"}`,
+      );
+      lines.push(`- Confidence: ${typeof claimVerdict?.confidence === "number" ? claimVerdict.confidence : "unknown"}`);
+      lines.push(`- Supporting evidence: ${formatMarkdownList(claimVerdict?.supportingEvidenceIds)}`);
+      lines.push(`- Contradicting evidence: ${formatMarkdownList(claimVerdict?.contradictingEvidenceIds)}`);
+      if (claimVerdict?.reasoning) {
+        lines.push("");
+        lines.push(compactMarkdownText(claimVerdict.reasoning, 1200));
+      }
+    }
+  }
+
+  lines.push("");
+  lines.push("## Quality Signals");
+  if (warnings.length === 0) {
+    lines.push("No analysis warnings were emitted.");
+  } else {
+    for (const warning of warnings.slice(0, 20)) {
+      lines.push(
+        `- [${warning?.severity ?? "info"}] ${warning?.type ?? "warning"}: ${compactMarkdownText(warning?.message, 500)}`,
+      );
+    }
+    if (warnings.length > 20) {
+      lines.push(`- ${warnings.length - 20} additional warning(s) omitted from this markdown summary.`);
+    }
+  }
+
+  lines.push("");
+  lines.push("## Evidence And Sources");
+  lines.push(`- Evidence items: ${evidenceItems.length}`);
+  lines.push(`- Sources: ${sources.length}`);
+  for (const source of sources.slice(0, 20)) {
+    const sourceLabel = compactMarkdownText(source?.title || source?.url || "Untitled source", 180);
+    lines.push(`- ${source?.id ?? "source"}: ${sourceLabel}${source?.url ? ` (${source.url})` : ""}`);
+  }
+  if (sources.length > 20) {
+    lines.push(`- ${sources.length - 20} additional source(s) omitted from this markdown summary.`);
+  }
+
+  lines.push("");
+  lines.push("## Technical Notes");
+  lines.push(`- Generated UTC: ${meta.generatedUtc ?? "unknown"}`);
+  lines.push(`- Pipeline: ${meta.pipeline ?? "claimboundary"}`);
+  lines.push(`- Prompt content hash: ${meta.promptContentHash ?? "unknown"}`);
+  lines.push(`- Models: ${modelsUsed || "unknown"}`);
+  lines.push(`- LLM calls: ${typeof meta.llmCalls === "number" ? meta.llmCalls : "unknown"}`);
+  lines.push(`- Search queries: ${searchQueries.length}`);
+  lines.push(`- Main research iterations: ${typeof meta.mainIterationsUsed === "number" ? meta.mainIterationsUsed : "unknown"}`);
+  lines.push(
+    `- Contradiction iterations: ${typeof meta.contradictionIterationsUsed === "number" ? meta.contradictionIterationsUsed : "unknown"}`,
+  );
+
+  return `${lines.join("\n")}\n`;
+}
+
 function createInitialResearchState(params: {
   jobId?: string;
   inputType: "text" | "url";
@@ -377,6 +532,7 @@ function createInitialResearchState(params: {
     evidenceItems: [],
     sources: [],
     searchQueries: [],
+    relevanceClassificationCache: {},
     claimAcquisitionLedger: {},
     queryBudgetUsageByClaim: {},
     researchedIterationsByClaim: {},
@@ -1299,8 +1455,7 @@ export async function runClaimBoundaryAnalysis(
     // Record output quality metrics
     recordOutputQuality(resultJson);
 
-    // TODO: Generate markdown report (Phase 3 UI work)
-    const reportMarkdown = "# ClaimAssessmentBoundary Analysis Report\n\n(Report generation not yet implemented)";
+    const reportMarkdown = formatClaimBoundaryReportMarkdown(resultJson);
 
     return { resultJson, reportMarkdown };
   } finally {

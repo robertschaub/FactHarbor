@@ -147,6 +147,7 @@ vi.mock("@/lib/analyzer/research-orchestrator", () => ({
   runResearchIteration: vi.fn(async () => {}),
   allClaimsSufficient: vi.fn(() => true),
   consumeClaimQueryBudget: vi.fn(),
+  wouldResolveExistingRemap: vi.fn(() => false),
   findLeastContradictedClaim: vi.fn(() => null),
   findLeastResearchedClaim: vi.fn(() => null),
   getClaimQueryBudgetRemaining: vi.fn(() => 0),

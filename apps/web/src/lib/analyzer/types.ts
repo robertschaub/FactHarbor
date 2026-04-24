@@ -824,7 +824,20 @@ export interface ClaimSelectionDraftState {
       | "draft_token_invalid"
       | "draft_expired";
     message: string;
+    failedUtc?: string;
   };
+  failureHistory?: Array<{
+    code:
+      | "stage1_failed"
+      | "recommendation_failed"
+      | "no_candidate_claims"
+      | "invalid_selection"
+      | "draft_token_invalid"
+      | "draft_expired";
+    message: string;
+    failedUtc?: string;
+    observability?: ClaimSelectionDraftObservability;
+  }>;
 }
 
 export interface ClaimSelectionMetadata {
@@ -1403,6 +1416,11 @@ export interface CBResearchState {
   evidenceItems: EvidenceItem[];
   sources: FetchedSource[];
   searchQueries: SearchQuery[];
+  /** Exact-input, per-job cache for Stage 2 relevance classifications. */
+  relevanceClassificationCache?: Record<
+    string,
+    Array<{ url: string; relevanceScore: number; originalRank: number }>
+  >;
   claimAcquisitionLedger: Record<string, ClaimAcquisitionLedgerEntry>;
   // Shared Stage 2 query budget usage: claimId -> queries consumed
   queryBudgetUsageByClaim: Record<string, number>;

@@ -49,6 +49,7 @@ import {
   computeTriangulationScore,
   computeDerivativeFactor,
   generateVerdictNarrative,
+  formatClaimBoundaryReportMarkdown,
   buildQualityGates,
   aggregateAssessment,
   assessEvidenceBalance,
@@ -679,6 +680,75 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
       });
 
       expect(resultJson.understanding?.atomicClaims?.[0]?.freshnessRequirement).toBe("current_snapshot");
+    });
+  });
+
+  describe("formatClaimBoundaryReportMarkdown", () => {
+    it("renders a usable report summary from structured resultJson", () => {
+      const markdown = formatClaimBoundaryReportMarkdown({
+        verdict: "LEANING-FALSE",
+        truthPercentage: 34,
+        confidence: 45,
+        truthPercentageRange: { min: 25, max: 43 },
+        meta: {
+          generatedUtc: "2026-04-24T12:00:00.000Z",
+          pipeline: "claimboundary",
+          promptContentHash: "abc123",
+          llmCalls: 8,
+          mainIterationsUsed: 2,
+          contradictionIterationsUsed: 1,
+          modelsUsed: { understand: "mock-understand", verdict: "mock-verdict" },
+        },
+        verdictNarrative: {
+          headline: "Structured report headline.",
+          evidenceBaseSummary: "The evidence base contains mixed support.",
+          keyFinding: "The key finding is evidence-backed and concise.",
+          limitations: "Some sources were unavailable.",
+        },
+        understanding: {
+          atomicClaims: [
+            { id: "AC_01", statement: "Entity A reported metric B." },
+          ],
+        },
+        claimVerdicts: [
+          {
+            claimId: "AC_01",
+            verdict: "LEANING-FALSE",
+            truthPercentage: 34,
+            confidence: 45,
+            supportingEvidenceIds: ["EV_1"],
+            contradictingEvidenceIds: ["EV_2"],
+            reasoning: "The strongest evidence contradicts the claim.",
+          },
+        ],
+        analysisWarnings: [
+          {
+            type: "budget_exceeded",
+            severity: "warning",
+            message: "Research time budget reached.",
+          },
+        ],
+        sources: [
+          {
+            id: "SRC_1",
+            title: "Primary source",
+            url: "https://example.test/source",
+          },
+        ],
+        evidenceItems: [{ id: "EV_1" }, { id: "EV_2" }],
+        searchQueries: ["query one", "query two"],
+      });
+
+      expect(markdown).toContain("# ClaimAssessmentBoundary Analysis Report");
+      expect(markdown).toContain("## Verdict");
+      expect(markdown).toContain("- Verdict: LEANING-FALSE");
+      expect(markdown).toContain("### AC_01");
+      expect(markdown).toContain("Entity A reported metric B.");
+      expect(markdown).toContain("- Evidence items: 2");
+      expect(markdown).toContain("- Sources: 1");
+      expect(markdown).toContain("[warning] budget_exceeded");
+      expect(markdown).toContain("## Technical Notes");
+      expect(markdown).not.toContain("(Report generation not yet implemented)");
     });
   });
 });
@@ -3921,7 +3991,8 @@ describe("Stage 2: runResearchIteration", () => {
     // Default metric-bearing fixtures now trigger one refinement pass.
     expect(state.searchQueries).toHaveLength(2);
     expect(state.searchQueries.map((query: any) => query.focus)).toEqual(["main", "refinement"]);
-    expect(state.llmCalls).toBe(6);
+    // The refinement pass reuses exact relevance classification for the identical result set.
+    expect(state.llmCalls).toBe(5);
     // Should have fetched source
     expect(state.sources).toHaveLength(1);
     // Should have added evidence (if it passes filter)

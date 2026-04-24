@@ -18,6 +18,7 @@ public sealed class ClaimSelectionDraftService
     private const int AbsoluteClaimSelectionCap = 5;
     private const int DefaultMaxRestartsPerDraft = 1;
     private const int AbsoluteMaxRestartsPerDraft = 5;
+    private const int MaxFailureHistoryEntries = 5;
 
     private readonly FhDbContext _db;
     private readonly ILogger<ClaimSelectionDraftService> _log;
@@ -426,11 +427,12 @@ public sealed class ClaimSelectionDraftService
         if (IsTerminalDraftState(draft) || draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
-        draft.DraftStateJson = draftStateJson;
+        var mergedDraftStateJson = MergePriorFailureDiagnostics(draft.DraftStateJson, draftStateJson);
+        draft.DraftStateJson = mergedDraftStateJson;
         draft.Status = "AWAITING_CLAIM_SELECTION";
         draft.Progress = 100;
         draft.LastEventMessage =
-            TryExtractObservabilityEventMessage(draftStateJson)
+            TryExtractObservabilityEventMessage(mergedDraftStateJson)
             ?? "Prepared claim set awaiting selection.";
         draft.UpdatedUtc = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -511,10 +513,11 @@ public sealed class ClaimSelectionDraftService
         if (!TryMergeDraftStateSelectedClaims(mergeSourceDraftStateJson, selectedClaimIds, out var mergedDraftStateJson))
             return (null, "Draft state could not be updated with selected claims", 409);
 
-        draft.DraftStateJson = mergedDraftStateJson;
+        var mergedWithFailureHistory = MergePriorFailureDiagnostics(draft.DraftStateJson, mergedDraftStateJson);
+        draft.DraftStateJson = mergedWithFailureHistory;
         draft.Progress = 100;
         draft.LastEventMessage =
-            TryExtractObservabilityEventMessage(mergedDraftStateJson)
+            TryExtractObservabilityEventMessage(mergedWithFailureHistory)
             ?? "Prepared claim set handed off for automatic continuation.";
         draft.UpdatedUtc = DateTime.UtcNow;
 
@@ -533,15 +536,20 @@ public sealed class ClaimSelectionDraftService
         if (IsTerminalDraftState(draft) || draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
+        var failedUtc = DateTime.UtcNow;
         draft.Status = "FAILED";
         draft.LastEventMessage = errorMessage;
-        draft.UpdatedUtc = DateTime.UtcNow;
+        draft.UpdatedUtc = failedUtc;
 
         var stateNode = ParseDraftStateNode(string.IsNullOrWhiteSpace(draftStateJson) ? draft.DraftStateJson : draftStateJson);
+        ApplyFailureHistory(
+            stateNode,
+            ExtractFailureHistoryEntries(draft.DraftStateJson));
         stateNode["lastError"] = new JsonObject
         {
             ["code"] = errorCode,
             ["message"] = errorMessage,
+            ["failedUtc"] = failedUtc.ToString("o"),
         };
         draft.DraftStateJson = stateNode.ToJsonString();
 
@@ -609,6 +617,141 @@ public sealed class ClaimSelectionDraftService
             return new JsonObject();
 
         return JsonNode.Parse(draftStateJson)?.AsObject() ?? new JsonObject();
+    }
+
+    private static string MergePriorFailureDiagnostics(string? priorDraftStateJson, string nextDraftStateJson)
+    {
+        try
+        {
+            var nextState = ParseDraftStateNode(nextDraftStateJson);
+            ApplyFailureHistory(nextState, ExtractFailureHistoryEntries(priorDraftStateJson));
+            return nextState.ToJsonString();
+        }
+        catch (JsonException)
+        {
+            return nextDraftStateJson;
+        }
+    }
+
+    private static void ApplyFailureHistory(JsonObject stateNode, IReadOnlyList<JsonObject> priorEntries)
+    {
+        var entries = ExtractFailureHistoryEntries(stateNode);
+        entries.AddRange(priorEntries.Select(CloneJsonObject));
+        var normalizedEntries = DeduplicateFailureHistory(entries);
+
+        if (normalizedEntries.Count == 0)
+        {
+            stateNode.Remove("failureHistory");
+            return;
+        }
+
+        stateNode["failureHistory"] = new JsonArray(
+            normalizedEntries.Select(entry => CloneJsonNode(entry)).ToArray());
+    }
+
+    private static List<JsonObject> ExtractFailureHistoryEntries(string? draftStateJson)
+    {
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+            return new List<JsonObject>();
+
+        try
+        {
+            return ExtractFailureHistoryEntries(ParseDraftStateNode(draftStateJson));
+        }
+        catch (JsonException)
+        {
+            return new List<JsonObject>();
+        }
+    }
+
+    private static List<JsonObject> ExtractFailureHistoryEntries(JsonObject stateNode)
+    {
+        var entries = new List<JsonObject>();
+
+        if (stateNode.TryGetPropertyValue("failureHistory", out var historyNode) &&
+            historyNode is JsonArray historyArray)
+        {
+            foreach (var historyEntry in historyArray)
+            {
+                if (historyEntry is JsonObject historyEntryObject && HasFailureIdentity(historyEntryObject))
+                    entries.Add(CloneJsonObject(historyEntryObject));
+            }
+        }
+
+        if (stateNode.TryGetPropertyValue("lastError", out var lastErrorNode) &&
+            lastErrorNode is JsonObject lastErrorObject &&
+            HasFailureIdentity(lastErrorObject))
+        {
+            var lastErrorEntry = CloneJsonObject(lastErrorObject);
+            if (!lastErrorEntry.ContainsKey("observability") &&
+                stateNode.TryGetPropertyValue("observability", out var observabilityNode) &&
+                observabilityNode is not null)
+            {
+                lastErrorEntry["observability"] = CloneJsonNode(observabilityNode);
+            }
+            entries.Add(lastErrorEntry);
+        }
+
+        return DeduplicateFailureHistory(entries);
+    }
+
+    private static List<JsonObject> DeduplicateFailureHistory(IEnumerable<JsonObject> entries)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var normalized = new List<JsonObject>();
+
+        foreach (var entry in entries)
+        {
+            if (!HasFailureIdentity(entry))
+                continue;
+
+            var key = string.Join(
+                "\u001f",
+                ReadJsonString(entry, "code") ?? "",
+                ReadJsonString(entry, "message") ?? "",
+                ReadJsonString(entry, "failedUtc") ?? "");
+
+            if (seen.Add(key))
+                normalized.Add(CloneJsonObject(entry));
+        }
+
+        if (normalized.Count <= MaxFailureHistoryEntries)
+            return normalized;
+
+        return normalized
+            .Skip(normalized.Count - MaxFailureHistoryEntries)
+            .ToList();
+    }
+
+    private static bool HasFailureIdentity(JsonObject entry)
+    {
+        return !string.IsNullOrWhiteSpace(ReadJsonString(entry, "code")) ||
+               !string.IsNullOrWhiteSpace(ReadJsonString(entry, "message"));
+    }
+
+    private static string? ReadJsonString(JsonObject obj, string propertyName)
+    {
+        if (!obj.TryGetPropertyValue(propertyName, out var node) || node is null)
+            return null;
+
+        try
+        {
+            return node.GetValue<string>();
+        }
+        catch (InvalidOperationException)
+        {
+            return node.ToJsonString();
+        }
+    }
+
+    private static JsonObject CloneJsonObject(JsonObject node)
+    {
+        return CloneJsonNode(node)?.AsObject() ?? new JsonObject();
+    }
+
+    private static JsonNode? CloneJsonNode(JsonNode? node)
+    {
+        return node is null ? null : JsonNode.Parse(node.ToJsonString());
     }
 
     private static int ExtractSelectionCap(string? draftStateJson)

@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  classifyRelevanceWithJobCache,
   finalizeClaimAcquisitionTelemetry,
   recordApplicabilityRemovalTelemetry,
   recordSeededEvidenceTelemetry,
 } from "@/lib/analyzer/research-orchestrator";
-import type { CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
+import type { AtomicClaim, CBResearchState, EvidenceItem } from "@/lib/analyzer/types";
 
 function createState(claimIds = ["AC_01", "AC_02", "AC_03"]): CBResearchState {
   return {
@@ -126,5 +127,82 @@ describe("research-orchestrator telemetry helpers", () => {
         neutral: 0,
       },
     });
+  });
+
+  it("reuses exact relevance classification within a research job", async () => {
+    const state = createState(["AC_01"]);
+    const claim = {
+      id: "AC_01",
+      statement: "Entity A reported metric B.",
+      freshnessRequirement: "current_snapshot",
+    } as AtomicClaim;
+    const searchResults = [
+      { url: "https://example.test/a", title: "A", snippet: "Alpha" },
+      { url: "https://example.test/b", title: "B", snippet: "Beta" },
+    ];
+    const classifier = vi.fn(async () => [
+      { url: "https://example.test/a", relevanceScore: 0.91, originalRank: 1 },
+    ]);
+
+    const first = await classifyRelevanceWithJobCache({
+      state,
+      claim,
+      searchResults,
+      pipelineConfig: { relevanceFloor: 0.4 } as any,
+      currentDate: "2026-04-24",
+      inferredGeography: "CH",
+      relevantGeographies: ["CH"],
+      classifier: classifier as any,
+    });
+
+    first.relevantSources[0].relevanceScore = 0.1;
+
+    const second = await classifyRelevanceWithJobCache({
+      state,
+      claim,
+      searchResults,
+      pipelineConfig: { relevanceFloor: 0.4 } as any,
+      currentDate: "2026-04-24",
+      inferredGeography: "CH",
+      relevantGeographies: ["CH"],
+      classifier: classifier as any,
+    });
+
+    expect(first.cacheHit).toBe(false);
+    expect(second.cacheHit).toBe(true);
+    expect(classifier).toHaveBeenCalledTimes(1);
+    expect(second.relevantSources).toEqual([
+      { url: "https://example.test/a", relevanceScore: 0.91, originalRank: 1 },
+    ]);
+  });
+
+  it("does not reuse relevance classifications across changed claim text", async () => {
+    const state = createState(["AC_01"]);
+    const searchResults = [
+      { url: "https://example.test/a", title: "A", snippet: "Alpha" },
+    ];
+    const classifier = vi.fn(async () => [
+      { url: "https://example.test/a", relevanceScore: 0.82, originalRank: 1 },
+    ]);
+
+    await classifyRelevanceWithJobCache({
+      state,
+      claim: { id: "AC_01", statement: "Entity A reported metric B." } as AtomicClaim,
+      searchResults,
+      pipelineConfig: { relevanceFloor: 0.4 } as any,
+      currentDate: "2026-04-24",
+      classifier: classifier as any,
+    });
+    const changed = await classifyRelevanceWithJobCache({
+      state,
+      claim: { id: "AC_01", statement: "Entity A reported metric C." } as AtomicClaim,
+      searchResults,
+      pipelineConfig: { relevanceFloor: 0.4 } as any,
+      currentDate: "2026-04-24",
+      classifier: classifier as any,
+    });
+
+    expect(changed.cacheHit).toBe(false);
+    expect(classifier).toHaveBeenCalledTimes(2);
   });
 });

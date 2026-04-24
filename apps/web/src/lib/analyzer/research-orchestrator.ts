@@ -105,6 +105,83 @@ const PRIMARY_SOURCE_REFINEMENT_TYPES = new Set<NonNullable<EvidenceItem["source
   "organization_report",
 ]);
 
+export type RelevanceSearchResult = {
+  url: string;
+  title: string;
+  snippet?: string | null;
+};
+
+export type RelevanceClassificationResult = {
+  url: string;
+  relevanceScore: number;
+  originalRank: number;
+};
+
+function buildRelevanceClassificationCacheKey(params: {
+  claim: AtomicClaim;
+  searchResults: RelevanceSearchResult[];
+  currentDate: string;
+  inferredGeography?: string | null;
+  relevantGeographies?: string[] | null;
+  pipelineConfig: PipelineConfig;
+}): string {
+  const relevantGeographies = Array.from(
+    new Set((params.relevantGeographies ?? []).filter((value): value is string => !!value)),
+  ).sort();
+
+  return JSON.stringify({
+    claimId: params.claim.id,
+    claimStatement: params.claim.statement,
+    freshnessRequirement: params.claim.freshnessRequirement ?? "none",
+    currentDate: params.currentDate,
+    inferredGeography: params.inferredGeography ?? null,
+    relevantGeographies,
+    relevanceFloor: params.pipelineConfig.relevanceFloor ?? 0.4,
+    foreignJurisdictionRelevanceCap: params.pipelineConfig.foreignJurisdictionRelevanceCap ?? 0.35,
+    searchResults: params.searchResults.map((result) => ({
+      url: result.url,
+      title: result.title,
+      snippet: result.snippet ?? "",
+    })),
+  });
+}
+
+export async function classifyRelevanceWithJobCache(params: {
+  state: CBResearchState;
+  claim: AtomicClaim;
+  searchResults: RelevanceSearchResult[];
+  pipelineConfig: PipelineConfig;
+  currentDate: string;
+  inferredGeography?: string | null;
+  relevantGeographies?: string[] | null;
+  classifier?: typeof classifyRelevance;
+}): Promise<{ relevantSources: RelevanceClassificationResult[]; cacheHit: boolean }> {
+  const cacheKey = buildRelevanceClassificationCacheKey(params);
+  const cache = params.state.relevanceClassificationCache ??= {};
+  const cached = cache[cacheKey];
+  if (cached) {
+    debugLog(
+      `[Stage2] Reusing exact relevance classification for ${cached.length} source(s) on claim ${params.claim.id}`,
+    );
+    return {
+      relevantSources: cached.map((source) => ({ ...source })),
+      cacheHit: true,
+    };
+  }
+
+  const classifier = params.classifier ?? classifyRelevance;
+  const relevantSources = await classifier(
+    params.claim,
+    params.searchResults,
+    params.pipelineConfig,
+    params.currentDate,
+    params.inferredGeography,
+    params.relevantGeographies,
+  );
+  cache[cacheKey] = relevantSources.map((source) => ({ ...source }));
+  return { relevantSources, cacheHit: false };
+}
+
 function sortGeneratedResearchQueries(
   queries: GeneratedResearchQuery[],
 ): GeneratedResearchQuery[] {
@@ -529,6 +606,7 @@ export async function researchEvidence(
   const researchStartMs = Date.now();
   let consecutiveZeroYield = 0;
   let budgetExhaustionWarned = false;
+  let timeBudgetWarned = false;
 
   for (let iteration = 0; iteration < maxMainIterations; iteration++) {
     // Abort signal check
@@ -538,10 +616,11 @@ export async function researchEvidence(
     const elapsedMs = Date.now() - researchStartMs;
     if (elapsedMs > timeBudgetMs) {
       state.onEvent?.(`Research time budget reached (${Math.round(elapsedMs / 60000)} min), proceeding to analysis...`, 55);
+      timeBudgetWarned = true;
       state.warnings.push({
         type: "budget_exceeded",
         severity: "warning",
-        message: `Research time budget reached after ${Math.round(elapsedMs / 60000)} minutes — analysis may have incomplete evidence.`,
+        message: `Research time budget reached after ${Math.round(elapsedMs / 60000)} minutes - analysis may have incomplete evidence.`,
         details: { elapsedMs, budgetMs: timeBudgetMs, iterationsCompleted: iteration },
       });
       break;
@@ -636,6 +715,21 @@ export async function researchEvidence(
     const contradictionElapsedMs = Date.now() - researchStartMs;
     if (contradictionElapsedMs > timeBudgetMs) {
       state.onEvent?.(`Research time budget reached during contradiction search, proceeding...`, 58);
+      if (!timeBudgetWarned) {
+        timeBudgetWarned = true;
+        state.warnings.push({
+          type: "budget_exceeded",
+          severity: "warning",
+          message: `Research time budget reached during contradiction search after ${Math.round(contradictionElapsedMs / 60000)} minutes - contradiction evidence may be incomplete.`,
+          details: {
+            stage: "research_budget",
+            elapsedMs: contradictionElapsedMs,
+            budgetMs: timeBudgetMs,
+            mainIterationsCompleted: state.mainIterationsUsed,
+            contradictionIterationsCompleted: state.contradictionIterationsUsed,
+          },
+        });
+      }
       break;
     }
 
@@ -1204,15 +1298,19 @@ export async function runResearchIteration(
         telemetry.searchResults += response.results.length;
 
         // 3. Relevance classification via LLM (Haiku, batched)
-        const relevantSources = await classifyRelevance(
-          targetClaim,
-          response.results,
+        const {
+          relevantSources,
+          cacheHit: relevanceCacheHit,
+        } = await classifyRelevanceWithJobCache({
+          state,
+          claim: targetClaim,
+          searchResults: response.results,
           pipelineConfig,
           currentDate,
-          state.understanding?.inferredGeography ?? null,
-          claimRelevantGeographies,
-        );
-        state.llmCalls++;
+          inferredGeography: state.understanding?.inferredGeography ?? null,
+          relevantGeographies: claimRelevantGeographies,
+        });
+        if (!relevanceCacheHit) state.llmCalls++;
         telemetry.relevanceAccepted += relevantSources.length;
         telemetry.losses.relevanceRejected += Math.max(
           response.results.length - relevantSources.length,
@@ -1237,15 +1335,19 @@ export async function runResearchIteration(
           pipelineConfig,
           {
             classifyDiscoveredSources: async (discoveredSources) => {
-              const discoveredRelevant = await classifyRelevance(
-                targetClaim,
-                discoveredSources,
+              const {
+                relevantSources: discoveredRelevant,
+                cacheHit: discoveredRelevanceCacheHit,
+              } = await classifyRelevanceWithJobCache({
+                state,
+                claim: targetClaim,
+                searchResults: discoveredSources,
                 pipelineConfig,
                 currentDate,
-                state.understanding?.inferredGeography ?? null,
-                claimRelevantGeographies,
-              );
-              state.llmCalls++;
+                inferredGeography: state.understanding?.inferredGeography ?? null,
+                relevantGeographies: claimRelevantGeographies,
+              });
+              if (!discoveredRelevanceCacheHit) state.llmCalls++;
               return discoveredRelevant;
             },
           },
@@ -1627,11 +1729,19 @@ export async function maybeRunSupplementaryEnglishLane(
       targetClaim,
       searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
     );
-    const relevantSources = await classifyRelevance(
-      targetClaim, response.results, pipelineConfig, currentDate,
-      state.understanding?.inferredGeography ?? null, enLaneRelevantGeographies,
-    );
-    state.llmCalls++;
+    const {
+      relevantSources,
+      cacheHit: relevanceCacheHit,
+    } = await classifyRelevanceWithJobCache({
+      state,
+      claim: targetClaim,
+      searchResults: response.results,
+      pipelineConfig,
+      currentDate,
+      inferredGeography: state.understanding?.inferredGeography ?? null,
+      relevantGeographies: enLaneRelevantGeographies,
+    });
+    if (!relevanceCacheHit) state.llmCalls++;
     enTelemetry.relevanceAccepted += relevantSources.length;
     enTelemetry.losses.relevanceRejected += Math.max(
       response.results.length - relevantSources.length,
@@ -1645,15 +1755,19 @@ export async function maybeRunSupplementaryEnglishLane(
       pipelineConfig,
       {
         classifyDiscoveredSources: async (discoveredSources) => {
-          const discoveredRelevant = await classifyRelevance(
-            targetClaim,
-            discoveredSources,
+          const {
+            relevantSources: discoveredRelevant,
+            cacheHit: discoveredRelevanceCacheHit,
+          } = await classifyRelevanceWithJobCache({
+            state,
+            claim: targetClaim,
+            searchResults: discoveredSources,
             pipelineConfig,
             currentDate,
-            state.understanding?.inferredGeography ?? null,
-            enLaneRelevantGeographies,
-          );
-          state.llmCalls++;
+            inferredGeography: state.understanding?.inferredGeography ?? null,
+            relevantGeographies: enLaneRelevantGeographies,
+          });
+          if (!discoveredRelevanceCacheHit) state.llmCalls++;
           return discoveredRelevant;
         },
       },
