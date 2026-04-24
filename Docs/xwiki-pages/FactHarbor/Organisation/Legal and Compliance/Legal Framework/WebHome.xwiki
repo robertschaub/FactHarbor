@@ -1,10 +1,10 @@
 = Legal Framework =
 
-== 1. Current Focus: Founding the Swiss Verein ==
+== 1. Current Legal Structure ==
 
-FactHarbor is currently transitioning from a solo-founder project to a formal non-profit organization. The chosen legal vehicle is a **Swiss Verein** (Association) based in Switzerland (Canton of Zürich).
+FactHarbor is organized as a **Swiss Verein** (Association) with seat in **Dietlikon, Canton of Zürich, Switzerland**.
 
-This structure was selected for its simplicity, flexibility, and strong alignment with FactHarbor's mission-driven, automation-first philosophy.
+The founding assembly adopted the statutes and established the association on **23 April 2026**. This structure was selected for its simplicity, flexibility, and strong alignment with FactHarbor's mission-driven, automation-first philosophy.
 
 == 2. Core Non-Profit Principles ==
 
@@ -16,12 +16,13 @@ Regardless of its stage, the organization is bound by several "mission-lock" pri
 *   **Asset Stewardship**: Domains, code repositories, and trademarks are held by the Verein for the benefit of the public.
 *   **Dissolution Clause**: Upon dissolution, remaining assets must be transferred to another mission-compatible non-profit.
 
-== 3. Draft Statutes (Bylaws) ==
+== 3. Statutes and Founding Record ==
 
-The formal statutes (Vereinsstatuten) are **complete and ready for final review** by the founding members and legal counsel:
+The governing documents are:
 
-*   **[[Draft Vereinsstatuten (German)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md]]**
-*   **[[Draft Verein Statutes (English)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md]]**
+*   **[[Vereinsstatuten (German, binding)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md]]**
+*   **[[Verein Statutes (English reference translation)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_EN.md]]**
+*   **[[Founding Assembly Record / Gründungsprotokoll>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.md]]**
 
 == 4. Intellectual Property & Privacy ==
 
@@ -34,9 +35,8 @@ Detailed legal policies for day-to-day operations are maintained in dedicated do
 == 5. Formation Roadmap ==
 
 |=Step|=Status|=Notes
-|**Draft Statutes**|✅ Complete|Ready for review
-|**Find Co-Founder**|⏳ In Progress|Need Treasurer/Board member
-|**Founding Assembly**|⬜ Pending|Sign minutes, adopt statutes
+|**Statutes**|✅ Complete|Adopted on 23 April 2026
+|**Founding Assembly**|✅ Complete|Founding minutes recorded on 23 April 2026
 |**Official Registration**|⬜ Pending|Commercial Register (Zefix)
 |**NPO Verification**|⬜ Pending|Apply for Claude for Nonprofits
 
