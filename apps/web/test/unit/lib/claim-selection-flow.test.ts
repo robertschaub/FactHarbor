@@ -9,6 +9,7 @@ import {
   isValidClaimSelection,
   normalizeClaimSelectionCap,
   normalizeClaimSelectionIdleAutoProceedMs,
+  normalizeClaimSelectionMode,
   resolveIdleAutoProceedSelection,
   shouldAutoContinueWithoutSelection,
   shouldRequireClaimSelectionUi,
@@ -22,6 +23,14 @@ describe("claim-selection-flow", () => {
     expect(normalizeClaimSelectionCap(0)).toBe(1);
     expect(normalizeClaimSelectionCap(3.9)).toBe(3);
     expect(normalizeClaimSelectionCap(9)).toBe(5);
+  });
+
+  it("defaults claim-selection mode to interactive unless automatic is explicitly configured", () => {
+    expect(normalizeClaimSelectionMode(undefined)).toBe("interactive");
+    expect(normalizeClaimSelectionMode(null)).toBe("interactive");
+    expect(normalizeClaimSelectionMode("interactive")).toBe("interactive");
+    expect(normalizeClaimSelectionMode("automatic")).toBe("automatic");
+    expect(normalizeClaimSelectionMode("AUTO")).toBe("interactive");
   });
 
   it("auto-continues only while candidate count stays below the configured threshold", () => {
@@ -82,9 +91,9 @@ describe("claim-selection-flow", () => {
   });
 
   it("computes the remaining idle countdown from the last interaction timestamp", () => {
-    expect(getClaimSelectionIdleRemainingMs(undefined, 900_000, 10_000)).toBe(900_000);
-    expect(getClaimSelectionIdleRemainingMs(10_000, 900_000, 70_000)).toBe(840_000);
-    expect(getClaimSelectionIdleRemainingMs(10_000, 900_000, 910_500)).toBe(0);
+    expect(getClaimSelectionIdleRemainingMs(undefined, 3_600_000, 10_000)).toBe(3_600_000);
+    expect(getClaimSelectionIdleRemainingMs(10_000, 3_600_000, 70_000)).toBe(3_540_000);
+    expect(getClaimSelectionIdleRemainingMs(10_000, 3_600_000, 3_610_500)).toBe(0);
     expect(getClaimSelectionIdleRemainingMs(10_000, 0, 70_000)).toBe(0);
   });
 });

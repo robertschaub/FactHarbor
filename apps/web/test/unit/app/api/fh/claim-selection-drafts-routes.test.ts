@@ -20,6 +20,7 @@ const mockForwardTextResponse = vi.fn(async (response: Response) => {
 const mockGetClaimSelectionDraftApiBase = vi.fn(() => "http://api.local");
 const mockResolveDraftId = vi.fn(async () => "draft-1");
 const mockDrainDraftQueue = vi.fn();
+const mockLoadPipelineConfig = vi.fn();
 const mockFetch = vi.fn();
 
 vi.mock("@/lib/input-policy-gate", () => ({
@@ -38,6 +39,10 @@ vi.mock("@/lib/claim-selection-draft-proxy", () => ({
 
 vi.mock("@/lib/internal-runner-queue", () => ({
   drainDraftQueue: (...args: unknown[]) => mockDrainDraftQueue(...args),
+}));
+
+vi.mock("@/lib/config-loader", () => ({
+  loadPipelineConfig: (...args: unknown[]) => mockLoadPipelineConfig(...args),
 }));
 
 function createJsonResponse(body: unknown, init: ResponseInit = {}): Response {
@@ -61,6 +66,9 @@ describe("claim-selection draft proxy routes", () => {
     mockGetClaimSelectionDraftApiBase.mockReturnValue("http://api.local");
     mockResolveDraftId.mockResolvedValue("draft-1");
     mockDrainDraftQueue.mockReset();
+    mockLoadPipelineConfig.mockResolvedValue({
+      config: { claimSelectionDefaultMode: "interactive" },
+    });
     mockFetch.mockResolvedValue(createJsonResponse({ ok: true }));
   });
 
@@ -121,6 +129,92 @@ describe("claim-selection draft proxy routes", () => {
       "2026-04-24T12:00:00.000Z",
     );
     expect(response.headers.get("set-cookie")).toContain("fh_claim_selection_draft_draft-1=token-1");
+  });
+
+  it("defaults session creation mode from pipeline config when the client omits it", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    mockLoadPipelineConfig.mockResolvedValueOnce({
+      config: { claimSelectionDefaultMode: "interactive" },
+    });
+    mockFetch.mockResolvedValueOnce(
+      createJsonResponse({
+        draftId: "draft-1",
+        draftAccessToken: "token-1",
+        status: "QUEUED",
+      }),
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          inputType: "text",
+          inputValue: "hello world",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockLoadPipelineConfig).toHaveBeenCalledWith("default");
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts",
+      expect.objectContaining({
+        body: JSON.stringify({
+          inputType: "text",
+          inputValue: "hello world",
+          selectionMode: "interactive",
+          inviteCode: undefined,
+        }),
+      }),
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      draftId: "draft-1",
+      selectionMode: "interactive",
+    });
+  });
+
+  it("respects an explicit client selection mode instead of the pipeline default", async () => {
+    const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    mockLoadPipelineConfig.mockResolvedValueOnce({
+      config: { claimSelectionDefaultMode: "interactive" },
+    });
+    mockFetch.mockResolvedValueOnce(
+      createJsonResponse({
+        draftId: "draft-1",
+        draftAccessToken: "token-1",
+        status: "QUEUED",
+      }),
+    );
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/claim-selection-drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          inputType: "text",
+          inputValue: "hello world",
+          selectionMode: "automatic",
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts",
+      expect.objectContaining({
+        body: JSON.stringify({
+          inputType: "text",
+          inputValue: "hello world",
+          selectionMode: "automatic",
+          inviteCode: undefined,
+        }),
+      }),
+    );
+    await expect(response.json()).resolves.toMatchObject({
+      draftId: "draft-1",
+      selectionMode: "automatic",
+    });
   });
 
   it("kicks draft queue recovery when loading an existing session", async () => {

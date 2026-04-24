@@ -15,6 +15,7 @@ import {
   CLAIM_SELECTION_ABSOLUTE_MAX,
   CLAIM_SELECTION_DEFAULT_CAP,
   CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
+  normalizeClaimSelectionMode,
 } from "./claim-selection-flow";
 
 // ============================================================================
@@ -493,6 +494,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Minimum centrality to keep a claim in ClaimBoundary pipeline (default: medium)"),
   claimSpecificityMinimum: z.number().min(0).max(1).optional()
     .describe("Minimum specificity score for Gate 1 pass in ClaimBoundary pipeline (default: 0.6)"),
+  claimSelectionDefaultMode: z.enum(["interactive", "automatic"]).optional()
+    .describe("Default ACS interaction mode for new analysis sessions (default: interactive). Interactive shows manual selection when the threshold is reached; automatic continues with recommended claims when safe."),
   claimSelectionCap: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
     .describe("Maximum claims ACS may recommend or continue, and the threshold where manual selection begins (default: 5)."),
   claimSelectionIdleAutoProceedMs: z.number().int().min(0).max(3600000).optional()
@@ -852,6 +855,9 @@ export const PipelineConfigSchema = z.object({
   if (data.claimSpecificityMinimum === undefined) {
     data.claimSpecificityMinimum = 0.6;
   }
+  if (data.claimSelectionDefaultMode === undefined) {
+    data.claimSelectionDefaultMode = normalizeClaimSelectionMode(undefined);
+  }
   if (data.claimSelectionCap === undefined) {
     data.claimSelectionCap = CLAIM_SELECTION_DEFAULT_CAP;
   }
@@ -1156,6 +1162,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   // ClaimBoundary Stage 1 defaults
   centralityThreshold: "medium",
   claimSpecificityMinimum: 0.6,
+  claimSelectionDefaultMode: normalizeClaimSelectionMode(undefined),
   claimSelectionCap: CLAIM_SELECTION_DEFAULT_CAP,
   claimSelectionIdleAutoProceedMs: CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
   maxAtomicClaims: 5,

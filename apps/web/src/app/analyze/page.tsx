@@ -23,6 +23,7 @@ import {
   getLocalStorageItemSafely,
   getSessionStorageItemSafely,
   setLocalStorageItemSafely,
+  setStoredClaimSelectionMode,
   storeDraftAccessToken,
   upsertStoredActiveClaimSelectionSession,
 } from "@/lib/claim-selection-client";
@@ -150,7 +151,6 @@ export default function AnalyzePage() {
         body: JSON.stringify({
           inputType,
           inputValue,
-          selectionMode: "automatic",
           inviteCode: inviteCode.trim() || undefined
         }),
         signal: controller.signal,
@@ -166,13 +166,17 @@ export default function AnalyzePage() {
                     throw new Error("Session creation response was incomplete");
       }
 
+      const effectiveSelectionMode =
+        data?.selectionMode === "automatic" ? "automatic" : "interactive";
+
       storeDraftAccessToken(data.draftId, data.draftAccessToken);
+      setStoredClaimSelectionMode(effectiveSelectionMode);
       upsertStoredActiveClaimSelectionSession({
         draftId: data.draftId,
         createdUtc: typeof data?.createdUtc === "string" ? data.createdUtc : new Date().toISOString(),
         inputType,
         inputPreview: buildStoredClaimSelectionSessionLabel(inputType),
-        selectionMode: "automatic",
+        selectionMode: effectiveSelectionMode,
         lastKnownStatus: typeof data?.status === "string" ? data.status : "QUEUED",
         lastKnownFinalJobId: null,
         lastKnownUpdatedUtc: null,

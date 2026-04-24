@@ -1,7 +1,16 @@
+export const CLAIM_SELECTION_MODE_VALUES = ["interactive", "automatic"] as const;
+export type ClaimSelectionMode = (typeof CLAIM_SELECTION_MODE_VALUES)[number];
+
 export const CLAIM_SELECTION_ABSOLUTE_MAX = 5;
 export const CLAIM_SELECTION_DEFAULT_CAP = 5;
-export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS = 900000;
+export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS = 3600000;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_MAX_MS = 3600000;
+
+export function normalizeClaimSelectionMode(
+  configuredMode: string | null | undefined,
+): ClaimSelectionMode {
+  return configuredMode === "automatic" ? "automatic" : "interactive";
+}
 
 export function normalizeClaimSelectionCap(
   configuredCap: number | null | undefined,

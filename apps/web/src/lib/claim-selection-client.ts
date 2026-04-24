@@ -1,4 +1,7 @@
-export type ClaimSelectionMode = "interactive" | "automatic";
+import {
+  normalizeClaimSelectionMode,
+  type ClaimSelectionMode,
+} from "@/lib/claim-selection-flow";
 export type StoredClaimSelectionSessionStatus =
   | "QUEUED"
   | "PREPARING"
@@ -129,7 +132,7 @@ export function canUseSessionStorage(): boolean {
 
 export function getStoredClaimSelectionMode(): ClaimSelectionMode {
   const stored = getLocalStorageItemSafely(CLAIM_SELECTION_MODE_STORAGE_KEY);
-  return stored === "automatic" ? "automatic" : "interactive";
+  return normalizeClaimSelectionMode(stored);
 }
 
 export function setStoredClaimSelectionMode(mode: ClaimSelectionMode): boolean {

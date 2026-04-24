@@ -1524,6 +1524,63 @@ export async function runPreliminarySearch(
   const fetchTimeoutMs = pipelineConfig.sourceFetchTimeoutMs ?? 20000;
 
   const allEvidence: PreliminaryEvidenceItem[] = [];
+  type SharedFetchResult =
+    | {
+      ok: true;
+      url: string;
+      text: string;
+      title: string;
+      contentType: string;
+    }
+    | {
+      ok: false;
+      url: string;
+      error?: ReturnType<typeof classifySourceFetchFailure>;
+    };
+  const sharedFetchPromises = new Map<string, Promise<SharedFetchResult>>();
+
+  const fetchSourceOnce = (searchResult: { url: string; title?: string }) => {
+    const existing = sharedFetchPromises.get(searchResult.url);
+    if (existing) {
+      return existing;
+    }
+
+    const fetchPromise: Promise<SharedFetchResult> = (async (): Promise<SharedFetchResult> => {
+      try {
+        const content = await extractTextFromUrl(searchResult.url, {
+          timeoutMs: fetchTimeoutMs,
+          maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
+        });
+        if (content.text.length > 100) {
+          return {
+            ok: true,
+            url: searchResult.url,
+            title: content.title || searchResult.title || "",
+            text: content.text,
+            contentType: content.contentType,
+          };
+        }
+        return {
+          ok: false,
+          url: searchResult.url,
+        };
+      } catch (error: unknown) {
+        return {
+          ok: false,
+          url: searchResult.url,
+          error: classifySourceFetchFailure(error),
+        };
+      }
+    })();
+
+    sharedFetchPromises.set(searchResult.url, fetchPromise);
+    void fetchPromise.then((result) => {
+      if (!result.ok && sharedFetchPromises.get(searchResult.url) === fetchPromise) {
+        sharedFetchPromises.delete(searchResult.url);
+      }
+    });
+    return fetchPromise;
+  };
 
   // Limit to top 3 rough claims to control cost (§8.1: "impliedClaim and top 2-3 rough claims")
   const claimsToSearch = roughClaims.slice(0, 3);
@@ -1633,42 +1690,26 @@ export async function runPreliminarySearch(
             let fetchFailed = 0;
 
             const fetchResults = await Promise.all(
-              sourcesToFetch.map(async (searchResult) => {
-                try {
-                  const content = await extractTextFromUrl(searchResult.url, {
-                    timeoutMs: fetchTimeoutMs,
-                    maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
-                  });
-                  if (content.text.length > 100) {
-                    return {
-                      ok: true as const,
-                      url: searchResult.url,
-                      title: content.title || searchResult.title,
-                      text: content.text,
-                      contentType: content.contentType,
-                    };
-                  }
-                  return { ok: false as const, url: searchResult.url };
-                } catch (error: unknown) {
-                  const classified = classifySourceFetchFailure(error);
-                  fetchFailed++;
-                  fetchErrorByType[classified.type] = (fetchErrorByType[classified.type] ?? 0) + 1;
-                  if (fetchErrorSamples.length < 5) {
-                    fetchErrorSamples.push({
-                      url: searchResult.url,
-                      type: classified.type,
-                      status: classified.status,
-                      message: classified.message.slice(0, 240),
-                    });
-                  }
-                  return { ok: false as const, url: searchResult.url };
-                }
-              }),
+              sourcesToFetch.map((searchResult) => fetchSourceOnce(searchResult)),
             );
 
             const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
             for (const result of fetchResults) {
-              if (!result.ok || !("text" in result)) continue;
+              if (!result.ok) {
+                if (result.error) {
+                  fetchFailed++;
+                  fetchErrorByType[result.error.type] = (fetchErrorByType[result.error.type] ?? 0) + 1;
+                  if (fetchErrorSamples.length < 5) {
+                    fetchErrorSamples.push({
+                      url: result.url,
+                      type: result.error.type,
+                      status: result.error.status,
+                      message: result.error.message.slice(0, 240),
+                    });
+                  }
+                }
+                continue;
+              }
               // Skip if already fetched by another query for this claim
               if (claimFetchedUrls.has(result.url)) continue;
               claimFetchedUrls.add(result.url);

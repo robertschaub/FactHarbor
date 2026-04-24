@@ -5,6 +5,8 @@ import {
   persistDraftAccessCookie,
   getClaimSelectionDraftApiBase,
 } from "@/lib/claim-selection-draft-proxy";
+import { normalizeClaimSelectionMode } from "@/lib/claim-selection-flow";
+import { loadPipelineConfig } from "@/lib/config-loader";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
 
 export const runtime = "nodejs";
@@ -53,13 +55,28 @@ export async function POST(request: Request) {
     );
   }
 
+  const explicitSelectionMode =
+    parsedBody.selectionMode === "interactive" || parsedBody.selectionMode === "automatic"
+      ? parsedBody.selectionMode
+      : null;
+
+  let effectiveSelectionMode = normalizeClaimSelectionMode(explicitSelectionMode);
+  if (!explicitSelectionMode) {
+    try {
+      const { config } = await loadPipelineConfig("default");
+      effectiveSelectionMode = normalizeClaimSelectionMode(config.claimSelectionDefaultMode);
+    } catch {
+      effectiveSelectionMode = normalizeClaimSelectionMode(undefined);
+    }
+  }
+
   const upstreamResponse = await fetch(`${base.replace(/\/$/, "")}/v1/claim-selection-drafts`, {
     method: "POST",
     headers: buildClaimSelectionDraftForwardHeaders(request, { includeContentType: true }),
     body: JSON.stringify({
       inputType,
       inputValue,
-      selectionMode: parsedBody.selectionMode,
+      selectionMode: effectiveSelectionMode,
       inviteCode: parsedBody.inviteCode,
     }),
   });
@@ -78,7 +95,14 @@ export async function POST(request: Request) {
     });
   }
 
-  const response = NextResponse.json(payload, { status: upstreamResponse.status });
+  const responsePayload = payload
+    ? {
+      ...payload,
+      selectionMode: effectiveSelectionMode,
+    }
+    : payload;
+
+  const response = NextResponse.json(responsePayload, { status: upstreamResponse.status });
 
   if (
     upstreamResponse.ok &&

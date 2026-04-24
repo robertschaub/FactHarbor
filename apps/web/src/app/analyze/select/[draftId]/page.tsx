@@ -965,8 +965,10 @@ export default function ClaimSelectionDraftPage() {
             <p className={styles.infoText}>
               Progress: {displayProgress}%.
               {" "}If Stage 1 stays below the manual-review threshold ({formatClaimCount(selectionThreshold)}),
-              FactHarbor continues automatically. At that threshold or above, you will review the
-              prepared claim set before analysis starts.
+              FactHarbor continues automatically.
+              {draft.selectionMode === "automatic"
+                ? " At that threshold or above, FactHarbor continues automatically with the recommended claim set when safe; otherwise manual selection is required."
+                : " At that threshold or above, you will review the prepared claim set before analysis starts."}
             </p>
           )}
           {livePreparationMessage ? (
