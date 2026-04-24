@@ -2541,6 +2541,49 @@ describe("filterPreparedUnderstandingForSelectedClaims", () => {
     expect(understanding.preliminaryEvidence).toHaveLength(1);
     expect(understanding.preliminaryEvidence[0].sourceUrl).toBe("https://example.com/selected");
   });
+
+  it("preserves structurally remappable provisional claim IDs when filtering selected claims", () => {
+    const understanding = {
+      atomicClaims: [
+        createAtomicClaim({ id: "AC_01" }),
+        createAtomicClaim({ id: "AC_02", statement: "Second claim" }),
+      ],
+      preliminaryEvidence: [
+        {
+          sourceUrl: "https://example.com/remappable",
+          snippet: "Evidence with numeric provisional ID",
+          claimId: "claim_01",
+          relevantClaimIds: ["claim_01"],
+        },
+        {
+          sourceUrl: "https://example.com/not-selected",
+          snippet: "Evidence mapped to an unselected claim",
+          claimId: "claim_02",
+          relevantClaimIds: ["claim_02"],
+        },
+        {
+          sourceUrl: "https://example.com/unresolved",
+          snippet: "Unresolved evidence from multi-claim preparation",
+          claimId: "",
+          relevantClaimIds: [],
+        },
+      ],
+    } as any;
+
+    filterPreparedUnderstandingForSelectedClaims(
+      understanding,
+      new Map([["AC_01", 0]]),
+    );
+
+    expect(understanding.preliminaryEvidence).toHaveLength(1);
+    expect(understanding.preliminaryEvidence[0].sourceUrl).toBe("https://example.com/remappable");
+
+    const state = { understanding, evidenceItems: [] } as any;
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(1);
+    expect(state.evidenceItems[0].relevantClaimIds).toEqual(["AC_01"]);
+  });
 });
 
 // ============================================================================

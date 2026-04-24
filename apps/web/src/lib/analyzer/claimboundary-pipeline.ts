@@ -119,6 +119,7 @@ import {
   recordApplicabilityRemovalTelemetry,
   researchEvidence,
   runResearchIteration,
+  wouldResolveExistingRemap,
   allClaimsSufficient,
   consumeClaimQueryBudget,
   findLeastContradictedClaim,
@@ -524,7 +525,10 @@ export function filterPreparedUnderstandingForSelectedClaims(
       : [];
     const claimId = selectedClaimIds.has(entry.claimId) ? entry.claimId : relevantClaimIds[0];
     if (!claimId) {
-      if (preserveUnresolvedPreliminaryEvidence) {
+      if (
+        preserveUnresolvedPreliminaryEvidence
+        || wouldResolveExistingRemap(entry, selectedClaimIds)
+      ) {
         return [entry];
       }
       return [];
