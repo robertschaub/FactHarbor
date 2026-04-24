@@ -31,10 +31,11 @@ Semantics:
 
 - `articleThesis` remains the general Stage 1 thesis summary for the input
 - `topLevelProposition.statement` is a canonical parent proposition only when the input contains a genuine conjunctive parent structure
-- `topLevelProposition.statement` must be derived from input text and must not be copied mechanically from `articleThesis`
+- `topLevelProposition.statement` must be independently derived from input text and must not be copied mechanically from `articleThesis`
 - when both exist, they may be semantically close, but they are not interchangeable fields
 - `topLevelProposition` is valid only when `componentClaimIds` identifies at least two child claims
 - `dominanceAssessment` remains a Stage 5 peer-conflict concept and is orthogonal to parent/component structure
+- `topLevelProposition` and `dominanceAssessment` can coexist in any combination; neither field implies, suppresses, or redefines the other
 - `topLevelProposition` is provisional until the final accepted child set has passed Stage 1 end-state validation
 
 ### Atomic-claim rule
@@ -67,15 +68,17 @@ Do now:
 - Add explicit type comments/JSDoc distinguishing:
   - `topLevelProposition` vs `articleThesis`
   - `topLevelProposition` vs Stage 5 `dominanceAssessment`
+- When implementing `types.ts`, add the matching Stage 5 prompt note that `dominanceAssessment` remains independent of whether `topLevelProposition` is present
 - Teach Pass 2 that `topLevelProposition` is allowed **outside** `atomicClaims`
 - Clarify prompt/validator doctrine that:
   - decomposition-integrity rules apply to `atomicClaims`
   - `topLevelProposition` is not itself an atomic claim
   - `topLevelProposition` is not a “whole-input restatement exemption”
+  - `topLevelProposition` is not a generic whole-input restatement; it is only the canonical parent conjunction when the input contains a genuine conjunctive structure
   - `topLevelProposition` should be absent for restatable but non-conjunctive inputs
 - Add an explicit hard negative prompt rule:
   - do **not** create `topLevelProposition` for broad evaluative or multi-dimensional inputs whose candidate components are alternative readings, alternative explanatory axes, or independent evaluation dimensions rather than jointly necessary conditions
-- Add post-retry Stage 1 structural validation that every `componentClaimId` resolves to a current `atomicClaims` entry and `componentClaimIds.length >= 2`; otherwise null out `topLevelProposition`
+- Add post-retry Stage 1 structural validation at Stage 1 output finalization time, using the same cross-reference-guard pattern as the existing Stage 5 `dominantClaimId` check, so every `componentClaimId` resolves to a current `atomicClaims` entry and `componentClaimIds.length >= 2`; otherwise null out `topLevelProposition`
 - Add final Stage 1 semantic re-authorization of `topLevelProposition` against the final accepted claim set during the same end-state LLM validation pass that refreshes claim-contract fidelity after Gate 1 changes
 - If the final accepted child set survives structurally but the parent is no longer semantically justified relative to that final set, null out `topLevelProposition`
 - Keep ACS semantics unchanged: claim selection and any Check-worthiness recommendation continue to operate on the flat final `atomicClaims` set only
@@ -161,6 +164,7 @@ Rules:
 - Show child claims beneath it
 - Keep coverage matrices and evidence linkage child-claim based until a dedicated parent-report contract exists
 - When both exist, show `topLevelProposition` as the main headline proposition
+- Do not render `articleThesis` alongside `topLevelProposition` in the main headline report surface
 - Keep `articleThesis` available in diagnostics, export, and admin surfaces instead of removing it entirely
 
 ## Why This Is The Recommended Shape
@@ -193,6 +197,7 @@ This is the safer current operational output for cases like the approved Bundesr
 - Update the decomposition-integrity rule so it explicitly applies to `atomicClaims`, not to `topLevelProposition`
 - State explicitly that `topLevelProposition` is valid only when the input contains a genuine conjunctive parent structure
 - State explicitly that a whole-input paraphrase is **not** sufficient reason to emit `topLevelProposition`
+- State explicitly that `topLevelProposition` is not a restatement exemption; it should be absent when the input is merely restatable but not genuinely conjunctive
 - State explicitly that `articleThesis` summarizes what the input is about, while `topLevelProposition.statement` is a truth-evaluable conjunction whose falsity follows from falsifying any single component; if the model cannot state which component failure would falsify the parent, it must not emit `topLevelProposition`
 - Add a hard negative rule for alternative-dimension decompositions:
   - if the candidate child propositions are independent reasons, alternative interpretations, or separate evaluation axes that could each make the input seem true/false on their own, do **not** emit `topLevelProposition`
