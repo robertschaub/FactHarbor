@@ -2822,13 +2822,14 @@ function citationCollapseWarning(
   collapse: DeferredCitationIntegrityCollapse,
   options: {
     deferredFromPreValidation?: boolean;
+    finalStateOnly?: boolean;
     preValidationCollapsedSide?: VerdictCitationCollapsedSide;
   } = {},
 ): AnalysisWarning {
   return {
     type: "verdict_citation_integrity_guard",
     severity: "error",
-    message: options.deferredFromPreValidation
+    message: options.deferredFromPreValidation || options.finalStateOnly
       ? `Claim ${collapse.claimId}: final verdict has no evidence on its ${collapse.collapsedSide} citation side after citation sanitation and validation.`
       : `Claim ${collapse.claimId}: citation integrity guard removed all evidence from the verdict's ${collapse.collapsedSide} citation side.`,
     details: {
@@ -2840,11 +2841,23 @@ function citationCollapseWarning(
       remainingSupportingCount: collapse.remainingSupportingCount,
       remainingContradictingCount: collapse.remainingContradictingCount,
       ...(options.deferredFromPreValidation ? { deferredFromPreValidation: true } : {}),
+      ...(options.finalStateOnly ? { finalStateOnly: true } : {}),
       ...(options.preValidationCollapsedSide
         ? { preValidationCollapsedSide: options.preValidationCollapsedSide }
         : {}),
     },
   };
+}
+
+function existingCitationGuardKeys(warnings: AnalysisWarning[]): Set<string> {
+  return new Set(
+    warnings
+      .filter((warning) => warning.type === "verdict_citation_integrity_guard")
+      .map((warning) => {
+        const details = warning.details as { claimId?: string; collapsedSide?: string } | undefined;
+        return `${details?.claimId ?? ""}:${details?.collapsedSide ?? ""}`;
+      }),
+  );
 }
 
 function emitDeferredCitationIntegrityWarnings(
@@ -2855,14 +2868,7 @@ function emitDeferredCitationIntegrityWarnings(
   if (!warnings || !deferredCollapses?.length) return;
 
   const finalByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
-  const emitted = new Set(
-    warnings
-      .filter((warning) => warning.type === "verdict_citation_integrity_guard")
-      .map((warning) => {
-        const details = warning.details as { claimId?: string; collapsedSide?: string } | undefined;
-        return `${details?.claimId ?? ""}:${details?.collapsedSide ?? ""}`;
-      }),
-  );
+  const emitted = existingCitationGuardKeys(warnings);
 
   for (const deferred of deferredCollapses) {
     const finalVerdict = finalByClaim.get(deferred.claimId);
@@ -2884,6 +2890,33 @@ function emitDeferredCitationIntegrityWarnings(
       deferredFromPreValidation: true,
       preValidationCollapsedSide: deferred.collapsedSide,
     }));
+    emitted.add(key);
+  }
+}
+
+function emitFinalCitationIntegrityWarnings(
+  verdicts: CBClaimVerdict[],
+  warnings?: AnalysisWarning[],
+): void {
+  if (!warnings) return;
+
+  const emitted = existingCitationGuardKeys(warnings);
+  for (const verdict of verdicts) {
+    const collapsedSide = missingCurrentDecisiveCitationSide(verdict);
+    if (!collapsedSide) continue;
+
+    const key = `${verdict.claimId}:${collapsedSide}`;
+    if (emitted.has(key)) continue;
+
+    warnings.push(citationCollapseWarning({
+      claimId: verdict.claimId,
+      collapsedSide,
+      truthPercentage: verdict.truthPercentage,
+      droppedCitations: [],
+      movedCitations: [],
+      remainingSupportingCount: verdict.supportingEvidenceIds.length,
+      remainingContradictingCount: verdict.contradictingEvidenceIds.length,
+    }, { finalStateOnly: true }));
     emitted.add(key);
   }
 }
@@ -3032,6 +3065,7 @@ export function enforceVerdictCitationIntegrity(
       options.deferredCollapsedSideWarnings,
       warnings,
     );
+    emitFinalCitationIntegrityWarnings(cleanedVerdicts, warnings);
   }
 
   return cleanedVerdicts;

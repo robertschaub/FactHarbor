@@ -422,6 +422,35 @@ describe("enforceVerdictCitationIntegrity", () => {
     expect((guardWarning?.details as any)?.preValidationCollapsedSide).toBe("contradicting");
   });
 
+  it("emits a final guard when a verdict already lacks its decisive citation side", () => {
+    const warnings: AnalysisWarning[] = [];
+    const verdict = makeVerdict({
+      truthPercentage: 35,
+      verdict: "LEANING-FALSE",
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    });
+    const evidence = [
+      makeEvidence({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+
+    const result = enforceVerdictCitationIntegrity([verdict], evidence, undefined, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    const guardWarning = warnings.find(
+      (warning) => warning.type === "verdict_citation_integrity_guard",
+    );
+    expect(guardWarning?.severity).toBe("error");
+    expect((guardWarning?.details as any)?.collapsedSide).toBe("contradicting");
+    expect((guardWarning?.details as any)?.finalStateOnly).toBe(true);
+  });
+
   it("preserves valid citations with missing applicability while deduplicating IDs", () => {
     const warnings: AnalysisWarning[] = [];
     const verdict = makeVerdict({
