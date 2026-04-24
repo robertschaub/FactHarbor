@@ -146,6 +146,8 @@ test("stdio mcp preflight_task matches CLI preflight-task output", async () => {
     "Continue the internal knowledge layer MCP implementation",
     "--role",
     "Senior Architect",
+    "--skill",
+    "pipeline",
   ]);
 
   const mcpResult = await withStdioClient(async (client) => {
@@ -154,6 +156,7 @@ test("stdio mcp preflight_task matches CLI preflight-task output", async () => {
       arguments: {
         task: "Continue the internal knowledge layer MCP implementation",
         role: "Senior Architect",
+        skill: "pipeline",
       },
     });
 

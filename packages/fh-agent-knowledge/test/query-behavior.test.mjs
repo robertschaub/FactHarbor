@@ -49,6 +49,28 @@ function createKnowledgeContext() {
           },
         ],
       },
+      skills: {
+        entries: [
+          {
+            name: "pipeline",
+            command: "/pipeline",
+            file: ".claude/skills/pipeline/SKILL.md",
+            description: "Deep analysis of the FactHarbor CB pipeline.",
+            allowedTools: ["Read", "Glob", "Grep", "Bash"],
+            disableModelInvocation: false,
+            sections: [{ heading: "Before forming any conclusion" }],
+          },
+          {
+            name: "validate",
+            command: "/validate",
+            file: ".claude/skills/validate/SKILL.md",
+            description: "Run FactHarbor post-change validation on benchmark families.",
+            allowedTools: ["Bash", "Read"],
+            disableModelInvocation: true,
+            sections: [{ heading: "Step 1" }],
+          },
+        ],
+      },
       docSections: {
         docs: [
           {
@@ -108,5 +130,41 @@ test("preflight-task keeps query-relevant handoffs and filters utility docs from
   );
   assert.ok(
     result.docAnchors.every((doc) => doc.file !== "Docs/AGENTS/Roles/Lead_Architect.md"),
+  );
+  assert.equal(result.startupAdvice.recommendedRole.name, "Lead Architect");
+  assert.ok(result.startupAdvice.firstActions.length > 0);
+  assert.ok(
+    result.startupAdvice.toolPlan.some((entry) => entry.tool === "get_role_context"),
+  );
+});
+
+test("preflight-task returns skill-aware startup advice", () => {
+  const result = preflightTask(createKnowledgeContext(), {
+    task: "Review a multi-stage pipeline change",
+    role: "Senior Architect",
+    skill: "pipeline",
+  });
+
+  assert.equal(result.startupAdvice.recommendedSkills[0]?.name, "pipeline");
+  assert.equal(result.startupAdvice.recommendedSkills[0]?.file, ".claude/skills/pipeline/SKILL.md");
+  assert.ok(
+    result.startupAdvice.docsToRead.some((entry) => entry.file === ".claude/skills/pipeline/SKILL.md"),
+  );
+  assert.ok(
+    result.startupAdvice.firstActions.some((entry) => entry.refs.includes(".claude/skills/pipeline/SKILL.md")),
+  );
+});
+
+test("preflight-task extracts role and primary skill from role-prefixed prompts", () => {
+  const result = preflightTask(createKnowledgeContext(), {
+    task: "As Senior Architect,\n\nReview a multi-stage pipeline change.\n\nSkill: pipeline, validate",
+  });
+
+  assert.equal(result.task, "Review a multi-stage pipeline change.");
+  assert.equal(result.roleContext.canonicalName, "Lead Architect");
+  assert.equal(result.startupAdvice.recommendedRole.name, "Lead Architect");
+  assert.equal(result.startupAdvice.recommendedSkills[0]?.name, "pipeline");
+  assert.ok(
+    result.startupAdvice.docsToRead.some((entry) => entry.file === ".claude/skills/pipeline/SKILL.md"),
   );
 });

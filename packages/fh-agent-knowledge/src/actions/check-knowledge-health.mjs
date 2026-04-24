@@ -18,6 +18,7 @@ export function checkKnowledgeHealth() {
           handoffs: context.data.handoffs.entries.length,
           recentWindow: context.data.recentWindow.entries.length,
           roles: context.data.roles.entries.length,
+          skills: context.data.skills.entries.length,
           docs: context.data.docSections.docs.length,
           stages: Object.keys(context.data.stageMap.stages).length,
           tasks: Object.keys(context.data.stageManifest.tasks).length,

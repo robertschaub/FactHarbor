@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-21 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -53,7 +53,7 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 
 ## Roles
 
-When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
+When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. This defines the active role and triggers `fhAgentKnowledge.preflight_task`; pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present. Role definitions: `Docs/AGENTS/Roles/`.
 
 ## Index-First Lookup
 
@@ -78,7 +78,7 @@ other Copilot surfaces are in `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
 
 If MCP is unavailable, fall back to:
 
-- `npm run fh-knowledge -- preflight-task --task "..." [--role ...]`
+- `npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`
 
 ## Behavior Examples
 

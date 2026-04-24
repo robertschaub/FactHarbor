@@ -2,7 +2,7 @@
 description: FactHarbor core project rules — applies to all files
 alwaysApply: true
 ---
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
 
 # FactHarbor — Core Rules
 
@@ -41,11 +41,13 @@ Two apps + one tool:
 If the project-scoped MCP server `fhAgentKnowledge` is available, use its `preflight_task`
 tool first for non-trivial tasks before manually scanning handoffs or indexes.
 
+When the prompt starts with `As <Role>,` or `As <Role>:`, treat it as role activation and as the `preflight_task` trigger. Pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present.
+
 Setup and fallback details: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
 
 ## Roles
 
-When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you how to run preflight, which role file to load from `Docs/AGENTS/Roles/`, and which documents to read.
 
 **Context-budget note:** If loading all Required Reading exceeds your context window, load only the role file and defer document reads until needed for the specific task.
 

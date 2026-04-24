@@ -1,4 +1,4 @@
-# Sync with /AGENTS.md. Last synced: 2026-03-24
+# Sync with /AGENTS.md. Last synced: 2026-04-24
 
 # FactHarbor — Windsurf Rules
 
@@ -33,7 +33,7 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 ## Roles
 
-When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. Role definitions: `Docs/AGENTS/Roles/`.
+When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS.md`. This defines the active role and triggers `fhAgentKnowledge.preflight_task`; pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present. Role definitions: `Docs/AGENTS/Roles/`.
 
 **Context-budget note:** If loading all Required Reading exceeds Cascade's context window, load only the role file and defer document reads until needed.
 
@@ -42,7 +42,7 @@ When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS
 If your Windsurf setup supports MCP and `fhAgentKnowledge` is configured, use `preflight_task`
 first for non-trivial tasks. Otherwise fall back to:
 
-`npm run fh-knowledge -- preflight-task --task "..." [--role ...]`
+`npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`
 
 Setup guide: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
 

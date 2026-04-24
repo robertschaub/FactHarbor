@@ -312,8 +312,8 @@ Quick syntax reference: `Docs/AGENTS/Policies/xWiki_Reading.md`. Full authoring 
 All agents MUST follow the Exchange Protocol on non-trivial task completion. Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md` (task fit check, role activation + alias table, Agent Exchange Protocol with three modes, output tiers, unified template, incoming-role checklist, archival thresholds, Consolidate WIP pointer).
 
 **Quick summary (do not skip the full file):**
-1. **Before starting a task**: assess role/model-tier fit. Then **query `Docs/AGENTS/index/handoff-index.json`** (filter by `role` + `topics`) to find relevant prior work — read only the matched files, not the full directory.
-2. **Role activation** ("As \<Role\>"): look up role in alias table → read `Docs/AGENTS/Roles/<RoleName>.md` → scan `Role_Learnings.md` → acknowledge → stay in role.
+1. **Before starting a task**: assess role/model-tier fit. If `fhAgentKnowledge` is available, call `preflight_task` before manual handoff/index scanning. Otherwise **query `Docs/AGENTS/index/handoff-index.json`** (filter by `role` + `topics`) to find relevant prior work — read only the matched files, not the full directory.
+2. **Role activation** ("As \<Role\>"): treat `As <Role>,` / `As <Role>:` as both role assignment and a required `fhAgentKnowledge.preflight_task` trigger. Call `preflight_task` with the user task, `role="<Role>"`, and the first explicit `Skill:` value when present; then load the resolved role file, relevant skill workflow(s), returned anchors, and `Role_Learnings.md` before acknowledging and staying in role.
 3. **On completion**: write output per tier — Trivial = chat only, Standard = append to `Docs/AGENTS/Agent_Outputs.md`, Significant = new file in `Docs/AGENTS/Handoffs/`. Role handoffs require at least Standard + `Warnings` + `Learnings`.
 4. **Append, don't overwrite** `Agent_Outputs.md`. `Docs/WIP/` is NEVER for completion outputs.
 

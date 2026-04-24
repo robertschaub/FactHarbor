@@ -2107,3 +2107,18 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | Verdict Citation Integrity Guard Review Follow-up -- [Standard] [open-items: yes]
 **For next agent:** The two follow-up review findings are addressed in [verdict-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts): explicit neutral `claimDirection` citations are removed from final directional buckets, including post-validation repair output, and decisive-side citation collapse now emits `verdict_citation_integrity_guard` with `error` severity. Focused verdict/warning tests and the web build passed; live jobs still require commit/restart first.
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Integrity_Guard.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | fhAgentKnowledge Startup Advice -- [Standard] [open-items: yes]
+**For next agent:** `fhAgentKnowledge` `preflight_task` now accepts optional `skill` and returns `startupAdvice` with recommended role, workflow skill, first actions, docs to read, handoffs to inspect, code-search hints, a tool plan, and guardrail warnings. The cache now indexes `.claude/skills/*/SKILL.md`, includes `Docs/DEVELOPMENT/` and skills in doc allowlisting, and tracks development-doc/skill digests for freshness. Verification: `npm run test:knowledge` passed (12/12), `node scripts/fh-knowledge.mjs refresh --force` rebuilt the cache, and health now reports `skills: 12`, `docs: 139`.
+**Warnings:** Existing Codex/VS Code MCP stdio processes must be restarted to load the new server code. The advisor is metadata/ranking based; source files remain authoritative and agents must still use source search/file reads before editing.
+**Learnings:** Extending `preflight_task` preserved the frozen MCP tool set while adding the desired intelligence. Optional `skill` should be passed when a workflow is already active; otherwise skills are ranked from cached skill metadata.
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Cross-Agent MCP Config Audit -- [Standard] [open-items: no]
+**For next agent:** Local MCP config now points to `fhAgentKnowledge` across the checked clients: Codex, Claude Code, Claude MCP file, VS Code/Copilot Chat project config, Cursor project and user config, Gemini project and user config, Copilot CLI, Cline, and Windsurf/Codeium. Added missing `C:/Users/rober/.copilot/mcp-config.json`, populated previously empty `C:/Users/rober/.cursor/mcp.json`, added the lowercase `c:/DEV/FactHarbor` Claude project entry, and normalized `C:/Users/rober/.claude/mcp.json` to direct `node` launch. Verification used JSON parsing, `codex mcp list`, and `claude mcp list`; Gemini's list command returned no text but both project/user Gemini settings contain the server entry.
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Role Preflight Trigger Documentation -- [Standard] [open-items: no]
+**For next agent:** `As <Role>,` / `As <Role>:` is now documented as both role activation and a required `fhAgentKnowledge.preflight_task` trigger across the canonical handoff protocol, root `AGENTS.md`, MCP setup guide, and tool wrappers. `preflight_task` also extracts the leading role and first `Skill:` value when an agent passes the full short-form prompt as `task`; read additional named skill workflows manually.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Role_Preflight_Trigger_Docs.md

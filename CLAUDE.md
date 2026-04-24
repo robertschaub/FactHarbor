@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-13 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
 
 # Claude Code instructions — FactHarbor
 
@@ -35,9 +35,11 @@ Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) �
 
 If `fhAgentKnowledge` is configured in Claude Code, use its `preflight_task` MCP tool before manually scanning handoffs or indexes for non-trivial tasks.
 
+When the prompt begins `As <Role>,` or `As <Role>:`, treat that as role activation and as the `preflight_task` trigger. Call `preflight_task` with the task body, `role="<Role>"`, and the first explicit `Skill:` value if present; then load the resolved role file and every named skill workflow.
+
 If MCP is not configured in the current Claude Code setup, fall back to:
 
-`npm run fh-knowledge -- preflight-task --task "..." [--role ...]`
+`npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`
 
 ## Workflow
 

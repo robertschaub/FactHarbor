@@ -24,6 +24,7 @@ export const PATHS = {
   rolesDir: join(REPO_ROOT, "Docs", "AGENTS", "Roles"),
   policiesDir: join(REPO_ROOT, "Docs", "AGENTS", "Policies"),
   wipDir: join(REPO_ROOT, "Docs", "WIP"),
+  developmentDir: join(REPO_ROOT, "Docs", "DEVELOPMENT"),
   architectureDir: join(
     REPO_ROOT,
     "Docs",
@@ -52,6 +53,7 @@ export const PATHS = {
     "analyzer",
     "model-tiering.ts",
   ),
+  claudeSkillsDir: join(REPO_ROOT, ".claude", "skills"),
 };
 
 export function resolveRepoPath(...segments) {

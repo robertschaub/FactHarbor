@@ -42,6 +42,8 @@ export function readCurrentSourceSnapshot(indexes) {
   const roleFiles = listFilesRecursive(PATHS.rolesDir, (path) => path.endsWith(".md"));
   const policyFiles = listFilesRecursive(PATHS.policiesDir, (path) => path.endsWith(".md"));
   const wipFiles = listFilesRecursive(PATHS.wipDir, (path) => path.endsWith(".md"));
+  const developmentFiles = listFilesRecursive(PATHS.developmentDir, (path) => path.endsWith(".md"));
+  const skillFiles = listFilesRecursive(PATHS.claudeSkillsDir, (path) => path.endsWith("SKILL.md"));
   const stageSourceFiles = [
     PATHS.claimBoundaryPipeline,
     ...listFilesRecursive(PATHS.analyzerDir, (path) => path.endsWith("-stage.ts")),
@@ -59,6 +61,8 @@ export function readCurrentSourceSnapshot(indexes) {
       roleLearningsMtime: getOptionalMtimeIso(PATHS.roleLearnings),
       policiesDigest: fingerprintIfAny(policyFiles),
       selectedWipDigest: fingerprintIfAny(wipFiles),
+      developmentDocsDigest: fingerprintIfAny(developmentFiles),
+      skillsDigest: fingerprintIfAny(skillFiles),
       stageSourceDigest: fingerprintIfAny(stageSourceFiles),
       modelTieringMtime: getOptionalMtimeIso(PATHS.modelTiering),
       handoffIndexGeneratedAt: indexes.handoffIndex.generatedAt ?? null,

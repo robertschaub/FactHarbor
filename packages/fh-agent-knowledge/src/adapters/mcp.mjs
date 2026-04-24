@@ -32,6 +32,7 @@ const MCP_INPUT_SCHEMAS = {
   preflight_task: buildRequiredInputSchema({
     task: buildRequiredStringField("Free-text description of the task to preflight."),
     role: z.string().min(1).optional().describe("Optional active role or role alias."),
+    skill: z.string().min(1).optional().describe("Optional active workflow skill name or slash command."),
     limit: z.number().int().positive().optional().describe("Optional result limit."),
   }),
   search_handoffs: buildRequiredInputSchema({

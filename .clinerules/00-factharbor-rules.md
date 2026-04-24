@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
 
 # FactHarbor — Cline Rules
 
@@ -52,7 +52,7 @@ Kimi K2 may not know FactHarbor conventions. Follow the terminology section abov
 
 ## Roles
 
-When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
+When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix..."), follow the **Role Activation Protocol** in `/AGENTS.md`. This defines the active role and triggers `fhAgentKnowledge.preflight_task`; pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present before manual scanning.
 
 **Context-budget note:** If loading all Required Reading exceeds your context window, load only the role file and defer document reads until needed for the specific task.
 
@@ -91,6 +91,8 @@ See `/AGENTS.md` Agent Handoff Protocol for full reference.
 
 If `fhAgentKnowledge` is configured in the current Cline setup, use its `preflight_task`
 tool first for non-trivial tasks before manually scanning handoffs or indexes.
+
+`As <Role>,` / `As <Role>:` is a preflight trigger as well as role activation. If MCP is unavailable, use the CLI fallback with `--role` and, when present, `--skill`.
 
 Rollout and config details: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
 

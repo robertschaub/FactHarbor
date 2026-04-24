@@ -29,8 +29,8 @@ export const KNOWLEDGE_OPERATION_DEFINITIONS = [
   {
     cliCommand: "preflight-task",
     mcpTool: "preflight_task",
-    cliUsage: "fh-knowledge preflight-task --task \"...\" [--role ...] [--limit 5]",
-    description: "Bundle the minimum startup context for a task from recent outputs, handoffs, stage anchors, role context, and doc anchors.",
+    cliUsage: "fh-knowledge preflight-task --task \"...\" [--role ...] [--skill ...] [--limit 5]",
+    description: "Bundle startup context and advice for a task from recent outputs, handoffs, stages, role context, skills, and doc anchors. If role/skill are omitted, extracts a leading 'As <Role>,' prompt and first 'Skill:' value from task.",
     execute(input = {}) {
       return buildQueryResult("preflight-task", (knowledgeContext) => ({
         result: preflightTask(knowledgeContext, input),

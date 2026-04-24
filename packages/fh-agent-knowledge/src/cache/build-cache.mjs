@@ -9,6 +9,7 @@ import { loadHandoffEntries } from "../sources/handoffs.mjs";
 import { loadCompatibilityIndexes } from "../sources/indexes.mjs";
 import { loadModelTaskEntries } from "../sources/model-tiering.mjs";
 import { loadRoleEntries } from "../sources/roles.mjs";
+import { loadSkillEntries } from "../sources/skills.mjs";
 import { loadStageEntries } from "../sources/stages.mjs";
 import {
   getCacheManifestPath,
@@ -22,6 +23,7 @@ const CACHE_FILES = {
   handoffs: join(PATHS.cacheDir, "handoffs.json"),
   recentWindow: join(PATHS.cacheDir, "recent-window.json"),
   roles: join(PATHS.cacheDir, "roles.json"),
+  skills: join(PATHS.cacheDir, "skills.json"),
   docSections: join(PATHS.cacheDir, "doc-sections.json"),
   stageMap: join(PATHS.cacheDir, "stage-map.json"),
   stageManifest: join(PATHS.cacheDir, "stage-manifest.json"),
@@ -60,6 +62,10 @@ function buildKnowledgeData() {
       generatedAt: new Date().toISOString(),
       entries: loadRoleEntries(),
     },
+    skills: {
+      generatedAt: new Date().toISOString(),
+      entries: loadSkillEntries(),
+    },
     docSections: {
       generatedAt: new Date().toISOString(),
       docs: buildDocSectionIndex(),
@@ -82,6 +88,7 @@ export function writeKnowledgeCache(payload) {
   writeJsonAtomic(CACHE_FILES.handoffs, payload.data.handoffs);
   writeJsonAtomic(CACHE_FILES.recentWindow, payload.data.recentWindow);
   writeJsonAtomic(CACHE_FILES.roles, payload.data.roles);
+  writeJsonAtomic(CACHE_FILES.skills, payload.data.skills);
   writeJsonAtomic(CACHE_FILES.docSections, payload.data.docSections);
   writeJsonAtomic(CACHE_FILES.stageMap, payload.data.stageMap);
   writeJsonAtomic(CACHE_FILES.stageManifest, payload.data.stageManifest);
@@ -110,6 +117,7 @@ export function loadKnowledgeCache() {
       handoffs: readJsonFile(CACHE_FILES.handoffs),
       recentWindow: readJsonFile(CACHE_FILES.recentWindow),
       roles: readJsonFile(CACHE_FILES.roles),
+      skills: readJsonFile(CACHE_FILES.skills),
       docSections: readJsonFile(CACHE_FILES.docSections),
       stageMap: readJsonFile(CACHE_FILES.stageMap),
       stageManifest: readJsonFile(CACHE_FILES.stageManifest),

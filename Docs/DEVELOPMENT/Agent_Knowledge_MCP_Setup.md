@@ -26,14 +26,44 @@ When the client supports MCP and the `fhAgentKnowledge` server is configured, th
 
 - call `preflight_task` with the current task description
 - include `role` when the user activated one
+- include `skill` when a workflow skill is already active or explicitly requested
 - only fall back to manual handoff scanning if the returned anchors are insufficient
+
+`preflight_task` returns the raw context anchors plus `startupAdvice`, which tells agents the likely role, workflow skills, first actions, docs, handoffs, code-search hints, tool plan, and guardrail warnings for the task.
+
+### Role Prompt Trigger
+
+Agents should treat a leading role prompt as a preflight trigger:
+
+```text
+As Senior Developer,
+
+Run a post-change pipeline health check.
+
+Skill: debug
+```
+
+This should become:
+
+```json
+{
+  "task": "Run a post-change pipeline health check.",
+  "role": "Senior Developer",
+  "skill": "debug"
+}
+```
+
+If the prompt lists multiple skills, pass the first/primary skill to `preflight_task` and then read every named workflow file manually. `As <Role>,` defines the active role for the task even when the user does not separately say "use this role".
+
+The tool is tolerant of the short form: if an agent passes the full prompt as `task` without separate `role` or `skill` fields, `preflight_task` extracts a leading `As <Role>,` / `As <Role>:` and the first `Skill:` value itself. Passing explicit fields is still preferred when the client makes that easy.
 
 Example request shape:
 
 ```json
 {
   "task": "Continue the internal knowledge layer MCP rollout",
-  "role": "Lead Architect"
+  "role": "Lead Architect",
+  "skill": "pipeline"
 }
 ```
 

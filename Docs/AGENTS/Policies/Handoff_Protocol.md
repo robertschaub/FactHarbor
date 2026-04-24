@@ -18,12 +18,19 @@ If no Captain role is actively assigned in the session, treat the active human u
 
 When the user starts with "As \<Role\>" or assigns you a role mid-conversation:
 
-1. **Look up the role** in the alias table below → find the canonical role name
-2. **Read your role's file** from `Docs/AGENTS/Roles/<RoleName>.md` — contains mission, focus areas, authority, required reading, key source files, deliverables, and anti-patterns
-3. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents
-4. **Acknowledge**: State your role, focus areas, and which docs you've loaded
-5. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
-6. **On handoff/completion**: Follow the Agent Exchange Protocol using the appropriate mode (`Completion` or `Role Handoff`). For role handoffs, include `Warnings` and `Learnings`, and append learnings to `Role_Learnings.md`.
+1. **Trigger knowledge preflight**: Treat `As <Role>,` or `As <Role>:` as both the role assignment and the startup signal for `fhAgentKnowledge.preflight_task`. Call it before manual handoff/index scanning with:
+   - `task`: the user's actual task request, excluding the role/skill boilerplate when practical
+   - `role`: the raw `<Role>` phrase from the prompt
+   - `skill`: the first explicit `Skill:` / `Skills:` value when present
+   If parsing is not practical in the active client, pass the full prompt as `task`; `preflight_task` will extract a leading `As <Role>,` / `As <Role>:` and `Skill:` line. If MCP is unavailable, use `npm run fh-knowledge -- preflight-task --task "..." --role "<Role>" [--skill "<primary-skill>"]`.
+2. **Resolve the role** from `preflight_task.roleContext` when present; otherwise look up the role in the alias table below to find the canonical role name.
+3. **Read your role's file** from `Docs/AGENTS/Roles/<RoleName>.md` — contains mission, focus areas, authority, required reading, key source files, deliverables, and anti-patterns.
+4. **Read explicit workflow skills**: if the prompt includes `Skill:` / `Skills:`, read and follow every named `.claude/skills/<name>/SKILL.md` workflow. `preflight_task` accepts one primary `skill`; additional skills still require manual file reads.
+5. **Inspect returned anchors**: use `startupAdvice` for first actions, docs, handoffs, code-search hints, tool plan, and warnings. Source search/file reads remain authoritative for implementation locations.
+6. **Check learnings**: Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas from previous agents.
+7. **Acknowledge**: State your role, focus areas, which docs/workflows you've loaded, and the key preflight anchors you will use.
+8. **Stay in role**: Focus on that role's concerns. Flag (don't act on) issues outside your scope.
+9. **On handoff/completion**: Follow the Agent Exchange Protocol using the appropriate mode (`Completion` or `Role Handoff`). For role handoffs, include `Warnings` and `Learnings`, and append learnings to `Role_Learnings.md`.
 
 **Role Alias Quick-Reference:**
 
@@ -127,13 +134,14 @@ Field requirements by mode:
 
 When you are the **incoming** role (receiving a handoff or starting a role mid-project), **self-serve context before asking the Captain**:
 
-1. Read `Docs/AGENTS/Agent_Outputs.md` — find the most recent entries relevant to your task
-2. **Query `Docs/AGENTS/index/handoff-index.json`** — filter by `role` and `topics` to find prior handoffs related to your task; read the matched files. (If the file does not exist yet, fall back to step 2b.)
-   - 2b. *(fallback)* Scan filenames in `Docs/AGENTS/Handoffs/` directly
-3. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
-4. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
-5. Check `Docs/WIP/` for active task documents related to the current work
-6. Acknowledge role activation, summarizing the context you found — only ask the Captain for what's missing
+1. If `fhAgentKnowledge` is available, call `preflight_task` with the incoming task, role, and primary explicit skill before manual scanning. Use `startupAdvice` as the first context map.
+2. Read `Docs/AGENTS/Agent_Outputs.md` — find the most recent entries relevant to your task
+3. **Query `Docs/AGENTS/index/handoff-index.json`** — filter by `role` and `topics` to find prior handoffs related to your task; read the matched files. (If the file does not exist yet, fall back to step 3b.)
+   - 3b. *(fallback)* Scan filenames in `Docs/AGENTS/Handoffs/` directly
+4. Read Required Reading for your role (from `Multi_Agent_Collaboration_Rules.md` §2 Role Registry)
+5. Scan your role's section in `Docs/AGENTS/Role_Learnings.md` for tips and gotchas
+6. Check `Docs/WIP/` for active task documents related to the current work
+7. Acknowledge role activation, summarizing the context you found — only ask the Captain for what's missing
 
 #### Rules
 

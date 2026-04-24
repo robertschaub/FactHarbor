@@ -1,0 +1,9 @@
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Role Preflight Trigger Documentation
+**Task:** Make `As <Role>,` define the active role and trigger `fhAgentKnowledge.preflight_task`.
+**Files touched:** `AGENTS.md`, `Docs/AGENTS/Policies/Handoff_Protocol.md`, `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`, `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md`, `.cursor/rules/factharbor-core.mdc`, `.clinerules/00-factharbor-rules.md`, `.windsurfrules`, `packages/fh-agent-knowledge/src/query/preflight-task.mjs`, `packages/fh-agent-knowledge/src/adapters/operations.mjs`, `packages/fh-agent-knowledge/test/query-behavior.test.mjs`, `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Role-prefixed prompts now require a preflight call before manual handoff/index scanning. Agents pass the prompt role as `role`, the user task body as `task`, and the first explicit `Skill:` value as `skill` when practical; `preflight_task` also extracts those directives if an agent passes the full short-form prompt as `task`. Additional named skills are read manually from `.claude/skills/<name>/SKILL.md`.
+**Open items:** None for the documentation change. Existing MCP client sessions may need a restart or tool-list refresh to pick up changed repo instructions.
+**Warnings:** This is an instruction-level behavior for agents that read the repo rules; it is not a client-side parser hook inside Codex, Claude, Gemini, Cursor, Copilot, Cline, or Windsurf.
+**For next agent:** Short prompts like `As Senior Developer, ... Skill: debug` should now be treated as sufficient startup instructions: activate the role, call `preflight_task`, then follow returned `startupAdvice` plus the explicit role/skill workflows.
+**Learnings:** Not appended to `Role_Learnings.md`; no role-specific operational lesson was discovered beyond the protocol update.

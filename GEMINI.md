@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-19 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
 
 # GEMINI.md
 
@@ -32,7 +32,7 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
-*   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first. Otherwise use `npm run fh-knowledge -- preflight-task --task "..." [--role ...]`. Setup guide: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
+*   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first. A prompt beginning `As <Role>,` or `As <Role>:` defines the active role and triggers `preflight_task`; pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present. Otherwise use `npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`. Setup guide: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
 
 ## Index-First Lookup
 

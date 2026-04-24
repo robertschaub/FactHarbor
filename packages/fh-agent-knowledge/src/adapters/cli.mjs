@@ -61,6 +61,7 @@ function buildCliInput(command, options) {
     return {
       task: requireOption(options, "task"),
       role: options.role ? String(options.role) : undefined,
+      skill: options.skill ? String(options.skill) : undefined,
       limit: parseOptionalInteger(options.limit, 5),
     };
   }

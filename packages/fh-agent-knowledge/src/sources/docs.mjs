@@ -8,7 +8,9 @@ const DOC_ROOTS = [
   PATHS.rolesDir,
   PATHS.policiesDir,
   PATHS.wipDir,
+  PATHS.developmentDir,
   PATHS.architectureDir,
+  PATHS.claudeSkillsDir,
 ];
 
 function listAllowedDocs() {
