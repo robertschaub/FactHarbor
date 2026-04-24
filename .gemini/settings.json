@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "fhAgentKnowledge": {
+      "command": "node",
+      "args": [
+        "scripts/fh-knowledge-mcp.mjs"
+      ]
+    }
+  }
+}
