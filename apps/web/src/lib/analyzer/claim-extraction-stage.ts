@@ -371,6 +371,7 @@ export async function extractClaims(
         pass2.inputClassification ?? "single_atomic_claim",
         pipelineConfig,
         salienceCommitment,
+        pass2.distinctEvents ?? [],
       )
     );
     state.llmCalls += contractValidationAttempts;
@@ -402,6 +403,7 @@ export async function extractClaims(
         state,
         24,
         salienceCommitment,
+        pass2.distinctEvents ?? [],
       );
       lastContractValidatedClaims = pass2.atomicClaims as unknown as AtomicClaim[];
       anchorRetryReason = evaluatedContract.anchorRetryReason;
@@ -534,6 +536,7 @@ export async function extractClaims(
               retryPass2.inputClassification ?? "single_atomic_claim",
               pipelineConfig,
               retrySalienceCommitment,
+              retryPass2.distinctEvents ?? [],
             )
               );
           retryContractResult = result;
@@ -567,6 +570,7 @@ export async function extractClaims(
             state,
             26,
             retrySalienceCommitment,
+            retryPass2.distinctEvents ?? [],
           )
           : undefined;
 
@@ -665,6 +669,7 @@ export async function extractClaims(
                   activePass2.inputClassification ?? "single_atomic_claim",
                   pipelineConfig,
                   salienceCommitment,
+                  activePass2.distinctEvents ?? [],
                 )
               ));
             } finally {
@@ -695,6 +700,7 @@ export async function extractClaims(
                 state,
                 28,
                 salienceCommitment,
+                activePass2.distinctEvents ?? [],
               );
               if (!evaluatedRepair.effectiveRePromptRequired) {
                 activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
@@ -978,8 +984,10 @@ export async function extractClaims(
     const multiEventGuidance =
       `DECOMPOSITION GUIDANCE: The input references ${distinctEventCount} distinct events or proceedings. ` +
       `Prior extraction collapsed these into a single claim. ` +
-      `Extract one atomic claim per distinct event or proceeding mentioned in the input. ` +
-      `Each claim should be independently verifiable with distinct evidence.`;
+      `Extract separate atomic claims for each independently verifiable direct event, branch, proceeding, comparison side, or decision gate represented by the input-derived distinct-events inventory. ` +
+      `Preserve any priority salience anchor in every split claim whose main act or state remains inside that anchor's semantic scope. ` +
+      `Do not create claims for evidence-only or background events that are not asserted by the input. ` +
+      `Input-derived distinct-events inventory: ${JSON.stringify(bestPass2.distinctEvents ?? [])}.`;
 
     try {
       const mt5RetrySalienceCommitment = usingContractApprovedMt5Exception
@@ -1055,6 +1063,7 @@ export async function extractClaims(
             retryPass2.inputClassification ?? "single_atomic_claim",
             pipelineConfig,
             mt5RetrySalienceCommitment,
+            retryPass2.distinctEvents ?? [],
           )
         );
         state.llmCalls += mt5ContractValidationAttempts;
@@ -1082,6 +1091,7 @@ export async function extractClaims(
             state,
             31,
             mt5RetrySalienceCommitment,
+            retryPass2.distinctEvents ?? [],
           );
           acceptRetry = !evaluatedMt5Contract.effectiveRePromptRequired;
         } else {
@@ -1152,6 +1162,7 @@ export async function extractClaims(
           bestPass2.inputClassification ?? "single_atomic_claim",
           pipelineConfig,
           salienceCommitment,
+          bestPass2.distinctEvents ?? [],
         )
       );
       state.llmCalls += finalContractValidationAttempts;
@@ -1180,6 +1191,7 @@ export async function extractClaims(
           state,
           30,
           salienceCommitment,
+          bestPass2.distinctEvents ?? [],
         );
         contractValidationSummary = evaluatedFinalContract.summary;
         contractValidationSummary.stageAttribution = stageAttribution;
@@ -3247,6 +3259,19 @@ function buildSalienceBindingContextJson(
   );
 }
 
+function buildDistinctEventsContextJson(
+  distinctEvents?: CBClaimUnderstanding["distinctEvents"],
+): string {
+  return JSON.stringify(
+    {
+      count: distinctEvents?.length ?? 0,
+      events: distinctEvents ?? [],
+    },
+    null,
+    2,
+  );
+}
+
 export function applySingleClaimAtomicityValidation(
   contractValidation: EvaluatedClaimContractValidation,
   atomicityResult: SingleClaimAtomicityValidationResult | undefined,
@@ -3522,6 +3547,7 @@ async function runSingleClaimBindingContractChallenge(
   inputClassification: string,
   pipelineConfig: PipelineConfig,
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+  distinctEvents: CBClaimUnderstanding["distinctEvents"] | undefined,
   state: CBResearchState,
   progressPercent: number,
 ): Promise<EvaluatedClaimContractValidation | undefined> {
@@ -3546,6 +3572,7 @@ async function runSingleClaimBindingContractChallenge(
     inputClassification,
     pipelineConfig,
     bindingSalienceCommitment,
+    distinctEvents,
   );
   state.llmCalls++;
 
@@ -3565,6 +3592,7 @@ async function applyApprovedSingleClaimChallenges(
   state: CBResearchState,
   progressPercent: number,
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+  distinctEvents?: CBClaimUnderstanding["distinctEvents"],
 ): Promise<EvaluatedClaimContractValidation> {
   if (!shouldRunSingleClaimAtomicityValidation(claims, contractValidation, salienceCommitment)) {
     return contractValidation;
@@ -3578,6 +3606,7 @@ async function applyApprovedSingleClaimChallenges(
     inputClassification,
     pipelineConfig,
     salienceCommitment,
+    distinctEvents,
     state,
     progressPercent,
   );
@@ -3597,6 +3626,7 @@ async function applyApprovedSingleClaimChallenges(
     inputClassification,
     pipelineConfig,
     salienceCommitment,
+    distinctEvents,
     state,
     progressPercent,
   );
@@ -3615,6 +3645,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
   inputClassification: string,
   pipelineConfig: PipelineConfig,
   salienceCommitment: NonNullable<CBClaimUnderstanding["salienceCommitment"]> | undefined,
+  distinctEvents: CBClaimUnderstanding["distinctEvents"] | undefined,
   state: CBResearchState,
   progressPercent: number,
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
@@ -3631,6 +3662,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     inputClassification,
     pipelineConfig,
     salienceCommitment,
+    distinctEvents,
   );
   state.llmCalls++;
 
@@ -3648,6 +3680,7 @@ async function runSingleClaimAtomicityValidationWithRecheck(
     inputClassification,
     pipelineConfig,
     salienceCommitment,
+    distinctEvents,
   );
   state.llmCalls++;
 
@@ -3662,6 +3695,7 @@ async function validateSingleClaimAtomicity(
   inputClassification: string,
   pipelineConfig: PipelineConfig,
   salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+  distinctEvents?: CBClaimUnderstanding["distinctEvents"],
 ): Promise<SingleClaimAtomicityValidationResult | undefined> {
   if (claims.length !== 1) return undefined;
 
@@ -3675,6 +3709,7 @@ async function validateSingleClaimAtomicity(
       impliedClaim,
       articleThesis,
       salienceBindingContextJson: buildSalienceBindingContextJson(salienceCommitment),
+      distinctEventsContextJson: buildDistinctEventsContextJson(distinctEvents),
       atomicClaimsJson: JSON.stringify(
         claims.map((claim) => ({
           claimId: claim.id,
@@ -3799,6 +3834,7 @@ async function validateClaimContract(
   inputClassification: string,
   pipelineConfig: PipelineConfig,
   salienceBinding?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
+  distinctEvents?: CBClaimUnderstanding["distinctEvents"],
 ): Promise<ClaimContractValidationResult | undefined> {
   if (claims.length === 0) return undefined;
 
@@ -3815,6 +3851,7 @@ async function validateClaimContract(
       impliedClaim,
       articleThesis,
       salienceBindingContextJson,
+      distinctEventsContextJson: buildDistinctEventsContextJson(distinctEvents),
       atomicClaimsJson: JSON.stringify(
         claims.map((c) => {
           // Track 1 (Rev B): pass directness context so the LLM validator can

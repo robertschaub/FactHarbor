@@ -1499,6 +1499,17 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
         null,
         2,
       ),
+      distinctEventsContextJson: JSON.stringify(
+        {
+          count: 2,
+          events: [
+            { name: "Branch A", date: "", description: "First input-derived branch" },
+            { name: "Branch B", date: "", description: "Second input-derived branch" },
+          ],
+        },
+        null,
+        2,
+      ),
       atomicClaimsJson: JSON.stringify(
         [
           {
@@ -1538,6 +1549,8 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
     expect(section).not.toBeNull();
     expect(section).toContain("Precommitted priority-anchor guard");
+    expect(section).toContain("Detected distinct-events reconciliation");
+    expect(section).toContain("${distinctEventsContextJson}");
     expect(section).toContain('"truthConditionAnchor"');
     expect(section).toContain('"antiInferenceCheck"');
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");

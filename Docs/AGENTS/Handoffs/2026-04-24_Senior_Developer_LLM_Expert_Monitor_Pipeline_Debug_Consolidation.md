@@ -11,6 +11,7 @@ files_touched:
   - Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md
   - Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Pipeline_Integrity_Fixes.md
   - Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md
+  - Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Stage1_Distinct_Events_Validator_Context.md
 ---
 
 ### 2026-04-24 | Senior Developer / LLM Expert | Codex | Monitor Pipeline Debug Consolidation
@@ -138,8 +139,8 @@ The session covered:
 
 11. **Browser-control tooling remains imperfect**
     - The in-app browser could be navigated and DOM-snapshotted earlier, but CDP screenshot capture timed out after service restart.
-    - In the resumed context, the Browser Use Node REPL execution tool was not exposed, so only a local browser fallback could be opened.
-    - This is a tooling/session issue, not a FactHarbor app root cause, but it affected "over-the-shoulder" monitoring.
+    - In the resumed context, Browser Use was restored through the Node REPL `iab` backend and the app was opened at `http://localhost:3000/jobs`.
+    - This remains a tooling/session monitoring item, not a FactHarbor app root cause.
 
 12. **API-side test harness gap remains**
     - Some claim-selection draft/service state-machine behaviors still lack direct API-side tests because the repo does not yet have a dedicated API test project.
@@ -179,6 +180,36 @@ The session covered:
 - Clean post-runner-claim validation: `d1689dfbd8ff46d98e76730bfd16fafb` on `ba39b52eef22336235aa6acafc8a0cb6c4191241+1586b2ba`, `LEANING-TRUE` 68/70.
 - Guard live-validation jobs: `d29fd298`, `6c23a1bd`, `e16ed62f`, `322d3d80`.
 - SVP/PDF older job remains pre-fix evidence for diagnosis, not clean validation of the final guard.
+
+## Follow-Up Findings From Newest Monitor Jobs
+
+These were added after the Captain pointed to jobs `3328ed201dd744148678efc015d7c33a`, `d1689dfbd8ff46d98e76730bfd16fafb`, and `466c86c0a399466fb8800c9134edf86e`.
+
+1. **Bundesrat `rechtskräftig` one-claim regression identified**
+   - Jobs `d1689df...` and `466c86...` both returned one near-verbatim AtomicClaim for the Captain-defined input.
+   - Both jobs classified the input as `single_atomic_claim` and recorded `contractValidationSummary.preservesContract=true`.
+   - Both ran single-claim atomicity validation and a binding contract challenge, but those validators did not receive the Pass 2 `distinctEvents` inventory that later triggered MT-5(C).
+   - MT-5(C) did trigger; `d1689df...` generated a 3-claim retry candidate, but because the retry did not revalidate cleanly, the code kept the original contract-approved one-claim set.
+   - Root cause class: downstream LLM validators lacked upstream input-derived structural context, so a near-verbatim one-claim approval overruled a later collapse signal.
+
+2. **Bundesrat fix implemented**
+   - `validateClaimContract()` and `validateSingleClaimAtomicity()` now receive `distinctEventsContextJson`.
+   - `CLAIM_CONTRACT_VALIDATION` and `CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION` now include topic-neutral detected distinct-events reconciliation rules.
+   - MT-5(C) reprompt guidance now names generic direct branch/proceeding/comparison-side/decision-gate splits and requires priority-anchor preservation in split claims where in scope.
+   - This is LLM-powered validation context, not deterministic semantic branch detection.
+
+3. **SVP PDF UNVERIFIED remains a separate broad-input quality packet**
+   - Job `3328ed...` correctly failed closed as `UNVERIFIED` / damaged rather than shipping a misleading report.
+   - Stage 1 extracted five claims from the PDF but omitted major thesis branches and the priority anchor around continuing approximately 40,000 annual immigration/fachkräfte flow.
+   - It also classified the broad PDF/article input as `single_atomic_claim`, which is suspicious and should remain under `MON-STG1-QUAL`.
+   - The current distinct-events validator-context patch may improve auditing of broad-input structure, but it does not fully solve broad article/PDF extraction.
+
+4. **Verification for this follow-up**
+   - Focused prompt-contract tests passed.
+   - Focused claim-contract validation tests passed.
+   - Focused MT-5 routing tests passed.
+   - Full `npm test` passed.
+   - `npm -w apps/web run build` passed and reseeded `claimboundary` prompt hash `28d09dc0d2c0...`.
 
 ## Documentation Map
 

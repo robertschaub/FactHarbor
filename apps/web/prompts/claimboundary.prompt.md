@@ -557,6 +557,9 @@ Your judgment must be traceable. If you approve preservation of a modifier-beari
 21. **Explicit conjunct coverage audit (MANDATORY).**
     When the input itself states multiple independently verifiable clause-level propositions joined by coordination, punctuation, or repeated predicate structure, at least one thesis-direct claim must preserve each explicit proposition unit. Do NOT approve a claim set that preserves one coordinated proposition while omitting another explicit independently verifiable conjunct merely because the clauses share the same actors, proceeding, topic, or legal frame.
 
+22. **Detected distinct-events reconciliation (MANDATORY when provided).**
+    The detected distinct-events inventory is advisory structural context emitted by the extraction stage from the input text. It is not ground truth and it does not authorize adding events that are not asserted by the input. When that inventory lists two or more entries and the accepted claim set has only one thesis-direct claim, do NOT approve the set merely because the claim is near-verbatim. First verify against the original input whether two or more listed entries are independently verifiable thesis components, branch events, comparison sides, proceedings, or decision gates. If they are and they remain bundled into one claim or one is omitted, fail validation and set `rePromptRequired: true`. If you approve a single claim despite multiple listed entries, your summary must explain why the entries are inseparable, merely search milestones, duplicate descriptions of the same event, or not asserted thesis components.
+
 ### Input
 
 Original input:
@@ -565,6 +568,11 @@ Original input:
 Precommitted salience context (when available):
 ```json
 ${salienceBindingContextJson}
+```
+
+Detected distinct events / branch candidates from extraction (advisory, input-derived):
+```json
+${distinctEventsContextJson}
 ```
 
 Input classification:
@@ -652,6 +660,7 @@ Assess the original input and the single extracted claim. Determine whether the 
 10. **No false positives for inseparable composites.** Do NOT require decomposition for pure rank/order/composite propositions whose coordinated phrase or comparison frame cannot resolve differently part-by-part.
 11. **Conservative retry rule.** Set `rePromptRequired: true` only when the single claim is materially non-atomic and downstream research would likely investigate different propositions if the claim were split.
 12. **Mandatory branch enumeration.** When independently verifiable bundled sub-propositions relevant to this audit are present, list each one in `branchLabels` using short verbatim or near-verbatim labels from the input or the single claim. Use `branchLabels` for coordinated branches and for comparison sides alike. Return an empty array only when no such bundled sub-propositions are present.
+13. **Detected distinct-events reconciliation.** Treat the detected distinct-events inventory as advisory structural context from the extraction stage, not as ground truth. Verify entries against the original input. If two or more entries correspond to independently verifiable thesis components, branch events, comparison sides, proceedings, or decision gates and the single claim leaves them fused, set `isAtomic: false`, `bundledInSingleClaim: true`, list the branches, and set `rePromptRequired: true`. If the inventory lists multiple entries but you approve the single claim, explain why those entries are inseparable, duplicate descriptions of one event, merely search milestones, or not asserted thesis components.
 
 ### Input
 
@@ -661,6 +670,11 @@ Original input:
 Precommitted salience context (when available):
 ```json
 ${salienceBindingContextJson}
+```
+
+Detected distinct events / branch candidates from extraction (advisory, input-derived):
+```json
+${distinctEventsContextJson}
 ```
 
 Input classification:

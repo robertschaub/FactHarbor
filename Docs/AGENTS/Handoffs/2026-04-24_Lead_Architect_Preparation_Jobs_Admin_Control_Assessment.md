@@ -1,0 +1,9 @@
+---
+### 2026-04-24 | Lead Architect | Codex (GPT-5) | Preparation Jobs Admin Control Assessment
+**Task:** Analyze whether admins can safely see and manipulate all jobs in preparation status.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Preparation_Jobs_Admin_Control_Assessment.md`, `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Feasible and low risk if implemented as an admin surface over `ClaimSelectionDraftEntity`, not by folding draft preparation into normal `JobEntity` rows. Current preparation sessions are drafts with statuses like `QUEUED`, `PREPARING`, `AWAITING_CLAIM_SELECTION`, `FAILED`, `CANCELLED`, `EXPIRED`, and `COMPLETED`; the real report `JobEntity` is created only after confirmation or auto-confirmation. Safe manipulation should reuse existing service operations: view, open session, hide/unhide, cancel, retry failed drafts, and confirm valid prepared selections.
+**Open items:** Implementation not performed. A Senior Developer should decide the exact admin UX scope: only `QUEUED`/`PREPARING`, or broader active preparation sessions including `AWAITING_CLAIM_SELECTION` and `FAILED`.
+**Warnings:** Do not add arbitrary admin status or JSON-edit controls. Canceling a `PREPARING` draft is DB-safe because later persistence paths ignore terminal drafts, but it does not abort the already-running Stage 1 LLM work. The existing internal `recoverable` endpoint is a runner recovery contract and should not be expanded into a UI contract without care.
+**For next agent:** Add a dedicated admin-only draft list endpoint and Next.js proxy, surface rows in an admin preparation/session view or a separate section on `/jobs`, and keep actions constrained to existing service methods. Add tests for admin-only visibility, hidden filtering, cancel while preparing, retry failed only, and no non-admin draft enumeration.
+**Learnings:** No durable role learning appended.

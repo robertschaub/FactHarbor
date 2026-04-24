@@ -245,6 +245,17 @@ describe("Stage-1 prompt contract", () => {
         null,
         2,
       ),
+      distinctEventsContextJson: JSON.stringify(
+        {
+          count: 2,
+          events: [
+            { name: "Decision gate A", date: "", description: "First input-derived branch" },
+            { name: "Decision gate B", date: "", description: "Second input-derived branch" },
+          ],
+        },
+        null,
+        2,
+      ),
       atomicClaimsJson: JSON.stringify([
         {
           claimId: "AC_01",
@@ -285,6 +296,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("No false positives for inseparable composites");
       expect(section).toContain("Mandatory branch enumeration");
       expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");
+      expect(section).toContain("Detected distinct-events reconciliation");
+      expect(section).toContain("${distinctEventsContextJson}");
       expect(section).toContain("singleClaimAssessment");
       expect(section).toContain("coordinatedBranchFinding");
       expect(section).toContain("bundledInSingleClaim");
@@ -465,6 +478,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
+      expect(contract).toContain("Detected distinct-events reconciliation");
+      expect(contract).toContain("${distinctEventsContextJson}");
     });
   });
 });
