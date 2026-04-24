@@ -1,0 +1,9 @@
+---
+### 2026-04-24 | Senior Developer | Codex (GPT-5) | Code Review Findings Fix
+**Task:** Fix actionable findings from the last-3-days code review and identify work better suited to other agents.
+**Files touched:** `apps/web/src/lib/claim-selection-draft-proxy.ts`; `apps/web/test/unit/lib/claim-selection-draft-proxy.test.ts`; `apps/web/src/lib/analyzer/research-acquisition-stage.ts`; `apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts`; `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`; `apps/api/Services/ClaimSelectionDraftService.cs`; `apps/api/Program.cs`; `apps/api/appsettings.json`; `apps/web/.env.example`.
+**Key decisions:** Draft proxy no longer forwards public `x-forwarded-for` by default; it forwards a client IP only from `FH_TRUSTED_CLIENT_IP_HEADER`. Draft restarts now reject cancelled drafts and use a bounded `ClaimSelectionDrafts:MaxRestartsPerDraft` setting. The manual draft table bootstrap now includes/ensures `IsHidden`. Existing acquisition sources without cached body text are queued for refetch instead of skipped.
+**Open items:** Deployment must configure a trusted reverse-proxy header, strip inbound copies of that header, and set `FH_TRUSTED_CLIENT_IP_HEADER` if per-client API draft rate limiting is required behind Next.js.
+**Warnings:** Without the trusted header deployment step, draft proxy requests will not forward a client IP to the API; API-side draft rate limiting may collapse to the proxy/server address while invite/restart limits still protect quota.
+**For next agent:** Verify production proxy config for `FH_TRUSTED_CLIENT_IP_HEADER=x-fh-client-ip` or equivalent. Focus code anchors: `buildClaimSelectionDraftForwardHeaders`, `RestartWithOtherAsync`, `EnsureClaimSelectionDraftsColumn`, and `fetchSources`.
+**Learnings:** Appended to Role_Learnings.md? no.

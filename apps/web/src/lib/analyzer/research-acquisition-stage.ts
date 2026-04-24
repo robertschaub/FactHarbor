@@ -203,18 +203,24 @@ export async function fetchSources(
 
   for (const source of deduplicatedRelevantSources.values()) {
     const existingSource = existingSourcesByUrl.get(source.url);
-    if (
-      existingSource
-      && existingSource.category !== "text/html"
-      && typeof existingSource.fullText === "string"
-      && existingSource.fullText.length > 0
-    ) {
-      fetched.push({
-        url: existingSource.url,
-        title: existingSource.title || existingSource.url,
-        text: existingSource.fullText.slice(0, 8000),
-      });
-      reusedSourceCount++;
+    if (existingSource) {
+      const hasCachedBody =
+        typeof existingSource.fullText === "string"
+        && existingSource.fullText.length > 0;
+      if (
+        existingSource.category !== "text/html"
+        && hasCachedBody
+      ) {
+        fetched.push({
+          url: existingSource.url,
+          title: existingSource.title || existingSource.url,
+          text: existingSource.fullText.slice(0, 8000),
+        });
+        reusedSourceCount++;
+        continue;
+      }
+
+      toFetch.push({ ...source, depth: 0 });
       continue;
     }
 

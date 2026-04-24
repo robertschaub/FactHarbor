@@ -3658,16 +3658,25 @@ describe("Stage 2: fetchSources", () => {
     );
   });
 
-  it("should skip already-fetched URLs", async () => {
+  it("should refetch existing source records without cached body text", async () => {
     const state = {
       sources: [{ url: "https://example.com/1", id: "S_001" }],
     } as any;
     const relevantSources = [{ url: "https://example.com/1" }];
+    mockFetchUrl.mockResolvedValue({
+      text: "Recovered source content ".repeat(20),
+      title: "Recovered Source",
+      contentType: "text/html",
+    });
 
     const result = await fetchSources(relevantSources, "test", state);
 
-    expect(result).toHaveLength(0);
-    expect(mockFetchUrl).not.toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+    expect(mockFetchUrl).toHaveBeenCalledWith(
+      "https://example.com/1",
+      expect.objectContaining({ timeoutMs: 20000, maxLength: 15000 }),
+    );
+    expect(state.sources[0].fullText).toContain("Recovered source content");
   });
 
   it("should skip sources with too-short content", async () => {
@@ -3796,7 +3805,7 @@ describe("Stage 2: runResearchIteration", () => {
     // Default metric-bearing fixtures now trigger one refinement pass.
     expect(state.searchQueries).toHaveLength(2);
     expect(state.searchQueries.map((query: any) => query.focus)).toEqual(["main", "refinement"]);
-    expect(state.llmCalls).toBe(5);
+    expect(state.llmCalls).toBe(6);
     // Should have fetched source
     expect(state.sources).toHaveLength(1);
     // Should have added evidence (if it passes filter)

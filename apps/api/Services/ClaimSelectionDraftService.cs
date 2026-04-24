@@ -6,6 +6,7 @@ using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace FactHarbor.Api.Services;
 
@@ -15,14 +16,21 @@ public sealed class ClaimSelectionDraftService
     // Current drafts must carry their configured threshold in DraftStateJson.
     private const int LegacyDraftSelectionCap = 5;
     private const int AbsoluteClaimSelectionCap = 5;
+    private const int DefaultMaxRestartsPerDraft = 1;
+    private const int AbsoluteMaxRestartsPerDraft = 5;
 
     private readonly FhDbContext _db;
     private readonly ILogger<ClaimSelectionDraftService> _log;
+    private readonly int _maxRestartsPerDraft;
 
-    public ClaimSelectionDraftService(FhDbContext db, ILogger<ClaimSelectionDraftService> log)
+    public ClaimSelectionDraftService(
+        FhDbContext db,
+        ILogger<ClaimSelectionDraftService> log,
+        IConfiguration configuration)
     {
         _db = db;
         _log = log;
+        _maxRestartsPerDraft = ResolveMaxRestartsPerDraft(configuration);
     }
 
     public sealed record CreateDraftResult(
@@ -298,8 +306,12 @@ public sealed class ClaimSelectionDraftService
             return (null, "Draft has expired", 410);
         if (draft.Status == "COMPLETED")
             return (null, "Draft already confirmed", 409);
+        if (draft.Status == "CANCELLED")
+            return (null, "Draft has been cancelled", 409);
         if (draft.Status == "PREPARING")
             return (null, "Draft is currently being prepared — wait for it to finish or cancel it first", 409);
+        if (draft.RestartCount >= _maxRestartsPerDraft)
+            return (null, BuildRestartLimitError(_maxRestartsPerDraft), 429);
 
         draft.ActiveInputType = newInputType;
         draft.ActiveInputValue = newInputValue;
@@ -633,6 +645,21 @@ public sealed class ClaimSelectionDraftService
         return selectionCap == 1
             ? "Must select exactly 1 claim"
             : $"Must select between 1 and {selectionCap} claims";
+    }
+
+    private static int ResolveMaxRestartsPerDraft(IConfiguration configuration)
+    {
+        var configured = configuration.GetValue(
+            "ClaimSelectionDrafts:MaxRestartsPerDraft",
+            DefaultMaxRestartsPerDraft);
+        return Math.Clamp(configured, 0, AbsoluteMaxRestartsPerDraft);
+    }
+
+    private static string BuildRestartLimitError(int maxRestarts)
+    {
+        return maxRestarts == 0
+            ? "Draft restarts are disabled"
+            : $"Draft restart limit reached ({maxRestarts})";
     }
 
     private static string? TryExtractObservabilityEventMessage(string? draftStateJson)

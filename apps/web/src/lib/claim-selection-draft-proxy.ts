@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { checkAdminKey, getClientIp } from "@/lib/auth";
+import { checkAdminKey } from "@/lib/auth";
 
 export type DraftRouteParams = { draftId?: string };
 export type DraftRouteContext = { params: Promise<DraftRouteParams> };
@@ -54,6 +54,34 @@ function tryGetDraftTokenFromCookieHeader(cookieHeader: string | null, draftId: 
   return null;
 }
 
+function getTrustedClientIpHeaderName(): string | null {
+  const headerName = process.env.FH_TRUSTED_CLIENT_IP_HEADER?.trim();
+  if (!headerName || !/^[a-z0-9-]+$/i.test(headerName)) {
+    return null;
+  }
+  return headerName;
+}
+
+function sanitizeForwardedIp(value: string | null): string | null {
+  if (!value) return null;
+
+  const candidate = value.split(",")[0]?.trim();
+  if (!candidate || candidate.length > 128 || /[\r\n]/.test(candidate)) {
+    return null;
+  }
+
+  return candidate;
+}
+
+function getTrustedClientIp(request: Request): string | null {
+  const trustedHeaderName = getTrustedClientIpHeaderName();
+  if (!trustedHeaderName) {
+    return null;
+  }
+
+  return sanitizeForwardedIp(request.headers.get(trustedHeaderName));
+}
+
 export function buildClaimSelectionDraftForwardHeaders(
   request: Request,
   options?: {
@@ -79,7 +107,10 @@ export function buildClaimSelectionDraftForwardHeaders(
     if (draftToken) headers["X-Draft-Token"] = draftToken;
   }
 
-  headers["x-forwarded-for"] = getClientIp(request);
+  const trustedClientIp = getTrustedClientIp(request);
+  if (trustedClientIp) {
+    headers["x-forwarded-for"] = trustedClientIp;
+  }
   const forwardedProto = request.headers.get("x-forwarded-proto");
   if (forwardedProto) headers["x-forwarded-proto"] = forwardedProto;
 

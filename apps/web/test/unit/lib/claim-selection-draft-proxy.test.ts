@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { NextResponse } from "next/server";
 
 import {
@@ -10,6 +10,16 @@ import {
 } from "@/lib/claim-selection-draft-proxy";
 
 describe("claim-selection-draft-proxy", () => {
+  const originalTrustedClientIpHeader = process.env.FH_TRUSTED_CLIENT_IP_HEADER;
+
+  afterEach(() => {
+    if (originalTrustedClientIpHeader === undefined) {
+      delete process.env.FH_TRUSTED_CLIENT_IP_HEADER;
+    } else {
+      process.env.FH_TRUSTED_CLIENT_IP_HEADER = originalTrustedClientIpHeader;
+    }
+  });
+
   it("falls back to the persistent draft cookie when no draft header is present", () => {
     const request = new Request("http://localhost/api/fh/claim-selection-drafts/draft-1", {
       headers: {
@@ -45,6 +55,33 @@ describe("claim-selection-draft-proxy", () => {
     ).toEqual(
       expect.objectContaining({
         "X-Draft-Token": "token-header",
+      }),
+    );
+  });
+
+  it("does not forward user-supplied x-forwarded-for by default", () => {
+    delete process.env.FH_TRUSTED_CLIENT_IP_HEADER;
+    const request = new Request("http://localhost/api/fh/claim-selection-drafts", {
+      headers: {
+        "x-forwarded-for": "203.0.113.10",
+      },
+    });
+
+    expect(buildClaimSelectionDraftForwardHeaders(request)).not.toHaveProperty("x-forwarded-for");
+  });
+
+  it("forwards client IP only from the configured trusted header", () => {
+    process.env.FH_TRUSTED_CLIENT_IP_HEADER = "x-fh-client-ip";
+    const request = new Request("http://localhost/api/fh/claim-selection-drafts", {
+      headers: {
+        "x-forwarded-for": "203.0.113.10",
+        "x-fh-client-ip": "198.51.100.23",
+      },
+    });
+
+    expect(buildClaimSelectionDraftForwardHeaders(request)).toEqual(
+      expect.objectContaining({
+        "x-forwarded-for": "198.51.100.23",
       }),
     );
   });

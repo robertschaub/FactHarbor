@@ -152,6 +152,7 @@ using (var scope = app.Services.CreateScope())
     EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");
     EnsureClaimSelectionDraftsTable(db);
     EnsureClaimSelectionDraftsColumn(db, "LastEventMessage", "TEXT");
+    EnsureClaimSelectionDraftsColumn(db, "IsHidden", "INTEGER NOT NULL DEFAULT 0");
     EnsureUniqueJobDraftIndex(db);
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
@@ -261,6 +262,7 @@ static void EnsureClaimSelectionDraftsTable(FhDbContext db)
                 LastEventMessage TEXT,
                 DraftStateJson TEXT,
                 DraftAccessTokenHash TEXT,
+                IsHidden INTEGER NOT NULL DEFAULT 0,
                 FinalJobId TEXT
             );
             CREATE INDEX IX_ClaimSelectionDrafts_Status ON ClaimSelectionDrafts (Status);";

@@ -536,6 +536,46 @@ describe("research-acquisition-stage", () => {
       expect(state.sources[0]?.fullText).toContain("Refetched HTML content");
     });
 
+    it("should refetch existing source records that do not have cached body text", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        return {
+          text: "Recovered source content ".repeat(20),
+          title: "Recovered title",
+          contentType: "application/pdf",
+        };
+      });
+
+      const state = createMinimalState();
+      state.sources.push({
+        id: "S_001",
+        url: "https://cached.example/missing-body.pdf",
+        title: "Metadata-only source",
+        trackRecordScore: null,
+        fullText: "",
+        fetchedAt: new Date().toISOString(),
+        category: "application/pdf",
+        fetchSuccess: false,
+        searchQuery: "prior query",
+        relevanceScore: 0.91,
+      } as CBResearchState["sources"][number]);
+
+      const result = await fetchSources(
+        [{ url: "https://cached.example/missing-body.pdf", relevanceScore: 0.91 }],
+        "test query",
+        state,
+        { parallelExtractionLimit: 1, sourceFetchTimeoutMs: 5000, fetchSameDomainDelayMs: 0 },
+      );
+
+      expect(attemptedUrls).toEqual(["https://cached.example/missing-body.pdf"]);
+      expect(result.map((source) => source.url)).toEqual(["https://cached.example/missing-body.pdf"]);
+      expect(state.sources).toHaveLength(1);
+      expect(state.sources[0]?.fetchSuccess).toBe(true);
+      expect(state.sources[0]?.fullText).toContain("Recovered source content");
+    });
+
     it("should classify empty-PDF extraction failures as PDF parse errors", async () => {
       const { extractTextFromUrl } = await import("@/lib/retrieval");
       vi.mocked(extractTextFromUrl).mockRejectedValue(
