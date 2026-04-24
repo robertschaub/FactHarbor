@@ -37,6 +37,15 @@ When user starts with "As \<Role\>", follow Role Activation Protocol in `/AGENTS
 
 **Context-budget note:** If loading all Required Reading exceeds Cascade's context window, load only the role file and defer document reads until needed.
 
+## Internal Knowledge Startup
+
+If your Windsurf setup supports MCP and `fhAgentKnowledge` is configured, use `preflight_task`
+first for non-trivial tasks. Otherwise fall back to:
+
+`npm run fh-knowledge -- preflight-task --task "..." [--role ...]`
+
+Setup guide: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
+
 ## Conventions
 
 - Commits: `type(scope): description`

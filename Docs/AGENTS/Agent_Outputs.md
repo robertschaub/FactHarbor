@@ -1944,3 +1944,111 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | FactHarbor Statutes Signature Block And Updated DE PDF -- [Standard] [open-items: yes]
 **For next agent:** The binding German statutes now include a formal end-of-document signature block in [Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md). The original `Vereinsstatuten_FactHarbor_DE.pdf` could not be overwritten because another process had the file open, so the refreshed PDF with the signature block was emitted as [Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf](/c:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf). If the canonical filename matters later, close the open PDF handle and re-render or rename deliberately.
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | NPO Formation Checklist International Recognition Update -- [Standard] [open-items: yes]
+**For next agent:** [NPO_Formation_Checklist.md](/c:/DEV/FactHarbor/Docs/Legal/NPO_Formation_Checklist.md) now states the actual recognition stack explicitly: Zurich commercial-register entry, Zurich tax exemption, then Goodstack / TechSoup / Candid, with NGOsource ED only when U.S. foundation fundraising becomes relevant. The checklist now includes an exact ordered next-step section from the current post-founding state, updates the Handelsregister filing details to match the official Zurich process more closely, and adds a compact official-source block at the end.
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | NPO Formation Checklist Handelsregister Filing Pack -- [Standard] [open-items: yes]
+**For next agent:** [NPO_Formation_Checklist.md](/c:/DEV/FactHarbor/Docs/Legal/NPO_Formation_Checklist.md) now includes a concrete Zurich Handelsregister submission pack for FactHarbor under the official-registration phase: exact required / conditional documents, explicit use of the current statutes and protocol file paths, and a recommended assembly order for finalizing signatures, acceptance declarations, board-constitution minutes, signature certifications, and the registration form. The remaining operational question is whether the founders want to rely on the existing founding protocol for board election acceptance or create a separate acceptance declaration to reduce filing risk.
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session And Job Read-Route Queue Recoverability -- [Significant] [open-items: yes]
+**For next agent:** The queue hang was not normal capacity pressure. In the live Next runtime, the background drain/watchdog path was not sufficient on its own, so queued sessions and stale running jobs could sit indefinitely. The fix was to make the UI-polled read routes kick recovery opportunistically: [claim-selection-drafts/[draftId]/route.ts](/c:/DEV/FactHarbor/apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/route.ts) now triggers `drainDraftQueue()`, and [jobs/route.ts](/c:/DEV/FactHarbor/apps/web/src/app/api/fh/jobs/route.ts) plus [jobs/[id]/route.ts](/c:/DEV/FactHarbor/apps/web/src/app/api/fh/jobs/[id]/route.ts) now trigger `drainRunnerQueue()`. This recovered the real stuck session `5a6162785b434263852b513d37a159de` and resumed progress on job `a5f79bc1d8e545ceab8d80dc3df0fe12`. The remaining queued final jobs are expected because the local env still has `FH_RUNNER_MAX_CONCURRENCY=1`.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_And_Job_Read_Route_Queue_Recoverability.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Text-First Follow-On Debate -- [Standard] [open-items: yes]
+**For next agent:** Debate result was `MODIFY`: pursue a text-first session-preparation path only as a post-`ACS-1` architecture track, not as an ACS v1 semantic change. The target design is text-first extraction + bounded retry + Gate 1 + recommendation/selection, with preliminary evidence retained only as a structural validator-triggered Stage 1 rescue and universal rollout gated on shadow parity for both Stage 1 claim quality and downstream report quality.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Text_First_Follow_On_Debate.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Text-First Proposal Document -- [Standard] [open-items: yes]
+**For next agent:** The debate result is now documented as a concrete `ACS-vNext` proposal in [2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md). The key guard is unchanged: text-first default plus bounded structural rescue is a follow-on design track only, with shadow validation required before any rollout.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Text_First_Proposal_Document.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Semantics-Preserving Async Proposal -- [Standard] [open-items: yes]
+**For next agent:** The active recommendation has changed. Keep current evidence-seeded Stage 1 semantics unchanged and solve the user problem with async session UX, a private active-sessions surface, readiness notifications, exact-result reuse under an identical analytical contract, and same-semantics Stage 1 hardening. The text-first redesign note remains only as retired historical context.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Semantics-Preserving Async Proposal Review -- [Standard] [open-items: yes]
+**For next agent:** The proposal holds up as the right direction for the async user-interaction problem because it builds on the current draft/prepared-job path and leaves Stage 1 semantics untouched. The main guard is Phase 2 reuse for URL inputs: exact URL alone is not semantics-complete because prepared snapshots depend on `resolvedInputText`, so reuse must include resolved-content identity or a freshness revalidation rule. Also keep the first inbox scoped honestly as same-browser resumability, not cross-device recovery.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal_Review.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Selection Readiness Root Cause Plan Review Disposition -- [Significant] [open-items: yes]
+**For next agent:** The active selection-readiness plan is now in [Docs/WIP/2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md) and has been review-tightened. The key correction is sequencing: the strongest currently measured blocker is Stage 1 latency before selection, not repeated broad-input contract-preservation failure. Broad-input Stage 1 quality remains a real secondary investigation track, but only on concrete failing packets. The final priority order is latency first, quality investigation second, log attribution third.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Selection_Readiness_Root_Cause_Plan_Review_Disposition.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Default Interactive Mode via UCM -- [Significant] [open-items: yes]
+**For next agent:** The `/analyze` web submit path no longer hardcodes `automatic` claim-selection mode. A new pipeline UCM field, `claimSelectionDefaultMode`, now controls the effective default and currently defaults to `interactive`. The draft-create proxy resolves the effective mode server-side and returns it to the client, so sessions created from `/analyze` now surface the manual AC Selection dialog again when the candidate-claim threshold is reached, while still preserving 15-minute idle auto-continue.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Default_Interactive_Mode_UCM.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Semantics-Preserving Async Proposal Finalized After Review Debate -- [Standard] [open-items: yes]
+**For next agent:** The async-preparation plan is now implementation-ready and review-narrowed. Phase 1 is explicitly same-browser async resumability only: private active-session surface, readiness signaling, and inbox safeguards while keeping Stage 1 semantics unchanged and draft access tokens in `sessionStorage`. Cross-draft prepared-result reuse and browser-persistent resume are now explicitly deferred to separate correctness/privacy review tracks instead of being treated as default follow-ons.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Preparation Async Proposal Review Cleanup -- [Standard] [open-items: yes]
+**For next agent:** The follow-up review cleanup fixed two traceability issues without changing direction: the finalized AGENTS output now points to the primary proposal handoff, and the Phase 2 acceptance criteria in the active async proposal are now expressed as observable checks instead of soft wording. Read this as a documentation precision pass on the async-proposal slice only, not as a statement that the entire repo is otherwise clean.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Async_Proposal_Review_Cleanup.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Browser-Close Recovery Review -- [Significant] [open-items: yes]
+**For next agent:** The same-browser/browser-close session-resume slice has now had a proper code review pass. The main hardening was privacy and churn control: the persistent local session registry no longer stores actual input previews, only generic `Text session` / `URL session` labels, and the `/analyze` resume surface no longer rewrites that registry on every polling cycle when nothing changed. Browser-close recovery still depends on the scoped HttpOnly draft-access cookie plus authenticated re-fetch, and the idle auto-continue default is now 15 minutes via the existing `claimSelectionIdleAutoProceedMs` UCM path.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Browser_Close_Recovery_Review.md
+
+---
+### 2026-04-23 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge CLI-First Implementation Slice -- [Significant] [open-items: yes]
+**For next agent:** The CLI-first internal knowledge layer now exists at `packages/fh-agent-knowledge/` with a working cache and query surface. Use `npm run fh-knowledge -- preflight-task --task "..." [--role ...]` as the default entry point, not ad hoc file hunting. The key retrieval bug found during smoke testing is already fixed: `preflight-task` no longer hides the MCP thread when a role is supplied, and `search-handoffs` now resolves role aliases through the parsed role table and returns field-level reasons. The next step is adoption/documentation, not another redesign; the MCP adapter itself remains deferred by the active spec.
+→ Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_CLI_First_Implementation_Slice.md
+
+---
+### 2026-04-23 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge Review Fixes -- [Standard] [open-items: yes]
+**For next agent:** The three Senior Architect review items on `@factharbor/fh-agent-knowledge` are now addressed. Query commands auto-refresh stale cache and expose `cacheRefreshed: true`, `health`/`refresh` still report stale state without mutating it, Windows cache writes no longer rely on temp-file rename replacement semantics, and missing optional source files no longer crash manifest snapshotting. This leaves the package ready for adoption wiring rather than more package-internal debugging.
+→ Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_Review_Fixes.md
+
+---
+### 2026-04-23 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge MCP Documentation Realignment -- [Standard] [open-items: yes]
+**For next agent:** The current governing docs now explicitly supersede the old CLI-first-only deferral. [2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) and [Docs/WIP/README.md](/c:/DEV/FactHarbor/Docs/WIP/README.md) now say the shared core and CLI are implemented and that the thin MCP adapter is the active next slice. Reviewer consolidation is: do not spend another cycle on adoption-vs-MCP debate; implement the MCP slice in this order: package dependency ownership, `scripts/fh-knowledge-mcp.mjs`, `src/adapters/mcp.mjs`, parity tests, then client wiring.
+→ Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_MCP_Documentation_Realignment.md
+
+---
+### 2026-04-24 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge MCP Execution Checklist -- [Standard] [open-items: yes]
+**For next agent:** The architecture did not need another planning round, but the first MCP coding slice now has an explicit execution freeze in [2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md): `stdio` only, exact tool names, direct `@modelcontextprotocol/sdk` ownership, thin-adapter-only responsibilities, and parity tests as the completion gate. Next is implementation, not more planning.
+→ Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Execution_Checklist.md
+
+---
+### 2026-04-24 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge MCP Adapter Implementation -- [Significant] [open-items: yes]
+**For next agent:** The thin MCP adapter is now implemented in the repo. `@factharbor/fh-agent-knowledge` now owns direct MCP runtime dependencies, `scripts/fh-knowledge-mcp.mjs` launches a stdio server, `src/adapters/mcp.mjs` exposes the frozen 9-tool surface, and CLI/MCP parity is enforced through a shared operation registry plus real stdio tests. The next step is rollout and client wiring, not more retrieval-layer implementation.
+→ Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Adapter_Implementation.md
+
+---
+### 2026-04-24 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge MCP Omitted Arguments Fix -- [Standard] [open-items: no]
+**For next agent:** The MCP interop regression is fixed. Zero-arg tools and the all-optional `refresh_knowledge` path in [mcp.mjs](/c:/DEV/FactHarbor/packages/fh-agent-knowledge/src/adapters/mcp.mjs) now accept omitted `arguments`, and [mcp-parity.test.mjs](/c:/DEV/FactHarbor/packages/fh-agent-knowledge/test/mcp-parity.test.mjs) covers the omitted-arguments case explicitly for `bootstrap_knowledge`, `check_knowledge_health`, and `refresh_knowledge`.
+→ Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Omitted_Arguments_Fix.md
+
+---
+### 2026-04-24 | Lead Architect | Codex (GPT-5) | Internal Agent Knowledge MCP Rollout Setup -- [Significant] [open-items: yes]
+**For next agent:** The rollout surface is now in place. `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md` is the central setup guide, `.cursor/mcp.json` and `.vscode/mcp.json` are committed project-scoped configs, and the main wrapper docs now tell agents to use `fhAgentKnowledge` `preflight_task` first with the CLI as fallback. The governing MCP spec and WIP index now reflect that rollout docs/configs are landed; the next step is real client validation and adoption, not more adapter logic.
+→ Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Rollout_Setup.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Dominant Proposition Senior Architect Review Disposition -- [Standard] [open-items: yes]
+**For next agent:** The latest dominant-proposition plan was already aligned with most of the Senior Architect review. The remaining pass was a narrow clarification update: stronger `topLevelProposition` / `dominanceAssessment` orthogonality wording, explicit Stage 1 finalization-time `componentClaimIds` cross-reference validation language, a clearer “not a restatement exemption” prompt rule, and a clearer UI rule that `articleThesis` should not sit alongside `topLevelProposition` in the main headline surface. No implementation work was done in this slice.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Dominant_Proposition_Senior_Architect_Review_Disposition.md
+
+---
+### 2026-04-23 | Unassigned | Codex (GPT-5) | Session Resume Review Follow-up -- [Significant] [open-items: yes]
+**For next agent:** The session-resume review follow-up closed the two real browser-close UX bugs. `ActiveClaimSelectionSessions.tsx` now keeps the `Open report` path available from persisted `lastKnownFinalJobId` even after the draft-access cookie is cleared, and the polling loop no longer remounts on every status transition. Added focused regressions for completed-session resume helpers and cancel-route cookie clearance.
+→ Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Resume_Review_Followup.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Stage 1 Preliminary Fetch Reuse For Selection Readiness -- [Significant] [open-items: yes]
+**For next agent:** Phase 1 of the selection-readiness plan now has a concrete same-semantics latency reduction in code. [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) now reuses exact in-flight and successful URL fetches during Stage 1 preliminary search so duplicate query results do not re-download/re-parse the same source before AC selection becomes available. Review forced one important correction: failed and underlength fetches are evicted from the cache so later duplicates can retry, and focused regressions now cover both failure and short-body recovery paths.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Stage1_Preliminary_Fetch_Reuse_For_Selection_Readiness.md

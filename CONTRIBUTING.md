@@ -83,6 +83,7 @@ This project uses AI coding agents extensively. If you are an AI agent, read:
 - [AGENTS.md](AGENTS.md) — fundamental rules, terminology, architecture
 - [Docs/AGENTS/](Docs/AGENTS/) — role-specific instructions
 - Tool-specific configs: `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/`, `.clinerules/`, `.windsurfrules`
+- MCP rollout/setup: [Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md](Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md)
 
 ## Questions?
 

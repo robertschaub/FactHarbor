@@ -1,9 +1,10 @@
 ---
-title: Internal Agent Knowledge Query Layer - CLI-First v1 Implementation Spec
+title: Internal Agent Knowledge Query Layer - MCP + CLI v1 Implementation Spec
 date: 2026-04-22
-authors: GitHub Copilot (GPT-5.4)
-status: Draft for implementation review
-scope: Local-only developer workflow knowledge layer for FactHarbor with shared query core and CLI-first rollout
+updated: 2026-04-24
+authors: GitHub Copilot (GPT-5.4), Codex (GPT-5)
+status: Active implementation spec
+scope: Local-only developer workflow knowledge layer for FactHarbor with shared query core plus implemented CLI and MCP adapters, with rollout docs/configs landed and client adoption follow-through next
 requires: Captain approval, Lead Developer implementation review
 related:
   - Docs/WIP/2026-04-16_Agent_Indexing_System_Design.md
@@ -11,53 +12,58 @@ related:
   - Docs/ARCHIVE/Agent_Outputs_2026-03.md
   - Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Improvement_Options_Debate.md
   - Docs/AGENTS/Handoffs/2026-04-19_Code_Reviewer_Indexing_Recommendation_Accuracy_Review.md
+  - Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_CLI_First_Implementation_Slice.md
+  - Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_Review_Fixes.md
   - scripts/build-index.mjs
   - package.json
 ---
 
-# Internal Agent Knowledge Query Layer - CLI-First v1 Implementation Spec
+# Internal Agent Knowledge Query Layer - MCP + CLI v1 Implementation Spec
 
 ## 1. Purpose
 
-This document refines the earlier indexing Phase 2 idea into an implementation-ready CLI-first v1 for a local internal developer workflow knowledge layer.
+This document defines the current v1 shape of the internal FactHarbor knowledge layer for developer workflow support.
 
 The goal is narrow:
 
-- give Claude Code, Cursor, Cline, Codex, and VS Code Copilot one consistent CLI-first way to retrieve FactHarbor working context
+- give Claude Code, Cursor, Cline, Codex, and VS Code Copilot one consistent way to retrieve FactHarbor working context through the same shared query core
 - reduce multi-file discovery overhead for handoffs, stage ownership, role context, and model-tier lookup
 - keep the system local-only and thin over existing sources of truth
-- move toward a gitignored local serving cache without deleting the current committed index artifacts in v1
+- use a gitignored local cache without deleting the current committed index artifacts in v1
 
 This document is intentionally not a product-facing MCP design. It must not become a parallel way to submit analyses, mutate reports, or bypass the existing job lifecycle.
+
+> Status update - 2026-04-24:
+> The earlier CLI-only deferral is now historical. The shared query core, CLI, and thin MCP adapter are all implemented in `packages/fh-agent-knowledge/`. Rollout setup documentation and committed project-scoped configs now exist for Cursor and VS Code/Copilot Chat. Broader client adoption and local client validation remain the active next slice.
 
 ## 2. Closed decisions
 
 The following items are settled for v1 and should be treated as implementation constraints, not open questions:
 
 1. v1 is for internal developer workflow only. It is not a public or partner-facing FactHarbor integration surface.
-2. v1 ships one shared query core and one adapter over that core: CLI.
-3. An MCP adapter is explicitly deferred until CLI usage validates that the added integration surface is worth it.
+2. v1 ships one shared query core and two thin adapters over that core: CLI and MCP.
+3. The shared query core, CLI, and thin MCP adapter are already implemented; rollout and adoption are the active next slice, not more server-side retrieval work.
 4. The v1 surface is limited to knowledge retrieval plus safe local cache operations.
-5. v1 tool scope includes: task preflight, handoff search, stage lookup, model-task lookup, role context, targeted doc-section retrieval, bootstrap, refresh, and health check.
+5. v1 tool scope includes the same read-only capability set across CLI and MCP: task preflight, handoff search, stage lookup, model-task lookup, role context, targeted doc-section retrieval, bootstrap, refresh, and health check.
 6. v1 does not include job submission, report mutation, config writes, database writes, build orchestration, test orchestration, or a general shell surface.
 7. v1 remains a thin layer over existing sources of truth in the repo. It must not introduce a second authoritative knowledge store.
 8. A gitignored local cache is the primary serving substrate in v1.
 9. The current committed generated index artifacts remain rollout-time compatibility, bootstrap inputs, and the default v1 query substrate for handoff, stage, and model lookups.
-10. The implementation lives outside `apps/` in a new shared package plus thin script entry points.
+10. The implementation lives outside `apps/` in a shared package plus thin script entry points.
 11. v1 uses plain Node ESM modules and does not require a separate build step.
 12. v1 is local-only. No hosted service, background daemon, or remote multi-user mode is introduced.
 13. v1 ships without telemetry by default. Optional local-only usage logging may be added later behind an explicit opt-in flag.
-14. Protocol-complete handoff publication is deferred from v1.
+14. Protocol-complete handoff publication remains deferred from v1.
 15. BM25, embeddings, and broader retrieval sophistication remain deferred.
 
 ## 3. Working terminology
 
-- `shared query core` = the only logic-bearing layer. CLI uses it in v1; future adapters may use it later.
+- `shared query core` = the only logic-bearing layer. CLI uses it now; MCP must use the same layer rather than re-implement behavior.
 - `knowledge cache` = the gitignored local materialized data used to answer queries quickly.
 - `compatibility indexes` = the current committed generated artifacts in `Docs/AGENTS/index/`.
 - `hot window` = the recent recency overlay from `Docs/AGENTS/Agent_Outputs.md`.
 - `safe action` = a local action allowed in v1 because it only affects the local cache. It does not touch jobs, reports, configs, databases, or repo documentation files.
-- `authoritative source` = the repo file that owns a fact. The MCP never becomes that owner.
+- `authoritative source` = the repo file that owns a fact. The knowledge layer never becomes that owner.
 
 ## 4. Scope and non-goals
 
@@ -73,6 +79,7 @@ The following items are settled for v1 and should be treated as implementation c
 - local cache bootstrap and refresh
 - health inspection for cache freshness and source coverage
 - local cache management only
+- thin MCP exposure of the same read-only capability set already supported by CLI
 
 ### 4.2 Explicitly out of scope
 
@@ -81,28 +88,31 @@ The following items are settled for v1 and should be treated as implementation c
 - config writes or UCM writes
 - SQLite writes or admin actions
 - generalized repo search over arbitrary source code
-- code generation or patch application through the MCP
+- code generation or patch application through the knowledge layer
 - background watchers or always-on sync services
 - replacing grep/search as the general source-code lookup mechanism
 - protocol-complete handoff publication or any other repo-doc write path
 
 The existing rule remains: handoff history and stage metadata can help route code discovery, but source code location still uses normal code search once the owning file is known.
 
-## 5. V1 CLI surface
+## 5. V1 surface
 
-V1 ships one command surface only: the CLI. MCP tool names are deliberately not frozen in this document because the adapter is deferred.
+V1 now has two aligned surfaces over the same shared query core:
 
-| Capability | CLI command | Writes? | Notes |
-|---|---|---|---|
-| Task preflight | `fh-knowledge preflight-task` | No | Highest-value entry point; returns the smallest useful starting bundle |
-| Handoff retrieval | `fh-knowledge search-handoffs` | No | Uses topics, roles, dates, touched paths, and summary signals |
-| Stage lookup | `fh-knowledge lookup-stage` | No | Returns owning file and exported functions |
-| Model-task lookup | `fh-knowledge lookup-model-task` | No | Returns tier and resolved model IDs |
-| Role context | `fh-knowledge get-role-context` | No | Returns role brief, key docs, and learnings |
-| Targeted doc read | `fh-knowledge get-doc-section` | No | Reads only allowlisted docs/sections |
-| Bootstrap cache | `fh-knowledge bootstrap` | Cache only | Initial clean-clone setup |
-| Refresh cache | `fh-knowledge refresh` | Cache only | Forced or conditional rebuild |
-| Cache health | `fh-knowledge health` | No | Reports freshness, gaps, and fallback state |
+- CLI is already implemented and available through `fh-knowledge` / `npm run fh-knowledge -- ...`
+- MCP is now implemented over stdio and exposes the same capability set as CLI
+
+| Capability | CLI command | MCP tool | Writes? | Status |
+|---|---|---|---|---|
+| Task preflight | `fh-knowledge preflight-task` | `preflight_task` | No | CLI and MCP implemented |
+| Handoff retrieval | `fh-knowledge search-handoffs` | `search_handoffs` | No | CLI and MCP implemented |
+| Stage lookup | `fh-knowledge lookup-stage` | `lookup_stage` | No | CLI and MCP implemented |
+| Model-task lookup | `fh-knowledge lookup-model-task` | `lookup_model_task` | No | CLI and MCP implemented |
+| Role context | `fh-knowledge get-role-context` | `get_role_context` | No | CLI and MCP implemented |
+| Targeted doc read | `fh-knowledge get-doc-section` | `get_doc_section` | No | CLI and MCP implemented |
+| Bootstrap cache | `fh-knowledge bootstrap` | `bootstrap_knowledge` | Cache only | CLI and MCP implemented |
+| Refresh cache | `fh-knowledge refresh` | `refresh_knowledge` | Cache only | CLI and MCP implemented |
+| Cache health | `fh-knowledge health` | `check_knowledge_health` | No | CLI and MCP implemented |
 
 ### 5.1 `preflight_task` contract
 
@@ -156,7 +166,7 @@ These remain rollout-time compatibility inputs, bootstrap accelerators, and the 
 
 1. `bootstrap_knowledge` builds a local cache from authoritative repo inputs and compatibility indexes.
 2. Runtime queries serve from the local cache first.
-3. If the cache is missing or stale, the adapter returns a clear warning and offers refresh.
+3. If the cache is stale, query callers may auto-refresh before serving results; inspection endpoints should still be able to report stale state directly.
 4. When the cache is missing, limited read-only fallback to compatibility indexes is allowed so the system can still answer narrow queries on a clean clone.
 5. V1 has no repo write path through the query layer.
 
@@ -205,7 +215,7 @@ Freshness in v1 should be intentionally simple:
 - if `repoHead` changes, `check_knowledge_health` warns that refresh is recommended
 - if any authoritative-source fingerprint above changes, `check_knowledge_health` warns that refresh is recommended
 - if any compatibility-index `generatedAt` value moves past `builtAt`, `check_knowledge_health` warns that refresh is recommended
-- queries may still proceed on stale cache, but the staleness warning must remain visible in the response
+- query callers may auto-refresh stale cache before serving results; `health` should still surface stale state directly when asked to inspect
 
 To keep v1 small, `handoffsDigest`, `rolesDigest`, `policiesDigest`, `selectedWipDigest`, and `stageSourceDigest` may be simple deterministic file-set digests rather than per-file records.
 
@@ -247,9 +257,13 @@ packages/
         check-knowledge-health.mjs
       adapters/
         cli.mjs
+        mcp.mjs
+    test/
+      *.test.mjs
 
 scripts/
   fh-knowledge.mjs
+  fh-knowledge-mcp.mjs
 ```
 
 Placement rules:
@@ -263,7 +277,7 @@ Placement rules:
 
 ### 9.1 CLI
 
-The CLI is not a backup-only escape hatch. It is a first-class adapter required for cross-tool parity.
+The CLI is already implemented and remains a first-class adapter required for cross-tool parity.
 
 Initial commands:
 
@@ -279,19 +293,18 @@ fh-knowledge refresh [--force]
 fh-knowledge health
 ```
 
-### 9.2 Deferred MCP follow-up
+### 9.2 MCP
 
-An MCP adapter is intentionally not a v1 deliverable.
+The MCP adapter is now an active v1 deliverable and should remain a thin adapter over the same shared query core. It must not own business logic.
 
-If later CLI usage validates the need, the MCP adapter should remain a thin adapter over the same shared query core and should not own business logic.
-
-Expected follow-up constraints:
+Constraints:
 
 - use `@modelcontextprotocol/sdk`
 - stdio transport
 - local-only process launched by the client configuration
-
-The MCP adapter must not be introduced just because the protocol exists. The trigger should be validated usage need, not design symmetry.
+- expose the same read-only capability set listed in Section 5
+- keep naming and behavior aligned with the shared query operations
+- add parity checks so CLI and MCP stay behaviorally aligned
 
 ### 9.3 Deferred handoff publication follow-up
 
@@ -303,27 +316,55 @@ The earlier `publish_handoff` design work remains useful reference material, but
 
 ## 10. Implementation sequence
 
-### Phase A - shared core and cache
+### Phase A - shared core and cache (completed)
 
 - create `packages/fh-agent-knowledge/`
-- implement source readers, cache builder, freshness checks, and the six read-only query operations
+- implement source readers, cache builder, freshness checks, and the read-only query operations
 - keep current committed indexes untouched
 
-### Phase B - CLI
+### Phase B - CLI (completed)
 
 - add `scripts/fh-knowledge.mjs`
 - expose all v1 commands
 - validate that a clean clone can bootstrap locally
 
-### Phase C - rollout review
+### Phase C - MCP adapter (completed)
 
-- confirm that the CLI answers the high-value knowledge lookups cleanly
-- confirm that stale-cache warnings are surfaced correctly
-- confirm that wrapper/skill guidance can point to one concrete CLI path
+- add `packages/fh-agent-knowledge/src/adapters/mcp.mjs`
+- add `scripts/fh-knowledge-mcp.mjs`
+- register the same read-only operations as MCP tools
+- validate stdio startup and CLI/MCP parity for the same inputs
 
-### Phase D - deferred follow-up
+### Phase C execution checklist (frozen before coding)
 
-- optional MCP adapter over the same shared query core
+The remaining architecture is already settled. This checklist exists only to freeze the implementation contract for the first MCP coding slice:
+
+1. `v1` transport is `stdio` only.
+2. `@modelcontextprotocol/sdk` must be declared directly in `packages/fh-agent-knowledge/package.json`, and the repo root should expose one concrete MCP launcher script.
+3. MCP tool names are fixed exactly as listed in Section 5. Do not rename them during implementation.
+4. MCP inputs and outputs should mirror the existing shared-core and CLI behavior as closely as possible, including `cacheRefreshed`, `warnings`, and structured failure responses.
+5. The MCP adapter owns only tool registration, input validation, and dispatch. Query logic, cache logic, and freshness behavior stay in the shared package.
+6. Completion requires parity tests for the MCP surface, not just a server that starts successfully.
+7. Client wiring and example configuration come after parity is proven, not before.
+
+### Phase D - rollout review and client wiring (in progress)
+
+Completed:
+
+- confirm that CLI and MCP both answer the high-value knowledge lookups cleanly
+- confirm that stale-cache inspection vs. auto-refresh behavior is surfaced correctly
+- add a central rollout/setup guide at `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
+- commit project-scoped MCP configs for Cursor and VS Code / Copilot Chat
+- update tool-wrapper guidance to point agents to `preflight_task` first and the CLI fallback second
+
+Remaining:
+
+- validate local startup and discovery behavior across the supported MCP clients
+- tighten any client-specific setup notes that still need machine-local absolute paths
+- confirm wrapper/skill guidance can point to one concrete startup path per client
+
+### Phase E - deferred follow-up
+
 - any repo-write surface such as protocol-complete handoff publication
 - only then decide whether any committed generated artifacts should later move out of git
 
@@ -332,10 +373,12 @@ The earlier `publish_handoff` design work remains useful reference material, but
 V1 is acceptable when all of the following are true:
 
 - a clean local clone can run `bootstrap_knowledge` successfully
+- CLI commands can serve the implemented knowledge lookups from the shared cache/query core
+- MCP tools can expose the same read-only capabilities over stdio without re-implementing logic
+- CLI and MCP parity checks pass for the same inputs
 - `preflight_task` can surface the indexing/query-layer design anchors without broad file scanning
-- `search_handoffs` can retrieve relevant April 16-19 indexing handoffs
-- `lookup_stage` and `lookup_model_task` resolve against the current analyzer and model-tier data
-- `check_knowledge_health` detects missing cache and stale cache cleanly
+- `search_handoffs`, `lookup_stage`, and `lookup_model_task` resolve against the current repo state
+- stale query calls auto-refresh cache where appropriate, while `check_knowledge_health` can still report stale state directly
 - no v1 tool can mutate jobs, reports, configs, databases, or repo documentation files
 
 ## 12. Deferred items
@@ -343,25 +386,26 @@ V1 is acceptable when all of the following are true:
 The following are intentionally postponed beyond v1:
 
 - product-facing MCP tools over the async job API
-- MCP adapter delivery itself
 - job/report/config/database mutation surfaces
 - protocol-complete handoff publication
 - BM25 or embedding-backed ranking
 - background refresh daemons or watchers
 - automatic removal of committed generated index artifacts
 - usage telemetry by default
-- broader source-code semantic search through the MCP
+- broader source-code semantic search through the knowledge layer
 - any repo-doc write helper
 
 ## 13. Implementation note
 
 This spec refines rather than replaces [Docs/WIP/2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md).
 
-The April 16 design correctly identified the missing capability: a query surface that makes the index the easiest path. The adjustment in this v1 spec is now narrower still and follows the later debate result:
+The April 16 design correctly identified the missing capability: a query surface that makes the index the easiest path. This spec originally recorded a later CLI-first deferral, but that deferral is now historical only. The current repo state and decision are:
 
-- ship the shared query core and CLI first
+- keep the shared query core as the only logic-bearing layer
+- keep the implemented CLI surface
+- keep the implemented MCP adapter thin over the same shared query core
 - use a gitignored local cache as the primary serving layer
 - keep the current committed generated indexes as rollout-time compatibility inputs and the default v1 query substrate where that makes implementation materially simpler
-- defer MCP until CLI usage validates the added integration surface
 - defer protocol-complete handoff publication until a later write-surface phase
 - keep the scope strictly on internal developer knowledge retrieval and cache operations
+- treat client adoption and local client validation as the next step rather than more server-side retrieval work

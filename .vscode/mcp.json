@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "fhAgentKnowledge": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/scripts/fh-knowledge-mcp.mjs"
+      ]
+    }
+  }
+}

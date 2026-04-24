@@ -68,6 +68,18 @@ Before scanning `Docs/AGENTS/Handoffs/` by filename, query the generated indexes
 normal code search/grep. If the indexes are missing, run `npm run index` once or fall
 back to direct file scanning.
 
+## Internal Knowledge Startup
+
+If `fhAgentKnowledge` is configured in the active Copilot MCP surface, use its `preflight_task`
+tool first for non-trivial tasks instead of manually scanning handoffs.
+
+Project-scoped VS Code MCP config is committed at `.vscode/mcp.json`. Manual rollout notes for
+other Copilot surfaces are in `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
+
+If MCP is unavailable, fall back to:
+
+- `npm run fh-knowledge -- preflight-task --task "..." [--role ...]`
+
 ## Behavior Examples
 
 - Runner trigger: `apps/api/Services/RunnerClient.cs`

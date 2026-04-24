@@ -87,6 +87,13 @@ If a task would be better handled by another tool, say so:
 - **GitHub Copilot**: inline code completions.
 See `/AGENTS.md` Agent Handoff Protocol for full reference.
 
+## Internal Knowledge Startup
+
+If `fhAgentKnowledge` is configured in the current Cline setup, use its `preflight_task`
+tool first for non-trivial tasks before manually scanning handoffs or indexes.
+
+Rollout and config details: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
+
 ## Conventions
 
 - Commit messages: conventional commits `type(scope): description`.

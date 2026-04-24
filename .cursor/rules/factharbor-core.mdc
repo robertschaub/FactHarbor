@@ -36,6 +36,13 @@ Two apps + one tool:
 - Platform: Windows. Use PowerShell-compatible commands.
 - Solo developer + AI agents. Direct push to main is normal.
 
+## Internal Knowledge Startup
+
+If the project-scoped MCP server `fhAgentKnowledge` is available, use its `preflight_task`
+tool first for non-trivial tasks before manually scanning handoffs or indexes.
+
+Setup and fallback details: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`
+
 ## Roles
 
 When the user starts with "As \<Role\>" (e.g., "As Senior Developer, fix…"), follow the **Role Activation Protocol** in `/AGENTS.md`. It tells you which role file to load from `Docs/AGENTS/Roles/` and which documents to read.
