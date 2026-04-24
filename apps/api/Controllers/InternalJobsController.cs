@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FactHarbor.Api.Controllers;
 
 public sealed record StatusUpdateRequest(string status, int? progress, string level, string message, string? executedWebGitCommitHash = null);
+public sealed record RunnerClaimRequest(int? maxConcurrency = null, string? executedWebGitCommitHash = null);
 public sealed record ResultStoreRequest(object resultJson, string? reportMarkdown);
 
 [ApiController]
@@ -17,6 +18,27 @@ public sealed class InternalJobsController : ControllerBase
     public InternalJobsController(JobService jobs)
     {
         _jobs = jobs;
+    }
+
+    [HttpPost("{jobId}/claim-runner")]
+    public async Task<IActionResult> ClaimRunner(string jobId, [FromBody] RunnerClaimRequest req)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request)) return Unauthorized();
+
+        var claim = await _jobs.TryClaimRunnerSlotAsync(
+            jobId,
+            req.maxConcurrency ?? 1,
+            req.executedWebGitCommitHash);
+
+        if (claim.reason == "not_found") return NotFound(new { claimed = false, reason = claim.reason });
+
+        return Ok(new
+        {
+            claimed = claim.claimed,
+            reason = claim.reason,
+            status = claim.status,
+            runningCount = claim.runningCount
+        });
     }
 
     [HttpPut("{jobId}/status")]

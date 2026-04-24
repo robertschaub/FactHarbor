@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(() => new Promise(() => {})),
@@ -41,6 +42,14 @@ async function flushMicrotasks(iterations = 8): Promise<void> {
   for (let i = 0; i < iterations; i++) {
     await Promise.resolve();
   }
+}
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
 }
 
 describe("runner concurrency split", () => {
@@ -137,6 +146,8 @@ describe("runner concurrency split", () => {
 
   it("starts a report job even when the prep lane is already busy", async () => {
     let jobDetailReads = 0;
+    const analysis = createDeferred<any>();
+    vi.mocked(runClaimBoundaryAnalysis).mockImplementation(() => analysis.promise);
 
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = String(input);
@@ -165,6 +176,15 @@ describe("runner concurrency split", () => {
           pipelineVariant: "claimboundary",
           inputType: "text",
           inputValue: "queued report input",
+        }), { status: 200 });
+      }
+
+      if (method === "POST" && url.endsWith("/internal/v1/jobs/job-1/claim-runner")) {
+        return new Response(JSON.stringify({
+          claimed: true,
+          reason: "claimed",
+          status: "RUNNING",
+          runningCount: 1,
         }), { status: 200 });
       }
 
@@ -204,5 +224,8 @@ describe("runner concurrency split", () => {
     expect(qs.runningCount).toBe(1);
     expect(qs.runningJobIds.has("job-1")).toBe(true);
     expect(ds.runningCount).toBe(1);
+
+    analysis.resolve({ resultJson: { meta: {} } });
+    await flushMicrotasks();
   });
 });

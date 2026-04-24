@@ -373,6 +373,15 @@ describe("drainRunnerQueue pause integration", () => {
           }), { status: 200 });
         }
 
+        if (method === "POST" && url.endsWith(`/internal/v1/jobs/${jobId}/claim-runner`)) {
+          return new Response(JSON.stringify({
+            claimed: true,
+            reason: "claimed",
+            status: "RUNNING",
+            runningCount: 1,
+          }), { status: 200 });
+        }
+
         if (method === "PUT" && url.includes(`/internal/v1/jobs/${jobId}/status`)) {
           return new Response(JSON.stringify({ ok: true }), { status: 200 });
         }
@@ -450,6 +459,15 @@ describe("drainRunnerQueue pause integration", () => {
           }), { status: 200 });
         }
 
+        if (method === "POST" && url.endsWith(`/internal/v1/jobs/${orphanJobId}/claim-runner`)) {
+          return new Response(JSON.stringify({
+            claimed: true,
+            reason: "claimed",
+            status: "RUNNING",
+            runningCount: 1,
+          }), { status: 200 });
+        }
+
         if (method === "PUT" && url.includes(`/internal/v1/jobs/${orphanJobId}/status`)) {
           putPayloads.push({
             url,
@@ -483,6 +501,63 @@ describe("drainRunnerQueue pause integration", () => {
       expect(qs.runningJobIds.has(orphanJobId)).toBe(true);
       expect(qs.runningCount).toBe(1);
       expect(qs.queue).toHaveLength(0);
+    });
+
+    it("keeps a queued job pending when the API runner claim reports full capacity", async () => {
+      const jobId = "job-capacity-full-1";
+
+      vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+        const url = String(input);
+        const method = init?.method ?? "GET";
+
+        if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+          return new Response(JSON.stringify({
+            jobs: [],
+            pagination: { totalPages: 1 },
+          }), { status: 200 });
+        }
+
+        if (method === "GET" && url.endsWith(`/v1/jobs/${jobId}`)) {
+          return new Response(JSON.stringify({
+            jobId,
+            status: "QUEUED",
+            pipelineVariant: "claimboundary",
+          }), { status: 200 });
+        }
+
+        if (method === "POST" && url.endsWith(`/internal/v1/jobs/${jobId}/claim-runner`)) {
+          return new Response(JSON.stringify({
+            claimed: false,
+            reason: "capacity_full",
+            status: "QUEUED",
+            runningCount: 1,
+          }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      });
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      (globalThis as any).__fhRunnerQueueState = {
+        runningCount: 0,
+        queue: [{ jobId, enqueuedAt: Date.now() }],
+        runningJobIds: new Set<string>(),
+        isDraining: false,
+        drainRequested: false,
+        watchdogTimer: null,
+      };
+
+      const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+      await drainRunnerQueue();
+      await flushMicrotasks();
+
+      const qs = (globalThis as any).__fhRunnerQueueState;
+      expect(vi.mocked(runClaimBoundaryAnalysis)).not.toHaveBeenCalled();
+      expect(qs.runningJobIds.has(jobId)).toBe(false);
+      expect(qs.runningCount).toBe(1);
+      expect(qs.queue).toEqual([{ jobId, enqueuedAt: expect.any(Number) }]);
     });
 
     it("does not re-queue a RUNNING snapshot when the live job already completed", async () => {

@@ -245,6 +245,33 @@ async function apiPost(apiBase: string, adminKey: string | null, path: string, p
   return res.json();
 }
 
+type RunnerSlotClaimResult = {
+  claimed: boolean;
+  reason: string;
+  status?: string | null;
+  runningCount?: number;
+};
+
+async function claimRunnerSlot(
+  apiBase: string,
+  adminKey: string | null,
+  jobId: string,
+  maxConcurrency: number,
+  executedWebGitCommitHash: string | null,
+): Promise<RunnerSlotClaimResult> {
+  const payload = await apiPost(apiBase, adminKey, `/internal/v1/jobs/${jobId}/claim-runner`, {
+    maxConcurrency,
+    executedWebGitCommitHash,
+  });
+
+  return {
+    claimed: payload?.claimed === true,
+    reason: typeof payload?.reason === "string" ? payload.reason : "unknown",
+    status: typeof payload?.status === "string" ? payload.status : null,
+    runningCount: typeof payload?.runningCount === "number" ? payload.runningCount : undefined,
+  };
+}
+
 export function normalizeRunningProgress(progress?: number): number | undefined {
   if (typeof progress !== "number") return progress;
   return progress >= 100 ? 99 : progress;
@@ -294,14 +321,6 @@ async function runJobBackground(jobId: string) {
 
     try {
       acquiredSlot = true;
-
-      await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
-        status: "RUNNING",
-        progress: 1,
-        level: "info",
-        message: "Runner started",
-        executedWebGitCommitHash,
-      });
 
     const job = await apiGet(apiBase, adminKey, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
@@ -707,6 +726,37 @@ export async function drainRunnerQueue() {
       } catch {}
       // All jobs are claimboundary now — no queue partitioning needed
       if (!jobVariant) jobVariant = "claimboundary";
+
+      let claim: RunnerSlotClaimResult;
+      try {
+        claim = await claimRunnerSlot(
+          apiBase,
+          adminKey,
+          next.jobId,
+          maxConcurrency,
+          getWebGitCommitHash(),
+        );
+      } catch (err) {
+        console.warn(`[Runner] Failed to claim runner slot for ${next.jobId}:`, err);
+        qs.queue.unshift(next);
+        break;
+      }
+
+      if (!claim.claimed) {
+        if (claim.reason === "capacity_full") {
+          if (typeof claim.runningCount === "number") {
+            effectiveRunningCount = claim.runningCount;
+            qs.runningCount = claim.runningCount;
+          }
+          qs.queue.unshift(next);
+          break;
+        }
+        console.info(
+          `[Runner] Skipping ${next.jobId}: runner slot was not claimed ` +
+          `(reason=${claim.reason}, status=${claim.status ?? "unknown"})`,
+        );
+        continue;
+      }
 
       effectiveRunningCount++;
       qs.runningCount = effectiveRunningCount;

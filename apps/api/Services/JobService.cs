@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Data;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using Microsoft.Data.Sqlite;
@@ -89,6 +90,51 @@ public sealed class JobService
     {
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = level, Message = message, TsUtc = DateTime.UtcNow });
         await _db.SaveChangesAsync();
+    }
+
+    public async Task<(bool claimed, string reason, string? status, int runningCount)> TryClaimRunnerSlotAsync(
+        string jobId,
+        int maxConcurrency,
+        string? executedWebGitCommitHash = null)
+    {
+        var concurrencyLimit = Math.Max(1, maxConcurrency);
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+        var job = await _db.Jobs.FirstOrDefaultAsync(x => x.JobId == jobId);
+        if (job is null)
+        {
+            return (false, "not_found", null, 0);
+        }
+
+        var status = (job.Status ?? "").Trim().ToUpperInvariant();
+        if (status != "QUEUED")
+        {
+            return (false, "not_queued", status, 0);
+        }
+
+        var runningCount = await _db.Jobs.CountAsync(x => x.Status == "RUNNING");
+        if (runningCount >= concurrencyLimit)
+        {
+            return (false, "capacity_full", status, runningCount);
+        }
+
+        job.Status = "RUNNING";
+        job.Progress = 1;
+        if (!string.IsNullOrWhiteSpace(executedWebGitCommitHash))
+            job.ExecutedWebGitCommitHash = executedWebGitCommitHash.Trim().ToLowerInvariant();
+        job.UpdatedUtc = DateTime.UtcNow;
+
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = jobId,
+            Level = "info",
+            Message = "Runner started",
+            TsUtc = DateTime.UtcNow
+        });
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+        return (true, "claimed", "RUNNING", runningCount + 1);
     }
 
     public async Task UpdateStatusAsync(
