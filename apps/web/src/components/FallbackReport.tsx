@@ -60,6 +60,7 @@ const WARNING_TYPE_LABELS: Record<string, string> = {
   verdict_integrity_failure: "Verdict Integrity Failure",
   verdict_grounding_issue: "Verdict Grounding Issue",
   verdict_direction_issue: "Verdict Direction Issue",
+  verdict_citation_integrity_guard: "Verdict Citation Integrity Guard",
 };
 
 const WARNING_TYPE_HINTS: Record<string, string> = {
@@ -79,6 +80,7 @@ const WARNING_TYPE_HINTS: Record<string, string> = {
   search_provider_error: "Check search provider quota/key health and rerun after recovery.",
   evidence_filter_degradation: "Inspect evidence-filter LLM failures; heuristic fallback may lower precision.",
   insufficient_evidence: "This claim lacks sufficient evidence for a confident verdict. Consider broadening search scope or adding more sources.",
+  verdict_citation_integrity_guard: "Final verdict citations were sanitized. Review remaining evidence support before relying on the verdict.",
   baseless_challenge_blocked: "A verdict adjustment was reverted because the challenge lacked supporting evidence.",
   baseless_challenge_detected: "Multiple baseless challenges were detected and blocked during verdict aggregation.",
   evidence_pool_imbalance: "This is directional telemetry and can occur naturally on one-sided evidence topics.",

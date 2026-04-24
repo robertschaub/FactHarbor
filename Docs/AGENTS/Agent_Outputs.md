@@ -2084,6 +2084,21 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_Code_Review_Findings_Fix.md
 
 ---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Pipeline Quality, Speed, And Cost Improvement Plan -- [Significant] [open-items: yes]
+**For next agent:** Use [2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md](/c:/DEV/FactHarbor/Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md) as the current reconciled plan. First slice should be baseline/observability plus Stage 2 relevance/applicability fail-open counters and handling, then Stage 3 ClaimAssessmentBoundary concentration stabilization; safe cost work is limited to exact reuse, telemetry, default-off experiments, and structurally validated retry reduction.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md
+
+---
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | SerpApi Starter Sufficiency Investigation -- [Standard] [open-items: yes]
 **For next agent:** SerpApi is not currently active in local or deployed search ordering; both use Google CSE first, Serper second, Wikipedia supplementary. Starter is enough as a Google fallback for one regular user based on local telemetry, but not enough as primary search for frequent daily full analyses. Relevant anchors: [web-search.ts](/c:/DEV/FactHarbor/apps/web/src/lib/web-search.ts), [search.default.json](/c:/DEV/FactHarbor/apps/web/configs/search.default.json), deployed admin `/api/version`, and `apps/api/factharbor.db` `ResultJson.searchQueries`.
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_SerpApi_Starter_Sufficiency_Investigation.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Verdict Citation Integrity Guard -- [Standard] [open-items: yes]
+**For next agent:** [verdict-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts) now runs `enforceVerdictCitationIntegrity(...)` after phantom cleanup and before spread/validation, removing structurally invalid/non-direct final citations and moving bucket-mismatched direct citations based on existing `claimDirection`. Verify live only after commit/restart; full `npm test` had runner timeouts that passed in isolated rerun.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Integrity_Guard.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Verdict Citation Integrity Guard Review Follow-up -- [Standard] [open-items: yes]
+**For next agent:** The two follow-up review findings are addressed in [verdict-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/verdict-stage.ts): explicit neutral `claimDirection` citations are removed from final directional buckets, including post-validation repair output, and decisive-side citation collapse now emits `verdict_citation_integrity_guard` with `error` severity. Focused verdict/warning tests and the web build passed; live jobs still require commit/restart first.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Integrity_Guard.md

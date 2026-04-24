@@ -521,10 +521,18 @@ export async function runVerdictStage(
     advocateVerdicts,
   );
 
+  // Step 4b-3: Enforce final directional citation invariants before validation.
+  const citationIntegrityVerdicts = enforceVerdictCitationIntegrity(
+    cleanedVerdicts,
+    evidence,
+    validatedChallengeDoc,
+    warnings,
+  );
+
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
   // Recompute verdict label after confidence change to prevent stale MIXED
   // when confidence drops below the UNVERIFIED threshold (e.g. 52%/28%).
-  const spreadAdjustedVerdicts = cleanedVerdicts.map((v) => {
+  const spreadAdjustedVerdicts = citationIntegrityVerdicts.map((v) => {
     const adjustedConfidence = applySpreadAdjustment(v.confidence, v.consistencyResult, config);
     return {
       ...v,
@@ -1605,7 +1613,12 @@ export async function validateVerdicts(
     validated.push(current);
   }
 
-  return validated;
+  return enforceVerdictCitationIntegrity(
+    validated,
+    evidence,
+    repairContext?.validatedChallengeDoc,
+    warnings,
+  );
 }
 
 type NormalizedValidationEntry = {
@@ -1982,12 +1995,16 @@ function normalizeVerdictCitationDirections(
   const contradictingEvidenceIds: string[] = [];
   for (const id of citedIds) {
     const item = evidenceById.get(id);
+    if (!item) {
+      continue;
+    }
     if (item?.applicability && item.applicability !== "direct") {
       continue;
     }
     const direction = item?.claimDirection;
     if (direction === "supports") supportingEvidenceIds.push(id);
     else if (direction === "contradicts") contradictingEvidenceIds.push(id);
+    else if (direction === "neutral") continue;
     else if (originalSupporting.has(id)) supportingEvidenceIds.push(id);
     else if (originalContradicting.has(id)) contradictingEvidenceIds.push(id);
   }
@@ -2545,6 +2562,327 @@ export function stripPhantomEvidenceIds(
       ...v,
       supportingEvidenceIds: cleanedSupporting,
       contradictingEvidenceIds: cleanedContradicting,
+    };
+  });
+}
+
+type VerdictCitationBucket = "supporting" | "contradicting";
+type VerdictCitationDropReason =
+  | "missing_evidence"
+  | "claim_scope_mismatch"
+  | "invalid_challenge_reference"
+  | "non_direct_applicability"
+  | "neutral_claim_direction";
+
+interface VerdictCitationDrop {
+  id: string;
+  bucket: VerdictCitationBucket;
+  reason: VerdictCitationDropReason;
+  sourceId?: string;
+  sourceUrl?: string;
+  claimDirection?: EvidenceItem["claimDirection"];
+  applicability?: EvidenceItem["applicability"];
+  relevantClaimIds?: string[];
+  invalidChallengeReference?: boolean;
+}
+
+interface VerdictCitationMove {
+  id: string;
+  from: VerdictCitationBucket;
+  to: VerdictCitationBucket;
+  reason: "bucket_direction_mismatch";
+  sourceId?: string;
+  sourceUrl?: string;
+  claimDirection?: EvidenceItem["claimDirection"];
+}
+
+function buildInvalidChallengeCitationMap(
+  challengeDoc?: ChallengeDocument,
+): Map<string, Set<string>> {
+  const invalidByClaim = new Map<string, Set<string>>();
+  if (!challengeDoc) return invalidByClaim;
+
+  for (const challenge of challengeDoc.challenges) {
+    const invalidIds = new Set<string>();
+    for (const point of challenge.challengePoints) {
+      for (const id of point.challengeValidation?.invalidIds ?? []) {
+        invalidIds.add(id);
+      }
+    }
+    if (invalidIds.size > 0) {
+      invalidByClaim.set(challenge.claimId, invalidIds);
+    }
+  }
+
+  return invalidByClaim;
+}
+
+function getCitationDropReason(
+  claimId: string,
+  id: string,
+  evidenceById: Map<string, EvidenceItem>,
+  invalidChallengeIds: Set<string>,
+): VerdictCitationDropReason | null {
+  const item = evidenceById.get(id);
+  if (!item) return "missing_evidence";
+
+  if (
+    Array.isArray(item.relevantClaimIds)
+    && item.relevantClaimIds.length > 0
+    && !item.relevantClaimIds.includes(claimId)
+  ) {
+    return "claim_scope_mismatch";
+  }
+
+  if (invalidChallengeIds.has(id)) {
+    return "invalid_challenge_reference";
+  }
+
+  if (item.applicability && item.applicability !== "direct") {
+    return "non_direct_applicability";
+  }
+
+  if (item.claimDirection === "neutral") {
+    return "neutral_claim_direction";
+  }
+
+  return null;
+}
+
+function getCitationMoveTarget(
+  id: string,
+  bucket: VerdictCitationBucket,
+  evidenceById: Map<string, EvidenceItem>,
+): VerdictCitationBucket | null {
+  const item = evidenceById.get(id);
+  if (bucket === "supporting" && item?.claimDirection === "contradicts") {
+    return "contradicting";
+  }
+  if (bucket === "contradicting" && item?.claimDirection === "supports") {
+    return "supporting";
+  }
+  return null;
+}
+
+function cleanVerdictCitationBucket(
+  verdict: CBClaimVerdict,
+  bucket: VerdictCitationBucket,
+  ids: string[],
+  evidenceById: Map<string, EvidenceItem>,
+  invalidChallengeIds: Set<string>,
+): { ids: string[]; dropped: VerdictCitationDrop[]; moved: VerdictCitationMove[] } {
+  const kept: string[] = [];
+  const seen = new Set<string>();
+  const dropped: VerdictCitationDrop[] = [];
+  const moved: VerdictCitationMove[] = [];
+
+  for (const id of ids) {
+    const reason = getCitationDropReason(verdict.claimId, id, evidenceById, invalidChallengeIds);
+    if (reason) {
+      const item = evidenceById.get(id);
+      dropped.push({
+        id,
+        bucket,
+        reason,
+        sourceId: item?.sourceId,
+        sourceUrl: item?.sourceUrl,
+        claimDirection: item?.claimDirection,
+        applicability: item?.applicability,
+        relevantClaimIds: item?.relevantClaimIds,
+        invalidChallengeReference: invalidChallengeIds.has(id),
+      });
+      continue;
+    }
+
+    const moveTarget = getCitationMoveTarget(id, bucket, evidenceById);
+    if (moveTarget) {
+      const item = evidenceById.get(id);
+      moved.push({
+        id,
+        from: bucket,
+        to: moveTarget,
+        reason: "bucket_direction_mismatch",
+        sourceId: item?.sourceId,
+        sourceUrl: item?.sourceUrl,
+        claimDirection: item?.claimDirection,
+      });
+      continue;
+    }
+
+    if (!seen.has(id)) {
+      seen.add(id);
+      kept.push(id);
+    }
+  }
+
+  return { ids: kept, dropped, moved };
+}
+
+function decisiveCitationSideCollapsed(
+  original: CBClaimVerdict,
+  cleanedSupportingIds: string[],
+  cleanedContradictingIds: string[],
+): "supporting" | "contradicting" | "all" | null {
+  if (
+    original.truthPercentage > 50
+    && original.supportingEvidenceIds.length > 0
+    && cleanedSupportingIds.length === 0
+  ) {
+    return "supporting";
+  }
+
+  if (
+    original.truthPercentage < 50
+    && original.contradictingEvidenceIds.length > 0
+    && cleanedContradictingIds.length === 0
+  ) {
+    return "contradicting";
+  }
+
+  if (
+    original.truthPercentage === 50
+    && original.supportingEvidenceIds.length + original.contradictingEvidenceIds.length > 0
+    && cleanedSupportingIds.length + cleanedContradictingIds.length === 0
+  ) {
+    return "all";
+  }
+
+  return null;
+}
+
+function emitCitationIntegrityWarnings(
+  verdict: CBClaimVerdict,
+  cleanedSupportingIds: string[],
+  cleanedContradictingIds: string[],
+  dropped: VerdictCitationDrop[],
+  moved: VerdictCitationMove[],
+  warnings?: AnalysisWarning[],
+): void {
+  if (!warnings || (dropped.length === 0 && moved.length === 0)) return;
+
+  const directionDropReasons: ReadonlySet<VerdictCitationDropReason> = new Set([
+    "non_direct_applicability",
+    "neutral_claim_direction",
+  ]);
+  const groundingDrops = dropped.filter((drop) => !directionDropReasons.has(drop.reason));
+  const directionDrops = dropped.filter((drop) =>
+    directionDropReasons.has(drop.reason),
+  );
+
+  if (groundingDrops.length > 0) {
+    warnings.push({
+      type: "verdict_grounding_issue",
+      severity: "info",
+      message: `Claim ${verdict.claimId}: citation integrity guard removed ${groundingDrops.length} structurally invalid evidence citation(s).`,
+      details: {
+        claimId: verdict.claimId,
+        droppedCitations: groundingDrops,
+      },
+    });
+  }
+
+  if (directionDrops.length > 0 || moved.length > 0) {
+    warnings.push({
+      type: "verdict_direction_issue",
+      severity: "info",
+      message: `Claim ${verdict.claimId}: citation integrity guard normalized ${directionDrops.length + moved.length} invalid directional evidence citation(s).`,
+      details: {
+        claimId: verdict.claimId,
+        droppedCitations: directionDrops,
+        movedCitations: moved,
+      },
+    });
+  }
+
+  const collapsedSide = decisiveCitationSideCollapsed(
+    verdict,
+    cleanedSupportingIds,
+    cleanedContradictingIds,
+  );
+  if (collapsedSide) {
+    warnings.push({
+      type: "verdict_citation_integrity_guard",
+      severity: "error",
+      message: `Claim ${verdict.claimId}: citation integrity guard removed all evidence from the verdict's ${collapsedSide} citation side.`,
+      details: {
+        claimId: verdict.claimId,
+        collapsedSide,
+        truthPercentage: verdict.truthPercentage,
+        droppedCitations: dropped,
+        movedCitations: moved,
+        remainingSupportingCount: cleanedSupportingIds.length,
+        remainingContradictingCount: cleanedContradictingIds.length,
+      },
+    });
+  }
+}
+
+/**
+ * Enforce final directional citation invariants around verdict validation.
+ *
+ * This is structural sanitation over existing pipeline fields only:
+ * - cited IDs must exist in the evidence pool
+ * - claim-scoped evidence must include the verdict claim
+ * - challenge-invalid IDs must not survive as verdict citations
+ * - directional buckets may cite only direct, non-neutral evidence
+ */
+export function enforceVerdictCitationIntegrity(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  validatedChallengeDoc?: ChallengeDocument,
+  warnings?: AnalysisWarning[],
+): CBClaimVerdict[] {
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const invalidByClaim = buildInvalidChallengeCitationMap(validatedChallengeDoc);
+
+  return verdicts.map((verdict) => {
+    const invalidChallengeIds = invalidByClaim.get(verdict.claimId) ?? new Set<string>();
+    const supporting = cleanVerdictCitationBucket(
+      verdict,
+      "supporting",
+      verdict.supportingEvidenceIds,
+      evidenceById,
+      invalidChallengeIds,
+    );
+    const contradicting = cleanVerdictCitationBucket(
+      verdict,
+      "contradicting",
+      verdict.contradictingEvidenceIds,
+      evidenceById,
+      invalidChallengeIds,
+    );
+    const dropped = [...supporting.dropped, ...contradicting.dropped];
+    const moved = [...supporting.moved, ...contradicting.moved];
+    const movedToSupporting = contradicting.moved
+      .filter((move) => move.to === "supporting")
+      .map((move) => move.id);
+    const movedToContradicting = supporting.moved
+      .filter((move) => move.to === "contradicting")
+      .map((move) => move.id);
+    const supportingEvidenceIds = Array.from(new Set([...supporting.ids, ...movedToSupporting]));
+    const contradictingEvidenceIds = Array.from(new Set([...contradicting.ids, ...movedToContradicting]));
+    const citationArraysChanged = (
+      dropped.length > 0
+      || moved.length > 0
+      || supportingEvidenceIds.length !== verdict.supportingEvidenceIds.length
+      || contradictingEvidenceIds.length !== verdict.contradictingEvidenceIds.length
+    );
+
+    if (!citationArraysChanged) return verdict;
+
+    emitCitationIntegrityWarnings(
+      verdict,
+      supportingEvidenceIds,
+      contradictingEvidenceIds,
+      dropped,
+      moved,
+      warnings,
+    );
+
+    return {
+      ...verdict,
+      supportingEvidenceIds,
+      contradictingEvidenceIds,
     };
   });
 }

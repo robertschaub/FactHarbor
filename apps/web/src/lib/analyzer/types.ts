@@ -892,6 +892,7 @@ export type AnalysisWarningType =
   | "verdict_integrity_failure"        // Integrity policy downgraded verdict to safe fallback
   | "verdict_grounding_issue"          // Verdict grounding validation found invalid evidence references
   | "verdict_direction_issue"          // Verdict direction validation found truth%/evidence misalignment
+  | "verdict_citation_integrity_guard" // Final citation sanitation removed decisive/invalid directional citations
   | "direction_rescue_plausible"       // Verdict direction issue was overridden by plausibility rescue
   | "challenger_failure"               // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
   | "llm_tpm_guard_fallback"           // OpenAI TPM guard swapped to smaller model (routine successful fallback)
@@ -1202,7 +1203,7 @@ export interface ChallengePoint {
 export interface ChallengeValidation {
   evidenceIdsValid: boolean;     // true if ALL referenced IDs exist in the evidence pool
   validIds: string[];            // Evidence IDs that exist in the pool
-  invalidIds: string[];          // Evidence IDs that do NOT exist (hallucinated)
+  invalidIds: string[];          // Evidence IDs that are missing or structurally invalid for the challenged claim
 }
 
 /**

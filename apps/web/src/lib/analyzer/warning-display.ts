@@ -53,6 +53,7 @@ const WARNING_CLASSIFICATION = {
   verdict_integrity_failure: { bucket: "analysis", impact: "degrading" },
   verdict_grounding_issue: { bucket: "analysis", impact: "informational" },
   verdict_direction_issue: { bucket: "analysis", impact: "informational" },
+  verdict_citation_integrity_guard: { bucket: "analysis", impact: "degrading" },
   direction_rescue_plausible: { bucket: "analysis", impact: "informational" },
   challenger_failure: { bucket: "analysis", impact: "informational" },
   llm_tpm_guard_fallback: { bucket: "provider", impact: "informational" },

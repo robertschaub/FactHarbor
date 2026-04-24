@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T07:49:32.643Z",
+  "generatedAt": "2026-04-24T10:10:07.137Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -111,6 +111,7 @@
         "isVerdictDirectionPlausible",
         "getClaimLocalEvidence",
         "stripPhantomEvidenceIds",
+        "enforceVerdictCitationIntegrity",
         "runStructuralConsistencyCheck",
         "enforceHarmConfidenceFloor",
         "confidenceToTier",

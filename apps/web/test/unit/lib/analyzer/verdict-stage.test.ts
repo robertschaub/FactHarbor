@@ -1356,6 +1356,91 @@ describe("validateVerdicts (Step 5)", () => {
     }]);
   });
 
+  it("drops neutral citations returned by direction repair before accepting the repaired verdict", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 55,
+      confidence: 80,
+      supportingEvidenceIds: ["EV_CONTRADICT"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_CONTRADICT",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "contradicts",
+      }),
+      createEvidenceItem({
+        id: "EV_SUPPORT",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "supports",
+      }),
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "neutral",
+      }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Initial mismatch"] }];
+        }
+        if (directionValidationCalls === 2) {
+          return [{ claimId: "AC_01", directionValid: false, issues: ["Normalized mismatch"] }];
+        }
+
+        const verdictInput = (input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0];
+        expect(verdictInput?.supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+        expect(verdictInput?.contradictingEvidenceIds).toEqual([]);
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      [],
+      {
+        claims,
+        boundaries,
+        coverageMatrix,
+        repairExecutor: async (request) => ({
+          ...request.verdict,
+          truthPercentage: 65,
+          supportingEvidenceIds: ["EV_SUPPORT", "EV_NEUTRAL"],
+          contradictingEvidenceIds: [],
+          reasoning: "Repaired with one directional support citation.",
+        }),
+      },
+    );
+
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(result[0].supportingEvidenceIds).not.toContain("EV_NEUTRAL");
+    expect(directionValidationCalls).toBe(3);
+  });
+
   it("rejects repaired reasoning that fails post-repair grounding and preserves pre-repair reasoning", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
