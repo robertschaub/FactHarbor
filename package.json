@@ -9,8 +9,11 @@
     "packages/*"
   ],
   "scripts": {
+    "fh-knowledge": "node scripts/fh-knowledge.mjs",
+    "fh-knowledge:mcp": "node scripts/fh-knowledge-mcp.mjs",
     "lint": "echo \"(add lint later)\"",
     "test": "npm -w apps/web test",
+    "test:knowledge": "node --test packages/fh-agent-knowledge/test/**/*.test.mjs",
     "test:ci": "npm -w apps/web run test:ci",
     "test:llm": "npm -w apps/web run test:llm",
     "promptfoo": "node scripts/promptfoo-sr.js",

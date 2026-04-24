@@ -1,0 +1,14 @@
+{
+  "name": "@factharbor/fh-agent-knowledge",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "bin": {
+    "fh-knowledge": "./bin/fh-knowledge.mjs",
+    "fh-knowledge-mcp": "./bin/fh-knowledge-mcp.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.27.1",
+    "zod": "3.25.76"
+  }
+}
