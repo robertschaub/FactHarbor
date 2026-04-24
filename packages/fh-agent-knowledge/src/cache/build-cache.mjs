@@ -131,6 +131,9 @@ export function loadKnowledgeContext({ allowFallback = true, refreshIfStale = fa
           source: "cache",
           manifest: payload.manifest,
           data: payload.data,
+          // The cache was rebuilt from the current repo snapshot just above, so
+          // comparing the manifest to itself is the intentional "fresh baseline"
+          // for the returned context rather than a second repo read.
           freshness: evaluateCacheFreshness(payload.manifest, payload.manifest),
           refreshed: true,
         });

@@ -20,32 +20,40 @@ function buildOptionalInputSchema(shape) {
   return z.object(shape).optional();
 }
 
+function buildRequiredInputSchema(shape) {
+  return z.object(shape);
+}
+
+function buildRequiredStringField(description) {
+  return z.string().min(1).describe(description);
+}
+
 const MCP_INPUT_SCHEMAS = {
-  preflight_task: buildOptionalInputSchema({
-    task: z.string().describe("Free-text description of the task to preflight."),
-    role: z.string().optional().describe("Optional active role or role alias."),
+  preflight_task: buildRequiredInputSchema({
+    task: buildRequiredStringField("Free-text description of the task to preflight."),
+    role: z.string().min(1).optional().describe("Optional active role or role alias."),
     limit: z.number().int().positive().optional().describe("Optional result limit."),
   }),
-  search_handoffs: buildOptionalInputSchema({
-    query: z.string().describe("Search query for handoff retrieval."),
-    role: z.string().optional().describe("Optional role filter."),
-    after: z.string().optional().describe("Optional lower date bound in YYYY-MM-DD format."),
+  search_handoffs: buildRequiredInputSchema({
+    query: buildRequiredStringField("Search query for handoff retrieval."),
+    role: z.string().min(1).optional().describe("Optional role filter."),
+    after: z.string().min(1).optional().describe("Optional lower date bound in YYYY-MM-DD format."),
     limit: z.number().int().positive().optional().describe("Optional result limit."),
   }),
-  lookup_stage: buildOptionalInputSchema({
-    name: z.string().describe("Stage name or task phrase to resolve."),
+  lookup_stage: buildRequiredInputSchema({
+    name: buildRequiredStringField("Stage name or task phrase to resolve."),
     limit: z.number().int().positive().optional().describe("Optional result limit."),
   }),
-  lookup_model_task: buildOptionalInputSchema({
-    task: z.string().describe("Analyzer task to resolve in the model-tier manifest."),
+  lookup_model_task: buildRequiredInputSchema({
+    task: buildRequiredStringField("Analyzer task to resolve in the model-tier manifest."),
     limit: z.number().int().positive().optional().describe("Optional result limit."),
   }),
-  get_role_context: buildOptionalInputSchema({
-    role: z.string().describe("Role name or alias to resolve."),
+  get_role_context: buildRequiredInputSchema({
+    role: buildRequiredStringField("Role name or alias to resolve."),
   }),
-  get_doc_section: buildOptionalInputSchema({
-    file: z.string().describe("Allowed repo doc path."),
-    section: z.string().describe("Section heading to retrieve."),
+  get_doc_section: buildRequiredInputSchema({
+    file: buildRequiredStringField("Allowed repo doc path."),
+    section: buildRequiredStringField("Section heading to retrieve."),
   }),
   bootstrap_knowledge: buildOptionalInputSchema({}),
   refresh_knowledge: buildOptionalInputSchema({

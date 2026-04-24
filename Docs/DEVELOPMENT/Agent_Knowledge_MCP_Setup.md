@@ -71,7 +71,7 @@ From PowerShell:
 
 ```powershell
 $repo = (Resolve-Path .).Path
-claude mcp add-json fhAgentKnowledge ("{`"type`":`"stdio`",`"command`":`"cmd`",`"args`":[`"/c`",`"node`",`"$repo\\scripts\\fh-knowledge-mcp.mjs`"],`"env`":{}}") --scope local
+claude mcp add-json fhAgentKnowledge ("{`"type`":`"stdio`",`"command`":`"node`",`"args`":[`"$repo\\scripts\\fh-knowledge-mcp.mjs`"],`"env`":{}}") --scope local
 ```
 
 After setup, ask Claude Code to use `preflight_task` first.

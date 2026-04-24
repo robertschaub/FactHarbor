@@ -6,10 +6,13 @@ const UTILS_DIR = dirname(THIS_FILE);
 const SRC_DIR = resolve(UTILS_DIR, "..");
 const PACKAGE_DIR = resolve(SRC_DIR, "..");
 const REPO_ROOT = resolve(PACKAGE_DIR, "..", "..");
+const CACHE_DIR = process.env.FH_AGENT_KNOWLEDGE_CACHE_DIR
+  ? resolve(process.env.FH_AGENT_KNOWLEDGE_CACHE_DIR)
+  : join(REPO_ROOT, ".cache", "fh-agent-knowledge");
 
 export const PATHS = {
   repoRoot: REPO_ROOT,
-  cacheDir: join(REPO_ROOT, ".cache", "fh-agent-knowledge"),
+  cacheDir: CACHE_DIR,
   agents: join(REPO_ROOT, "AGENTS.md"),
   currentStatus: join(REPO_ROOT, "Docs", "STATUS", "Current_Status.md"),
   agentOutputs: join(REPO_ROOT, "Docs", "AGENTS", "Agent_Outputs.md"),

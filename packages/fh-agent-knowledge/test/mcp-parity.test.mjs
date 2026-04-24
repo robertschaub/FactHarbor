@@ -1,7 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -21,6 +23,11 @@ const EXPECTED_TOOL_NAMES = [
   "refresh_knowledge",
   "search_handoffs",
 ];
+const TEST_CACHE_DIR = mkdtempSync(join(tmpdir(), "fh-agent-knowledge-mcp-parity-"));
+
+process.on("exit", () => {
+  rmSync(TEST_CACHE_DIR, { recursive: true, force: true });
+});
 
 function createClient() {
   return new Client({
@@ -36,10 +43,21 @@ function runCliJson(args) {
     {
       cwd: PATHS.repoRoot,
       encoding: "utf8",
+      env: {
+        ...process.env,
+        FH_AGENT_KNOWLEDGE_CACHE_DIR: TEST_CACHE_DIR,
+      },
     },
   );
 
   return JSON.parse(stdout);
+}
+
+function ensureFreshCache() {
+  runCliJson(["bootstrap"]);
+  const healthResult = runCliJson(["health"]);
+  assert.equal(healthResult.stale, false);
+  assert.equal(healthResult.cacheSource, "cache");
 }
 
 function stripScores(value) {
@@ -81,6 +99,10 @@ async function withStdioClient(run) {
     args: [join(PATHS.repoRoot, "scripts", "fh-knowledge-mcp.mjs")],
     cwd: PATHS.repoRoot,
     stderr: "pipe",
+    env: {
+      ...process.env,
+      FH_AGENT_KNOWLEDGE_CACHE_DIR: TEST_CACHE_DIR,
+    },
   });
 
   try {
@@ -91,7 +113,8 @@ async function withStdioClient(run) {
   }
 }
 
-const VOLATILE_CACHE_FIELDS = new Set(["builtAt"]);
+const VOLATILE_BOOTSTRAP_FIELDS = new Set(["builtAt"]);
+const VOLATILE_QUERY_FIELDS = new Set(["cacheRefreshed"]);
 
 test("mcp server exposes the exact frozen tool set", async () => {
   const server = createKnowledgeMcpServer();
@@ -115,7 +138,7 @@ test("mcp server exposes the exact frozen tool set", async () => {
 });
 
 test("stdio mcp preflight_task matches CLI preflight-task output", async () => {
-  runCliJson(["refresh", "--force"]);
+  ensureFreshCache();
 
   const cliResult = runCliJson([
     "preflight-task",
@@ -137,7 +160,10 @@ test("stdio mcp preflight_task matches CLI preflight-task output", async () => {
     return response.structuredContent;
   });
 
-  assert.deepEqual(stripScores(mcpResult), stripScores(cliResult));
+  assert.deepEqual(
+    stripScores(stripKeys(mcpResult, VOLATILE_QUERY_FIELDS)),
+    stripScores(stripKeys(cliResult, VOLATILE_QUERY_FIELDS)),
+  );
 });
 
 test("stdio mcp check_knowledge_health matches CLI health output", async () => {
@@ -156,37 +182,60 @@ test("stdio mcp check_knowledge_health matches CLI health output", async () => {
 
 test("stdio mcp zero-arg tools tolerate omitted arguments", async () => {
   const cliBootstrap = runCliJson(["bootstrap"]);
-  const cliHealth = runCliJson(["health"]);
-  const cliRefresh = runCliJson(["refresh"]);
 
-  const { bootstrapResult, healthResult, refreshResult } = await withStdioClient(async (client) => {
-    const bootstrapResponse = await client.callTool({
+  const bootstrapResult = await withStdioClient(async (client) => {
+    const response = await client.callTool({
       name: "bootstrap_knowledge",
     });
-    const healthResponse = await client.callTool({
-      name: "check_knowledge_health",
-    });
-    const refreshResponse = await client.callTool({
-      name: "refresh_knowledge",
-    });
 
-    return {
-      bootstrapResult: bootstrapResponse.structuredContent,
-      healthResult: healthResponse.structuredContent,
-      refreshResult: refreshResponse.structuredContent,
-    };
+    return response.structuredContent;
   });
 
   assert.deepEqual(
-    stripKeys(bootstrapResult, VOLATILE_CACHE_FIELDS),
-    stripKeys(cliBootstrap, VOLATILE_CACHE_FIELDS),
+    stripKeys(bootstrapResult, VOLATILE_BOOTSTRAP_FIELDS),
+    stripKeys(cliBootstrap, VOLATILE_BOOTSTRAP_FIELDS),
   );
-  assert.deepEqual(
-    stripKeys(healthResult, VOLATILE_CACHE_FIELDS),
-    stripKeys(cliHealth, VOLATILE_CACHE_FIELDS),
-  );
-  assert.deepEqual(
-    stripKeys(refreshResult, VOLATILE_CACHE_FIELDS),
-    stripKeys(cliRefresh, VOLATILE_CACHE_FIELDS),
-  );
+
+  ensureFreshCache();
+  const cliHealth = runCliJson(["health"]);
+
+  const healthResult = await withStdioClient(async (client) => {
+    const response = await client.callTool({
+      name: "check_knowledge_health",
+    });
+
+    return response.structuredContent;
+  });
+
+  assert.deepEqual(healthResult, cliHealth);
+
+  ensureFreshCache();
+  const cliRefresh = runCliJson(["refresh"]);
+
+  const refreshResult = await withStdioClient(async (client) => {
+    const response = await client.callTool({
+      name: "refresh_knowledge",
+    });
+
+    return response.structuredContent;
+  });
+
+  assert.deepEqual(refreshResult, cliRefresh);
+});
+
+test("stdio mcp surfaces missing required tool arguments as schema errors", async () => {
+  const preflightResult = await withStdioClient((client) => client.callTool({
+    name: "preflight_task",
+  }));
+  assert.equal(preflightResult.isError, true);
+  assert.match(preflightResult.content[0]?.text ?? "", /preflight_task/i);
+  assert.match(preflightResult.content[0]?.text ?? "", /(expected object|task)/i);
+
+  const docSectionResult = await withStdioClient((client) => client.callTool({
+    name: "get_doc_section",
+    arguments: {},
+  }));
+  assert.equal(docSectionResult.isError, true);
+  assert.match(docSectionResult.content[0]?.text ?? "", /get_doc_section/i);
+  assert.match(docSectionResult.content[0]?.text ?? "", /(file|section)/i);
 });
