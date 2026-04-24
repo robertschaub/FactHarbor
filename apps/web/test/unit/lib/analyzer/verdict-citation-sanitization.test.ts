@@ -253,6 +253,175 @@ describe("enforceVerdictCitationIntegrity", () => {
     expect(guardWarning?.severity).toBe("error");
   });
 
+  it("defers collapsed-side errors and re-emits them when final verdict remains collapsed", () => {
+    const warnings: AnalysisWarning[] = [];
+    const deferredCollapsedSideWarnings = [];
+    const verdict = makeVerdict({
+      truthPercentage: 35,
+      verdict: "LEANING-FALSE",
+      supportingEvidenceIds: ["EV_SUPPORT"],
+      contradictingEvidenceIds: ["EV_NEUTRAL"],
+    });
+    const evidence = [
+      makeEvidence({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      makeEvidence({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+
+    const result = enforceVerdictCitationIntegrity(
+      [verdict],
+      evidence,
+      undefined,
+      warnings,
+      {
+        emitCollapsedSideWarnings: false,
+        deferredCollapsedSideWarnings,
+      },
+    );
+
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((warning) => warning.type === "verdict_direction_issue")).toBe(true);
+    expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
+
+    enforceVerdictCitationIntegrity(
+      result,
+      evidence,
+      undefined,
+      warnings,
+      { deferredCollapsedSideWarnings },
+    );
+
+    const guardWarning = warnings.find(
+      (warning) => warning.type === "verdict_citation_integrity_guard",
+    );
+    expect(guardWarning?.severity).toBe("error");
+    expect((guardWarning?.details as any)?.collapsedSide).toBe("contradicting");
+    expect((guardWarning?.details as any)?.deferredFromPreValidation).toBe(true);
+  });
+
+  it("drops deferred collapsed-side errors when validation repairs the final direction", () => {
+    const warnings: AnalysisWarning[] = [];
+    const deferredCollapsedSideWarnings = [];
+    const verdict = makeVerdict({
+      truthPercentage: 35,
+      verdict: "LEANING-FALSE",
+      supportingEvidenceIds: ["EV_SUPPORT"],
+      contradictingEvidenceIds: ["EV_NEUTRAL"],
+    });
+    const evidence = [
+      makeEvidence({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      makeEvidence({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+
+    const sanitized = enforceVerdictCitationIntegrity(
+      [verdict],
+      evidence,
+      undefined,
+      warnings,
+      {
+        emitCollapsedSideWarnings: false,
+        deferredCollapsedSideWarnings,
+      },
+    );
+    const repairedVerdict = {
+      ...sanitized[0],
+      truthPercentage: 72,
+      verdict: "MOSTLY-TRUE" as const,
+      confidence: 62,
+      confidenceTier: "MEDIUM" as const,
+    };
+
+    enforceVerdictCitationIntegrity(
+      [repairedVerdict],
+      evidence,
+      undefined,
+      warnings,
+      { deferredCollapsedSideWarnings },
+    );
+
+    expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
+  });
+
+  it("re-emits deferred errors when validation changes direction but leaves the new decisive side empty", () => {
+    const warnings: AnalysisWarning[] = [];
+    const deferredCollapsedSideWarnings = [];
+    const verdict = makeVerdict({
+      truthPercentage: 35,
+      verdict: "LEANING-FALSE",
+      supportingEvidenceIds: ["EV_SUPPORT"],
+      contradictingEvidenceIds: ["EV_NEUTRAL"],
+    });
+    const evidence = [
+      makeEvidence({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      makeEvidence({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+
+    const sanitized = enforceVerdictCitationIntegrity(
+      [verdict],
+      evidence,
+      undefined,
+      warnings,
+      {
+        emitCollapsedSideWarnings: false,
+        deferredCollapsedSideWarnings,
+      },
+    );
+    const changedButStillDegraded = {
+      ...sanitized[0],
+      truthPercentage: 72,
+      verdict: "MOSTLY-TRUE" as const,
+      confidence: 62,
+      confidenceTier: "MEDIUM" as const,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: [],
+    };
+
+    enforceVerdictCitationIntegrity(
+      [changedButStillDegraded],
+      evidence,
+      undefined,
+      warnings,
+      { deferredCollapsedSideWarnings },
+    );
+
+    const guardWarning = warnings.find(
+      (warning) => warning.type === "verdict_citation_integrity_guard",
+    );
+    expect(guardWarning?.severity).toBe("error");
+    expect((guardWarning?.details as any)?.collapsedSide).toBe("supporting");
+    expect((guardWarning?.details as any)?.preValidationCollapsedSide).toBe("contradicting");
+  });
+
   it("preserves valid citations with missing applicability while deduplicating IDs", () => {
     const warnings: AnalysisWarning[] = [];
     const verdict = makeVerdict({

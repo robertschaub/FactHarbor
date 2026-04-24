@@ -521,12 +521,19 @@ export async function runVerdictStage(
     advocateVerdicts,
   );
 
-  // Step 4b-3: Enforce final directional citation invariants before validation.
+  const deferredCitationIntegrityCollapses: DeferredCitationIntegrityCollapse[] = [];
+
+  // Step 4b-3: Sanitize directional citation invariants before validation.
+  // Collapsed-side errors are emitted only after validation/repair sees final verdicts.
   const citationIntegrityVerdicts = enforceVerdictCitationIntegrity(
     cleanedVerdicts,
     evidence,
     validatedChallengeDoc,
     warnings,
+    {
+      emitCollapsedSideWarnings: false,
+      deferredCollapsedSideWarnings: deferredCitationIntegrityCollapses,
+    },
   );
 
   // Step 4c: Spread adjustment — penalize confidence for unstable verdicts
@@ -557,6 +564,7 @@ export async function runVerdictStage(
       calculationConfig,
       sourcePortfolioByClaim: fullPortfolio,
       validatedChallengeDoc,
+      deferredCitationIntegrityCollapses,
     },
   );
 
@@ -1114,6 +1122,7 @@ export interface VerdictValidationRepairContext {
   calculationConfig?: CalcConfig;
   sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>;
   validatedChallengeDoc?: ChallengeDocument;
+  deferredCitationIntegrityCollapses?: DeferredCitationIntegrityCollapse[];
   repairExecutor?: (
     request: VerdictRepairRequest,
     llmCall: LLMCallFn,
@@ -1618,6 +1627,9 @@ export async function validateVerdicts(
     evidence,
     repairContext?.validatedChallengeDoc,
     warnings,
+    {
+      deferredCollapsedSideWarnings: repairContext?.deferredCitationIntegrityCollapses,
+    },
   );
 }
 
@@ -2567,6 +2579,7 @@ export function stripPhantomEvidenceIds(
 }
 
 type VerdictCitationBucket = "supporting" | "contradicting";
+type VerdictCitationCollapsedSide = VerdictCitationBucket | "all";
 type VerdictCitationDropReason =
   | "missing_evidence"
   | "claim_scope_mismatch"
@@ -2594,6 +2607,21 @@ interface VerdictCitationMove {
   sourceId?: string;
   sourceUrl?: string;
   claimDirection?: EvidenceItem["claimDirection"];
+}
+
+interface VerdictCitationIntegrityOptions {
+  emitCollapsedSideWarnings?: boolean;
+  deferredCollapsedSideWarnings?: DeferredCitationIntegrityCollapse[];
+}
+
+interface DeferredCitationIntegrityCollapse {
+  claimId: string;
+  collapsedSide: VerdictCitationCollapsedSide;
+  truthPercentage: number;
+  droppedCitations: VerdictCitationDrop[];
+  movedCitations: VerdictCitationMove[];
+  remainingSupportingCount: number;
+  remainingContradictingCount: number;
 }
 
 function buildInvalidChallengeCitationMap(
@@ -2722,7 +2750,7 @@ function decisiveCitationSideCollapsed(
   original: CBClaimVerdict,
   cleanedSupportingIds: string[],
   cleanedContradictingIds: string[],
-): "supporting" | "contradicting" | "all" | null {
+): VerdictCitationCollapsedSide | null {
   if (
     original.truthPercentage > 50
     && original.supportingEvidenceIds.length > 0
@@ -2750,6 +2778,116 @@ function decisiveCitationSideCollapsed(
   return null;
 }
 
+function missingCurrentDecisiveCitationSide(
+  verdict: CBClaimVerdict,
+): VerdictCitationCollapsedSide | null {
+  if (verdict.truthPercentage > 50 && verdict.supportingEvidenceIds.length === 0) {
+    return "supporting";
+  }
+
+  if (verdict.truthPercentage < 50 && verdict.contradictingEvidenceIds.length === 0) {
+    return "contradicting";
+  }
+
+  if (
+    verdict.truthPercentage === 50
+    && verdict.supportingEvidenceIds.length + verdict.contradictingEvidenceIds.length === 0
+  ) {
+    return "all";
+  }
+
+  return null;
+}
+
+function createDeferredCitationCollapse(
+  verdict: CBClaimVerdict,
+  collapsedSide: VerdictCitationCollapsedSide,
+  cleanedSupportingIds: string[],
+  cleanedContradictingIds: string[],
+  dropped: VerdictCitationDrop[],
+  moved: VerdictCitationMove[],
+): DeferredCitationIntegrityCollapse {
+  return {
+    claimId: verdict.claimId,
+    collapsedSide,
+    truthPercentage: verdict.truthPercentage,
+    droppedCitations: dropped,
+    movedCitations: moved,
+    remainingSupportingCount: cleanedSupportingIds.length,
+    remainingContradictingCount: cleanedContradictingIds.length,
+  };
+}
+
+function citationCollapseWarning(
+  collapse: DeferredCitationIntegrityCollapse,
+  options: {
+    deferredFromPreValidation?: boolean;
+    preValidationCollapsedSide?: VerdictCitationCollapsedSide;
+  } = {},
+): AnalysisWarning {
+  return {
+    type: "verdict_citation_integrity_guard",
+    severity: "error",
+    message: options.deferredFromPreValidation
+      ? `Claim ${collapse.claimId}: final verdict has no evidence on its ${collapse.collapsedSide} citation side after citation sanitation and validation.`
+      : `Claim ${collapse.claimId}: citation integrity guard removed all evidence from the verdict's ${collapse.collapsedSide} citation side.`,
+    details: {
+      claimId: collapse.claimId,
+      collapsedSide: collapse.collapsedSide,
+      truthPercentage: collapse.truthPercentage,
+      droppedCitations: collapse.droppedCitations,
+      movedCitations: collapse.movedCitations,
+      remainingSupportingCount: collapse.remainingSupportingCount,
+      remainingContradictingCount: collapse.remainingContradictingCount,
+      ...(options.deferredFromPreValidation ? { deferredFromPreValidation: true } : {}),
+      ...(options.preValidationCollapsedSide
+        ? { preValidationCollapsedSide: options.preValidationCollapsedSide }
+        : {}),
+    },
+  };
+}
+
+function emitDeferredCitationIntegrityWarnings(
+  verdicts: CBClaimVerdict[],
+  deferredCollapses: DeferredCitationIntegrityCollapse[] | undefined,
+  warnings?: AnalysisWarning[],
+): void {
+  if (!warnings || !deferredCollapses?.length) return;
+
+  const finalByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
+  const emitted = new Set(
+    warnings
+      .filter((warning) => warning.type === "verdict_citation_integrity_guard")
+      .map((warning) => {
+        const details = warning.details as { claimId?: string; collapsedSide?: string } | undefined;
+        return `${details?.claimId ?? ""}:${details?.collapsedSide ?? ""}`;
+      }),
+  );
+
+  for (const deferred of deferredCollapses) {
+    const finalVerdict = finalByClaim.get(deferred.claimId);
+    if (!finalVerdict) continue;
+
+    const finalCollapsedSide = missingCurrentDecisiveCitationSide(finalVerdict);
+    if (!finalCollapsedSide) continue;
+
+    const key = `${deferred.claimId}:${finalCollapsedSide}`;
+    if (emitted.has(key)) continue;
+
+    warnings.push(citationCollapseWarning({
+      ...deferred,
+      collapsedSide: finalCollapsedSide,
+      truthPercentage: finalVerdict.truthPercentage,
+      remainingSupportingCount: finalVerdict.supportingEvidenceIds.length,
+      remainingContradictingCount: finalVerdict.contradictingEvidenceIds.length,
+    }, {
+      deferredFromPreValidation: true,
+      preValidationCollapsedSide: deferred.collapsedSide,
+    }));
+    emitted.add(key);
+  }
+}
+
 function emitCitationIntegrityWarnings(
   verdict: CBClaimVerdict,
   cleanedSupportingIds: string[],
@@ -2757,6 +2895,7 @@ function emitCitationIntegrityWarnings(
   dropped: VerdictCitationDrop[],
   moved: VerdictCitationMove[],
   warnings?: AnalysisWarning[],
+  options: VerdictCitationIntegrityOptions = {},
 ): void {
   if (!warnings || (dropped.length === 0 && moved.length === 0)) return;
 
@@ -2800,20 +2939,19 @@ function emitCitationIntegrityWarnings(
     cleanedContradictingIds,
   );
   if (collapsedSide) {
-    warnings.push({
-      type: "verdict_citation_integrity_guard",
-      severity: "error",
-      message: `Claim ${verdict.claimId}: citation integrity guard removed all evidence from the verdict's ${collapsedSide} citation side.`,
-      details: {
-        claimId: verdict.claimId,
-        collapsedSide,
-        truthPercentage: verdict.truthPercentage,
-        droppedCitations: dropped,
-        movedCitations: moved,
-        remainingSupportingCount: cleanedSupportingIds.length,
-        remainingContradictingCount: cleanedContradictingIds.length,
-      },
-    });
+    const collapse = createDeferredCitationCollapse(
+      verdict,
+      collapsedSide,
+      cleanedSupportingIds,
+      cleanedContradictingIds,
+      dropped,
+      moved,
+    );
+    if (options.emitCollapsedSideWarnings ?? true) {
+      warnings.push(citationCollapseWarning(collapse));
+    } else {
+      options.deferredCollapsedSideWarnings?.push(collapse);
+    }
   }
 }
 
@@ -2831,11 +2969,12 @@ export function enforceVerdictCitationIntegrity(
   evidence: EvidenceItem[],
   validatedChallengeDoc?: ChallengeDocument,
   warnings?: AnalysisWarning[],
+  options: VerdictCitationIntegrityOptions = {},
 ): CBClaimVerdict[] {
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const invalidByClaim = buildInvalidChallengeCitationMap(validatedChallengeDoc);
 
-  return verdicts.map((verdict) => {
+  const cleanedVerdicts = verdicts.map((verdict) => {
     const invalidChallengeIds = invalidByClaim.get(verdict.claimId) ?? new Set<string>();
     const supporting = cleanVerdictCitationBucket(
       verdict,
@@ -2877,6 +3016,7 @@ export function enforceVerdictCitationIntegrity(
       dropped,
       moved,
       warnings,
+      options,
     );
 
     return {
@@ -2885,6 +3025,16 @@ export function enforceVerdictCitationIntegrity(
       contradictingEvidenceIds,
     };
   });
+
+  if (options.emitCollapsedSideWarnings ?? true) {
+    emitDeferredCitationIntegrityWarnings(
+      cleanedVerdicts,
+      options.deferredCollapsedSideWarnings,
+      warnings,
+    );
+  }
+
+  return cleanedVerdicts;
 }
 
 /**
