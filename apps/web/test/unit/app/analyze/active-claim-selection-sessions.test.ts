@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getResumeTarget,
+  getSessionStatusLabel,
   getSessionSummary,
 } from "@/app/analyze/ActiveClaimSelectionSessions";
 import type { StoredClaimSelectionSessionRef } from "@/lib/claim-selection-client";
@@ -37,7 +38,19 @@ describe("ActiveClaimSelectionSessions helpers", () => {
       destination: "/jobs/job-1",
       linkLabel: "Open report",
     });
-    expect(getSessionSummary(item)).toBe("Preparation has completed and a report job is ready.");
+    expect(getSessionStatusLabel(item)).toBe("REPORT PROCESSING");
+    expect(getSessionSummary(item)).toBe("Preparation has completed and the report job is processing.");
+  });
+
+  it("labels claim-selection-ready sessions without exposing the raw internal status", () => {
+    const item = {
+      ref: buildRef({ lastKnownStatus: "AWAITING_CLAIM_SELECTION" }),
+      draft: null,
+      error: null,
+      accessUnavailable: false,
+    };
+
+    expect(getSessionStatusLabel(item)).toBe("READY");
   });
 
   it("does not expose a resume link when draft access is gone and no final job exists", () => {

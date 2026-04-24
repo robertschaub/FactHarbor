@@ -60,6 +60,7 @@ import {
   assessEvidenceApplicability,
   selectTopSources,
   buildClaimBoundaryResultJson,
+  filterPreparedUnderstandingForSelectedClaims,
 } from "@/lib/analyzer/claimboundary-pipeline";
 import type {
   AtomicClaim,
@@ -2467,6 +2468,78 @@ describe("seedEvidenceFromPreliminarySearch", () => {
     expect(item.evidenceScope.methodology).toBe("Preliminary search result");
     expect(item.evidenceScope.temporal).toBe("");
     expect(item.evidenceScope.geographic).toBe("");
+  });
+});
+
+describe("filterPreparedUnderstandingForSelectedClaims", () => {
+  it("preserves unresolved preliminary evidence for a single prepared claim so seeding can remap it", () => {
+    const understanding = {
+      atomicClaims: [createAtomicClaim({ id: "AC_01" })],
+      preliminaryEvidence: [
+        {
+          sourceUrl: "https://example.com/provisional",
+          snippet: "Evidence with provisional claim id",
+          claimId: "claim_01",
+          relevantClaimIds: ["claim_01"],
+          probativeValue: "high",
+        },
+        {
+          sourceUrl: "https://example.com/unassigned",
+          snippet: "Evidence without claim id",
+          claimId: "",
+          relevantClaimIds: [],
+          probativeValue: "medium",
+        },
+      ],
+    } as any;
+
+    filterPreparedUnderstandingForSelectedClaims(
+      understanding,
+      new Map([["AC_01", 0]]),
+    );
+
+    expect(understanding.preliminaryEvidence).toHaveLength(2);
+    expect(understanding.preliminaryEvidence[0].claimId).toBe("claim_01");
+    expect(understanding.preliminaryEvidence[0].relevantClaimIds).toEqual(["claim_01"]);
+    expect(understanding.preliminaryEvidence[1].claimId).toBe("");
+
+    const state = { understanding, evidenceItems: [] } as any;
+    seedEvidenceFromPreliminarySearch(state);
+
+    expect(state.evidenceItems).toHaveLength(2);
+    expect(state.evidenceItems.every((item: any) => item.relevantClaimIds[0] === "AC_01")).toBe(true);
+  });
+
+  it("does not retain unresolved preliminary evidence when filtering a multi-claim snapshot to one claim", () => {
+    const understanding = {
+      atomicClaims: [
+        createAtomicClaim({ id: "AC_01" }),
+        createAtomicClaim({ id: "AC_02", statement: "Second claim" }),
+      ],
+      preliminaryEvidence: [
+        {
+          sourceUrl: "https://example.com/selected",
+          snippet: "Evidence with selected final claim id",
+          claimId: "AC_01",
+          relevantClaimIds: ["AC_01"],
+        },
+        {
+          sourceUrl: "https://example.com/unresolved",
+          snippet: "Unresolved evidence from multi-claim preparation",
+          claimId: "claim_02",
+          relevantClaimIds: ["claim_02"],
+        },
+      ],
+    } as any;
+
+    filterPreparedUnderstandingForSelectedClaims(
+      understanding,
+      new Map([["AC_01", 0]]),
+    );
+
+    expect(understanding.atomicClaims.map((claim: any) => claim.id)).toEqual(["AC_01"]);
+    expect(understanding.preliminaryEvidence).toHaveLength(1);
+    expect(understanding.preliminaryEvidence[0].sourceUrl).toBe("https://example.com/selected");
   });
 });
 

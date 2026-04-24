@@ -491,11 +491,14 @@ function buildPreparedResearchState(params: {
   return { state, detectedUrl };
 }
 
-function filterPreparedUnderstandingForSelectedClaims(
+export function filterPreparedUnderstandingForSelectedClaims(
   understanding: CBClaimUnderstanding,
   selectedOrder: Map<string, number>,
 ): void {
+  const originalClaimCount = understanding.atomicClaims.length;
   const selectedClaimIds = new Set(selectedOrder.keys());
+  const preserveUnresolvedPreliminaryEvidence =
+    originalClaimCount === 1 && selectedClaimIds.size === 1;
   const sortBySelectionOrder = <T extends { id: string }>(items: T[]) =>
     items.sort((a, b) => (selectedOrder.get(a.id) ?? 0) - (selectedOrder.get(b.id) ?? 0));
 
@@ -521,6 +524,9 @@ function filterPreparedUnderstandingForSelectedClaims(
       : [];
     const claimId = selectedClaimIds.has(entry.claimId) ? entry.claimId : relevantClaimIds[0];
     if (!claimId) {
+      if (preserveUnresolvedPreliminaryEvidence) {
+        return [entry];
+      }
       return [];
     }
 

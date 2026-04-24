@@ -56,6 +56,20 @@ function getStatusTone(status: string): { background: string; color: string } {
   }
 }
 
+export function getSessionStatusLabel(item: ActiveSessionItem): string {
+  const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
+  if (finalJobId) {
+    return "REPORT PROCESSING";
+  }
+
+  const status = item.draft?.status ?? item.ref.lastKnownStatus;
+  if (status === "AWAITING_CLAIM_SELECTION") {
+    return "READY";
+  }
+
+  return status;
+}
+
 export function getResumeTarget(item: ActiveSessionItem): { destination: string; linkLabel: string } | null {
   const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
   if (finalJobId) {
@@ -78,7 +92,7 @@ export function getResumeTarget(item: ActiveSessionItem): { destination: string;
 export function getSessionSummary(item: ActiveSessionItem): string {
   const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
   if (finalJobId) {
-    return "Preparation has completed and a report job is ready.";
+    return "Preparation has completed and the report job is processing.";
   }
 
   if (item.accessUnavailable) {
@@ -95,7 +109,7 @@ export function getSessionSummary(item: ActiveSessionItem): string {
   }
 
   if (draft.finalJobId) {
-    return "Preparation has completed and a report job is ready.";
+    return "Preparation has completed and the report job is processing.";
   }
 
   switch (draft.status) {
@@ -389,7 +403,7 @@ export function ActiveClaimSelectionSessions({ adminKey }: { adminKey: string | 
                         letterSpacing: "0.02em",
                       }}
                     >
-                      {status}
+                      {getSessionStatusLabel(item)}
                     </span>
                     <span style={{ color: "#7b8da6", fontSize: 12 }}>
                       {item.ref.selectionMode === "automatic" ? "Automatic mode" : "Interactive mode"}
