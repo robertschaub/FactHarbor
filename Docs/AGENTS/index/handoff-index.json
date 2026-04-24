@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-19T14:11:02.443Z",
-  "count": 228,
+  "generatedAt": "2026-04-24T20:21:58.462Z",
+  "count": 363,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -2002,8 +2002,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "dominant",
         "claim",
         "debate",
@@ -2082,8 +2080,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "dominant",
         "claim",
         "aggregation",
@@ -2192,8 +2188,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "dominant",
         "claim",
         "implementation",
@@ -2210,11 +2204,10 @@
       "file": "2026-04-09_Lead_Architect_LLM_Expert_Option_G_Review_Request.md",
       "date": "2026-04-09",
       "roles": [
-        "lead_architect"
+        "lead_architect",
+        "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "option",
         "g",
         "review",
@@ -2249,8 +2242,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "option",
         "g",
         "review",
@@ -2269,8 +2260,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "stage",
         "5",
         "llm",
@@ -2369,8 +2358,6 @@
         "senior_developer"
       ],
       "topics": [
-        "senior",
-        "developer",
         "current",
         "state",
         "report",
@@ -2391,8 +2378,6 @@
         "senior_developer"
       ],
       "topics": [
-        "senior",
-        "developer",
         "implementation",
         "refresh",
         "review"
@@ -2407,11 +2392,10 @@
       "file": "2026-04-10_Lead_Architect_Senior_Developer_Overarching_Report_Quality_Investigation.md",
       "date": "2026-04-10",
       "roles": [
-        "lead_architect"
+        "lead_architect",
+        "senior_developer"
       ],
       "topics": [
-        "senior",
-        "developer",
         "overarching",
         "report",
         "quality",
@@ -2446,6 +2430,8 @@
         "llm_expert"
       ],
       "topics": [
+        "report",
+        "quality",
         "consolidated",
         "review",
         "plan"
@@ -2466,6 +2452,8 @@
         "adversarial_reviewer"
       ],
       "topics": [
+        "report",
+        "quality",
         "multi",
         "agent",
         "review",
@@ -2519,8 +2507,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "claim",
         "clarification",
         "gate",
@@ -2560,8 +2546,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "phase",
         "2",
         "gate",
@@ -2592,8 +2576,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "report",
         "quality",
         "restoration",
@@ -2650,8 +2632,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "c16",
         "combined",
         "replay",
@@ -2671,8 +2651,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "c16",
         "replay",
         "review",
@@ -2692,8 +2670,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "phase7",
         "salience",
         "first",
@@ -2730,8 +2706,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "current",
         "work",
         "and",
@@ -2752,8 +2726,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "code",
@@ -2777,8 +2749,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "docs",
@@ -2803,8 +2773,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "final",
@@ -2828,8 +2796,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "step",
@@ -2853,8 +2819,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "step",
@@ -2878,8 +2842,6 @@
         "lead_architect"
       ],
       "topics": [
-        "lead",
-        "architect",
         "phase",
         "7",
         "working",
@@ -3210,8 +3172,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "prompt",
         "diagnosis",
         "7333cb1f"
@@ -3230,8 +3190,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "prompt",
         "diagnosis",
         "skill",
@@ -3251,8 +3209,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "prompt",
         "diagnosis",
         "skill",
@@ -3275,8 +3231,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "delegated",
         "review",
         "and",
@@ -3296,8 +3250,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "job",
         "review",
         "on",
@@ -3318,8 +3270,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "live",
         "prompt",
         "runtime",
@@ -3339,8 +3289,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "narrow",
         "claim",
         "contract",
@@ -3357,11 +3305,10 @@
       "file": "2026-04-15_Lead_Developer_LLM_Expert_New_Report_Investigation.md",
       "date": "2026-04-15",
       "roles": [
-        "lead_developer"
+        "lead_developer",
+        "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "new",
         "report",
         "investigation"
@@ -3377,8 +3324,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "prompt",
         "issue",
         "review",
@@ -3393,11 +3338,10 @@
       "file": "2026-04-15_Lead_Developer_LLM_Expert_Submitted_Job_Effectiveness_Review.md",
       "date": "2026-04-15",
       "roles": [
-        "lead_developer"
+        "lead_developer",
+        "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "submitted",
         "job",
         "effectiveness",
@@ -3415,6 +3359,8 @@
         "code_reviewer"
       ],
       "topics": [
+        "review",
+        "board",
         "phase7b",
         "charter",
         "debate",
@@ -3903,8 +3849,6 @@
         "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "report",
         "review",
         "skill",
@@ -4270,11 +4214,10 @@
       "file": "2026-04-17_senior_developer_llm_expert_bundesrat_repair_anchor_carrier_fix.md",
       "date": "2026-04-17",
       "roles": [
-        "senior_developer"
+        "senior_developer",
+        "llm_expert"
       ],
       "topics": [
-        "llm",
-        "expert",
         "bundesrat",
         "repair",
         "anchor",
@@ -4497,6 +4440,28 @@
       "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) in `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, and `CLAIM_CONTRACT_VALIDATION`, plus [claim-extraction-prompt-contract.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/claim-extractio"
     },
     {
+      "file": "2026-04-19_LLM_Expert_CH_DE_Fact_Checking_Forward_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "ch",
+        "de",
+        "fact",
+        "checking",
+        "forward",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_CH_DE_Fact_Checking_Forward_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -4619,6 +4584,137 @@
       "summary": "Start with [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) at the `expectedEvidenceProfile` rules and `GENERATE_QUERIES` section, plus the updated contract assertions in [claim-extraction-prompt-contract.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyz"
     },
     {
+      "file": "2026-04-19_Unassigned_Bundesrat_Repair_Anchor_Narrowing_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "bundesrat",
+        "repair",
+        "anchor",
+        "narrowing",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/repair-anchor-selection.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Bundesrat_Repair_Anchor_Narrowing_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/analyzer/claim-extraction-stage.ts:2777-2800` and `apps/web/test/unit/lib/analyzer/repair-anchor-selection.test.ts:133-146`. Verification anchors are failing clean job `cb2361aa346d4e9583819ccde37598d7` (`UNVERIFIED 50/0`, repair anchor narrowed to temporal clause) versu"
+    },
+    {
+      "file": "2026-04-19_Unassigned_CH_DE_Ecosystem_Adjacency_Guard_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "ch",
+        "de",
+        "ecosystem",
+        "adjacency",
+        "guard",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_CH_DE_Ecosystem_Adjacency_Guard_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Compare `48e1dc1c6e2b416584a3539de947f6fc` directly against `69cbbf4b318e477ca740b63a45f1f5d5` and `63f795860245464fafbf374fc9b01f91`. The key question is no longer “does the run stay stuck on FOEG governance material?” — that part improved. The remaining tuning seam, if any, is whether the newer co"
+    },
+    {
+      "file": "2026-04-19_Unassigned_CH_DE_Fact_Checking_Query_Seeding_Stabilization.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "ch",
+        "de",
+        "fact",
+        "checking",
+        "query",
+        "seeding",
+        "stabilization"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts"
+      ],
+      "summary": "Watch `f59f64d739be47fa9d5192c9d7fefc34` through completion and verify `ExecutedWebGitCommitHash` starts with `3add5697...` and `resultJson.meta.promptContentHash` is `53232e79...`. Then compare its verdict against `bcfcaa1f99304c83a8ee3676170444dd` and `63f795860245464fafbf374fc9b01f91` to determin"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Consolidated_Prompt_Audit_Adjudication.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "consolidated",
+        "prompt",
+        "audit",
+        "adjudication"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Adjudication.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the following as the consolidated priority order: (1) `inverse-claim-verification.prompt.md` semantic contract and edge cases, (2) SR runtime schema/prompt-surface cleanup, (3) `claimboundary` ecosystem-rule governance via a Stage-1 routing contract and synchronization tests, (4) optional load"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Consolidated_Prompt_Audit_Implementation_Plan.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "consolidated",
+        "prompt",
+        "audit",
+        "implementation",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Implementation_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use [2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md) as the execution baseline. If implementation begins, start with Workstream 1 and Workstream 2 schema tightening in the same bounded branch, then "
+    },
+    {
+      "file": "2026-04-19_Unassigned_Current_Aggregate_Metric_Refinement_Fix.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "current",
+        "aggregate",
+        "metric",
+        "refinement",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Current_Aggregate_Metric_Refinement_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Judge the live fix on a clean rerun of `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz` after restart. Check whether Stage 1 emits `primaryMetric`, whether a refinement iteration runs only when the direct metric is still missing, and whether the rerun admits `stat-jahr-202"
+    },
+    {
       "file": "2026-04-19_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
       "date": "2026-04-19",
       "roles": [
@@ -4640,6 +4736,93 @@
       "summary": "Start from commit SHAs `3a13dbb9`, `bfc48338`, `01aa3203`, `1c7bd96e`, and `9479376d`, plus `apps/web/src/lib/analyzer/research-acquisition-stage.ts`, `apps/web/src/lib/retrieval.ts`, and the targeted tests under `apps/web/test/unit/lib/analyzer/` and `apps/web/test/unit/lib/`. Verification on this "
     },
     {
+      "file": "2026-04-19_Unassigned_Inverse_Verification_And_SR_Contract_Hardening.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "inverse",
+        "verification",
+        "and",
+        "sr",
+        "contract",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/prompts/text-analysis/inverse-claim-verification.prompt.md",
+        "apps/web/src/lib/calibration/paired-job-audit.ts",
+        "apps/web/test/unit/lib/paired-job-audit.test.ts",
+        "apps/web/src/lib/source-reliability/sr-eval-types.ts",
+        "apps/web/src/lib/source-reliability/sr-eval-engine.ts",
+        "apps/web/src/lib/source-reliability/sr-eval-prompts.ts",
+        "apps/web/test/unit/lib/source-reliability/sr-eval-types.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Inverse_Verification_And_SR_Contract_Hardening.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/src/lib/calibration/paired-job-audit.ts` and `apps/web/src/lib/source-reliability/sr-eval-types.ts`. The inverse verifier now fails soft instead of throwing, and SR evaluator outputs are canonicalized before post-processing. If you continue this track, the next bounded step is e"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Post_Commit_Targeted_Reruns_Validation.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "post",
+        "commit",
+        "targeted",
+        "reruns",
+        "validation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Post_Commit_Targeted_Reruns_Validation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat `fc4c657f` as the preserved clean baseline for the current prompt direction. If continuing quality work, start with `cb2361aa346d4e9583819ccde37598d7` plus the older Bundesrat report-review handoff `Docs/AGENTS/Handoffs/2026-04-17_Unassigned_Report_Review_d816e2e8_Stage1_Multi_Event_Reprompt.m"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Prompt_Audit_Schema_Contract_Findings.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "prompt",
+        "audit",
+        "schema",
+        "contract",
+        "findings"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Prompt_Audit_Schema_Contract_Findings.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Key anchors are `apps/web/src/lib/input-policy-gate.ts:113-146`, `apps/web/src/app/api/fh/analyze/route.ts:31-38`, `apps/web/src/lib/source-reliability/sr-eval-types.ts:63-92`, `apps/web/src/lib/source-reliability/sr-eval-engine.ts:128-145`, `apps/web/src/lib/source-reliability/sr-eval-prompts.ts:50"
+    },
+    {
+      "file": "2026-04-19_Unassigned_Prompt_Diagnosis_7be084ee_Asylum_Current_Total_Regression.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "prompt",
+        "diagnosis",
+        "7be084ee",
+        "asylum",
+        "current",
+        "total",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Prompt_Diagnosis_7be084ee_Asylum_Current_Total_Regression.md",
+        "Docs/AGENTS/Prompt_Issue_Register.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with runtime blobs `5b34870a...` vs `53232e79...` from `apps/web/config.db`, not the current working file. Compare `c95d00114cc54e6da201237d1ab59218` against `7be084ee2c52441894a0d4a5c67213ec`. If implementing, prefer a **narrow prompt rewrite** over new code. The main test of success is wheth"
+    },
+    {
       "file": "2026-04-19_Unassigned_Report_Review_01dfef57_Exclusivity_Claim_Atomicity_Fix.md",
       "date": "2026-04-19",
       "roles": [
@@ -4658,6 +4841,25 @@
         "apps/web/prompts/claimboundary.prompt.md"
       ],
       "summary": "The fix is in `apps/web/prompts/claimboundary.prompt.md` — search for \"Exclusivity/uniqueness override\" to find both instances (Pass 1 and Pass 2 classification sections)."
+    },
+    {
+      "file": "2026-04-19_Unassigned_Report_Review_8f3ca9dd_Revert_Assessment.md",
+      "date": "2026-04-19",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "8f3ca9dd",
+        "revert",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Report_Review_8f3ca9dd_Revert_Assessment.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with these anchors:"
     },
     {
       "file": "2026-04-19_Unassigned_Report_Review_CH_DE_Fact_Checking_Prompt_Fix.md",
@@ -4738,6 +4940,2612 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Use the revised file as the full briefing version. If you create a shorter meeting card, preserve the current structure: discovery first, demo as support, honest limits, then three project lines with C as the internal default but not the explicit opening push."
+    },
+    {
+      "file": "2026-04-20_Unassigned_Bolsonaro_Target_Object_Applicability_Guard_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "bolsonaro",
+        "target",
+        "object",
+        "applicability",
+        "guard",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts"
+      ],
+      "summary": "Before submitting any rerun, confirm:"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Bolsonaro_Target_Proceeding_Scope_Hardening.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "bolsonaro",
+        "target",
+        "proceeding",
+        "scope",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "Check the first fresh rerun after this commit. Focus on:"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Bundesrat_Priority_Anchor_Contract_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "bundesrat",
+        "priority",
+        "anchor",
+        "contract",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts"
+      ],
+      "summary": "Before claiming success, restart services on the committed SHA and rerun:"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Bundesrat_Stage1_Prompt_Review.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "bundesrat",
+        "stage1",
+        "prompt",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Bundesrat_Stage1_Prompt_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Relevant prompt anchors are `apps/web/prompts/claimboundary.prompt.md` under `CLAIM_SALIENCE_COMMITMENT`, `CLAIM_EXTRACTION_PASS2`, `CLAIM_CONTRACT_VALIDATION`, and `CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION`. Relevant runtime context is `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, especiall"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Compound_Subject_Decomposition_Prompt_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "compound",
+        "subject",
+        "decomposition",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Compound_Subject_Decomposition_Prompt_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/prompts/claimboundary.prompt.md` around the Stage-1 classification rules and contract-repair rules. The intent is to stop joint anchors like `bevor Volk und Parlament ...` from being decomposed into whole-claim-plus-subclaim outputs. Restart the local stack before relying on thi"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Coordinated_Branch_Atomicity_Prompt_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "coordinated",
+        "branch",
+        "atomicity",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Coordinated_Branch_Atomicity_Prompt_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `apps/web/prompts/claimboundary.prompt.md` around the Pass 1 / Pass 2 classification bullets and `CLAIM_CONTRACT_REPAIR`. The key contract is now: coordinated branches may be split when independently verifiable, but the whole unsplit sentence must not coexist with those branch claims, and"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Coordinated_Branch_Repair_Pass_Gating_And_Atomicity_Debug.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "coordinated",
+        "branch",
+        "repair",
+        "pass",
+        "gating",
+        "and",
+        "atomicity",
+        "debug"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Daily_Bug_Scan_Atomicity_Gating_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "atomicity",
+        "gating",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Daily_Bug_Scan_Atomicity_Gating_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Primary anchors are [claim-extraction-stage.ts](C:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) around the atomicity call sites and [claim-contract-validation.test.ts](C:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts). Verification on this tr"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "no",
+        "confirmed",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "$CODEX_HOME/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Baseline for this window is \"no confirmed regression\" after passing `claim-contract-validation.test.ts`, `claimboundary-pipeline.test.ts`, `research-extraction-stage.test.ts`, `claim-extraction-prompt-contract.test.ts`, `verdict-prompt-contract.test.ts`, and `npm -w apps/web run build`. Ignore the w"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Dominant_Proposition_Architecture_Plan.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "dominant",
+        "proposition",
+        "architecture",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-20_Unassigned_Dominant_Proposition_Architecture_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md). Use `topLevelProposition` in code, keep it outside `atomicClaims`, validate `componentClaimIds` against the final post-retry claim set, and treat `Plas"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Single_Claim_Atomicity_Enforcement_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "single",
+        "claim",
+        "atomicity",
+        "enforcement",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "Docs/AGENTS/index/stage-map.json",
+        "Docs/AGENTS/index/stage-manifest.json"
+      ],
+      "summary": "The relevant runtime path is `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, especially `shouldRunSingleClaimAtomicityValidation(...)`, `evaluateSingleClaimAtomicityValidation(...)`, `applySingleClaimAtomicityValidation(...)`, and `validateSingleClaimAtomicity(...)`. The prompt contract lives"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Unverified_Review_Followup_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "unverified",
+        "review",
+        "followup",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/contract-revalidation-fallback.test.ts"
+      ],
+      "summary": "The review blocker is resolved structurally in `claim-extraction-stage.ts` around `canCarryForwardValidatedContractApproval(...)`. The follow-up tests now distinguish dropping a tangential claim from dropping a thesis-direct non-anchor claim. Verification passed on targeted Vitest (`73 passed`), `np"
+    },
+    {
+      "file": "2026-04-20_Unassigned_Unverified_Stage1_Contract_Stability_Fix.md",
+      "date": "2026-04-20",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "unverified",
+        "stage1",
+        "contract",
+        "stability",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/contract-revalidation-fallback.test.ts"
+      ],
+      "summary": "The main runtime seam is in `canCarryForwardValidatedContractApproval(...)` and the final revalidation branch in `extractClaims(...)`. Prompt changes are intentionally narrow and generic; if the reruns still miss, inspect Stage 1 outputs first, especially whether the Bolsonaro fairness conjunct is s"
+    },
+    {
+      "file": "2026-04-21_LLM_Expert_Debate_Skill_Structural_Hardening.md",
+      "date": "2026-04-21",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "debate",
+        "skill",
+        "structural",
+        "hardening"
+      ],
+      "files_touched": [
+        ".claude/skills/debate/SKILL.md",
+        "Docs/AGENTS/Handoffs/2026-04-21_LLM_Expert_Debate_Skill_Structural_Hardening.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "If another workflow calls `/debate`, update that caller first so it emits `CONTEXT_MANIFEST` with `EVIDENCE_INVENTORY`, `KNOWN_GAPS`, and `OPTIONAL_STATE` only when materially relevant. If Captain wants another bounded improvement, add one or two canonical manifest examples from a real caller skill "
+    },
+    {
+      "file": "2026-04-21_Lead_Architect_Additive_Repair_Drift_Grounded_Review.md",
+      "date": "2026-04-21",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "additive",
+        "repair",
+        "drift",
+        "grounded",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md",
+        "Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Grounded_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md). Preserve the current posture: local relevance is established, prevalence is not quantified, and the best-supported design direction remains verifier-"
+    },
+    {
+      "file": "2026-04-21_Lead_Architect_Additive_Repair_Drift_Problem_Statement.md",
+      "date": "2026-04-21",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "additive",
+        "repair",
+        "drift",
+        "problem",
+        "statement"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Additive_Repair_Drift_Problem_Statement.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-21_Additive_Repair_Drift_Problem_Statement.md). If you are designing agent workflow controls, preserve the distinction between the phenomenon (“failed attempts stay live too long”) and the preferre"
+    },
+    {
+      "file": "2026-04-21_Lead_Architect_Failed_Attempt_Recovery_Rule_Draft.md",
+      "date": "2026-04-21",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "failed",
+        "attempt",
+        "recovery",
+        "rule",
+        "draft"
+      ],
+      "files_touched": [
+        "AGENTS.md",
+        ".github/copilot-instructions.md",
+        "Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Failed_Attempt_Recovery_Rule_Draft.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [AGENTS.md](/c:/DEV/FactHarbor/AGENTS.md) at the new Failed-Attempt Recovery section and the synced summary in [.github/copilot-instructions.md](/c:/DEV/FactHarbor/.github/copilot-instructions.md). If you later push this down into skill files, keep the same narrow posture: post-failure re"
+    },
+    {
+      "file": "2026-04-21_Lead_Architect_Skill_Level_Failed_Attempt_Recovery_Reinforcement.md",
+      "date": "2026-04-21",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "skill",
+        "level",
+        "failed",
+        "attempt",
+        "recovery",
+        "reinforcement"
+      ],
+      "files_touched": [
+        ".claude/skills/debug/SKILL.md",
+        ".claude/skills/report-review/SKILL.md",
+        ".claude/skills/pipeline/SKILL.md",
+        "Docs/AGENTS/Handoffs/2026-04-21_Lead_Architect_Skill_Level_Failed_Attempt_Recovery_Reinforcement.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [.claude/skills/report-review/SKILL.md](/c:/DEV/FactHarbor/.claude/skills/report-review/SKILL.md), where the rule now sits inside the non-negotiable constraint list that Phase 4 sub-agents receive verbatim. The matching lighter-weight reinforcements are in [.claude/skills/debug/SKILL.md]("
+    },
+    {
+      "file": "2026-04-21_Senior_Developer_Unverified_Validator_Retry_Hardening.md",
+      "date": "2026-04-21",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "unverified",
+        "validator",
+        "retry",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-21_Senior_Developer_Unverified_Validator_Retry_Hardening.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [apps/web/src/lib/analyzer/claim-extraction-stage.ts](apps/web/src/lib/analyzer/claim-extraction-stage.ts#L348), [apps/web/src/lib/analyzer/claim-extraction-stage.ts](apps/web/src/lib/analyzer/claim-extraction-stage.ts#L2602), and [apps/web/src/lib/analyzer/claim-extraction-stage.ts](apps"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Benchmark_Rerun_Wave_Five_Candidates.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "benchmark",
+        "rerun",
+        "wave",
+        "five",
+        "candidates"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Benchmark_Rerun_Wave_Five_Candidates.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use these exact completed jobs for any follow-up review or expectation-update discussion: `2379b10561764db98c88696ff995761c` (`bundesrat-rechtskraftig`), `a6b0e0fc14984926a678a462456bc110` (`bundesrat-simple`), `f3fbbfd6ef6a4c2ea259dfef15857960` (`asylum-235000-de`), `774dec9e03ae4696825c151754bc5ce"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "no",
+        "confirmed",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Baseline for this window is still \"no confirmed regression\" after passing the dedicated verdict suites (`171` + `81` tests) and `npm -w apps/web run build`. The most relevant SHAs are `08b3d771`, `5f1a7446`, `f8ae0d44`, `a1353b82`, `f874e62e`, `c2f68884`, `972eb1c4`, and `ace3c114`."
+    },
+    {
+      "file": "2026-04-21_Unassigned_Daily_Bug_Scan_Report_Review_Publication_No_Regression.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "report",
+        "review",
+        "publication",
+        "no",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_Report_Review_Publication_No_Regression.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Baseline for the post-`2026-04-21T06:00:17Z` window is still \"no confirmed regression.\" If a later issue is reported against `/report-review`, start with commit `51ede468` and check whether the problem is in workflow instructions only versus the analyzer/runtime itself."
+    },
+    {
+      "file": "2026-04-21_Unassigned_Daily_Bug_Scan_Uncommitted_Anchor_Override_Fix_Verified.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "uncommitted",
+        "anchor",
+        "override",
+        "fix",
+        "verified"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Daily_Bug_Scan_Uncommitted_Anchor_Override_Fix_Verified.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Treat the current uncommitted Stage 1 patch in [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts:2694) as the concrete result of this scan. Verification passed on `claim-contract-anchor-override.test.ts`, `contract-revalidation-fallback.test.ts`, `cla"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_1b52c739_Binding_Retry_Redesign_Assessment.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "1b52c739",
+        "binding",
+        "retry",
+        "redesign",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Binding_Retry_Redesign_Assessment.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Replace the boolean helper in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` with a binding-context builder driven by `EvaluatedClaimContractValidation.summary.truthConditionAnchor.validPreservedIds`. Add tests for: (1) non-empty but invalid carrier IDs still escalating, (2) salience inventor"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_1b52c739_Contract_Retry_Binding_Fix.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "1b52c739",
+        "contract",
+        "retry",
+        "binding",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts"
+      ],
+      "summary": "The critical seam is [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) around the retry block and the new helper `shouldUseBindingSalienceForContractRetry(...)`. The exact bad job had `understanding.inputClassification = \"question\"` with 3 direct cla"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_1b52c739_Retry_Salience_Plan_Fix.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "1b52c739",
+        "retry",
+        "salience",
+        "plan",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-21_Unassigned_Report_Review_1b52c739_Retry_Salience_Plan_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The important runtime seams are [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) around the initial contract-validation block and the new `buildContractRetrySaliencePlan(...)` helper, plus the replacement tests in [claim-contract-validation.test.ts]"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_Cross_Tool_Publication.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "cross",
+        "tool",
+        "publication"
+      ],
+      "files_touched": [
+        "GEMINI.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md"
+      ],
+      "summary": "`/report-review` is now discoverable from the Claude skill file, `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, and the shared workflow reference doc. Do not fork the workflow into tool-specific variants; keep `.claude/skills/report-review/SKILL.md` canonical and update the di"
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_Skill_Restore_Exact_Job_First.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "skill",
+        "restore",
+        "exact",
+        "job",
+        "first"
+      ],
+      "files_touched": [
+        ".claude/skills/report-review/SKILL.md"
+      ],
+      "summary": "Treat `.claude/skills/report-review/SKILL.md` as intentionally ahead of `HEAD` again: exact-job-first diagnosis and provisional-only prompt edits on non-inspectable jobs are back in force."
+    },
+    {
+      "file": "2026-04-21_Unassigned_Report_Review_e5e6ec8d_Anchor_Override_Fix.md",
+      "date": "2026-04-21",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "e5e6ec8d",
+        "anchor",
+        "override",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claim-contract-anchor-override.test.ts"
+      ],
+      "summary": "The concrete regression anchors are the hosted hidden job `e5e6ec8da824491c8984a18505481ba7` (`2026-04-21T10:42:34Z`, commit `ace3c114463ecfbe56f4f16037bc5c3a65088e50`, prompt hash `5a77affe3d1b03104ce3ab850a3cf86b6953a890134f1d9dbfc73791d75fcbd7`) and the successful local comparator `ae6b54e96bda4a"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "implementation_spec",
+        "pre_job_intake",
+        "draft_flow"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md`. The first implementation slice should be backend-first: add `ClaimSelectionDraftEntity`, the draft service/controller pair, shared analyze-input validation, and the prepared-job columns on `JobEntity`. Only after that sh"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec_Debate.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "implementation_spec",
+        "debate",
+        "spec_tightening"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Implementation_Spec_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement from the tightened spec, not the earlier version. In particular: use one authoritative draft payload, minimal job-side selection metadata, explicit active-input typing on restart, and shared runner concurrency without forcing a large queue rewrite up front."
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Atomic_Claim_Selection_Interactive_Default.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "interactive_default",
+        "intake_flow",
+        "non_interactive_override"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Atomic_Claim_Selection_Interactive_Default.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Requirement_Refinement.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Debate.md"
+      ],
+      "summary": "Treat prior \"rollout default undecided\" language as superseded. Design the first implementation around an interactive-by-default pre-job chooser, with `automatic` as an explicit override only. Preserve the exact-final-`atomicClaims` seam, persist candidate/recommended/selected IDs plus mode and `Oth"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Clarified_Order_ACS_CheckWorthiness_TopLevelProposition.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "clarified",
+        "order",
+        "acs",
+        "checkworthiness",
+        "toplevelproposition"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Clarified_Order_ACS_CheckWorthiness_TopLevelProposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) as the baseline for steps 1-2 and [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Ar"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Debate_CheckWorthiness_Before_ACS.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "debate",
+        "checkworthiness",
+        "before",
+        "acs"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Debate_CheckWorthiness_Before_ACS.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The winning shape is: ACS draft/prepared-job foundation first, then the check-worthiness recommendation module inside that flow. Relevant anchors are [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md), `app"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Documentation_Update_ACS_CheckWorthiness_TopLevelProposition.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "documentation",
+        "update",
+        "acs",
+        "checkworthiness",
+        "toplevelproposition"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Documentation_Update_ACS_CheckWorthiness_TopLevelProposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start implementation from [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md), then treat [2026-04-20_Dominant_Proposition_Architecture_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-20_Dominant_Proposition_Ar"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_Implementation_Order_CheckWorthiness_AtomicClaimSelection_DominantClaim.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "implementation",
+        "order",
+        "checkworthiness",
+        "atomicclaimselection",
+        "dominantclaim"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_Implementation_Order_CheckWorthiness_AtomicClaimSelection_DominantClaim.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use these anchors when planning implementation: current Stage 5 dominance path is in `apps/web/src/lib/analyzer/aggregation-stage.ts`, `apps/web/src/lib/analyzer/types.ts`, `apps/web/prompts/claimboundary.prompt.md`, and `apps/web/configs/calculation.default.json`; current Stage 1 candidate seam is "
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Debate.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "atomic",
+        "claim",
+        "selection",
+        "debate"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the modified baseline, not from the original requirement wording. The decisive evidence was: (1) current Stage 1 final `atomicClaims` are the right v1 seam, and (2) current live-job lifecycle/state semantics are the wrong place to insert the chooser by default. If implementation proceeds,"
+    },
+    {
+      "file": "2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Requirement_Refinement.md",
+      "date": "2026-04-22",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "atomic",
+        "claim",
+        "selection",
+        "requirement",
+        "refinement"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Lead_Architect_LLM_Expert_Atomic_Claim_Selection_Requirement_Refinement.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the improved requirement below. The key runtime contract today is `CBClaimUnderstanding.atomicClaims` in `apps/web/src/lib/analyzer/types.ts`, populated by Stage 1 in `apps/web/src/lib/analyzer/claim-extraction-stage.ts` and currently submitted from `apps/web/src/app/analyze/page.tsx` as "
+    },
+    {
+      "file": "2026-04-22_Senior_Developer_Article_Gate1_Contract_Preservation_And_Iran_URL_Rerun.md",
+      "date": "2026-04-22",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage1",
+        "gate1",
+        "article",
+        "contract_validation",
+        "unverified",
+        "rerun"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
+      ],
+      "summary": "Monitor job `9164bcf79cb04df2a0f308d933aed8ac` to terminal status, then compare its Stage 1 contract outcome and final report state against stale job `f82f68af360f48c19357f16b4196a4c8`. If it still lands `UNVERIFIED`, inspect the new event trail around Gate 1 and the post-Gate-1 contract summary bef"
+    },
+    {
+      "file": "2026-04-22_Senior_Developer_Build_Index_Parser_Regression_Tests.md",
+      "date": "2026-04-22",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "build",
+        "index",
+        "parser",
+        "regression",
+        "tests"
+      ],
+      "files_touched": [],
+      "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
+    },
+    {
+      "file": "2026-04-22_Senior_Developer_DevOps_Expert_Runner_Admin_Reads_For_Hidden_Jobs.md",
+      "date": "2026-04-22",
+      "roles": [
+        "senior_developer",
+        "devops_expert"
+      ],
+      "topics": [
+        "runner",
+        "admin",
+        "reads",
+        "for",
+        "hidden",
+        "jobs"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/test/unit/lib/drain-runner-pause.integration.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_DevOps_Expert_Runner_Admin_Reads_For_Hidden_Jobs.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "The regression test is in `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`. If the retried deployed job still fails, inspect the deployed web env first: confirm `FH_ADMIN_KEY` is set there and matches the API’s `Admin:Key`, then verify the service was restarted after rollout. The runt"
+    },
+    {
+      "file": "2026-04-22_Senior_Developer_SR_Contract_Replay_Stage1_Outcome.md",
+      "date": "2026-04-22",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "sr",
+        "contract",
+        "replay",
+        "stage1",
+        "outcome"
+      ],
+      "files_touched": [],
+      "summary": "SR Contract Controlled Replay — Stage 1 Outcome"
+    },
+    {
+      "file": "2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Review.md",
+      "date": "2026-04-22",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "sr",
+        "contract",
+        "risk",
+        "benefit",
+        "review"
+      ],
+      "files_touched": [
+        "apps/web/scripts/tmp-sr-contract-risk-review.ts",
+        "Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Comparison.json",
+        "Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with `Docs/AGENTS/Handoffs/2026-04-22_Senior_Developer_SR_Contract_Risk_Benefit_Comparison.json`. The most important examples are `deeplearning.ai` (old unsupported `educational_platform`, now jumps to `collaborative_reference` with a large score increase), `siemens.com` (old `corporate_publis"
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS1_Acceptance_Validation_Prepared_Stage1_Regression.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "acs_1",
+        "acceptance_validation",
+        "prepared_stage1",
+        "regression_tests"
+      ],
+      "files_touched": [
+        "apps/web/test/unit/lib/analyzer/claimboundary-prepared-stage1.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_ACS1_Acceptance_Validation_Prepared_Stage1_Regression.md"
+      ],
+      "summary": "If you continue ACS-1 acceptance work, the remaining highest-value validation is live draft-path parity on the Captain-defined anchors plus invite-slot/lazy-expiry API behavior. For prepared-job regressions, start with `apps/web/test/unit/lib/analyzer/claimboundary-prepared-stage1.test.ts`."
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS1_Implementation_Takeover_Fixes.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "acs_1",
+        "implementation_takeover",
+        "draft_preparation",
+        "prepared_job_reuse"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Controllers/JobsController.cs",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Services/JobService.cs",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_ACS1_Implementation_Takeover_Fixes.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The main runtime seam is now `prepareStage1Snapshot(...)` in [claimboundary-pipeline.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claimboundary-pipeline.ts), used both by the draft worker and by `runClaimBoundaryAnalysis(...)` when `preparedStage1` is provided. The draft worker auto-confirms onl"
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS1_Live_Acceptance_Validation_Bundesrat_Failure.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "acs_1",
+        "live_validation",
+        "bundesrat",
+        "acceptance_failure"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_ACS1_Live_Acceptance_Validation_Bundesrat_Failure.md"
+      ],
+      "summary": "Start from the live artifacts above. Compare the draft-prepared understanding (`preparedStage1Json` on job `a8a3a633e6cc4e40bf200dab471302f0`) against the cold-start `resultJson.understanding` on job `5dc2089fb984461bbb6dbf2ae18f2765`. The most likely seam is Stage 1 extraction stability around sing"
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS1_Reviewer_Hardening_Commit_Readiness.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "acs_1",
+        "reviewer_followup",
+        "queue_recovery",
+        "prepared_job_reuse"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Controllers/InternalClaimSelectionDraftsController.cs",
+        "apps/api/Data/FhDbContext.cs",
+        "apps/api/Program.cs",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/migrations/20260422000000_AddClaimSelectionDraft.cs",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_ACS1_Reviewer_Hardening_Commit_Readiness.md"
+      ],
+      "summary": "The recovery seam now starts at `GET /internal/v1/claim-selection-drafts/recoverable` and `drainDraftQueue()` in [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts). The prepared-job sanitization logic lives in `filterPreparedUnderstandingForSelectedClaims(...)` "
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS1_Stage1_Parity_Investigation_Bundesrat_Nondeterminism.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs1",
+        "stage1",
+        "parity",
+        "investigation",
+        "bundesrat",
+        "nondeterminism"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS_CW1_Implementation.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "cw1",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "ACS-CW-1 Implementation"
+    },
+    {
+      "file": "2026-04-22_Unassigned_ACS_UI_Selection_Flow_Implementation.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "ui",
+        "selection",
+        "flow",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "ACS UI Selection Flow Implementation"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Proposal.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "check_worthiness",
+        "zhaw",
+        "recommendation_methodology"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Proposal.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) section 8.2 as the implementation baseline. The key repo fact behind this proposal is in [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/li"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Review_Followup.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "check_worthiness",
+        "review_followup",
+        "recommendation_methodology"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Check_Worthiness_Review_Followup.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The corrected baseline is [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md). Focus on sections 2, 6.2-6.4, 8.2, and 12.5. If implementation starts, preserve the new contract split: Gate 1 remains filtering"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Atomic_Claim_Selection_Lead_Developer_Review_Disposition.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "implementation_spec",
+        "lead_developer_review",
+        "review_disposition"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Lead_Developer_Review_Disposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The implemented review dispositions are concentrated in [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md): queryable-row vs rich-detail split (section 5.6), `PreparedStage1Snapshot` and draft/job persisten"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Atomic_Claim_Selection_Spec_Sequencing_Reconcile.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "atomic_claim_selection",
+        "implementation_spec",
+        "sequencing",
+        "documentation_reconciliation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Atomic_Claim_Selection_Spec_Sequencing_Reconcile.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The updated alignment points are in [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md): frontmatter related docs, sequencing clarification near the top, and the rollout section. If you implement from this s"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Check_Worthiness_Lead_Developer_Review_Disposition.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "check_worthiness",
+        "review_disposition",
+        "acs",
+        "model_routing",
+        "contract_clarity"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Lead_Developer_Review_Disposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The consolidated design doc now says: the live extraction-time field is a coarse signal, not the rich selector contract; inputs are full `AtomicClaim` objects; `context_refinement` is the default target tier but must pass provider-specific quality validation; automatic mode is intentionally capped a"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Check_Worthiness_Recommendation_Design_Consolidation.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "check_worthiness",
+        "atomic_claim_selection",
+        "architecture",
+        "requirements",
+        "specification"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Recommendation_Design_Consolidation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md` as the consolidated `ACS-CW-1` design note. The core implementation ordering remains `ACS-1` foundation first, `ACS-CW-1` second, `TOPPROP-1` later. The most important guardrails are: keep `AtomicClaim.checkWorthiness` advisory, kee"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Check_Worthiness_Review_Disposition_Appendix.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "check_worthiness",
+        "review_disposition",
+        "documentation",
+        "appendix"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Review_Disposition_Appendix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the appendix in `2026-04-22_Check_Worthiness_Recommendation_Design.md` as the quick local summary of review outcomes, then open the linked handoffs only if you need the full rationale trail."
+    },
+    {
+      "file": "2026-04-22_Unassigned_Check_Worthiness_Senior_Architect_LLM_Expert_Findings_Disposition.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "check_worthiness",
+        "fail_closed",
+        "contract_invariants",
+        "soft_refusal",
+        "architecture"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Senior_Architect_LLM_Expert_Findings_Disposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The recommendation contract is now hardened where it was previously too permissive: fail-closed is enforced by explicit invariants, not just by prose, and empty/partial soft-refusal outputs are explicitly invalid even if they pass basic structured parsing. The key new sections are the added requirem"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Check_Worthiness_Service_Reuse_Refinement.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "check_worthiness",
+        "service_boundary",
+        "atomic_claim_extraction",
+        "zhaw",
+        "architecture"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Check_Worthiness_Recommendation_Design.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Check_Worthiness_Service_Reuse_Refinement.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Reuse the same ACS recommendation logic as an internal service, not as a separate product slice. Preserve the explicit semantic mapping to FCW/FNC/OPN-equivalent properties, keep `unclear` as a FactHarbor control state, and do not let the reuse note blur the approved order of `ACS-1` first and `ACS-"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Publish_Handoff_Atomicity_Pass.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "publish_handoff",
+        "atomicity",
+        "idempotency",
+        "architecture"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Publish_Handoff_Atomicity_Pass.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP v1 Publish Handoff Atomicity Pass"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Review_Refinement.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "indexing",
+        "review",
+        "refinement",
+        "publish_handoff"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        ".gitignore",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Review_Refinement.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP v1 Review Refinement"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "indexing",
+        "cli",
+        "architecture",
+        "spec"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_MCP_V1_Spec.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP v1 Spec"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Internal_Agent_Knowledge_Query_Layer_CLI_First_Realignment.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "cli",
+        "debate",
+        "realignment",
+        "architecture"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Internal_Agent_Knowledge_Query_Layer_CLI_First_Realignment.md"
+      ],
+      "summary": "Internal Agent Knowledge Query Layer CLI-First Realignment"
+    },
+    {
+      "file": "2026-04-22_Unassigned_Report_Review_e95bd017_Non_Inspectable_Hosted_Job.md",
+      "date": "2026-04-22",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "report",
+        "review",
+        "e95bd017",
+        "non",
+        "inspectable",
+        "hosted",
+        "job"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-22_Unassigned_Report_Review_e95bd017_Non_Inspectable_Hosted_Job.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with the exact-job evidence, not comparators. Anchors: hosted detail `https://app.factharbor.ch/api/fh/jobs/e95bd017e955433d897fab04342f45e1` and history `https://app.factharbor.ch/api/fh/jobs/e95bd017e955433d897fab04342f45e1/events/history` both return 404; the proxy path in `apps/web/src/app"
+    },
+    {
+      "file": "2026-04-23_Lead_Architect_Internal_Agent_Knowledge_CLI_First_Implementation_Slice.md",
+      "date": "2026-04-23",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "cli",
+        "cache",
+        "preflight",
+        "retrieval"
+      ],
+      "files_touched": [
+        "package.json",
+        "scripts/fh-knowledge.mjs",
+        "packages/fh-agent-knowledge/package.json",
+        "packages/fh-agent-knowledge/bin/fh-knowledge.mjs",
+        "packages/fh-agent-knowledge/src/index.mjs",
+        "packages/fh-agent-knowledge/src/adapters/cli.mjs",
+        "packages/fh-agent-knowledge/src/actions/bootstrap-knowledge.mjs",
+        "packages/fh-agent-knowledge/src/actions/refresh-knowledge.mjs",
+        "packages/fh-agent-knowledge/src/actions/check-knowledge-health.mjs",
+        "packages/fh-agent-knowledge/src/cache/build-cache.mjs",
+        "packages/fh-agent-knowledge/src/cache/freshness.mjs",
+        "packages/fh-agent-knowledge/src/cache/manifest.mjs",
+        "packages/fh-agent-knowledge/src/contracts/results.mjs",
+        "packages/fh-agent-knowledge/src/query/get-doc-section.mjs",
+        "packages/fh-agent-knowledge/src/query/get-role-context.mjs",
+        "packages/fh-agent-knowledge/src/query/lookup-model-task.mjs",
+        "packages/fh-agent-knowledge/src/query/lookup-stage.mjs",
+        "packages/fh-agent-knowledge/src/query/preflight-task.mjs",
+        "packages/fh-agent-knowledge/src/query/search-handoffs.mjs",
+        "packages/fh-agent-knowledge/src/sources/agent-outputs.mjs",
+        "packages/fh-agent-knowledge/src/sources/docs.mjs",
+        "packages/fh-agent-knowledge/src/sources/handoffs.mjs",
+        "packages/fh-agent-knowledge/src/sources/indexes.mjs",
+        "packages/fh-agent-knowledge/src/sources/model-tiering.mjs",
+        "packages/fh-agent-knowledge/src/sources/roles.mjs",
+        "packages/fh-agent-knowledge/src/sources/stages.mjs",
+        "packages/fh-agent-knowledge/src/utils/args.mjs",
+        "packages/fh-agent-knowledge/src/utils/fs.mjs",
+        "packages/fh-agent-knowledge/src/utils/paths.mjs",
+        "packages/fh-agent-knowledge/src/utils/scoring.mjs",
+        "packages/fh-agent-knowledge/src/utils/sections.mjs",
+        "packages/fh-agent-knowledge/test/query-behavior.test.mjs"
+      ],
+      "summary": "Internal Agent Knowledge CLI-First Implementation Slice"
+    },
+    {
+      "file": "2026-04-23_Lead_Architect_Internal_Agent_Knowledge_MCP_Documentation_Realignment.md",
+      "date": "2026-04-23",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "documentation",
+        "review",
+        "next_steps"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_MCP_Documentation_Realignment.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Documentation Realignment"
+    },
+    {
+      "file": "2026-04-23_Lead_Architect_Internal_Agent_Knowledge_Review_Fixes.md",
+      "date": "2026-04-23",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "cli",
+        "cache",
+        "review",
+        "windows"
+      ],
+      "files_touched": [
+        "packages/fh-agent-knowledge/src/cache/build-cache.mjs",
+        "packages/fh-agent-knowledge/src/cache/manifest.mjs",
+        "packages/fh-agent-knowledge/src/utils/fs.mjs",
+        "packages/fh-agent-knowledge/src/actions/check-knowledge-health.mjs",
+        "packages/fh-agent-knowledge/src/actions/refresh-knowledge.mjs",
+        "packages/fh-agent-knowledge/src/adapters/cli.mjs",
+        "packages/fh-agent-knowledge/test/cache-and-fs.test.mjs",
+        "Docs/AGENTS/Handoffs/2026-04-23_Lead_Architect_Internal_Agent_Knowledge_Review_Fixes.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge Review Fixes"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Auto_Confirm_And_Job_Progress_Polling_Fix.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "auto_continue",
+        "atomicity",
+        "jobs_ui",
+        "progress_polling"
+      ],
+      "files_touched": [
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Controllers/InternalClaimSelectionDraftsController.cs",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/lib/job-polling.ts",
+        "apps/web/src/app/jobs/page.tsx",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/test/unit/lib/job-polling.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Confirm_And_Job_Progress_Polling_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If auto-continue still ever opens the selection UI on fresh drafts, inspect the API transaction path in `InternalClaimSelectionDraftsController.PostAutoConfirm(...)` first, not the page. If progress still appears to regress, start with `apps/web/src/lib/job-polling.ts` and confirm the backend `updat"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Auto_Continue_Recovery_Fix.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "auto_continue",
+        "recovery",
+        "ui",
+        "grander",
+        "runtime_followup"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "Docs/WIP/2026-04-23_Grander_Runtime_Followup_Options.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Auto_Continue_Recovery_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If this issue reappears, inspect `runDraftPreparationBackground(...)` in `apps/web/src/lib/internal-runner-queue.ts`, `StorePreparedResultAsync(...)` and `ConfirmDraftAsync(...)` in `apps/api/Services/ClaimSelectionDraftService.cs`, and the selection page auto-confirm guard in `apps/web/src/app/anal"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Default_Interactive_Mode_UCM.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "default",
+        "interactive",
+        "mode",
+        "ucm"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-23 — ACS Default Interactive Mode via UCM"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Draft_Slowness_Challenger_Position.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "draft_slowness",
+        "observability",
+        "stage1",
+        "challenger"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Draft_Slowness_Challenger_Position.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The critical code anchors are `apps/web/src/lib/internal-runner-queue.ts` (`runDraftPreparationBackground(...)` and `prepareStage1Snapshot(...)` call site), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (contract validation / retry / repair progress plateau), `apps/web/src/app/analyze/select"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Fragment_Root_Cause_Debate.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "fragment",
+        "root",
+        "cause",
+        "debate"
+      ],
+      "files_touched": [],
+      "summary": "ACS Fragment Root-Cause Debate"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Idle_Auto_Proceed_Timer.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "session_ui",
+        "ucm",
+        "auto_continue",
+        "inactivity_timeout",
+        "server_owned_timeout"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/claim-selection-flow.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/pipeline.default.json",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Controllers/InternalClaimSelectionDraftsController.cs",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/test/unit/app/api/fh/claim-selection-drafts-routes.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Idle_Auto_Proceed_Timer.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If inactivity semantics change again, keep these three authority layers aligned: UCM/schema defaults in `config-schemas.ts` and `pipeline.default.json`, persisted session-state fields in `ClaimSelectionDraftState` / `ClaimSelectionDraftService`, and the runner sweep in `internal-runner-queue.ts`. Do"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Live_Monitoring_Grander_Draft.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "live",
+        "monitoring",
+        "grander",
+        "draft"
+      ],
+      "files_touched": [],
+      "summary": "ACS Live Monitoring Grander Draft"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Selection_Threshold_AutoContinue.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "selection",
+        "threshold",
+        "autocontinue"
+      ],
+      "files_touched": [],
+      "summary": "ACS Selection Threshold Auto-Continue"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Session_Code_Review_Disposition.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "session_ui",
+        "code_review",
+        "review_disposition",
+        "inactivity_timeout",
+        "hide_from_start"
+      ],
+      "files_touched": [
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Session_Code_Review_Disposition.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If idle auto-proceed changes again, keep the three contracts aligned: persisted timeout/interactions in `ClaimSelectionDraftService`, the runner sweep in `internal-runner-queue.ts`, and the manual-screen bootstrap/countdown logic in `page.tsx`. Do not relax the timestamp compare-and-confirm guard in"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_Slow_Dialog_Real_Issue_Fragment_URL_Expansion.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "slow",
+        "dialog",
+        "real",
+        "issue",
+        "fragment",
+        "url",
+        "expansion"
+      ],
+      "files_touched": [],
+      "summary": "ACS Slow Dialog Real Issue: Fragment URL Expansion"
+    },
+    {
+      "file": "2026-04-23_Unassigned_ACS_UCM_Selection_Cap.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "ucm",
+        "selection",
+        "cap"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/claim-selection-flow.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/pipeline.default.json",
+        "apps/web/src/lib/analyzer/claim-selection-recommendation.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/confirm/route.ts",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/web/test/unit/lib/claim-selection-flow.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-selection-recommendation.test.ts",
+        "apps/web/test/unit/app/api/fh/claim-selection-drafts-routes.test.ts"
+      ],
+      "summary": "If ACS selection behavior changes again, update the same four authority points together: `pipeline.claimSelectionCap` in [config-schemas.ts](/c:/DEV/FactHarbor/apps/web/src/lib/config-schemas.ts), persisted draft state in [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Automatic_Mode_Auto_Confirm_And_Safe_Source_Reuse.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "automatic_mode",
+        "research_acquisition",
+        "pdf_fetch",
+        "source_reuse",
+        "review"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/src/lib/analyzer/pipeline-utils.ts",
+        "apps/web/src/lib/retrieval.ts",
+        "apps/web/test/unit/lib/internal-runner-queue.test.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts",
+        "apps/web/test/unit/lib/retrieval.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Automatic_Mode_Auto_Confirm_And_Safe_Source_Reuse.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If automatic mode still stops on the chooser UI, start with `apps/web/src/lib/internal-runner-queue.ts` and verify the recommended set is non-empty before the internal `auto-confirm` call. If repeated-source optimization needs to expand later, preserve the current safety boundary: document/data reus"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Bundesrat_MT5C_Recovery_And_Preparing_UI_Copy.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "stage1",
+        "claim_extraction",
+        "bundesrat",
+        "mt5c",
+        "multi_event_reprompt",
+        "salience_commitment",
+        "jobs_ui",
+        "claim_selection"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/analyze/select/[draftId]/page-helpers.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-multi-event.test.ts",
+        "apps/web/test/unit/app/analyze/select/page-helpers.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Bundesrat_MT5C_Recovery_And_Preparing_UI_Copy.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If the Bundesrat family under-splits again, start with the live log for the exact `MT-5(C)` branch outcome. If you still see `contract-approved ... Skipping multi-event reprompt`, either salience commitment failed/returned empty anchors or the run never reached the new salience-backed exception. If "
+    },
+    {
+      "file": "2026-04-23_Unassigned_Claim_Selection_Dialog_Slow_Path_Diagnosis.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim",
+        "selection",
+        "dialog",
+        "slow",
+        "path",
+        "diagnosis"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Dialog_Slow_Path_Diagnosis.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts:826), [claimboundary-pipeline.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claimboundary-pipeline.ts:541), [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Claim_Selection_Draft_Observability_Implementation.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim",
+        "selection",
+        "draft",
+        "observability",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/api/Data/Entities.cs",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Program.cs",
+        "apps/api/migrations/005_add_claim_selection_draft_last_event_message.sql"
+      ],
+      "summary": "Restart the web/API services, create a fresh 5+ claim draft on the known slow Iran URL, and verify that the draft page now shows live milestone text through the Stage 1 retry path and stores a timing summary in `draftStateJson.observability`. If full-suite stability matters, investigate the two `adm"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Claim_Selection_Slow_Path_Debate.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim",
+        "selection",
+        "slow",
+        "path",
+        "debate"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the live diagnosis handoff together with [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts:826), [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts:890), [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/ana"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Claim_Selection_Slow_Path_Implementation_Plan_Review.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim",
+        "selection",
+        "slow",
+        "path",
+        "implementation",
+        "plan",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claim_Selection_Slow_Path_Implementation_Plan_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement from these anchors: `apps/web/src/lib/internal-runner-queue.ts` for draft orchestration and recommendation timing; `apps/web/src/lib/analyzer/claim-extraction-stage.ts` for Stage 1 milestone splitting and sub-step timings; `apps/web/src/lib/analyzer/types.ts` for `ClaimSelectionDraftState."
+    },
+    {
+      "file": "2026-04-23_Unassigned_Claude_Opus_Slow_Path_Review_Verification.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claude",
+        "opus",
+        "slow",
+        "path",
+        "review",
+        "verification"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Claude_Opus_Slow_Path_Review_Verification.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `apps/web/src/lib/internal-runner-queue.ts` (`runDraftPreparationBackground`, `normalizeDraftPreparationProgress`), `apps/web/src/lib/analyzer/claim-extraction-stage.ts` (contract validation / retry / repair path), `apps/web/src/lib/analyzer/claim-selection-recommendation.ts` (`recordLLMC"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Code_Review_Disposition_Claim_Selection_Check_Worthiness.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "code",
+        "review",
+        "disposition",
+        "claim",
+        "selection",
+        "check",
+        "worthiness"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Code_Review_Disposition_Claim_Selection_Check_Worthiness.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use this handoff as the repository-local record that the reviewed Claim Selection Draft and Check-Worthiness slices were externally approved with no blocking findings. For implementation history and prior fixes, also read [2026-04-23_Unassigned_ACS_UCM_Selection_Cap.md](/c:/DEV/FactHarbor/Docs/AGENT"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Dominant_Proposition_Senior_Architect_Review_Disposition.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "dominant",
+        "proposition",
+        "senior",
+        "architect",
+        "review",
+        "disposition"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-23 — Dominant Proposition Senior Architect Review Disposition"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Draft_Hide_From_Start.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim_selection",
+        "draft_visibility",
+        "jobs_ui",
+        "admin_actions"
+      ],
+      "files_touched": [
+        "apps/api/Data/Entities.cs",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/migrations/20260423144324_AddClaimSelectionDraftIsHidden.cs",
+        "apps/api/migrations/20260423144324_AddClaimSelectionDraftIsHidden.Designer.cs",
+        "apps/api/migrations/FhDbContextModelSnapshot.cs",
+        "apps/api/migrations/006_add_claim_selection_draft_is_hidden.sql",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/hide/route.ts",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/unhide/route.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Draft_Hide_From_Start.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If you later add a draft-list page, honor `ClaimSelectionDraftEntity.IsHidden` with the same admin-only visibility semantics used for hidden jobs. Do not reintroduce a separate “draft hide” meaning that diverges from eventual report visibility."
+    },
+    {
+      "file": "2026-04-23_Unassigned_FactHarbor_Statutes_Art18_Art24_Hardening.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "factharbor",
+        "statutes",
+        "art18",
+        "art24",
+        "hardening"
+      ],
+      "files_touched": [
+        "Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md",
+        "Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_EN.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_FactHarbor_Statutes_Art18_Art24_Hardening.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with [DRAFT_Vereinsstatuten_FactHarbor_DE.md](/c:/DEV/FactHarbor/Docs/Legal/DRAFT_Vereinsstatuten_FactHarbor_DE.md) Art. 18 and Art. 24, then check the matching EN clauses. If you continue the legal work, the next highest-value artifact is a short set of IP assignment / licence template clause"
+    },
+    {
+      "file": "2026-04-23_Unassigned_FactHarbor_Statutes_Challenger_Position.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "factharbor",
+        "statutes",
+        "challenger",
+        "position"
+      ],
+      "files_touched": [],
+      "summary": "If the advocate side argues \"founding is still possible,\" separate that from the narrower proposition tested here: \"ready without further mandatory edits.\" The decisive anchors for the challenger case are E11 and E14 plus the documented gaps around Art. 24 implementation and official tax comfort. Ar"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Fragment_Aware_HTML_Extraction_Fix.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "fragment",
+        "aware",
+        "html",
+        "extraction",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Fragment-Aware HTML Extraction Fix"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Preparation_UI_Header_Parity_With_Job_Page.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "preparing_ui",
+        "jobs_ui",
+        "claim_selection",
+        "session_header"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/analyze/select/[draftId]/page.module.css",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Preparation_UI_Header_Parity_With_Job_Page.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Keep the preparation header visually coupled to the job page header unless product explicitly decides they should diverge again. The previous custom hero version was rejected by the user."
+    },
+    {
+      "file": "2026-04-23_Unassigned_Preparation_UI_Info_And_Utility_Pass.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "claim_selection",
+        "preparing_ui",
+        "draft_token_access",
+        "jobs_ui"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/analyze/select/[draftId]/page.module.css",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Preparation_UI_Info_And_Utility_Pass.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If the user asks for `Events` on the preparation page, do not bolt it on in the page alone. Add a real draft-events persistence/query path first, then surface it in the UI."
+    },
+    {
+      "file": "2026-04-23_Unassigned_Runner_Queue_Split_For_Session_Preparation.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "runner",
+        "queue",
+        "split",
+        "for",
+        "session",
+        "preparation"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_And_Job_Read_Route_Queue_Recoverability.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "and",
+        "job",
+        "read",
+        "route",
+        "queue",
+        "recoverability"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Browser_Close_Recovery_Review.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "session_resume",
+        "browser_close_recovery",
+        "session_ui",
+        "privacy",
+        "review"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/web/src/app/analyze/ActiveClaimSelectionSessions.tsx",
+        "apps/web/src/app/analyze/page.tsx",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/api/fh/claim-selection-drafts/route.ts",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/route.ts",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/cancel/route.ts",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/confirm/route.ts",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/selection-state/route.ts",
+        "apps/web/src/lib/claim-selection-client.ts",
+        "apps/web/src/lib/claim-selection-draft-proxy.ts",
+        "apps/web/src/lib/claim-selection-flow.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/pipeline.default.json",
+        "apps/web/test/unit/lib/claim-selection-client.test.ts",
+        "apps/web/test/unit/lib/claim-selection-draft-proxy.test.ts",
+        "apps/web/test/unit/app/api/fh/claim-selection-drafts-routes.test.ts",
+        "apps/web/test/unit/lib/claim-selection-flow.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Browser_Close_Recovery_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If this session-recovery path expands again, keep the privacy boundary explicit: persistent browser state should store only enough to rediscover the session, not the full claim/article text. Auth continuity should stay cookie-scoped to the draft proxy path, and terminal transitions must continue to "
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Preparation_Async_Proposal_Review_Cleanup.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "preparation",
+        "async",
+        "proposal",
+        "review",
+        "cleanup"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Async_Proposal_Review_Cleanup.md"
+      ],
+      "summary": "Use the WIP proposal and the primary proposal handoff as the source-of-truth pair; treat this cleanup note only as traceability for the review corrections."
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "preparation",
+        "semantics",
+        "preserving",
+        "async",
+        "proposal"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md",
+        "Docs/WIP/2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use [2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md) as the active implementation-ready design note. Treat [2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md](/c:/D"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal_Review.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "preparation",
+        "semantics",
+        "preserving",
+        "async",
+        "proposal",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Semantics_Preserving_Async_Proposal_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the active async plan as approved in direction but narrowed in scope. Implement Phase 1 only as same-browser async resumability plus readiness signaling and inbox safeguards. Do not move draft access tokens to persistent browser storage and do not build cross-draft prepared-result reuse unless"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Preparation_Text_First_Follow_On_Debate.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "preparation",
+        "text",
+        "first",
+        "follow",
+        "on",
+        "debate"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Text_First_Follow_On_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat this as `ACS-vNext`, not as a quiet extension of [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md). Use [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Preparation_Text_First_Proposal_Document.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "preparation",
+        "text",
+        "first",
+        "proposal",
+        "document"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md",
+        "Docs/AGENTS/Handoffs/2026-04-23_Unassigned_Session_Preparation_Text_First_Proposal_Document.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If implementation planning continues, start from [2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md) and keep its scope boundary intact: `ACS-vNext`, structural-only rescue triggers, UCM-gated "
+    },
+    {
+      "file": "2026-04-23_Unassigned_Session_Resume_Review_Followup.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "session",
+        "resume",
+        "review",
+        "followup"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-23 — Session Resume Review Follow-up"
+    },
+    {
+      "file": "2026-04-23_Unassigned_Verdict_Citation_Sanitation_And_SR_Sparse_Early_Exit.md",
+      "date": "2026-04-23",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "verdict",
+        "citation",
+        "sanitation",
+        "and",
+        "sr",
+        "sparse",
+        "early",
+        "exit"
+      ],
+      "files_touched": [],
+      "summary": "Implement the two previously deferred “low-hanging fruit” follow-ups from the Grander runtime discussion if they could be landed narrowly and safely: (1) verdict citation sanitation, and (4) SR sparse"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Adapter_Implementation.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "implementation",
+        "parity",
+        "stdio"
+      ],
+      "files_touched": [
+        "packages/fh-agent-knowledge/package.json",
+        "package.json",
+        "packages/fh-agent-knowledge/src/adapters/operations.mjs",
+        "packages/fh-agent-knowledge/src/adapters/cli.mjs",
+        "packages/fh-agent-knowledge/src/adapters/mcp.mjs",
+        "packages/fh-agent-knowledge/bin/fh-knowledge-mcp.mjs",
+        "scripts/fh-knowledge-mcp.mjs",
+        "packages/fh-agent-knowledge/test/mcp-parity.test.mjs",
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Adapter Implementation"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Execution_Checklist.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "checklist",
+        "implementation",
+        "next_steps"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Execution_Checklist.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Execution Checklist"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Omitted_Arguments_Fix.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "interop",
+        "regression",
+        "testing"
+      ],
+      "files_touched": [
+        "packages/fh-agent-knowledge/src/adapters/mcp.mjs",
+        "packages/fh-agent-knowledge/test/mcp-parity.test.mjs",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Omitted Arguments Fix"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Rollout_Setup.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "rollout",
+        "setup",
+        "documentation"
+      ],
+      "files_touched": [
+        "Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md",
+        ".cursor/mcp.json",
+        ".vscode/mcp.json",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        ".cursor/rules/factharbor-core.mdc",
+        ".clinerules/00-factharbor-rules.md",
+        ".windsurfrules",
+        "CONTRIBUTING.md",
+        "Docs/WIP/2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Rollout Setup"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Schema_Validation_And_Parity_Hardening.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "mcp",
+        "agent",
+        "knowledge",
+        "schema",
+        "validation",
+        "parity",
+        "configuration"
+      ],
+      "files_touched": [
+        "packages/fh-agent-knowledge/src/utils/paths.mjs",
+        "packages/fh-agent-knowledge/src/adapters/mcp.mjs",
+        "packages/fh-agent-knowledge/src/cache/build-cache.mjs",
+        "packages/fh-agent-knowledge/test/mcp-parity.test.mjs",
+        "Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md",
+        "C:/Users/rober/.claude.json",
+        "Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Schema_Validation_And_Parity_Hardening.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Internal Agent Knowledge MCP Schema Validation And Parity Hardening"
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_Claim_Selection_Draft_State_Runtime_Guard.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "claim",
+        "selection",
+        "draft",
+        "state",
+        "runtime",
+        "guard"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts"
+      ],
+      "summary": "If this page gets more draft-state fields, keep parsed `draftStateJson` treated as untrusted runtime data even when TypeScript marks fields required. The UI crash was caused by `draftState?.recommendedClaimIds.length`, which still dereferenced `.length` when `draftState` existed but `recommendedClai"
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_Code_Review_Findings_Fix.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "code",
+        "review",
+        "findings",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/claim-selection-draft-proxy.ts",
+        "apps/web/test/unit/lib/claim-selection-draft-proxy.test.ts",
+        "apps/web/src/lib/analyzer/research-acquisition-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-acquisition-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Program.cs",
+        "apps/api/appsettings.json",
+        "apps/web/.env.example"
+      ],
+      "summary": "Verify production proxy config for `FH_TRUSTED_CLIENT_IP_HEADER=x-fh-client-ip` or equivalent. Focus code anchors: `buildClaimSelectionDraftForwardHeaders`, `RestartWithOtherAsync`, `EnsureClaimSelectionDraftsColumn`, and `fetchSources`."
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Consolidation.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "monitor",
+        "pipeline-debug",
+        "selection-readiness",
+        "verdict-citations",
+        "runner"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Consolidation.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/STATUS/Current_Status.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/WIP/2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_Runner_Diagnostics_Pipeline_Improvements.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Pipeline_Integrity_Fixes.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md"
+      ],
+      "summary": "Start from `Docs/STATUS/Backlog.md` section \"Immediate Priorities (2026-04-24 Monitor Session)\" and this handoff. The highest-priority implementation path is `MON-EVID-1` / `MON-VCI-1` / `MON-STG1-LAT`, with prompt edits requiring Captain approval."
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_LLM_Expert_Pipeline_Integrity_Fixes.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "pipeline",
+        "integrity",
+        "fixes"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-citation-sanitization.test.ts",
+        "apps/web/src/lib/claim-selection-flow.ts",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/test/unit/lib/claim-selection-flow.test.ts"
+      ],
+      "summary": "Relevant helpers are `enforceVerdictCitationIntegrity`, `missingCurrentDecisiveCitationSide`, `safeDowngradeCollapsedCitationVerdicts`, and `resolveInitialClaimSelection`. Focused verification passed: `npm -w apps/web run test -- test/unit/lib/claim-selection-flow.test.ts test/unit/lib/analyzer/verd"
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_Runner_Diagnostics_Pipeline_Improvements.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "runner",
+        "diagnostics",
+        "pipeline",
+        "improvements"
+      ],
+      "files_touched": [],
+      "summary": "Senior Developer Handoff - Runner Diagnostics and Pipeline Improvements"
+    },
+    {
+      "file": "2026-04-24_Unassigned_ACS_Recommendation_Order_Normalization.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "recommendation",
+        "order",
+        "normalization"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-24 — Unassigned — ACS Recommendation Order Normalization"
+    },
+    {
+      "file": "2026-04-24_Unassigned_ACS_Session_Preparation_Challenger_Review.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "acs",
+        "session",
+        "preparation",
+        "challenger",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_ACS_Session_Preparation_Challenger_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If shipping now, keep scope to [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts), [debug.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/debug.ts), [page.tsx](/c:/DEV/FactHarbor/apps/web/src/app/analyze/select/[draftId]/page.tsx), and [page-helpers.ts](/c:/DEV"
+    },
+    {
+      "file": "2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "pipeline",
+        "quality",
+        "speed",
+        "cost",
+        "improvement",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with the \"Implementation Order\" section. The highest-impact first coding slice is observability plus Stage 2 fail-open counters/handling, followed by Stage 3 concentration stabilization. Treat older April 10 Stage 1 report-quality plans as partially superseded by later fixes; use them for resi"
+    },
+    {
+      "file": "2026-04-24_Unassigned_Role_Preflight_Trigger_Docs.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "role",
+        "preflight",
+        "trigger",
+        "docs"
+      ],
+      "files_touched": [
+        "AGENTS.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        "Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".github/copilot-instructions.md",
+        ".cursor/rules/factharbor-core.mdc",
+        ".clinerules/00-factharbor-rules.md",
+        ".windsurfrules",
+        "packages/fh-agent-knowledge/src/query/preflight-task.mjs",
+        "packages/fh-agent-knowledge/src/adapters/operations.mjs",
+        "packages/fh-agent-knowledge/test/query-behavior.test.mjs",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Short prompts like `As Senior Developer, ... Skill: debug` should now be treated as sufficient startup instructions: activate the role, call `preflight_task`, then follow returned `startupAdvice` plus the explicit role/skill workflows."
+    },
+    {
+      "file": "2026-04-24_Unassigned_Selection_Readiness_Debate_Consolidation_And_Impl.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "selection",
+        "readiness",
+        "debate",
+        "consolidation",
+        "and",
+        "impl"
+      ],
+      "files_touched": [],
+      "summary": "Task"
+    },
+    {
+      "file": "2026-04-24_Unassigned_Selection_Readiness_Root_Cause_Plan_Review_Disposition.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "selection",
+        "readiness",
+        "root",
+        "cause",
+        "plan",
+        "review",
+        "disposition"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-24 — Selection Readiness Root Cause Plan Review Disposition"
+    },
+    {
+      "file": "2026-04-24_Unassigned_SerpApi_Starter_Sufficiency_Investigation.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "serpapi",
+        "starter",
+        "sufficiency",
+        "investigation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_SerpApi_Starter_Sufficiency_Investigation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Relevant anchors are `apps/web/src/lib/web-search.ts`, `apps/web/configs/search.default.json`, deployed admin `/api/version` showing `[\"Google-CSE\",\"Serper\",\"Wikipedia\"]`, and local `apps/api/factharbor.db` job telemetry from `ResultJson.searchQueries`."
+    },
+    {
+      "file": "2026-04-24_Unassigned_Stage1_Preliminary_Fetch_Reuse_For_Selection_Readiness.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "stage1",
+        "preliminary",
+        "fetch",
+        "reuse",
+        "for",
+        "selection",
+        "readiness"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-24 — Unassigned — Stage 1 Preliminary Fetch Reuse For Selection Readiness"
+    },
+    {
+      "file": "2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "verdict",
+        "citation",
+        "guard",
+        "live",
+        "validation"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Completed jobs: Bolsonaro EN `d29fd298` => `LEANING-TRUE` 63/55; hydrogen `6c23a1bd` => `FALSE` 9/75; plastic `e16ed62f` => `MIXED` 48/67; Swiss comparison `322d3d80` => `UNVERIFIED` 50/0. All guard warnings absent. Warning severity looked aligned: first three had info-only diagnostics; Swiss had wa"
+    },
+    {
+      "file": "2026-04-24_Unassigned_Verdict_Citation_Integrity_Guard.md",
+      "date": "2026-04-24",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "verdict",
+        "citation",
+        "integrity",
+        "guard"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/warning-display.ts",
+        "apps/web/src/components/FallbackReport.tsx",
+        "apps/web/test/unit/lib/analyzer/verdict-citation-sanitization.test.ts"
+      ],
+      "summary": "If validating with live jobs, commit/restart first, then use the Captain-approved inputs already exercised in the monitoring run. Compare for disappearance of `verdict_grounding_issue` / `verdict_direction_issue` cases where invalid/non-direct IDs survive in final `supportingEvidenceIds` or `contrad"
     }
   ]
 }

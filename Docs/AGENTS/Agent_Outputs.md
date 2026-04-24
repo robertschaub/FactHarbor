@@ -2109,6 +2109,11 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Integrity_Guard.md
 
 ---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Verdict Citation Guard Live Validation -- [Standard] [open-items: yes]
+**For next agent:** Four Captain-approved live jobs were submitted and monitored in the UI after the guard fix. Jobs `d29fd298`, `6c23a1bd`, and `e16ed62f` ran under `959b7280+dirty` and completed without `verdict_citation_integrity_guard`; `322d3d80` completed under later `58a74905+dirty`, so use it only as operational evidence. Open items: `SUCCEEDED`+progress `99`, runtime provenance drift, and long clustering/reconciler heartbeat gaps.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md
+
+---
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | fhAgentKnowledge Startup Advice -- [Standard] [open-items: yes]
 **For next agent:** `fhAgentKnowledge` `preflight_task` now accepts optional `skill` and returns `startupAdvice` with recommended role, workflow skill, first actions, docs to read, handoffs to inspect, code-search hints, a tool plan, and guardrail warnings. The cache now indexes `.claude/skills/*/SKILL.md`, includes `Docs/DEVELOPMENT/` and skills in doc allowlisting, and tracks development-doc/skill digests for freshness. Verification: `npm run test:knowledge` passed (12/12), `node scripts/fh-knowledge.mjs refresh --force` rebuilt the cache, and health now reports `skills: 12`, `docs: 139`.
 **Warnings:** Existing Codex/VS Code MCP stdio processes must be restarted to load the new server code. The advisor is metadata/ranking based; source files remain authoritative and agents must still use source search/file reads before editing.
@@ -2122,3 +2127,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | Role Preflight Trigger Documentation -- [Standard] [open-items: no]
 **For next agent:** `As <Role>,` / `As <Role>:` is now documented as both role activation and a required `fhAgentKnowledge.preflight_task` trigger across the canonical handoff protocol, root `AGENTS.md`, MCP setup guide, and tool wrappers. `preflight_task` also extracts the leading role and first `Skill:` value when an agent passes the full short-form prompt as `task`; read additional named skill workflows manually.
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Role_Preflight_Trigger_Docs.md
+
+---
+### 2026-04-24 | Senior Developer / LLM Expert | Codex | Pipeline Integrity Fixes -- [Standard] [open-items: yes]
+**For next agent:** `enforceVerdictCitationIntegrity` now safe-downgrades directional verdicts whose decisive citation side is empty after sanitation, limited to 7-band directional ranges; `resolveInitialClaimSelection` prevents seeded/stale `selectedClaimIds` from overriding current recommendations before user interaction. Verification: focused claim-selection/citation/verdict tests and `npm -w apps/web run build` passed.
+→ Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Pipeline_Integrity_Fixes.md
+
+---
+### 2026-04-24 | Senior Developer / LLM Expert | Codex | Monitor Pipeline Debug Consolidation -- [Significant] [open-items: yes]
+**For next agent:** The whole monitor/pipeline-debug session is now consolidated in one durable handoff and surfaced in `Docs/STATUS/Current_Status.md` plus `Docs/STATUS/Backlog.md`. Fixed items include report markdown/warning cleanup, runner API-side concurrency claim, stale claim-selection seeding, and verdict citation safe-downgrade behavior. Open items remain Stage 1 latency, broad-input Stage 1 quality, Stage 2 evidence/provenance invariants, runtime provenance drift, progress `99`, long-stage heartbeats, warning materiality, Browser Use tooling, and deterministic `claimNeedsPrimarySourceRefinement()` replacement.
+→ Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Consolidation.md

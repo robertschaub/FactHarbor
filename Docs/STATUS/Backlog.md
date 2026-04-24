@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-22
+**Last Updated**: 2026-04-24
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -11,6 +11,27 @@
 **See Also**:
 - `Docs/STATUS/Current_Status.md` for the current high-level snapshot
 - `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` for the current root-cause summary and next-step plan
+- `Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Consolidation.md` for the 2026-04-24 monitor/pipeline-debug consolidation
+
+---
+
+## Immediate Priorities (2026-04-24 Monitor Session)
+
+This section captures the latest monitor-driven pipeline/debug work. It does not supersede every older quality track below; it defines the current execution order for issues observed during the April 24 session.
+
+| Item | Description | Domain | Urgency | Importance | Status | Notes |
+|------|-------------|--------|---------|------------|--------|-------|
+| **MON-EVID-1** | Add Stage 2 evidence lifecycle/provenance invariants: source identity, evidence item provenance, category/schema normalization counts, cap-drop accounting, reconciliation deltas, and explicit admission/drop reasons. | Analyzer / Evidence / Integrity | high | high | ACTIVE | First slice from `Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md` and the monitor consolidation handoff. |
+| **MON-VCI-1** | Continue verdict citation integrity hardening and monitoring: final verdicts must not cite missing, invalid, non-direct, challenge-invalid, neutral, or bucket-mismatched evidence IDs as directional proof. | Analyzer / Verdict / Reporting | high | high | MONITOR | Core guard landed; live jobs showed no guard warnings, but extension/monitoring remains active. |
+| **MON-STG1-LAT** | Reduce Stage 1 time-to-selection under current semantics through exact same-job successful reuse, better retry/repair diagnostics, and fail-fast accounting. | Analyzer / ACS / Performance | high | high | ACTIVE | Do not switch to text-first ACS or weaken evidence-seeded Stage 1. |
+| **MON-STG1-QUAL** | Investigate broad-input Stage 1 quality only from concrete failing packets: omitted thesis branches, bundled consequences, and contract-preservation failures. | Analyzer / Stage 1 / Quality | high | high | ACTIVE | Prompt edits require Captain approval and topic-neutral wording. |
+| **MON-WARN-1** | Enforce warning materiality: admin-only diagnostics stay out of user-facing `Quality Signals`; material degradation must be user-visible through registered warning types. | Analyzer / Reporting / UX | high | high | ACTIVE | Report markdown cleanup landed; continue auditing warning sources. |
+| **MON-PROV-1** | Eliminate live validation provenance drift between prepared Stage 1, final job execution, runtime commit, prompt/config state, and dirty suffixes. | Runner / Observability | high | high | OPEN | Commit, restart/reseed when needed, then submit validation jobs. |
+| **MON-PROG-99** | Investigate terminal `SUCCEEDED` jobs that remain at progress `99`. | API / Runner / UI | med | high | OPEN | Observed on job `e16ed62f`; monitor trust issue, not yet proven analysis-impacting. |
+| **MON-HEARTBEAT-1** | Add visible heartbeats/sub-stage progress for long clustering and reconciler plateaus. | Analyzer / Monitor / UX | med | med | OPEN | Large evidence pools visibly plateaued for minutes. |
+| **MON-BROWSER-1** | Track in-app Browser Use screenshot/CDP timeouts and missing resumed `node_repl` execution tool as tooling issues. | Tooling / Monitor | med | med | OPEN | Not a FactHarbor app root cause, but it affected over-the-shoulder monitoring. |
+| **MON-DETERMINISTIC-1** | Replace `claimNeedsPrimarySourceRefinement()` token-overlap semantic logic with a batched LLM coverage assessment instead of extending deterministic text-meaning code. | Analyzer / Architecture / Quality | low | high | OPEN | Must follow AGENTS.md LLM-intelligence rule. |
+| **MON-REUSE-1** | Keep cross-session prepared snapshot reuse deferred until exact prompt/config/commit/input identity and freshness rules are approved. | ACS / Performance / Governance | low | high | DEFERRED | Provenance-only groundwork is acceptable; live reuse is not yet approved. |
 
 ---
 
