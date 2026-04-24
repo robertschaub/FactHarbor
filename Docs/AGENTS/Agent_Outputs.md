@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | ACS Session Preparation Challenger Review -- [Standard] [open-items: yes]
+**For next agent:** Block cross-session prepared-result reuse for now: current Stage 1 semantics still include live URL fetch plus live preliminary search, and `PreparedStage1Snapshot` only persists `resolvedInputText` + `preparedUnderstanding`, so exact public-URL equality is not a safe reuse contract. Narrow current scope to attribution cleanup in `internal-runner-queue.ts` / analyzer logging and truthful prep wording in `page.tsx` / `page-helpers.ts` without weakening the per-draft token boundary.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_ACS_Session_Preparation_Challenger_Review.md
+
+---
 ### 2026-04-23 | Unassigned | Codex (GPT-5) | ACS Fragment Root-Cause Debate -- [Standard] [open-items: yes]
 **For next agent:** Full-tier debate result was `MODIFY`: the live Grander ACS case does prove fragment URL expansion into duplicated whole-page FAQ text before Stage 1, and it does rule out recommendation tuning as the first fix for that incident. But the current bundle still does not prove fragment-aware bounded extraction should ship ahead of Stage 1 final revalidation hardening without an exact same-URL A/B rerun.
 → Docs/AGENTS/Handoffs/2026-04-23_Unassigned_ACS_Fragment_Root_Cause_Debate.md
@@ -2052,3 +2057,13 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-24 | Unassigned | Codex (GPT-5) | Stage 1 Preliminary Fetch Reuse For Selection Readiness -- [Significant] [open-items: yes]
 **For next agent:** Phase 1 of the selection-readiness plan now has a concrete same-semantics latency reduction in code. [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) now reuses exact in-flight and successful URL fetches during Stage 1 preliminary search so duplicate query results do not re-download/re-parse the same source before AC selection becomes available. Review forced one important correction: failed and underlength fetches are evicted from the cache so later duplicates can retry, and focused regressions now cover both failure and short-body recovery paths.
 → Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Stage1_Preliminary_Fetch_Reuse_For_Selection_Readiness.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | ACS Recommendation Order Normalization -- [Standard] [open-items: no]
+**For next agent:** The ACS recommendation validator no longer fails interactive sessions for order-only mismatch between `recommendedClaimIds` and `rankedClaimIds`. [claim-selection-recommendation.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-selection-recommendation.ts) now preserves all real set/cardinality invariants but normalizes the recommended subset into ranked order before returning it, and [claim-selection-recommendation.test.ts](/c:/DEV/FactHarbor/apps/web/test/unit/lib/analyzer/claim-selection-recommendation.test.ts) covers both direct validator normalization and the live generator path.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_ACS_Recommendation_Order_Normalization.md
+
+---
+### 2026-04-24 | Unassigned | Codex (GPT-5) | Selection Readiness Debate Consolidation And Implementation -- [Significant] [open-items: yes]
+**For next agent:** The three-item follow-up was debate-reviewed and narrowed before code landed. Live cross-session prepared-snapshot reuse remains deferred, but forward-only `preparedStage1.preparationProvenance` is now embedded for future exact/auditable reuse decisions. The shippable fixes in this slice are concurrent draft/job log attribution via async-scoped prefixes in [debug.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/debug.ts) and [internal-runner-queue.ts](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts), plus preparation-page wording that now explains the true order: Stage 1 first, then recommendation, then manual selection when needed.
+→ Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Selection_Readiness_Debate_Consolidation_And_Impl.md
