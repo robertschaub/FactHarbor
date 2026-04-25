@@ -95,3 +95,76 @@ All four used older prompt hashes than the final fix and should be treated as di
 - Do not claim all root causes are closed until the clean live rerun is inspected.
 - Local queue delay is currently explained by `FH_RUNNER_MAX_CONCURRENCY=1`; this is an ops/config setting, not a pipeline bug.
 - Older live jobs with `gitCommitHash: null` or dirty runtime state remain useful for diagnosis but not as clean validation evidence.
+
+## Update 2026-04-25 - C35 Causality and Stage 1 Contract Fix
+
+**Follow-up question:** Captain suspected `claimboundary.prompt.md` change `c35ff588b3892fa724a16fbf1c5a8fcffdf084ce` as the culprit for repeated `UNVERIFIED` reports on `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
+
+**Conclusion:** `c35ff588` is a plausible contributor to the separate ACS selection/preparation issue family, but it is not the direct root cause of the later recurring `UNVERIFIED` sequence for this direct input.
+
+### C35 Assessment
+
+- `c35ff588` added the `CLAIM_SELECTION_RECOMMENDATION` prompt section and wired claim-selection recommendation into prepared draft flow.
+- That can change which already-extracted candidates are recommended or auto-selected.
+- It does not directly change claim extraction, contract validation, query generation, evidence extraction, applicability, or verdict prompts.
+- The earliest bad job `322d3d80b3c04ee6b0d2a7a2916c5a6f` already had only one candidate claim. A selection recommender cannot create the missing second candidate after extraction has already produced one.
+- Later recurring `UNVERIFIED` reports used two-claim structures and failed through citation-integrity or Stage 1 contract-preservation paths, not through the recommendation section added by `c35ff588`.
+- Do not revert `c35ff588` prompt text alone. The runtime now expects the recommendation section; a removal would risk breaking prepared-session recommendation behavior.
+
+### Additional Root Cause Found
+
+After commit `8842be9809cfbc326b187dfd182ff2bdcc087d22`, live rerun `c3c516e435564f7abc6f15a098e7e3fb` still failed before research with `report_damaged`. The failure was Stage 1 contract validation, not verdict evidence handling:
+
+- Stage 1 extracted `AC_01` for the current number and `AC_02` for the historical comparison.
+- The contract validator rejected the comparison because `AC_02` necessarily referenced both sides of the relation.
+- For a two-sided approximate quantitative comparison, some overlap is required to preserve the relation. Treating that overlap as semantic subsumption caused an unjustified damaged fallback.
+
+First forward fix `0fc59a8072c772a4293da2ba6fcca234c2ff43dd` relaxed the comparison reference contract, but live validation `c642fbb4e2884c30b1c07a4b85c346c0` still returned `UNVERIFIED` with `report_damaged`. Failed-attempt recovery classification: **keep but insufficient**. The run showed Pass 2 produced a bad side-plus-relation triplet: one current-side claim, one standalone reference-side value claim, and one full relation claim.
+
+Final forward fix `d76dd8b3515d299e69d38dc7f67001b1daba8c33` added generic prompt guidance against that triplet shape:
+
+- For approximate two-sided quantitative comparisons, do not return side A, standalone side B, and a third A-vs-B relation claim.
+- Return side A plus a companion claim that carries the reference-side relation to side A.
+- If repair sees the triplet shape, fold the relation and approximation strength into the comparator/reference-side claim and remove the redundant whole-comparison claim.
+
+### Validation
+
+Focused tests passed after the final prompt fix:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`
+- Result: 79 passed.
+
+Prompt reseed completed. Active prompt hash after reseed:
+
+- `f8df3fe20f4ca76151d176879a9b0d5bfb4dd16e2e70a1e8193231465e7f89aa`
+
+Clean live rerun:
+
+- Job `15a12c3f114c455e95b667032594f968`
+- Runtime commit `d76dd8b3515d299e69d38dc7f67001b1daba8c33+b24d10f8`
+- Result: `SUCCEEDED`, verdict `MIXED`, truth `50.4`, confidence `62`
+- `claimCount: 2`
+- `evidenceItems: 26`
+- No `report_damaged`
+- No `verdict_integrity_failure`
+- Warnings were info-level only: limited fetch failures, per-source cap, and evidence partition stats.
+
+Final AtomicClaims:
+
+- `AC_01`: `235000 Flüchtlinge leben in der Schweiz.`
+- `AC_02`: `Am Ende des Zweiten Weltkrieges lebten in der Schweiz fast so viel Flüchtlinge wie heute (235000).`
+
+The run is not a perfect report-quality endpoint, but it closes the observed unjustified `UNVERIFIED`/damaged-fallback path for this input.
+
+### Debate / Review Disposition
+
+- **Reviewer 1:** `c35ff588` is unlikely to be the direct root culprit. It changed prepared-session recommendation, not extraction or verdict integrity. The same prompt hash also produced non-`UNVERIFIED` outcomes later, which argues against a consistent direct prompt-section cause.
+- **Reviewer 2:** The damaged rerun `c3c516e...` points to Stage 1 contract validation over-applying decomposition/subsumption rules to a quantitative comparison. The minimal forward fix should be generic comparison-overlap allowance and triplet prevention, not a rollback of `c35ff588`.
+- **Reconciled decision:** Keep the prior evidence-handling and citation-integrity fixes. Keep `c35ff588`. Keep `0fc59a80` as a necessary contract relaxation. Keep `d76dd8b3` as the validated final prompt correction for the triplet extraction failure.
+
+### Remaining Opportunities
+
+- Stage 1 still needed retry/repair in job `15a12c3f...`, which cost about 1.5 minutes. Quality is fixed first; a future optimization should tune Pass 2 so this input shape lands in the repaired two-claim form on the first attempt.
+- The clean rerun took about 12 minutes total. Most time was research, clustering, and verdict generation. If repeated, investigate clustering latency around large evidence-scope sets before lowering model quality.
+- The `AC_01` evidence profile remains semantically narrow in this run: it focuses on recognized refugees with residence/settlement status while the user wording can imply a broader asylum-area population. That did not damage the report, but it can influence truth percentages and should be reviewed as a separate generic evidence-profile calibration task.
+- Browser control remained unavailable in the resumed Codex context; live monitoring was performed via jobs/API/database inspection rather than the shared in-app browser.
