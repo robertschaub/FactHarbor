@@ -903,6 +903,56 @@ describe("selectClaimsForGate1", () => {
     ]);
   });
 
+  it("preserves contract-approved article-length input even when Pass 2 classifies it as multi-assertion", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean article-length output",
+        stageAttribution: "initial",
+      },
+      "multi_assertion_input",
+      "article",
+    );
+
+    expect(result).toHaveLength(5);
+    expect(result.map((claim) => claim.id)).toEqual([
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+    ]);
+  });
+
+  it("does not bypass the cap for article-length input classified as a single claim", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean verbose single-claim output",
+        stageAttribution: "initial",
+      },
+      "single_atomic_claim",
+      "article",
+    );
+
+    expect(result).toHaveLength(3);
+    expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
   it("still applies centrality filtering when the contract is not approved", () => {
     const claims = makeClaims(["high", "high", "high", "high", "high"]);
 
@@ -918,6 +968,7 @@ describe("selectClaimsForGate1", () => {
         stageAttribution: "retry",
       },
       "single_atomic_claim",
+      "claim",
     );
 
     expect(result).toHaveLength(3);

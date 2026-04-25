@@ -739,6 +739,7 @@ export async function extractClaims(
   // Centrality filter — effective max is f(input length)
   // ------------------------------------------------------------------
   const centralityThreshold = pipelineConfig.centralityThreshold ?? "medium";
+  const structuralInputType = detectInputType(state.originalInput);
   const maxCap = pipelineConfig.maxAtomicClaims ?? 5;
   const base = pipelineConfig.maxAtomicClaimsBase ?? 3;
   const charsPerClaim = pipelineConfig.atomicClaimsInputCharsPerClaim ?? 500;
@@ -768,6 +769,7 @@ export async function extractClaims(
     effectiveMax,
     contractValidationSummary,
     activePass2.inputClassification,
+    structuralInputType,
     protectedAnchorCarrierIds,
   );
 
@@ -2846,10 +2848,14 @@ export function selectClaimsForGate1(
   maxClaims: number,
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
   inputClassification?: string,
+  structuralInputType?: "claim" | "article",
   requiredClaimIds: string[] = [],
 ): AtomicClaim[] {
+  const isArticleLikeMultiAssertion =
+    structuralInputType === "article" && inputClassification === "multi_assertion_input";
+
   if (
-    inputClassification === "article"
+    (inputClassification === "article" || isArticleLikeMultiAssertion)
     &&
     contractValidationSummary?.preservesContract === true
     && contractValidationSummary.rePromptRequired === false
