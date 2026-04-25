@@ -348,6 +348,18 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("`contextual` or `foreign_reaction`");
     });
 
+    it("verdict prompts preserve balanced citations for broad umbrella ambiguity", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+
+      expect(advocate).toContain("broad authoritative umbrella measurement");
+      expect(advocate).toContain("narrower formal subset");
+      expect(advocate).toContain("Do NOT omit the broad supporting citation");
+      expect(reconciliation).toContain("broad authoritative umbrella measurement");
+      expect(reconciliation).toContain("narrower formal subset");
+      expect(reconciliation).toContain("preserve both material evidence directions");
+    });
+
     it("direction validation rejects non-direct directional citations", () => {
       const section = extractSection(promptContent, "VERDICT_DIRECTION_VALIDATION");
       expect(section).toContain("Consider the `applicability` field when present");

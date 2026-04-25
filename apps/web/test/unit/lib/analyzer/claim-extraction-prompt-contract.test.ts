@@ -341,6 +341,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("broad public-language label");
       expect(section).toContain("closest authoritative source-native umbrella quantity");
       expect(section).toContain("Do NOT silently redefine the claim to the narrowest official subset");
+      expect(section).toContain("broad source-native administrative stock");
+      expect(section).toContain("narrower formal-status subsets");
+      expect(section).toContain("not as the primary metric");
       expect(section).toContain("current-versus-historical or current-versus-reference comparison");
       expect(section).toContain("broadest authoritative current-side quantity");
       expect(section).toContain("explicitly preserve the comparator metric class");
