@@ -709,8 +709,10 @@ export function filterPreparedUnderstandingForSelectedClaims(
 ): void {
   const originalClaimCount = understanding.atomicClaims.length;
   const selectedClaimIds = new Set(selectedOrder.keys());
+  const allPreparedClaimsSelected =
+    originalClaimCount > 0 && selectedClaimIds.size === originalClaimCount;
   const preserveUnresolvedPreliminaryEvidence =
-    originalClaimCount === 1 && selectedClaimIds.size === 1;
+    allPreparedClaimsSelected || (originalClaimCount === 1 && selectedClaimIds.size === 1);
   const sortBySelectionOrder = <T extends { id: string }>(items: T[]) =>
     items.sort((a, b) => (selectedOrder.get(a.id) ?? 0) - (selectedOrder.get(b.id) ?? 0));
 

@@ -351,6 +351,46 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     expect(mockResearchEvidence).not.toHaveBeenCalled();
     expect(mockExtractClaims).not.toHaveBeenCalled();
   }, 10_000);
+
+  it("preserves unresolved preliminary evidence when all prepared claims are selected", async () => {
+    const preparedStage1 = {
+      version: 1,
+      resolvedInputText: "resolved text",
+      preparedUnderstanding: {
+        detectedLanguage: "en",
+        detectedInputType: "text",
+        atomicClaims: [
+          { id: "AC_01", statement: "Claim one" },
+          { id: "AC_02", statement: "Claim two" },
+        ],
+        preliminaryEvidence: [
+          {
+            claimId: "",
+            relevantClaimIds: [],
+            sourceUrl: "https://example.com/unmapped",
+            snippet: "Unmapped preliminary evidence that Stage 2 can remap semantically.",
+          },
+        ],
+      },
+    } as any;
+
+    await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "resolved text",
+      preparedStage1,
+      selectedClaimIds: ["AC_01", "AC_02"],
+    });
+
+    const state = mockResearchEvidence.mock.calls[0][0];
+    expect(state.understanding.preliminaryEvidence).toEqual([
+      {
+        claimId: "",
+        relevantClaimIds: [],
+        sourceUrl: "https://example.com/unmapped",
+        snippet: "Unmapped preliminary evidence that Stage 2 can remap semantically.",
+      },
+    ]);
+  }, 10_000);
 });
 
 describe("prepareStage1Snapshot provenance", () => {
