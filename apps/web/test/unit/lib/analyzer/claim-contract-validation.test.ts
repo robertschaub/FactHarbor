@@ -1554,6 +1554,8 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain('"truthConditionAnchor"');
     expect(section).toContain('"antiInferenceCheck"');
     expect(section).toContain("If `truthConditionAnchor.presentInInput` is true and `preservedInClaimIds` is empty, then `rePromptRequired` must be true.");
+    expect(section).toContain("the modifier/status claim is a valid preservation carrier");
+    expect(section).toContain('Do not mark that carrier as `recommendedAction: "retry"` or `proxyDriftSeverity: "material"` solely because');
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
   });
 });

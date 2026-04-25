@@ -443,6 +443,7 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
       expect(pass2).toContain("Modifier-fusion rule for coordinated branches");
+      expect(pass2).toContain("unless the independent-status exception below applies");
       expect(pass2).toContain("Independent-status exception");
       expect(pass2).toContain("Extract one thesis-direct claim preserving the modifier with the main act/state");
       expect(pass2).toContain("Status-plus-branch bundling prohibition");
@@ -470,6 +471,7 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("distinct institutions, actor groups, proceedings, or decision gates");
       expect(contract).toContain("Modifier externalization audit (MANDATORY)");
       expect(contract).toContain("one thesis-direct modifier/status claim plus separate thesis-direct branch claims");
+      expect(contract).toContain('set `preservesEvaluativeMeaning: true`, `proxyDriftSeverity: "none"` or `"mild"`, and `recommendedAction: "keep"`');
       expect(contract).toContain("may be preserved as its own thesis-direct claim");
       expect(contract).toContain("bundled claim is non-atomic");
       expect(contract).toContain("`rePromptRequired` must be true");
