@@ -10,8 +10,8 @@ These tasks are mandatory for legal compliance and core functionality.
 === 2.1 Legal & Compliance ===
 |= Task |= Status |= Notes |
 | **Engage Swiss legal advisor for policy review** | ⬜ Not Started | Review all policies, bylaws |
-| **Draft and adopt Verein bylaws (statutes)** | ✅ Draft Ready | Required for legal existence |
-| **Appoint founding board (minimum two members)** | ⬜ Not Started | Can include yourself |
+| **Draft and adopt Verein bylaws (statutes)** | ✅ Complete | Adopted 23 April 2026 |
+| **Appoint founding board (minimum two members)** | ✅ Complete | President: Robert Schaub, Treasurer: Stefanie Schaub-Hehr |
 | **Apply for Swiss tax-exempt status** | ⬜ Not Started | Cantonal tax authority |
 | **Designate Swiss representative** | ⬜ Not Started | Can be yourself with Swiss address |
 | **Create processing activities register** | ⬜ Not Started | Internal document |
@@ -123,8 +123,8 @@ Strategic decisions needed before implementation:
 == 7. Launch Blockers - Go/No-Go Checklist ==
 **Cannot launch until ALL are complete:**
 **Legal:**
-- [x] Verein bylaws drafted (adoption pending)
-- [ ] Governing Team appointed (two members minimum)
+- [x] Verein bylaws adopted (23 April 2026)
+- [x] Governing Team appointed (President + Treasurer)
 - [ ] Swiss representative designated
 - [ ] Privacy Policy effective date set
 - [ ] Processing activities register created

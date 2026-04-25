@@ -158,11 +158,22 @@ Modelle, die auf Tweets trainiert wurden, erreichen auf Video-Transkripten nur *
 - Keine Eigenleistungs-Prozente als Fakten präsentieren. Cieliebak kennt das besser.
 - Kein "4-monatige Machbarkeitsstudie" — die Cheque-Laufzeit ist projektabhängig, nicht fix.
 
+### Update nach dem Meeting (April 2026)
+
+**Neuer bevorzugter Track: DIZH 5. Rapid Action Call**
+- CHF 15'000–75'000, Deadline 1. Juli 2026
+- Thema: "Demokratische Resilienz" — passt perfekt
+- **Kein Cash-Beitrag von FactHarbor nötig** (Cieliebak bestätigt: ZHAW deckt Matching intern)
+- In-Kind (Entwicklerzeit) im Letter of Intent erwähnen
+- Kompatibilität mit Innosuisse Cheque wird noch geklärt (Navina Gupta, ab 1. Mai)
+
+Siehe [DIZH Leitfaden](../Knowledge/DIZH_Rapid_Action_Call_Leitfaden.md) für Details.
+
 ### Entlastungspaket 2027
 
-Innosuisse-Kürzungen von 32–33 Mio. CHF/Jahr geplant. **Argument im Meeting:** "Die Fördertöpfe werden kleiner — ein Grund mehr, jetzt zu starten."
+Innosuisse-Kürzungen von 32–33 Mio. CHF/Jahr geplant. Argument: "Die Fördertöpfe werden kleiner — ein Grund mehr, jetzt zu starten."
 
-### Nächste realistische ICT-Sitzungen
+### Nächste realistische ICT-Sitzungen (Innosuisse)
 
 | Datum | Einreichung bis |
 |-------|----------------|

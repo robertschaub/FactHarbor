@@ -15,7 +15,7 @@ This is the internal strategy document for FactHarbor's next cooperation and fun
 == Top Priorities (Next 90 Days) ==
 
 |=Priority lane|=Why now|=Gate|=Next action
-|**1. Swiss academic lead + Innosuisse path**|Most realistic near-term funding route; strongest bridge from Alpha to funded research and credibility.|Clear Swiss entity / UID path and one agreed project thesis.|Approach **ZHAW CAI / NLP** first. Keep ETH / UZH as fallback options. Frame the first conversation around one concrete Innosuisse-ready topic, not a broad wishlist.
+|**1. Swiss academic lead + Innosuisse path**|Most realistic near-term funding route; strongest bridge from Alpha to funded research and credibility.|✅ Verein founded (23 April 2026). UID pending (~early May). ZHAW partnership confirmed.|**ZHAW CAI / NLP partnership confirmed** (Giedemann, Cieliebak, Deriu). Two funding tracks active: DIZH Rapid Action Call (deadline 1 July 2026) and Innosuisse Innovation Cheque.
 |**2. One Innosuisse-ready project thesis**|Partner and funding conversations need one problem statement that clearly matches current product gaps.|Choose one lead theme: **multi-source retrieval**, **multilingual stability**, or **low-resource verification**.|Write a 1-page brief and reuse it across academic and grant outreach.
 |**3. DACH pilot outreach: Catherine Gilbert (dpa)**|First concrete fact-checking contact. Catherine Gilbert (ex-Keystone-SDA Verification Officer, now dpa OSINT Freelance) confirmed interest. **Video call scheduled April 8, 2026, 16:00.**|Demo-ready claim, known limitations prepared, clear questions.|Run the call. Ask about workflow pain points, Swiss network contacts, and willingness to give ongoing feedback.
 |**4. Swiss broadcaster lane: EBU Spotlight (not SRF)**|SRG SSR corporate declined interest (March 27, 2026). SRF/Melanie Koemle friendly but not engaged. **Do not re-approach SRG/SRF until a concrete external milestone exists** (Beta, benchmark, or pilot with another newsroom). EBU Headquarters (Geneva) remains a separate channel.|Pilot evidence from dpa call or other DACH contact.|Approach **EBU Spotlight** independently of SRF, only after the dpa conversation produces signal.
@@ -57,12 +57,12 @@ Platforms for individual donations and recurring support. Low effort to set up, 
 |=Platform|=Status|=Fees|=Action
 |**[[GitHub Sponsors>>https:~/~/github.com/sponsors]]**|**Set up now**|0%|Apply with AHV-Nummer + Swiss bank account. Approval in days. Tiers: CHF 5/15/50 pro Monat.
 |**[[Liberapay>>https:~/~/en.liberapay.com/]]**|**Set up now**|0% platform, ~2-3% payment processing|Register, create profile. European, open-source-focused, recurring donations.
-|**[[Open Collective Europe>>https:~/~/opencollective.com/europe]]**|**After Verein registration**|4-10% fiscal host fee|Contact hello@oceurope.org to confirm Swiss eligibility. Transparent public budgets.
+|**[[Open Collective Europe>>https:~/~/opencollective.com/europe]]**|**Ready** (Verein founded)|4-10% fiscal host fee|Contact hello@oceurope.org to confirm Swiss eligibility. Transparent public budgets.
 |**[[wemakeit>>https:~/~/wemakeit.com/]]**|**Campaign when ready**|10% (only on success)|Swiss crowdfunding, 67% success rate. Best for one-time campaign with specific milestone. CHF 5-15K realistic for Alpha stage.
 
 (% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
 (((
-**Priority:** GitHub Sponsors and Liberapay now (zero cost, passive). Open Collective after Verein. wemakeit only with a defined campaign goal and enough community to reach 30% in the first week.
+**Priority:** GitHub Sponsors and Liberapay now (zero cost, passive). Open Collective is now possible (Verein founded). wemakeit only with a defined campaign goal and enough community to reach 30% in the first week.
 )))
 
 == Secondary Targets / Watchlist ==
@@ -75,14 +75,14 @@ Platforms for individual donations and recurring support. Low effort to set up, 
 
 == Risks That Change Priorities ==
 
-* If the Swiss legal setup or UID path slips, Swiss grant routes slow down immediately.
+* ~~If the Swiss legal setup or UID path slips, Swiss grant routes slow down immediately.~~ ✅ Verein founded 23 April 2026; HR filing initiated, UID expected ~early May.
 * If outreach stays broad instead of choosing one lead academic lane, partner discussions will remain exploratory and not fundable.
 * If there is no short proof pack (demo, Alpha status, one project thesis, one ask), EBU / Full Fact outreach will be premature. (dpa call April 8 is confirmed regardless.)
 * If ClaimReview and external benchmarking remain undefined for too long, media credibility will lag behind technical progress.
 
 == Recommended Sequence ==
 
-1. Finalize the Swiss applicant-readiness path.
+1. ~~Finalize the Swiss applicant-readiness path.~~ ✅ Verein founded, HR filing initiated.
 1. Pick **one** lead academic lane and **one** research thesis.
 1. Build one concise partner pack: demo, Alpha status, current technical gap, and the specific cooperation ask.
 1. Use that pack for **ZHAW first**, then **Catherine Gilbert / dpa** (call April 8), then **EBU Spotlight** (not SRF directly — declined March 27).

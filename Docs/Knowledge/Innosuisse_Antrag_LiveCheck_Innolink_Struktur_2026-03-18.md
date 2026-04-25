@@ -1,7 +1,7 @@
 # Innosuisse-Antrag v2 — Innovationsprojekt mit Umsetzungspartner
 
 **Stand:** 18.03.2026
-**Projektstatus:** Antragsentwurf v2 — wissenschaftlich fundiert, mit Literaturreview und quantitativen Daten
+**Projektstatus:** ⚠️ ÜBERHOLT — Dieser Entwurf basierte auf einer geplanten Partnerschaft mit UZH (Schimanski/Leippold), die am 23.03.2026 nicht zustande kam. Die aktive Forschungspartnerschaft läuft nun mit **ZHAW CAI/NLP** (Giedemann/Cieliebak/Deriu) über DIZH Rapid Action Call + Innosuisse Cheque. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) und [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md).
 **Förderinstrument:** Innovationsprojekte mit Umsetzungspartner
 **Arbeitstitel:** **LiveCheck: Evidenzbasierte Echtzeit-Faktenprüfung für Audio- und Video-Inhalte**
 
@@ -412,7 +412,7 @@ Die finanzielle Nachhaltigkeit basiert **nicht** auf Spenden, Sponsoring oder st
 
 #### Umsetzungspartner
 
-**FactHarbor Verein** (Gründung in Vorbereitung; UID-Registrierung via BFS oder Handelsregister geplant — geschätzte Dauer: 2-3 Wochen)
+**FactHarbor Verein** (gegründet 23. April 2026; HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026)
 
 **Rolle:**
 - Produktvision und Systemarchitektur

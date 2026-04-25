@@ -4,7 +4,7 @@
 **Erstellt von:** Claude Opus 4.6 (2026-03-11)
 **Quellen:** innosuisse.admin.ch, bridge.ch, BFS UID-Register (alle Links am Ende)
 
-> **Verwandte Dokumente:** [Meeting Prep Schimanski](Meeting_Prep_Schimanski_2026-03-18_DE.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
+> **Verwandte Dokumente:** [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) | [ZHAW Meeting Prep](../Meetings/2026-04-22_ZHAW_Meeting_Prep.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ### Muss der Verein schon existieren?
 
-**Ja — vermutlich bei Antragstellung**, weil das Innolink-Portal eine UID-Nummer verlangt. Der Umsetzungspartner muss eine **UID-Nummer** (Unternehmens-Identifikationsnummer) haben. Ob der Verein erst bei Vertragsabschluss (nach Genehmigung) existieren muss, ist eine offene Frage (siehe unten).
+**Ja — bei Antragstellung**, weil das Innolink-Portal eine UID-Nummer verlangt. ✅ FactHarbor Verein gegründet am 23. April 2026; HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026.
 
 Ein Schweizer Verein erlangt Rechtspersönlichkeit sobald Statuten angenommen werden — ein Handelsregistereintrag ist nur nötig bei kaufmännischem Betrieb über CHF 100'000 Jahresumsatz.
 
@@ -48,7 +48,7 @@ Ein Schweizer Verein erlangt Rechtspersönlichkeit sobald Statuten angenommen we
 
 ### ⚠️ Offene Fragen (bei Innosuisse klären: innoprojects@innosuisse.ch)
 
-1. **Wann muss der Verein existieren?** Bei Antragstellung (UID nötig für Innolink-Portal) oder reicht es bei Projektstart/Vertragsabschluss? Falls erst bei Vertragsabschluss: kann man den Antrag schon vor Vereinsgründung einreichen?
+1. ~~**Wann muss der Verein existieren?**~~ ✅ Erledigt — Verein gegründet 23.04.2026, UID in Bearbeitung.
 2. **Solo-Entwickler als einzige Eigenleistung** — zählt die Zeit eines einzelnen Entwicklers als In-Kind-Beitrag bei den Standardstundensätzen?
 3. **Imputierte Lohnkosten** — wenn der Verein keinen Umsatz hat und der Entwickler unbezahlt arbeitet, zählen dann kalkulatorische Lohnkosten?
 
@@ -170,13 +170,13 @@ Die Regelung sagt nicht, woher das Geld im Verein stammen muss — nur dass es *
 | **Crowdfunding** | ✅ Werden zu Vereinsmitteln | Kein Risiko |
 | **Privat einbringen** (Darlehen/Spende an Verein) | ✅ Wird zu Vereinsmitteln | Kein Risiko, aber persönliche Belastung |
 
-### Rechenbeispiel: FactHarbor + UZH Postdoc
+### Rechenbeispiel: FactHarbor + ZHAW
 
 | Posten | Betrag/Jahr | Wer |
 |--------|-----------|-----|
-| Postdoc-Gehalt + Overhead (UZH) | ~CHF 130'000 | Innosuisse |
+| Forschende/r Gehalt + Overhead (ZHAW) | ~CHF 130'000 | Innosuisse |
 | FactHarbor Eigenleistung (Entwickler-Zeit) | ~CHF 130'000 | FactHarbor (In-Kind) |
-| Cash-Beitrag an UZH (5%) | ~CHF 13'750 | FactHarbor (Cash) |
+| Cash-Beitrag an ZHAW (5%) | ~CHF 13'750 | FactHarbor (Cash) |
 | **Gesamt pro Jahr** | **~CHF 275'000** | |
 
 Bei 2 Jahren: ~CHF 550'000 Gesamt, Cash-Beitrag ~CHF 27'500.
@@ -217,10 +217,11 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 
 | Instrument | Passung | Begründung |
 |-----------|---------|-----------|
-| **Innovation Project** | ⭐⭐⭐⭐ | FactHarbor (Verein) als Umsetzungspartner, UZH als Forschungspartner. Beide gleichberechtigt. Passt zum Modell. |
-| **BRIDGE Discovery** | ⭐⭐ | Tobias müsste allein beantragen. FactHarbor hat keine formelle Rolle. Funktioniert, aber Verein ist nicht zentral. |
+| **Innovation Project** | ⭐⭐⭐⭐ | FactHarbor (Verein) als Umsetzungspartner, ZHAW als Forschungspartner. Beide gleichberechtigt. Passt zum Modell. |
+| **DIZH Rapid Action Call** | ⭐⭐⭐⭐⭐ | ZHAW beantragt, FactHarbor als Praxispartner. Kein Cash nötig. Thema "Demokratische Resilienz" passt perfekt. Bis CHF 75K. |
+| **BRIDGE Discovery** | ⭐⭐ | Forscher/in müsste allein beantragen. FactHarbor hat keine formelle Rolle. |
 
-**Empfehlung:** Innovation Project ist der bessere Fit, weil FactHarbor als gleichberechtigter Partner agiert und die Plattform das Kernstück der Innovation ist.
+**Empfehlung:** DIZH Rapid Action Call als erster Schritt (höhere Summe, kein Cash nötig, thematisch perfekt). Parallel oder danach Innovation Cheque / Innovation Project über Innosuisse. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md).
 
 ---
 
@@ -230,32 +231,26 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 
 | Voraussetzung | Status | Aktion nötig? |
 |--------------|--------|--------------|
-| FactHarbor Verein gegründet | ❓ | **Klären: existiert der Verein bereits?** |
-| UID-Nummer | ❓ | Falls Verein existiert: UID prüfen. Falls nicht: gründen + registrieren |
-| Forschungspartner (UZH) | 🔄 In Anbahnung | Meeting 18.03.2026 mit Tobias Schimanski |
+| FactHarbor Verein gegründet | ✅ | Gegründet 23.04.2026 |
+| UID-Nummer | 🔄 | HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026 |
+| Forschungspartner (ZHAW) | ✅ | Bestätigt: Giedemann, Cieliebak, Deriu |
 | Funktionierende Plattform | ✅ | app.factharbor.ch + Demo-Umgebung |
 | Vorarbeiten (Markt, Wettbewerb) | ✅ | Knowledge-Dokumente vorhanden |
 
-### Zeitplan (optimistisch)
+### Aktuelle Funding-Strategie (Stand April 2026)
+
+**Zwei Tracks laufen parallel — Kompatibilität wird geklärt:**
 
 | Datum | Meilenstein |
 |-------|------------|
-| 18.03.2026 | Meeting mit Tobias — Forschungspassung klären |
-| Apr 2026 | Forschungsskizze + Grant-Outline mit Tobias/Leippold |
-| Mai 2026 | Antrag vorbereiten, bei Innosuisse einreichen |
-| 24.06.2026 | ICT-Sitzung Innovationsrat → Entscheid |
-| Sep 2026 | Bei Genehmigung: Finanzierungsvertrag, Projektstart |
+| 1. Mai 2026 | Navina Gupta (ZHAW/DIZH) klärt Kompatibilität DIZH + Innosuisse |
+| ~Anfang Mai 2026 | UID erwartet (HR-Eintragung Kt. Zürich eingeleitet) |
+| Nach 11. Mai 2026 | Nächstes Meeting mit Patrick Giedemann |
+| ~10. Juni 2026 | ZHAW-Digital-Matching-Antrag (intern, 3 Wochen vor Deadline) |
+| **1. Juli 2026** | **DIZH Rapid Action Call Deadline** |
+| Rolling | Innosuisse Innovation Cheque (jederzeit einreichbar) |
 
-### Zeitplan (realistisch)
-
-| Datum | Meilenstein |
-|-------|------------|
-| 18.03.2026 | Meeting mit Tobias |
-| Apr-Mai 2026 | Forschungsrichtung festlegen, zweites Meeting mit Leippold |
-| Jun-Jul 2026 | Antrag ausarbeiten |
-| ~22.07.2026 | Einreichung (Ziel: ICT-Sitzung 02.09.2026) |
-| Sep 2026 | Entscheid |
-| Nov-Dez 2026 | Projektstart |
+Siehe [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) für Details zum DIZH-Track.
 
 ---
 
@@ -267,4 +262,6 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 - [BRIDGE Discovery — Ausschreibung 2026](https://www.innosuisse.admin.ch/en/bridge-discovery-call-for-projects)
 - [BRIDGE Discovery — Details (bridge.ch)](https://www.bridge.ch/en/2JhW2ZFO9e7sAImV/page/funding/discovery)
 - [BFS — UID-System](https://www.bfs.admin.ch/bfs/en/home/registers/enterprise-register/enterprise-identification.html)
+- [DIZH 5. Rapid Action Call](https://www.dizh.uzh.ch/en/2026/04/01/call-for-proposals-5th-rapid-action-call/)
+- [DIZH Innovationsprogramm](https://www.dizh.uzh.ch/en/activities/innovationprogram/)
 - [Kontakt: innoprojects@innosuisse.ch](mailto:innoprojects@innosuisse.ch)
