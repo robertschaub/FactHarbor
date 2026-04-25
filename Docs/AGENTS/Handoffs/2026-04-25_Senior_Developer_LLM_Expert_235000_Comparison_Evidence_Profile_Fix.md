@@ -168,3 +168,46 @@ The run is not a perfect report-quality endpoint, but it closes the observed unj
 - The clean rerun took about 12 minutes total. Most time was research, clustering, and verdict generation. If repeated, investigate clustering latency around large evidence-scope sets before lowering model quality.
 - The `AC_01` evidence profile remains semantically narrow in this run: it focuses on recognized refugees with residence/settlement status while the user wording can imply a broader asylum-area population. That did not damage the report, but it can influence truth percentages and should be reviewed as a separate generic evidence-profile calibration task.
 - Browser control remained unavailable in the resumed Codex context; live monitoring was performed via jobs/API/database inspection rather than the shared in-app browser.
+
+## Update 2026-04-26 - SEM Current-Side Evidence and Failed Attempt Recovery
+
+**Follow-up question:** Captain observed that two newer reports for the exact input still contain errors or fail to find/cite the official SEM evidence with the 235000+ `Personen aus dem Asylbereich` figure for the current side of the comparison.
+
+### Validation Results
+
+- Commit `393a8987` passed `expectedEvidenceProfile` into relevance/contract validation. Live job `55fdfa6d8d7149138c33d78354a92d9c` succeeded but still did not cite current-side SEM evidence in `AC_02`.
+- Commit `f5219085` preserved current-side comparison evidence in more prompt paths. Live job `a04cfca20f414b9bb473586922c10f2e` succeeded with 2 claims, 51 evidence items, and no grounding/integrity warning.
+- `a04cfca...` found and cited official SEM 2025/early-2026 current-side evidence for `AC_01`, including `Total Personen aus dem Asylbereich (inkl. Rückkehrunterstützung): 235.057 Personen (Ende 2025)` from `sem.admin.ch` / `cms.news.admin.ch`.
+- `a04cfca...` still did **not** cite SEM/current-side evidence in `AC_02`; `AC_02` cited only historical/reference-side evidence. The claim contract had accepted a whole-comparison claim whose `freshnessRequirement` and `expectedEvidenceProfile` were historical-only.
+- Commit `d7632d78` attempted to reject that whole-plus-side comparison split more strongly. Live job `a19ee1a1067a4e1db26a9b53569531ea` regressed to `UNVERIFIED`, confidence `0`, `report_damaged`, 0 boundaries, and no research after 16 LLM calls.
+
+### Failed-Attempt Recovery Classification
+
+- `f5219085`: **keep but insufficient**. It improved current-side evidence acquisition and made `AC_01` cite the SEM 235057 figure, but it did not force the comparison claim to carry current-side evidence obligations.
+- `d7632d78`: **revert**. Its first focused live validation failed before research and worsened report quality relative to `f5219085`.
+- Revert commit `14a6e015` removed only `d7632d78`'s prompt/test tightening. The active prompt hash after build/postbuild reseed returned to `e71861261405...`.
+
+### Verification After Revert
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts test/unit/lib/analyzer/verdict-prompt-contract.test.ts`
+  - Passed: 171 tests.
+- `npm -w apps/web run build`
+  - Passed.
+  - Postbuild prompt reseed changed claimboundary prompt back to hash prefix `e71861261405...`.
+
+### Current State
+
+The system is no longer left on the known-worse `report_damaged` prompt attempt. However, the exact SEM/current-side citation issue is **not fully closed**:
+
+- The pipeline can find the official SEM `235057 Personen aus dem Asylbereich` evidence for the current-side claim.
+- The comparison claim can still be accepted with a historical-only evidence contract, so its own citation arrays may omit the SEM/current-side evidence even when the evidence exists elsewhere in the same report.
+
+### Recommended Next Step
+
+Do not stack another broad prompt edit without live-run allowance. The safer next design is a narrower Stage 1 repair strategy for quantitative comparisons:
+
+- Either produce a clean 2-claim shape where the companion comparison claim carries both-side evidence profile and freshest-side freshness, or produce a 3-claim shape with explicit current-side, historical-side, and relation claims.
+- In either shape, the relation/comparison claim must be able to cite evidence for both comparison sides when both are present in the claim-local evidence pool.
+- The validator should reject bad whole-plus-side shapes, but the repair path must reliably transform them instead of escalating to `report_damaged`.
+
+No additional live job was submitted after `a19ee...` because the approved rerun budget for this phase was exhausted.
