@@ -243,6 +243,64 @@ type RuntimeRoleModels = Record<string, {
   fallbackUsed: boolean;
 }>;
 
+function normalizeReportSourceUrlKey(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    url.hash = "";
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return trimmed.replace(/#.*$/, "").replace(/\/$/, "");
+  }
+}
+
+function selectEvidenceReferencedSources(
+  sources: FetchedSource[],
+  evidenceItems: EvidenceItem[],
+): FetchedSource[] {
+  const referencedSourceIds = new Set<string>();
+  const referencedSourceUrls = new Set<string>();
+
+  for (const item of evidenceItems) {
+    if (typeof item.sourceId === "string" && item.sourceId.trim().length > 0) {
+      referencedSourceIds.add(item.sourceId.trim());
+    }
+    const sourceUrlKey = normalizeReportSourceUrlKey(item.sourceUrl);
+    if (sourceUrlKey) {
+      referencedSourceUrls.add(sourceUrlKey);
+    }
+  }
+
+  if (referencedSourceIds.size === 0 && referencedSourceUrls.size === 0) {
+    return [];
+  }
+
+  const selected = sources.filter((source) => (
+    referencedSourceIds.has(source.id) ||
+    (normalizeReportSourceUrlKey(source.url) !== null &&
+      referencedSourceUrls.has(normalizeReportSourceUrlKey(source.url)!))
+  ));
+
+  return selected;
+}
+
+function serializeFetchedSource(s: FetchedSource) {
+  return {
+    id: s.id,
+    url: s.url,
+    title: s.title,
+    trackRecordScore: s.trackRecordScore,
+    trackRecordConfidence: s.trackRecordConfidence,
+    trackRecordConsensus: s.trackRecordConsensus,
+    category: s.category,
+    fetchSuccess: s.fetchSuccess,
+    searchQuery: s.searchQuery,
+  };
+}
+
 export function buildClaimBoundaryResultJson(params: {
   assessment: OverallAssessment;
   input: Pick<AnalysisInput, "inputType" | "inputValue">;
@@ -341,17 +399,8 @@ export function buildClaimBoundaryResultJson(params: {
     coverageMatrix: assessment.coverageMatrix,
     understanding: state.understanding,
     evidenceItems: state.evidenceItems,
-    sources: state.sources.map((s: FetchedSource) => ({
-      id: s.id,
-      url: s.url,
-      title: s.title,
-      trackRecordScore: s.trackRecordScore,
-      trackRecordConfidence: s.trackRecordConfidence,
-      trackRecordConsensus: s.trackRecordConsensus,
-      category: s.category,
-      fetchSuccess: s.fetchSuccess,
-      searchQuery: s.searchQuery,
-    })),
+    sources: state.sources.map(serializeFetchedSource),
+    citedSources: selectEvidenceReferencedSources(state.sources, state.evidenceItems).map(serializeFetchedSource),
     searchQueries: state.searchQueries,
     claimAcquisitionLedger: state.claimAcquisitionLedger,
     qualityGates: assessment.qualityGates,
@@ -1121,6 +1170,7 @@ export async function runClaimBoundaryAnalysis(
     const boundaries = await clusterBoundaries(state);
     state.claimBoundaries = boundaries;
     finalizeClaimAcquisitionTelemetry(state);
+    onEvent(`Clustering complete: ${boundaries.length} boundary group(s).`, -1);
     endPhase("cluster");
 
     // D5 Control 1: Evidence Sufficiency Gate — per-claim evidence check
@@ -1548,7 +1598,7 @@ export async function runVerdictStageWithPreflight({
   onEvent?.("Generating verdicts...", 70);
   startPhase("verdict");
   try {
-    return await generateVerdictsFn(
+    const verdicts = await generateVerdictsFn(
       claims,
       evidenceItems,
       boundaries,
@@ -1562,6 +1612,8 @@ export async function runVerdictStageWithPreflight({
       sources,
       reportLanguage,
     );
+    onEvent?.(`Verdict generation complete: ${verdicts.length} claim verdict(s).`, -1);
+    return verdicts;
   } catch (verdictError: unknown) {
     const errorMessage = verdictError instanceof Error
       ? verdictError.message

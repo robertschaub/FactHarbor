@@ -32,6 +32,7 @@ export interface HtmlReportInput {
   claimBoundaries: any[];
   evidenceItems: any[];
   sources: any[];
+  allSources?: any[];
   searchQueries: any[];
   qualityGates: any;
 }
@@ -374,7 +375,7 @@ function buildHeader(input: HtmlReportInput): string {
     ${meta.searchProviders ? `<span class="chip chip-gray">&#128269; ${esc(Array.isArray(meta.searchProviders) ? meta.searchProviders.join(" &amp; ") : meta.searchProviders)}</span>` : ""}
     <span class="chip chip-gray">${esc(llmCalls)} LLM calls</span>
     <span class="chip chip-gray">${esc(totalSearches)} searches</span>
-    <span class="chip chip-gray">${claimCount} claim${claimCount !== 1 ? "s" : ""} · ${boundaryCount} boundaries · ${evCount} evidence items · ${srcCount} sources</span>
+    <span class="chip chip-gray">${claimCount} claim${claimCount !== 1 ? "s" : ""} · ${boundaryCount} boundaries · ${evCount} evidence items · ${srcCount} cited sources</span>
     <span class="chip chip-green">${esc(job.status)}</span>
   </div>
 </div>`;
@@ -712,7 +713,7 @@ function buildSourcesSection(sources: any[]): string {
 <div class="section">
   <div class="section-head">
     <span>&#128279;</span>
-    <span class="section-title">Sources</span>
+    <span class="section-title">Cited Sources</span>
     <span class="section-badge">${sources.length} sources</span>
   </div>
   <div class="section-body">
@@ -763,6 +764,7 @@ function buildSearchQueriesSection(queries: any[]): string {
 
 function buildQualityGatesSection(qualityGates: any, meta: any, input: HtmlReportInput): string {
   const { evidenceItems, sources, searchQueries, claimVerdicts } = input;
+  const fetchedSources = input.allSources ?? sources;
 
   const gate1 = qualityGates?.gate1 || {};
   const gate4 = qualityGates?.gate4 || {};
@@ -795,7 +797,7 @@ function buildQualityGatesSection(qualityGates: any, meta: any, input: HtmlRepor
       <div class="gate-card">
         <div class="gate-title">Evidence Summary</div>
         <div class="gate-stat"><span class="gate-stat-key">Total evidence items</span><span class="gate-stat-val">${evidenceItems.length}</span></div>
-        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">${sources.length}</span></div>
+        <div class="gate-stat"><span class="gate-stat-key">Sources fetched</span><span class="gate-stat-val">${fetchedSources.length}</span></div>
         <div class="gate-stat"><span class="gate-stat-key">Searches performed</span><span class="gate-stat-val">${searchQueries.length}</span></div>
       </div>
       <div class="gate-card">

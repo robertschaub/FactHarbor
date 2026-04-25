@@ -681,6 +681,83 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
 
       expect(resultJson.understanding?.atomicClaims?.[0]?.freshnessRequirement).toBe("current_snapshot");
     });
+
+    it("serializes cited sources separately from the fetched-source audit trail", () => {
+      const claims = [createAtomicClaim({ id: "AC_01" })];
+      const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+      const evidenceItems = [
+        createEvidenceItem({
+          id: "EV_01",
+          sourceId: "S_keep_by_id",
+          sourceUrl: "https://source.example/report#section",
+        }),
+        createEvidenceItem({
+          id: "EV_02",
+          sourceId: "",
+          sourceUrl: "https://url-only.example/article?view=full#details",
+        }),
+      ];
+      const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidenceItems);
+      const assessment: OverallAssessment = {
+        truthPercentage: 65,
+        verdict: "LEANING-TRUE",
+        confidence: 58,
+        verdictNarrative: createVerdictNarrative(),
+        hasMultipleBoundaries: false,
+        claimBoundaries: boundaries,
+        claimVerdicts: [createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 65, confidence: 58 })],
+        coverageMatrix,
+        qualityGates: {
+          passed: true,
+          gate1Stats: { total: 1, passed: 1, filtered: 0, centralKept: 1 },
+          gate4Stats: { total: 1, publishable: 1, highConfidence: 0, mediumConfidence: 1, lowConfidence: 0, insufficient: 0, centralKept: 0 },
+          summary: { totalEvidenceItems: 2, totalSources: 3, searchesPerformed: 1, contradictionSearchPerformed: false },
+        },
+      };
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input: { inputType: "text", inputValue: "Entity A performed action B." },
+        state: {
+          languageIntent: null,
+          understanding: { atomicClaims: claims } as any,
+          evidenceItems,
+          sources: [
+            { id: "S_keep_by_id", url: "https://source.example/report", title: "Kept by ID", fetchSuccess: true },
+            { id: "S_keep_by_url", url: "https://url-only.example/article?view=full", title: "Kept by URL", fetchSuccess: true },
+            { id: "S_unused", url: "https://unused.example/background", title: "Unused", fetchSuccess: true },
+          ] as any,
+          searchQueries: [],
+          claimAcquisitionLedger: {},
+          warnings: [],
+          llmCalls: 1,
+          mainIterationsUsed: 1,
+          contradictionIterationsUsed: 0,
+          contradictionSourcesFound: 0,
+        },
+        llmProvider: "anthropic",
+        verdictModelName: "mock-verdict",
+        understandModelName: "mock-understand",
+        extractModelName: "mock-extract",
+        runtimeModelsUsed: new Set(["mock-understand", "mock-verdict"]),
+        runtimeRoleModels: {},
+        searchProvider: "mock-search",
+        searchProviders: "mock-search",
+        evidenceBalance: { supporting: 1, contradicting: 0, neutral: 1, total: 2, balanceRatio: 0.5, isSkewed: false },
+        promptContentHash: "__PROMPT__",
+        boundaryCount: boundaries.length,
+      });
+
+      expect(resultJson.sources.map((source: any) => source.id)).toEqual([
+        "S_keep_by_id",
+        "S_keep_by_url",
+        "S_unused",
+      ]);
+      expect(resultJson.citedSources.map((source: any) => source.id)).toEqual([
+        "S_keep_by_id",
+        "S_keep_by_url",
+      ]);
+    });
   });
 
   describe("formatClaimBoundaryReportMarkdown", () => {

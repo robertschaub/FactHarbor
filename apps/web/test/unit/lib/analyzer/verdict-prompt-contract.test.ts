@@ -99,6 +99,7 @@ const RECONCILIATION_VARS: Record<string, string> = {
   advocateVerdicts: '[{"claimId":"AC_01","truthPercentage":72}]',
   challenges: '[{"claimId":"AC_01","challengePoints":[]}]',
   consistencyResults: '[{"claimId":"AC_01","spread":5}]',
+  evidenceItems: '[{"id":"EV_01","claimDirection":"supports","applicability":"direct"},{"id":"EV_02","claimDirection":"contextual","applicability":"contextual"}]',
   sourcePortfolioByClaim: '{"AC_01":[]}',
   reportLanguage: "German",
   currentDate: "2026-04-02",
@@ -243,6 +244,15 @@ describe("Stage-4 prompt contract", () => {
       const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
       expect(section).toContain("Do not place machine IDs in prose");
       expect(section).toContain("adjustmentBasedOnChallengeIds");
+    });
+
+    it("reconciliation has evidence metadata for direct-only citation arrays", () => {
+      const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(section).toContain("Treat `applicability` and `claimDirection` in Evidence Items as binding");
+      expect(section).toContain("Only `direct` evidence with `claimDirection = \"supports\"` may appear");
+      expect(section).toContain("only `direct` evidence with `claimDirection = \"contradicts\"` may appear");
+      expect(section).toContain("Do not convert absence of direct evidence into a directional contradiction");
+      expect(section).toContain("${evidenceItems}");
     });
 
     it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
@@ -519,6 +529,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("current-versus-historical or current-versus-reference comparison claims");
       expect(section).toContain("broadest authoritative umbrella total");
       expect(section).toContain("Retrieve the decisive current total and the comparator total directly");
+      expect(section).toContain("source-native comparator class identified in `expectedEvidenceProfile`");
+      expect(section).toContain("endpoint stock versus period/window total or cumulative flow ambiguous");
+      expect(section).toContain("not automatic substitutes for one another");
       expect(section).toContain("recurring official statistics series or update stream");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
     });
@@ -650,6 +663,16 @@ describe("Stage-2 prompt contract", () => {
       // Core policy: comparator evidence about different proceedings is contextual
       expect(section).toContain("comparator/precedent");
       expect(section).toContain('"contextual"');
+    });
+
+    it("extracts historical/reference totals as direct comparison evidence when point stock is not explicit", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("period/window totals, cumulative totals, and endpoint/stock figures");
+      expect(section).toContain("Preserve the metric class in `evidenceScope`");
+      expect(section).toContain("mismatch caveat rather than treating it as automatically decisive");
+      expect(section).toContain("`claimDirection` is relative to the comparison relationship");
+      expect(section).toContain("classify the evidence as `supports` or `contradicts` when the numeric relationship is clear");
+      expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied");
     });
 
     it("exception requires finding to be about the directly evaluated target, not just the same institution", () => {
@@ -785,6 +808,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("broader policy problem or harm domain remains");
       expect(section).toContain('"contextual"');
       expect(section).toContain("inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself");
+    });
+
+    it("marks historical/reference totals direct for approximate comparison comparator sides", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("approximate current-versus-historical or current-versus-reference comparisons");
+      expect(section).toContain("comparator route named in `expectedEvidenceProfile`");
+      expect(section).toContain("different metric class from the route the claim most naturally implies");
+      expect(section).toContain("do not let applicability alone erase the distinction");
     });
 
     it("uses abstract examples without domain-specific terms", () => {

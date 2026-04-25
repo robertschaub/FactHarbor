@@ -338,6 +338,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do NOT silently redefine the claim to the narrowest official subset");
       expect(section).toContain("current-versus-historical or current-versus-reference comparison");
       expect(section).toContain("broadest authoritative current-side quantity");
+      expect(section).toContain("explicitly preserve the comparator metric class");
+      expect(section).toContain("do not replace endpoint or stock wording with a cumulative/flow total");
+      expect(section).toContain("keep both plausible routes and mark the mismatch as a caveat");
       expect(section).toContain("present-state proposition rather than leaving its time window ambiguous");
       expect(section).toContain("recurring official statistics series");
       expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");

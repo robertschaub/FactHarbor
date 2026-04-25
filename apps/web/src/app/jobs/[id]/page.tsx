@@ -1181,8 +1181,12 @@ export default function JobPage() {
         category: c.sourceType || 'citation',
       }))
     : result?.sources || [];
-  const sourceUrlToIndex = useMemo(() => new Map<string, number>(sources.map((s: any, i: number) => [s.url as string, i])), [sources]);
-  const sourceUrlToTitle = useMemo(() => new Map<string, string>(sources.map((s: any) => [s.url as string, (s.title as string) || ""])), [sources]);
+  const citedSources = Array.isArray(result?.citedSources) ? result.citedSources : [];
+  const reportSources = pipelineVariant === "claimboundary" && citedSources.length > 0
+    ? citedSources
+    : sources;
+  const sourceUrlToIndex = useMemo(() => new Map<string, number>(reportSources.map((s: any, i: number) => [s.url as string, i])), [reportSources]);
+  const sourceUrlToTitle = useMemo(() => new Map<string, string>(reportSources.map((s: any) => [s.url as string, (s.title as string) || ""])), [reportSources]);
   const usedModels = collectUsedModels(result);
   const usedModelsLabel = formatUsedModels(usedModels);
   const modelRolesHint = [
@@ -1425,7 +1429,8 @@ export default function JobPage() {
           claimVerdicts,
           claimBoundaries,
           evidenceItems,
-          sources,
+          sources: reportSources,
+          allSources: sources,
           searchQueries,
           qualityGates,
         });
@@ -2184,7 +2189,7 @@ export default function JobPage() {
           <ReportSection title="Sources" className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
             <SourcesPanel
               searchQueries={searchQueries}
-              sources={sources}
+              sources={reportSources}
               researchStats={researchStats}
               searchProvider={result?.meta?.searchProvider}
               searchProviders={result?.meta?.searchProviders}
@@ -2198,7 +2203,7 @@ export default function JobPage() {
             <ReportSection title="Search Queries" className={`${styles.reportSurfaceCard} ${styles.inputSection}`}>
               <SourcesPanel
                 searchQueries={searchQueries}
-                sources={sources}
+                sources={reportSources}
                 researchStats={researchStats}
                 searchProvider={result?.meta?.searchProvider}
                 searchProviders={result?.meta?.searchProviders}
@@ -2210,7 +2215,7 @@ export default function JobPage() {
             </ReportSection>
           )}
 
-          <SourceReliabilityPanel sources={sources} />
+          <SourceReliabilityPanel sources={reportSources} />
 
         </div>
       )}

@@ -860,6 +860,67 @@ describe("reconcileVerdicts (Step 4)", () => {
     expect(validatedChallengeDoc.challenges).toHaveLength(1);
   });
 
+  it("sends evidence applicability and direction metadata to reconciliation", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01",
+      claimId: "AC_01",
+      truthPercentage: 75,
+      verdict: "MOSTLY-TRUE",
+      confidence: 80,
+      reasoning: "Original reasoning",
+      harmPotential: "medium",
+      isContested: false,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+      boundaryFindings: [],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_01",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+        claimDirection: "supports",
+      }),
+      createEvidenceItem({
+        id: "EV_02",
+        relevantClaimIds: ["AC_01"],
+        applicability: "contextual",
+        claimDirection: "neutral",
+      }),
+    ];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: reconciliationResponse(),
+    });
+
+    await reconcileVerdicts(
+      advocateVerdictsList,
+      { challenges: [] },
+      [],
+      evidence,
+      mockLLM,
+    );
+
+    const callInput = (mockLLM as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][1] as {
+      evidenceItems: Array<Record<string, unknown>>;
+    };
+
+    expect(callInput.evidenceItems).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: "EV_01",
+        applicability: "direct",
+        claimDirection: "supports",
+      }),
+      expect.objectContaining({
+        id: "EV_02",
+        applicability: "contextual",
+        claimDirection: "neutral",
+      }),
+    ]));
+  });
+
   it("should keep original verdict if reconciliation doesn't include claim", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
