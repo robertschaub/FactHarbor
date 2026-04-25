@@ -34,5 +34,10 @@
   },
   "evalConcurrency": 5,
   "evalTimeoutMs": 90000,
+  "maxLiveEvaluationsPerRun": 12,
+  "runtimeBudgetMs": 90000,
+  "minLiveEvaluationBudgetMs": 10000,
+  "minPrimaryRemainingBudgetMs": 15000,
+  "minRefinementRemainingBudgetMs": 20000,
   "defaultConfidence": 0.8
 }

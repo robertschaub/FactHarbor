@@ -552,6 +552,37 @@ export async function evaluateSourceWithConsensus(
   );
 }
 
+function buildBudgetGuardPayload(
+  domain: string,
+  evidencePack: EvidencePack,
+  remainingBudgetMs: number | null,
+  requiredBudgetMs: number,
+): ResponsePayload {
+  return {
+    score: null,
+    confidence: 0,
+    modelPrimary: "budget_guard",
+    modelSecondary: null,
+    consensusAchieved: false,
+    reasoning:
+      `Source reliability evaluation for ${domain} was skipped because the remaining request budget ` +
+      `(${remainingBudgetMs ?? "unknown"} ms) was below the configured guard (${requiredBudgetMs} ms).`,
+    category: "insufficient_data",
+    sourceType: "unknown",
+    identifiedEntity: null,
+    evidencePack: {
+      providersUsed: evidencePack.providersUsed,
+      queries: evidencePack.queries,
+      items: evidencePack.items,
+      qualityAssessment: evidencePack.qualityAssessment,
+    },
+    biasIndicator: null,
+    evidenceCited: [],
+    caveats: ["Source reliability evaluation skipped because the per-domain budget was exhausted."],
+    transient: true,
+  };
+}
+
 /**
  * Run the LLM evaluation + refinement pipeline against an already-built,
  * already-quality-assessed evidence pack.
@@ -576,6 +607,30 @@ export async function evaluateSourceWithPinnedEvidencePack(
   // ============================================================================
   // STEP 1: Primary evaluation (Anthropic Claude)
   // ============================================================================
+  const remainingBeforePrimaryMs = getRemainingBudgetMs(
+    config.requestStartedAtMs,
+    config.requestBudgetMs,
+  );
+  if (
+    remainingBeforePrimaryMs !== null &&
+    remainingBeforePrimaryMs < config.minPrimaryRemainingBudgetMs
+  ) {
+    debugLog(`[SR-Eval] Skipping primary evaluation for ${domain} due to tight request budget`, {
+      domain,
+      remainingBudgetMs: remainingBeforePrimaryMs,
+      minPrimaryRemainingBudgetMs: config.minPrimaryRemainingBudgetMs,
+    });
+    return {
+      success: true,
+      data: buildBudgetGuardPayload(
+        domain,
+        evidencePack,
+        remainingBeforePrimaryMs,
+        config.minPrimaryRemainingBudgetMs,
+      ),
+    };
+  }
+
   const primary = await evaluateWithModel(domain, "anthropic", evidencePack, config);
   if (!primary) {
     debugLog(`[SR-Eval] Primary evaluation failed for ${domain}`);
@@ -630,6 +685,42 @@ export async function evaluateSourceWithPinnedEvidencePack(
   // ============================================================================
   // STEP 3: Sequential Refinement (GPT-5 mini cross-checks Claude's work)
   // ============================================================================
+  const remainingBeforeRefinementMs = getRemainingBudgetMs(
+    config.requestStartedAtMs,
+    config.requestBudgetMs,
+  );
+  if (
+    remainingBeforeRefinementMs !== null &&
+    remainingBeforeRefinementMs < config.minRefinementRemainingBudgetMs
+  ) {
+    debugLog(`[SR-Eval] Skipping refinement for ${domain} due to tight request budget`, {
+      domain,
+      remainingBudgetMs: remainingBeforeRefinementMs,
+      minRefinementRemainingBudgetMs: config.minRefinementRemainingBudgetMs,
+    });
+    const payload = buildResponsePayload(
+      primary.result,
+      primary.modelName,
+      config.openaiModel,
+      false,
+      evidencePack,
+      primary.result.score,
+      primary.result.confidence * 0.9,
+    );
+    applyLanguageDetectionCaveat(payload, domain);
+    applyEvidenceQualityAssessmentCaveat(payload, evidencePack);
+    payload.identifiedEntity = primary.result.identifiedEntity;
+    payload.refinementApplied = false;
+    payload.caveats = [
+      ...(payload.caveats ?? []),
+      "Refinement pass skipped because the remaining per-domain budget was below the configured guard.",
+    ];
+    return {
+      success: true,
+      data: payload,
+    };
+  }
+
   debugLog(`[SR-Eval] Starting sequential refinement for ${domain}...`);
 
   const refinement = await refineEvaluation(

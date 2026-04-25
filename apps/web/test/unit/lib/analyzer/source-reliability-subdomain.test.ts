@@ -18,6 +18,7 @@ import {
   getTrackRecordData,
   getTrackRecordScore,
   prefetchSourceReliability,
+  setSourceReliabilityConfig,
 } from "@/lib/analyzer/source-reliability";
 import { batchGetCachedData, setCachedScore } from "@/lib/source-reliability-cache";
 
@@ -137,6 +138,7 @@ describe("source-reliability subdomain fallback — evaluation", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    setSourceReliabilityConfig();
   });
 
   it("evaluates subdomain first; when subdomain returns null, also evaluates and caches root domain", async () => {
@@ -205,5 +207,80 @@ describe("source-reliability subdomain fallback — evaluation", () => {
 
     expect(mockedSetCachedScore).toHaveBeenCalledOnce();
     expect(mockedSetCachedScore.mock.calls[0][0]).toBe("wikipedia.org");
+  });
+
+  it("caps uncached live evaluations and marks skipped domains unknown", async () => {
+    stubFetchEvalSuccess(0.65);
+
+    const result = await prefetchSourceReliability(
+      [
+        "https://alpha.example.test/a",
+        "https://beta.example.test/b",
+        "https://gamma.example.test/c",
+      ],
+      {
+        fallback: false,
+        maxLiveEvaluations: 2,
+        budgetMs: 90000,
+      },
+    );
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2);
+    expect(result.evaluated).toBe(2);
+    expect(result.skippedDueToLimit).toBe(1);
+    expect(getTrackRecordScore("https://gamma.example.test/c")).toBeNull();
+  });
+
+  it("uses cache only when the live SR budget is exhausted", async () => {
+    stubFetchEvalSuccess(0.65);
+
+    const result = await prefetchSourceReliability(
+      ["https://alpha.example.test/a", "https://beta.example.test/b"],
+      {
+        fallback: false,
+        maxLiveEvaluations: 10,
+        budgetMs: 0,
+      },
+    );
+
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    expect(result.evaluated).toBe(0);
+    expect(result.skippedDueToBudget).toBe(2);
+    expect(getTrackRecordScore("https://alpha.example.test/a")).toBeNull();
+  });
+
+  it("applies the live-evaluation cap across root fallback evaluations", async () => {
+    stubFetchNullThenSuccess(1, 0.72);
+
+    const result = await prefetchSourceReliability(
+      ["https://en.wikipedia.org/wiki/Test"],
+      {
+        maxLiveEvaluations: 1,
+        budgetMs: 90000,
+      },
+    );
+
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    expect(mockedSetCachedScore).toHaveBeenCalledOnce();
+    expect(mockedSetCachedScore.mock.calls[0][0]).toBe("en.wikipedia.org");
+    expect(result.skippedDueToLimit).toBe(1);
+    expect(getTrackRecordScore("https://en.wikipedia.org/wiki/Test")).toBeNull();
+  });
+
+  it("passes the remaining per-domain budget to the internal evaluator", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => makeEvalResponse(0.65),
+    }));
+
+    await prefetchSourceReliability(["https://alpha.example.test/a"], {
+      fallback: false,
+      maxLiveEvaluations: 1,
+      budgetMs: 25000,
+    });
+
+    const body = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body));
+    expect(body.budgetMs).toBeLessThanOrEqual(25000);
+    expect(body.budgetMs).toBeGreaterThanOrEqual(10000);
   });
 });

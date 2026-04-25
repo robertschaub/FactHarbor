@@ -21,6 +21,7 @@ import {
   getPromptCachingOptions,
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
+import { recordLLMCall } from "./metrics-integration";
 import type { PipelineConfig } from "@/lib/config-schemas";
 
 // ── Types ───────────────────────────────────────────────────────────
@@ -42,6 +43,8 @@ export interface ScopeNormalizationResult {
   mergeMap: Record<number, number>;
   /** How many scopes were merged away (originalCount - normalizedScopes.length) */
   mergedCount: number;
+  /** Whether an LLM call was attempted for metrics/accounting. */
+  llmAttempted?: boolean;
 }
 
 // ── Zod Schema for LLM Output ──────────────────────────────────────
@@ -117,6 +120,7 @@ export function validateNormalizationOutput(
 export async function normalizeScopeEquivalence(
   uniqueScopes: UniqueScope[],
   pipelineConfig: PipelineConfig,
+  onEvent?: (message: string, progress: number) => void,
 ): Promise<ScopeNormalizationResult> {
   const scopeCount = uniqueScopes.length;
 
@@ -125,6 +129,7 @@ export async function normalizeScopeEquivalence(
     normalizedScopes: uniqueScopes,
     mergeMap: Object.fromEntries(uniqueScopes.map((s) => [s.index, s.index])),
     mergedCount: 0,
+    llmAttempted: false,
   };
 
   // Render the SCOPE_NORMALIZATION prompt
@@ -156,7 +161,10 @@ export async function normalizeScopeEquivalence(
 
   // Make Haiku-tier LLM call
   const model = getModelForTask("understand", undefined, pipelineConfig);
+  onEvent?.(`LLM call: scope normalization - ${model.modelName}`, -1);
   let llmOutput: ScopeNormalizationOutput;
+  let usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number } | undefined;
+  const llmCallStartedAt = Date.now();
   try {
     const result = await generateText({
       model: model.model,
@@ -177,30 +185,87 @@ export async function normalizeScopeEquivalence(
         pipelineConfig.llmProvider ?? "anthropic",
       ),
     });
+    usage = result.usage;
 
     const extracted = extractStructuredOutput(result);
     if (!extracted) {
+      recordLLMCall({
+        taskType: "cluster",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: usage?.inputTokens ?? 0,
+        completionTokens: usage?.outputTokens ?? 0,
+        totalTokens: usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: true,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Scope normalization returned no structured output",
+        timestamp: new Date(),
+      });
       console.info("[ScopeNorm] Failed to extract structured output from LLM, skipping normalization");
-      return identityResult;
+      return { ...identityResult, llmAttempted: true };
     }
     llmOutput = ScopeNormalizationOutputSchema.parse(extracted);
   } catch (err) {
+    recordLLMCall({
+      taskType: "cluster",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: usage?.inputTokens ?? 0,
+      completionTokens: usage?.outputTokens ?? 0,
+      totalTokens: usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      timestamp: new Date(),
+    });
     console.info("[ScopeNorm] LLM call failed, skipping normalization:", err);
-    return identityResult;
+    return { ...identityResult, llmAttempted: true };
   }
 
   // Validate LLM output
   const validation = validateNormalizationOutput(llmOutput, scopeCount);
   if (!validation.valid) {
+    recordLLMCall({
+      taskType: "cluster",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: usage?.inputTokens ?? 0,
+      completionTokens: usage?.outputTokens ?? 0,
+      totalTokens: usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: validation.reason,
+      timestamp: new Date(),
+    });
     console.info(`[ScopeNorm] LLM output validation failed: ${validation.reason}. Skipping normalization.`);
-    return identityResult;
+    return { ...identityResult, llmAttempted: true };
   }
+
+  recordLLMCall({
+    taskType: "cluster",
+    provider: model.provider,
+    modelName: model.modelName,
+    promptTokens: usage?.inputTokens ?? 0,
+    completionTokens: usage?.outputTokens ?? 0,
+    totalTokens: usage?.totalTokens ?? 0,
+    durationMs: Date.now() - llmCallStartedAt,
+    success: true,
+    schemaCompliant: true,
+    retries: 0,
+    timestamp: new Date(),
+  });
 
   // Check if any actual merges occurred
   const multiMemberGroups = llmOutput.equivalenceGroups.filter((g) => g.scopeIndices.length > 1);
   if (multiMemberGroups.length === 0) {
     console.info(`[ScopeNorm] No equivalent scopes found among ${scopeCount} scopes`);
-    return identityResult;
+    return { ...identityResult, llmAttempted: true };
   }
 
   // Build normalized scopes and merge map
@@ -232,7 +297,7 @@ export async function normalizeScopeEquivalence(
     `Groups: ${multiMemberGroups.map((g) => `[${g.scopeIndices.join(",")}]→${g.canonicalIndex}`).join(", ")}`,
   );
 
-  return { normalizedScopes, mergeMap, mergedCount };
+  return { normalizedScopes, mergeMap, mergedCount, llmAttempted: true };
 }
 
 /**

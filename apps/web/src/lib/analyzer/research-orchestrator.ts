@@ -16,8 +16,10 @@ import {
 } from "@/lib/config-loader";
 import {
   PipelineConfig,
-  SearchConfig
+  SearchConfig,
+  SourceReliabilityConfig,
 } from "@/lib/config-schemas";
+import { getConfig } from "@/lib/config-storage";
 import {
   checkAbortSignal,
   extractDomain,
@@ -513,6 +515,30 @@ export function finalizeClaimAcquisitionTelemetry(state: CBResearchState): void 
   }
 }
 
+export function collectSourceReliabilityUrls(
+  state: Pick<CBResearchState, "evidenceItems" | "sources">,
+): string[] {
+  const sourceUrlById = new Map(state.sources.map((source) => [source.id, source.url]));
+  const evidenceReferencesByUrl = new Map<string, number>();
+
+  for (const item of state.evidenceItems) {
+    const urls = new Set<string>();
+    if (item.sourceId) {
+      const sourceUrl = sourceUrlById.get(item.sourceId);
+      if (sourceUrl) urls.add(sourceUrl);
+    }
+    if (item.sourceUrl) urls.add(item.sourceUrl);
+
+    for (const url of urls) {
+      evidenceReferencesByUrl.set(url, (evidenceReferencesByUrl.get(url) ?? 0) + 1);
+    }
+  }
+
+  return Array.from(evidenceReferencesByUrl.entries())
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .map(([url]) => url);
+}
+
 /**
  * Stage 2: Gather evidence for each central claim using web search and LLM extraction.
  *
@@ -529,14 +555,16 @@ export async function researchEvidence(
 ): Promise<void> {
   state.researchedIterationsByClaim ??= {};
   const effectiveJobId = jobId ?? state.jobId;
-  const [pipelineResult, searchResult, calcResult] = await Promise.all([
+  const [pipelineResult, searchResult, calcResult, srResult] = await Promise.all([
     loadPipelineConfig("default", effectiveJobId),
     loadSearchConfig("default", effectiveJobId),
     loadCalcConfig("default", effectiveJobId),
+    getConfig("sr", "default", { jobId: effectiveJobId }),
   ]);
   const pipelineConfig = pipelineResult.config;
   const searchConfig = searchResult.config;
   const calcConfig = calcResult.config;
+  const srConfig = srResult.config as SourceReliabilityConfig;
 
   // Log config load status for research stage
   if (pipelineResult.contentHash === "__ERROR_FALLBACK__") {
@@ -547,6 +575,9 @@ export async function researchEvidence(
   }
   if (calcResult.contentHash === "__ERROR_FALLBACK__") {
     console.warn(`[Pipeline] UCM calc config load failed in researchEvidence — using hardcoded defaults.`);
+  }
+  if (srResult.contentHash === "__ERROR_FALLBACK__") {
+    console.warn(`[Pipeline] UCM source reliability config load failed in researchEvidence — using hardcoded defaults.`);
   }
 
   const currentDate = new Date().toISOString().split("T")[0];
@@ -782,10 +813,24 @@ export async function researchEvidence(
   // ------------------------------------------------------------------
   // Step 4: Batch SR-Eval for all collected sources (deferred from per-iteration)
   // ------------------------------------------------------------------
-  const allSourceUrls = state.sources.map((s) => s.url);
-  if (allSourceUrls.length > 0) {
-    state.onEvent?.("Evaluating source reliability...", 58);
-    const srPrefetch = await prefetchSourceReliability(allSourceUrls);
+  const sourceReliabilityUrls = collectSourceReliabilityUrls(state);
+  if (sourceReliabilityUrls.length > 0) {
+    state.onEvent?.(
+      `Evaluating source reliability for ${sourceReliabilityUrls.length}/${state.sources.length} evidence-linked source(s)...`,
+      58,
+    );
+    const srPrefetch = await prefetchSourceReliability(sourceReliabilityUrls, {
+      config: srConfig,
+      maxLiveEvaluations: srConfig.maxLiveEvaluationsPerRun,
+      budgetMs: srConfig.runtimeBudgetMs,
+      minEvaluationBudgetMs: srConfig.minLiveEvaluationBudgetMs,
+    });
+    if (srPrefetch.skippedDueToLimit > 0 || srPrefetch.skippedDueToBudget > 0) {
+      state.onEvent?.(
+        `Source reliability limited: ${srPrefetch.evaluated} evaluated, ${srPrefetch.cacheHits} cache hit(s), ${srPrefetch.skippedDueToLimit + srPrefetch.skippedDueToBudget} skipped.`,
+        -1,
+      );
+    }
     if (srPrefetch.errorCount > 0) {
       const failedDomainCount = srPrefetch.failedDomains.length;
       const domainCount = Math.max(1, srPrefetch.domains.length);
@@ -808,6 +853,10 @@ export async function researchEvidence(
           failedDomainRatio,
           failedDomains: srPrefetch.failedDomains.slice(0, 20),
           noConsensusCount: srPrefetch.noConsensusCount,
+          skippedDueToLimit: srPrefetch.skippedDueToLimit,
+          skippedDueToBudget: srPrefetch.skippedDueToBudget,
+          liveEvaluationLimit: srPrefetch.liveEvaluationLimit,
+          liveEvaluationBudgetMs: srPrefetch.liveEvaluationBudgetMs,
         },
       });
     }

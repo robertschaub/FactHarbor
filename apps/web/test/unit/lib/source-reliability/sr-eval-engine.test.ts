@@ -45,6 +45,8 @@ function makeConfig(): SrEvalConfig {
     },
     requestStartedAtMs: Date.now(),
     requestBudgetMs: null,
+    minPrimaryRemainingBudgetMs: 15000,
+    minRefinementRemainingBudgetMs: 20000,
   };
 }
 
@@ -196,5 +198,65 @@ describe("evaluateSourceWithPinnedEvidencePack sparse insufficient-data fast pat
 
     expect(result.success).toBe(true);
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
+  });
+
+  it("skips primary evaluation when the per-domain budget is already exhausted", async () => {
+    const config = makeConfig();
+    config.requestStartedAtMs = Date.now() - 10_000;
+    config.requestBudgetMs = 10_000;
+
+    const result = await evaluateSourceWithPinnedEvidencePack(
+      "example.com",
+      makeEvidencePack(["E1", "E2"]),
+      true,
+      0.8,
+      config,
+    );
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.transient).toBe(true);
+    expect(result.data.modelPrimary).toBe("budget_guard");
+    expect(mockGenerateText).not.toHaveBeenCalled();
+  });
+
+  it("skips refinement when the remaining per-domain budget is below the refinement guard", async () => {
+    mockGenerateText.mockResolvedValueOnce({
+      text: JSON.stringify({
+        domain: "example.com",
+        sourceType: "unknown",
+        score: 0.5,
+        confidence: 0.6,
+        reasoning: "Primary pass completed.",
+        factualRating: "mixed",
+        evidenceCited: [
+          {
+            claim: "Evidence exists",
+            basis: "See E1",
+            evidenceId: "E1",
+          },
+        ],
+        caveats: [],
+      }),
+    });
+
+    const config = makeConfig();
+    config.requestStartedAtMs = Date.now();
+    config.requestBudgetMs = 25_000;
+    config.minRefinementRemainingBudgetMs = 30_000;
+
+    const result = await evaluateSourceWithPinnedEvidencePack(
+      "example.com",
+      makeEvidencePack(["E1", "E2"]),
+      true,
+      0.8,
+      config,
+    );
+
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.modelSecondary).toBe("gpt-5-mini");
+    expect(result.data.refinementApplied).toBe(false);
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
   });
 });

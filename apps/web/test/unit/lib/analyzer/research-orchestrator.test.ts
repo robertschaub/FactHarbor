@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   classifyRelevanceWithJobCache,
+  collectSourceReliabilityUrls,
   finalizeClaimAcquisitionTelemetry,
   recordApplicabilityRemovalTelemetry,
   recordSeededEvidenceTelemetry,
@@ -204,5 +205,26 @@ describe("research-orchestrator telemetry helpers", () => {
 
     expect(changed.cacheHit).toBe(false);
     expect(classifier).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("collectSourceReliabilityUrls", () => {
+  it("uses evidence-linked source URLs and ignores fetched sources that produced no evidence", () => {
+    const state = createState(["AC_01"]);
+    state.sources = [
+      { id: "SRC_A", url: "https://source-a.example.test/a" },
+      { id: "SRC_B", url: "https://source-b.example.test/b" },
+      { id: "SRC_UNUSED", url: "https://unused.example.test/c" },
+    ] as any;
+    state.evidenceItems = [
+      { id: "EV_01", sourceId: "SRC_B", sourceUrl: "https://source-b.example.test/b" },
+      { id: "EV_02", sourceId: "SRC_A", sourceUrl: "https://source-a.example.test/a" },
+      { id: "EV_03", sourceId: "SRC_B", sourceUrl: "https://source-b.example.test/b" },
+    ] as EvidenceItem[];
+
+    expect(collectSourceReliabilityUrls(state)).toEqual([
+      "https://source-b.example.test/b",
+      "https://source-a.example.test/a",
+    ]);
   });
 });

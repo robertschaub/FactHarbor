@@ -1289,6 +1289,11 @@ export const SourceReliabilityConfigSchema = z.object({
   // === Performance & Reliability ===
   evalConcurrency: z.number().int().min(1).max(10).optional().describe("Max concurrent SR evaluations (default: 5)"),
   evalTimeoutMs: z.number().int().min(10000).max(300000).optional().describe("Timeout for individual SR evaluations (ms) (default: 90000)"),
+  maxLiveEvaluationsPerRun: z.number().int().min(0).max(50).optional().describe("Maximum uncached live SR domain evaluations per analysis run (cache lookups are unaffected)"),
+  runtimeBudgetMs: z.number().int().min(0).max(300000).optional().describe("Wall-clock budget for live SR prefetch work per analysis run; 0 means cache-only"),
+  minLiveEvaluationBudgetMs: z.number().int().min(0).max(60000).optional().describe("Minimum remaining SR prefetch budget required before starting a live domain evaluation"),
+  minPrimaryRemainingBudgetMs: z.number().int().min(0).max(300000).optional().describe("Minimum per-domain budget required before starting primary SR evaluation"),
+  minRefinementRemainingBudgetMs: z.number().int().min(0).max(300000).optional().describe("Minimum per-domain budget required before starting SR refinement"),
   defaultConfidence: z.number().min(0).max(1).optional().describe("Default confidence for missing track records (default: 0.8)"),
 
 });
@@ -1341,6 +1346,11 @@ export const DEFAULT_SR_CONFIG: SourceReliabilityConfig = {
   },
   evalConcurrency: 5,
   evalTimeoutMs: 90000,
+  maxLiveEvaluationsPerRun: 12,
+  runtimeBudgetMs: 90000,
+  minLiveEvaluationBudgetMs: 10000,
+  minPrimaryRemainingBudgetMs: 15000,
+  minRefinementRemainingBudgetMs: 20000,
   defaultConfidence: 0.8,
 };
 

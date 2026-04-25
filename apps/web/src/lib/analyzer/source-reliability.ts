@@ -38,6 +38,11 @@ export const SR_CONFIG = {
   skipTlds: sharedConfig.skipTlds,
   evalConcurrency: sharedConfig.evalConcurrency ?? 5,
   evalTimeoutMs: sharedConfig.evalTimeoutMs ?? 90000,
+  maxLiveEvaluationsPerRun: sharedConfig.maxLiveEvaluationsPerRun ?? 12,
+  runtimeBudgetMs: sharedConfig.runtimeBudgetMs ?? 90000,
+  minLiveEvaluationBudgetMs: sharedConfig.minLiveEvaluationBudgetMs ?? 10000,
+  minPrimaryRemainingBudgetMs: sharedConfig.minPrimaryRemainingBudgetMs ?? 15000,
+  minRefinementRemainingBudgetMs: sharedConfig.minRefinementRemainingBudgetMs ?? 20000,
   defaultConfidence: sharedConfig.defaultConfidence ?? 0.8,
 };
 
@@ -63,6 +68,11 @@ export function setSourceReliabilityConfig(config?: SourceReliabilityConfig): vo
   SR_CONFIG.skipTlds = next.skipTlds;
   SR_CONFIG.evalConcurrency = next.evalConcurrency ?? 5;
   SR_CONFIG.evalTimeoutMs = next.evalTimeoutMs ?? 90000;
+  SR_CONFIG.maxLiveEvaluationsPerRun = next.maxLiveEvaluationsPerRun ?? 12;
+  SR_CONFIG.runtimeBudgetMs = next.runtimeBudgetMs ?? 90000;
+  SR_CONFIG.minLiveEvaluationBudgetMs = next.minLiveEvaluationBudgetMs ?? 10000;
+  SR_CONFIG.minPrimaryRemainingBudgetMs = next.minPrimaryRemainingBudgetMs ?? 15000;
+  SR_CONFIG.minRefinementRemainingBudgetMs = next.minRefinementRemainingBudgetMs ?? 20000;
   SR_CONFIG.defaultConfidence = next.defaultConfidence ?? 0.8;
   setCacheTtlDays(next.cacheTtlDays);
 }
@@ -106,10 +116,17 @@ export function extractDomain(url: string): string | null {
  * Uses a blacklist approach: skip known blog platforms and spam TLDs.
  */
 export function isImportantSource(domain: string): boolean {
-  if (!SR_CONFIG.filterEnabled) return true;
+  return isImportantSourceWithConfig(domain, SR_CONFIG);
+}
+
+function isImportantSourceWithConfig(
+  domain: string,
+  config: Pick<SourceReliabilityConfig, "filterEnabled" | "skipPlatforms" | "skipTlds">,
+): boolean {
+  if (!config.filterEnabled) return true;
 
   // 1. Skip user-content platforms (configurable list)
-  if (SR_CONFIG.skipPlatforms.some((p) => domain.includes(p))) {
+  if (config.skipPlatforms.some((p) => domain.includes(p))) {
     return false;
   }
 
@@ -120,7 +137,7 @@ export function isImportantSource(domain: string): boolean {
 
   // 3. Skip exotic/spam-associated TLDs (configurable list)
   const tld = domain.split(".").pop()?.toLowerCase() || "";
-  if (SR_CONFIG.skipTlds.includes(tld)) {
+  if (config.skipTlds.includes(tld)) {
     return false;
   }
 
@@ -148,6 +165,18 @@ export interface PrefetchResult {
   errorByType: Record<SourceReliabilityErrorType, number>;
   failedDomains: string[];
   errorSamples: SourceReliabilityErrorEvent[];
+  skippedDueToLimit: number;
+  skippedDueToBudget: number;
+  liveEvaluationLimit: number;
+  liveEvaluationBudgetMs: number | null;
+}
+
+export interface PrefetchSourceReliabilityOptions {
+  fallback?: boolean;
+  config?: SourceReliabilityConfig;
+  maxLiveEvaluations?: number;
+  budgetMs?: number;
+  minEvaluationBudgetMs?: number;
 }
 
 export type SourceReliabilityErrorType =
@@ -182,8 +211,29 @@ function emptySourceReliabilityErrorCounts(): Record<SourceReliabilityErrorType,
   };
 }
 
-export async function prefetchSourceReliability(urls: string[], options?: { fallback?: boolean }): Promise<PrefetchResult> {
+export async function prefetchSourceReliability(
+  urls: string[],
+  options?: PrefetchSourceReliabilityOptions,
+): Promise<PrefetchResult> {
   const useRootFallback = options?.fallback ?? true;
+  const runtimeConfig = options?.config ?? getSRConfig();
+  const evalConcurrency = runtimeConfig.evalConcurrency ?? 5;
+  const evalTimeoutMs = runtimeConfig.evalTimeoutMs ?? 90000;
+  const maxLiveEvaluations = Math.max(
+    0,
+    Math.floor(options?.maxLiveEvaluations ?? runtimeConfig.maxLiveEvaluationsPerRun ?? 12),
+  );
+  const liveEvaluationBudgetMs = options?.budgetMs ?? runtimeConfig.runtimeBudgetMs ?? 90000;
+  const minEvaluationBudgetMs = Math.max(
+    0,
+    options?.minEvaluationBudgetMs ?? runtimeConfig.minLiveEvaluationBudgetMs ?? 10000,
+  );
+  const budgetDeadlineMs =
+    liveEvaluationBudgetMs === undefined || liveEvaluationBudgetMs === null
+      ? null
+      : Date.now() + Math.max(0, liveEvaluationBudgetMs);
+  let liveEvaluationsStarted = 0;
+
   const result: PrefetchResult = {
     domains: [],
     alreadyPrefetched: 0,
@@ -194,9 +244,13 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
     errorByType: emptySourceReliabilityErrorCounts(),
     failedDomains: [],
     errorSamples: [],
+    skippedDueToLimit: 0,
+    skippedDueToBudget: 0,
+    liveEvaluationLimit: maxLiveEvaluations,
+    liveEvaluationBudgetMs: liveEvaluationBudgetMs ?? null,
   };
   
-  if (!SR_CONFIG.enabled) {
+  if (!runtimeConfig.enabled) {
     console.log("[SR] Source reliability disabled");
     return result;
   }
@@ -251,15 +305,41 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
   // Find cache misses that need evaluation
   const misses = newDomains.filter((d) => !prefetchedData.has(d));
 
-  // **PERFORMANCE FIX**: Parallelize SR evaluations with concurrency limit
-  // Each domain evaluation takes ~15-25 seconds (web searches + 2 LLM calls)
-  // Processing serially caused 10+ minute delays with 39 domains
-  // Concurrency=3 reduces SR-Eval time by ~3x
-  const SR_EVAL_CONCURRENCY = SR_CONFIG.evalConcurrency;
+  const getRemainingBudgetMs = (): number | null => {
+    if (budgetDeadlineMs === null) return null;
+    return Math.max(0, budgetDeadlineMs - Date.now());
+  };
+
+  const reserveLiveEvaluation = (domain: string): { allowed: true; budgetMs: number } | { allowed: false; reason: "limit" | "budget" } => {
+    if (liveEvaluationsStarted >= maxLiveEvaluations) {
+      result.skippedDueToLimit++;
+      prefetchedData.set(domain, null);
+      return { allowed: false, reason: "limit" };
+    }
+
+    const remainingBudgetMs = getRemainingBudgetMs();
+    if (
+      remainingBudgetMs !== null &&
+      (remainingBudgetMs <= 0 || remainingBudgetMs < minEvaluationBudgetMs)
+    ) {
+      result.skippedDueToBudget++;
+      prefetchedData.set(domain, null);
+      return { allowed: false, reason: "budget" };
+    }
+
+    liveEvaluationsStarted++;
+    return {
+      allowed: true,
+      budgetMs: Math.max(
+        minEvaluationBudgetMs,
+        Math.min(evalTimeoutMs, remainingBudgetMs ?? evalTimeoutMs),
+      ),
+    };
+  };
 
   // Core evaluation function: evaluate ONE domain, store result in cache and prefetchedData.
-  const evaluateDomain = async (domain: string): Promise<CachedReliabilityData | null> => {
-    if (!isImportantSource(domain)) {
+  const evaluateDomain = async (domain: string, budgetMs: number): Promise<CachedReliabilityData | null> => {
+    if (!isImportantSourceWithConfig(domain, runtimeConfig)) {
       console.log(`[SR] Skipping unimportant source: ${domain}`);
       prefetchedData.set(domain, null);
       return null;
@@ -267,15 +347,22 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
 
     try {
       let hadEvalError = false;
-      const evalResult = await evaluateSourceInternal(domain, (errInfo) => {
+      const evalResult = await evaluateSourceInternal(domain, runtimeConfig, (errInfo) => {
         hadEvalError = true;
         result.errorCount++;
         result.errorByType[errInfo.type] = (result.errorByType[errInfo.type] ?? 0) + 1;
         if (!result.failedDomains.includes(domain)) result.failedDomains.push(domain);
         if (result.errorSamples.length < 20) result.errorSamples.push(errInfo);
-      });
+      }, budgetMs);
 
       if (evalResult) {
+        if (evalResult.transient) {
+          prefetchedData.set(domain, null);
+          result.noConsensusCount++;
+          console.log(`[SR] Transient evaluation skipped for ${domain}: ${evalResult.reasoning ?? "budget guard"}`);
+          return null;
+        }
+
         const data: CachedReliabilityData = {
           score: evalResult.score,
           confidence: evalResult.confidence,
@@ -330,14 +417,46 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
     }
   };
 
+  const evaluateDomainsWithLimits = async (domainsToEvaluate: string[], label: string): Promise<void> => {
+    const uniqueDomainsToEvaluate = [...new Set(domainsToEvaluate)];
+    let i = 0;
+    let batchIndex = 0;
+
+    while (i < uniqueDomainsToEvaluate.length) {
+      const batch: Array<{ domain: string; budgetMs: number }> = [];
+
+      while (i < uniqueDomainsToEvaluate.length && batch.length < evalConcurrency) {
+        const domain = uniqueDomainsToEvaluate[i++];
+        if (prefetchedData.has(domain)) continue;
+
+        if (!isImportantSourceWithConfig(domain, runtimeConfig)) {
+          console.log(`[SR] Skipping unimportant source: ${domain}`);
+          prefetchedData.set(domain, null);
+          continue;
+        }
+
+        const reservation = reserveLiveEvaluation(domain);
+        if (!reservation.allowed) {
+          console.log(`[SR] Skipping live evaluation for ${domain}: ${reservation.reason}`);
+          continue;
+        }
+
+        batch.push({ domain, budgetMs: reservation.budgetMs });
+      }
+
+      if (batch.length === 0) continue;
+
+      batchIndex++;
+      const totalBatches = Math.ceil(uniqueDomainsToEvaluate.length / Math.max(1, evalConcurrency));
+      console.log(`[SR] ${label} batch ${batchIndex}/${totalBatches}: ${batch.map((item) => item.domain).join(", ")}`);
+      await Promise.all(batch.map((item) => evaluateDomain(item.domain, item.budgetMs)));
+    }
+  };
+
   // Pass 1: evaluate every miss domain directly (no root redirect).
   // Each domain is evaluated on its own merits and its result stored under its own name.
   const uniqueMisses = [...new Set(misses)];
-  for (let i = 0; i < uniqueMisses.length; i += SR_EVAL_CONCURRENCY) {
-    const batch = uniqueMisses.slice(i, i + SR_EVAL_CONCURRENCY);
-    console.log(`[SR] Pass 1 batch ${Math.floor(i / SR_EVAL_CONCURRENCY) + 1}/${Math.ceil(uniqueMisses.length / SR_EVAL_CONCURRENCY)}: ${batch.join(", ")}`);
-    await Promise.all(batch.map(d => evaluateDomain(d)));
-  }
+  await evaluateDomainsWithLimits(uniqueMisses, "Pass 1");
 
   // Pass 2 (fallback enabled only): for domains whose score is still null after Pass 1,
   // evaluate their root domain. The root domain result is stored under its own name and the
@@ -379,24 +498,23 @@ export async function prefetchSourceReliability(urls: string[], options?: { fall
       }
 
       // Evaluate root domains not found in cache
-      for (let i = 0; i < rootsToEvaluate.length; i += SR_EVAL_CONCURRENCY) {
-        const batch = rootsToEvaluate.slice(i, i + SR_EVAL_CONCURRENCY);
-        console.log(`[SR] Pass 2 (root fallback) batch: ${batch.join(", ")}`);
-        await Promise.all(batch.map(async root => {
-          await evaluateDomain(root);
-          // Update in-memory map for null-score subdomains so sync lookup returns root's score
-          const rootData = prefetchedData.get(root);
-          if (rootData && rootData.score !== null) {
-            for (const subdomain of rootsNeeded.get(root) ?? []) {
-              prefetchedData.set(subdomain, rootData);
-            }
+      await evaluateDomainsWithLimits(rootsToEvaluate, "Pass 2 (root fallback)");
+      for (const root of rootsToEvaluate) {
+        const rootData = prefetchedData.get(root);
+        if (rootData && rootData.score !== null) {
+          for (const subdomain of rootsNeeded.get(root) ?? []) {
+            prefetchedData.set(subdomain, rootData);
           }
-        }));
+        }
       }
     }
   }
 
-  console.log(`[SR] Prefetch complete: ${prefetchedData.size} domains total`);
+  console.log(
+    `[SR] Prefetch complete: ${prefetchedData.size} domains total; ` +
+    `${result.evaluated} evaluated, ${result.cacheHits} cache hit(s), ` +
+    `${result.skippedDueToLimit} skipped by limit, ${result.skippedDueToBudget} skipped by budget`,
+  );
   if (result.errorCount > 0) {
     console.warn(
       `[SR] Prefetch had ${result.errorCount} evaluation error(s) across ${result.failedDomains.length} domain(s). ` +
@@ -498,6 +616,7 @@ interface EvaluationResult {
   caveats?: string[];
   identifiedEntity?: string | null;
   sourceType?: string | null;
+  transient?: boolean;
 }
 
 /**
@@ -506,13 +625,18 @@ interface EvaluationResult {
  */
 async function evaluateSourceInternal(
   domain: string,
+  config: SourceReliabilityConfig,
   onError?: (event: SourceReliabilityErrorEvent) => void,
+  budgetMs?: number,
 ): Promise<EvaluationResult | null> {
   const baseUrl = process.env.FH_INTERNAL_API_URL || "http://localhost:3000";
   const runnerKey = process.env.FH_INTERNAL_RUNNER_KEY || "";
 
   // **P0 FIX**: Add timeout to prevent indefinite hangs (90 sec max per domain)
-  const EVAL_TIMEOUT_MS = SR_CONFIG.evalTimeoutMs;
+  const EVAL_TIMEOUT_MS = Math.max(
+    10000,
+    Math.min(config.evalTimeoutMs ?? 90000, budgetMs ?? config.evalTimeoutMs ?? 90000),
+  );
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), EVAL_TIMEOUT_MS);
 
@@ -525,9 +649,9 @@ async function evaluateSourceInternal(
       },
       body: JSON.stringify({
         domain,
-        multiModel: SR_CONFIG.multiModel,
-        confidenceThreshold: SR_CONFIG.confidenceThreshold,
-        consensusThreshold: SR_CONFIG.consensusThreshold,
+        multiModel: config.multiModel,
+        confidenceThreshold: config.confidenceThreshold,
+        consensusThreshold: config.consensusThreshold,
         budgetMs: EVAL_TIMEOUT_MS,
       }),
       signal: controller.signal,

@@ -35,7 +35,7 @@ import { evaluateSourceWithConsensus } from "@/lib/source-reliability/sr-eval-en
 import type { SrEvalConfig } from "@/lib/source-reliability/sr-eval-types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60; // Allow up to 60s for multi-model evaluation
+export const maxDuration = 300; // Match the request schema's maximum per-domain budget.
 
 // ============================================================================
 // CONFIGURATION DIAGNOSTICS (logs once on module load)
@@ -242,6 +242,8 @@ export async function POST(req: Request) {
     evidenceQualityAssessment: evidenceQualityAssessmentConfig,
     requestStartedAtMs,
     requestBudgetMs,
+    minPrimaryRemainingBudgetMs: srConfig.minPrimaryRemainingBudgetMs ?? DEFAULT_SR_CONFIG.minPrimaryRemainingBudgetMs ?? 15000,
+    minRefinementRemainingBudgetMs: srConfig.minRefinementRemainingBudgetMs ?? DEFAULT_SR_CONFIG.minRefinementRemainingBudgetMs ?? 20000,
   };
 
   // Rate limiting

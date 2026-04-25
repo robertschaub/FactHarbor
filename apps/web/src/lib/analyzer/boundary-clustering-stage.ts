@@ -92,14 +92,22 @@ export async function clusterBoundaries(
 
   if (scopeNormEnabled && uniqueScopes.length >= scopeNormMinScopes) {
     try {
-      const normResult = await normalizeScopeEquivalence(uniqueScopes, pipelineConfig);
+      state.onEvent?.(`Normalizing ${uniqueScopes.length} evidence scope(s)...`, -1);
+      const normResult = await normalizeScopeEquivalence(uniqueScopes, pipelineConfig, state.onEvent);
+      if (normResult.llmAttempted) {
+        state.llmCalls++;
+      }
+      state.onEvent?.(
+        `Scope normalization complete: ${uniqueScopes.length} -> ${normResult.normalizedScopes.length} scope(s).`,
+        -1,
+      );
       if (normResult.mergedCount > 0) {
         repointEvidenceScopes(state.evidenceItems, normResult);
         effectiveScopes = normResult.normalizedScopes;
-        state.llmCalls++;
       }
     } catch (err) {
       console.info("[Stage3] Scope normalization failed (non-fatal), proceeding with original scopes:", err);
+      state.onEvent?.("Scope normalization failed; continuing with original scopes.", -1);
     }
   }
 

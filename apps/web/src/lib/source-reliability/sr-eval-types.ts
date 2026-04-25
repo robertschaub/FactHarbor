@@ -126,6 +126,8 @@ export interface SrEvalConfig {
   evidenceQualityAssessment: EvidenceQualityAssessmentConfig;
   requestStartedAtMs: number;
   requestBudgetMs: number | null;
+  minPrimaryRemainingBudgetMs: number;
+  minRefinementRemainingBudgetMs: number;
 }
 
 // ============================================================================
@@ -264,6 +266,8 @@ export interface ResponsePayload {
   refinementNotes?: string;
   /** Sequential refinement: Original score before refinement */
   originalScore?: number | null;
+  /** Transient responses are safe fallbacks for this request and should not be cached. */
+  transient?: boolean;
 }
 
 export interface EvaluationError {
