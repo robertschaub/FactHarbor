@@ -50,3 +50,18 @@ Entries not re-confirmed under newer prompt/runtime provenance become `status: u
 - **Observed behavior:** Benchmark job `7be084ee2c52441894a0d4a5c67213ec` regressed from recent successful run `c95d00114cc54e6da201237d1ab59218` even though the runtime path had no analyzer code changes. The good run preserved the SEM 2025 umbrella-total path and found `stat-jahr-2025-kommentar-d.pdf`; the bad run instead collapsed onto 2024 yearly stats, under-threshold framing, and partial status counts.
 - **Recommended fix:** Narrow or relocate the comparative-ecosystem bullets introduced in `3add5697` so they remain effective for CH/DE ecosystem comparisons without living as broad, high-salience additions in the generic Stage 1 / Stage 2 prompt path. Pair that with a slightly harder current-total reacquisition rule for thresholded `current_snapshot` population claims.
 - **Mitigation applied:** 2026-04-19 prompt revision wraps the comparative-ecosystem instructions in `CLAIM_EXTRACTION_PASS1`, `CLAIM_EXTRACTION_PASS2`, and `GENERATE_QUERIES` behind explicit `ONLY for comparative ecosystem claims` gates, adds generic negative exclusions for present-state metrics / rankings / threshold comparisons / other current measurable values, and moves the present-state metric query guards ahead of the ecosystem block in `GENERATE_QUERIES`. Focused prompt-contract tests pass, but no post-fix live rerun has completed yet, so the issue is downgraded to `unconfirmed`, not `resolved`.
+
+## PI-004 — Comparator-precedent default conflicted with numeric-comparison evidence direction (P3)
+- **Type:** SYSTEMIC
+- **Severity:** HIGH
+- **Confidence:** CONFIRMED
+- **Prompt:** `claimboundary.prompt.md`, section: `EXTRACT_EVIDENCE`
+- **Prompt hash:** `e3f8b764ec0c03928e6915af3a15218a0c2083854b96c0b7ae38240f6c2c3d60`
+- **Coverage:** BLOB-EXACT
+- **First seen:** commit `1b994eb04eb4ad7fb8b3b372d36bcf84c527e403` — 2026-04-25
+- **Last confirmed:** commit `1b994eb04eb4ad7fb8b3b372d36bcf84c527e403` — 2026-04-25
+- **Status:** open
+- **Description:** `EXTRACT_EVIDENCE` contained both a generic comparator/precedent default saying comparator evidence is normally `contextual` and a numeric-comparison rule saying one-sided current/reference values can be directional when the relation is clear. Without an explicit precedence rule, the model could classify direct current-versus-reference numeric evidence as neutral/contextual, causing later citation sanitation to remove decisive citations.
+- **Observed behavior:** Job `4070a74a47b04fc3944d785dd68a5a56` for the exact Captain-defined current-versus-historical comparison found direct, high-probative comparator evidence for AC_02, but the final verdict cited direct items `EV_004` and `EV_005` whose `claimDirection` remained `neutral`. The citation integrity guard correctly stripped them as `neutral_claim_direction` and safely downgraded AC_02 to `UNVERIFIED` (`verdict_integrity_failure`).
+- **Recommended fix:** Clarify, in topic-neutral terms, that the target-object comparator/precedent default does not override numeric comparison claims, and that source-native current-side or reference-side values on the stated metric route should be classified directionally when the relationship is clear.
+- **Mitigation applied:** 2026-04-25 prompt revision adds the explicit precedence rule in `EXTRACT_EVIDENCE` and extends `verdict-prompt-contract.test.ts` to guard it. Focused prompt-contract tests pass. A post-reseed live rerun is still required before marking this resolved.

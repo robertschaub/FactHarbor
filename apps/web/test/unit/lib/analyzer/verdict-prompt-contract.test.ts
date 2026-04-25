@@ -681,6 +681,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");
       expect(section).toContain("classify the evidence as `supports` or `contradicts` when the numeric relationship is clear");
       expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied");
+      expect(section).toContain("This target-object comparator/precedent default does NOT override numeric comparison claims");
+      expect(section).toContain("This rule has priority over the target-object comparator/precedent default above");
+      expect(section).toContain("Do not leave source-native current-side or reference-side values `contextual` solely because the source reports only one side of the comparison");
     });
 
     it("exception requires finding to be about the directly evaluated target, not just the same institution", () => {
