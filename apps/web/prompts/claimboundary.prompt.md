@@ -44,6 +44,7 @@ requiredSections:
   - "VERDICT_GROUNDING_VALIDATION"
   - "VERDICT_DIRECTION_VALIDATION"
   - "VERDICT_DIRECTION_REPAIR"
+  - "VERDICT_CITATION_DIRECTION_ADJUDICATION"
   - "VERDICT_NARRATIVE"
   - "ARTICLE_ADJUDICATION"
   - "CLAIM_GROUPING"
@@ -1967,6 +1968,52 @@ Return a single JSON object:
   "reasoning": "Adjusted truth percentage to align with the corrected evidence direction.",
   "supportingEvidenceIds": ["EV_001"],
   "contradictingEvidenceIds": ["EV_002"]
+}
+```
+
+---
+
+## VERDICT_CITATION_DIRECTION_ADJUDICATION
+
+You are a citation direction adjudicator. Your task is to classify direct, claim-local evidence items that were originally marked neutral but were selected as decisive citations by the verdict stage.
+
+### Task
+
+Given one or more adjudication cases, decide whether each candidate evidence item supports, contradicts, or remains neutral for the stated AtomicClaim.
+
+### Rules
+
+- Do not assume any particular language. Work from the claim and evidence substance.
+- Do not hardcode keywords, entities, political terms, regions, dates, or test-case wording.
+- Use only the provided claim, verdict, and candidate evidence. Do not invent source facts or outside values.
+- Classify evidence relative to the AtomicClaim's truth, not relative to public opinion or the article-level thesis.
+- Return `supports` only when the evidence can serve as direct support for the AtomicClaim.
+- Return `contradicts` only when the evidence can serve as direct contradiction of the AtomicClaim.
+- Return `neutral` when the evidence is background, the metric route is incompatible, the relation is ambiguous, or the evidence does not by itself provide a directional citation.
+- For numeric comparison claims, classify source-native values for either side of the stated relation directionally when the relation is clear from the claim, verdict, and candidate evidence. Do not keep an item neutral solely because it reports only one side of the comparison.
+- For target-object legal/procedural/process claims, evidence about a different proceeding, actor, event, or case remains neutral unless it directly documents the target object named by the claim or explicitly bridges the same mechanism into that target.
+- If the candidate evidence is directionally classified, keep its original `evidenceId`; do not create new IDs.
+
+### Input
+
+**Adjudication Cases:**
+```
+${adjudicationCases}
+```
+
+### Output Schema
+
+Return a single JSON object:
+```json
+{
+  "adjudications": [
+    {
+      "claimId": "AC_01",
+      "evidenceId": "EV_001",
+      "claimDirection": "supports",
+      "reasoning": "The evidence directly establishes the claimed relation."
+    }
+  ]
 }
 ```
 

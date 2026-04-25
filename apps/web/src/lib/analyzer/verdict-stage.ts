@@ -1637,8 +1637,20 @@ export async function validateVerdicts(
     validated.push(current);
   }
 
+  const citationAdjudicated = repairContext
+    ? await adjudicateNeutralCitationDirections(
+      validated,
+      evidence,
+      repairContext.claims,
+      llmCall,
+      config,
+      warnings,
+      repairContext.deferredCitationIntegrityCollapses,
+    )
+    : validated;
+
   return enforceVerdictCitationIntegrity(
-    validated,
+    citationAdjudicated,
     evidence,
     repairContext?.validatedChallengeDoc,
     warnings,
@@ -2330,6 +2342,238 @@ function deriveDirectionalCitationsFromEvidencePool(
     supportingEvidenceIds: Array.from(new Set(supportingEvidenceIds)),
     contradictingEvidenceIds: Array.from(new Set(contradictingEvidenceIds)),
   };
+}
+
+type CitationDirectionAdjudication = {
+  claimId: string;
+  evidenceId: string;
+  claimDirection: "supports" | "contradicts" | "neutral";
+  reasoning?: string;
+};
+
+type NeutralCitationAdjudicationCase = {
+  claimId: string;
+  claimText: string;
+  truthPercentage: number;
+  verdict: ClaimVerdict7Point;
+  decisiveSide: VerdictCitationBucket;
+  candidates: Array<{
+    evidenceId: string;
+    originalBucket: VerdictCitationBucket;
+    statement: string;
+    sourceType?: SourceType;
+    probativeValue?: EvidenceItem["probativeValue"];
+    applicability?: EvidenceItem["applicability"];
+    evidenceScope?: EvidenceItem["evidenceScope"];
+    sourceUrl?: string;
+  }>;
+};
+
+type NeutralCitationCandidate = NeutralCitationAdjudicationCase["candidates"][number];
+
+function normalizeCitationDirectionAdjudications(raw: unknown): CitationDirectionAdjudication[] {
+  const payload = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).adjudications)
+      ? (raw as { adjudications: unknown[] }).adjudications
+      : [];
+
+  return payload
+    .map((item): CitationDirectionAdjudication | null => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      const claimId = typeof record.claimId === "string" ? record.claimId : "";
+      const evidenceId = typeof record.evidenceId === "string" ? record.evidenceId : "";
+      const claimDirection = record.claimDirection;
+      if (
+        !claimId
+        || !evidenceId
+        || (claimDirection !== "supports" && claimDirection !== "contradicts" && claimDirection !== "neutral")
+      ) {
+        return null;
+      }
+      return {
+        claimId,
+        evidenceId,
+        claimDirection,
+        reasoning: typeof record.reasoning === "string" ? record.reasoning : undefined,
+      };
+    })
+    .filter((item): item is CitationDirectionAdjudication => Boolean(item));
+}
+
+function isSingleClaimScopedEvidence(item: EvidenceItem, claimId: string): boolean {
+  return Array.isArray(item.relevantClaimIds)
+    && item.relevantClaimIds.length === 1
+    && item.relevantClaimIds[0] === claimId;
+}
+
+function buildNeutralCitationAdjudicationCases(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  claims: AtomicClaim[],
+  deferredCollapses?: DeferredCitationIntegrityCollapse[],
+): NeutralCitationAdjudicationCase[] {
+  if (!deferredCollapses?.length) return [];
+
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const claimById = new Map(claims.map((claim) => [claim.id, claim]));
+  const verdictByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
+  const cases: NeutralCitationAdjudicationCase[] = [];
+
+  for (const collapse of deferredCollapses) {
+    const verdict = verdictByClaim.get(collapse.claimId);
+    const claim = claimById.get(collapse.claimId);
+    if (!verdict || !claim) continue;
+
+    const decisiveSide = decisiveCitationSideForVerdict(verdict);
+    if (!decisiveSide || missingCurrentDecisiveCitationSide(verdict) !== decisiveSide) continue;
+
+    const candidates = collapse.droppedCitations
+      .filter((drop) => drop.reason === "neutral_claim_direction" && drop.bucket === decisiveSide)
+      .map((drop): NeutralCitationCandidate | null => {
+        const item = evidenceById.get(drop.id);
+        if (
+          !item
+          || item.claimDirection !== "neutral"
+          || item.applicability !== "direct"
+          || !isSingleClaimScopedEvidence(item, collapse.claimId)
+        ) {
+          return null;
+        }
+
+        return {
+          evidenceId: item.id,
+          originalBucket: drop.bucket,
+          statement: item.statement,
+          sourceType: item.sourceType,
+          probativeValue: item.probativeValue,
+          applicability: item.applicability,
+          evidenceScope: item.evidenceScope,
+          sourceUrl: item.sourceUrl,
+        };
+      })
+      .filter((item): item is NeutralCitationCandidate => Boolean(item));
+
+    if (candidates.length === 0) continue;
+    cases.push({
+      claimId: verdict.claimId,
+      claimText: claim.statement,
+      truthPercentage: verdict.truthPercentage,
+      verdict: verdict.verdict,
+      decisiveSide,
+      candidates,
+    });
+  }
+
+  return cases;
+}
+
+async function adjudicateNeutralCitationDirections(
+  verdicts: CBClaimVerdict[],
+  evidence: EvidenceItem[],
+  claims: AtomicClaim[],
+  llmCall: LLMCallFn,
+  config: VerdictStageConfig,
+  warnings?: AnalysisWarning[],
+  deferredCollapses?: DeferredCitationIntegrityCollapse[],
+): Promise<CBClaimVerdict[]> {
+  const cases = buildNeutralCitationAdjudicationCases(verdicts, evidence, claims, deferredCollapses);
+  if (cases.length === 0) return verdicts;
+
+  let adjudications: CitationDirectionAdjudication[] = [];
+  try {
+    const raw = await llmCall(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      {
+        adjudicationCases: cases,
+      },
+      {
+        tier: config.debateRoles.validation.strength,
+        temperature: 0,
+        providerOverride: config.debateRoles.validation.provider,
+        callContext: {
+          debateRole: "validation",
+          promptKey: "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+        },
+      },
+    );
+    adjudications = normalizeCitationDirectionAdjudications(raw);
+  } catch (error) {
+    warnings?.push({
+      type: "verdict_direction_issue",
+      severity: "info",
+      message: `Neutral citation direction adjudication unavailable; preserving citation integrity downgrade behavior.`,
+      details: {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    });
+    return verdicts;
+  }
+
+  if (adjudications.length === 0) return verdicts;
+
+  const candidateKeys = new Set(
+    cases.flatMap((entry) =>
+      entry.candidates.map((candidate) => `${entry.claimId}:${candidate.evidenceId}`),
+    ),
+  );
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const acceptedByClaim = new Map<string, CitationDirectionAdjudication[]>();
+
+  for (const adjudication of adjudications) {
+    if (adjudication.claimDirection === "neutral") continue;
+    const key = `${adjudication.claimId}:${adjudication.evidenceId}`;
+    if (!candidateKeys.has(key)) continue;
+
+    const item = evidenceById.get(adjudication.evidenceId);
+    if (
+      !item
+      || item.claimDirection !== "neutral"
+      || item.applicability !== "direct"
+      || !isSingleClaimScopedEvidence(item, adjudication.claimId)
+    ) {
+      continue;
+    }
+
+    item.claimDirection = adjudication.claimDirection;
+    const entries = acceptedByClaim.get(adjudication.claimId) ?? [];
+    entries.push(adjudication);
+    acceptedByClaim.set(adjudication.claimId, entries);
+  }
+
+  if (acceptedByClaim.size === 0) return verdicts;
+
+  for (const [claimId, entries] of acceptedByClaim) {
+    warnings?.push({
+      type: "verdict_direction_issue",
+      severity: "info",
+      message: `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) before citation integrity downgrade.`,
+      details: {
+        claimId,
+        adjudicatedCitations: entries,
+      },
+    });
+  }
+
+  return verdicts.map((verdict) => {
+    const entries = acceptedByClaim.get(verdict.claimId);
+    if (!entries?.length) return verdict;
+
+    const supportingEvidenceIds = new Set(verdict.supportingEvidenceIds);
+    const contradictingEvidenceIds = new Set(verdict.contradictingEvidenceIds);
+
+    for (const entry of entries) {
+      if (entry.claimDirection === "supports") supportingEvidenceIds.add(entry.evidenceId);
+      if (entry.claimDirection === "contradicts") contradictingEvidenceIds.add(entry.evidenceId);
+    }
+
+    return {
+      ...verdict,
+      supportingEvidenceIds: Array.from(supportingEvidenceIds),
+      contradictingEvidenceIds: Array.from(contradictingEvidenceIds),
+    };
+  });
 }
 
 async function defaultRepairExecutor(

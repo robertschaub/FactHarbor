@@ -131,6 +131,24 @@ const DIRECTION_REPAIR_VARS: Record<string, string> = {
   currentDate: "2026-04-02",
 };
 
+const CITATION_DIRECTION_ADJUDICATION_VARS: Record<string, string> = {
+  adjudicationCases: JSON.stringify([{
+    claimId: "AC_01",
+    claimText: "Entity A is approximately equal to reference B",
+    truthPercentage: 35,
+    verdict: "LEANING-FALSE",
+    decisiveSide: "contradicting",
+    candidates: [{
+      evidenceId: "EV_01",
+      originalBucket: "contradicting",
+      statement: "Reference B has value 100 during the assessed window.",
+      applicability: "direct",
+      probativeValue: "high",
+    }],
+  }]),
+  currentDate: "2026-04-02",
+};
+
 /** Stage 5 narrative (aggregation-stage.ts:399-429) */
 const VERDICT_NARRATIVE_VARS: Record<string, string> = {
   reportLanguage: "German",
@@ -161,6 +179,7 @@ describe("Stage-4 prompt contract", () => {
     { name: "VERDICT_GROUNDING_VALIDATION", vars: GROUNDING_VALIDATION_VARS, label: "grounding validation" },
     { name: "VERDICT_DIRECTION_VALIDATION", vars: DIRECTION_VALIDATION_VARS, label: "direction validation" },
     { name: "VERDICT_DIRECTION_REPAIR", vars: DIRECTION_REPAIR_VARS, label: "direction repair" },
+    { name: "VERDICT_CITATION_DIRECTION_ADJUDICATION", vars: CITATION_DIRECTION_ADJUDICATION_VARS, label: "citation direction adjudication" },
   ];
 
   for (const { name, vars, label } of SECTIONS) {
@@ -223,6 +242,17 @@ describe("Stage-4 prompt contract", () => {
       }
 
       expect(stringified.atomicClaims).toContain('"freshnessRequirement":"current_snapshot"');
+    });
+  });
+
+  describe("VERDICT_CITATION_DIRECTION_ADJUDICATION", () => {
+    it("keeps citation adjudication generic and preserves numeric comparison direction repair", () => {
+      const section = extractSection(promptContent, "VERDICT_CITATION_DIRECTION_ADJUDICATION");
+      expect(section).toContain("direct, claim-local evidence items");
+      expect(section).toContain("Return `neutral` when the evidence is background");
+      expect(section).toContain("For numeric comparison claims");
+      expect(section).toContain("Do not keep an item neutral solely because it reports only one side of the comparison");
+      expect(section).toContain("For target-object legal/procedural/process claims");
     });
   });
 
