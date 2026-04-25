@@ -1,9 +1,9 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-04-24
+**Last Updated**: 2026-04-25
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The current engineering focus has shifted from the April 15 Phase 7-only framing to the April 24 monitor-driven pipeline integrity and selection-readiness track. Recent work fixed report markdown/warning cleanup, stale verdict diagnostics, runner concurrency claiming, prepared Stage 1 retry diagnostics, stale claim-selection seeding, verdict citation integrity behavior, and a Stage 1 validator-context gap where one-claim approvals did not see the input-derived `distinctEvents` inventory. Do **not** treat the session as fully closed: Stage 1 time-to-selection, broad-input Stage 1 quality, Stage 2 evidence lifecycle/provenance invariants, runtime provenance drift, terminal-progress finalization, long-stage heartbeats, and warning materiality remain active work.
+**Status**: ClaimAssessmentBoundary pipeline is operational. The current engineering focus has shifted from the April 15 Phase 7-only framing to the April 24 monitor-driven pipeline integrity and selection-readiness track. Recent work fixed report markdown/warning cleanup, stale verdict diagnostics, runner concurrency claiming, prepared Stage 1 retry diagnostics, stale claim-selection seeding, verdict citation integrity behavior, a Stage 1 validator-context gap where one-claim approvals did not see the input-derived `distinctEvents` inventory, and a Stage 4 deterministic-mode gap where self-consistency still ran stochastic reruns despite `deterministic=true`. Do **not** treat the session as fully closed: Stage 1 time-to-selection, broad-input Stage 1 quality, Stage 2 evidence lifecycle/provenance invariants, evidence-pool variance, runtime provenance drift, terminal-progress finalization, long-stage heartbeats, and warning materiality remain active work.
 
 ---
 
@@ -13,6 +13,7 @@
 - **Stage 1 time-to-selection is still open.** Heavy URL/PDF/article inputs still spend roughly 60-122 seconds in preparation before Atomic Claim Selection becomes available. The current diagnosis is full evidence-seeded Stage 1 latency, not the recommendation call alone.
 - **Stage 1 quality remains a targeted investigation track.** The Bundesrat one-claim collapse now has a validator-context fix; broad URL/PDF inputs such as the SVP packet remain open. Fix from concrete failing packets only; do not weaken contract validation or introduce deterministic semantic branch detection.
 - **Stage 2 evidence lifecycle/provenance is now a first-slice integrity priority.** Live runs showed normalization/fallbacks, cap drops, reconciliation deltas, and applicability/directness label inconsistencies that need invariant accounting.
+- **Duplicate-run stability remains under monitor.** Clean Bundesrat reruns now split Stage 1 into the expected Volk/Parlament claims, but evidence volume and source concentration still varied downstream. Stage 4 deterministic-mode stochastic reruns were fixed; Stage 2 evidence-pool variance remains open.
 - **Verdict citation integrity guard is implemented and under monitor.** The guard removes invalid/non-direct/bucket-mismatched citations and safely downgrades directional verdicts when the decisive citation side collapses.
 - **Runner concurrency claiming is fixed.** API-side transactional claim prevents local Next.js runtime/process-local state from bypassing `FH_RUNNER_MAX_CONCURRENCY`.
 - **Report markdown stub was fixed.** The clean validation job no longer showed the ClaimAssessmentBoundary markdown stub and kept admin-only `info` diagnostics out of user-facing quality warnings.
@@ -31,12 +32,14 @@
 - Verdict citation integrity now removes invalid/non-direct/bucket-mismatched citations and safe-downgrades directional verdicts when decisive citations collapse.
 - Stage 1 contract and single-claim atomicity validators now receive input-derived `distinctEvents` context, and the prompt reconciles that context before approving near-verbatim one-claim extractions.
 - Clean validation job `d1689dfbd8ff46d98e76730bfd16fafb` completed on the post-runner-claim stack with `LEANING-TRUE` 68/70 and no user-visible warnings.
+- Stage 4 deterministic mode now disables self-consistency sampling and lowers challenger sampling to the schema floor when `deterministic=true`, avoiding two stochastic verdict reruns and reducing cost/latency for the default profile.
 
 ## Open Monitor Findings (2026-04-24)
 
 - **Stage 1 latency:** still the dominant source of delayed claim selection on heavy inputs.
 - **Stage 1 broad-input quality:** still needs concrete failing-packet analysis for omitted branches, bundled consequences, and contract-preservation failures. The SVP PDF job `3328ed201dd744148678efc015d7c33a` is the current broad-input packet; it failed closed as UNVERIFIED after omitting major thesis branches and a priority anchor.
 - **Stage 2 evidence lifecycle:** needs invariant accounting for source identity, provenance, normalization/fallbacks, cap drops, reconciliation deltas, and admission/drop reasons.
+- **Evidence-pool variance:** duplicate clean-code runs on the same input still produced different evidence counts/source mixes; this is not closed by the Stage 4 deterministic fix.
 - **Stage 3 / long stages:** concentration metrics and progress heartbeats are still needed for large evidence pools.
 - **Runtime provenance:** dirty/later-runtime validation jobs must not be treated as clean validation.
 - **Terminal progress:** investigate jobs ending `SUCCEEDED` at progress `99`.

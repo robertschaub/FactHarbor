@@ -199,6 +199,7 @@ export function buildVerdictStageConfig(
   pipelineConfig: PipelineConfig,
   calcConfig: CalcConfig,
 ): VerdictStageConfig {
+  const deterministic = pipelineConfig.deterministic === true;
   const spreadThresholds = calcConfig.selfConsistencySpreadThresholds ?? {
     stable: 5,
     moderate: 12,
@@ -209,11 +210,13 @@ export function buildVerdictStageConfig(
   const canonicalRoles = pipelineConfig.debateRoles ?? DEFAULT_VERDICT_STAGE_CONFIG.debateRoles;
 
   return {
-    selfConsistencyMode: pipelineConfig.selfConsistencyMode ?? "full",
-    selfConsistencyTemperature:
-      pipelineConfig.selfConsistencyTemperature ?? 0.4,
-    challengerTemperature:
-      pipelineConfig.challengerTemperature ?? 0.3,
+    selfConsistencyMode: deterministic ? "disabled" : (pipelineConfig.selfConsistencyMode ?? "full"),
+    selfConsistencyTemperature: deterministic
+      ? 0.1
+      : (pipelineConfig.selfConsistencyTemperature ?? 0.4),
+    challengerTemperature: deterministic
+      ? 0.1
+      : (pipelineConfig.challengerTemperature ?? 0.3),
     verdictGroundingPolicy:
       pipelineConfig.verdictGroundingPolicy ?? "disabled",
     verdictDirectionPolicy:

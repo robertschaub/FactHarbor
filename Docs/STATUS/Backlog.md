@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-24
+**Last Updated**: 2026-04-25
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -25,6 +25,7 @@ This section captures the latest monitor-driven pipeline/debug work. It does not
 | **MON-VCI-1** | Continue verdict citation integrity hardening and monitoring: final verdicts must not cite missing, invalid, non-direct, challenge-invalid, neutral, or bucket-mismatched evidence IDs as directional proof. | Analyzer / Verdict / Reporting | high | high | MONITOR | Core guard landed; live jobs showed no guard warnings, but extension/monitoring remains active. |
 | **MON-STG1-LAT** | Reduce Stage 1 time-to-selection under current semantics through exact same-job successful reuse, better retry/repair diagnostics, and fail-fast accounting. | Analyzer / ACS / Performance | high | high | ACTIVE | Do not switch to text-first ACS or weaken evidence-seeded Stage 1. |
 | **MON-STG1-QUAL** | Investigate Stage 1 quality only from concrete failing packets: omitted thesis branches, bundled consequences, one-claim collapse, and contract-preservation failures. | Analyzer / Stage 1 / Quality | high | high | ACTIVE | Bundesrat one-claim validator-context patch landed; SVP PDF broad-input packet remains open. Prompt edits require Captain approval and topic-neutral wording. |
+| **MON-STG4-DET** | Keep deterministic-mode verdict behavior aligned with the UCM contract and monitor duplicate-run stability after disabling Stage 4 stochastic self-consistency under `deterministic=true`. | Analyzer / Verdict / Stability / Cost | high | high | MONITOR | Clean duplicate Bundesrat reruns split Stage 1 correctly but diverged downstream; Stage 4 deterministic override landed, while Stage 2 evidence-pool variance remains open under `MON-EVID-1`. |
 | **MON-WARN-1** | Enforce warning materiality: admin-only diagnostics stay out of user-facing `Quality Signals`; material degradation must be user-visible through registered warning types. | Analyzer / Reporting / UX | high | high | ACTIVE | Report markdown cleanup landed; continue auditing warning sources. |
 | **MON-PROV-1** | Eliminate live validation provenance drift between prepared Stage 1, final job execution, runtime commit, prompt/config state, and dirty suffixes. | Runner / Observability | high | high | OPEN | Commit, restart/reseed when needed, then submit validation jobs. |
 | **MON-PROG-99** | Investigate terminal `SUCCEEDED` jobs that remain at progress `99`. | API / Runner / UI | med | high | OPEN | Observed on job `e16ed62f`; monitor trust issue, not yet proven analysis-impacting. |

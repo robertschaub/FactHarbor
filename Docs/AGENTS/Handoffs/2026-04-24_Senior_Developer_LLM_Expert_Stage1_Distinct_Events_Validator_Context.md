@@ -3,9 +3,14 @@ roles: [Senior Developer, LLM Expert]
 topics: [stage1, claim-extraction, contract-validation, atomicity, monitor]
 files_touched:
   - apps/web/src/lib/analyzer/claim-extraction-stage.ts
+  - apps/web/src/lib/analyzer/verdict-generation-stage.ts
   - apps/web/prompts/claimboundary.prompt.md
   - apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts
   - apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts
+  - apps/web/test/unit/lib/analyzer/claim-extraction-multi-event.test.ts
+  - apps/web/test/unit/lib/analyzer/verdict-generation-stage-config.test.ts
+  - Docs/STATUS/Backlog.md
+  - Docs/STATUS/Current_Status.md
 ---
 
 ### 2026-04-24 | Senior Developer / LLM Expert | Codex | Stage 1 Distinct-Events Validator Context
@@ -23,3 +28,17 @@ files_touched:
 **For next agent:** Primary root cause for `d1689df...` and `466c86...`: the initial contract validator and single-claim atomicity checks saw only the original input plus the near-verbatim one claim, approved it, then MT-5(C) generated a larger candidate but rejected it because the retry did not revalidate cleanly. The patch threads `distinctEventsContextJson` through `validateClaimContract()` and `validateSingleClaimAtomicity()`, tightens `CLAIM_CONTRACT_VALIDATION` and `CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION`, improves MT-5(C) reprompt guidance, adds the corrective-retry/fail-closed branch when expanded MT-5(C) candidates fail validation, and changes fidelity-correction retries to input-only. Verification before first live rerun: focused prompt/contract/MT-5 tests, full `npm test`, and `npm -w apps/web run build` passed; first live rerun exposed the fallback gap. Verification after the fail-closed/input-only recovery patch: focused MT-5 tests passed; run full tests/build before committing if this handoff is picked up mid-turn.
 
 **Learnings:** Not appended to `Role_Learnings.md`; durable learning captured here: when an upstream LLM stage already emits an input-derived structural inventory, downstream LLM validators must receive that inventory too, otherwise the pipeline can detect collapse later but still treat the original one-claim approval as authoritative.
+
+### 2026-04-25 Continuation | Senior Developer / LLM Expert | Codex | Stage 1 Live Validation and Stage 4 Deterministic Drift
+
+**Task:** Continue the monitor/debug task after the user reported report degradation and asked whether all root causes were identified and fixed.
+
+**Stage 1 live validation:** After commit `12783ed1`, services were restarted and reseeded before live submissions. Two exact Captain-defined Bundesrat reruns (`091a00a73cf74e42ae4b6921615271e1`, `fe9dc6420ab24d20bbf422a8d83fd424`) both completed with `claimCount=2`, `preservesContract=true`, and clean `executedWebGitCommitHash=12783ed1425272d5d4d7af67747e0640034b8ff4`. This validates the specific one-claim-collapse fix for the Bundesrat wording: the pipeline now splits the Volk and Parlament branches while preserving the `rechtskraeftig` anchor.
+
+**New finding:** The duplicate clean-code reruns still diverged downstream: `091a00...` ended `LEANING-TRUE` 62/73 with 56 evidence items, while `fe9dc...` ended `MIXED` 49/58 with 38 evidence items. The per-claim reasoning showed self-consistency spread directly contributing to the lower-confidence mixed result (`values: 55/45/55` and `52/45/55`). Code inspection found UCM default `deterministic: true`, but Stage 4 still mapped `selfConsistencyMode` to `full`, ran two extra advocate calls at `selfConsistencyTemperature=0.4`, and ran the challenger at `challengerTemperature=0.3`. This contradicted `ConsistencyResult.assessed` documentation, which states skipped/false for disabled or deterministic mode, and added avoidable cost/latency.
+
+**Fix:** `buildVerdictStageConfig()` now treats `pipelineConfig.deterministic === true` as a hard override for Stage 4 stochastic controls: self-consistency is disabled, `selfConsistencyTemperature` resolves to the schema floor `0.1`, and `challengerTemperature` resolves to `0.1`. The challenger role is still retained for adversarial coverage; only its sampling is reduced. This is a narrow code fix, not a prompt change.
+
+**Verification:** Focused `verdict-generation-stage-config` test passed; existing Stage 4 tests (`verdict-stage`, `verdict-preflight`, `verdict-parse-artifact`) passed; the broad `claimboundary-pipeline` unit suite passed. Run full `npm test` and `npm -w apps/web run build` before live validation if picking up mid-turn.
+
+**Remaining open items:** Evidence volume/source-pool variance remains separate from the Stage 4 stochastic-control fix. The two clean reruns had materially different evidence pools and source concentration patterns; this likely belongs under Stage 2 evidence lifecycle/provenance invariants and possibly deterministic temperature handling for query/relevance/extraction calls. Do not blanket-force every pipeline temperature to zero without a verifier-backed reason: several retry paths intentionally use small temperature increases for schema/refusal recovery. The SVP PDF `3328ed201dd744148678efc015d7c33a` remains an open broad-input/PDF quality packet.
