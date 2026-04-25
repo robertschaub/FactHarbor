@@ -216,6 +216,17 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("CLAIM_CONTRACT_VALIDATION", () => {
+    it("forbids ellipsis-bridged truth-condition anchors that repair would copy literally", () => {
+      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+      expect(section).not.toBeNull();
+      expect(section).toContain("must be a contiguous input-authored span");
+      expect(section).toContain("not an ellipsis-bridged summary");
+      expect(section).toContain("Do not use `...`, `…`, bracketed omissions");
+      expect(section).toContain("choose the single decisive contiguous span");
+    });
+  });
+
   describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION", () => {
     const vars: Record<string, string> = {
       analysisInput: "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
@@ -341,6 +352,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("approximate parity");
       expect(section).toContain("Do NOT fail opinion merely because the comparison operator is imprecise");
       expect(section).toContain("imprecision affects expected evidence and verdict confidence");
+      expect(section).toContain("finding that value is the point of research");
+      expect(section).toContain("Do NOT fail specificity merely because the comparator value must be researched");
       expect(section).toContain("without assigning an invented standalone value to the comparator/reference side");
     });
   });
