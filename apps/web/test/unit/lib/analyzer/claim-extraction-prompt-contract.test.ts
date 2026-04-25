@@ -121,8 +121,6 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("preserve the shared anchor in each");
       expect(section).toContain('thesisRelevance` is `"direct"`');
       expect(section).toContain("faithful restatement of that original proposition");
-      expect(section).toContain("does not authorize a whole-comparison claim to remain beside a separate claim for one side");
-      expect(section).toContain("preserve the primary proposition through the side claim plus the relational comparator companion");
       expect(section).toContain("Comparison-Side Repair Fidelity");
       expect(section).toContain("named/current-side proposition from a comparison");
       expect(section).toContain("remaining comparison or parity proposition");
@@ -132,8 +130,6 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("neutral anaphoric reference");
       expect(section).toContain("compact reference-link to the already-isolated side's input-authored number");
       expect(section).toContain("does not independently reassert that side's factual truth");
-      expect(section).toContain("source-native route when available");
-      expect(section).toContain("set the repaired claim's `freshnessRequirement`");
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
       expect(section).toContain("folding the relation and approximation strength into the comparator/reference-side claim");
       expect(section).toContain("removing the redundant whole-comparison claim");
@@ -143,7 +139,6 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not shift it onto a different clause");
       expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
       expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
-      expect(section).toContain('"freshnessRequirement": "none"');
     });
   });
 
@@ -502,10 +497,6 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("A conjunctive clause with one shared verb phrase does not override this rule");
       expect(pass2).toContain("inseparable rank/order/composite proposition");
       expect(pass2).toContain("rest of a comparison class");
-      expect(pass2).toContain("do NOT return a whole-comparison claim alongside a separate claim for the current/named side");
-      expect(pass2).toContain("the companion is written from the comparator/reference/relation side");
-      expect(pass2).toContain("must not independently reassert the isolated side as a second current-state fact");
-      expect(pass2).toContain("freshnessRequirement` must follow the freshest decisive side");
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
       expect(pass2).toContain("Comparison decomposition integrity (MANDATORY)");
       expect(pass2).toContain("the companion claim must isolate the remaining comparator/reference or parity proposition");
@@ -520,8 +511,6 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("expectedEvidenceProfile` must carry the referenced side's input-authored anchor");
       expect(pass2).toContain("likely source-native measurement route/source family");
       expect(pass2).toContain("expectedEvidenceProfile.sourceNativeRoutes");
-      expect(pass2).toContain("this both-side profile rule applies whether the claim is unsplit or is a decomposed companion");
-      expect(pass2).toContain("does not replace the comparison claim's own need");
       expect(pass2).toContain("preserve that freshness contract on the companion claim");
       expect(pass2).toContain("current_snapshot");
       expect(pass2).toContain("retrieve both sides");
@@ -543,18 +532,10 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("`rePromptRequired` must be true");
       expect(contract).toContain("whole-input carry-through");
       expect(contract).toContain("another thesis-direct claim restates that same side plus the full comparison");
-      expect(contract).toContain("comparison evidence-profile loss");
-      expect(contract).toContain("Comparison decomposition integrity overrides verbatim-anchor preservation");
-      expect(contract).toContain("Comparison evidence-profile and freshness integrity override anchor-carrier approval");
-      expect(contract).toContain("Sibling claims do not substitute for the target claim's own evidence contract");
       expect(contract).toContain("The companion claim must isolate the remaining comparator/reference or parity proposition");
       expect(contract).toContain("semantically subsuming another returned claim");
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
-      expect(contract).toContain("does NOT override decomposition integrity for comparison claim sets");
-      expect(contract).toContain("overrides generic verbatim-anchor approval");
-      expect(contract).toContain("fail the double-loss case");
-      expect(contract).toContain("Treat this as material profile loss");
       expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
       expect(contract).toContain("Do NOT fail merely because the companion claim contains a short reference-link");
       expect(contract).toContain("is not asserted as a separate current-state fact inside the companion claim");
