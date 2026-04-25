@@ -500,8 +500,9 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
       expect(pass2).toContain("Comparison decomposition integrity (MANDATORY)");
       expect(pass2).toContain("the companion claim must isolate the remaining comparator/reference or parity proposition");
-      expect(pass2).toContain("compact reference-link to the already-isolated quantity");
-      expect(pass2).toContain("does not independently reassert that side's factual truth");
+      expect(pass2).toContain("must preserve enough input-authored anchor material for downstream evidence direction");
+      expect(pass2).toContain("include that anchor in the companion claim as a compact reference-link");
+      expect(pass2).toContain("must not independently reassert that side's factual truth");
       expect(pass2).toContain("No side-plus-relation triplets");
       expect(pass2).toContain("return side A plus a companion claim that carries the remaining side B relation to side A");
       expect(pass2).toContain("proper sub-assertion");
@@ -530,6 +531,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
       expect(contract).toContain("Do NOT fail merely because the companion claim contains a short reference-link");
       expect(contract).toContain("is not asserted as a separate current-state fact inside the companion claim");
+      expect(contract).toContain("omitting an input-authored number, threshold, rate, named quantity, or date");
+      expect(contract).toContain("material anchor loss");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
