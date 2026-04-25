@@ -292,7 +292,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do NOT require decomposition merely because a claim compares A and B");
       expect(section).toContain('A statement of the form "A is more/less [predicate] than B" is ordinarily one inseparable comparative proposition');
       expect(section).toContain("Conjunctive gate rule");
-      expect(section).toContain("Modifier fusion across split propositions");
+      expect(section).toContain("Modifier handling across split propositions");
+      expect(section).toContain("a separate thesis-direct modifier/status claim plus separate branch-relation claims is more atomic");
       expect(section).toContain("No false positives for inseparable composites");
       expect(section).toContain("Mandatory branch enumeration");
       expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");
@@ -442,7 +443,10 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
       expect(pass2).toContain("Modifier-fusion rule for coordinated branches");
-      expect(pass2).toContain("Do NOT create one claim for the modified act/state and a separate claim for the branch chronology");
+      expect(pass2).toContain("Independent-status exception");
+      expect(pass2).toContain("Extract one thesis-direct claim preserving the modifier with the main act/state");
+      expect(pass2).toContain("Status-plus-branch bundling prohibition");
+      expect(pass2).toContain("Do not repeat the status qualifier inside every branch claim");
       expect(pass2).toContain("Single-claim bundling prohibition");
       expect(pass2).toContain("you MUST split it");
       expect(pass2).toContain("named/current side plus a separate proposition about the comparator/reference side");
@@ -465,8 +469,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("current-versus-historical, current-versus-threshold, or named-side-versus-rest-of-comparison-class comparisons");
       expect(contract).toContain("distinct institutions, actor groups, proceedings, or decision gates");
       expect(contract).toContain("Modifier externalization audit (MANDATORY)");
-      expect(contract).toContain("must remain fused with that main act in each branch claim");
-      expect(contract).toContain("A standalone modifier/effect claim does not count as preserving branch atomicity");
+      expect(contract).toContain("one thesis-direct modifier/status claim plus separate thesis-direct branch claims");
+      expect(contract).toContain("may be preserved as its own thesis-direct claim");
       expect(contract).toContain("bundled claim is non-atomic");
       expect(contract).toContain("`rePromptRequired` must be true");
       expect(contract).toContain("whole-input carry-through");

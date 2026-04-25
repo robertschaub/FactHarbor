@@ -1579,7 +1579,8 @@ describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
     expect(section).toContain("named/current side plus another proposition about the comparator/reference side");
     expect(section).toContain("Do NOT require decomposition merely because a claim compares A and B");
     expect(section).toContain('A statement of the form "A is more/less [predicate] than B" is ordinarily one inseparable comparative proposition');
-    expect(section).toContain("Modifier fusion across split propositions");
+    expect(section).toContain("Modifier handling across split propositions");
+    expect(section).toContain("a separate thesis-direct modifier/status claim plus separate branch-relation claims is more atomic");
     expect(section).toContain("Mandatory branch enumeration");
     expect(section).toContain("Use `branchLabels` for coordinated branches and for comparison sides alike");
     expect(section).toContain("singleClaimAssessment");
