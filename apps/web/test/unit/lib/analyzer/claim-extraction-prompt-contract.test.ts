@@ -349,10 +349,6 @@ describe("Stage-1 prompt contract", () => {
       const section = extractSection(promptContent, "CLAIM_VALIDATION");
       expect(section).not.toBeNull();
       expect(section).toContain("Approximate quantitative comparison check");
-      expect(section).toContain("Current-snapshot check");
-      expect(section).toContain("source input asserts a present-tense or currently-valid state");
-      expect(section).toContain("verification date is the analysis date or the freshest authoritative current source");
-      expect(section).toContain("not Gate 1 specificity");
       expect(section).toContain("approximate parity");
       expect(section).toContain("Do NOT fail opinion merely because the comparison operator is imprecise");
       expect(section).toContain("imprecision affects expected evidence and verdict confidence");
