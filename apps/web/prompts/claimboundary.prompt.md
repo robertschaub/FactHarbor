@@ -1204,6 +1204,11 @@ Given a claim and source content, extract evidence items with full metadata incl
 ${claim}
 ```
 
+**Expected Evidence Profile:**
+```
+${expectedEvidenceProfile}
+```
+
 **Source Content:**
 ```
 ${sourceContent}
@@ -2316,6 +2321,7 @@ For each evidence item, determine whether it was produced by actors within the c
 ```
 ${claims}
 ```
+Each claim may include `expectedEvidenceProfile`; use it to preserve the intended metric route, comparator class, source-native quantities, and decisive evidence type when assessing applicability.
 
 **Inferred Geography:**
 ```

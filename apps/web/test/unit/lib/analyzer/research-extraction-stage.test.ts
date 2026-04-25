@@ -410,6 +410,38 @@ describe("Research Extraction Stage", () => {
       expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
     });
 
+    it("passes the expected evidence profile to the extraction prompt", async () => {
+      const claim = createClaim({
+        id: "AC_01",
+        statement: "Entity A is close to benchmark B.",
+        expectedEvidenceProfile: {
+          methodologies: ["source-native comparator route"],
+          expectedMetrics: ["current metric", "reference metric"],
+          expectedSourceTypes: ["government_report"],
+          primaryMetric: "current metric",
+        },
+      });
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: "text" }];
+
+      mockLoadSection.mockResolvedValue({ content: "extraction prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+
+      await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "EXTRACT_EVIDENCE",
+      );
+      expect(renderCall).toBeDefined();
+      const profile = JSON.parse(renderCall![2].expectedEvidenceProfile);
+      expect(profile).toMatchObject({
+        methodologies: ["source-native comparator route"],
+        expectedMetrics: ["current metric", "reference metric"],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "current metric",
+      });
+    });
+
     it("should extract evidence items with full EvidenceScope", async () => {
       const claim = createClaim({ id: "AC_01", statement: "Test claim" });
       const sources = [
@@ -428,6 +460,7 @@ describe("Research Extraction Stage", () => {
               methodology: "Government statistical survey",
               temporal: "2023-2024",
               geographic: "United States",
+              analyticalDimension: "point-in-time stock total",
             },
             probativeValue: "high",
             sourceType: "government_report",
@@ -444,6 +477,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].statement).toBe("Statistical data shows X increased by 30%");
       expect(result[0].evidenceScope?.methodology).toBe("Government statistical survey");
       expect(result[0].evidenceScope?.temporal).toBe("2023-2024");
+      expect(result[0].evidenceScope?.analyticalDimension).toBe("point-in-time stock total");
       expect(result[0].sourceType).toBe("government_report");
       expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
       expect(result[0].isDerivative).toBe(false);
@@ -748,9 +782,27 @@ describe("Research Extraction Stage", () => {
       expect(result[0].applicability).toBeUndefined();
     });
 
-    it("should pass inferredGeography and claims to the prompt template", async () => {
-      const claims = [createClaim({ id: "AC_01", statement: "Country A courts" })];
-      const evidence = [createEvidence({ id: "EV_01", sourceUrl: "https://example.com/source" })];
+    it("should pass inferredGeography, claim evidence profiles, and evidence metadata to the prompt template", async () => {
+      const claims = [createClaim({
+        id: "AC_01",
+        statement: "Country A courts",
+        expectedEvidenceProfile: {
+          methodologies: ["procedural record"],
+          expectedMetrics: ["case-specific process"],
+          expectedSourceTypes: ["legal_document"],
+        },
+      })];
+      const evidence = [createEvidence({
+        id: "EV_01",
+        sourceUrl: "https://example.com/source",
+        claimDirection: "neutral",
+        evidenceScope: {
+          name: "Comparator route",
+          methodology: "source-native count",
+          temporal: "reference period",
+          analyticalDimension: "source-native comparator route",
+        },
+      })];
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockResolvedValue({ text: "" } as any);
@@ -765,9 +817,26 @@ describe("Research Extraction Stage", () => {
       );
       expect(renderCall).toBeDefined();
       expect(renderCall![2]).toMatchObject({ inferredGeography: "BR" });
-      const claimsArg = renderCall![2].claims;
-      expect(claimsArg).toContain("AC_01");
-      expect(claimsArg).toContain("Country A courts");
+      const claimsArg = JSON.parse(renderCall![2].claims);
+      expect(claimsArg[0]).toMatchObject({
+        id: "AC_01",
+        statement: "Country A courts",
+        expectedEvidenceProfile: {
+          methodologies: ["procedural record"],
+          expectedMetrics: ["case-specific process"],
+          expectedSourceTypes: ["legal_document"],
+        },
+      });
+      const evidenceArg = JSON.parse(renderCall![2].evidenceItems);
+      expect(evidenceArg[0]).toMatchObject({
+        index: 0,
+        claimDirection: "neutral",
+        evidenceScope: {
+          methodology: "source-native count",
+          temporal: "reference period",
+          analyticalDimension: "source-native comparator route",
+        },
+      });
     });
 
     it("should pass the union of relevant geographies to the applicability prompt", async () => {

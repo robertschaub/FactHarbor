@@ -628,6 +628,12 @@ describe("Stage-2 prompt contract", () => {
   const EXTRACT_EVIDENCE_VARS: Record<string, string> = {
     currentDate: "2026-04-06",
     claim: "Entity A complied with procedural law during proceeding B",
+    expectedEvidenceProfile: JSON.stringify({
+      methodologies: ["source-native comparator route"],
+      expectedMetrics: ["current metric", "reference metric"],
+      expectedSourceTypes: ["government_report"],
+      primaryMetric: "current metric",
+    }),
     sourceContent: "[Source 1: Test]\nURL: https://example.com\nContent about proceedings...",
     sourceUrl: "https://example.com",
   };
@@ -667,6 +673,8 @@ describe("Stage-2 prompt contract", () => {
 
     it("extracts historical/reference totals as direct comparison evidence when point stock is not explicit", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("Expected Evidence Profile");
+      expect(section).toContain("${expectedEvidenceProfile}");
       expect(section).toContain("period/window totals, cumulative totals, and endpoint/stock figures");
       expect(section).toContain("Preserve the metric class in `evidenceScope`");
       expect(section).toContain("mismatch caveat rather than treating it as automatically decisive");
@@ -812,6 +820,7 @@ describe("Stage-2 prompt contract", () => {
 
     it("marks historical/reference totals direct for approximate comparison comparator sides", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Each claim may include `expectedEvidenceProfile`");
       expect(section).toContain("approximate current-versus-historical or current-versus-reference comparisons");
       expect(section).toContain("comparator route named in `expectedEvidenceProfile`");
       expect(section).toContain("different metric class from the route the claim most naturally implies");

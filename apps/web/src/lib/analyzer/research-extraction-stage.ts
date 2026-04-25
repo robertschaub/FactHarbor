@@ -264,6 +264,7 @@ export async function extractResearchEvidence(
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
     claim: targetClaim.statement,
+    expectedEvidenceProfile: JSON.stringify(targetClaim.expectedEvidenceProfile ?? {}, null, 2),
     sourceContent: sources.map((s, i) =>
       `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
     ).join("\n\n---\n\n"),
@@ -374,6 +375,7 @@ export async function extractResearchEvidence(
           temporal: ei.evidenceScope?.temporal,
           geographic: ei.evidenceScope?.geographic,
           boundaries: ei.evidenceScope?.boundaries,
+          analyticalDimension: ei.evidenceScope?.analyticalDimension,
           additionalDimensions: ei.evidenceScope?.additionalDimensions,
         },
         probativeValue: ei.probativeValue,
@@ -486,10 +488,16 @@ export async function assessEvidenceApplicability(
     sourceUrl: item.sourceUrl ?? "unknown",
     sourceTitle: item.sourceTitle ?? "unknown",
     category: item.category,
+    claimDirection: item.claimDirection ?? "neutral",
+    evidenceScope: item.evidenceScope ?? null,
   }));
 
   const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", {
-    claims: JSON.stringify(claims.map(c => ({ id: c.id, statement: c.statement })), null, 2),
+    claims: JSON.stringify(claims.map(c => ({
+      id: c.id,
+      statement: c.statement,
+      expectedEvidenceProfile: c.expectedEvidenceProfile ?? {},
+    })), null, 2),
     inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
     relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     evidenceItems: JSON.stringify(evidenceSummaries, null, 2),
