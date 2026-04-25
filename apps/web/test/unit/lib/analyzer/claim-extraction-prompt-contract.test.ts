@@ -125,6 +125,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("named/current-side proposition from a comparison");
       expect(section).toContain("remaining comparison or parity proposition");
       expect(section).toContain("Preserve the original comparison operator and approximation strength");
+      expect(section).toContain("do not repair by copying the named/current-side numeric anchor onto the comparator/reference side");
+      expect(section).toContain("Keep the approximation as a relation");
       expect(section).toContain("neutral anaphoric reference");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
@@ -317,11 +319,15 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("secondary checks only");
       expect(section).toContain("compares two quantities, populations, or rates");
       expect(section).toContain("Do NOT collapse a comparative claim to only one side of the comparison");
+      expect(section).toContain("keep the approximation operator as a relation");
+      expect(section).toContain("copying the named/current-side numeric anchor onto that side");
+      expect(section).toContain("neutral anaphoric reference back to the isolated named/current-side quantity");
       expect(section).toContain("broad public-language label");
       expect(section).toContain("closest authoritative source-native umbrella quantity");
       expect(section).toContain("Do NOT silently redefine the claim to the narrowest official subset");
       expect(section).toContain("current-versus-historical or current-versus-reference comparison");
       expect(section).toContain("broadest authoritative current-side quantity");
+      expect(section).toContain("present-state proposition rather than leaving its time window ambiguous");
       expect(section).toContain("recurring official statistics series");
       expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
     });
@@ -481,6 +487,7 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("semantically subsuming another returned claim");
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
+      expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
