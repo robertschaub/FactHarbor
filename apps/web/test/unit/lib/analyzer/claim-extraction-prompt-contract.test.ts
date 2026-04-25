@@ -128,6 +128,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("do not repair by copying the named/current-side numeric anchor onto the comparator/reference side");
       expect(section).toContain("Keep the approximation as a relation");
       expect(section).toContain("neutral anaphoric reference");
+      expect(section).toContain("compact reference-link to the already-isolated side's input-authored number");
+      expect(section).toContain("does not independently reassert that side's factual truth");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");
@@ -492,6 +494,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("Decomposition integrity (MANDATORY)");
       expect(pass2).toContain("Comparison decomposition integrity (MANDATORY)");
       expect(pass2).toContain("the companion claim must isolate the remaining comparator/reference or parity proposition");
+      expect(pass2).toContain("compact reference-link to the already-isolated quantity");
+      expect(pass2).toContain("does not independently reassert that side's factual truth");
       expect(pass2).toContain("proper sub-assertion");
       expect(pass2).toContain("whole-input restatement");
       expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
@@ -516,6 +520,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
       expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
+      expect(contract).toContain("Do NOT fail merely because the companion claim contains a short reference-link");
+      expect(contract).toContain("is not asserted as a separate current-state fact inside the companion claim");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
