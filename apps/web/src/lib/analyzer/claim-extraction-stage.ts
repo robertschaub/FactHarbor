@@ -100,7 +100,8 @@ export const Pass2AtomicClaimSchema = z.object({
       .catch([]),
     primaryMetric: z.string().optional(),
     componentMetrics: z.array(z.string()).optional().catch([]),
-  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [], componentMetrics: [] }),
+    sourceNativeRoutes: z.array(z.string()).optional().catch([]),
+  }).catch({ methodologies: [], expectedMetrics: [], expectedSourceTypes: [], componentMetrics: [], sourceNativeRoutes: [] }),
 });
 
 // Pass2OutputSchema: All fields use .catch() defaults to prevent AI SDK NoObjectGeneratedError.
@@ -4048,6 +4049,7 @@ async function validateClaimContract(
             statement: c.statement,
             category: c.category,
             thesisRelevance: c.thesisRelevance ?? "direct",
+            expectedEvidenceProfile: c.expectedEvidenceProfile ?? {},
           };
           if (c.claimDirection !== undefined) payload.claimDirection = c.claimDirection;
           if (c.isDimensionDecomposition !== undefined) payload.isDimensionDecomposition = c.isDimensionDecomposition;

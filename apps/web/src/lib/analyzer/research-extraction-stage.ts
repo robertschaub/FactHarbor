@@ -114,6 +114,7 @@ export async function classifyRelevance(
     currentDate,
     claim: claim.statement,
     freshnessRequirement: claim.freshnessRequirement ?? "none",
+    expectedEvidenceProfile: JSON.stringify(claim.expectedEvidenceProfile ?? {}, null, 2),
     inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),
     relevantGeographies: formatPromptRelevantGeographies(normalizedRelevantGeographies),
     searchResults: JSON.stringify(

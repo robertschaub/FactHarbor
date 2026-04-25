@@ -1003,6 +1003,7 @@ export interface AtomicClaim {
     expectedSourceTypes: SourceType[]; // e.g., ["peer_reviewed_study", "government_report"]
     primaryMetric?: string;      // Direct decisive metric for current aggregate / threshold claims
     componentMetrics?: string[]; // Secondary sub-metrics used only when official sources publish compositionally
+    sourceNativeRoutes?: string[]; // Publisher-native archive, series, artifact, or terminology routes to decisive evidence
   };
 }
 

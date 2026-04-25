@@ -509,7 +509,10 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
       expect(pass2).toContain("When a decomposed comparison companion claim uses an anaphoric or compact reference");
       expect(pass2).toContain("expectedEvidenceProfile` must carry the referenced side's input-authored anchor");
+      expect(pass2).toContain("likely source-native measurement route/source family");
+      expect(pass2).toContain("retrieve both sides");
       expect(pass2).toContain("not as a new standalone proposition in the `statement`");
+      expect(pass2).toContain("sourceNativeRoutes");
       expect(contract).toContain("non-atomic single-claim bundling");
       expect(contract).toContain("externalization of a main-act modifier into a standalone sub-claim");
       expect(contract).toContain("Single-claim bundling audit (MANDATORY)");

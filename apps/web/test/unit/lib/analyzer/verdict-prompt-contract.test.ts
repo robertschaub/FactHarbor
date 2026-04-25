@@ -626,6 +626,7 @@ describe("Stage-2 prompt contract", () => {
     currentDate: "2026-04-06",
     claim: "Entity A complied with procedural law during proceeding B",
     freshnessRequirement: "current_snapshot",
+    expectedEvidenceProfile: '{"expectedMetrics":["current metric","reference metric"],"sourceNativeRoutes":["publisher archive"]}',
     inferredGeography: "BR",
     relevantGeographies: '["BR"]',
     searchResults: '[{"url":"https://example.com/article","title":"Test Article","snippet":"Relevant snippet"}]',
@@ -649,6 +650,7 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("generic institution homepages are at most borderline relevant");
       expect(section).toContain("statistics archive, series overview, or direct artifact route");
       expect(section).toContain("partial flow metrics");
+      expect(section).toContain("${expectedEvidenceProfile}");
     });
 
     it("treats overlap-only procedural controversies as comparator evidence unless they document the target path", () => {
@@ -663,6 +665,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("broader policy problem or harm domain");
       expect(section).toContain("not direct ecosystem evidence for the named activity");
       expect(section).toContain("inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself");
+    });
+
+    it("uses expected evidence profile for decomposed comparison companion relevance", () => {
+      const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
+      expect(section).toContain("treat `expectedEvidenceProfile` as part of the relevance target");
+      expect(section).toContain("referenced-side anchor");
+      expect(section).toContain("source-native measurement route");
+      expect(section).toContain("reports only one side");
     });
   });
 
@@ -718,6 +728,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Expected Evidence Profile");
       expect(section).toContain("${expectedEvidenceProfile}");
       expect(section).toContain("period/window totals, cumulative totals, and endpoint/stock figures");
+      expect(section).toContain("treat `expectedEvidenceProfile` as part of the claim context");
+      expect(section).toContain("source-native measurement route");
       expect(section).toContain("Preserve the metric class in `evidenceScope`");
       expect(section).toContain("mismatch caveat rather than treating it as automatically decisive");
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");

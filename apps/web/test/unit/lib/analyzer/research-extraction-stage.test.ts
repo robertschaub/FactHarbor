@@ -252,6 +252,48 @@ describe("Research Extraction Stage", () => {
       expect(renderCall![2]).toMatchObject({ freshnessRequirement: "current_snapshot" });
     });
 
+    it("passes expected evidence profile to the relevance prompt", async () => {
+      const claim = createClaim({
+        statement: "Reference-side comparison claim",
+        expectedEvidenceProfile: {
+          methodologies: ["source-native current-side route"],
+          expectedMetrics: ["referenced-side metric", "comparator metric"],
+          expectedSourceTypes: ["government_report"],
+          primaryMetric: "comparison relation",
+          componentMetrics: ["referenced-side anchor"],
+          sourceNativeRoutes: ["publisher archive"],
+        },
+      });
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        relevantSources: [
+          { url: "https://example.com/1", relevanceScore: 0.8, jurisdictionMatch: "direct", reasoning: "ok" },
+        ],
+      });
+
+      await classifyRelevance(
+        claim,
+        [{ url: "https://example.com/1", title: "T", snippet: "s" }],
+        mockConfig,
+        "2026-03-23",
+      );
+
+      const renderCall = mockLoadSection.mock.calls.find(
+        ([, section]) => section === "RELEVANCE_CLASSIFICATION",
+      );
+      expect(renderCall).toBeDefined();
+      const profile = JSON.parse(renderCall![2].expectedEvidenceProfile);
+      expect(profile).toMatchObject({
+        methodologies: ["source-native current-side route"],
+        expectedMetrics: ["referenced-side metric", "comparator metric"],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "comparison relation",
+        componentMetrics: ["referenced-side anchor"],
+        sourceNativeRoutes: ["publisher archive"],
+      });
+    });
+
     it("should respect foreignJurisdictionRelevanceCap from UCM config", async () => {
       const claim = createClaim({ statement: "Country A" });
       const searchResults = [

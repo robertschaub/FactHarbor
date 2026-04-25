@@ -1477,7 +1477,7 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     if (!section) return;
 
     // Mirror the exact payload validateClaimContract() builds, including the
-    // new directness metadata fields.
+    // directness metadata and profile fields the prompt audits.
     const vars: Record<string, string> = {
       analysisInput: "Sample input.",
       inputClassification: "single_atomic_claim",
@@ -1518,6 +1518,12 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
             category: "factual",
             thesisRelevance: "direct",
             claimDirection: "supports_thesis",
+            expectedEvidenceProfile: {
+              methodologies: ["source-native route"],
+              expectedMetrics: ["metric A"],
+              expectedSourceTypes: ["government_report"],
+              sourceNativeRoutes: ["publisher archive"],
+            },
           },
           {
             claimId: "AC_02",
@@ -1526,6 +1532,12 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
             thesisRelevance: "tangential",
             claimDirection: "contextual",
             isDimensionDecomposition: false,
+            expectedEvidenceProfile: {
+              methodologies: [],
+              expectedMetrics: [],
+              expectedSourceTypes: [],
+              sourceNativeRoutes: [],
+            },
           },
         ],
         null,
