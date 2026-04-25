@@ -1517,6 +1517,7 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
             statement: "Direct claim",
             category: "factual",
             thesisRelevance: "direct",
+            freshnessRequirement: "current_snapshot",
             claimDirection: "supports_thesis",
             expectedEvidenceProfile: {
               methodologies: ["source-native route"],
@@ -1530,6 +1531,7 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
             statement: "Tangential claim",
             category: "factual",
             thesisRelevance: "tangential",
+            freshnessRequirement: "none",
             claimDirection: "contextual",
             isDimensionDecomposition: false,
             expectedEvidenceProfile: {

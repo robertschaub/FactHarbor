@@ -619,6 +619,12 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("source-native record of the directly evaluated target itself");
       expect(section).toContain("broader commentary involving overlapping actors or institutions");
     });
+
+    it("preserves source-native route labels in generated queries", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("expectedEvidenceProfile.sourceNativeRoutes");
+      expect(section).toContain("verbatim or near-verbatim");
+    });
   });
 
   /** Stage 2 relevance classification (research-extraction-stage.ts:113-123) */
@@ -738,6 +744,15 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("This target-object comparator/precedent default does NOT override numeric comparison claims");
       expect(section).toContain("This rule has priority over the target-object comparator/precedent default above");
       expect(section).toContain("Do not leave source-native current-side or reference-side values `contextual` solely because the source reports only one side of the comparison");
+    });
+
+    it("requires verdicts to cite both sides of approximate numeric comparisons", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(advocate).toContain("cite material evidence for EACH side of the comparison");
+      expect(advocate).toContain("Do not omit a current-side citation");
+      expect(reconciliation).toContain("preserve material evidence for EACH side");
+      expect(reconciliation).toContain("do not omit a current-side citation");
     });
 
     it("exception requires finding to be about the directly evaluated target, not just the same institution", () => {

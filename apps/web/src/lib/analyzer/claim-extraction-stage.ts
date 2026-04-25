@@ -4049,6 +4049,7 @@ async function validateClaimContract(
             statement: c.statement,
             category: c.category,
             thesisRelevance: c.thesisRelevance ?? "direct",
+            freshnessRequirement: c.freshnessRequirement ?? "none",
             expectedEvidenceProfile: c.expectedEvidenceProfile ?? {},
           };
           if (c.claimDirection !== undefined) payload.claimDirection = c.claimDirection;

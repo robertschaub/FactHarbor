@@ -510,6 +510,9 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("When a decomposed comparison companion claim uses an anaphoric or compact reference");
       expect(pass2).toContain("expectedEvidenceProfile` must carry the referenced side's input-authored anchor");
       expect(pass2).toContain("likely source-native measurement route/source family");
+      expect(pass2).toContain("expectedEvidenceProfile.sourceNativeRoutes");
+      expect(pass2).toContain("preserve that freshness contract on the companion claim");
+      expect(pass2).toContain("current_snapshot");
       expect(pass2).toContain("retrieve both sides");
       expect(pass2).toContain("not as a new standalone proposition in the `statement`");
       expect(pass2).toContain("sourceNativeRoutes");
@@ -539,6 +542,7 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("If the companion claim uses an anaphoric or compact reference");
       expect(contract).toContain("verify that its `expectedEvidenceProfile` carries the referenced side's input-authored anchor");
       expect(contract).toContain("material anchor loss");
+      expect(contract).toContain("material freshness loss");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
