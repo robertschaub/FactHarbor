@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { shouldRunMultiEventReprompt } from "@/lib/analyzer/claim-extraction-stage";
+import {
+  buildMultiEventRepromptGuidance,
+  shouldRunMultiEventReprompt,
+} from "@/lib/analyzer/claim-extraction-stage";
 import type { CBClaimUnderstanding } from "@/lib/analyzer/types";
 
 function makeContractSummary(
@@ -83,5 +86,56 @@ describe("shouldRunMultiEventReprompt", () => {
     expect(
       shouldRunMultiEventReprompt(4, 1, 0, makeContractSummary(), makeSalienceCommitment()),
     ).toBe(false);
+  });
+});
+
+describe("buildMultiEventRepromptGuidance", () => {
+  it("uses input-only recovery guidance for contract-approved MT-5(C) retries", () => {
+    const guidance = buildMultiEventRepromptGuidance({
+      distinctEventCount: 3,
+      distinctEvents: [
+        {
+          name: "Evidence-derived event title",
+          date: "2030",
+          description: "Evidence-only detail",
+        },
+      ],
+      salienceCommitment: makeSalienceCommitment({
+        anchors: [
+          {
+            text: "priority modifier",
+            inputSpan: "priority modifier",
+            type: "modal_illocutionary",
+            rationale: "truth-condition-bearing modifier",
+            truthConditionShiftIfRemoved: "The proposition changes.",
+          },
+        ],
+      }),
+      inputOnly: true,
+    });
+
+    expect(guidance).toContain("rederive branch labels from the original input");
+    expect(guidance).toContain("Precommitted salience anchors");
+    expect(guidance).toContain("priority modifier");
+    expect(guidance).not.toContain("Evidence-derived event title");
+    expect(guidance).not.toContain("2030");
+  });
+
+  it("keeps the distinct-events inventory for ordinary non-approved retries", () => {
+    const guidance = buildMultiEventRepromptGuidance({
+      distinctEventCount: 2,
+      distinctEvents: [
+        {
+          name: "First branch",
+          date: "",
+          description: "Input branch",
+        },
+      ],
+      inputOnly: false,
+    });
+
+    expect(guidance).toContain("Input-derived distinct-events inventory");
+    expect(guidance).toContain("First branch");
+    expect(guidance).toContain("Verify every entry against the original input");
   });
 });

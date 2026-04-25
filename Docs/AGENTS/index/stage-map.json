@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T20:21:58.462Z",
+  "generatedAt": "2026-04-25T05:10:01.257Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -44,6 +44,7 @@
         "selectClaimsForGate1",
         "runClaimContractValidationWithRetry",
         "shouldProtectValidatedAnchorCarriers",
+        "buildMultiEventRepromptGuidance",
         "shouldRunMultiEventReprompt",
         "evaluateClaimContractValidation",
         "shouldRunSingleClaimAtomicityValidation",

@@ -499,9 +499,13 @@ export async function extractClaims(
         const retryPass2StartedAt = Date.now();
         let retryPass2;
         try {
+          // Contract-correction retries must repair fidelity to the input.
+          // Reusing preliminary evidence here has caused evidence-specific
+          // dates/titles to leak into claim statements while input anchors were
+          // dropped. Stage 2 can still enrich evidence profiles after Stage 1.
           retryPass2 = await runPass2(
             state.originalInput,
-            preliminaryEvidence,
+            [],
             pipelineConfig,
             currentDate,
             state,
@@ -981,18 +985,17 @@ export async function extractClaims(
     );
     state.onEvent?.("Extracting claims: multi-event reprompt...", 30);
 
-    const multiEventGuidance =
-      `DECOMPOSITION GUIDANCE: The input references ${distinctEventCount} distinct events or proceedings. ` +
-      `Prior extraction collapsed these into a single claim. ` +
-      `Extract separate atomic claims for each independently verifiable direct event, branch, proceeding, comparison side, or decision gate represented by the input-derived distinct-events inventory. ` +
-      `Preserve any priority salience anchor in every split claim whose main act or state remains inside that anchor's semantic scope. ` +
-      `Do not create claims for evidence-only or background events that are not asserted by the input. ` +
-      `Input-derived distinct-events inventory: ${JSON.stringify(bestPass2.distinctEvents ?? [])}.`;
-
     try {
       const mt5RetrySalienceCommitment = usingContractApprovedMt5Exception
         ? toBindingSalienceCommitment(salienceCommitment) ?? salienceCommitment
         : salienceCommitment;
+
+      const multiEventGuidance = buildMultiEventRepromptGuidance({
+        distinctEventCount,
+        distinctEvents: bestPass2.distinctEvents ?? [],
+        salienceCommitment: mt5RetrySalienceCommitment,
+        inputOnly: usingContractApprovedMt5Exception,
+      });
 
       if (usingContractApprovedMt5Exception) {
         console.info(
@@ -1002,7 +1005,7 @@ export async function extractClaims(
 
       const retryPass2 = await runPass2(
         state.originalInput,
-        preliminaryEvidence,
+        usingContractApprovedMt5Exception ? [] : preliminaryEvidence,
         pipelineConfig,
         currentDate,
         state,
@@ -1046,6 +1049,9 @@ export async function extractClaims(
       // re-authorizes cleanly under the same contract validator.
       let acceptRetry = retryCount > gate1Result.filteredClaims.length;
       let evaluatedMt5Contract: EvaluatedClaimContractValidation | undefined;
+      let acceptedMt5Gate1 = retryGate1;
+      let acceptedMt5Pass2 = retryPass2;
+      let acceptedMt5Count = retryCount;
 
       if (acceptRetry && usingContractApprovedMt5Exception) {
         state.onEvent?.("Validating multi-event retry claim contract fidelity...", 31);
@@ -1097,22 +1103,143 @@ export async function extractClaims(
         } else {
           acceptRetry = false;
         }
+
+        if (!acceptRetry && evaluatedMt5Contract?.effectiveRePromptRequired) {
+          console.info(
+            "[Stage1] MT-5(C) expanded retry failed contract validation; attempting one corrective decomposition retry before failing closed.",
+          );
+
+          const correctiveMt5Guidance =
+            `${multiEventGuidance}\n\n` +
+            `PREVIOUS EXPANDED CANDIDATE REJECTED BY CONTRACT VALIDATION: ${evaluatedMt5Contract.summary.summary}\n\n` +
+            `CORRECTIVE DECOMPOSITION REQUIREMENTS: Return only a clean decomposition of the original input. ` +
+            `Do not include one whole-input or near-verbatim bundled claim alongside its component claims. ` +
+            `Do not omit explicit independently verifiable branches, proceedings, comparison sides, or decision gates. ` +
+            `Preserve priority salience anchors fused with the original main act/state in each split claim where that anchor remains in semantic scope.`;
+
+          // The corrective retry is purely about decomposition fidelity, so it
+          // runs input-only to avoid copying details from preliminary evidence.
+          const correctivePass2 = await runPass2(
+            state.originalInput,
+            [],
+            pipelineConfig,
+            currentDate,
+            state,
+            correctiveMt5Guidance,
+            pass1.inferredGeography,
+            pass1.detectedLanguage,
+            "context_refinement",
+            mt5RetrySalienceCommitment,
+          );
+          state.llmCalls++;
+
+          const correctiveClaims = filterByCentrality(
+            correctivePass2.atomicClaims as unknown as AtomicClaim[],
+            centralityThreshold,
+            effectiveMax,
+          );
+          const correctiveIsDimension = correctivePass2.inputClassification === "ambiguous_single_claim";
+          if (correctiveIsDimension) {
+            for (const c of correctiveClaims) {
+              (c as AtomicClaim).isDimensionDecomposition = true;
+            }
+          }
+
+          const correctiveGate1 = await runGate1Validation(
+            correctiveClaims,
+            pipelineConfig,
+            currentDate,
+            state.originalInput,
+          );
+          state.llmCalls++;
+
+          const correctiveCount = correctiveGate1.filteredClaims.length;
+          console.info(
+            `[Stage1] MT-5(C) corrective reprompt: ${correctiveCount} claims post-Gate-1 (was 1).`,
+          );
+
+          if (correctiveCount > gate1Result.filteredClaims.length) {
+            state.onEvent?.("Validating corrective multi-event retry claim contract fidelity...", 31);
+            state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+            const {
+              result: correctiveContractResult,
+              attempts: correctiveContractValidationAttempts,
+            } = await runClaimContractValidationWithRetry(() =>
+              validateClaimContract(
+                correctiveGate1.filteredClaims as AtomicClaim[],
+                state.originalInput,
+                correctivePass2.impliedClaim ?? "",
+                correctivePass2.articleThesis ?? "",
+                correctivePass2.inputClassification ?? "single_atomic_claim",
+                pipelineConfig,
+                mt5RetrySalienceCommitment,
+                correctivePass2.distinctEvents ?? [],
+              )
+            );
+            state.llmCalls += correctiveContractValidationAttempts;
+
+            if (correctiveContractResult) {
+              const evaluatedCorrectiveContract = await applyApprovedSingleClaimChallenges(
+                correctiveGate1.filteredClaims as AtomicClaim[],
+                evaluateClaimContractValidation(
+                  correctiveContractResult,
+                  correctiveGate1.filteredClaims as AtomicClaim[],
+                ),
+                state.originalInput,
+                correctivePass2.impliedClaim ?? "",
+                correctivePass2.articleThesis ?? "",
+                correctivePass2.inputClassification ?? "single_atomic_claim",
+                pipelineConfig,
+                state,
+                31,
+                mt5RetrySalienceCommitment,
+                correctivePass2.distinctEvents ?? [],
+              );
+              acceptRetry = !evaluatedCorrectiveContract.effectiveRePromptRequired;
+              if (acceptRetry) {
+                evaluatedMt5Contract = evaluatedCorrectiveContract;
+                acceptedMt5Gate1 = correctiveGate1;
+                acceptedMt5Pass2 = correctivePass2;
+                acceptedMt5Count = correctiveCount;
+              } else {
+                evaluatedMt5Contract = evaluatedCorrectiveContract;
+              }
+            }
+          }
+        }
       }
 
       if (acceptRetry) {
-        gate1Result = retryGate1;
-        bestPass2 = retryPass2;
+        gate1Result = acceptedMt5Gate1;
+        bestPass2 = acceptedMt5Pass2;
         if (evaluatedMt5Contract) {
           stageAttribution = "retry";
-          lastContractValidatedClaims = retryGate1.filteredClaims as AtomicClaim[];
+          lastContractValidatedClaims = acceptedMt5Gate1.filteredClaims as AtomicClaim[];
           contractValidationSummary = evaluatedMt5Contract.summary;
           contractValidationSummary.stageAttribution = stageAttribution;
         }
-        console.info(`[Stage1] MT-5(C) recovered: ${retryCount} claims.`);
+        console.info(`[Stage1] MT-5(C) recovered: ${acceptedMt5Count} claims.`);
       } else if (usingContractApprovedMt5Exception) {
-        console.info(
-          "[Stage1] MT-5(C) retry did not re-validate cleanly; keeping the existing contract-approved single-claim set.",
-        );
+        if (evaluatedMt5Contract?.effectiveRePromptRequired && retryCount > gate1Result.filteredClaims.length) {
+          contractValidationSummary = {
+            ...evaluatedMt5Contract.summary,
+            preservesContract: false,
+            rePromptRequired: true,
+            failureMode: "contract_violated",
+            stageAttribution: "retry",
+            summary: [
+              "MT-5(C) detected a likely single-claim collapse. Expanded retry candidates produced more than one claim but failed contract revalidation, so the original one-claim set is not safe to ship.",
+              evaluatedMt5Contract.summary.summary,
+            ].filter(Boolean).join(" "),
+          };
+          console.info(
+            "[Stage1] MT-5(C) retry did not re-validate cleanly; marking the Stage 1 contract as failed instead of keeping the existing one-claim set.",
+          );
+        } else {
+          console.info(
+            "[Stage1] MT-5(C) retry did not produce an expanded clean candidate; keeping the existing contract-approved single-claim set.",
+          );
+        }
       }
     } catch (repromptErr) {
       console.warn("[Stage1] MT-5(C) reprompt failed (non-fatal):", repromptErr);
@@ -2963,6 +3090,53 @@ function canSafelyRetryContractApprovedMultiEventSet(
   salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>,
 ): boolean {
   return salienceCommitment?.success === true && (salienceCommitment.anchors?.length ?? 0) > 0;
+}
+
+export function buildMultiEventRepromptGuidance(params: {
+  distinctEventCount: number;
+  distinctEvents: CBClaimUnderstanding["distinctEvents"] | undefined;
+  salienceCommitment?: NonNullable<CBClaimUnderstanding["salienceCommitment"]>;
+  inputOnly?: boolean;
+}): string {
+  const {
+    distinctEventCount,
+    distinctEvents,
+    salienceCommitment,
+    inputOnly = false,
+  } = params;
+
+  const guidanceParts = [
+    `DECOMPOSITION GUIDANCE: The prior extraction indicated ${distinctEventCount} distinct events, branches, proceedings, comparison sides, or decision gates but the surviving claim set collapsed them into one claim.`,
+    "Extract separate atomic claims for each independently verifiable direct event, branch, proceeding, comparison side, or decision gate asserted by the original input.",
+    "When the original input says one main act or state occurred before, after, because of, or subject to multiple coordinated decision gates or actor groups, create one thesis-direct claim per gate or branch that preserves the full relation. Do not create one bare claim for the main act and separate bare claims for the gates.",
+    "Preserve any priority salience anchor in every split claim whose main act or state remains inside that anchor's semantic scope.",
+    "Do not keep a whole-input or near-verbatim bundled claim alongside its component claims.",
+    "Do not create claims for evidence-only or background events that are not asserted by the input.",
+  ];
+
+  if (inputOnly) {
+    guidanceParts.push(
+      "For this correction retry, rederive branch labels from the original input and precommitted salience anchors only. Treat the prior distinct-events metadata as a trigger, not as claim text. Do not copy dates, titles, names, or specifics that appeared only in preliminary evidence.",
+    );
+  } else {
+    guidanceParts.push(
+      `Input-derived distinct-events inventory: ${JSON.stringify(distinctEvents ?? [])}. Verify every entry against the original input before using it.`,
+    );
+  }
+
+  if (salienceCommitment?.success && (salienceCommitment.anchors?.length ?? 0) > 0) {
+    guidanceParts.push(
+      `Precommitted salience anchors: ${JSON.stringify(
+        (salienceCommitment.anchors ?? []).map((anchor) => ({
+          text: anchor.text,
+          type: anchor.type,
+          inputSpan: anchor.inputSpan,
+        })),
+      )}.`,
+    );
+  }
+
+  return guidanceParts.join(" ");
 }
 
 export function shouldRunMultiEventReprompt(
