@@ -333,6 +333,18 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("Gate 1 approximate-comparison validation", () => {
+    it("treats approximate quantitative comparisons as factual and fidelity-preserving when source-input anchored", () => {
+      const section = extractSection(promptContent, "CLAIM_VALIDATION");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Approximate quantitative comparison check");
+      expect(section).toContain("approximate parity");
+      expect(section).toContain("Do NOT fail opinion merely because the comparison operator is imprecise");
+      expect(section).toContain("imprecision affects expected evidence and verdict confidence");
+      expect(section).toContain("without assigning an invented standalone value to the comparator/reference side");
+    });
+  });
+
   describe("distinct event discipline", () => {
     it("keeps distinctEvents tied to input-authored direct path milestones", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
