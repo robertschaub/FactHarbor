@@ -760,7 +760,10 @@ describe("Stage-2 prompt contract", () => {
     it("broad public-language totals do not let narrow official subsets auto-contradict", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       expect(section).toContain("broader or more formal source-native umbrella label");
+      expect(section).toContain("classify that umbrella total as `supports`");
+      expect(section).toContain("do NOT make the item `contextual` solely because the source uses a technical umbrella category");
       expect(section).toContain("narrower official subcategory or legal-status subset is NOT automatic contradiction");
+      expect(section).toContain("The umbrella total may be `supports`");
       expect(section).toContain("scope-clarifying treatment");
       expect(section).toContain("closest authoritative measures");
       expect(section).toContain("flow or process metrics");
