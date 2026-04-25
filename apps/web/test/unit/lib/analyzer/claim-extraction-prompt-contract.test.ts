@@ -130,6 +130,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("neutral anaphoric reference");
       expect(section).toContain("compact reference-link to the already-isolated side's input-authored number");
       expect(section).toContain("does not independently reassert that side's factual truth");
+      expect(section).toContain("Side-Plus-Relation Triplet Repair");
+      expect(section).toContain("folding the relation and approximation strength into the comparator/reference-side claim");
+      expect(section).toContain("removing the redundant whole-comparison claim");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");
@@ -496,6 +499,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("the companion claim must isolate the remaining comparator/reference or parity proposition");
       expect(pass2).toContain("compact reference-link to the already-isolated quantity");
       expect(pass2).toContain("does not independently reassert that side's factual truth");
+      expect(pass2).toContain("No side-plus-relation triplets");
+      expect(pass2).toContain("return side A plus a companion claim that carries the remaining side B relation to side A");
       expect(pass2).toContain("proper sub-assertion");
       expect(pass2).toContain("whole-input restatement");
       expect(pass2).toContain("If verifying one returned thesis-direct claim still requires resolving another returned thesis-direct claim");
