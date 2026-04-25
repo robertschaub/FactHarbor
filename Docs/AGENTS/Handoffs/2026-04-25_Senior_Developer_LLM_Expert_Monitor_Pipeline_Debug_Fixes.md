@@ -57,4 +57,11 @@
 - If continuing validation, use Captain-approved exact inputs only. Submit through a UTF-8-safe path such as Node for non-ASCII inputs.
 - The next highest-value pipeline slice is the still-open approximate-comparison preservation issue, not another article-preservation change.
 
+**Continuation debate (2026-04-25):**
+- Proposition debated: prioritize the approximate-comparison preservation issue for `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.` before SVP rerun, heartbeat/progress, OCR/PDF fallback, or broad docs cleanup.
+- Advocate argued this is the highest-leverage remaining report-quality issue because Stage 1 can distort the analytical unit before research and verdict.
+- Challenger argued for one post-restart SVP live rerun first, because the direct URL/article fix is loaded but not live-confirmed.
+- Reconciler verdict: `MODIFY`. Continue with the approximate-comparison slice next, but define that slice as local verification first, then a generic multilingual fix only if verification confirms the defect, then safe focused tests. Defer the SVP live rerun until the comparison slice reaches a verifier-backed stopping point.
+- Adopted constraints: use the Captain-approved input exactly; no German/Swiss/refugee/World-War-II/SVP/domain-specific hardcoding; no deterministic semantic comparison logic; do not regress article preservation; preserve unrelated dirty docs/index work.
+
 **Learnings:** Not appended to `Role_Learnings.md` in this slice. Candidate learning: URL-fetched article text may be semantically classified as `single_atomic_claim` or `multi_assertion_input`; structural source type must be threaded separately when code is making non-semantic selection/capping decisions.
