@@ -947,10 +947,40 @@ describe("selectClaimsForGate1", () => {
       },
       "single_atomic_claim",
       "article",
+      "text",
     );
 
     expect(result).toHaveLength(3);
     expect(result.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
+  it("preserves contract-approved URL article input even when Pass 2 classifies it as a single claim", () => {
+    const claims = makeClaims(["high", "high", "high", "high", "high"]);
+
+    const result = selectClaimsForGate1(
+      claims,
+      "high",
+      3,
+      {
+        ran: true,
+        preservesContract: true,
+        rePromptRequired: false,
+        summary: "clean URL article output",
+        stageAttribution: "initial",
+      },
+      "single_atomic_claim",
+      "article",
+      "url",
+    );
+
+    expect(result).toHaveLength(5);
+    expect(result.map((claim) => claim.id)).toEqual([
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+    ]);
   });
 
   it("still applies centrality filtering when the contract is not approved", () => {
@@ -969,6 +999,7 @@ describe("selectClaimsForGate1", () => {
       },
       "single_atomic_claim",
       "claim",
+      "text",
     );
 
     expect(result).toHaveLength(3);

@@ -770,6 +770,7 @@ export async function extractClaims(
     contractValidationSummary,
     activePass2.inputClassification,
     structuralInputType,
+    state.inputType,
     protectedAnchorCarrierIds,
   );
 
@@ -2849,13 +2850,16 @@ export function selectClaimsForGate1(
   contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
   inputClassification?: string,
   structuralInputType?: "claim" | "article",
+  sourceInputType?: "text" | "url",
   requiredClaimIds: string[] = [],
 ): AtomicClaim[] {
   const isArticleLikeMultiAssertion =
     structuralInputType === "article" && inputClassification === "multi_assertion_input";
+  const isUrlSourcedArticleLike =
+    sourceInputType === "url" && structuralInputType === "article";
 
   if (
-    (inputClassification === "article" || isArticleLikeMultiAssertion)
+    (inputClassification === "article" || isArticleLikeMultiAssertion || isUrlSourcedArticleLike)
     &&
     contractValidationSummary?.preservesContract === true
     && contractValidationSummary.rePromptRequired === false
