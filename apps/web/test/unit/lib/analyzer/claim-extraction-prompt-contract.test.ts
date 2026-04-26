@@ -559,8 +559,10 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
       expect(contract).toContain("Do NOT fail merely because the companion claim contains a short reference-link");
       expect(contract).toContain("is not asserted as a separate current-state fact inside the companion claim");
+      expect(contract).toContain("That relation-only permission is NOT an evidence-profile or freshness exemption");
       expect(contract).toContain("If the companion claim uses an anaphoric or compact reference");
       expect(contract).toContain("verify that its `expectedEvidenceProfile` carries the referenced side's input-authored anchor");
+      expect(contract).toContain("source-native route or source family needed for verdict evidence");
       expect(contract).toContain("material anchor loss");
       expect(contract).toContain("material freshness loss");
       expect(contract).toContain("When this rule fails a side-plus-relation triplet");
@@ -575,6 +577,9 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("profile omits the route needed to retrieve and cite evidence for that side");
       expect(contract).toContain("the summary must name missing current-side source route");
       expect(contract).toContain("because the profile only names a ratio/relation back to that side");
+      expect(contract).toContain("Invalid acceptance rationale");
+      expect(contract).toContain("only a relational anchor");
+      expect(contract).toContain("statement-atomicity reasons only");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
