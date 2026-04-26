@@ -638,5 +638,15 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("classify it as `supports` or `contradicts` and preserve the caveat in `evidenceScope`");
       expect(section).toContain("source-native values for either side can be directional even if no source states the full comparison sentence");
     });
+
+    it("targets concise quantitative artifacts for weak reference-side comparison coverage", () => {
+      const queries = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(queries).not.toBeNull();
+      expect(queries).toContain("concise quantitative synthesis");
+      expect(queries).toContain("statistics table");
+      expect(queries).toContain("Do NOT spend all reference-side coverage on publisher homepages");
+      expect(queries).toContain("If a quantitative comparison side is represented mainly by source inventories");
+      expect(queries).toContain("pivot the next queries toward concise quantitative syntheses");
+    });
   });
 });
