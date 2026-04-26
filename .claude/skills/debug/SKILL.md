@@ -9,6 +9,8 @@ ultrathink
 Analyze recent pipeline runs for issues.
 Focus: $ARGUMENTS (leave blank for general post-change check)
 
+For analysis-pipeline issue investigations, apply `AGENTS.md` §Analysis Pipeline Fix Protocol: identify root cause before recommending fixes, prioritize quality over speed over cost, and escalate to `/pipeline`, `/prompt-diagnosis`, `/report-review`, or `/debate` when this quick check is too narrow.
+
 **Step 1 — Read the debug log:**
 Read `apps/web/debug-analyzer.log`. If large, read the last 300 lines.
 Identify: errors, warnings, stage failures, contract violations, unexpected LLM outputs, timing anomalies.

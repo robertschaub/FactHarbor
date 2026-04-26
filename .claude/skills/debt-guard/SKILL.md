@@ -46,6 +46,8 @@ For every bugfix, explicitly compare the undo/amend path against the add-new-cod
 
 Do not skip `/debt-guard` because the fix is small. Small fixes use Compact Path; risky or unclear fixes use Full Path.
 
+For analysis-pipeline fixes, apply `AGENTS.md` §Analysis Pipeline Fix Protocol priority: quality first, then speed, then cost.
+
 ## Required Path Selection
 
 Before editing, choose exactly one path:

@@ -2225,6 +2225,10 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Index_GeneratedAt_Stability.md
 
 ---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Analysis Pipeline Fix Protocol -- [Standard] [open-items: no]
+**For next agent:** Added the debated compact `AGENTS.md` Analysis Pipeline Fix Protocol: quality first, root-cause discipline, debate/review triggers, live-job monitoring, live inspection guidance, and documentation expectations. Added short execution cues to `/debug`, `/pipeline`, `/debt-guard`, `/prompt-diagnosis`, and `/validate`; no meta-skill was created and existing Safety, Prompt, Live Job, and Skill Selection rules remain canonical.
+
+---
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Collaboration Rules Restructure Proposal -- [Standard] [open-items: yes]
 **For next agent:** Phase 3 is now a proposal only: `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` gives a slice-by-slice approval matrix for shrinking `Multi_Agent_Collaboration_Rules.md` into a routing doc while preserving hub-and-spoke and WIP templates as procedures. Do not edit the rules file until Captain approves slices.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Collaboration_Rules_Restructure_Proposal.md

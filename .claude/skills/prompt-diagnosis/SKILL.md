@@ -388,6 +388,8 @@ Each recommendation must answer three questions as required output fields:
    - If YES → mark `REGRESSION RISK: <input families>`
 3. **Runtime test:** Is this a prompt-text fix, or is the real fix prompt rollout / active-blob alignment / stage code change?
 
+Prompt fixes must comply with `AGENTS.md` §Analysis Prompt Rules and §Multilingual Robustness: generic, topic-neutral, multilingual, and free of benchmark, input-specific, or diagnosis-sourced vocabulary.
+
 ```
 [<id>] <severity> | <prompt-file or runtime path>
 Change:           <specific wording or operational change>

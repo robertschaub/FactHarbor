@@ -300,6 +300,19 @@ When submitting **live analysis jobs or validation batches** after changing sour
 - **Refresh the runtime before submission.** If the change requires a process reload to take effect, restart the affected services first. If the change is prompt/config-only and reseeding is sufficient, reseed before submitting jobs.
 - **Do not submit live jobs against stale processes or stale prompt/config state.** Verification runs must use the updated source/prompt/config actually intended for evaluation.
 
+### Analysis Pipeline Fix Protocol
+
+When fixing analysis-pipeline issues, agents must apply all standing rules
+(§Safety, §Bugfix Complexity Guard, §Analysis Prompt Rules, §Multilingual Robustness,
+§Live Job Submission Discipline, §Named Workflows skill selection order) plus:
+
+1. **Priority order:** Improve quality first, then speed, then cost.
+2. **Root-cause discipline:** Find and fix root causes, not symptoms. This is the same principle as `/debt-guard` Phase 2 causal attribution — do not add fallbacks, retries, prompt patches, or compatibility paths unless evidence shows the existing mechanism cannot carry the fix.
+3. **Debate/review gate:** Debate or review fixes when the change affects prompt/config behavior, crosses stage boundaries, increases mechanisms, follows failed validation, or has contested causality.
+4. **Monitoring:** Monitor live jobs for failures, `UNVERIFIED`, report degradation, warning/error escalation, log errors, stale runtime state, and unnecessary delays.
+5. **Live inspection:** Keep the in-app browser on the relevant app or job page when it materially helps live inspection.
+6. **Documentation:** Record findings, causes, fixes, decisions, validation state, and residual risks through the Exchange Protocol, `/handoff`, or `/context-extension` as appropriate.
+
 ---
 
 ## Reading .xwiki Files

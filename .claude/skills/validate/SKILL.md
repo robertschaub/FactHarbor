@@ -12,6 +12,8 @@ Run validation for change: $ARGUMENTS
 **Step 1 — Understand what changed:**
 Run `git log --oneline -5` and `git diff HEAD~1 --stat` to identify the scope of recent changes.
 
+Before submitting jobs, `AGENTS.md` §Live Job Submission Discipline applies: commit relevant source/prompt/config changes, refresh/reseed/restart affected runtime state as needed, and monitor live jobs per §Analysis Pipeline Fix Protocol.
+
 **Step 2 — Run validation batch:**
 From the project root run:
 `npm run validate:run -- post-$ARGUMENTS`
