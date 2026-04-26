@@ -20,6 +20,18 @@ public sealed class JobService
         _buildInfo = buildInfo;
     }
 
+    private static string NormalizeStatus(string? status)
+        => (status ?? "").Trim().ToUpperInvariant();
+
+    private static bool IsTerminalStatus(string? status)
+    {
+        return NormalizeStatus(status) switch
+        {
+            "SUCCEEDED" or "FAILED" or "CANCELLED" => true,
+            _ => false,
+        };
+    }
+
     public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "claimboundary", string? inviteCode = null)
     {
         var job = new JobEntity
@@ -147,15 +159,31 @@ public sealed class JobService
     {
         var job = await GetJobAsync(jobId);
         if (job is null) return;
+        var requestedStatus = NormalizeStatus(status);
+        if (string.IsNullOrWhiteSpace(requestedStatus))
+            requestedStatus = "RUNNING";
 
         // Enforce monotonic progress for RUNNING→RUNNING updates to prevent
         // out-of-order async events from making progress appear to go backward.
         // Terminal states and restarts (which change status) set progress directly.
-        var previousStatus = job.Status;
-        job.Status = status;
+        var previousStatus = NormalizeStatus(job.Status);
+        if (IsTerminalStatus(previousStatus) && requestedStatus != previousStatus)
+        {
+            _db.JobEvents.Add(new JobEventEntity
+            {
+                JobId = jobId,
+                Level = "info",
+                Message = $"Ignored status update after terminal status {previousStatus}: requested {requestedStatus} ({message})",
+                TsUtc = DateTime.UtcNow,
+            });
+            await _db.SaveChangesAsync();
+            return;
+        }
+
+        job.Status = requestedStatus;
         if (progress.HasValue)
         {
-            var isMonotonicViolation = status == "RUNNING" && previousStatus == "RUNNING"
+            var isMonotonicViolation = requestedStatus == "RUNNING" && previousStatus == "RUNNING"
                                       && progress.Value < job.Progress;
             if (!isMonotonicViolation)
                 job.Progress = progress.Value;
@@ -172,6 +200,19 @@ public sealed class JobService
     {
         var job = await GetJobAsync(jobId);
         if (job is null) return;
+        var previousStatus = NormalizeStatus(job.Status);
+        if (IsTerminalStatus(previousStatus))
+        {
+            _db.JobEvents.Add(new JobEventEntity
+            {
+                JobId = jobId,
+                Level = "info",
+                Message = $"Ignored result store after terminal status {previousStatus}",
+                TsUtc = DateTime.UtcNow,
+            });
+            await _db.SaveChangesAsync();
+            return;
+        }
 
         var jsonOptions = new JsonSerializerOptions { WriteIndented = true, PropertyNameCaseInsensitive = true };
         job.ResultJson = JsonSerializer.Serialize(resultJson, jsonOptions);

@@ -254,6 +254,8 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("stored claimDirection that conflicts with the verdict citation bucket");
       expect(section).toContain("storedClaimDirection");
       expect(section).toContain("Return `neutral` when the evidence is background");
+      expect(section).toContain("Return `neutral` for source-existence");
+      expect(section).toContain("Do not infer a missing value merely because a report or archive is comprehensive");
       expect(section).toContain("For numeric comparison claims");
       expect(section).toContain("Do not keep an item neutral solely because it reports only one side of the comparison");
       expect(section).toContain("For target-object legal/procedural/process claims");
@@ -286,6 +288,8 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Only `direct` evidence with `claimDirection = \"supports\"` may appear");
       expect(section).toContain("only `direct` evidence with `claimDirection = \"contradicts\"` may appear");
       expect(section).toContain("Do not convert absence of direct evidence into a directional contradiction");
+      expect(section).toContain("Do not convert source-existence");
+      expect(section).toContain("unless the evidence statement itself gives the decisive value");
       expect(section).toContain("${evidenceItems}");
     });
 
@@ -350,6 +354,8 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Treat `applicability` as binding for directional citation arrays");
       expect(section).toContain("Only evidence items marked `direct` may appear");
       expect(section).toContain("`contextual` or `foreign_reaction`");
+      expect(section).toContain("Do not use source-existence");
+      expect(section).toContain("without publishing the decisive value or finding");
     });
 
     it("verdict prompts preserve balanced citations for broad umbrella ambiguity", () => {
