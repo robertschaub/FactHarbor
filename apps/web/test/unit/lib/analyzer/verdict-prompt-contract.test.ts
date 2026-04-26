@@ -360,6 +360,18 @@ describe("Stage-4 prompt contract", () => {
       expect(reconciliation).toContain("preserve both material evidence directions");
     });
 
+    it("verdict prompts treat method comparability limits as caveats unless direct contradiction exists", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+
+      expect(advocate).toContain("method, scope, or window mismatch limits comparability");
+      expect(advocate).toContain("Supporting-only direct evidence cannot justify a low-truth or false verdict by itself");
+      expect(advocate).toContain("Unless direct contradicting evidence establishes that the mismatch changes the claim's substantive answer");
+      expect(reconciliation).toContain("preserve its citation direction according to `claimDirection`");
+      expect(reconciliation).toContain("Do not reconcile to a low-truth or false verdict using only supporting direct citations");
+      expect(reconciliation).toContain("keep the limitation as a confidence, misleadingness, or middle-range truth caveat");
+    });
+
     it("direction validation rejects non-direct directional citations", () => {
       const section = extractSection(promptContent, "VERDICT_DIRECTION_VALIDATION");
       expect(section).toContain("Consider the `applicability` field when present");
@@ -367,11 +379,27 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("flag that as a direction issue");
     });
 
+    it("direction validation flags low truth with one-sided supporting evidence", () => {
+      const section = extractSection(promptContent, "VERDICT_DIRECTION_VALIDATION");
+      expect(section).toContain("Flag a low-truth or below-midpoint verdict");
+      expect(section).toContain("one-sided support");
+      expect(section).toContain("no direct contradicting citations");
+      expect(section).toContain("do not make supporting evidence directional contradiction by themselves");
+    });
+
     it("direction repair removes non-direct evidence from directional arrays", () => {
       const section = extractSection(promptContent, "VERDICT_DIRECTION_REPAIR");
       expect(section).toContain("When `evidencePool` includes `applicability`");
       expect(section).toContain("keep only `direct` evidence IDs");
       expect(section).toContain("Remove `contextual` or `foreign_reaction` IDs");
+    });
+
+    it("direction repair does not turn supporting evidence into contradiction for comparability limits", () => {
+      const section = extractSection(promptContent, "VERDICT_DIRECTION_REPAIR");
+      expect(section).toContain("only direct supporting citations and no direct contradicting citations");
+      expect(section).toContain("do not move supporting evidence into `contradictingEvidenceIds`");
+      expect(section).toContain("raise the truth into a middle or weak-support range");
+      expect(section).toContain("Use `contradictingEvidenceIds` only for direct evidence whose `claimDirection` is `contradicts`");
     });
 
     it("advocate keeps broad public-language totals anchored to umbrella metrics instead of narrow subsets", () => {
