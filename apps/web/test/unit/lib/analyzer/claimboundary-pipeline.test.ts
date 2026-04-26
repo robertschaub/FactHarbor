@@ -8996,6 +8996,152 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(result.contractValidationSummary?.anchorRetryReason).toBeUndefined();
   });
 
+  it("should keep preliminary evidence available to contract retry for expected profiles", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: {
+        centralityThreshold: "medium",
+        maxAtomicClaims: 5,
+        preliminarySearchQueriesPerClaim: 1,
+        preliminaryMaxSources: 1,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockSearch.mockResolvedValue({
+      results: [{ url: "https://example.com/source", title: "Source", snippet: "source-native route" }],
+      providersUsed: ["google"],
+    } as any);
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(200),
+      title: "Source",
+      contentType: "text/html",
+    });
+    mockLoadSection.mockImplementation(async (_pipeline, section, variables) => ({
+      content: `section:${section}\npreliminary:${String((variables as any)?.preliminaryEvidence ?? "")}`,
+      variables: {},
+    } as any));
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            relevantSources: [
+              {
+                url: "https://example.com/source",
+                relevanceScore: 0.95,
+                jurisdictionMatch: "direct",
+                reasoning: "direct",
+              },
+            ],
+          };
+        case 3:
+          return {
+            evidenceItems: [
+              {
+                statement: "Source-native profile signal for the decisive comparison side",
+                sourceUrl: "https://example.com/source",
+                evidenceScope: { methodology: "official source-native series", temporal: "current" },
+                claimDirection: "supports",
+                sourceType: "government_report",
+                relevantClaimIds: ["AC_01"],
+              },
+            ],
+          };
+        case 4:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Original" });
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "material drift",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "drift",
+              },
+            ],
+          };
+        case 6:
+          return makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Retry" });
+        case 7:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "retry clean",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: true,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "clean",
+              },
+            ],
+          };
+        case 8:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "Contract retry should retain profile evidence.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    await extractClaims(state);
+
+    const pass2RenderCalls = mockLoadSection.mock.calls.filter(([, section]) => section === "CLAIM_EXTRACTION_PASS2");
+    const evidenceAwarePass2Calls = pass2RenderCalls.filter(([, , variables]) =>
+      String((variables as any)?.preliminaryEvidence ?? "").includes("Source-native profile signal"),
+    );
+
+    expect(evidenceAwarePass2Calls).toHaveLength(2);
+  });
+
   it("should keep retry-approved anchor carriers through centrality capping and Gate 1 filtering", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
