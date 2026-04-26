@@ -123,6 +123,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not change any existing claim `id`");
       expect(section).toContain("return the same number of claims you received");
       expect(section).toContain("duplicate or near-duplicate");
+      expect(section).toContain("invalid invented comparator/reference-side value claim");
+      expect(section).toContain("redundant whole-relation member in a side-plus-relation triplet");
       expect(section).toContain("Do NOT merge away coordinated-branch claims");
       expect(section).toContain("preserve the shared anchor in each");
       expect(section).toContain('thesisRelevance` is `"direct"`');
@@ -130,6 +132,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Contract Validation Summary (authoritative repair target)");
       expect(section).toContain("Validation-Summary Compliance");
       expect(section).toContain("must directly satisfy its corrected claim shape and failure reasons");
+      expect(section).toContain("invented comparator/reference-side value claims");
       expect(section).toContain("repair the relevant `statement`, `expectedEvidenceProfile`, and `freshnessRequirement` fields together");
       expect(section).toContain("not a license to violate the original input's comparison orientation");
       expect(section).toContain("Comparison-Side Repair Fidelity");
@@ -151,8 +154,10 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("side-specific source family or measurement route");
       expect(section).toContain("even when the comparator/reference route is historical");
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
-      expect(section).toContain("folding the relation and approximation strength into the comparator/reference-side claim");
-      expect(section).toContain("removing the redundant whole-comparison claim");
+      expect(section).toContain("first check whether the original input actually assigned the standalone value to the comparator/reference side");
+      expect(section).toContain("rewriting that claim into a relation-only companion");
+      expect(section).toContain("If the comparator/reference-side value is input-assigned");
+      expect(section).toContain("remove the redundant whole-comparison claim");
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");
@@ -568,6 +573,12 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("literal, near-verbatim, or semantic restatement of the whole input");
       expect(contract).toContain("whole proposition plus one of its parts");
       expect(contract).toContain("The approximation must remain a relation, not an invented comparator-side metric");
+      expect(contract).toContain("Priority copied-value check");
+      expect(contract).toContain("first verify that the original input itself assigns that value or metric to that comparator/reference side");
+      expect(contract).toContain("do NOT describe the standalone comparator/reference-side claim as valid");
+      expect(contract).toContain("Treat it as an invented comparator/reference-side metric");
+      expect(contract).toContain("name this copied-value violation in the summary before lower-priority redundancy or subsumption issues");
+      expect(contract).toContain("Do not fail under this check when the input itself assigns the value to the comparator/reference side");
       expect(contract).toContain("Do NOT fail merely because the companion claim contains a short reference-link");
       expect(contract).toContain("is not asserted as a separate current-state fact inside the companion claim");
       expect(contract).toContain("That relation-only permission is NOT an evidence-profile or freshness exemption");
@@ -579,6 +590,9 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("When this rule fails a side-plus-relation triplet");
       expect(contract).toContain("Do NOT recommend or require a third separate whole-relation claim");
       expect(contract).toContain("describe the corrected two-claim shape");
+      expect(contract).toContain("first decide whether the standalone comparator/reference-side value was actually assigned to that side by the input");
+      expect(contract).toContain("do not call that value claim valid");
+      expect(contract).toContain("one side-specific claim plus one relation companion");
       expect(contract).toContain("the corrective summary must preserve that orientation");
       expect(contract).toContain("unless the input itself used that orientation");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
