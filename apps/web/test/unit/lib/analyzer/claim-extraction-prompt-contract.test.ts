@@ -548,6 +548,10 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("verify that its `expectedEvidenceProfile` carries the referenced side's input-authored anchor");
       expect(contract).toContain("material anchor loss");
       expect(contract).toContain("material freshness loss");
+      expect(contract).toContain("When this rule fails a side-plus-relation triplet");
+      expect(contract).toContain("Do NOT recommend or require a third separate whole-relation claim");
+      expect(contract).toContain("describe the corrected two-claim shape");
+      expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
