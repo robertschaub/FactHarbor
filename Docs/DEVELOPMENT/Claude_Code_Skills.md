@@ -530,17 +530,25 @@ All fourteen skills are discoverable by non-Claude agents:
   `/debt-guard` before editing, then agents open the referenced `.claude/skills/<name>/SKILL.md`
   file directly.
 
+Workflow selection follows the order in [AGENTS.md](../../AGENTS.md): mandatory gates first,
+then explicit user or prompt assignment, then `fhAgentKnowledge.preflight_task` for role-activated
+or ambiguous tasks, then metadata or table matching. Overlapping workflows rely on their own scope
+guards; FactHarbor does not use a separate meta-routing skill.
+
 For any tool that is not Claude Code:
 
-1. Find the skill name in the Named Workflows table in `AGENTS.md`.
-2. Read the corresponding `.claude/skills/<name>/SKILL.md` file.
-3. **Ignore the YAML frontmatter** (the `---` block at the top). It is Claude Code metadata.
-4. Follow the numbered steps in the body as a plain markdown procedure.
-5. Prefer PowerShell-compatible command variants in this repository; translate any shell snippet
+1. Apply mandatory gates such as `/debt-guard` first.
+2. Honor explicit skill assignments from the user or prompt.
+3. Call `fhAgentKnowledge.preflight_task` for role-activated or ambiguous tasks when available.
+4. Find the skill name in the Named Workflows table in `AGENTS.md`.
+5. Read the corresponding `.claude/skills/<name>/SKILL.md` file.
+6. **Ignore the YAML frontmatter** (the `---` block at the top). It is Claude Code metadata.
+7. Follow the numbered steps in the body as a plain markdown procedure.
+8. Prefer PowerShell-compatible command variants in this repository; translate any shell snippet
    to your host shell if needed.
-6. Note that `ultrathink` is a Claude Code directive — other tools can ignore it or substitute
+9. Note that `ultrathink` is a Claude Code directive — other tools can ignore it or substitute
    their own deep-reasoning invocation.
-7. `/validate` uses `disable-model-invocation: true` to prevent accidental auto-invocation;
+10. `/validate` uses `disable-model-invocation: true` to prevent accidental auto-invocation;
    other tools should treat this as a reminder to only run the skill explicitly.
 
 ---

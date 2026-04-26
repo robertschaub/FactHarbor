@@ -2184,3 +2184,7 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Skill Review Amendments -- [Standard] [open-items: no]
 **For next agent:** Applied the five accepted amendments from `.codex/context-extension/2026-04-26_skill-review-debate_context.md`: `/debt-guard` Compact Path now has `Mechanism touched`, a compact worked example, and concrete Phase 6 triggers; `/context-extension` now has a separate `/wip-update` Overlap Gate row and explicit `agent-exchange` supersession endpoint. Repo and user-level context-extension skills validate and hash-match.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Skill_Review_Amendments.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Skill Selection Routing Docs Sync -- [Standard] [open-items: no]
+**For next agent:** Skill routing guidance is intentionally docs-only: no `skill-user` or `skill-selection` meta-skill was added. `AGENTS.md` now defines the canonical selection order, and related Claude/Gemini/shared skill docs mirror it: mandatory gates, explicit assignment, `fhAgentKnowledge.preflight_task` for role-activated or ambiguous tasks, then metadata/table matching. Overlapping workflows rely on their own scope guards.

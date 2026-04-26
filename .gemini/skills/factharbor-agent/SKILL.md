@@ -29,6 +29,14 @@ This skill ensures that Gemini CLI follows the FactHarbor development lifecycle 
 Gemini can use the shared FactHarbor workflow library stored under `.claude/skills/`. These
 files are the canonical workflow definitions shared across Claude, Codex/GPT, and Gemini.
 
+Skill selection order:
+1. Apply mandatory gates first, especially `debt-guard` before any bugfixing task.
+2. Honor explicit user or prompt assignments such as `Skill: pipeline` or `/audit`.
+3. Use `fhAgentKnowledge.preflight_task` recommendations when MCP is available, required by role activation, or workflow choice is ambiguous.
+4. Otherwise select from the workflow list below by task fit and then read only the needed `SKILL.md`.
+
+When workflows overlap, use each workflow's own scope guards to decide ownership. Do not create or invoke a meta-routing skill.
+
 Available workflows:
 - `debt-guard` → `.claude/skills/debt-guard/SKILL.md`
 - `debate` → `.claude/skills/debate/SKILL.md` (read and execute the role procedure manually or with available agents when slash commands are unavailable)

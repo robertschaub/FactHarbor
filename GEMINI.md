@@ -51,6 +51,15 @@ back to direct file scanning.
 ## Named Workflows
 Documented procedures for recurring tasks. Read the file and follow its instructions (ignore YAML frontmatter).
 
+**Skill selection order.** Resolve which workflows to apply using these layers, in order:
+
+1. **Mandatory gates** — `.claude/skills/debt-guard/SKILL.md` for bugfixes. Always applies regardless of other routing.
+2. **Explicit assignment** — the user or prompt names a skill directly (`Skill: pipeline`, `/audit`, etc.).
+3. **Preflight routing** — `fhAgentKnowledge.preflight_task` returns recommended skills and startup advice. Role-activated tasks must call preflight; other tasks may call it when workflow choice is ambiguous.
+4. **Metadata/table match** — use the Named Workflows table below and the target skill's own description.
+
+When skills overlap, each skill's own scope guards determine which workflow owns the outcome. Do not create meta-routing skills.
+
 | Task | Workflow file |
 |---|---|
 | Balanced bugfix complexity guard | `.claude/skills/debt-guard/SKILL.md` — mandatory for every bugfixing task before editing; compare undoing/amending previous code against adding new code |
