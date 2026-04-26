@@ -21,6 +21,7 @@ const WARNING_CLASSIFICATION = {
   report_damaged: { bucket: "analysis", impact: "degrading" },
   llm_provider_error: { bucket: "provider", impact: "degrading" },
   structured_output_failure: { bucket: "provider", impact: "degrading" },
+  salience_commitment_degraded: { bucket: "analysis", impact: "informational" },
   evidence_filter_degradation: { bucket: "provider", impact: "degrading" },
   search_provider_error: { bucket: "provider", impact: "informational" },
   source_reliability_error: { bucket: "provider", impact: "informational" },

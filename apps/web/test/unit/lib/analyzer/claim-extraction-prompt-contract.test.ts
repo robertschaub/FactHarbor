@@ -628,6 +628,37 @@ describe("Stage-1 prompt contract", () => {
   });
 
   describe("evidence extraction direction for numeric comparisons", () => {
+    it("exposes runtime current date to freshness-sensitive query generation", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).not.toBeNull();
+      if (!section) return;
+
+      const { unresolved, rendered } = renderWithVars(section, {
+        currentDate: "2026-04-26",
+        claim: "Entity A currently reports metric X.",
+        freshnessRequirement: "current_snapshot",
+        expectedEvidenceProfile: JSON.stringify({
+          primaryMetric: "current total for metric X",
+          sourceNativeRoutes: ["official statistics archive"],
+        }),
+        distinctEvents: "[]",
+        iterationType: "main",
+        queryStrategyMode: "legacy",
+        existingEvidenceSummary: "none",
+        detectedLanguage: "en",
+        inferredGeography: "not geographically specific",
+        relevantGeographies: "none",
+      });
+
+      expect(unresolved).toEqual([]);
+      expect(rendered).toContain("2026-04-26");
+      expect(section).toContain("runtime date for \"current\", \"latest\", \"present\"");
+      expect(section).toContain("newest source-native publication");
+      expect(section).toContain("available on or before `${currentDate}`");
+      expect(section).toContain("Do not drift to an older annual/retrospective summary");
+      expect(section).toContain("**Current Date:**");
+    });
+
     it("keeps one-sided quantitative comparator evidence directional when the relation is assessable", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       expect(section).not.toBeNull();

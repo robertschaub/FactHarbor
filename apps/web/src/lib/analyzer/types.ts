@@ -873,6 +873,7 @@ export type AnalysisWarningType =
   | "report_damaged"                // Final report integrity degraded by critical failures
   | "llm_provider_error"            // LLM provider failed (quota/credits/auth/rate/service)
   | "structured_output_failure"     // LLM structured output failed, using fallback
+  | "salience_commitment_degraded"  // Stage 1 salience-commitment failed open; analysis continued without salience anchors
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
   | "search_provider_error"         // Search provider returned fatal error (429, quota exhaustion)
   | "source_reliability_error"      // Source-reliability evaluation infra/API errors during prefetch

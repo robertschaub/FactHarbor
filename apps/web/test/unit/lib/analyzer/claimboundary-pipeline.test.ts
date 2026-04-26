@@ -9743,6 +9743,207 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     expect(renderedSections).toContain("CLAIM_CONTRACT_REPAIR");
   });
 
+  it("should retry contract repair once with refined validation feedback", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 0, repairPassEnabled: true },
+        salienceCommitment: { enabled: false },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    mockLoadSection.mockImplementation(async (_pipeline, section) => ({ content: `section:${section}`, variables: {} } as any));
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            ...makePass2(1, { inputClassification: "single_atomic_claim", statementPrefix: "Metric" }),
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "The current metric for Entity A is 235 units." }),
+              createAtomicClaim({ id: "AC_02", statement: "The reference-period metric is approximately 235 units." }),
+            ],
+          };
+        case 3:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "AC_02 copies the current-side value onto the comparator side and lacks current-side route/freshness.",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "current-side metric is preserved",
+              },
+              {
+                claimId: "AC_02",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "copied comparator value",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "almost as high",
+              preservedInClaimIds: [],
+              preservedByQuotes: [],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 4:
+          return {
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "The current metric for Entity A is 235 units." }),
+              createAtomicClaim({ id: "AC_02", statement: "The reference-period metric is almost as high as the current metric for Entity A (235 units)." }),
+            ],
+          };
+        case 5:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: false,
+              rePromptRequired: true,
+              summary: "The repair still makes the comparator side the subject and leaves current-side route/freshness incomplete.",
+            },
+            claims: [
+              {
+                claimId: "AC_02",
+                preservesEvaluativeMeaning: false,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "material",
+                recommendedAction: "retry",
+                reasoning: "orientation and freshness still invalid",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "almost as high",
+              preservedInClaimIds: ["AC_02"],
+              preservedByQuotes: ["almost as high"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 6:
+          return {
+            atomicClaims: [
+              createAtomicClaim({ id: "AC_01", statement: "The current metric for Entity A is 235 units." }),
+              createAtomicClaim({
+                id: "AC_02",
+                statement: "The current metric for Entity A is almost as high as the reference-period metric.",
+                freshnessRequirement: "current_snapshot",
+              }),
+            ],
+          };
+        case 7:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "refined repair preserved the comparison orientation and metadata",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "current-side metric is preserved",
+              },
+              {
+                claimId: "AC_02",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "relation repaired",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: "almost as high",
+              preservedInClaimIds: ["AC_02"],
+              preservedByQuotes: ["almost as high"],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 8:
+          return makeGate1Pass(2);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: "The current metric for Entity A is 235 units, almost as high as the reference-period metric.",
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    const result = await extractClaims(state);
+
+    const repairedComparisonClaim = result.atomicClaims.find((claim) => claim.id === "AC_02");
+    expect(repairedComparisonClaim?.statement).toBe("The current metric for Entity A is almost as high as the reference-period metric.");
+    expect(result.contractValidationSummary).toMatchObject({
+      ran: true,
+      preservesContract: true,
+      rePromptRequired: false,
+      stageAttribution: "repair",
+      summary: "refined repair preserved the comparison orientation and metadata",
+    });
+
+    const renderedSections = mockLoadSection.mock.calls.map(([, section]) => section);
+    expect(renderedSections.filter((section) => section === "CLAIM_CONTRACT_REPAIR")).toHaveLength(2);
+  });
+
   it("should keep repair-approved anchor carriers through centrality capping and Gate 1 filtering", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
@@ -10289,6 +10490,15 @@ describe("Stage 1: extractClaims reprompt loop", () => {
       anchors: [],
     });
     expect(state.llmCalls).toBe(4);
+    expect(state.warnings).toContainEqual(expect.objectContaining({
+      type: "salience_commitment_degraded",
+      severity: "info",
+      details: expect.objectContaining({
+        stage: "claim_extraction",
+        mode: "audit",
+        errorMessage: "No object generated: response did not match schema.",
+      }),
+    }));
   });
 
   it("should load the binding-mode contract appendix when salience binding is active", async () => {

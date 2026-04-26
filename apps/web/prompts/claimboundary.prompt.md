@@ -936,12 +936,14 @@ Each query must also declare:
 - `freshnessWindow`: whether this query should prefer recent results (`w`, `m`, `y`) or has no special freshness requirement (`none`)
 
 Treat `${freshnessRequirement}` as the authoritative claim-level freshness contract from Stage 1.
+Treat `${currentDate}` as the runtime date for "current", "latest", "present", and equivalent freshness language.
 
 ### Rules
 
 - **Language context**: The input was detected as `${detectedLanguage}` with inferred geography `${inferredGeography}` and relevant geographies `${relevantGeographies}`. Generate queries primarily in `${detectedLanguage}`. Include 1-2 English queries only if the topic has significant English-language academic or international coverage. Do NOT default to English for non-English claims.
 - Queries should target the specific methodologies, metrics, and source types described in `expectedEvidenceProfile`.
 - If `${freshnessRequirement}` is `current_snapshot`, at least one query must target a source-native or official route with `retrievalLane = primary_direct` or `navigational` and `freshnessWindow = w` or `m`.
+- For `current_snapshot`, aim the freshness-sensitive query at the newest source-native publication, update stream, archive month/period, dashboard, or data artifact available on or before `${currentDate}`. Do not drift to an older annual/retrospective summary when a newer routine current-statistics route is likely available.
 - If `${freshnessRequirement}` is `recent`, prefer at least one query with `freshnessWindow = w` or `m` unless the decisive evidence is clearly archival or fixed to a past period.
 - When `expectedEvidenceProfile` implies a current stock, total, ranking, or administrative count that should come from official or institutional sources, include at least one query aimed at the latest source-native archive, overview, or statistics landing page and at least one query aimed at the decisive current figure itself. Prefer publisher-native phrasing over broad topical summary wording.
 - When `expectedEvidenceProfile.primaryMetric` is present, dedicate one query to the direct source-native artifact or page most likely to publish that metric itself and one query to the archive, recurring series, or navigation path that leads to it.
@@ -1003,6 +1005,11 @@ Treat `${freshnessRequirement}` as the authoritative claim-level freshness contr
 **Claim:**
 ```
 ${claim}
+```
+
+**Current Date:**
+```
+${currentDate}
 ```
 
 **Expected Evidence Profile:**

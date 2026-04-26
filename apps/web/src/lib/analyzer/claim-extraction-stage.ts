@@ -293,6 +293,18 @@ export async function extractClaims(
     }
     if (salienceCommitment.ran) {
       state.llmCalls++;
+      if (!salienceCommitment.success) {
+        state.warnings.push({
+          type: "salience_commitment_degraded",
+          severity: "info",
+          message: "Stage 1 salience commitment failed open; continuing without salience anchors.",
+          details: {
+            stage: "claim_extraction",
+            mode: salienceCommitment.mode,
+            errorMessage: salienceCommitment.errorMessage,
+          },
+        });
+      }
       console.info(
         `[Stage1] E2 salience commitment: ${salienceCommitment.anchors.length} anchor(s) identified.`,
       );
@@ -731,7 +743,85 @@ export async function extractClaims(
                   `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${repairAnchorText}" fused and validated cleanly.`
                 );
               } else {
-                console.info("[Stage1] Contract repair did not validate cleanly; keeping pre-repair set.");
+                const refinedRepairAnchorText =
+                  selectRepairAnchorText(
+                    evaluatedRepair.summary,
+                    repairedPass2.atomicClaims as unknown as AtomicClaim[],
+                    salienceCommitment,
+                  ) ?? repairAnchorText;
+                if (shouldAttemptContractRepair(evaluatedRepair.summary, refinedRepairAnchorText)) {
+                  console.info(
+                    "[Stage1] Contract repair did not validate cleanly; attempting one refined repair with the post-repair validation summary.",
+                  );
+                  state.onEvent?.("Repairing claim set against refined contract validation summary...", 28);
+                  const refinedRepairedPass2 = await runContractRepair(
+                    repairedPass2.atomicClaims as unknown as AtomicClaim[],
+                    refinedRepairAnchorText,
+                    evaluatedRepair.summary,
+                    state.originalInput,
+                    activePass2.impliedClaim ?? "",
+                    activePass2.articleThesis ?? "",
+                    pipelineConfig,
+                    state,
+                  );
+                  if (refinedRepairedPass2) {
+                    state.llmCalls++;
+                    state.onEvent?.("Validating refined claim contract repair...", 28);
+                    const {
+                      result: refinedRepairValidationResult,
+                      attempts: refinedRepairValidationAttempts,
+                    } = await runClaimContractValidationWithRetry(() =>
+                      validateClaimContract(
+                        refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[],
+                        state.originalInput,
+                        activePass2.impliedClaim ?? "",
+                        activePass2.articleThesis ?? "",
+                        activePass2.inputClassification ?? "single_atomic_claim",
+                        pipelineConfig,
+                        salienceCommitment,
+                        activePass2.distinctEvents ?? [],
+                      )
+                    );
+                    state.llmCalls += refinedRepairValidationAttempts;
+
+                    if (refinedRepairValidationResult) {
+                      const evaluatedRefinedRepair = await applyApprovedSingleClaimChallenges(
+                        refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[],
+                        evaluateClaimContractValidation(
+                          refinedRepairValidationResult,
+                          refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[],
+                        ),
+                        state.originalInput,
+                        activePass2.impliedClaim ?? "",
+                        activePass2.articleThesis ?? "",
+                        activePass2.inputClassification ?? "single_atomic_claim",
+                        pipelineConfig,
+                        state,
+                        28,
+                        salienceCommitment,
+                        activePass2.distinctEvents ?? [],
+                      );
+                      if (!evaluatedRefinedRepair.effectiveRePromptRequired) {
+                        activePass2 = { ...activePass2, atomicClaims: refinedRepairedPass2.atomicClaims };
+                        stageAttribution = "repair";
+                        lastContractValidatedClaims = refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[];
+                        contractValidationSummary = evaluatedRefinedRepair.summary;
+                        contractValidationSummary.stageAttribution = stageAttribution;
+                        console.info(
+                          `[Stage1] Refined contract repair produced ${refinedRepairedPass2.atomicClaims.length} claim(s) and validated cleanly.`,
+                        );
+                      } else {
+                        console.info("[Stage1] Refined contract repair did not validate cleanly; keeping pre-repair set.");
+                      }
+                    } else {
+                      console.warn("[Stage1] Refined contract repair could not be re-validated; keeping pre-repair set.");
+                    }
+                  } else {
+                    console.warn("[Stage1] Refined contract repair returned no usable output; keeping pre-repair set.");
+                  }
+                } else {
+                  console.info("[Stage1] Contract repair did not validate cleanly; keeping pre-repair set.");
+                }
               }
             } else {
               console.warn("[Stage1] Contract repair could not be re-validated; keeping pre-repair set.");
@@ -2356,7 +2446,9 @@ async function runContractRepair(
         },
         {
           role: "user" as const,
-          content: `Repair the claim set to satisfy the contract validation summary while preserving the anchor "${anchorText}".`,
+          content:
+            `Repair the claim set to satisfy every failure reason in the contract validation summary while preserving the anchor "${anchorText}" exactly. ` +
+            "If the summary names a comparison-side copied-value, orientation, evidence-profile, or freshness defect, repair the `statement`, `expectedEvidenceProfile`, and `freshnessRequirement` together; keep the comparison relation orientation-preserving and do not assign a named/current-side value to the comparator/reference side unless the original input did so.",
         },
       ],
       temperature: 0,
