@@ -555,4 +555,17 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("${distinctEventsContextJson}");
     });
   });
+
+  describe("evidence extraction direction for numeric comparisons", () => {
+    it("keeps one-sided quantitative comparator evidence directional when the relation is assessable", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Numeric comparison claims");
+      expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied by the claim/profile");
+      expect(section).toContain("Do not leave source-native current-side or reference-side values `contextual` solely because the source reports only one side");
+      expect(section).toContain("Do not mark a direct quantitative source value as `contextual` merely because it carries a metric-class, temporal-window, or category-scope caveat");
+      expect(section).toContain("classify it as `supports` or `contradicts` and preserve the caveat in `evidenceScope`");
+      expect(section).toContain("source-native values for either side can be directional even if no source states the full comparison sentence");
+    });
+  });
 });
