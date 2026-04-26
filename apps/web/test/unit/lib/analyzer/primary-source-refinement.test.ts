@@ -48,7 +48,11 @@ vi.mock("@/lib/analyzer/source-reliability", () => ({
 }));
 
 vi.mock("@/lib/analyzer/llm", () => ({
-  getModelForTask: vi.fn(),
+  getModelForTask: vi.fn(() => ({
+    model: { id: "mock-model" },
+    modelName: "mock-model",
+    provider: "anthropic",
+  })),
   extractStructuredOutput: vi.fn(),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
   getPromptCachingOptions: vi.fn(() => ({})),

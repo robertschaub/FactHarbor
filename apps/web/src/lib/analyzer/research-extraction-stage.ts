@@ -262,11 +262,20 @@ export async function extractResearchEvidence(
   sources: Array<{ url: string; title: string; text: string }>,
   pipelineConfig: PipelineConfig,
   currentDate: string,
+  allClaims: AtomicClaim[] = [targetClaim],
 ): Promise<EvidenceItem[]> {
+  const claimSet = allClaims.some((claim) => claim.id === targetClaim.id)
+    ? allClaims
+    : [targetClaim, ...allClaims];
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
     claim: targetClaim.statement,
     expectedEvidenceProfile: JSON.stringify(targetClaim.expectedEvidenceProfile ?? {}, null, 2),
+    allClaims: JSON.stringify(claimSet.map((claim) => ({
+      id: claim.id,
+      statement: claim.statement,
+      expectedEvidenceProfile: claim.expectedEvidenceProfile ?? {},
+    })), null, 2),
     sourceContent: sources.map((s, i) =>
       `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
     ).join("\n\n---\n\n"),
@@ -328,12 +337,24 @@ export async function extractResearchEvidence(
     let missingSourceUrlAssignmentCount = 0;
     let unmatchedSourceUrlFallbackCount = 0;
     let contextualMappedToNeutralCount = 0;
+    let directionalCompanionClaimSuppressedCount = 0;
+    const knownClaimIds = new Set(claimSet.map((claim) => claim.id));
 
     const evidenceItems = validated.evidenceItems.map((ei) => {
-      // Log when LLM returns mismatched claim IDs (admin diagnostic)
-      if (ei.relevantClaimIds.length > 0 && !ei.relevantClaimIds.includes(targetClaim.id)) {
+      const hasUnknownClaimIds = ei.relevantClaimIds.some((claimId) => !knownClaimIds.has(claimId));
+      if (ei.relevantClaimIds.length === 0 || !ei.relevantClaimIds.includes(targetClaim.id) || hasUnknownClaimIds) {
         claimIdMismatchCount++;
       }
+      const mappedClaimDirection = ei.claimDirection === "contextual" ? "neutral" as const : ei.claimDirection;
+      const validCompanionClaimIds = ei.relevantClaimIds.filter((claimId) =>
+        claimId !== targetClaim.id && knownClaimIds.has(claimId),
+      );
+      if (mappedClaimDirection !== "neutral" && validCompanionClaimIds.length > 0) {
+        directionalCompanionClaimSuppressedCount++;
+      }
+      const relevantClaimIds = mappedClaimDirection === "neutral"
+        ? Array.from(new Set([targetClaim.id, ...validCompanionClaimIds]))
+        : [targetClaim.id];
       
       const normalizedCategoryInput = ei.category.toLowerCase().replace(/[_\s-]+/g, "_");
       const mappedCategory = mapCategory(ei.category);
@@ -357,7 +378,7 @@ export async function extractResearchEvidence(
       }
       matchedSource = matchedSource ?? sources[0];
 
-      if (ei.claimDirection === "contextual") {
+      if (mappedClaimDirection === "neutral" && ei.claimDirection === "contextual") {
         contextualMappedToNeutralCount++;
       }
 
@@ -370,7 +391,7 @@ export async function extractResearchEvidence(
         sourceUrl: matchedSource?.url ?? "",
         sourceTitle: matchedSource?.title ?? "",
         sourceExcerpt: ei.statement,
-        claimDirection: ei.claimDirection === "contextual" ? "neutral" as const : ei.claimDirection,
+        claimDirection: mappedClaimDirection,
         evidenceScope: {
           name: ei.evidenceScope?.methodology?.slice(0, 30) || "Unspecified",
           methodology: ei.evidenceScope?.methodology,
@@ -382,9 +403,11 @@ export async function extractResearchEvidence(
         },
         probativeValue: ei.probativeValue,
         sourceType: mapSourceType(ei.sourceType),
-        // Always use targetClaim.id — extraction targets a single claim,
-        // and LLM often returns wrong ID formats (e.g. "claim_01" vs "AC_01")
-        relevantClaimIds: [targetClaim.id],
+        // Extraction targets a single claim, so always preserve the target ID.
+        // Directional evidence has one global claimDirection, so companion IDs
+        // are kept only for neutral/contextual items until the data model can
+        // represent per-claim directions.
+        relevantClaimIds,
         isDerivative: ei.isDerivative ?? false,
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
       } satisfies EvidenceItem;
@@ -397,6 +420,7 @@ export async function extractResearchEvidence(
       || missingSourceUrlAssignmentCount > 0
       || unmatchedSourceUrlFallbackCount > 0
       || contextualMappedToNeutralCount > 0
+      || directionalCompanionClaimSuppressedCount > 0
     ) {
       debugLogFileOnly(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
         claimIdMismatches: claimIdMismatchCount,
@@ -405,6 +429,7 @@ export async function extractResearchEvidence(
         missingSourceUrlAssignments: missingSourceUrlAssignmentCount,
         unmatchedSourceUrlFallbacks: unmatchedSourceUrlFallbackCount,
         contextualMappedToNeutral: contextualMappedToNeutralCount,
+        directionalCompanionClaimSuppressed: directionalCompanionClaimSuppressedCount,
       });
     }
 
@@ -581,7 +606,9 @@ export async function assessEvidenceApplicability(
         foreignDomains.push(domain);
       }
       const existingClaimIds = item.relevantClaimIds ?? [];
-      const addedClaimIds = claimMappingAdditions.get(index) ?? [];
+      const addedClaimIds = item.claimDirection === "neutral"
+        ? claimMappingAdditions.get(index) ?? []
+        : [];
       const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...addedClaimIds]));
       if (relevantClaimIds.length > existingClaimIds.length) {
         claimMappingExtensions++;

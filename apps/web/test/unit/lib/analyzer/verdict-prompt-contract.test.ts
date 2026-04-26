@@ -720,6 +720,7 @@ describe("Stage-2 prompt contract", () => {
       expectedSourceTypes: ["government_report"],
       primaryMetric: "current metric",
     }),
+    allClaims: '[{"id":"AC_01","statement":"Entity A has current metric M","expectedEvidenceProfile":{"expectedMetrics":["current metric"]}},{"id":"AC_02","statement":"Entity A is close to reference metric R","expectedEvidenceProfile":{"expectedMetrics":["current metric","reference metric"]}}]',
     sourceContent: "[Source 1: Test]\nURL: https://example.com\nContent about proceedings...",
     sourceUrl: "https://example.com",
   };
@@ -748,6 +749,13 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       expect(section).toContain("target-specific");
       expect(section).toContain("comparator");
+    });
+
+    it("keeps companion claim IDs direction-safe in evidence extraction", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("Because one evidence item has only one `claimDirection`");
+      expect(section).toContain("list multiple claim IDs only for `contextual` items");
+      expect(section).toContain("For `supports` or `contradicts` items, keep the target claim ID only");
     });
 
     it("comparator guidance classifies historical precedent as contextual by default", () => {
@@ -935,7 +943,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("evidence applicability and claim-mapping engine");
       expect(section).toContain("directly reports one side, component, denominator, reference class, or source-native measurement route");
       expect(section).toContain("first gathered for a separate side-specific companion claim");
-      expect(section).toContain("Include both the side-specific claim ID and the comparison claim ID in `relevantClaimIds`");
+      expect(section).toContain("Because each item carries only one `claimDirection`");
+      expect(section).toContain("add companion claim IDs only when the item is neutral/contextual for all listed claims");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 

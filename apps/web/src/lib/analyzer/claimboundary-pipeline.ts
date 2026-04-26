@@ -416,7 +416,18 @@ function compactMarkdownText(value: unknown, maxLength = 700): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   if (compacted.length <= maxLength) return compacted;
-  return `${compacted.slice(0, maxLength).trim()}...`;
+  const truncated = compacted.slice(0, maxLength).trim();
+  const sentenceBoundary = Math.max(
+    truncated.lastIndexOf(". "),
+    truncated.lastIndexOf("! "),
+    truncated.lastIndexOf("? "),
+    truncated.lastIndexOf("\n"),
+  );
+  const minimumUsefulBoundary = Math.floor(maxLength * 0.6);
+  const safeText = sentenceBoundary >= minimumUsefulBoundary
+    ? truncated.slice(0, sentenceBoundary + 1).trim()
+    : truncated;
+  return `${safeText}...`;
 }
 
 function formatMarkdownList(values: unknown, empty = "none"): string {

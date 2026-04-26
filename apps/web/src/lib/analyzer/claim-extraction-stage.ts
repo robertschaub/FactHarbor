@@ -1066,6 +1066,8 @@ export async function extractClaims(
       let acceptedMt5Gate1 = retryGate1;
       let acceptedMt5Pass2 = retryPass2;
       let acceptedMt5Count = retryCount;
+      const maxMt5CorrectiveRetries = 1;
+      let mt5CorrectiveRetriesUsed = 0;
 
       if (acceptRetry && usingContractApprovedMt5Exception) {
         state.onEvent?.("Validating multi-event retry claim contract fidelity...", 31);
@@ -1118,7 +1120,12 @@ export async function extractClaims(
           acceptRetry = false;
         }
 
-        if (!acceptRetry && evaluatedMt5Contract?.effectiveRePromptRequired) {
+        if (
+          !acceptRetry
+          && evaluatedMt5Contract?.effectiveRePromptRequired
+          && mt5CorrectiveRetriesUsed < maxMt5CorrectiveRetries
+        ) {
+          mt5CorrectiveRetriesUsed++;
           console.info(
             "[Stage1] MT-5(C) expanded retry failed contract validation; attempting one corrective decomposition retry before failing closed.",
           );

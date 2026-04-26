@@ -483,6 +483,16 @@ describe("Research Extraction Stage", () => {
         expectedSourceTypes: ["government_report"],
         primaryMetric: "current metric",
       });
+      const allClaims = JSON.parse(renderCall![2].allClaims);
+      expect(allClaims).toEqual([
+        expect.objectContaining({
+          id: "AC_01",
+          statement: "Entity A is close to benchmark B.",
+          expectedEvidenceProfile: expect.objectContaining({
+            primaryMetric: "current metric",
+          }),
+        }),
+      ]);
     });
 
     it("should extract evidence items with full EvidenceScope", async () => {
@@ -527,7 +537,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].probativeValue).toBe("high");
     });
 
-    it("should always use targetClaim.id for relevantClaimIds regardless of LLM output", async () => {
+    it("should always include targetClaim.id for relevantClaimIds", async () => {
       const claim = createClaim({ id: "AC_02" });
       const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
 
@@ -549,6 +559,76 @@ describe("Research Extraction Stage", () => {
       const result = await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
 
       expect(result[0].relevantClaimIds).toEqual(["AC_02"]);
+    });
+
+    it("should preserve valid companion claim IDs on contextual extraction output", async () => {
+      const targetClaim = createClaim({ id: "AC_01", statement: "Current-side metric claim" });
+      const companionClaim = createClaim({
+        id: "AC_02",
+        statement: "Comparison claim using the current-side metric",
+        expectedEvidenceProfile: {
+          expectedMetrics: ["current-side metric", "reference-side metric"],
+        },
+      });
+      const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        evidenceItems: [
+          {
+            statement: "Official source reports current-side metric.",
+            category: "statistic",
+            claimDirection: "contextual",
+            evidenceScope: { methodology: "Official statistics", temporal: "current" },
+            probativeValue: "high",
+            relevantClaimIds: ["AC_02", "AC_UNKNOWN"],
+          },
+        ],
+      });
+
+      const result = await extractResearchEvidence(
+        targetClaim,
+        sources,
+        mockConfig,
+        "2026-03-23",
+        [targetClaim, companionClaim],
+      );
+
+      expect(result[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+      expect(result[0].claimDirection).toBe("neutral");
+    });
+
+    it("should suppress companion claim IDs on directional extraction output", async () => {
+      const targetClaim = createClaim({ id: "AC_01", statement: "Side-specific directional claim" });
+      const companionClaim = createClaim({ id: "AC_02", statement: "Companion comparison claim" });
+      const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        evidenceItems: [
+          {
+            statement: "Official source directionally supports the side-specific claim.",
+            category: "statistic",
+            claimDirection: "supports",
+            evidenceScope: { methodology: "Official statistics", temporal: "current" },
+            probativeValue: "high",
+            relevantClaimIds: ["AC_01", "AC_02"],
+          },
+        ],
+      });
+
+      const result = await extractResearchEvidence(
+        targetClaim,
+        sources,
+        mockConfig,
+        "2026-03-23",
+        [targetClaim, companionClaim],
+      );
+
+      expect(result[0].claimDirection).toBe("supports");
+      expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
     });
 
     it("should override wrong-format LLM claim IDs with targetClaim.id", async () => {
@@ -719,6 +799,7 @@ describe("Research Extraction Stage", () => {
           missingSourceUrlAssignments: 2,
           unmatchedSourceUrlFallbacks: 1,
           contextualMappedToNeutral: 1,
+          directionalCompanionClaimSuppressed: 0,
         },
       );
       expect(mockDebugLog).not.toHaveBeenCalledWith(
@@ -796,6 +877,7 @@ describe("Research Extraction Stage", () => {
         createEvidence({
           id: "EV_01",
           statement: "Official source reports current metric M for Entity A.",
+          claimDirection: "neutral",
           relevantClaimIds: ["AC_01"],
         }),
       ];
@@ -828,7 +910,7 @@ describe("Research Extraction Stage", () => {
         createClaim({ id: "AC_01", statement: "Generic side claim" }),
         createClaim({ id: "AC_02", statement: "Generic comparison claim" }),
       ];
-      const evidence = [createEvidence({ id: "EV_01", relevantClaimIds: ["AC_01"] })];
+      const evidence = [createEvidence({ id: "EV_01", claimDirection: "neutral", relevantClaimIds: ["AC_01"] })];
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockResolvedValue({ text: "" } as any);
@@ -851,7 +933,7 @@ describe("Research Extraction Stage", () => {
         createClaim({ id: "AC_01", statement: "Side claim" }),
         createClaim({ id: "AC_02", statement: "Comparison claim" }),
       ];
-      const evidence = [createEvidence({ id: "EV_01", relevantClaimIds: ["AC_01"] })];
+      const evidence = [createEvidence({ id: "EV_01", claimDirection: "neutral", relevantClaimIds: ["AC_01"] })];
       const disabledConfig = { applicabilityFilterEnabled: false } as any;
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });

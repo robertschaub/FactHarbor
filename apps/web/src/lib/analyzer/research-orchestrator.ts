@@ -130,10 +130,13 @@ function buildRelevanceClassificationCacheKey(params: {
   const relevantGeographies = Array.from(
     new Set((params.relevantGeographies ?? []).filter((value): value is string => !!value)),
   ).sort();
+  const relevanceModel = getModelForTask("understand", undefined, params.pipelineConfig);
 
   return JSON.stringify({
     claimId: params.claim.id,
     claimStatement: params.claim.statement,
+    relevanceProvider: relevanceModel.provider,
+    relevanceModel: relevanceModel.modelName,
     freshnessRequirement: params.claim.freshnessRequirement ?? "none",
     currentDate: params.currentDate,
     inferredGeography: params.inferredGeography ?? null,
@@ -830,6 +833,22 @@ export async function researchEvidence(
         `Source reliability limited: ${srPrefetch.evaluated} evaluated, ${srPrefetch.cacheHits} cache hit(s), ${srPrefetch.skippedDueToLimit + srPrefetch.skippedDueToBudget} skipped.`,
         -1,
       );
+      state.warnings.push({
+        type: "source_reliability_budget_limited",
+        severity: "info",
+        message:
+          `Source reliability live evaluation skipped ${srPrefetch.skippedDueToLimit + srPrefetch.skippedDueToBudget} domain(s) ` +
+          `because the per-run limit or runtime budget was exhausted. Those domains use unknown reliability defaults.`,
+        details: {
+          stage: "research_sr",
+          skippedDueToLimit: srPrefetch.skippedDueToLimit,
+          skippedDueToBudget: srPrefetch.skippedDueToBudget,
+          liveEvaluationLimit: srPrefetch.liveEvaluationLimit,
+          liveEvaluationBudgetMs: srPrefetch.liveEvaluationBudgetMs,
+          evaluated: srPrefetch.evaluated,
+          cacheHits: srPrefetch.cacheHits,
+        },
+      });
     }
     if (srPrefetch.errorCount > 0) {
       const failedDomainCount = srPrefetch.failedDomains.length;
@@ -1419,6 +1438,7 @@ export async function runResearchIteration(
           fetchedSources,
           pipelineConfig,
           currentDate,
+          state.understanding?.atomicClaims ?? [targetClaim],
         );
         state.llmCalls++;
         telemetry.rawEvidenceItems += rawEvidence.length;
@@ -1832,7 +1852,7 @@ export async function maybeRunSupplementaryEnglishLane(
     }
 
     const rawEvidence = await extractResearchEvidence(
-      targetClaim, fetchedSources, pipelineConfig, currentDate,
+      targetClaim, fetchedSources, pipelineConfig, currentDate, state.understanding?.atomicClaims ?? [targetClaim],
     );
     state.llmCalls++;
     enTelemetry.rawEvidenceItems += rawEvidence.length;

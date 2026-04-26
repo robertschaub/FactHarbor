@@ -876,6 +876,7 @@ export type AnalysisWarningType =
   | "evidence_filter_degradation"   // LLM evidence filter failed, using heuristics
   | "search_provider_error"         // Search provider returned fatal error (429, quota exhaustion)
   | "source_reliability_error"      // Source-reliability evaluation infra/API errors during prefetch
+  | "source_reliability_budget_limited" // Source-reliability live evaluation skipped domains due to budget/limit
   | "source_fetch_failure"          // Individual source fetch/extraction failures during research
   | "source_fetch_degradation"      // High source-fetch failure ratio; evidence acquisition degraded
   | "budget_exceeded"               // Analysis terminated early due to budget

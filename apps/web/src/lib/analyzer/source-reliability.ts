@@ -310,6 +310,15 @@ export async function prefetchSourceReliability(
     return Math.max(0, budgetDeadlineMs - Date.now());
   };
 
+  const getLiveEvaluationBlockReason = (): "limit" | "budget" | null => {
+    if (liveEvaluationsStarted >= maxLiveEvaluations) return "limit";
+    const remainingBudgetMs = getRemainingBudgetMs();
+    if (remainingBudgetMs !== null && remainingBudgetMs < minEvaluationBudgetMs) return "budget";
+    return null;
+  };
+
+  const canStartLiveEvaluation = (): boolean => getLiveEvaluationBlockReason() === null;
+
   const reserveLiveEvaluation = (domain: string): { allowed: true; budgetMs: number } | { allowed: false; reason: "limit" | "budget" } => {
     if (liveEvaluationsStarted >= maxLiveEvaluations) {
       result.skippedDueToLimit++;
@@ -497,8 +506,28 @@ export async function prefetchSourceReliability(
         }
       }
 
-      // Evaluate root domains not found in cache
-      await evaluateDomainsWithLimits(rootsToEvaluate, "Pass 2 (root fallback)");
+      // Evaluate root domains not found in cache only if a live SR slot remains.
+      if (rootsToEvaluate.length > 0 && canStartLiveEvaluation()) {
+        await evaluateDomainsWithLimits(rootsToEvaluate, "Pass 2 (root fallback)");
+      } else if (rootsToEvaluate.length > 0) {
+        const blockReason = getLiveEvaluationBlockReason() ?? "limit";
+        const skippedEvaluationRoots = rootsToEvaluate.filter((root) => {
+          prefetchedData.set(root, null);
+          if (!isImportantSourceWithConfig(root, runtimeConfig)) {
+            console.log(`[SR] Skipping unimportant source: ${root}`);
+            return false;
+          }
+          return true;
+        });
+        if (blockReason === "limit") {
+          result.skippedDueToLimit += skippedEvaluationRoots.length;
+        } else {
+          result.skippedDueToBudget += skippedEvaluationRoots.length;
+        }
+        console.log(
+          `[SR] Skipping Pass 2 root fallback for ${skippedEvaluationRoots.length} root domain(s): live evaluation ${blockReason} exhausted`,
+        );
+      }
       for (const root of rootsToEvaluate) {
         const rootData = prefetchedData.get(root);
         if (rootData && rootData.score !== null) {

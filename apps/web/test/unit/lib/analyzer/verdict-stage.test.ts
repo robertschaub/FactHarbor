@@ -1250,6 +1250,79 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
   });
 
+  it("still enforces citation integrity when neutral citation adjudication fails", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 25,
+        verdict: "MOSTLY-FALSE",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        throw new Error("adjudication unavailable");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [createAtomicClaim({ id: "AC_01" })],
+        boundaries: [createClaimBoundary()],
+        coverageMatrix: buildCoverageMatrix([createAtomicClaim({ id: "AC_01" })], [createClaimBoundary()], evidence),
+        deferredCitationIntegrityCollapses: [{
+          claimId: "AC_01",
+          collapsedSide: "contradicting",
+          truthPercentage: 25,
+          droppedCitations: [{
+            id: "EV_NEUTRAL",
+            bucket: "contradicting",
+            reason: "neutral_claim_direction",
+            claimDirection: "neutral",
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+          }],
+          movedCitations: [],
+          remainingSupportingCount: 0,
+          remainingContradictingCount: 0,
+        }] as any,
+      },
+    );
+
+    expect(mockLLM).toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.objectContaining({ adjudicationCases: expect.any(Array) }),
+      expect.objectContaining({ tier: "budget" }),
+    );
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((warning) => warning.type === "verdict_direction_issue")).toBe(true);
+    expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(true);
+  });
+
   it("emits verdict_batch_retry when validation recovers on retry", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({ claimId: "AC_01" })];
     const evidence = [createEvidenceItem({ id: "EV_01" })];

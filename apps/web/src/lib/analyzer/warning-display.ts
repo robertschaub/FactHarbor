@@ -24,6 +24,7 @@ const WARNING_CLASSIFICATION = {
   evidence_filter_degradation: { bucket: "provider", impact: "degrading" },
   search_provider_error: { bucket: "provider", impact: "informational" },
   source_reliability_error: { bucket: "provider", impact: "informational" },
+  source_reliability_budget_limited: { bucket: "provider", impact: "informational" },
   source_fetch_failure: { bucket: "provider", impact: "informational" },
   source_fetch_degradation: { bucket: "analysis", impact: "informational" },
   budget_exceeded: { bucket: "analysis", impact: "degrading" },

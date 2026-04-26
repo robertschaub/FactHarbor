@@ -15,6 +15,7 @@ import {
   extractDomain,
   isImportantSource,
   getTrackRecordScore,
+  prefetchSourceReliability,
   clearPrefetchedScores,
   SR_CONFIG,
   applyEvidenceWeighting,
@@ -170,6 +171,38 @@ describe("getTrackRecordScore (sync lookup)", () => {
     // This test verifies the function signature doesn't return a Promise
     const result = getTrackRecordScore("https://example.com");
     expect(result).not.toBeInstanceOf(Promise);
+  });
+});
+
+describe("prefetchSourceReliability budget guards", () => {
+  beforeEach(() => {
+    clearPrefetchedScores();
+  });
+
+  afterEach(() => {
+    clearPrefetchedScores();
+  });
+
+  it("does not spend additional Pass 2 root fallback slots after the live evaluation limit is exhausted", async () => {
+    const suffix = `sr-budget-${Date.now()}.org`;
+    const result = await prefetchSourceReliability(
+      [
+        `https://a.${suffix}/source`,
+        `https://b.${suffix}/source`,
+      ],
+      {
+        config: {
+          ...SR_CONFIG,
+          enabled: true,
+          maxLiveEvaluationsPerRun: 0,
+        },
+        maxLiveEvaluations: 0,
+        fallback: true,
+      },
+    );
+
+    expect(result.skippedDueToLimit).toBe(2);
+    expect(result.evaluated).toBe(0);
   });
 });
 

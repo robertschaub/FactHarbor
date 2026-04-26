@@ -206,6 +206,47 @@ describe("research-orchestrator telemetry helpers", () => {
     expect(changed.cacheHit).toBe(false);
     expect(classifier).toHaveBeenCalledTimes(2);
   });
+
+  it("does not reuse relevance classifications across changed model routing", async () => {
+    const state = createState(["AC_01"]);
+    const claim = { id: "AC_01", statement: "Entity A reported metric B." } as AtomicClaim;
+    const searchResults = [
+      { url: "https://example.test/a", title: "A", snippet: "Alpha" },
+    ];
+    const classifier = vi.fn(async () => [
+      { url: "https://example.test/a", relevanceScore: 0.82, originalRank: 0 },
+    ]);
+
+    await classifyRelevanceWithJobCache({
+      state,
+      claim,
+      searchResults,
+      pipelineConfig: {
+        llmProvider: "anthropic",
+        llmTiering: true,
+        modelUnderstand: "budget",
+        relevanceFloor: 0.4,
+      } as any,
+      currentDate: "2026-04-24",
+      classifier: classifier as any,
+    });
+    const changed = await classifyRelevanceWithJobCache({
+      state,
+      claim,
+      searchResults,
+      pipelineConfig: {
+        llmProvider: "anthropic",
+        llmTiering: true,
+        modelUnderstand: "standard",
+        relevanceFloor: 0.4,
+      } as any,
+      currentDate: "2026-04-24",
+      classifier: classifier as any,
+    });
+
+    expect(changed.cacheHit).toBe(false);
+    expect(classifier).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("collectSourceReliabilityUrls", () => {
