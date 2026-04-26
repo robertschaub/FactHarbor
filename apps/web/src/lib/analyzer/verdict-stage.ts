@@ -1688,6 +1688,79 @@ export async function validateVerdicts(
       }
     }
 
+    if (
+      repairContext
+      && current.verdictReason !== "verdict_integrity_failure"
+      && decisiveCitationSideForVerdict(current) === null
+      && current.supportingEvidenceIds.length === 0
+      && current.contradictingEvidenceIds.length === 0
+    ) {
+      const originalClaimDirections = new Map(evidence.map((item) => [item.id, item.claimDirection]));
+      const mixedAdjudicationWarnings: AnalysisWarning[] = [];
+      let keepMixedAdjudication = false;
+      try {
+        const [mixedAdjudicated] = await adjudicateNeutralCitationDirections(
+          [current],
+          evidence,
+          repairContext.claims,
+          llmCall,
+          config,
+          mixedAdjudicationWarnings,
+          repairContext.deferredCitationIntegrityCollapses,
+          { includeDecisiveMissing: false, includeMixedEmpty: true },
+        );
+        const mixedChanged = Boolean(mixedAdjudicated) && (
+          mixedAdjudicated.supportingEvidenceIds.length !== current.supportingEvidenceIds.length
+          || mixedAdjudicated.contradictingEvidenceIds.length !== current.contradictingEvidenceIds.length
+          || mixedAdjudicated.supportingEvidenceIds.some((id, index) => id !== current.supportingEvidenceIds[index])
+          || mixedAdjudicated.contradictingEvidenceIds.some((id, index) => id !== current.contradictingEvidenceIds[index])
+        );
+
+        if (mixedChanged) {
+          const mixedDirection = await validateDirectionOnly(
+            mixedAdjudicated,
+            evidence,
+            llmCall,
+            validationTier,
+            validationProvider,
+          );
+
+          if (mixedDirection.valid !== false) {
+            const mixedGrounding = await validateGroundingOnly(
+              mixedAdjudicated,
+              evidence,
+              llmCall,
+              validationTier,
+              validationProvider,
+              repairContext,
+            );
+            if (mixedGrounding.valid) {
+              keepMixedAdjudication = true;
+              warnings?.push(...mixedAdjudicationWarnings);
+              current = {
+                ...mixedAdjudicated,
+                boundaryFindings: refreshBoundaryFindingsAfterRepair(
+                  mixedAdjudicated,
+                  evidence,
+                  repairContext.boundaries,
+                  repairContext.coverageMatrix,
+                  repairContext.calculationConfig,
+                ),
+              };
+              validated.push(current);
+              continue;
+            }
+          }
+        }
+      } finally {
+        if (!keepMixedAdjudication) {
+          for (const item of evidence) {
+            item.claimDirection = originalClaimDirections.get(item.id);
+          }
+        }
+      }
+    }
+
     if (pendingGroundingIssues.length > 0 && config.verdictGroundingPolicy !== "safe_downgrade") {
       emitGroundingIssue();
     }
@@ -2409,15 +2482,22 @@ type CitationDirectionAdjudication = {
   reasoning?: string;
 };
 
+type NeutralCitationAdjudicationCaseMode = "decisive_missing" | "mixed_empty";
+type NeutralCitationAdjudicationOptions = {
+  includeDecisiveMissing?: boolean;
+  includeMixedEmpty?: boolean;
+};
+
 type NeutralCitationAdjudicationCase = {
   claimId: string;
   claimText: string;
   truthPercentage: number;
   verdict: ClaimVerdict7Point;
-  decisiveSide: VerdictCitationBucket;
+  caseMode: NeutralCitationAdjudicationCaseMode;
+  decisiveSide?: VerdictCitationBucket;
   candidates: Array<{
     evidenceId: string;
-    originalBucket: VerdictCitationBucket;
+    originalBucket?: VerdictCitationBucket;
     statement: string;
     sourceType?: SourceType;
     probativeValue?: EvidenceItem["probativeValue"];
@@ -2471,13 +2551,16 @@ function buildNeutralCitationAdjudicationCases(
   evidence: EvidenceItem[],
   claims: AtomicClaim[],
   deferredCollapses?: DeferredCitationIntegrityCollapse[],
+  options: NeutralCitationAdjudicationOptions = {},
 ): NeutralCitationAdjudicationCase[] {
+  const includeDecisiveMissing = options.includeDecisiveMissing ?? true;
+  const includeMixedEmpty = options.includeMixedEmpty ?? false;
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const claimById = new Map(claims.map((claim) => [claim.id, claim]));
   const verdictByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
   const cases: NeutralCitationAdjudicationCase[] = [];
 
-  for (const collapse of deferredCollapses ?? []) {
+  if (includeDecisiveMissing) for (const collapse of deferredCollapses ?? []) {
     const verdict = verdictByClaim.get(collapse.claimId);
     const claim = claimById.get(collapse.claimId);
     if (!verdict || !claim) continue;
@@ -2517,12 +2600,13 @@ function buildNeutralCitationAdjudicationCases(
       claimText: claim.statement,
       truthPercentage: verdict.truthPercentage,
       verdict: verdict.verdict,
+      caseMode: "decisive_missing",
       decisiveSide,
       candidates,
     });
   }
 
-  for (const verdict of verdicts) {
+  if (includeDecisiveMissing) for (const verdict of verdicts) {
     const decisiveSide = decisiveCitationSideForVerdict(verdict);
     if (!decisiveSide || missingCurrentDecisiveCitationSide(verdict) !== decisiveSide) continue;
 
@@ -2562,7 +2646,42 @@ function buildNeutralCitationAdjudicationCases(
       claimText: claim.statement,
       truthPercentage: verdict.truthPercentage,
       verdict: verdict.verdict,
+      caseMode: "decisive_missing",
       decisiveSide,
+      candidates: fallbackCandidates,
+    });
+  }
+
+  if (includeMixedEmpty) for (const verdict of verdicts) {
+    if (decisiveCitationSideForVerdict(verdict) !== null) continue;
+    if (verdict.supportingEvidenceIds.length > 0 || verdict.contradictingEvidenceIds.length > 0) continue;
+
+    const claim = claimById.get(verdict.claimId);
+    if (!claim) continue;
+
+    const fallbackCandidates = evidence
+      .filter((item) =>
+        item.claimDirection === "neutral"
+        && item.applicability === "direct"
+        && isSingleClaimScopedEvidence(item, verdict.claimId),
+      )
+      .map((item): NeutralCitationCandidate => ({
+        evidenceId: item.id,
+        statement: item.statement,
+        sourceType: item.sourceType,
+        probativeValue: item.probativeValue,
+        applicability: item.applicability,
+        evidenceScope: item.evidenceScope,
+        sourceUrl: item.sourceUrl,
+      }));
+
+    if (fallbackCandidates.length === 0) continue;
+    cases.push({
+      claimId: verdict.claimId,
+      claimText: claim.statement,
+      truthPercentage: verdict.truthPercentage,
+      verdict: verdict.verdict,
+      caseMode: "mixed_empty",
       candidates: fallbackCandidates,
     });
   }
@@ -2578,8 +2697,9 @@ async function adjudicateNeutralCitationDirections(
   config: VerdictStageConfig,
   warnings?: AnalysisWarning[],
   deferredCollapses?: DeferredCitationIntegrityCollapse[],
+  options?: NeutralCitationAdjudicationOptions,
 ): Promise<CBClaimVerdict[]> {
-  const cases = buildNeutralCitationAdjudicationCases(verdicts, evidence, claims, deferredCollapses);
+  const cases = buildNeutralCitationAdjudicationCases(verdicts, evidence, claims, deferredCollapses, options);
   if (cases.length === 0) return verdicts;
 
   let adjudications: CitationDirectionAdjudication[] = [];
@@ -2645,11 +2765,15 @@ async function adjudicateNeutralCitationDirections(
 
   if (acceptedByClaim.size === 0) return verdicts;
 
+  const caseKindByClaim = new Map(cases.map((entry) => [entry.claimId, entry.caseMode]));
   for (const [claimId, entries] of acceptedByClaim) {
+    const caseKind = caseKindByClaim.get(claimId);
     warnings?.push({
       type: "verdict_direction_issue",
       severity: "info",
-      message: `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) before citation integrity downgrade.`,
+      message: caseKind === "mixed_empty"
+        ? `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) to populate empty mixed-verdict citations.`
+        : `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) before citation integrity downgrade.`,
       details: {
         claimId,
         adjudicatedCitations: entries,
@@ -2663,6 +2787,18 @@ async function adjudicateNeutralCitationDirections(
 
     const supportingEvidenceIds = new Set(verdict.supportingEvidenceIds);
     const contradictingEvidenceIds = new Set(verdict.contradictingEvidenceIds);
+
+    if (
+      caseKindByClaim.get(verdict.claimId) === "mixed_empty"
+      && verdict.supportingEvidenceIds.length === 0
+      && verdict.contradictingEvidenceIds.length === 0
+    ) {
+      for (const item of evidence) {
+        if (item.applicability !== "direct" || !isSingleClaimScopedEvidence(item, verdict.claimId)) continue;
+        if (item.claimDirection === "supports") supportingEvidenceIds.add(item.id);
+        if (item.claimDirection === "contradicts") contradictingEvidenceIds.add(item.id);
+      }
+    }
 
     for (const entry of entries) {
       if (entry.claimDirection === "supports") supportingEvidenceIds.add(entry.evidenceId);

@@ -2044,7 +2044,7 @@ Return a single JSON object:
 
 ## VERDICT_CITATION_DIRECTION_ADJUDICATION
 
-You are a citation direction adjudicator. Your task is to classify direct, claim-local evidence items that were originally marked neutral but were selected as decisive citations by the verdict stage.
+You are a citation direction adjudicator. Your task is to classify direct, claim-local evidence items that were originally marked neutral but either were selected as decisive citations by the verdict stage or are needed to populate an otherwise uncited mixed verdict.
 
 ### Task
 

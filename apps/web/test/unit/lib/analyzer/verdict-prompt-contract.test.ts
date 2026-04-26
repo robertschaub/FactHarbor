@@ -137,6 +137,7 @@ const CITATION_DIRECTION_ADJUDICATION_VARS: Record<string, string> = {
     claimText: "Entity A is approximately equal to reference B",
     truthPercentage: 35,
     verdict: "LEANING-FALSE",
+    caseMode: "decisive_missing",
     decisiveSide: "contradicting",
     candidates: [{
       evidenceId: "EV_01",
@@ -249,6 +250,7 @@ describe("Stage-4 prompt contract", () => {
     it("keeps citation adjudication generic and preserves numeric comparison direction repair", () => {
       const section = extractSection(promptContent, "VERDICT_CITATION_DIRECTION_ADJUDICATION");
       expect(section).toContain("direct, claim-local evidence items");
+      expect(section).toContain("populate an otherwise uncited mixed verdict");
       expect(section).toContain("Return `neutral` when the evidence is background");
       expect(section).toContain("For numeric comparison claims");
       expect(section).toContain("Do not keep an item neutral solely because it reports only one side of the comparison");

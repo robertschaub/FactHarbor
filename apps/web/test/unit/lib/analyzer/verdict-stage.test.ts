@@ -1495,6 +1495,347 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.message.includes("LLM adjudicated"))).toBe(false);
   });
 
+  it("adjudicates direct neutral candidates for uncited mixed verdicts", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 55,
+        verdict: "MIXED",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      createEvidenceItem({
+        id: "EV_CONTEXT",
+        claimDirection: "supports",
+        applicability: "contextual",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "contradicts",
+            reasoning: "The direct neutral candidate provides the other side of the mixed verdict.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.objectContaining({
+        adjudicationCases: [
+          expect.objectContaining({
+            claimId: "AC_01",
+            caseMode: "mixed_empty",
+            candidates: [expect.objectContaining({ evidenceId: "EV_NEUTRAL" })],
+          }),
+        ],
+      }),
+      expect.objectContaining({ tier: "budget" }),
+    );
+    expect(evidence[1].claimDirection).toBe("contradicts");
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_NEUTRAL"]);
+    expect(result[0].supportingEvidenceIds).not.toContain("EV_CONTEXT");
+    expect(warnings.some((warning) => warning.message.includes("empty mixed-verdict citations"))).toBe(true);
+  });
+
+  it("does not leak mixed-empty adjudication when direction validation rejects it", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 55,
+        verdict: "MIXED",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    let directionCalls = 0;
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionCalls += 1;
+        return directionCalls === 1
+          ? [{ claimId: "AC_01", directionValid: true, issues: [] }]
+          : [{ claimId: "AC_01", directionValid: false, issues: ["Rejected mixed-empty citation direction"] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "contradicts",
+            reasoning: "Tentative direction.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(evidence[0].claimDirection).toBe("neutral");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((warning) => warning.message.includes("empty mixed-verdict citations"))).toBe(false);
+  });
+
+  it("does not leak mixed-empty adjudication when grounding rejects it", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 55,
+        verdict: "MIXED",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls += 1;
+        return groundingCalls === 1
+          ? [{ claimId: "AC_01", groundingValid: true, issues: [] }]
+          : [{ claimId: "AC_01", groundingValid: false, issues: ["Rejected mixed-empty citation grounding"] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "supports",
+            reasoning: "Tentative direction.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(evidence[0].claimDirection).toBe("neutral");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((warning) => warning.message.includes("empty mixed-verdict citations"))).toBe(false);
+  });
+
+  it("does not accept mixed-empty adjudication when grounding is unavailable", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 55,
+        verdict: "MIXED",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls += 1;
+        return groundingCalls === 1
+          ? [{ claimId: "AC_01", groundingValid: true, issues: [] }]
+          : [];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "supports",
+            reasoning: "Tentative direction.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(evidence[0].claimDirection).toBe("neutral");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(warnings.some((warning) => warning.message.includes("empty mixed-verdict citations"))).toBe(false);
+  });
+
+  it("does not run mixed-empty adjudication for verdict integrity failures", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 50,
+        verdict: "MIXED",
+        verdictReason: "verdict_integrity_failure",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        throw new Error("integrity-failure verdict should not enter mixed-empty adjudication");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).not.toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+  });
+
   it("does not adjudicate multi-claim neutral candidates for an empty decisive citation side", async () => {
     const verdicts = [
       createCBVerdict({
