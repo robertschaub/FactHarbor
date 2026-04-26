@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   selectRepairAnchorText,
+  shouldAttemptContractRepair,
   shouldRunContractRepairPass,
 } from "@/lib/analyzer/claim-extraction-stage";
 import type { CBClaimUnderstanding } from "@/lib/analyzer/types";
@@ -169,5 +170,37 @@ describe("shouldRunContractRepairPass", () => {
 
   it("keeps repair enabled for unapproved claim sets", () => {
     expect(shouldRunContractRepairPass(makeContractSummary("rechtskräftig"))).toBe(true);
+  });
+});
+
+describe("shouldAttemptContractRepair", () => {
+  it("attempts repair for failed summaries even when the anchor already appears in a claim", () => {
+    const summary = {
+      ...makeContractSummary("approximate relation"),
+      truthConditionAnchor: {
+        presentInInput: true,
+        anchorText: "approximate relation",
+        preservedInClaimIds: ["AC_03"],
+        preservedByQuotes: ["approximate relation"],
+        validPreservedIds: ["AC_03"],
+      },
+    };
+
+    expect(shouldAttemptContractRepair(summary, "approximate relation")).toBe(true);
+  });
+
+  it("skips repair when a failed summary has no input-present anchor to preserve", () => {
+    const summary = {
+      ...makeContractSummary(""),
+      truthConditionAnchor: {
+        presentInInput: false,
+        anchorText: "",
+        preservedInClaimIds: [],
+        preservedByQuotes: [],
+        validPreservedIds: [],
+      },
+    };
+
+    expect(shouldAttemptContractRepair(summary, undefined)).toBe(false);
   });
 });

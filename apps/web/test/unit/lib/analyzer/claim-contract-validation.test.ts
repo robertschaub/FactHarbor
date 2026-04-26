@@ -1825,11 +1825,12 @@ describe("C9: contractValidationSummary.failureMode discriminant", () => {
     expect(source).toContain("async function runContractRepair");
     expect(source).toMatch(/getModelForTask\("context_refinement"[^\n]+runContractRepair|runContractRepair[\s\S]+?getModelForTask\("context_refinement"/);
 
-    // Structural gate fires only when anchor is non-empty, present-in-input,
-    // and NOT a substring of any claim statement.
+    // Structural gate now also fires when the anchor is already present but
+    // the validator still rejects the claim set shape.
     expect(source).toContain("repairPassEnabled");
     expect(source).toContain("presentInInput === true");
     expect(source).toContain("selectRepairAnchorText(");
+    expect(source).toContain("shouldAttemptContractRepair(");
     expect(source).toContain("claimSetContainsAnchorText(");
 
     // Repair output must carry the anchor verbatim — post-check discards

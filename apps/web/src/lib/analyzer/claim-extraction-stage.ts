@@ -604,13 +604,12 @@ export async function extractClaims(
     }
 
     // ------------------------------------------------------------------
-    // C11b (Phase 5): anchor-gated targeted repair pass.
-    // After retry: if the LLM emitted a truthConditionAnchor whose anchorText
-    // is marked present-in-input but does NOT appear as a literal substring
-    // in any claim's statement, the retry has a deterministic modifier-omission
-    // failure. Fire one narrow-scope LLM call to insert the anchor verbatim
-    // into the thesis-direct claim, then let final revalidate authorize the
-    // repaired set.
+    // C11b (Phase 5): targeted contract repair pass.
+    // After retry: if the LLM still emits an unapproved contract summary with
+    // a present-in-input anchor, fire one narrow-scope LLM call to satisfy the
+    // validator's repair target. The repair may insert a missing anchor or fix
+    // a structurally invalid claim set whose anchor is already present. Final
+    // revalidation must authorize the repaired set before adoption.
     // ------------------------------------------------------------------
     const repairPassEnabled = calcConfig.claimContractValidation?.repairPassEnabled ?? true;
     if (repairPassEnabled && contractValidationSummary && shouldRunContractRepairPass(contractValidationSummary)) {
@@ -628,14 +627,24 @@ export async function extractClaims(
         anchorPresentInInput &&
         !claimSetContainsAnchorText(currentClaims, repairAnchorText);
 
-      if (anchorMissing && repairAnchorText) {
+      const shouldAttemptRepair = shouldAttemptContractRepair(
+        contractValidationSummary,
+        repairAnchorText,
+      );
+
+      if (shouldAttemptRepair && repairAnchorText) {
         if (anchor?.anchorText?.trim() && anchor.anchorText.trim() !== repairAnchorText) {
           console.info(
             `[Stage1] Narrowed repair anchor from "${anchor.anchorText.trim()}" to salience-backed span "${repairAnchorText}" before contract repair.`,
           );
         }
 
-        state.onEvent?.(`Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`, 27);
+        state.onEvent?.(
+          anchorMissing
+            ? `Repairing claim set to carry anchor "${repairAnchorText}" verbatim...`
+            : "Repairing claim set against contract validation summary...",
+          27,
+        );
         try {
           const repairPassStartedAt = Date.now();
           let repairedPass2;
@@ -2284,13 +2293,14 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
 }
 
 /**
- * C11b (Phase 5): anchor-gated targeted repair pass.
+ * C11b (Phase 5): targeted contract repair pass.
  *
  * Narrow single-instruction LLM call: given a claim set whose retry output
- * already drifted, insert the verbatim anchor modifier into the thesis-direct
- * claim. The prompt is scoped to one job — no decomposition, no enumeration,
- * no evidence integration — because competing priors are what make broadcast
- * retry noisy. Returns the updated Pass2 output on success, undefined otherwise.
+ * already drifted, satisfy the validator's repair target while preserving the
+ * verbatim anchor in the thesis-direct claim set. The prompt is scoped to one
+ * job — no decomposition, no enumeration, no evidence integration — because
+ * competing priors are what make broadcast retry noisy. Returns the updated
+ * Pass2 output on success, undefined otherwise.
  *
  * Uses `context_refinement` tier (same as the contract-failure retry) so the
  * repair runs on the standard tier (Sonnet today) without a new task key.
@@ -2334,7 +2344,7 @@ async function runContractRepair(
         },
         {
           role: "user" as const,
-          content: `Repair the claim set to include the anchor "${anchorText}".`,
+          content: `Repair the claim set to satisfy the contract validation summary while preserving the anchor "${anchorText}".`,
         },
       ],
       temperature: 0,
@@ -3725,6 +3735,18 @@ export function shouldRunContractRepairPass(
     contractValidationSummary?.preservesContract === true &&
     contractValidationSummary?.rePromptRequired === false
   );
+}
+
+export function shouldAttemptContractRepair(
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
+  repairAnchorText: string | undefined,
+): boolean {
+  if (!shouldRunContractRepairPass(contractValidationSummary)) {
+    return false;
+  }
+
+  const anchor = contractValidationSummary?.truthConditionAnchor;
+  return anchor?.presentInInput === true && !!repairAnchorText?.trim();
 }
 
 async function runSingleClaimBindingContractChallenge(
