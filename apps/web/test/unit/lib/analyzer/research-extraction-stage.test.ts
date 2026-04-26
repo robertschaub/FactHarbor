@@ -837,6 +837,19 @@ describe("Research Extraction Stage", () => {
           { evidenceIndex: 0, applicability: "direct", relevantClaimIds: [], reasoning: "explicitly unmapped" },
         ],
       }).assessments[0].relevantClaimIds).toEqual([]);
+      expect(ApplicabilityAssessmentOutputSchema.parse({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [{ claimId: "AC_01", claimDirection: "supports" }],
+            reasoning: "mapped with claim-local direction",
+          },
+        ],
+      }).assessments[0].claimDirectionByClaimId).toEqual([
+        { claimId: "AC_01", claimDirection: "supports" },
+      ]);
     });
 
     it("should classify evidence and populate applicability field", async () => {
@@ -915,7 +928,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("should clone directional evidence as neutral single-claim companion evidence for LLM-mapped comparison claims", async () => {
+    it("should clone directional evidence as neutral single-claim companion evidence when no claim-local direction is supplied", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
         createClaim({
@@ -966,6 +979,64 @@ describe("Research Extraction Stage", () => {
       expect(result[1].statement).toBe(result[0].statement);
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         expect.stringContaining("Neutral companion clones: 1."),
+      );
+    });
+
+    it("should clone LLM-mapped companion evidence with claim-local direction when supplied", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
+        createClaim({
+          id: "AC_02",
+          statement: "Entity A's current metric M is approximately comparable to reference metric N",
+          expectedEvidenceProfile: {
+            componentMetrics: ["current metric M", "reference metric N"],
+          },
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "Official source reports current metric M for Entity A.",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_01", claimDirection: "supports" },
+              { claimId: "AC_02", claimDirection: "supports" },
+            ],
+            reasoning: "current-side component directly supports the comparison claim",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(result[1]).toMatchObject({
+        id: "EV_01__supports_AC_02",
+        claimDirection: "supports",
+        relevantClaimIds: ["AC_02"],
+        applicability: "direct",
+      });
+      expect(result[1].statement).toBe(result[0].statement);
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Directional companion clones: 1."),
       );
     });
 

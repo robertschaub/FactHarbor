@@ -2445,9 +2445,11 @@ For each evidence item, determine whether it was produced by actors within the c
 - For claims about whether an activity is systematic, institutionalized, organized, or otherwise established within a jurisdiction or entity, mark an item `"direct"` only when it evaluates the existence, absence, or structure of that broader ecosystem itself. Evidence about one topical use case, one platform-specific program, or one isolated implementation is usually `"contextual"` unless the source explicitly presents it as representative of the system being assessed.
 - For such claims, evidence about the governance, legal framework, or regulation of a broader policy problem or harm domain remains `"contextual"` unless it explicitly inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself.
 - For approximate current-versus-historical or current-versus-reference comparisons, evidence that directly reports a comparator route named in `expectedEvidenceProfile` is `"direct"` even when it is a source-native period/window total rather than an endpoint stock. If the evidence uses a different metric class from the route the claim most naturally implies, keep it direct only as caveated comparator evidence and preserve the mismatch in `evidenceScope`; do not let applicability alone erase the distinction.
-- For decomposed comparison claims, an evidence item that directly reports one side, component, denominator, reference class, or source-native measurement route named in a claim's `expectedEvidenceProfile` is relevant to that comparison claim even when the item was first gathered for a separate side-specific companion claim. Do not omit a materially relevant companion claim ID merely because the item is directional for its current claim: return all claim IDs for which the item supplies a necessary side/component/route, and explain any side-only or component-only relevance in `reasoning`. Downstream processing keeps directional labels claim-scoped; your job is to identify material claim relevance, not to broadcast topic overlap.
+- For decomposed comparison claims, an evidence item that directly reports one side, component, denominator, reference class, or source-native measurement route named in a claim's `expectedEvidenceProfile` is relevant to that comparison claim even when the item was first gathered for a separate side-specific companion claim. Do not omit a materially relevant companion claim ID merely because the item is directional for its current claim: return all claim IDs for which the item supplies a necessary side/component/route, and explain any side-only or component-only relevance in `reasoning`. Use `claimDirectionByClaimId` to keep the direction claim-scoped; your job is to identify material claim relevance, not to broadcast topic overlap.
 - For claim mapping, the claim statement's surface wording is not the only target. If the all-claims context shows that a companion claim's `expectedEvidenceProfile` requires a side route, source-native quantity, component, denominator, or reference class, then an item directly reporting that route is materially relevant to that companion claim even when the evidence text does not state the entire comparison sentence.
 - A one-side source-native value gathered under a side-specific sibling can therefore require adding the comparison companion's claim ID when that companion's profile names the same side route. Add the companion ID so downstream can preserve the item as claim-local side evidence; do not withhold the ID merely because the item's existing `claimDirection` was assigned for the side-specific sibling.
+- For every claim ID you include in `relevantClaimIds`, include one matching entry in `claimDirectionByClaimId`. Use `"supports"` or `"contradicts"` only when the item directly affects that claim's proposition or an explicit side/component/route in that claim's `expectedEvidenceProfile`; use `"neutral"` when it is only background or non-directional context for that claim.
+- When a directional item from one sibling also supplies a required side/component/route for a comparison companion, do not reduce the companion mapping to `"neutral"` by default. Decide the companion's claim-local direction from the item and that companion claim's assertion/profile: `"supports"` if it supports that claim's relation or required side, `"contradicts"` if it refutes it, otherwise `"neutral"`.
 - Do not broadcast evidence to every sibling claim. Add claim IDs only when the evidence item materially helps verify that claim's own assertion or an explicit route/side/component carried in its `expectedEvidenceProfile`.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
@@ -2493,6 +2495,9 @@ Return a JSON object:
       "evidenceIndex": 0,
       "applicability": "direct | contextual | foreign_reaction",
       "relevantClaimIds": ["AC_01"],
+      "claimDirectionByClaimId": [
+        { "claimId": "AC_01", "claimDirection": "supports | contradicts | neutral" }
+      ],
       "reasoning": "string — brief justification"
     }
   ]
@@ -2502,6 +2507,7 @@ Return a JSON object:
 - Include one assessment for every evidence item index.
 - Use only the three applicability labels above.
 - `relevantClaimIds` must contain only IDs from the provided claims list. It may contain zero, one, or multiple claim IDs. Return an empty array when the item is not materially relevant to any claim after applicability assessment.
+- `claimDirectionByClaimId` must contain only IDs from the provided claims list and should include one entry for every ID in `relevantClaimIds`. Use only `supports`, `contradicts`, or `neutral` for `claimDirection`.
 - Reasoning should be one sentence.
 
 ---

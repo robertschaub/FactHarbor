@@ -69,6 +69,10 @@ export const ApplicabilityAssessmentOutputSchema = z.object({
     evidenceIndex: z.number(),
     applicability: z.enum(["direct", "contextual", "foreign_reaction"]).catch("direct"),
     relevantClaimIds: z.array(z.string()),
+    claimDirectionByClaimId: z.array(z.object({
+      claimId: z.string(),
+      claimDirection: z.enum(["supports", "contradicts", "neutral"]).catch("neutral"),
+    })).optional().catch([]),
     reasoning: z.string(),
   })),
 });
@@ -578,15 +582,28 @@ export async function assessEvidenceApplicability(
     // Existing mappings are preserved; this pass only fills missing multi-claim
     // links found by the same LLM call that already sees all claims together.
     const knownClaimIds = new Set(claims.map((claim) => claim.id));
+    type ClaimDirection = NonNullable<EvidenceItem["claimDirection"]>;
     const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
     const claimMappingAdditions = new Map<number, string[]>();
+    const claimDirectionAdditions = new Map<number, Map<string, ClaimDirection>>();
     for (const assessment of validated.assessments) {
       classificationMap.set(assessment.evidenceIndex, assessment.applicability);
-      const validClaimIds = assessment.relevantClaimIds.filter((claimId) =>
-        knownClaimIds.has(claimId),
-      );
+      const directionByClaim = new Map<string, ClaimDirection>();
+      for (const directionEntry of assessment.claimDirectionByClaimId ?? []) {
+        if (knownClaimIds.has(directionEntry.claimId)) {
+          directionByClaim.set(directionEntry.claimId, directionEntry.claimDirection);
+        }
+      }
+      const candidateClaimIds = [
+        ...assessment.relevantClaimIds,
+        ...Array.from(directionByClaim.keys()),
+      ];
+      const validClaimIds = candidateClaimIds.filter((claimId) => knownClaimIds.has(claimId));
       if (validClaimIds.length > 0) {
         claimMappingAdditions.set(assessment.evidenceIndex, Array.from(new Set(validClaimIds)));
+      }
+      if (directionByClaim.size > 0) {
+        claimDirectionAdditions.set(assessment.evidenceIndex, directionByClaim);
       }
     }
 
@@ -595,6 +612,7 @@ export async function assessEvidenceApplicability(
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
     let neutralCompanionClones = 0;
+    let directionalCompanionClones = 0;
 
     const assessed = evidenceItems.flatMap((item, index) => {
       const applicability = classificationMap.get(index) ?? "direct";
@@ -605,8 +623,10 @@ export async function assessEvidenceApplicability(
       }
       const existingClaimIds = item.relevantClaimIds ?? [];
       const assessedClaimIds = claimMappingAdditions.get(index) ?? [];
+      const claimDirections = claimDirectionAdditions.get(index) ?? new Map<string, ClaimDirection>();
       const assessedItem = shouldApplyApplicability ? { ...item, applicability } : item;
-      if (item.claimDirection === "neutral") {
+      const itemDirection = item.claimDirection ?? "neutral";
+      if (itemDirection === "neutral") {
         const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
         if (relevantClaimIds.length > existingClaimIds.length) {
           claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
@@ -625,13 +645,20 @@ export async function assessEvidenceApplicability(
         return [assessedItem];
       }
 
-      const companionItems = companionClaimIds.map((claimId) => ({
-        ...assessedItem,
-        id: `${item.id}__neutral_${claimId}`,
-        claimDirection: "neutral" as const,
-        relevantClaimIds: [claimId],
-      }));
-      neutralCompanionClones += companionItems.length;
+      const companionItems = companionClaimIds.map((claimId) => {
+        const companionDirection = claimDirections.get(claimId) ?? "neutral";
+        if (companionDirection === "neutral") {
+          neutralCompanionClones++;
+        } else {
+          directionalCompanionClones++;
+        }
+        return {
+          ...assessedItem,
+          id: `${item.id}__${companionDirection}_${claimId}`,
+          claimDirection: companionDirection,
+          relevantClaimIds: [claimId],
+        };
+      });
       claimMappingExtensions += companionItems.length;
 
       return [assessedItem, ...companionItems];
@@ -646,6 +673,7 @@ export async function assessEvidenceApplicability(
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
+      `Directional companion clones: ${directionalCompanionClones}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(
