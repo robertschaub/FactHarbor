@@ -905,6 +905,99 @@ describe("Research Extraction Stage", () => {
       );
     });
 
+    it("should clone directional evidence as neutral single-claim companion evidence for LLM-mapped comparison claims", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
+        createClaim({
+          id: "AC_02",
+          statement: "Entity A's current metric M is approximately comparable to reference metric N",
+          expectedEvidenceProfile: {
+            componentMetrics: ["current metric M", "reference metric N"],
+          },
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "Official source reports current metric M for Entity A.",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            reasoning: "measures a current-side component needed by the comparison claim",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(result[1]).toMatchObject({
+        id: "EV_01__neutral_AC_02",
+        claimDirection: "neutral",
+        relevantClaimIds: ["AC_02"],
+        applicability: "direct",
+      });
+      expect(result[1].statement).toBe(result[0].statement);
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral companion clones: 1."),
+      );
+    });
+
+    it("should not clone directional evidence for unknown or already-scoped claim IDs", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
+        createClaim({ id: "AC_02", statement: "Comparison claim" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_UNKNOWN"],
+            reasoning: "only the existing claim is valid",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        relevantClaimIds: ["AC_01"],
+      });
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral companion clones: 0."),
+      );
+    });
+
     it("should still run claim mapping when inferredGeography is null without applying applicability", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Generic side claim" }),

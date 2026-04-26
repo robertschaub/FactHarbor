@@ -1250,6 +1250,137 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
   });
 
+  it("adjudicates direct claim-local neutral candidates when the decisive citation side is empty", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 72,
+        verdict: "MOSTLY-TRUE",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "supports",
+            reasoning: "The direct evidence supports the claim.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.objectContaining({
+        adjudicationCases: [
+          expect.objectContaining({
+            claimId: "AC_01",
+            decisiveSide: "supporting",
+            candidates: [expect.objectContaining({ evidenceId: "EV_NEUTRAL" })],
+          }),
+        ],
+      }),
+      expect.objectContaining({ tier: "budget" }),
+    );
+    expect(evidence[0].claimDirection).toBe("supports");
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_NEUTRAL"]);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
+  });
+
+  it("does not adjudicate multi-claim neutral candidates for an empty decisive citation side", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 72,
+        verdict: "MOSTLY-TRUE",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_MULTI",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01", "AC_02"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        throw new Error("should not adjudicate multi-claim evidence");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).not.toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+  });
+
   it("still enforces citation integrity when neutral citation adjudication fails", async () => {
     const verdicts = [
       createCBVerdict({

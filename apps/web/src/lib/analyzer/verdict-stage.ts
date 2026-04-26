@@ -2414,14 +2414,12 @@ function buildNeutralCitationAdjudicationCases(
   claims: AtomicClaim[],
   deferredCollapses?: DeferredCitationIntegrityCollapse[],
 ): NeutralCitationAdjudicationCase[] {
-  if (!deferredCollapses?.length) return [];
-
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const claimById = new Map(claims.map((claim) => [claim.id, claim]));
   const verdictByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
   const cases: NeutralCitationAdjudicationCase[] = [];
 
-  for (const collapse of deferredCollapses) {
+  for (const collapse of deferredCollapses ?? []) {
     const verdict = verdictByClaim.get(collapse.claimId);
     const claim = claimById.get(collapse.claimId);
     if (!verdict || !claim) continue;
@@ -2463,6 +2461,51 @@ function buildNeutralCitationAdjudicationCases(
       verdict: verdict.verdict,
       decisiveSide,
       candidates,
+    });
+  }
+
+  for (const verdict of verdicts) {
+    const decisiveSide = decisiveCitationSideForVerdict(verdict);
+    if (!decisiveSide || missingCurrentDecisiveCitationSide(verdict) !== decisiveSide) continue;
+
+    const claim = claimById.get(verdict.claimId);
+    if (!claim) continue;
+
+    const existingCase = cases.find((entry) => entry.claimId === verdict.claimId);
+    const existingCandidateIds = new Set(
+      existingCase?.candidates.map((candidate) => candidate.evidenceId) ?? [],
+    );
+    const fallbackCandidates = evidence
+      .filter((item) =>
+        item.claimDirection === "neutral"
+        && item.applicability === "direct"
+        && isSingleClaimScopedEvidence(item, verdict.claimId)
+        && !existingCandidateIds.has(item.id),
+      )
+      .map((item): NeutralCitationCandidate => ({
+        evidenceId: item.id,
+        originalBucket: decisiveSide,
+        statement: item.statement,
+        sourceType: item.sourceType,
+        probativeValue: item.probativeValue,
+        applicability: item.applicability,
+        evidenceScope: item.evidenceScope,
+        sourceUrl: item.sourceUrl,
+      }));
+
+    if (fallbackCandidates.length === 0) continue;
+    if (existingCase) {
+      existingCase.candidates.push(...fallbackCandidates);
+      continue;
+    }
+
+    cases.push({
+      claimId: verdict.claimId,
+      claimText: claim.statement,
+      truthPercentage: verdict.truthPercentage,
+      verdict: verdict.verdict,
+      decisiveSide,
+      candidates: fallbackCandidates,
     });
   }
 

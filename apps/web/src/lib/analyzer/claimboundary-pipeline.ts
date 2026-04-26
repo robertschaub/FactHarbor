@@ -1163,7 +1163,7 @@ export async function runClaimBoundaryAnalysis(
     state.evidenceItems = shouldFilterApplicability
       ? assessed.filter((item) => item.applicability !== "foreign_reaction")
       : assessed;
-    const removedCount = beforeApplicability - state.evidenceItems.length;
+    const removedCount = removedItems.length;
     if (removedCount > 0) {
       console.info(
         `[Fix3] Removed ${removedCount} foreign_reaction evidence items (${beforeApplicability} → ${state.evidenceItems.length})`

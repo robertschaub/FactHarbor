@@ -754,8 +754,8 @@ describe("Stage-2 prompt contract", () => {
     it("keeps companion claim IDs direction-safe in evidence extraction", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       expect(section).toContain("Because one evidence item has only one `claimDirection`");
-      expect(section).toContain("list multiple claim IDs only for `contextual` items");
-      expect(section).toContain("For `supports` or `contradicts` items, keep the target claim ID only");
+      expect(section).toContain("list multiple claim IDs on a shared item only when that same direction is valid for every listed claim");
+      expect(section).toContain("emit a separate `contextual` evidence item scoped to that companion claim");
     });
 
     it("comparator guidance classifies historical precedent as contextual by default", () => {
@@ -943,8 +943,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("evidence applicability and claim-mapping engine");
       expect(section).toContain("directly reports one side, component, denominator, reference class, or source-native measurement route");
       expect(section).toContain("first gathered for a separate side-specific companion claim");
-      expect(section).toContain("Because each item carries only one `claimDirection`");
-      expect(section).toContain("add companion claim IDs only when the item is neutral/contextual for all listed claims");
+      expect(section).toContain("Do not omit a materially relevant companion claim ID merely because the item is directional for its current claim");
+      expect(section).toContain("Downstream processing keeps directional labels claim-scoped");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 

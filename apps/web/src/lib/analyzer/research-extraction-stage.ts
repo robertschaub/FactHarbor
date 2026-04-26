@@ -597,8 +597,9 @@ export async function assessEvidenceApplicability(
     const counts = { direct: 0, contextual: 0, foreign_reaction: 0, unclassified: 0 };
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
+    let neutralCompanionClones = 0;
 
-    const assessed = evidenceItems.map((item, index) => {
+    const assessed = evidenceItems.flatMap((item, index) => {
       const applicability = classificationMap.get(index) ?? "direct";
       counts[applicability]++;
       if (applicability === "foreign_reaction") {
@@ -606,17 +607,37 @@ export async function assessEvidenceApplicability(
         foreignDomains.push(domain);
       }
       const existingClaimIds = item.relevantClaimIds ?? [];
-      const addedClaimIds = item.claimDirection === "neutral"
-        ? claimMappingAdditions.get(index) ?? []
-        : [];
-      const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...addedClaimIds]));
-      if (relevantClaimIds.length > existingClaimIds.length) {
-        claimMappingExtensions++;
-      }
+      const assessedClaimIds = claimMappingAdditions.get(index) ?? [];
       const assessedItem = shouldApplyApplicability ? { ...item, applicability } : item;
-      return relevantClaimIds.length > 0
-        ? { ...assessedItem, relevantClaimIds }
-        : assessedItem;
+      if (item.claimDirection === "neutral") {
+        const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
+        if (relevantClaimIds.length > existingClaimIds.length) {
+          claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
+        }
+        return [
+          relevantClaimIds.length > 0
+            ? { ...assessedItem, relevantClaimIds }
+            : assessedItem,
+        ];
+      }
+
+      const companionClaimIds = assessedClaimIds.filter((claimId) =>
+        !existingClaimIds.includes(claimId),
+      );
+      if (companionClaimIds.length === 0) {
+        return [assessedItem];
+      }
+
+      const companionItems = companionClaimIds.map((claimId) => ({
+        ...assessedItem,
+        id: `${item.id}__neutral_${claimId}`,
+        claimDirection: "neutral" as const,
+        relevantClaimIds: [claimId],
+      }));
+      neutralCompanionClones += companionItems.length;
+      claimMappingExtensions += companionItems.length;
+
+      return [assessedItem, ...companionItems];
     });
 
     // Count unclassified (items not in LLM response — default to "direct")
@@ -627,6 +648,7 @@ export async function assessEvidenceApplicability(
       `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
+      `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(
