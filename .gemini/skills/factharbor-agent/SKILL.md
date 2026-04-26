@@ -32,6 +32,7 @@ files are the canonical workflow definitions shared across Claude, Codex/GPT, an
 Available workflows:
 - `debt-guard` → `.claude/skills/debt-guard/SKILL.md`
 - `debate` → `.claude/skills/debate/SKILL.md` (read and execute the role procedure manually or with available agents when slash commands are unavailable)
+- `context-extension` → `.claude/skills/context-extension/SKILL.md` (preserve, exchange, and reload high-value in-progress context throughout long sessions when context-window loss, compaction, interruption, delegation, or handoff would lose important state)
 - `pipeline` → `.claude/skills/pipeline/SKILL.md`
 - `audit` → `.claude/skills/audit/SKILL.md`
 - `prompt-audit` → `.claude/skills/prompt-audit/SKILL.md`

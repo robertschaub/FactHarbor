@@ -309,6 +309,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** For reusable meta-skills like `/debate`, "generic" should not mean "unstructured". Keep the domain content caller-owned, but force a small structural transport envelope: stable evidence-item IDs, explicit known gaps, and optional provenance/language/runtime state only when it materially affects judgment quality. That lets every debate role reason over the same auditable footing without hardcoding a domain schema.
 **Files:** `.claude/skills/debate/SKILL.md`
 
+### 2026-04-26 — Dual-installed skills need one canonical source and mirror validation
+**Role:** LLM Expert  **Agent/Tool:** Codex (GPT-5)
+**Category:** useful-pattern
+**Learning:** When a workflow skill is installed both as a repo workflow and as a user-level Codex skill for automatic triggering, define one canonical source and treat the other copy as a mirror. Validate both skill packages and compare the mirrored `SKILL.md` content after edits; otherwise cross-tool discovery can silently drift.
+**Files:** `.claude/skills/context-extension/SKILL.md`, `C:/Users/rober/.codex/skills/context-extension/SKILL.md`, `Docs/DEVELOPMENT/Claude_Code_Skills.md`
+
 ## Product Strategist
 
 _(No entries yet)_

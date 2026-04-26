@@ -55,6 +55,7 @@ Documented procedures for recurring tasks. Read the file and follow its instruct
 |---|---|
 | Balanced bugfix complexity guard | `.claude/skills/debt-guard/SKILL.md` — mandatory for every bugfixing task before editing; compare undoing/amending previous code against adding new code |
 | Adversarial debate | `.claude/skills/debate/SKILL.md` — read and execute the role procedure manually or with available agents when slash commands are unavailable |
+| Context extension | `.claude/skills/context-extension/SKILL.md` — preserve, exchange, and reload high-value in-progress context throughout long sessions; not a replacement for completion outputs |
 | Deep pipeline analysis | `.claude/skills/pipeline/SKILL.md` |
 | Full quality audit | `.claude/skills/audit/SKILL.md` |
 | Static prompt quality audit | `.claude/skills/prompt-audit/SKILL.md` |

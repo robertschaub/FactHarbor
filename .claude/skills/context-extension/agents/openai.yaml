@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Extension"
+  short_description: "Preserve and exchange working context"
+  default_prompt: "Use $context-extension to preserve or exchange the high-value working context for this long task."

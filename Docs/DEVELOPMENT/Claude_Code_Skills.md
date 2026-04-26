@@ -1,6 +1,6 @@
 # FactHarbor Workflow Skills
 
-FactHarbor currently ships thirteen built-in workflow skills. Claude Code exposes them as slash
+FactHarbor currently ships fourteen built-in workflow skills. Claude Code exposes them as slash
 commands, and the same canonical procedures live under `.claude/skills/<name>/SKILL.md` for
 Codex/GPT, Gemini, and Cline to consume directly.
 
@@ -15,6 +15,7 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 | [Pipeline Analysis](#pipeline-analysis) | `/pipeline` | Debug, architecture questions, multi-stage changes | No |
 | [Quality Audit](#quality-audit) | `/audit` | Pre-release checks, quality regressions | No |
 | [Adversarial Debate](#adversarial-debate) | `/debate` | Structured adversarial debate on any proposition; reusable by other skills | No |
+| [Context Extension](#context-extension) | `/context-extension` | Preserve, exchange, and reload high-value in-progress context throughout long sessions | No |
 | [Debt Guard](#debt-guard) | `/debt-guard` | Mandatory bugfix complexity guard: decide between undoing/amending previous code and adding new code before editing | No |
 | [Prompt Audit](#prompt-audit) | `/prompt-audit` | Static prompt-only quality audit against AGENTS.md prompt rules and schema alignment | No |
 | [Validation](#validation) | `/validate` | Measure benchmark regressions after pipeline changes | **Yes — $1-5+** |
@@ -219,6 +220,63 @@ Examples:
 - New fallbacks, flags, helpers, or compatibility paths require a missing-capability justification or containment/removal plan.
 - Failed validation still uses the canonical `keep`, `quarantine`, or `revert` classification before another attempt is stacked.
 - Reverting ambiguous user-owned work requires Captain approval.
+
+---
+
+## Context Extension
+
+**File:** [`.claude/skills/context-extension/SKILL.md`](../../.claude/skills/context-extension/SKILL.md)
+
+Preserves selected working context into compact reload and exchange artifacts throughout long sessions when context-window pressure, compaction, resume, delegation, or handoff would otherwise lose important state. It is an in-progress working-memory workflow, not a second memory system and not a replacement for task-completion outputs.
+
+### When to use
+
+- Before compaction or resume when important state would otherwise be lost
+- After expensive file/log/report/subagent investigation that may need to be reloaded later
+- At a phase boundary where the next phase needs decisions, hypotheses, validation state, and exact reload pointers
+- Before delegating to another agent when it needs a bounded context packet rather than the full conversation
+- After review/debate consolidation when accepted and rejected alternatives must travel to the next phase
+- When the user asks to save, checkpoint, externalize, exchange, rehydrate, reload, or preserve working context
+
+### Invocation
+
+```
+/context-extension <optional task slug or reload target>
+```
+
+Examples:
+```
+/context-extension selection-readiness-investigation
+/context-extension reload 2026-04-26_selection-readiness_context.md
+```
+
+### What it does
+
+1. Writes a compact artifact under `.codex/context-extension/` using a stable date and task slug.
+2. Stores reload pointers and summaries, not raw transcripts or broad file dumps.
+3. Separates verified observations, decisions, hypotheses, open questions, reload steps, and "do not trust without rechecking" items.
+4. Adds agent-exchange packets with delegated questions, source pointers, constraints, known gaps, and expected return formats.
+5. Requires freshness checks against the current branch, git status, source files, date, and newest user instructions before reusing artifact claims.
+6. Requires deletion, supersession, or promotion into the normal Exchange Protocol output when the task ends.
+
+### Discovery and authority
+
+| Tool surface | Trigger mechanism | Canonical source |
+|---|---|---|
+| Codex / GPT in this desktop app | User-level skill auto-trigger from `C:\Users\rober\.codex\skills\context-extension\SKILL.md` | Mirror of `.claude/skills/context-extension/SKILL.md` |
+| Claude Code | `/context-extension` or automatic skill selection from `.claude/skills/context-extension/SKILL.md` | `.claude/skills/context-extension/SKILL.md` |
+| Gemini | Shared workflow list in `GEMINI.md` and `.gemini/skills/factharbor-agent/SKILL.md` | `.claude/skills/context-extension/SKILL.md` |
+| Generic agents | Named Workflows table in `AGENTS.md` | `.claude/skills/context-extension/SKILL.md` |
+
+If the user-level Codex copy and repo copy drift, the repo copy is authoritative for FactHarbor. Resync the user-level copy after changing the repo skill.
+
+### Guardrails
+
+- Completion outputs still use `Docs/AGENTS/Agent_Outputs.md` or `Docs/AGENTS/Handoffs/`.
+- Rehydrated context is advisory unless it points back to authoritative current files or tool outputs.
+- Do not store secrets, credentials, production/customer data, full transcripts, or raw sensitive logs.
+- Do not use `Docs/WIP/` for temporary context-extension artifacts.
+- `.codex/context-extension/` is gitignored local working state; promote selected content into the Exchange Protocol if it must survive task completion.
 
 ---
 
@@ -444,7 +502,7 @@ For complex concepts it uses multiple analogies. The tone is conversational, not
 
 ## Cross-Tool Usage
 
-All thirteen skills are discoverable by non-Claude agents:
+All fourteen skills are discoverable by non-Claude agents:
 
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also

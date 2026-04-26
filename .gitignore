@@ -160,3 +160,7 @@ apps/web/scripts/tmp-sr-*
 
 # Claude Code harness state
 .claude/scheduled_tasks.lock
+
+# Agent context-extension reload artifacts are local, temporary, and may mention
+# investigation state that should not be committed.
+.codex/context-extension/
