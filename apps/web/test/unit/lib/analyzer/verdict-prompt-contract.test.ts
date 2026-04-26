@@ -817,8 +817,12 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("referenced-side endpoint/stock values in numeric comparisons");
       expect(section).toContain("makes the claimed approximate parity, threshold, rank, greater-than, less-than, or equal-to relation true or false");
       expect(section).toContain("do not demote it to `contextual` solely because the source reports only the referenced side");
+      expect(section).toContain("Do not classify a referenced-side value as `supports` merely because it is the correct comparison side");
+      expect(section).toContain("Direction must follow the asserted relation");
       expect(section).toContain("Referenced-side endpoint, stock, threshold, or source-native comparator values follow the same rule");
       expect(section).toContain("using `contextual` as a caveat bucket");
+      expect(section).toContain("`supports` means the numeric relation is satisfied");
+      expect(section).toContain("A direct reference-side value that makes the asserted approximate parity, threshold, ordering, rank, or trend false is `contradicts`");
     });
 
     it("requires verdicts to cite both sides of approximate numeric comparisons", () => {
