@@ -1040,6 +1040,56 @@ describe("Research Extraction Stage", () => {
       );
     });
 
+    it("should apply LLM claim-local direction to already-scoped neutral evidence", async () => {
+      const claims = [
+        createClaim({
+          id: "AC_01",
+          statement: "Entity A's current metric M is approximately comparable to reference metric N",
+          expectedEvidenceProfile: {
+            componentMetrics: ["current metric M", "reference metric N"],
+          },
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "Official source reports reference metric N.",
+          claimDirection: "neutral",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_01", claimDirection: "contradicts" },
+            ],
+            reasoning: "reference-side value refutes the comparison relation",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01__contradicts_AC_01",
+        claimDirection: "contradicts",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(result[0].statement).toBe(evidence[0].statement);
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral claim-local direction clones: 1."),
+      );
+    });
+
     it("should not clone directional evidence for unknown or already-scoped claim IDs", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),

@@ -611,6 +611,7 @@ export async function assessEvidenceApplicability(
     const counts = { direct: 0, contextual: 0, foreign_reaction: 0, unclassified: 0 };
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
+    let neutralClaimDirectionClones = 0;
     let neutralCompanionClones = 0;
     let directionalCompanionClones = 0;
 
@@ -628,6 +629,30 @@ export async function assessEvidenceApplicability(
       const itemDirection = item.claimDirection ?? "neutral";
       if (itemDirection === "neutral") {
         const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
+        const directionalClaimIds = relevantClaimIds.filter((claimId) => {
+          const claimDirection = claimDirections.get(claimId);
+          return claimDirection !== undefined && claimDirection !== "neutral";
+        });
+        if (directionalClaimIds.length > 0) {
+          const neutralClaimIds = relevantClaimIds.filter((claimId) => !directionalClaimIds.includes(claimId));
+          const neutralItem = neutralClaimIds.length > 0
+            ? [{ ...assessedItem, relevantClaimIds: neutralClaimIds }]
+            : [];
+          const directionalItems = directionalClaimIds.map((claimId) => {
+            const claimDirection = claimDirections.get(claimId)!;
+            neutralClaimDirectionClones++;
+            return {
+              ...assessedItem,
+              id: `${item.id}__${claimDirection}_${claimId}`,
+              claimDirection,
+              relevantClaimIds: [claimId],
+            };
+          });
+          if (relevantClaimIds.length > existingClaimIds.length) {
+            claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
+          }
+          return [...neutralItem, ...directionalItems];
+        }
         if (relevantClaimIds.length > existingClaimIds.length) {
           claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
         }
@@ -672,6 +697,7 @@ export async function assessEvidenceApplicability(
       `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
+      `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
