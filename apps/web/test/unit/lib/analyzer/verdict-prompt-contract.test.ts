@@ -831,6 +831,11 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("using `contextual` as a caveat bucket");
       expect(section).toContain("`supports` means the numeric relation is satisfied");
       expect(section).toContain("A direct reference-side value that makes the asserted approximate parity, threshold, ordering, rank, or trend false is `contradicts`");
+      expect(section).toContain("same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `supports`");
+      expect(section).toContain("materially above or below the other side");
+      expect(section).toContain("classify it as `contradicts`, not weak support");
+      expect(section).toContain("Do not offset that contradiction with period totals, cumulative totals, sub-counts, or alternate metric classes");
+      expect(section).toContain("Same order of magnitude, shared unit, or a broad magnitude bucket is not enough for approximate-parity `supports`");
     });
 
     it("requires verdicts to cite both sides of approximate numeric comparisons", () => {
@@ -1004,6 +1009,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Add the comparison claim ID and use `claimDirectionByClaimId`");
       expect(section).toContain("include one matching entry in `claimDirectionByClaimId`");
       expect(section).toContain("do not reduce the companion mapping to `\"neutral\"` by default");
+      expect(section).toContain("Do not copy an item's existing `claimDirection` onto a comparison companion");
+      expect(section).toContain("same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `\"supports\"`");
+      expect(section).toContain("set that companion's `claimDirectionByClaimId` entry to `\"contradicts\"`");
+      expect(section).toContain("Keep period totals, cumulative totals, sub-counts, or alternate metric classes separate");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 
