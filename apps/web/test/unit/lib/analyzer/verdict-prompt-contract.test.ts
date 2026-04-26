@@ -793,6 +793,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("assign the companion's own direction");
       expect(section).toContain("supports or refutes that claim's required side, component, route, or asserted relation");
       expect(section).toContain("Use `contextual` only when the companion evidence is genuinely non-directional background");
+      expect(section).toContain("one-sided source evidence that directly reports that side's quantity, stock, total, threshold, denominator, or source-native route");
+      expect(section).toContain("Do not reserve it only for a standalone side-specific sibling claim");
+      expect(section).toContain("assign the comparison-scoped `claimDirection` from the side's effect on that relation");
     });
 
     it("comparator guidance classifies historical precedent as contextual by default", () => {
@@ -996,6 +999,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("the claim statement's surface wording is not the only target");
       expect(section).toContain("one-side source-native value gathered under a side-specific sibling");
       expect(section).toContain("do not withhold the ID");
+      expect(section).toContain("carries an input-authored side value, side label, threshold, denominator, source family, or source-native route");
+      expect(section).toContain("directly reports that same side's quantity or route");
+      expect(section).toContain("Add the comparison claim ID and use `claimDirectionByClaimId`");
       expect(section).toContain("include one matching entry in `claimDirectionByClaimId`");
       expect(section).toContain("do not reduce the companion mapping to `\"neutral\"` by default");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
