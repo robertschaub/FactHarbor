@@ -945,6 +945,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("first gathered for a separate side-specific companion claim");
       expect(section).toContain("Do not omit a materially relevant companion claim ID merely because the item is directional for its current claim");
       expect(section).toContain("Downstream processing keeps directional labels claim-scoped");
+      expect(section).toContain("the claim statement's surface wording is not the only target");
+      expect(section).toContain("one-side source-native value gathered under a side-specific sibling");
+      expect(section).toContain("do not withhold the ID");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 

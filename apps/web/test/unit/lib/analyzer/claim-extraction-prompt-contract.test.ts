@@ -236,6 +236,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not discover an anchor outside that list");
       expect(section).toContain('`success` is `false`');
       expect(section).toContain("Fall back to the base validator behavior");
+      expect(section).toContain("Binding mode does not relax comparison-companion metadata rules");
+      expect(section).toContain("a sibling claim that isolates that side is not enough");
+      expect(section).toContain("statement-atomicity reasons only");
     });
   });
 
@@ -583,6 +586,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("because the profile only names a ratio/relation back to that side");
       expect(contract).toContain("Invalid acceptance rationale");
       expect(contract).toContain("only a relational anchor");
+      expect(contract).toContain("revise the decision before returning");
+      expect(contract).toContain('set `rePromptRequired: true`');
       expect(contract).toContain("statement-atomicity reasons only");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
