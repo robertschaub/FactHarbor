@@ -921,6 +921,67 @@ describe("reconcileVerdicts (Step 4)", () => {
     ]));
   });
 
+  it("sends only validated challenge evidence IDs to reconciliation", async () => {
+    const advocateVerdictsList: CBClaimVerdict[] = [{
+      id: "CV_AC_01",
+      claimId: "AC_01",
+      truthPercentage: 75,
+      verdict: "MOSTLY-TRUE",
+      confidence: 80,
+      reasoning: "Original reasoning",
+      harmPotential: "medium",
+      isContested: false,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+      boundaryFindings: [],
+      consistencyResult: { claimId: "AC_01", percentages: [75], average: 75, spread: 0, stable: true, assessed: false },
+      challengeResponses: [],
+      triangulationScore: { boundaryCount: 1, supporting: 1, contradicting: 0, level: "weak", factor: 1.0 },
+    }];
+    const challengeDoc: ChallengeDocument = {
+      challenges: [{
+        claimId: "AC_01",
+        challengePoints: [{
+          id: "CP_AC_01_0",
+          type: "assumption",
+          description: "Challenge cites one valid and one cross-claim evidence ID",
+          evidenceIds: ["EV_01", "EV_02"],
+          severity: "medium",
+        }],
+      }],
+    };
+    const evidence = [
+      createEvidenceItem({ id: "EV_01", relevantClaimIds: ["AC_01"] }),
+      createEvidenceItem({ id: "EV_02", relevantClaimIds: ["AC_02"] }),
+    ];
+    const mockLLM = createMockLLM({
+      VERDICT_RECONCILIATION: reconciliationResponse(),
+    });
+
+    const { validatedChallengeDoc } = await reconcileVerdicts(
+      advocateVerdictsList,
+      challengeDoc,
+      [],
+      evidence,
+      mockLLM,
+    );
+
+    const callInput = (mockLLM as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][1] as {
+      challenges: ChallengeDocument["challenges"];
+    };
+    const promptChallenge = callInput.challenges[0].challengePoints[0];
+    const returnedChallenge = validatedChallengeDoc.challenges[0].challengePoints[0];
+
+    expect(promptChallenge.evidenceIds).toEqual(["EV_01"]);
+    expect(promptChallenge.challengeValidation).toEqual({
+      evidenceIdsValid: false,
+      validIds: ["EV_01"],
+      invalidIds: ["EV_02"],
+    });
+    expect(returnedChallenge.evidenceIds).toEqual(["EV_01"]);
+    expect(returnedChallenge.challengeValidation!.invalidIds).toEqual(["EV_02"]);
+  });
+
   it("should keep original verdict if reconciliation doesn't include claim", async () => {
     const advocateVerdictsList: CBClaimVerdict[] = [{
       id: "CV_AC_01", claimId: "AC_01", truthPercentage: 75, verdict: "MOSTLY-TRUE",
@@ -1248,6 +1309,89 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result[0].contradictingEvidenceIds).toEqual(["EV_NEUTRAL"]);
     expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
+  });
+
+  it("adjudicates direct citation bucket mismatches before integrity normalization", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 25,
+        verdict: "MOSTLY-FALSE",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: ["EV_DIRECTION"],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_DIRECTION",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_DIRECTION",
+            claimDirection: "contradicts",
+            reasoning: "The direct evidence refutes the claim, so the stored direction was wrong.",
+          }],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.objectContaining({
+        adjudicationCases: [
+          expect.objectContaining({
+            claimId: "AC_01",
+            caseMode: "bucket_mismatch",
+            candidates: [expect.objectContaining({
+              evidenceId: "EV_DIRECTION",
+              originalBucket: "contradicting",
+              targetBucket: "contradicting",
+              storedClaimDirection: "supports",
+            })],
+          }),
+        ],
+      }),
+      expect.objectContaining({ tier: "budget" }),
+    );
+    expect(evidence[0].claimDirection).toBe("contradicts");
+    expect(result[0].supportingEvidenceIds).toEqual([]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_DIRECTION"]);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(warnings.some((warning) =>
+      warning.type === "verdict_direction_issue"
+      && warning.message.includes("citation direction conflict"),
+    )).toBe(true);
   });
 
   it("adjudicates direct claim-local neutral candidates when the decisive citation side is empty", async () => {
@@ -3909,6 +4053,7 @@ describe("validateChallengeEvidence", () => {
     const cp = result.challenges[0].challengePoints[0];
 
     expect(cp.challengeValidation).toBeDefined();
+    expect(cp.evidenceIds).toEqual(["EV_01", "EV_02"]);
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(true);
     expect(cp.challengeValidation!.validIds).toEqual(["EV_01", "EV_02"]);
     expect(cp.challengeValidation!.invalidIds).toEqual([]);
@@ -3933,6 +4078,7 @@ describe("validateChallengeEvidence", () => {
     const cp = result.challenges[0].challengePoints[0];
 
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.evidenceIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.invalidIds).toEqual(["EV_FAKE", "EV_GHOST"]);
   });
@@ -3956,6 +4102,7 @@ describe("validateChallengeEvidence", () => {
     const cp = result.challenges[0].challengePoints[0];
 
     // Empty evidenceIds → not valid (no evidence cited)
+    expect(cp.evidenceIds).toEqual([]);
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
     expect(cp.challengeValidation!.validIds).toEqual([]);
     expect(cp.challengeValidation!.invalidIds).toEqual([]);
@@ -3979,6 +4126,7 @@ describe("validateChallengeEvidence", () => {
     const cp = result.challenges[0].challengePoints[0];
 
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.evidenceIds).toEqual([]);
     expect(cp.challengeValidation!.validIds).toEqual([]);
     expect(cp.challengeValidation!.invalidIds).toEqual(["EV_01"]);
   });
@@ -3996,6 +4144,8 @@ describe("validateChallengeEvidence", () => {
     };
 
     const result = validateChallengeEvidence(challengeDoc, evidence);
+    expect(result.challenges[0].challengePoints[0].evidenceIds).toEqual(["EV_01"]);
+    expect(result.challenges[0].challengePoints[1].evidenceIds).toEqual([]);
     expect(result.challenges[0].challengePoints[0].challengeValidation!.evidenceIdsValid).toBe(true);
     expect(result.challenges[0].challengePoints[1].challengeValidation!.evidenceIdsValid).toBe(false);
   });
@@ -4021,6 +4171,7 @@ describe("validateChallengeEvidence", () => {
     const result = validateChallengeEvidence(challengeDoc, evidence);
     const cp = result.challenges[0].challengePoints[0];
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(false);
+    expect(cp.evidenceIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.invalidIds).toEqual(["EV_02"]);
   });
@@ -4045,6 +4196,7 @@ describe("validateChallengeEvidence", () => {
     const result = validateChallengeEvidence(challengeDoc, evidence);
     const cp = result.challenges[0].challengePoints[0];
     expect(cp.challengeValidation!.evidenceIdsValid).toBe(true);
+    expect(cp.evidenceIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.validIds).toEqual(["EV_01"]);
     expect(cp.challengeValidation!.invalidIds).toEqual([]);
   });
@@ -4101,6 +4253,11 @@ describe("validateChallengeEvidence", () => {
     expect(valEn.invalidIds).toEqual(valFr.invalidIds);
     expect(valEn.evidenceIdsValid).toBe(valDe.evidenceIdsValid);
     expect(valEn.evidenceIdsValid).toBe(valFr.evidenceIdsValid);
+    expect(resultEn.challenges[0].challengePoints[0].evidenceIds).toEqual(["EV_01"]);
+    expect(resultEn.challenges[0].challengePoints[0].evidenceIds)
+      .toEqual(resultDe.challenges[0].challengePoints[0].evidenceIds);
+    expect(resultEn.challenges[0].challengePoints[0].evidenceIds)
+      .toEqual(resultFr.challenges[0].challengePoints[0].evidenceIds);
   });
 });
 

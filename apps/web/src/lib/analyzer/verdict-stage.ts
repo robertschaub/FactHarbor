@@ -1514,7 +1514,12 @@ export async function validateVerdicts(
                 neutralAdjudicationWarnings,
                 repairContext.deferredCitationIntegrityCollapses,
               );
+              const claimDirectionsChanged = evidence.some((item) =>
+                item.claimDirection !== originalClaimDirections.get(item.id),
+              );
               const neutralChanged = Boolean(neutralAdjudicated) && (
+                claimDirectionsChanged
+                ||
                 neutralAdjudicated.supportingEvidenceIds.length !== current.supportingEvidenceIds.length
                 || neutralAdjudicated.contradictingEvidenceIds.length !== current.contradictingEvidenceIds.length
                 || neutralAdjudicated.supportingEvidenceIds.some((id, index) => id !== current.supportingEvidenceIds[index])
@@ -1709,7 +1714,12 @@ export async function validateVerdicts(
           repairContext.deferredCitationIntegrityCollapses,
           { includeDecisiveMissing: false, includeMixedEmpty: true },
         );
+        const claimDirectionsChanged = evidence.some((item) =>
+          item.claimDirection !== originalClaimDirections.get(item.id),
+        );
         const mixedChanged = Boolean(mixedAdjudicated) && (
+          claimDirectionsChanged
+          ||
           mixedAdjudicated.supportingEvidenceIds.length !== current.supportingEvidenceIds.length
           || mixedAdjudicated.contradictingEvidenceIds.length !== current.contradictingEvidenceIds.length
           || mixedAdjudicated.supportingEvidenceIds.some((id, index) => id !== current.supportingEvidenceIds[index])
@@ -2482,10 +2492,11 @@ type CitationDirectionAdjudication = {
   reasoning?: string;
 };
 
-type NeutralCitationAdjudicationCaseMode = "decisive_missing" | "mixed_empty";
+type NeutralCitationAdjudicationCaseMode = "decisive_missing" | "mixed_empty" | "bucket_mismatch";
 type NeutralCitationAdjudicationOptions = {
   includeDecisiveMissing?: boolean;
   includeMixedEmpty?: boolean;
+  includeBucketMismatches?: boolean;
 };
 
 type NeutralCitationAdjudicationCase = {
@@ -2504,6 +2515,8 @@ type NeutralCitationAdjudicationCase = {
     applicability?: EvidenceItem["applicability"];
     evidenceScope?: EvidenceItem["evidenceScope"];
     sourceUrl?: string;
+    storedClaimDirection?: EvidenceItem["claimDirection"];
+    targetBucket?: VerdictCitationBucket;
   }>;
 };
 
@@ -2555,6 +2568,7 @@ function buildNeutralCitationAdjudicationCases(
 ): NeutralCitationAdjudicationCase[] {
   const includeDecisiveMissing = options.includeDecisiveMissing ?? true;
   const includeMixedEmpty = options.includeMixedEmpty ?? false;
+  const includeBucketMismatches = options.includeBucketMismatches ?? true;
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const claimById = new Map(claims.map((claim) => [claim.id, claim]));
   const verdictByClaim = new Map(verdicts.map((verdict) => [verdict.claimId, verdict]));
@@ -2652,6 +2666,53 @@ function buildNeutralCitationAdjudicationCases(
     });
   }
 
+  if (includeBucketMismatches) for (const verdict of verdicts) {
+    const claim = claimById.get(verdict.claimId);
+    if (!claim) continue;
+
+    const cited = [
+      ...verdict.supportingEvidenceIds.map((id) => ({ id, bucket: "supporting" as const })),
+      ...verdict.contradictingEvidenceIds.map((id) => ({ id, bucket: "contradicting" as const })),
+    ];
+    const candidates = cited
+      .map(({ id, bucket }): NeutralCitationCandidate | null => {
+        const item = evidenceById.get(id);
+        if (
+          !item
+          || item.applicability !== "direct"
+          || !isSingleClaimScopedEvidence(item, verdict.claimId)
+          || (item.claimDirection !== "supports" && item.claimDirection !== "contradicts")
+          || !getCitationMoveTarget(id, bucket, evidenceById)
+        ) {
+          return null;
+        }
+
+        return {
+          evidenceId: item.id,
+          originalBucket: bucket,
+          targetBucket: bucket,
+          storedClaimDirection: item.claimDirection,
+          statement: item.statement,
+          sourceType: item.sourceType,
+          probativeValue: item.probativeValue,
+          applicability: item.applicability,
+          evidenceScope: item.evidenceScope,
+          sourceUrl: item.sourceUrl,
+        };
+      })
+      .filter((item): item is NeutralCitationCandidate => Boolean(item));
+
+    if (candidates.length === 0) continue;
+    cases.push({
+      claimId: verdict.claimId,
+      claimText: claim.statement,
+      truthPercentage: verdict.truthPercentage,
+      verdict: verdict.verdict,
+      caseMode: "bucket_mismatch",
+      candidates,
+    });
+  }
+
   if (includeMixedEmpty) for (const verdict of verdicts) {
     if (decisiveCitationSideForVerdict(verdict) !== null) continue;
     if (verdict.supportingEvidenceIds.length > 0 || verdict.contradictingEvidenceIds.length > 0) continue;
@@ -2688,6 +2749,11 @@ function buildNeutralCitationAdjudicationCases(
 
   return cases;
 }
+
+type AcceptedCitationDirectionAdjudication = CitationDirectionAdjudication & {
+  caseMode: NeutralCitationAdjudicationCaseMode;
+  previousClaimDirection?: EvidenceItem["claimDirection"];
+};
 
 async function adjudicateNeutralCitationDirections(
   verdicts: CBClaimVerdict[],
@@ -2734,32 +2800,48 @@ async function adjudicateNeutralCitationDirections(
 
   if (adjudications.length === 0) return verdicts;
 
-  const candidateKeys = new Set(
+  const candidateKeys: Set<string> = new Set(
     cases.flatMap((entry) =>
       entry.candidates.map((candidate) => `${entry.claimId}:${candidate.evidenceId}`),
     ),
   );
+  const caseModeByKey: Map<string, NeutralCitationAdjudicationCaseMode> = new Map(
+    cases.flatMap((entry) =>
+      entry.candidates.map((candidate) => [`${entry.claimId}:${candidate.evidenceId}`, entry.caseMode] as const),
+    ),
+  );
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
-  const acceptedByClaim = new Map<string, CitationDirectionAdjudication[]>();
+  const acceptedByClaim = new Map<string, AcceptedCitationDirectionAdjudication[]>();
 
   for (const adjudication of adjudications) {
-    if (adjudication.claimDirection === "neutral") continue;
     const key = `${adjudication.claimId}:${adjudication.evidenceId}`;
     if (!candidateKeys.has(key)) continue;
+    const caseMode = caseModeByKey.get(key);
 
     const item = evidenceById.get(adjudication.evidenceId);
     if (
       !item
-      || item.claimDirection !== "neutral"
       || item.applicability !== "direct"
       || !isSingleClaimScopedEvidence(item, adjudication.claimId)
     ) {
       continue;
     }
 
+    const previousClaimDirection = item.claimDirection;
+    if (caseMode === "bucket_mismatch") {
+      if (previousClaimDirection !== "supports" && previousClaimDirection !== "contradicts") continue;
+      item.claimDirection = adjudication.claimDirection;
+      const entries = acceptedByClaim.get(adjudication.claimId) ?? [];
+      entries.push({ ...adjudication, caseMode, previousClaimDirection });
+      acceptedByClaim.set(adjudication.claimId, entries);
+      continue;
+    }
+
+    if (adjudication.claimDirection === "neutral") continue;
+    if (item.claimDirection !== "neutral") continue;
     item.claimDirection = adjudication.claimDirection;
     const entries = acceptedByClaim.get(adjudication.claimId) ?? [];
-    entries.push(adjudication);
+    entries.push({ ...adjudication, caseMode: caseMode ?? "decisive_missing", previousClaimDirection });
     acceptedByClaim.set(adjudication.claimId, entries);
   }
 
@@ -2768,12 +2850,16 @@ async function adjudicateNeutralCitationDirections(
   const caseKindByClaim = new Map(cases.map((entry) => [entry.claimId, entry.caseMode]));
   for (const [claimId, entries] of acceptedByClaim) {
     const caseKind = caseKindByClaim.get(claimId);
+    const bucketMismatchCount = entries.filter((entry) => entry.caseMode === "bucket_mismatch").length;
+    const neutralCount = entries.length - bucketMismatchCount;
     warnings?.push({
       type: "verdict_direction_issue",
       severity: "info",
-      message: caseKind === "mixed_empty"
-        ? `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) to populate empty mixed-verdict citations.`
-        : `Claim ${claimId}: LLM adjudicated ${entries.length} direct neutral citation(s) before citation integrity downgrade.`,
+      message: bucketMismatchCount > 0
+        ? `Claim ${claimId}: LLM adjudicated ${bucketMismatchCount} citation direction conflict(s) before citation integrity normalization.`
+        : caseKind === "mixed_empty"
+          ? `Claim ${claimId}: LLM adjudicated ${neutralCount} direct neutral citation(s) to populate empty mixed-verdict citations.`
+          : `Claim ${claimId}: LLM adjudicated ${neutralCount} direct neutral citation(s) before citation integrity downgrade.`,
       details: {
         claimId,
         adjudicatedCitations: entries,
@@ -4049,7 +4135,14 @@ export function validateChallengeEvidence(
           validIds,
           invalidIds,
         };
-        return { ...cp, challengeValidation: validation };
+        return {
+          ...cp,
+          // Downstream reconciliation treats evidenceIds as the normal
+          // challenge citation channel; keep invalid references only in the
+          // validation diagnostic so they cannot be used as evidence.
+          evidenceIds: validIds,
+          challengeValidation: validation,
+        };
       }),
     })),
   };

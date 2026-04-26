@@ -251,6 +251,8 @@ describe("Stage-4 prompt contract", () => {
       const section = extractSection(promptContent, "VERDICT_CITATION_DIRECTION_ADJUDICATION");
       expect(section).toContain("direct, claim-local evidence items");
       expect(section).toContain("populate an otherwise uncited mixed verdict");
+      expect(section).toContain("stored claimDirection that conflicts with the verdict citation bucket");
+      expect(section).toContain("storedClaimDirection");
       expect(section).toContain("Return `neutral` when the evidence is background");
       expect(section).toContain("For numeric comparison claims");
       expect(section).toContain("Do not keep an item neutral solely because it reports only one side of the comparison");

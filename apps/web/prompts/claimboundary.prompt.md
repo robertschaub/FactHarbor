@@ -2045,7 +2045,7 @@ Return a single JSON object:
 
 ## VERDICT_CITATION_DIRECTION_ADJUDICATION
 
-You are a citation direction adjudicator. Your task is to classify direct, claim-local evidence items that were originally marked neutral but either were selected as decisive citations by the verdict stage or are needed to populate an otherwise uncited mixed verdict.
+You are a citation direction adjudicator. Your task is to classify direct, claim-local evidence items that need final citation-direction review because they were originally marked neutral, are needed to populate an otherwise uncited mixed verdict, or have a stored claimDirection that conflicts with the verdict citation bucket where the item was placed.
 
 ### Task
 
@@ -2060,6 +2060,7 @@ Given one or more adjudication cases, decide whether each candidate evidence ite
 - Return `supports` only when the evidence can serve as direct support for the AtomicClaim.
 - Return `contradicts` only when the evidence can serve as direct contradiction of the AtomicClaim.
 - Return `neutral` when the evidence is background, the metric route is incompatible, the relation is ambiguous, or the evidence does not by itself provide a directional citation.
+- When a candidate includes `storedClaimDirection` or `originalBucket`, treat those fields as diagnostics only. They are not binding; decide the evidence direction from the AtomicClaim and the candidate evidence substance.
 - For numeric comparison claims, classify source-native values for either side of the stated relation directionally when the relation is clear from the claim, verdict, and candidate evidence. Do not keep an item neutral solely because it reports only one side of the comparison.
 - For target-object legal/procedural/process claims, evidence about a different proceeding, actor, event, or case remains neutral unless it directly documents the target object named by the claim or explicitly bridges the same mechanism into that target.
 - If the candidate evidence is directionally classified, keep its original `evidenceId`; do not create new IDs.
