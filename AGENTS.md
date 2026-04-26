@@ -352,6 +352,15 @@ If these files do not exist yet, run `npm run index` to seed them.
 
 Documented workflows for recurring tasks. **Claude Code** users invoke them as slash commands. **All other tools** (Gemini, GPT, Copilot, Cline, etc.) read the file directly and follow its instructions — the content is plain markdown.
 
+**Skill selection order.** Agents resolve which workflows to apply using these layers, in order:
+
+1. **Mandatory gates** — `/debt-guard` for bugfixes (see §Bugfix Complexity Guard). Always applies regardless of other routing.
+2. **Explicit assignment** — the user or prompt names a skill directly (`Skill: pipeline`, `/audit`, etc.).
+3. **Preflight routing** — `fhAgentKnowledge.preflight_task` returns recommended skills and startup advice. Agents activated with `As <Role>,` must call preflight before starting; other agents may call it for ambiguous tasks.
+4. **Metadata match** — Claude Code injects skill descriptions into the system context; the model selects based on task fit. Non-Claude tools use the table below.
+
+When skills overlap, each skill's own scope guards (for example, context-extension's Overlap Gate) determine which workflow owns the outcome. Do not create meta-routing skills.
+
 | Slash command | Workflow file | When to use |
 |---|---|---|
 | `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |
