@@ -814,6 +814,11 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("This target-object comparator/precedent default does NOT override numeric comparison claims");
       expect(section).toContain("This rule has priority over the target-object comparator/precedent default above");
       expect(section).toContain("Do not leave source-native current-side or reference-side values `contextual` solely because the source reports only one side of the comparison");
+      expect(section).toContain("referenced-side endpoint/stock values in numeric comparisons");
+      expect(section).toContain("makes the claimed approximate parity, threshold, rank, greater-than, less-than, or equal-to relation true or false");
+      expect(section).toContain("do not demote it to `contextual` solely because the source reports only the referenced side");
+      expect(section).toContain("Referenced-side endpoint, stock, threshold, or source-native comparator values follow the same rule");
+      expect(section).toContain("using `contextual` as a caveat bucket");
     });
 
     it("requires verdicts to cite both sides of approximate numeric comparisons", () => {
