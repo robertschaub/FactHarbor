@@ -2213,3 +2213,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Phase 1-2 Implementation -- [Significant] [open-items: yes]
 **For next agent:** Phase 1 added `node scripts/build-index.mjs --tier=2 --tracked-only` plus `npm run index:tier2:tracked` for clean committed handoff indexes; Phase 2 created `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`. Review that audit before any rules restructure; most heavy sections are load-on-demand reference, not deletion candidates.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Phase1_Phase2_Implementation.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Post-Commit Index Stabilization -- [Standard] [open-items: yes]
+**For next agent:** `scripts/git-hooks/post-commit` now rebuilds handoff indexes with `--tier=2 --tracked-only`, and local hooks were reinstalled. Commit-time generated `handoff-index.json` should no longer sweep unrelated untracked handoffs; PostToolUse indexing remains filesystem-based for live discoverability.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Post_Commit_Index_Stabilization.md

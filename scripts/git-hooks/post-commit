@@ -18,7 +18,7 @@ log_failure() {
 CHANGED=$(git diff-tree --no-commit-id -r --name-only HEAD 2>/dev/null || true)
 
 if echo "$CHANGED" | grep -q "Docs/AGENTS/Handoffs/"; then
-  node "$INDEX_SCRIPT" --tier=2 >> "$LOG_FILE" 2>&1 || log_failure "post-commit: build-index --tier=2 failed"
+  node "$INDEX_SCRIPT" --tier=2 --tracked-only >> "$LOG_FILE" 2>&1 || log_failure "post-commit: build-index --tier=2 --tracked-only failed"
 fi
 
 if echo "$CHANGED" | grep -q "apps/web/src/lib/analyzer/"; then

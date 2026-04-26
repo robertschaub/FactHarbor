@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T18:37:50.094Z",
-  "count": 378,
+  "generatedAt": "2026-04-26T19:00:28.616Z",
+  "count": 379,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -7851,6 +7851,41 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat `/debt-guard` as accepted after the post-review amendment. If you regenerate all agent indexes in a dirty worktree, inspect the handoff index before committing because untracked handoff files are included by the index script."
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Post_Commit_Index_Stabilization.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace",
+        "governance",
+        "post_commit_hook",
+        "tracked_index",
+        "debt_guard"
+      ],
+      "files_touched": [
+        "scripts/git-hooks/post-commit",
+        "Docs/AGENTS/index/handoff-index.json",
+        "Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Post_Commit_Index_Stabilization.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Post-Commit Index Stabilization",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend post-commit hook to use existing tracked-only index mode",
+            "net_mechanism_count": "unchanged",
+            "verification": "safe-local / `npm run install-hooks`; `npm run index:tier2:tracked`; `npm -w apps/web test -- build-index.test.ts`; `git diff --check`",
+            "residual_debt": "PostToolUse hook intentionally remains filesystem-based for live discoverability"
+          }
+        }
+      }
     },
     {
       "file": "2026-04-26_Agents_Supervisor_Skill_Review_Amendments.md",
