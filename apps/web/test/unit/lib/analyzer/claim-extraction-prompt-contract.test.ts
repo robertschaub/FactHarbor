@@ -154,6 +154,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("side-specific metric label, or numeric target alone is not enough");
       expect(section).toContain("side-specific source family or measurement route");
       expect(section).toContain("even when the comparator/reference route is historical");
+      expect(section).toContain("Final Comparison Companion Self-Audit");
+      expect(section).toContain("The same companion must also carry source route/source family");
+      expect(section).toContain('do not leave `freshnessRequirement` as `"none"`');
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
       expect(section).toContain("first check whether the original input actually assigned the standalone value to the comparator/reference side");
       expect(section).toContain("rewriting that claim into a relation-only companion");
@@ -165,7 +168,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not shift it onto a different clause");
       expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
       expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
-      expect(section).toContain('"freshnessRequirement": "none"');
+      expect(section).toContain('"freshnessRequirement": "current_snapshot"');
     });
   });
 
@@ -598,6 +601,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("unless the input itself used that orientation");
       expect(contract).toContain("describe the companion relation in current-side-subject form");
       expect(contract).toContain("Do NOT describe the target as");
+      expect(contract).toContain("must not describe the corrected companion as the comparator/reference side being approximately that metric");
+      expect(contract).toContain("orientation/copied-value violation, missing referenced-side route/profile, and freshness loss");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
       expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
