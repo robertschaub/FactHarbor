@@ -27,6 +27,7 @@
 - Added `references/artifact-template.md` to force a consistent reload/exchange shape: verified observations, decisions, reviewed/debated conclusions, agent exchange packet, hypotheses, open questions, reload plan, untrusted/stale content, and retention action.
 - Synced discovery surfaces across `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, `factharbor-agent.skill`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md`.
 - Ran a small externalized design review: one subagent focused on governance/failure modes, one on install conventions, then a two-role debate over sufficiency. Challenger findings drove the canonical-source, gitignore, sensitivity-check, and lifecycle tightening amendments.
+- Post-commit overlap review classified the follow-up as an incomplete existing workflow boundary, not a reason to add another mechanism. The skill now has an explicit Overlap Gate assigning ownership to `preflight_task`, `/handoff`, `/debate`, docs/WIP workflows, and analysis workflows, plus an Efficiency Budget to prevent artifact sprawl.
 
 **Warnings:**
 - `PyYAML` was missing from the default Python environment, so the first `quick_validate.py` attempt failed. I installed `PyYAML` with `python -m pip install PyYAML`, after which both skill validators passed.
@@ -41,11 +42,13 @@
 - SHA-256 comparison confirmed the mirrored `artifact-template.md` files also match.
 - Node-based checks confirmed all discovery docs reference `.claude/skills/context-extension/SKILL.md`, both skill files reference `references/artifact-template.md`, and `.gitignore` includes `.codex/context-extension/`.
 - Rebuilt `factharbor-agent.skill` and verified its archive shape remains `references/`, `scripts/`, `SKILL.md` at the package root.
+- Overlap review found no blockers after the Overlap Gate and Efficiency Budget amendments.
 
 **For next agent:**
 - When changing the context-extension workflow, edit `.claude/skills/context-extension/SKILL.md` first, then resync `C:/Users/rober/.codex/skills/context-extension/SKILL.md` and rerun both validators.
 - Do not let `.codex/context-extension/` become a permanent memory store. Temporary artifacts must be deleted, superseded, or promoted selectively into the normal Exchange Protocol output when a task ends.
 - Use explicit modes when writing artifacts: `session-checkpoint`, `agent-exchange`, `subagent-return`, or `reload`.
+- Before using the skill, apply the Overlap Gate: if another workflow owns the work, use context-extension only to carry compact state between phases.
 - If other tool wrappers need stronger automatic behavior later, mirror the trigger language from `AGENTS.md` and `Docs/DEVELOPMENT/Claude_Code_Skills.md` instead of adding a second workflow.
 
 **Learnings:** Appended to `Role_Learnings.md`? **Yes** — added an LLM Expert learning about dual-installed skills needing one canonical repo source plus mirrored user-level trigger copies and validation.

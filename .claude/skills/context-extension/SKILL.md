@@ -24,6 +24,21 @@ Use the skill when at least one condition is true:
 
 Do not use it for routine small tasks, final summaries, completion handoffs, raw transcript storage, broad file dumps, secrets, credentials, production/customer data, or material better recovered from authoritative source files.
 
+## Overlap Gate
+
+Before writing or reloading an artifact, choose the owning workflow:
+
+| Need | Owning workflow | Context-extension role |
+|---|---|---|
+| Find startup context, role fit, prior handoffs, stage owners | `fhAgentKnowledge.preflight_task` / AGENTS startup protocol | Use only after preflight when the active session needs a local working checkpoint |
+| Complete a non-trivial task or role handoff | Exchange Protocol / `/handoff` | Link or promote selected working notes; never replace the durable output |
+| Run adversarial decision-making | `/debate` | Store the compact debated conclusion and rejected alternatives after debate |
+| Clean living docs or archive WIP/handoffs | `/docs-update` or `/wip-update` | Checkpoint investigation state only if the doc cleanup is long-running |
+| Analyze pipeline, reports, prompts, debug logs, or validation | `/pipeline`, `/report-review`, `/prompt-diagnosis`, `/debug`, `/validate`, `/audit` | Store reload pointers and intermediate state; do not duplicate those workflows' analysis rules |
+| Explain code to a human | `/explain-code` | Usually none; use only if the explanation session becomes long and needs a reload packet |
+
+If another workflow owns the outcome, run that workflow first. Context-extension may carry the state between phases, but it must not become the place where the real work is performed or recorded.
+
 ## Session Rhythm
 
 For long-running work, consider context-extension at these points:
@@ -51,6 +66,17 @@ Keep the three record types distinct:
 - Context-extension artifacts are volatile working packets.
 - Exchange Protocol outputs are durable completion and role-handoff records.
 - `Docs/WIP/` files are formal collaborative investigation or design docs.
+
+## Efficiency Budget
+
+Use the smallest artifact that preserves continuity:
+
+- Keep one active artifact per task slug whenever possible.
+- Update at phase boundaries, delegation points, subagent returns, compaction/pause, or explicit user request. Do not update after every tool call.
+- Prefer pointers over copied text. A good artifact tells the next agent what to reopen, not everything you saw.
+- Keep `Verified observations` and `Reload plan` short enough to scan quickly; split only when a single artifact would become harder to use than rereading sources.
+- Keep `.codex/context-extension/index.md` to active or recently superseded artifacts only; remove stale rows when artifacts are deleted or promoted.
+- If writing the artifact would take longer than reconstructing the context from authoritative files, do not write it.
 
 ## Authority Rules
 
@@ -123,6 +149,8 @@ Use context-extension for agent-to-agent working exchange when a subagent or fut
 5. If a debate/review produced the exchange packet, record the debated alternatives and why they were accepted or rejected.
 
 For subagent returns, require the receiving packet to include: assigned task, files inspected, verified observations, unresolved questions, confidence level, and exact reload pointers. Merge only selected verified content into the active parent artifact; keep rejected or unverified claims in a clearly labeled section if they affected the decision.
+
+Subagents usually return their packet in their final response. The parent agent owns writes to `.codex/context-extension/` unless the user explicitly asks a worker to edit shared artifacts. This avoids concurrent artifact edits and keeps one agent accountable for the manifest.
 
 ## Reload Flow
 

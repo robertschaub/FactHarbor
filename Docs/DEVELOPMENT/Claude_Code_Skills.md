@@ -259,6 +259,20 @@ Examples:
 5. Requires freshness checks against the current branch, git status, source files, date, and newest user instructions before reusing artifact claims.
 6. Requires deletion, supersession, or promotion into the normal Exchange Protocol output when the task ends.
 
+### Overlap boundaries
+
+Context Extension is a transport layer for working memory, not the owner of the work. Use the owning workflow for the actual task:
+
+| If the need is... | Use... | Context Extension may... |
+|---|---|---|
+| Startup orientation or prior-work discovery | `fhAgentKnowledge.preflight_task` and AGENTS startup protocol | checkpoint only the state gathered after preflight |
+| Completion or role handoff | Exchange Protocol / `/handoff` | promote selected working notes into the durable output |
+| Adversarial decision-making | `/debate` | store the compact conclusion and rejected alternatives |
+| Living-doc or WIP cleanup | `/docs-update` or `/wip-update` | checkpoint long-running cleanup state |
+| Pipeline/report/prompt/debug/validation analysis | `/pipeline`, `/report-review`, `/prompt-diagnosis`, `/debug`, `/validate`, `/audit` | preserve reload pointers and intermediate state |
+
+Efficiency rule: write one compact active artifact per task only at phase boundaries, delegation points, subagent returns, pause/compaction, or explicit user request. If the artifact would be more expensive than rereading the source, do not write it.
+
 ### Discovery and authority
 
 | Tool surface | Trigger mechanism | Canonical source |
