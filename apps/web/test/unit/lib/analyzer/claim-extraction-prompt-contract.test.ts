@@ -142,6 +142,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("comparison orientation wherever possible");
       expect(section).toContain("attaching the named/current-side number as though it were the comparator/reference value");
       expect(section).toContain("Do not treat an inverted repair target from the validation summary as permission to invert the input");
+      expect(section).toContain("rewrite the target as the named/current-side quantity");
       expect(section).toContain("do not repair by copying the named/current-side numeric anchor onto the comparator/reference side");
       expect(section).toContain("Keep the approximation as a relation");
       expect(section).toContain("neutral anaphoric reference");
@@ -595,6 +596,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("one side-specific claim plus one relation companion");
       expect(contract).toContain("the corrective summary must preserve that orientation");
       expect(contract).toContain("unless the input itself used that orientation");
+      expect(contract).toContain("describe the companion relation in current-side-subject form");
+      expect(contract).toContain("Do NOT describe the target as");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
       expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
