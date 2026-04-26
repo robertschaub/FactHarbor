@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T19:00:28.616Z",
-  "count": 379,
+  "generatedAt": "2026-04-26T19:04:44.452Z",
+  "count": 380,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -7851,6 +7851,39 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat `/debt-guard` as accepted after the post-review amendment. If you regenerate all agent indexes in a dirty worktree, inspect the handoff index before committing because untracked handoff files are included by the index script."
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Index_GeneratedAt_Stability.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace_governance",
+        "handoff_index",
+        "generated_at",
+        "hooks"
+      ],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts",
+        "Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "`handoff-index.json` should no longer become dirty after post-commit tracked-only regeneration when only `generatedAt` changes. Continue ACE governance work from `Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md`; review the Phase 2 audit before proposing any `Multi_Agent_Collaboration_Rule",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend existing generated-index writer",
+            "net_mechanism_count": "unchanged",
+            "verification": "safe-local / `npm -w apps/web test -- build-index.test.ts`; `npm run index:tier2:tracked`; `git diff --check`",
+            "residual_debt": "none for timestamp-only churn; unrelated generated stage index diffs remain intentionally untouched"
+          }
+        }
+      }
     },
     {
       "file": "2026-04-26_Agents_Supervisor_Post_Commit_Index_Stabilization.md",

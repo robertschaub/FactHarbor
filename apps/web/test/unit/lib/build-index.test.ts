@@ -133,4 +133,28 @@ describe("parseHandoff", () => {
 
     expect(files).toEqual(["2026-04-26_Agents_Supervisor_ACE.md"]);
   });
+
+  it("ignores top-level generatedAt when comparing generated index content", async () => {
+    const { comparableIndexJson } = await loadBuildIndexModule();
+
+    expect(comparableIndexJson(JSON.stringify({
+      generatedAt: "2026-04-26T10:00:00.000Z",
+      count: 1,
+      entries: [{ file: "a.md" }],
+    }))).toBe(comparableIndexJson(JSON.stringify({
+      generatedAt: "2026-04-26T11:00:00.000Z",
+      count: 1,
+      entries: [{ file: "a.md" }],
+    })));
+
+    expect(comparableIndexJson(JSON.stringify({
+      generatedAt: "2026-04-26T10:00:00.000Z",
+      count: 1,
+      entries: [{ file: "a.md" }],
+    }))).not.toBe(comparableIndexJson(JSON.stringify({
+      generatedAt: "2026-04-26T11:00:00.000Z",
+      count: 2,
+      entries: [{ file: "a.md" }, { file: "b.md" }],
+    })));
+  });
 });

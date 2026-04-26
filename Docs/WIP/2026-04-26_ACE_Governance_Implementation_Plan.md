@@ -51,6 +51,7 @@ Implementation progress:
 
 - Phase 0 committed as `ab559315 docs(agents): stabilize ACE governance plan`.
 - Phase 1 implemented a tracked-only handoff-index mode, regenerated `handoff-index.json` without unrelated untracked handoffs, and updated the post-commit hook to use tracked-only handoff indexing.
+- Follow-up stabilization keeps generated indexes from being rewritten when only top-level `generatedAt` changes, preventing post-commit timestamp churn after tracked-only regeneration.
 - Phase 2 produced `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`.
 
 ## Implementation Sequence
@@ -87,7 +88,7 @@ Acceptance criteria:
 - No enforcement, warning, or failure behavior is added.
 - Generated index diff is reviewed for unrelated file sweep-in before commit.
 
-Status: implemented with `node scripts/build-index.mjs --tier=2 --tracked-only` and root script `npm run index:tier2:tracked`. The generated index excludes unrelated untracked handoff files, and `scripts/git-hooks/post-commit` now uses tracked-only handoff indexing after commits. The current run has no older tracked handoff with a final debt-guard result block, so telemetry field presence is proven by parser tests and appears once a tracked handoff contains a result block.
+Status: implemented with `node scripts/build-index.mjs --tier=2 --tracked-only` and root script `npm run index:tier2:tracked`. The generated index excludes unrelated untracked handoff files, and `scripts/git-hooks/post-commit` now uses tracked-only handoff indexing after commits. `scripts/build-index.mjs` also skips generated-index writes when the only difference is top-level `generatedAt`, so hook runs do not dirty the worktree with timestamp-only churn. The current run has no older tracked handoff with a final debt-guard result block, so telemetry field presence is proven by parser tests and appears once a tracked handoff contains a result block.
 
 ### Phase 2 - Reproducible Collaboration Rules Audit
 
@@ -167,7 +168,8 @@ Acceptance criteria:
 
 | Risk | Control |
 |---|---|
-| Generated index sweeps unrelated local files into a commit | Regenerate only after cleaning or intentionally staging handoff/WIP state. |
+| Generated index sweeps unrelated local files into a commit | Use `npm run index:tier2:tracked` for committed handoff-index updates; regenerate full filesystem indexes only when the local handoff/WIP state is intentional. |
+| Generated index timestamp churn dirties the worktree after commit hooks | `scripts/build-index.mjs` ignores top-level `generatedAt` when deciding whether to rewrite an existing generated index file. |
 | Telemetry becomes premature enforcement | Keep parser passive until sample review. |
 | Useful low-frequency procedures get archived | Require section-level audit and Captain approval before moves. |
 | Governance docs become heavier instead of leaner | Prefer pointers and load-on-demand procedures over duplicating rules. |

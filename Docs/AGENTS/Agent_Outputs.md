@@ -2218,3 +2218,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Post-Commit Index Stabilization -- [Standard] [open-items: yes]
 **For next agent:** `scripts/git-hooks/post-commit` now rebuilds handoff indexes with `--tier=2 --tracked-only`, and local hooks were reinstalled. Commit-time generated `handoff-index.json` should no longer sweep unrelated untracked handoffs; PostToolUse indexing remains filesystem-based for live discoverability.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Post_Commit_Index_Stabilization.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Index GeneratedAt Stability -- [Standard] [open-items: yes]
+**For next agent:** `scripts/build-index.mjs` now skips generated index rewrites when only top-level `generatedAt` changes, so post-commit tracked-only handoff indexing should stop dirtying `Docs/AGENTS/index/handoff-index.json` with timestamp-only churn. Continue ACE governance work from `Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md`.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Index_GeneratedAt_Stability.md

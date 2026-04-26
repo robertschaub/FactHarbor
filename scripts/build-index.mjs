@@ -47,9 +47,30 @@ const generatedAt = new Date().toISOString();
 // ---------------------------------------------------------------------------
 // Atomic write — never leave a corrupt half-written file
 // ---------------------------------------------------------------------------
+export function comparableIndexJson(json) {
+  try {
+    const parsed = JSON.parse(json);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      delete parsed.generatedAt;
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return null;
+  }
+}
+
 function writeAtomic(filePath, data) {
   const tmp = filePath + '.tmp';
   const json = JSON.stringify(data, null, 2);
+
+  if (existsSync(filePath)) {
+    const existingComparable = comparableIndexJson(readFileSync(filePath, 'utf8'));
+    const nextComparable = comparableIndexJson(json);
+    if (existingComparable && nextComparable && existingComparable === nextComparable) {
+      return;
+    }
+  }
+
   writeFileSync(tmp, json, 'utf8');
   try {
     renameSync(tmp, filePath);
