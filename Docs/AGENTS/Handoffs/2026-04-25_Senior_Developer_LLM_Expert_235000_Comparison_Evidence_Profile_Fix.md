@@ -211,3 +211,30 @@ Do not stack another broad prompt edit without live-run allowance. The safer nex
 - The validator should reject bad whole-plus-side shapes, but the repair path must reliably transform them instead of escalating to `report_damaged`.
 
 No additional live job was submitted after `a19ee...` because the approved rerun budget for this phase was exhausted.
+
+## Update 2026-04-26 - Narrow Comparison Freshness Prompt Hardening
+
+After checking open job `4070a74a47b04fc3944d785dd68a5a56`, the job was completed but still degraded:
+
+- Result: `UNVERIFIED`, truth `56`, confidence `24`.
+- `AC_02` had empty support and contradiction citation arrays.
+- Warnings included `verdict_citation_integrity_guard` and `verdict_integrity_failure`.
+- Runtime provenance was older/dirty (`1b994eb0...+6ec53dc5`, prompt hash `e3f8...`), so this job is diagnostic evidence, not validation of the current tree.
+
+Commit `30ee883d` adds a narrower prompt hardening than the reverted `d7632d78`:
+
+- It strengthens Pass 2 extraction so every thesis-direct quantitative comparison claim, whether unsplit or decomposed, must carry both-side evidence profile, side route, metric class, comparison relation, and freshest-side `freshnessRequirement`.
+- It strengthens `CLAIM_CONTRACT_REPAIR` so repaired comparison companions preserve source-native routes and current/present-side freshness.
+- It does **not** add a new fail-closed validator rule, so it avoids the specific `report_damaged` regression seen in job `a19ee...`.
+
+Verification:
+
+- `git diff --check`
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/verdict-prompt-contract.test.ts`
+  - Passed: 171 tests.
+- `npm -w apps/web run build`
+  - Passed.
+  - Postbuild reseeded active claimboundary prompt hash prefix `bf72036efd04...`.
+- Services restarted after commit and health checks passed for web and API.
+
+Remaining open: this is not live-validated. A future exact-input rerun is still required to confirm whether `AC_02` now carries/cites the official current-side evidence when the report compares current and historical quantities.
