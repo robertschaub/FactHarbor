@@ -16,6 +16,8 @@ Captain-approved input:
   - Kept but insufficient. Adds a generic validator rule that a comparison companion referencing a current/present/freshness-sensitive side must carry that side's route/metric class and fail if freshness/profile is lost.
 - `987dc115 fix(stage1): give contract repair validator context`
   - Kept but insufficient. Passes the validator summary into `CLAIM_CONTRACT_REPAIR` so repair can address corrected shape/profile/freshness failures, not just insert the anchor text.
+- `8666e27c fix(prompt): require side routes for comparison companions`
+  - Safe-local verified, not live-rerun verified yet. Tightens Pass 2, contract validation, and contract repair so a ratio/approximation/relation metric does not count as a current-side source-native route, and freshness follows the freshest side needed for evidence.
 
 Safe verification passed:
 
@@ -50,11 +52,11 @@ That contradicts the intended rule from `558f08cd`: a companion claim that depen
 
 ## Recommended Next Step
 
-Do not add Stage 4 rescue first. The lowest-net-complexity next correction is still Stage 1 prompt/contract repair:
+Do not add Stage 4 rescue first. After `8666e27c`, the next step is live validation with a fresh Captain-approved rerun budget:
 
-1. Tighten `CLAIM_CONTRACT_VALIDATION` so a mere ratio/anchor mention is not enough; the comparison companion's own profile must include source-native routes/metric classes for both sides when both sides are needed for verdict evidence.
-2. Make the freshness rule more precise: if a current-side metric must be cited in the companion verdict, the companion cannot be approved with `freshnessRequirement: "none"` solely because the comparator route is historical. It may need `current_snapshot` or an explicit profile note that current-side evidence must be acquired/cited.
-3. Re-run only with new Captain approval, because the 6-run budget is exhausted.
+1. Reseed/restart first.
+2. Re-run the exact Captain-approved input once or twice.
+3. Inspect AC_02 before Stage 4 conclusions: it should have concrete side-specific source-native routes/metric classes for both current and comparator sides, and it should not use `freshnessRequirement: "none"` when current-side evidence is needed.
 
 If Stage 1 then produces a correct AC_02 profile but Stage 4 still loses citations, move to `verdict-stage.ts`/evidence-direction analysis. At that point the evidence would show the problem is no longer extraction/profile.
 
