@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-26 | Code Reviewer | Claude Opus 4.6 | Pipeline Review Since ACS Baseline (2f7a2805) -- [Significant] [open-items: yes]
+**For next agent:** 11 findings ranked by severity. #1 (high): no C# tests for `ClaimSelectionDraftService.cs` (1,057-line state machine). #2 (medium): verdict citation integrity fallback skips re-enforcement on adjudication failure. #3 (medium): relevance cache key missing model/provider. Comparison evidence profile threading is consistent across all 7 stages; ACS security is strong.
+→ Docs/AGENTS/Handoffs/2026-04-26_Code_Reviewer_Pipeline_Review_Since_ACS_Baseline.md
+
+---
 ### 2026-04-24 | Senior Developer | Codex (GPT-5) | Claim Selection Draft State And Salience Runtime Guards -- [Standard] [open-items: no]
 **For next agent:** [page.tsx](/c:/DEV/FactHarbor/apps/web/src/app/analyze/select/[draftId]/page.tsx) now normalizes parsed draft JSON before rendering, so older or partial draft states no longer crash on missing `recommendedClaimIds.length`. [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) now fail-opens leaked salience commitment schema errors, preserving the documented non-fatal behavior and allowing Stage 1 to continue to Pass 2.
 → Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_Claim_Selection_Draft_State_Runtime_Guard.md
@@ -2146,3 +2151,17 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ### 2026-04-24 | Senior Developer / LLM Expert | Codex | Stage 1 Distinct-Events Validator Context -- [Significant] [open-items: yes]
 **For next agent:** Jobs `d1689df...` and `466c86...` exposed a one-claim collapse where contract/atomicity validators approved a near-verbatim single claim without seeing the Pass 2 `distinctEvents` inventory that later triggered MT-5(C). [claim-extraction-stage.ts](/c:/DEV/FactHarbor/apps/web/src/lib/analyzer/claim-extraction-stage.ts) now passes `distinctEventsContextJson` into contract and single-claim atomicity validation, [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/web/prompts/claimboundary.prompt.md) reconciles that advisory inventory before approving one-claim outputs, and focused/full tests plus build passed. `3328ed...` remains a separate broad-input SVP PDF packet under `MON-STG1-QUAL`.
 → Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Stage1_Distinct_Events_Validator_Context.md
+
+---
+### 2026-04-25 | Agents Supervisor | Codex (GPT-5) | Debt Guard Workflow Skill -- [Standard] [open-items: no]
+**For next agent:** New shared workflow skill [debt-guard](/c:/DEV/FactHarbor/.claude/skills/debt-guard/SKILL.md) is mandatory for every bugfixing task before editing. It now has explicit Compact vs Full paths, balanced undo/amend vs add decisions, hunk-level non-destructive revert wording, verifier tier/cost/provenance fields, high-risk-only debate, and deliberate-debt removal triggers. Discovery was synced in `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, `Docs/DEVELOPMENT/Claude_Code_Skills.md`, and `factharbor-agent.skill`.
+→ Docs/AGENTS/Handoffs/2026-04-25_Agents_Supervisor_Debt_Guard_Workflow_Skill.md
+
+---
+### 2026-04-26 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Comparison Profile Follow-up -- [Significant] [open-items: yes]
+**For next agent:** The `235000 Flüchtlinge...` issue is improved but not proven fixed. Commits `b7712b0c`, `558f08cd`, and `987dc115` are keep-but-insufficient: Stage 1 no longer damages preparation on the latest run and SEM 2025 evidence `235 057 Personen aus dem Asylbereich` is found/cited for AC_01, but AC_02 still ends `UNVERIFIED` with `verdict_citation_integrity_guard` / `verdict_integrity_failure`. The next correction should tighten Stage 1 validation/repair so a comparison companion depending on a current-side number carries concrete current-side route/metric/freshness in its own profile; only move to Stage 4 if that profile is correct and citations still collapse. The 6 approved reruns are exhausted.
+→ Docs/AGENTS/Handoffs/2026-04-26_Senior_Developer_LLM_Expert_235000_Comparison_Profile_Open.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Debt Guard Cross-Tool Docs Sync -- [Standard] [open-items: no]
+**For next agent:** Related agent docs now expose `/debt-guard` beyond the root/Gemini surfaces: Claude, Copilot, Cursor, Cline/RooCode, and Windsurf wrappers point bugfixing agents to `.claude/skills/debt-guard/SKILL.md`; `Docs/AGENTS/README.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md` document the cross-tool expectation. Keep the generated index files out of this commit unless they are intentionally regenerated after unrelated untracked handoffs/WIP files are handled.
