@@ -47,6 +47,12 @@ Verification already run:
 - `npm -w apps/web test -- build-index.test.ts` -> passed.
 - `git diff --check` -> passed.
 
+Implementation progress:
+
+- Phase 0 committed as `ab559315 docs(agents): stabilize ACE governance plan`.
+- Phase 1 implemented a tracked-only handoff-index mode and regenerated `handoff-index.json` without unrelated untracked handoffs.
+- Phase 2 produced `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`.
+
 ## Implementation Sequence
 
 ### Phase 0 - Commit Stabilization Baseline
@@ -81,6 +87,8 @@ Acceptance criteria:
 - No enforcement, warning, or failure behavior is added.
 - Generated index diff is reviewed for unrelated file sweep-in before commit.
 
+Status: implemented with `node scripts/build-index.mjs --tier=2 --tracked-only` and root script `npm run index:tier2:tracked`. The generated index excludes unrelated untracked handoff files. The current run has no older tracked handoff with a final debt-guard result block, so telemetry field presence is proven by parser tests and will appear in the index once a tracked handoff contains a result block.
+
 ### Phase 2 - Reproducible Collaboration Rules Audit
 
 Goal: replace the informal 44% dead-weight claim with a reproducible audit artifact.
@@ -104,6 +112,8 @@ Acceptance criteria:
 - Every proposed move/delete/archive action cites section-level evidence.
 - Citation absence is not treated as proof of dead weight by itself.
 - The audit distinguishes "rare but useful reference" from "obsolete".
+
+Status: initial audit created at `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`; pending Captain review.
 
 ### Phase 3 - Collaboration Rules Restructure Proposal
 
@@ -165,7 +175,7 @@ Acceptance criteria:
 
 ## Open Decisions
 
-None for Phase 0. Phase 1 requires a clean/intentional handoff directory decision before regenerating `handoff-index.json`.
+Captain review is needed before Phase 3 restructure proposal becomes an edit plan. Phase 1 no longer requires cleaning unrelated untracked files when `--tracked-only` is used, but default index generation still scans the filesystem for hook-time discoverability.
 
 ## Done Criteria
 

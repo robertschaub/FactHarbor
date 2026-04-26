@@ -28,6 +28,7 @@
     "index": "node scripts/build-index.mjs",
     "index:tier1": "node scripts/build-index.mjs --tier=1",
     "index:tier2": "node scripts/build-index.mjs --tier=2",
+    "index:tier2:tracked": "node scripts/build-index.mjs --tier=2 --tracked-only",
     "install-hooks": "node scripts/install-hooks.mjs"
   },
   "dependencies": {

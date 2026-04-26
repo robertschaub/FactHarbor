@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T06:31:31.541Z",
-  "count": 371,
+  "generatedAt": "2026-04-26T18:37:50.094Z",
+  "count": 378,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5727,15 +5727,13 @@
         "senior_developer"
       ],
       "topics": [
-        "build_index",
-        "handoff_index",
+        "build",
+        "index",
         "parser",
-        "regression_tests"
+        "regression",
+        "tests"
       ],
-      "files_touched": [
-        "scripts/build-index.mjs",
-        "apps/web/test/unit/lib/build-index.test.ts"
-      ],
+      "files_touched": [],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -7674,6 +7672,159 @@
       "summary": "2026-04-25 - SR Prefetch And Stage 3 Observability Fix"
     },
     {
+      "file": "2026-04-26_Agents_Supervisor_ACE_Governance_Implementation_Plan.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace",
+        "governance",
+        "implementation_plan",
+        "telemetry",
+        "commit_scope"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md",
+        "Docs/WIP/2026-04-26_ACE_Governance_Reaudit_Consolidated.md",
+        "Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        ".claude/skills/debt-guard/SKILL.md",
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Implementation_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "ACE Governance Implementation Plan"
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_ACE_Governance_Phase1_Phase2_Implementation.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace",
+        "governance",
+        "tracked_index",
+        "collaboration_rules_audit",
+        "debt_guard"
+      ],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "package.json",
+        "apps/web/test/unit/lib/build-index.test.ts",
+        "Docs/AGENTS/index/handoff-index.json",
+        "Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md",
+        "Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md",
+        "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Phase1_Phase2_Implementation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "ACE Governance Phase 1-2 Implementation",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend existing index generation path with opt-in tracked-only mode",
+            "net_mechanism_count": "unchanged",
+            "verification": "safe-local / `npm -w apps/web test -- build-index.test.ts`; `npm run index:tier2:tracked`; `git diff --check`",
+            "residual_debt": "default hook-time index generation still scans the filesystem by design; use tracked-only mode for commit-quality regeneration"
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_ACE_Governance_Reaudit_Consolidation.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace",
+        "governance",
+        "reaudit",
+        "debate",
+        "telemetry",
+        "collaboration_rules"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-26_ACE_Governance_Reaudit_Consolidated.md",
+        "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Reaudit_Consolidation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "ACE Governance Re-Audit Consolidation"
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_ACE_Governance_Stabilization_Decisions.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace",
+        "governance",
+        "telemetry",
+        "debt_guard",
+        "ownership",
+        "supersession"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md",
+        "Docs/WIP/2026-04-26_ACE_Governance_Reaudit_Consolidated.md",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        ".claude/skills/debt-guard/SKILL.md",
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts",
+        "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Stabilization_Decisions.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "ACE Governance Stabilization Decisions"
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_ACE_Readiness_Challenge.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace_readiness",
+        "governance_audit",
+        "debt_guard",
+        "context_extension",
+        "literature_review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-26_ACE_Readiness_Review_And_Debate.md",
+        ".claude/skills/debt-guard/SKILL.md",
+        ".claude/skills/context-extension/SKILL.md",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        "Docs/AGENTS/Policies/Handoff_Protocol.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If revising the ACE review, correct D3 scope, soften or re-source the \"attractive nuisance\" framing, replace the unsupported 79% MAST claim, and make the governance dead-weight audit reproducible before acting on the 44% cleanup number."
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Context_Extension_Skill.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor",
+        "llm_expert"
+      ],
+      "topics": [
+        "context",
+        "extension",
+        "skill"
+      ],
+      "files_touched": [
+        ".claude/skills/context-extension/SKILL.md"
+      ],
+      "summary": "When changing the context-extension workflow, edit `.claude/skills/context-extension/SKILL.md` first, then resync `C:/Users/rober/.codex/skills/context-extension/SKILL.md` and rerun both validators."
+    },
+    {
       "file": "2026-04-26_Agents_Supervisor_Debt_Guard_Post_Review_Amendments.md",
       "date": "2026-04-26",
       "roles": [
@@ -7700,6 +7851,27 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Treat `/debt-guard` as accepted after the post-review amendment. If you regenerate all agent indexes in a dirty worktree, inspect the handoff index before committing because untracked handoff files are included by the index script."
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Skill_Review_Amendments.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "skill_review",
+        "debt_guard",
+        "context_extension",
+        "agent_exchange"
+      ],
+      "files_touched": [
+        ".claude/skills/debt-guard/SKILL.md",
+        ".claude/skills/context-extension/SKILL.md",
+        "C:/Users/rober/.codex/skills/context-extension/SKILL.md",
+        ".codex/context-extension/2026-04-26_skill-review-debate_context.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "When changing dual-installed skills, keep `.claude/skills/context-extension/SKILL.md` canonical, resync `C:/Users/rober/.codex/skills/context-extension/SKILL.md`, compare hashes, and rerun `quick_validate.py` for both packages. Do not infer wrapper edits are needed; search first for the exact change"
     },
     {
       "file": "2026-04-26_Code_Reviewer_Pipeline_Review_Since_ACS_Baseline.md",

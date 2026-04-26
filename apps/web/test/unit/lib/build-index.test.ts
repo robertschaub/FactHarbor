@@ -120,4 +120,17 @@ describe("parseHandoff", () => {
       residual_debt: "none",
     });
   });
+
+  it("derives tracked handoff files while excluding untracked-like non-handoff paths", async () => {
+    const { handoffFilesFromTrackedOutput } = await loadBuildIndexModule();
+    const files = handoffFilesFromTrackedOutput([
+      "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE.md",
+      "Docs/AGENTS/Handoffs/README.md",
+      "Docs/WIP/2026-04-26_Draft.md",
+      "Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE.md",
+      "",
+    ].join("\n"));
+
+    expect(files).toEqual(["2026-04-26_Agents_Supervisor_ACE.md"]);
+  });
 });

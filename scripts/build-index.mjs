@@ -8,6 +8,7 @@
  *   node scripts/build-index.mjs           # rebuild all tiers
  *   node scripts/build-index.mjs --tier=1  # stage-manifest.json + stage-map.json
  *   node scripts/build-index.mjs --tier=2  # handoff-index.json
+ *   node scripts/build-index.mjs --tier=2 --tracked-only
  *
  * Artifacts:
  *   Tier 1a  stage-manifest.json   LLM task → model tier → model ID
@@ -19,6 +20,7 @@ import {
   readFileSync, writeFileSync, readdirSync,
   mkdirSync, renameSync, unlinkSync, existsSync,
 } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve, join, dirname, basename } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -32,6 +34,7 @@ const ANALYZER  = join(REPO, 'apps/web/src/lib/analyzer');
 const args      = process.argv.slice(2);
 const tierArg   = args.find(a => a.startsWith('--tier='));
 const tier      = tierArg ? parseInt(tierArg.split('=')[1], 10) : null;
+const TRACKED_ONLY = args.includes('--tracked-only');
 
 const RUN1 = !tier || tier === 1;
 const RUN2 = !tier || tier === 2;
@@ -268,6 +271,20 @@ function debtGuardBlockPriority(header) {
   return 2;
 }
 
+export function handoffFilesFromTrackedOutput(output) {
+  return [...new Set(
+    output
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(line =>
+        line.startsWith('Docs/AGENTS/Handoffs/')
+        && line.endsWith('.md')
+        && basename(line) !== 'README.md'
+      )
+      .map(line => basename(line))
+  )].sort();
+}
+
 const ROLE_VARIANTS = (() => {
   const variants = new Map();
 
@@ -438,9 +455,15 @@ function buildHandoffIndex() {
     return { generatedAt, count: 0, entries: [] };
   }
 
-  const files = readdirSync(HANDOFFS)
-    .filter(f => f.endsWith('.md') && f !== 'README.md')
-    .sort();
+  const files = TRACKED_ONLY
+    ? handoffFilesFromTrackedOutput(execFileSync(
+      'git',
+      ['ls-files', '--', 'Docs/AGENTS/Handoffs'],
+      { cwd: REPO, encoding: 'utf8' }
+    ))
+    : readdirSync(HANDOFFS)
+      .filter(f => f.endsWith('.md') && f !== 'README.md')
+      .sort();
 
   const entries = files.map(file => {
     try {

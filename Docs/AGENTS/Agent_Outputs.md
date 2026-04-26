@@ -2208,3 +2208,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Implementation Plan -- [Significant] [open-items: yes]
 **For next agent:** `Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md` is the execution plan for the accepted re-audit corrections. It preserves the staged path: commit stabilization baseline, rebuild passive debt-guard telemetry index from a clean/intentional handoff set, then produce a reproducible `Multi_Agent_Collaboration_Rules.md` audit before any restructure or Agent Evaluator work.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Implementation_Plan.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Phase 1-2 Implementation -- [Significant] [open-items: yes]
+**For next agent:** Phase 1 added `node scripts/build-index.mjs --tier=2 --tracked-only` plus `npm run index:tier2:tracked` for clean committed handoff indexes; Phase 2 created `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`. Review that audit before any rules restructure; most heavy sections are load-on-demand reference, not deletion candidates.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Phase1_Phase2_Implementation.md
