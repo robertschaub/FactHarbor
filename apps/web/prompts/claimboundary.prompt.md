@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-26T22:40:00Z"
+lastModified: "2026-04-26T23:05:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -2435,6 +2435,18 @@ You are an evidence applicability and claim-mapping engine. Given a set of evide
 ### Task
 
 For each evidence item, determine whether it was produced by actors within the claim's jurisdiction or by external/foreign actors. Also return the full set of atomic claim IDs for which the evidence item directly reports, materially measures, or otherwise supplies a necessary side/component/route of the claim's expected evidence profile.
+
+### Claim-Local Direction Contract
+
+This task has two separate outputs:
+- `relevantClaimIds` is the material-relevance mapping: the item helps verify, bound, or route that claim.
+- `claimDirectionByClaimId` is the truth-direction mapping: the item makes that claim more true, more false, or neither.
+
+Never use `"supports"` as a synonym for "relevant", "direct", "source-native", or "supplies a needed comparison side." Highly direct side evidence can still be `"contradicts"` when the reported value refutes the asserted relationship.
+
+For numeric comparison claims, decide each `claimDirectionByClaimId` entry by the claim/profile's comparison relation, not by the item's topical fit. A one-sided source-native value can be directional when the claim/profile supplies the other side. For approximate parity or closeness claims, same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `"supports"`; if the reported side is materially above or below the other side under the same metric route, the relation is false and the claim-local direction is `"contradicts"`.
+
+Keep metric routes separate. If an item reports a period/window total, cumulative total, sub-count, category component, report existence, archive existence, or methodology/source-portfolio fact while the claim/profile route requires an endpoint stock, standing population, threshold, or other substantive value, use `"neutral"` for that claim unless the claim/profile explicitly accepts the item's route for the asserted relation. Do not turn source-existence or route-availability evidence into `"supports"` for a substantive numeric comparison merely because the named source is authoritative or likely contains relevant data.
 
 ### Applicability Categories
 

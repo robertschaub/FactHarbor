@@ -997,6 +997,15 @@ describe("Stage-2 prompt contract", () => {
     it("can map side-specific evidence to decomposed comparison claims through expectedEvidenceProfile", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("evidence applicability and claim-mapping engine");
+      expect(section).toContain("Claim-Local Direction Contract");
+      expect(section).toContain("`relevantClaimIds` is the material-relevance mapping");
+      expect(section).toContain("`claimDirectionByClaimId` is the truth-direction mapping");
+      expect(section).toContain("Never use `\"supports\"` as a synonym for \"relevant\", \"direct\", \"source-native\", or \"supplies a needed comparison side.\"");
+      expect(section).toContain("Highly direct side evidence can still be `\"contradicts\"`");
+      expect(section).toContain("decide each `claimDirectionByClaimId` entry by the claim/profile's comparison relation");
+      expect(section).toContain("if the reported side is materially above or below the other side under the same metric route");
+      expect(section).toContain("Keep metric routes separate.");
+      expect(section).toContain("source-existence or route-availability evidence");
       expect(section).toContain("directly reports one side, component, denominator, reference class, or source-native measurement route");
       expect(section).toContain("first gathered for a separate side-specific companion claim");
       expect(section).toContain("Do not omit a materially relevant companion claim ID merely because the item is directional for its current claim");
