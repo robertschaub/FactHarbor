@@ -285,6 +285,12 @@ export async function aggregateAssessment(
   });
 
   const directionConflict = hasDirectionConflict(directClaimVerdicts, claims, borderlineMargin);
+  const borderlineAdjudication = hasBorderlineAdjudicationNeed(
+    directClaimVerdicts,
+    claims,
+    borderlineMargin,
+  );
+  const shouldRunArticleAdjudication = directionConflict || borderlineAdjudication;
 
   // ------------------------------------------------------------------
   // Article adjudication (Option G): LLM adjudication on conflict path
@@ -292,12 +298,12 @@ export async function aggregateAssessment(
   let articleAdjudication: ArticleAdjudication | undefined;
   let finalTruthPercentage: number = baselineTruth;
   let finalConfidence: number = baselineConfidence;
-  let adjudicationPathType: AdjudicationPath["path"] = directionConflict
-    ? "baseline_fallback"    // conflict exists but adjudication not attempted or disabled
+  let adjudicationPathType: AdjudicationPath["path"] = shouldRunArticleAdjudication
+    ? "baseline_fallback"    // conflict/borderline case exists but adjudication not attempted or disabled
     : "baseline_same_direction";
   let guardsApplied: AdjudicationPath["guardsApplied"];
 
-  if (adjudicationEnabled && directionConflict && claimVerdicts.length >= 2) {
+  if (adjudicationEnabled && shouldRunArticleAdjudication && claimVerdicts.length >= 2) {
     state.onEvent?.(`LLM call: article adjudication — ${getModelForTask("verdict", undefined, pipelineConfig).modelName}`, -1);
     const rawAdjudication = await assessArticleVerdict(
       claimVerdicts,
@@ -423,6 +429,7 @@ export async function aggregateAssessment(
   const adjudicationPath: AdjudicationPath = {
     baselineAggregate: { truthPercentage: Math.round(baselineTruth), confidence: Math.round(baselineConfidence) },
     directionConflict,
+    borderlineAdjudication,
     ...(articleAdjudication ? {
       llmAdjudication: {
         rawTruthPercentage: articleAdjudication.articleTruthPercentage,
@@ -628,6 +635,41 @@ export function hasDirectionConflict(
     }
 
     if (hasTrueLeaning && hasFalseLeaning) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Detect multi-claim cases where one direct claim is borderline/mixed while
+ * another direct claim leans clearly. This is a structural check on typed LLM
+ * outputs. It does not decide which claim is semantically dominant; it only
+ * routes the case to the existing article adjudicator so the LLM can decide
+ * whether the borderline claim carries the original input's defining proposition.
+ */
+export function hasBorderlineAdjudicationNeed(
+  directClaimVerdicts: CBClaimVerdict[],
+  claims: { id: string; claimDirection?: string }[],
+  borderlineMargin: number = 10,
+): boolean {
+  let hasBorderline = false;
+  let hasClearLeaning = false;
+
+  for (const verdict of directClaimVerdicts) {
+    if (verdict.confidenceTier === "INSUFFICIENT") continue;
+
+    const claim = claims.find((c) => c.id === verdict.claimId);
+    const direction = claim?.claimDirection;
+    if (direction === "contextual") continue;
+
+    const truth = verdict.truthPercentage;
+    if (truth >= 50 - borderlineMargin && truth <= 50 + borderlineMargin) {
+      hasBorderline = true;
+    } else {
+      hasClearLeaning = true;
+    }
+
+    if (hasBorderline && hasClearLeaning) return true;
   }
 
   return false;

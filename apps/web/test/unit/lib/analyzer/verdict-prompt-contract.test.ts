@@ -529,6 +529,13 @@ describe("Stage-5 ARTICLE_ADJUDICATION prompt contract", () => {
     expect(section).toContain("primary semantic anchor");
   });
 
+  it("handles borderline defining claims without prerequisite dominance", () => {
+    const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
+    expect(section).toContain("borderline/mixed");
+    expect(section).toContain("clear prerequisite or background claim");
+    expect(section).toContain("defining proposition");
+  });
+
   it("references baseline weighted average as structural anchor", () => {
     const section = extractSection(promptContent, "ARTICLE_ADJUDICATION");
     expect(section).toContain("baselineTruthPercentage");

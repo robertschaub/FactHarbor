@@ -1556,7 +1556,9 @@ export interface AdjudicationPath {
   baselineAggregate: { truthPercentage: number; confidence: number };
   /** Whether claims had a direction conflict (Option G gate). */
   directionConflict?: boolean;
-  /** LLM adjudication output, present only when directionConflict=true and LLM succeeded. */
+  /** Whether a mixed/borderline direct claim triggered article adjudication. */
+  borderlineAdjudication?: boolean;
+  /** LLM adjudication output, present when an adjudication gate fired and LLM succeeded. */
   llmAdjudication?: {
     rawTruthPercentage: number;
     rawConfidence: number;

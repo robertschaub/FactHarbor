@@ -7252,7 +7252,7 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     const claims = [createAtomicClaim({ id: "AC_01" }), createAtomicClaim({ id: "AC_02", statement: "Claim 2" })];
     const verdicts = [
       createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 80, confidence: 85, confidenceTier: "HIGH" }),
-      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 40, confidence: 70, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 65, confidence: 70, confidenceTier: "MEDIUM" }),
     ];
     const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
     const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
@@ -7293,6 +7293,54 @@ describe("aggregateAssessment article adjudication and direction conflict (Optio
     );
     // No ARTICLE_ADJUDICATION prompt call
     expect(mockLoadSection).not.toHaveBeenCalledWith(
+      "claimboundary",
+      "ARTICLE_ADJUDICATION",
+      expect.anything(),
+    );
+  });
+
+  it("borderline direct claim with a clear sibling fires article adjudication", async () => {
+    await setupConfigMocks(true);
+    const adjudicationPayload = {
+      articleTruthPercentage: 50,
+      articleConfidence: 52,
+      dominanceAssessment: {
+        mode: "single",
+        dominantClaimId: "AC_02",
+        strength: "strong",
+        rationale: "AC_02 carries the defining proposition while AC_01 is a prerequisite.",
+      },
+      claimWeightRationale: [
+        { claimId: "AC_01", effectiveInfluence: "minor", reasoning: "Prerequisite claim." },
+        { claimId: "AC_02", effectiveInfluence: "primary", reasoning: "Defining mixed claim." },
+      ],
+      adjudicationReasoning: "The article should remain close to the defining mixed claim.",
+    };
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} } as any);
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput
+      .mockReturnValueOnce(adjudicationPayload)
+      .mockReturnValueOnce(narrativeOutput);
+
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Defining comparison claim" }),
+    ];
+    const verdicts = [
+      createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 72, confidence: 70, confidenceTier: "MEDIUM" }),
+      createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 52, confidence: 50, confidenceTier: "MEDIUM" }),
+    ];
+    const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+
+    const result = await aggregateAssessment(verdicts, boundaries, [], coverageMatrix, makeState(claims));
+
+    expect(result.adjudicationPath!.path).toBe("llm_adjudicated");
+    expect(result.adjudicationPath!.directionConflict).toBe(false);
+    expect(result.adjudicationPath!.borderlineAdjudication).toBe(true);
+    expect(result.articleAdjudication).toBeDefined();
+    expect(result.truthPercentage).toBe(50);
+    expect(mockLoadSection).toHaveBeenCalledWith(
       "claimboundary",
       "ARTICLE_ADJUDICATION",
       expect.anything(),
