@@ -134,7 +134,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Comparison-Side Repair Fidelity");
       expect(section).toContain("named/current-side proposition from a comparison");
       expect(section).toContain("remaining comparison or parity proposition");
-      expect(section).toContain("Preserve the original comparison operator and approximation strength");
+      expect(section).toContain("Preserve the original comparison operator, approximation strength, and comparison orientation");
+      expect(section).toContain("comparison orientation wherever possible");
+      expect(section).toContain("attaching the named/current-side number as though it were the comparator/reference value");
       expect(section).toContain("do not repair by copying the named/current-side numeric anchor onto the comparator/reference side");
       expect(section).toContain("Keep the approximation as a relation");
       expect(section).toContain("neutral anaphoric reference");
@@ -352,6 +354,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("compares two quantities, populations, or rates");
       expect(section).toContain("Do NOT collapse a comparative claim to only one side of the comparison");
       expect(section).toContain("keep the approximation operator as a relation");
+      expect(section).toContain("Preserve the input's comparison orientation wherever possible");
+      expect(section).toContain("rather than inverting the comparator/reference side into the subject");
       expect(section).toContain("copying the named/current-side numeric anchor onto that side");
       expect(section).toContain("neutral anaphoric reference back to the isolated named/current-side quantity");
       expect(section).toContain("broad public-language label");

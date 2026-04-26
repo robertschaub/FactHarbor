@@ -457,6 +457,8 @@ export async function extractClaims(
       const atomicityGuidance = atomicityRetryReason
         ? ` The previous extraction kept one bundled claim even though the input ties one act/state to multiple independently verifiable coordinated branches. Split into one thesis-direct claim per coordinated branch, preserve any in-scope truth-condition-bearing modifier in each branch claim, and do NOT keep a bundled whole-claim version.`
         : "";
+      const comparisonDecompositionGuidance =
+        ` For decomposed comparison repairs, preserve the input's comparison orientation: if one claim isolates the named/current side, the companion claim must carry the remaining relation/reference side without turning the isolated side's numeric or factual anchor into a standalone value on the comparator/reference side; do not keep a whole-comparison restatement beside side-specific claims.`;
 
       const contractGuidance = contractResult
         ? `CLAIM CONTRACT CORRECTION: The previous extraction drifted from the original claim contract. ` +
@@ -466,13 +468,15 @@ export async function extractClaims(
           `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
-          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`
+          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.` +
+          comparisonDecompositionGuidance
         : `CLAIM CONTRACT CORRECTION: The contract-validation step did not return a usable structured result. Re-extract conservatively from the input only. ` +
           `Preserve the original evaluative meaning and use only neutral dimension qualifiers. ` +
           `The primary direct claim must fuse any truth-condition-bearing modifier with the action it modifies, preserving the user's original word(s) for the modifier **verbatim** in the claim's \`statement\` — do not translate, paraphrase, or restate the modifier in different legal or normative terminology, and do not externalize the modifier into a supporting sub-claim. ` +
           `Do NOT substitute proxy predicates (feasibility, contribution, efficiency) for the user's original predicate. ` +
           `For factual or procedural claims, preserve the original action/state threshold as well: do not rewrite a decisive act or decision as a discussion, consultation, review, recommendation, or other lower-threshold step, and do not upgrade a preparatory step into a final one. ` +
-          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.`;
+          `If a shared predicate or modifier applies across multiple actors in one sentence, preserve that same predicate/modifier in the actor-specific decomposition.` +
+          comparisonDecompositionGuidance;
 
       console.info(
         contractResult
@@ -1136,7 +1140,8 @@ export async function extractClaims(
             `CORRECTIVE DECOMPOSITION REQUIREMENTS: Return only a clean decomposition of the original input. ` +
             `Do not include one whole-input or near-verbatim bundled claim alongside its component claims. ` +
             `Do not omit explicit independently verifiable branches, proceedings, comparison sides, or decision gates. ` +
-            `Preserve priority salience anchors fused with the original main act/state in each split claim where that anchor remains in semantic scope.`;
+            `Preserve priority salience anchors fused with the original main act/state in each split claim where that anchor remains in semantic scope. ` +
+            `For decomposed comparison repairs, preserve the input's comparison orientation: if one claim isolates the named/current side, the companion claim must carry the remaining relation/reference side without turning the isolated side's numeric or factual anchor into a standalone value on the comparator/reference side; do not keep a whole-comparison restatement beside side-specific claims.`;
 
           // The corrective retry is purely about decomposition fidelity, so it
           // runs input-only to avoid copying details from preliminary evidence.
