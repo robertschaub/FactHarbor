@@ -643,6 +643,7 @@ export async function extractClaims(
             repairedPass2 = await runContractRepair(
               currentClaims,
               repairAnchorText,
+              contractValidationSummary,
               state.originalInput,
               activePass2.impliedClaim ?? "",
               activePass2.articleThesis ?? "",
@@ -2297,6 +2298,7 @@ function normalizePass2Output(raw: Record<string, unknown>): Record<string, unkn
 async function runContractRepair(
   claims: AtomicClaim[],
   anchorText: string,
+  contractValidationSummary: CBClaimUnderstanding["contractValidationSummary"],
   inputText: string,
   impliedClaim: string,
   articleThesis: string,
@@ -2314,6 +2316,7 @@ async function runContractRepair(
       impliedClaim,
       articleThesis,
       atomicClaimsJson: JSON.stringify(claims, null, 2),
+      contractValidationSummaryJson: JSON.stringify(contractValidationSummary ?? null, null, 2),
     });
 
     if (!rendered) {

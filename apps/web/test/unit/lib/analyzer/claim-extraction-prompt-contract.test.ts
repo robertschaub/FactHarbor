@@ -60,6 +60,12 @@ describe("Stage-1 prompt contract", () => {
       anchorText: "rechtskräftig",
       impliedClaim: "The treaty was legally binding before a later public decision.",
       articleThesis: "The claim turns on whether the legal-binding qualifier is preserved.",
+      contractValidationSummaryJson: JSON.stringify({
+        preservesContract: false,
+        rePromptRequired: true,
+        summary: "The repaired claim must preserve the original qualifier on the thesis-direct claim.",
+        failureMode: "contract_violated",
+      }, null, 2),
       atomicClaimsJson: JSON.stringify([
         {
           id: "AC_01",
@@ -121,6 +127,10 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("preserve the shared anchor in each");
       expect(section).toContain('thesisRelevance` is `"direct"`');
       expect(section).toContain("faithful restatement of that original proposition");
+      expect(section).toContain("Contract Validation Summary (authoritative repair target)");
+      expect(section).toContain("Validation-Summary Compliance");
+      expect(section).toContain("must directly satisfy its corrected claim shape and failure reasons");
+      expect(section).toContain("repair the relevant `statement`, `expectedEvidenceProfile`, and `freshnessRequirement` fields together");
       expect(section).toContain("Comparison-Side Repair Fidelity");
       expect(section).toContain("named/current-side proposition from a comparison");
       expect(section).toContain("remaining comparison or parity proposition");
