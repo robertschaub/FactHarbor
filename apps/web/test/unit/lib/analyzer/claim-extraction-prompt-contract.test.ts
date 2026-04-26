@@ -552,6 +552,10 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("Do NOT recommend or require a third separate whole-relation claim");
       expect(contract).toContain("describe the corrected two-claim shape");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
+      expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
+      expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
+      expect(contract).toContain("profile omits the route needed to retrieve and cite evidence for that side");
+      expect(contract).toContain("the summary must name missing current-side evidence-profile or freshness loss");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
