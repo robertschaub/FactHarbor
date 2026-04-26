@@ -560,6 +560,23 @@ describe("Stage-5 ARTICLE_ADJUDICATION prompt contract", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Stage-1 prompt contract tests
+// ---------------------------------------------------------------------------
+
+describe("Stage-1 prompt contract", () => {
+  describe("CLAIM_EXTRACTION_PASS2", () => {
+    it("keeps endpoint and stock comparison profiles from accepting alternate routes by component listing alone", () => {
+      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+      expect(section, "Section ## CLAIM_EXTRACTION_PASS2 not found").not.toBeNull();
+      expect(section).toContain("endpoint, timepoint, as-of, final-state, standing-stock, or current-snapshot comparison");
+      expect(section).toContain("must name that side's metric class explicitly");
+      expect(section).toContain("do not by themselves accept a period/window total, cumulative flow, or alternate route");
+      expect(section).toContain("unless the input itself authorizes that metric class for the relation");
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Stage-2 prompt contract tests
 // ---------------------------------------------------------------------------
 
@@ -820,7 +837,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Preserve the metric class in `evidenceScope`");
       expect(section).toContain("Do not relabel a period/window total or cumulative-through-period value as an endpoint/timepoint stock value");
       expect(section).toContain("When the claim/profile route requires an endpoint or standing stock");
-      expect(section).toContain("keep period/window or cumulative values `contextual` unless the claim/profile explicitly accepts that metric class");
+      expect(section).toContain("keep period/window or cumulative values `contextual` unless the claim/profile's decisive metric route explicitly accepts that metric class");
+      expect(section).toContain("Explicit route acceptance must appear in the claim/profile's decisive metric route");
+      expect(section).toContain("componentMetrics` entry is not enough");
+      expect(section).toContain("does not make an alternate metric class directional support");
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");
       expect(section).toContain("classify the evidence as `supports` or `contradicts` when the numeric relationship is clear");
       expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied");
@@ -1027,6 +1047,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `\"supports\"`");
       expect(section).toContain("set that companion's `claimDirectionByClaimId` entry to `\"contradicts\"`");
       expect(section).toContain("Keep period totals, cumulative totals, sub-counts, or alternate metric classes separate");
+      expect(section).toContain("Route acceptance must come from the decisive metric route");
+      expect(section).toContain("`componentMetrics` list does not by itself accept an alternate route");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 
