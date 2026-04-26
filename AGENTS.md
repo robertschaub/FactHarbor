@@ -141,6 +141,21 @@ When a code or prompt change fails its first focused validation (for example: `n
 
 This is **bounded backtracking**, not blanket rollback-first behavior.
 
+### Bugfix Complexity Guard (MANDATORY)
+
+For **every bugfixing task** — including failing tests, build failures, regressions, review findings, runtime defects, and failed-validation recovery — agents MUST load and apply `/debt-guard` before editing.
+
+`/debt-guard` is not rollback-first. It requires a balanced comparison between:
+- undoing, narrowing, or amending previous changes;
+- quarantining or deleting obsolete code;
+- adding new code when evidence shows the capability is genuinely missing.
+
+Agents must choose the evidence-backed path with the lowest net complexity and must reconcile the final diff against the pre-edit complexity budget.
+
+Bugfixes should stay small and self-contained. If the required fix expands into unrelated cleanup, migration, or broad refactoring, split the follow-up unless that work is required by the verifier-backed root cause.
+
+Trivial single-site bugfixes may use `/debt-guard`'s compact path, but they still must load and apply the skill before editing.
+
 ### Pipeline Integrity
 - **No stage skipping:** Understand → Research → Verdict (all required)
 - **Evidence transparency:** Every verdict must cite supporting or opposing evidence items
@@ -340,6 +355,7 @@ Documented workflows for recurring tasks. **Claude Code** users invoke them as s
 | Slash command | Workflow file | When to use |
 |---|---|---|
 | `/debate` | `.claude/skills/debate/SKILL.md` | Structured adversarial debate on any proposition. Spawns Advocate/Challenger/Reconciler (+ optional Probes/Validator). Use for architecture decisions, root-cause attribution, fix selection, or any decision needing adversarial pressure. Tiers: `--lite` (2 agents), `--standard` (3), `--full` (5–6). Other skills invoke `/debate` for their adversarial synthesis steps. |
+| `/debt-guard` | `.claude/skills/debt-guard/SKILL.md` | Mandatory for every bugfixing task before editing. Balanced complexity-control workflow for failed validation recovery, refactors, or reviews; forces agents to compare undoing/amending prior changes against adding new code, then choose the evidence-backed path with the lowest net complexity. |
 | `/pipeline` | `.claude/skills/pipeline/SKILL.md` | Deep CB pipeline analysis, architecture questions, multi-stage debugging |
 | `/audit` | `.claude/skills/audit/SKILL.md` | Full prompt + code quality audit; pre-release or after major changes |
 | `/prompt-audit` | `.claude/skills/prompt-audit/SKILL.md` | Static prompt-only audit against a 9-criterion rubric (rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, failure-mode coverage); linter-style, no runs, no writes |

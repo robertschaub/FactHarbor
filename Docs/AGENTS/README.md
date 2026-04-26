@@ -62,10 +62,10 @@ All tool configs reference `/AGENTS.md` as the single source of truth. Most are 
 | Gemini CLI | `/GEMINI.md` | Auto-loaded as foundational mandate alongside `AGENTS.md`; mirrors the shared Named Workflows table |
 | Codex (GPT) | `/AGENTS.md` (native) | Reads `AGENTS.md` directly; use its Named Workflows table for shared skills |
 | Claude Code | `/CLAUDE.md` | Auto-loaded into system prompt alongside `AGENTS.md` |
-| GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code |
-| Cursor | `/.cursor/rules/*.mdc` | Glob-scoped rules, auto-attached per file type |
-| Cline / RooCode | `/.clinerules/*.md` | Inserted into system prompt |
-| Windsurf | `/.windsurfrules` | 6000 char limit, condensed rules inline |
+| GitHub Copilot | `/.github/copilot-instructions.md` | Auto-loaded in VS Code; includes the mandatory Debt Guard bugfix pointer |
+| Cursor | `/.cursor/rules/*.mdc` | Glob-scoped rules, auto-attached per file type; core rules include the Debt Guard bugfix pointer |
+| Cline / RooCode | `/.clinerules/*.md` | Inserted into system prompt; includes the Debt Guard bugfix pointer |
+| Windsurf | `/.windsurfrules` | 6000 char limit, condensed rules inline; includes the Debt Guard bugfix pointer |
 
 ---
 

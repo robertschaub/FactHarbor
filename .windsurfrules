@@ -1,4 +1,4 @@
-# Sync with /AGENTS.md. Last synced: 2026-04-24
+# Sync with /AGENTS.md. Last synced: 2026-04-26
 
 # FactHarbor — Windsurf Rules
 
@@ -30,6 +30,10 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 - No production data access. No secrets in commits. No destructive git without explicit ask.
 - Platform: Windows. PowerShell-compatible commands.
+
+## Bugfixing
+
+For every bugfix, regression, failing test/build, runtime defect, or failed-validation recovery, read `.claude/skills/debt-guard/SKILL.md` before editing. Compare undo/amend against adding code; choose the evidence-backed lowest net complexity.
 
 ## Roles
 

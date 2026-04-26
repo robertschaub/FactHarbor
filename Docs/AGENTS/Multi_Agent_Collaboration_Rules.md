@@ -1,7 +1,7 @@
 # FactHarbor Multi-Agent Collaboration Rules
 
 **Version:** 2.1
-**Date:** 2026-03-23
+**Date:** 2026-04-26
 **Status:** Active
 **Owner:** Robert Schaub
 
@@ -152,6 +152,8 @@ For small, well-understood changes:
 2. **Lead Developer** reviews and approves
 3. **Senior Developer** implements
 4. **Lead Developer** verifies
+
+For any bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery, this quick workflow is bounded by `/debt-guard` (`.claude/skills/debt-guard/SKILL.md`). The implementer must apply Debt Guard before editing, compare undoing/amending previous code against adding new code, and choose the evidence-backed path with the lowest net complexity. Trivial single-site fixes may use Debt Guard's compact path.
 
 ### 3.3 Complex Investigation Workflow
 
@@ -665,6 +667,10 @@ The `/debate` skill (`.claude/skills/debate/SKILL.md`) uses structured adversari
 | Reconciler (STANDARD/LITE) | Mid-tier (Sonnet) | Bounded decision space; matches pipeline `verdict-stage.ts` precedent |
 
 Any agent working on FactHarbor can invoke `/debate` when a decision needs adversarial pressure — architecture choices, root-cause attribution, fix mechanism selection. Pass the tier explicitly; pass domain constraints verbatim so all debate roles are bound by the same rules as the calling workflow.
+
+### 6.5 Debt Guard Across Model Tiers
+
+`/debt-guard` (`.claude/skills/debt-guard/SKILL.md`) is mandatory for every bugfixing task across all agent tools and model tiers. Lightweight models may use the compact path for obvious single-site fixes, but they still must load the skill before editing. Higher-capability models should use the full path when ownership, prior failed attempts, public contracts, prompt/config behavior, or net mechanism increases are involved.
 
 ---
 

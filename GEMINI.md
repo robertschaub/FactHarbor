@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
 
 # GEMINI.md
 
@@ -29,6 +29,7 @@ You are an expert software engineer working on **FactHarbor**.
 
 ## Behavior
 *   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
+*   **Bugfixing:** For every bugfix, regression fix, failing test/build fix, or failed-validation recovery, first read and apply `.claude/skills/debt-guard/SKILL.md`.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
@@ -52,8 +53,11 @@ Documented procedures for recurring tasks. Read the file and follow its instruct
 
 | Task | Workflow file |
 |---|---|
+| Balanced bugfix complexity guard | `.claude/skills/debt-guard/SKILL.md` — mandatory for every bugfixing task before editing; compare undoing/amending previous code against adding new code |
+| Adversarial debate | `.claude/skills/debate/SKILL.md` — read and execute the role procedure manually or with available agents when slash commands are unavailable |
 | Deep pipeline analysis | `.claude/skills/pipeline/SKILL.md` |
 | Full quality audit | `.claude/skills/audit/SKILL.md` |
+| Static prompt quality audit | `.claude/skills/prompt-audit/SKILL.md` |
 | Post-change validation | `.claude/skills/validate/SKILL.md` |
 | Generate handoff document | `.claude/skills/handoff/SKILL.md` |
 | Debug log + test analysis | `.claude/skills/debug/SKILL.md` |

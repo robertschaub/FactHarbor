@@ -2,7 +2,7 @@
 description: FactHarbor core project rules — applies to all files
 alwaysApply: true
 ---
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
 
 # FactHarbor — Core Rules
 
@@ -30,6 +30,10 @@ Two apps + one tool:
 - Do not change secrets/credentials or commit them.
 - Avoid destructive git commands unless explicitly asked.
 - Do not overwrite `apps/api/factharbor.db` unless asked.
+
+## Bugfixing Standard
+- For every bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
+- Debt Guard is balanced: compare undoing/amending previous code against adding new code, then choose the evidence-backed path with the lowest net complexity.
 
 ## Conventions
 - Commit messages: conventional commits `type(scope): description`.

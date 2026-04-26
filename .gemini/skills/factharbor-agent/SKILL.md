@@ -1,6 +1,6 @@
 ---
 name: factharbor-agent
-description: Specialized agent for handling role activation, task completion logging, shared workflow-skill discovery, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, or needing to follow FactHarbor's Senior Engineer engineering standards.
+description: Specialized agent for handling role activation, task completion logging, shared workflow-skill discovery, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, needing to follow FactHarbor's Senior Engineer engineering standards, or doing any FactHarbor bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery so `.claude/skills/debt-guard/SKILL.md` is applied before editing.
 ---
 
 # FactHarbor Agent
@@ -20,6 +20,7 @@ This skill ensures that Gemini CLI follows the FactHarbor development lifecycle 
 
 ### 2. Executing a Task
 - **Engineering Standard**: All analysis-affecting logic MUST use LLM intelligence (no regex/heuristics).
+- **Bugfixing Standard**: For every bugfix, regression fix, failing test/build fix, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
 - **Architecture Reference**: Follow patterns in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
 - **Multilingual Support**: Ensure analysis handles non-English inputs correctly.
 
@@ -29,8 +30,11 @@ Gemini can use the shared FactHarbor workflow library stored under `.claude/skil
 files are the canonical workflow definitions shared across Claude, Codex/GPT, and Gemini.
 
 Available workflows:
+- `debt-guard` → `.claude/skills/debt-guard/SKILL.md`
+- `debate` → `.claude/skills/debate/SKILL.md` (read and execute the role procedure manually or with available agents when slash commands are unavailable)
 - `pipeline` → `.claude/skills/pipeline/SKILL.md`
 - `audit` → `.claude/skills/audit/SKILL.md`
+- `prompt-audit` → `.claude/skills/prompt-audit/SKILL.md`
 - `validate` → `.claude/skills/validate/SKILL.md`
 - `handoff` → `.claude/skills/handoff/SKILL.md`
 - `debug` → `.claude/skills/debug/SKILL.md`

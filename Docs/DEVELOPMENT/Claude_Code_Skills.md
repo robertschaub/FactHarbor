@@ -1,6 +1,6 @@
 # FactHarbor Workflow Skills
 
-FactHarbor currently ships eleven built-in workflow skills. Claude Code exposes them as slash
+FactHarbor currently ships thirteen built-in workflow skills. Claude Code exposes them as slash
 commands, and the same canonical procedures live under `.claude/skills/<name>/SKILL.md` for
 Codex/GPT, Gemini, and Cline to consume directly.
 
@@ -15,6 +15,8 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 | [Pipeline Analysis](#pipeline-analysis) | `/pipeline` | Debug, architecture questions, multi-stage changes | No |
 | [Quality Audit](#quality-audit) | `/audit` | Pre-release checks, quality regressions | No |
 | [Adversarial Debate](#adversarial-debate) | `/debate` | Structured adversarial debate on any proposition; reusable by other skills | No |
+| [Debt Guard](#debt-guard) | `/debt-guard` | Mandatory bugfix complexity guard: decide between undoing/amending previous code and adding new code before editing | No |
+| [Prompt Audit](#prompt-audit) | `/prompt-audit` | Static prompt-only quality audit against AGENTS.md prompt rules and schema alignment | No |
 | [Validation](#validation) | `/validate` | Measure benchmark regressions after pipeline changes | **Yes — $1-5+** |
 | [Handoff](#handoff) | `/handoff` | End of any significant task | No |
 | [Debug Check](#debug-check) | `/debug` | Post-change health check; log + test analysis | No |
@@ -169,6 +171,93 @@ Callers pass an explicit tier flag. Auto-detection uses the context manifest's s
 ### Cross-skill integration
 
 Other skills invoke `/debate` by passing a `CONTEXT_MANIFEST` with `EVIDENCE_INVENTORY`, `KNOWN_GAPS`, and optional `OPTIONAL_STATE`. The skill adds no domain rules — caller constraints pass through verbatim to all roles.
+
+---
+
+## Debt Guard
+
+**File:** [`.claude/skills/debt-guard/SKILL.md`](../../.claude/skills/debt-guard/SKILL.md)
+
+Mandatory balanced complexity-control workflow for bug fixes, failed validation recovery, refactors, and reviews. It prevents additive repair drift without assuming rollback is always best.
+
+### When to use
+
+- Every bugfixing task before editing, including regressions, failing tests/builds, runtime defects, and review findings
+- Every bugfix where a previous change might have introduced or exposed the issue
+- Failed validation recovery after a test, build, manual check, or live verifier fails
+- Reviewing agent-generated patches for fallback stacking, duplicate mechanisms, or obsolete code left behind
+- Refactoring when two mechanisms now compete for the same responsibility
+
+### Invocation
+
+```
+/debt-guard <task or diff focus>
+```
+
+Examples:
+```
+/debt-guard fix the failing verdict citation guard test
+/debt-guard review this patch for additive workaround drift
+/debt-guard failed build after the retry change
+```
+
+### What it does
+
+1. Builds an evidence inventory: symptom, verifier, recent change surface, existing mechanisms, and constraints.
+2. Classifies the likely cause as introduced regression, incomplete existing mechanism, obsolete parallel mechanism, missing capability, or uncertain.
+3. Compares undo/amend/quarantine/delete options against adding new code.
+4. Allows a compact path for trivial single-site fixes, while still requiring the skill to be loaded and applied before editing.
+5. Requires a pre-edit Complexity Budget and a post-edit reconciliation against the actual diff for non-trivial fixes.
+6. Requires explicit verifier tier, cost, and runtime-provenance handling for expensive or live validation.
+7. Enforces small, self-contained bugfix slices; oversized cleanup or refactor work becomes a follow-up unless required by the verifier-backed root cause.
+8. Classifies accepted temporary debt separately from unplanned mess and requires a removal trigger when debt is deliberately accepted.
+9. Uses self-review or reviewer review for non-trivial fixes and gates `/debate --standard` to high-risk cases.
+
+### Key guardrails
+
+- Do not default to rollback, and do not default to additive code.
+- New fallbacks, flags, helpers, or compatibility paths require a missing-capability justification or containment/removal plan.
+- Failed validation still uses the canonical `keep`, `quarantine`, or `revert` classification before another attempt is stacked.
+- Reverting ambiguous user-owned work requires Captain approval.
+
+---
+
+## Prompt Audit
+
+**File:** [`.claude/skills/prompt-audit/SKILL.md`](../../.claude/skills/prompt-audit/SKILL.md)
+
+Static prompt-only quality audit for `apps/web/prompts/`. It scores prompts against AGENTS.md prompt rules, multilingual robustness, neutrality, efficiency, output schema alignment, and failure-mode coverage. No real LLM calls and no file writes.
+
+### When to use
+
+- Auditing prompts before editing them
+- Checking prompt rule compliance after prompt changes
+- Looking for generic-hygiene, schema-alignment, or multilingual robustness issues without running jobs
+- Following up on `/audit` findings that are prompt-only and do not require runtime provenance
+
+### Invocation
+
+```
+/prompt-audit <optional prompt file, directory, or blank for all prompts>
+```
+
+Examples:
+```
+/prompt-audit
+/prompt-audit claimboundary.prompt.md
+/prompt-audit apps/web/prompts
+```
+
+### What it does
+
+1. Loads AGENTS.md prompt rules and the analyzer type contracts needed for schema checks.
+2. Audits each in-scope prompt against nine criteria: rule compliance, efficiency, effectiveness, un-ambiguity, generic hygiene, multilingual robustness, bias/neutrality, output schema alignment, and failure-mode coverage.
+3. Emits findings only for concerns and failures, with line evidence and generic fix proposals.
+4. Runs a self-audit over proposed fixes so policy-violating fixes are rejected instead of recommended.
+
+### Caveat
+
+- This is static and read-only. Use `/prompt-diagnosis` for runtime prompt provenance and `/report-review` for concrete job-output quality analysis.
 
 ---
 
@@ -355,13 +444,14 @@ For complex concepts it uses multiple analogies. The tone is conversational, not
 
 ## Cross-Tool Usage
 
-All ten skills are discoverable by non-Claude agents:
+All thirteen skills are discoverable by non-Claude agents:
 
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also
   enter through [`.gemini/skills/factharbor-agent/SKILL.md`](../../.gemini/skills/factharbor-agent/SKILL.md).
-- **Cline and other AGENTS-aware tools** read the **Named Workflows** table in
-  [AGENTS.md](../../AGENTS.md) and then open the referenced `.claude/skills/<name>/SKILL.md`
+- **GitHub Copilot, Cursor, Cline, and Windsurf** have lightweight wrapper files that point
+  back to [AGENTS.md](../../AGENTS.md). Their bugfixing summaries explicitly point agents to
+  `/debt-guard` before editing, then agents open the referenced `.claude/skills/<name>/SKILL.md`
   file directly.
 
 For any tool that is not Claude Code:
@@ -615,3 +705,9 @@ Examples:
 3. Add a row to the **Named Workflows** table in `GEMINI.md`.
 4. Update the shared workflow list in `.gemini/skills/factharbor-agent/SKILL.md`.
 5. Add a row to the Quick Reference table at the top of this file.
+6. Rebuild/refresh `factharbor-agent.skill` whenever `.gemini/skills/factharbor-agent/SKILL.md` changes.
+7. For mandatory workflows such as bugfix guards, update lightweight tool wrappers too:
+   `.github/copilot-instructions.md`, `.cursor/rules/factharbor-core.mdc`,
+   `.clinerules/00-factharbor-rules.md`, and `.windsurfrules`.
+8. Verify every workflow path listed in `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, wrapper docs, and this file exists and is included in the intended commit.
+9. Run `npm run index` after writing final handoffs so `Docs/AGENTS/index/handoff-index.json` can discover the new task history. Handoff indexes are for agent task history only, not source-code lookup.

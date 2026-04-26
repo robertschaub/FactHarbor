@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -40,6 +40,11 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 - After a code or prompt change fails focused validation (for example: `npm test`, `npm -w apps/web run build`, or an explicitly described manual verification), do not automatically stack broader edits on top.
 - First classify the earlier attempt: `keep`, `quarantine`, or `revert`.
 - Broaden scope only with a verifier-backed reason; if ownership of the earlier change is unclear, ask Captain before reverting.
+
+## Bugfixing Standard
+
+- For every bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
+- Debt Guard is balanced: compare undoing/amending previous code against adding new code, then choose the evidence-backed path with the lowest net complexity.
 
 ## Commands
 

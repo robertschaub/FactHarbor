@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-24 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
 
 # Claude Code instructions — FactHarbor
 
@@ -26,6 +26,7 @@ Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) �
 ## Pointers
 
 - **Safety, hooks, destructive-git rules**: see `AGENTS.md` §Safety (authoritative).
+- **Bugfixing**: load and apply `.claude/skills/debt-guard/SKILL.md` before editing any bugfix, regression, failing test/build, runtime defect, or failed-validation recovery.
 - **Roles** ("As \<Role\>"): `Docs/AGENTS/Roles/` — activation protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 - **Multi-agent workflows & collaboration**: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
 - **Permissions mode**: `.claude/settings.json` uses `bypassPermissions` because this repo relies on local safety hooks plus a solo-maintainer workflow where agents are expected to make direct code changes without repeated approval prompts.
