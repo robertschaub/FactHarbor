@@ -156,7 +156,7 @@
   "minEvidenceContentLength": 100,
   "fetchSameDomainDelayMs": 500,
   "fetchDomainSkipThreshold": 2,
-  "researchMaxQueriesPerIteration": 3,
+  "researchMaxQueriesPerIteration": 4,
   "sourceExtractionMaxLength": 15000,
   "maxEvidenceItemsPerSource": 5,
   "iterationRetryDelayMs": 2000,

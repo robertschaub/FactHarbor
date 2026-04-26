@@ -451,6 +451,15 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("selected subgroups");
       expect(section).toContain("Do not let such unsupported arithmetic drive a strong truth downgrade");
     });
+
+    it("citation adjudication keeps approximate-comparison direction caveated instead of exact-equality strict", () => {
+      const section = extractSection(promptContent, "VERDICT_CITATION_DIRECTION_ADJUDICATION");
+      expect(section).toContain("judge direction by the claim's approximate relation, not by exact equality");
+      expect(section).toContain("same broad magnitude or near-comparability");
+      expect(section).toContain("Do not classify an approximate-comparison candidate as `contradicts` merely because");
+      expect(section).toContain("stricter endpoint stock or same-method synchronized stock");
+      expect(section).toContain("direct caveated comparator evidence");
+    });
   });
 });
 
@@ -669,6 +678,14 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "GENERATE_QUERIES");
       expect(section).toContain("expectedEvidenceProfile.sourceNativeRoutes");
       expect(section).toContain("verbatim or near-verbatim");
+    });
+
+    it("query generation spends complex quantitative slots on decisive side totals first", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("generate 2-4 search queries");
+      expect(section).toContain("both direct-value and source-native archive coverage");
+      expect(section).toContain("decisive side-specific totals");
+      expect(section).toContain("both still needed");
     });
   });
 
