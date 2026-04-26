@@ -1,0 +1,410 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using FactHarbor.Api.Data;
+using FactHarbor.Api.Helpers;
+using FactHarbor.Api.Services;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
+
+namespace FactHarbor.Api.Tests.Services;
+
+public sealed class ClaimSelectionDraftServiceTests
+{
+    [Fact]
+    public async Task GetDraftAsync_ExpiredActiveDraft_MarksExpiredAndPersists()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(db, status: "QUEUED", expiresUtc: DateTime.UtcNow.AddMinutes(-1));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.GetDraftAsync(draft.DraftId);
+
+        Assert.NotNull(result);
+        Assert.Equal("EXPIRED", result.Status);
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        Assert.Equal("EXPIRED", reloaded?.Status);
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_NonAdminClaimsInviteSlotAndStoresOnlyTokenHash()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        db.InviteCodes.Add(new InviteCodeEntity
+        {
+            Code = "INVITE",
+            MaxJobs = 10,
+            DailyLimit = 10,
+            HourlyLimit = 10,
+            IsActive = true,
+        });
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CreateDraftAsync(
+            "text",
+            "A verifiable claim",
+            "interactive",
+            "INVITE",
+            isAdmin: false);
+
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+        Assert.NotNull(result);
+
+        var draft = await db.ClaimSelectionDrafts.FindAsync(result.DraftId);
+        var invite = await db.InviteCodes.FindAsync("INVITE");
+        var today = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc);
+        var usage = await db.InviteCodeUsage.FindAsync("INVITE", today);
+
+        Assert.NotNull(draft);
+        Assert.NotEqual(result.DraftAccessToken, draft!.DraftAccessTokenHash);
+        Assert.Matches("^[a-f0-9]{64}$", draft.DraftAccessTokenHash!);
+        Assert.True(service.ValidateAccessToken(draft, result.DraftAccessToken));
+        Assert.False(service.ValidateAccessToken(draft, "wrong-token"));
+        Assert.False(service.ValidateAccessToken(draft, null));
+        Assert.Equal(1, invite?.UsedJobs);
+        Assert.Equal(1, usage?.UsageCount);
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_HourlyLimitCountsDraftsButNotDraftBackedJobsTwice()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        db.InviteCodes.Add(new InviteCodeEntity
+        {
+            Code = "INVITE",
+            MaxJobs = 10,
+            DailyLimit = 10,
+            HourlyLimit = 2,
+            UsedJobs = 1,
+            IsActive = true,
+        });
+        var existingDraft = SeedDraft(db, inviteCode: "INVITE", createdUtc: DateTime.UtcNow.AddMinutes(-5));
+        db.Jobs.Add(new JobEntity
+        {
+            JobId = Guid.NewGuid().ToString("N"),
+            Status = "QUEUED",
+            InputType = "text",
+            InputValue = "Draft backed job",
+            InviteCode = "INVITE",
+            ClaimSelectionDraftId = existingDraft.DraftId,
+            CreatedUtc = DateTime.UtcNow.AddMinutes(-4),
+            UpdatedUtc = DateTime.UtcNow.AddMinutes(-4),
+        });
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CreateDraftAsync(
+            "text",
+            "Another verifiable claim",
+            "interactive",
+            "INVITE",
+            isAdmin: false);
+
+        Assert.NotNull(result);
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+        Assert.Equal(2, (await db.InviteCodes.FindAsync("INVITE"))?.UsedJobs);
+    }
+
+    [Fact]
+    public async Task UpdateSelectionStateAsync_StaleInteractionDoesNotOverwriteNewerSelection()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var latestInteraction = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02"],
+                lastSelectionInteractionUtc: latestInteraction,
+                selectedClaimIds: ["AC_01"]));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.UpdateSelectionStateAsync(
+            draft.DraftId,
+            ["AC_02"],
+            latestInteraction.AddSeconds(-5));
+
+        Assert.NotNull(result);
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+
+        var selectedClaimIds = ReadSelectedClaimIds(result!.DraftStateJson);
+        Assert.Equal(["AC_01"], selectedClaimIds);
+    }
+
+    [Fact]
+    public async Task PrepareAutoContinueAsync_AwaitingSelectionRejectsChangedInteractionTimestamp()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var currentInteraction = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02"],
+                lastSelectionInteractionUtc: currentInteraction,
+                selectedClaimIds: ["AC_01"]));
+        await db.SaveChangesAsync();
+        var originalState = draft.DraftStateJson;
+
+        var requestState = PreparedState(
+            ["AC_01", "AC_02"],
+            lastSelectionInteractionUtc: currentInteraction.AddSeconds(-1),
+            selectedClaimIds: ["AC_02"]);
+        var service = CreateDraftService(db);
+
+        var (result, error, statusCode) = await service.PrepareAutoContinueAsync(
+            draft.DraftId,
+            requestState,
+            ["AC_02"]);
+
+        Assert.Null(result);
+        Assert.Equal(409, statusCode);
+        Assert.Equal("Draft selection state changed before automatic continuation could run", error);
+        Assert.Equal(originalState, (await db.ClaimSelectionDrafts.FindAsync(draft.DraftId))?.DraftStateJson);
+    }
+
+    [Fact]
+    public async Task StorePreparedResultAsync_MergesPriorLastErrorIntoDeduplicatedFailureHistory()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var failedUtc = DateTime.UtcNow.AddMinutes(-10).ToString("o");
+        var priorState = new JsonObject
+        {
+            ["lastError"] = new JsonObject
+            {
+                ["code"] = "stage1_contract",
+                ["message"] = "Contract failed",
+                ["failedUtc"] = failedUtc,
+            },
+            ["observability"] = new JsonObject
+            {
+                ["eventMessage"] = "Previous preparation failed",
+            },
+        }.ToJsonString();
+        var draft = SeedDraft(db, status: "PREPARING", draftStateJson: priorState);
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        await service.StorePreparedResultAsync(draft.DraftId, PreparedState(["AC_01"]));
+
+        var reloaded = await db.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        Assert.Equal("AWAITING_CLAIM_SELECTION", reloaded?.Status);
+
+        using var doc = JsonDocument.Parse(reloaded!.DraftStateJson!);
+        var history = doc.RootElement.GetProperty("failureHistory");
+        Assert.Equal(1, history.GetArrayLength());
+        Assert.Equal("stage1_contract", history[0].GetProperty("code").GetString());
+        Assert.Equal("Previous preparation failed", history[0].GetProperty("observability").GetProperty("eventMessage").GetString());
+    }
+
+    [Fact]
+    public async Task StorePreparedResultAsync_TrimsFailureHistoryToFiveAndDeduplicates()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var historyEntries = Enumerable.Range(1, 7)
+            .Select(i => (JsonNode?)new JsonObject
+            {
+                ["code"] = $"E{i}",
+                ["message"] = $"Failure {i}",
+                ["failedUtc"] = $"2026-04-2{i % 10}T00:00:00.0000000Z",
+            })
+            .ToArray();
+        var priorState = new JsonObject
+        {
+            ["failureHistory"] = new JsonArray(historyEntries),
+            ["lastError"] = new JsonObject
+            {
+                ["code"] = "E7",
+                ["message"] = "Failure 7",
+                ["failedUtc"] = "2026-04-27T00:00:00.0000000Z",
+            },
+        }.ToJsonString();
+        var draft = SeedDraft(db, status: "PREPARING", draftStateJson: priorState);
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        await service.StorePreparedResultAsync(draft.DraftId, PreparedState(["AC_01"]));
+
+        var reloaded = await db.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        using var doc = JsonDocument.Parse(reloaded!.DraftStateJson!);
+        var history = doc.RootElement.GetProperty("failureHistory");
+        Assert.Equal(5, history.GetArrayLength());
+        Assert.Equal(5, history.EnumerateArray()
+            .Select(entry => $"{entry.GetProperty("code").GetString()}|{entry.GetProperty("message").GetString()}|{entry.GetProperty("failedUtc").GetString()}")
+            .Distinct()
+            .Count());
+        Assert.Equal("E3", history[0].GetProperty("code").GetString());
+        Assert.Equal("E7", history[4].GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task CreateJobFromDraftAsync_SecondCallReturnsExistingDraftJob()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(["AC_01"], selectedClaimIds: ["AC_01"]));
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var (firstJob, firstError) = await service.CreateJobFromDraftAsync(draft, ["AC_01"]);
+        var (secondJob, secondError) = await service.CreateJobFromDraftAsync(draft, ["AC_01"]);
+
+        Assert.Null(firstError);
+        Assert.Null(secondError);
+        Assert.NotNull(firstJob);
+        Assert.NotNull(secondJob);
+        Assert.Equal(firstJob!.JobId, secondJob!.JobId);
+        Assert.Equal(1, await db.Jobs.CountAsync(j => j.ClaimSelectionDraftId == draft.DraftId));
+        Assert.Equal(1, await db.JobEvents.CountAsync(e => e.JobId == firstJob.JobId));
+    }
+
+    private static ClaimSelectionDraftService CreateDraftService(
+        FhDbContext db,
+        IDictionary<string, string?>? config = null)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(config ?? new Dictionary<string, string?>())
+            .Build();
+        return new ClaimSelectionDraftService(
+            db,
+            NullLogger<ClaimSelectionDraftService>.Instance,
+            configuration);
+    }
+
+    private static JobService CreateJobService(FhDbContext db)
+    {
+        return new JobService(db, NullLogger<JobService>.Instance, new AppBuildInfo());
+    }
+
+    private static ClaimSelectionDraftEntity SeedDraft(
+        FhDbContext db,
+        string status = "QUEUED",
+        string? draftStateJson = null,
+        string? inviteCode = null,
+        DateTime? createdUtc = null,
+        DateTime? expiresUtc = null)
+    {
+        var created = createdUtc ?? DateTime.UtcNow;
+        var draft = new ClaimSelectionDraftEntity
+        {
+            DraftId = Guid.NewGuid().ToString("N"),
+            Status = status,
+            Progress = status == "AWAITING_CLAIM_SELECTION" ? 100 : 0,
+            OriginalInputType = "text",
+            ActiveInputType = "text",
+            OriginalInputValue = "A verifiable claim",
+            ActiveInputValue = "A verifiable claim",
+            PipelineVariant = "claimboundary",
+            InviteCode = inviteCode,
+            SelectionMode = "interactive",
+            DraftStateJson = draftStateJson,
+            CreatedUtc = created,
+            UpdatedUtc = created,
+            ExpiresUtc = expiresUtc ?? DateTime.UtcNow.AddHours(1),
+        };
+        db.ClaimSelectionDrafts.Add(draft);
+        return draft;
+    }
+
+    private static string PreparedState(
+        string[] claimIds,
+        DateTime? lastSelectionInteractionUtc = null,
+        string[]? selectedClaimIds = null,
+        int selectionCap = 5)
+    {
+        var state = new JsonObject
+        {
+            ["selectionCap"] = selectionCap,
+            ["preparedStage1"] = new JsonObject
+            {
+                ["preparedUnderstanding"] = new JsonObject
+                {
+                    ["atomicClaims"] = new JsonArray(
+                        claimIds.Select(id => (JsonNode?)new JsonObject { ["id"] = id }).ToArray()),
+                },
+            },
+        };
+
+        if (lastSelectionInteractionUtc.HasValue)
+        {
+            state["selectionIdleAutoProceedMs"] = 1000;
+            state["lastSelectionInteractionUtc"] = DateTime
+                .SpecifyKind(lastSelectionInteractionUtc.Value, DateTimeKind.Utc)
+                .ToString("o");
+        }
+
+        if (selectedClaimIds is not null)
+        {
+            state["selectedClaimIds"] = JsonStringArray(selectedClaimIds);
+        }
+
+        return state.ToJsonString();
+    }
+
+    private static string[] ReadSelectedClaimIds(string? draftStateJson)
+    {
+        using var doc = JsonDocument.Parse(draftStateJson ?? "{}");
+        return doc.RootElement.GetProperty("selectedClaimIds")
+            .EnumerateArray()
+            .Select(item => item.GetString())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Cast<string>()
+            .ToArray();
+    }
+
+    private static JsonArray JsonStringArray(IEnumerable<string> values)
+    {
+        return new JsonArray(values.Select(value => (JsonNode?)JsonValue.Create(value)).ToArray());
+    }
+
+    private sealed class TestDatabase : IAsyncDisposable
+    {
+        private readonly SqliteConnection _connection;
+        private readonly DbContextOptions<FhDbContext> _options;
+
+        private TestDatabase(SqliteConnection connection, DbContextOptions<FhDbContext> options)
+        {
+            _connection = connection;
+            _options = options;
+        }
+
+        public static async Task<TestDatabase> CreateAsync()
+        {
+            var connection = new SqliteConnection("Data Source=:memory:");
+            await connection.OpenAsync();
+            var options = new DbContextOptionsBuilder<FhDbContext>()
+                .UseSqlite(connection)
+                .Options;
+            await using var db = new FhDbContext(options);
+            await db.Database.EnsureCreatedAsync();
+            return new TestDatabase(connection, options);
+        }
+
+        public FhDbContext CreateContext() => new(_options);
+
+        public async ValueTask DisposeAsync()
+        {
+            await _connection.DisposeAsync();
+        }
+    }
+}
