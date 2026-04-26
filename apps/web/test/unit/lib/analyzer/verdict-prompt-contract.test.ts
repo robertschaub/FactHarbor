@@ -787,6 +787,11 @@ describe("Stage-2 prompt contract", () => {
 
     it("keeps companion claim IDs direction-safe in evidence extraction", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("Evidence Direction Contract");
+      expect(section).toContain("`claimDirection` is a truth-direction label, not a relevance label");
+      expect(section).toContain("Do not use `supports` or `contradicts` merely because an item is direct, source-native, authoritative, or supplies a needed side/component/route");
+      expect(section).toContain("report existence, archive existence, methodology descriptions, source-portfolio summaries, and dataset availability are not directional by themselves");
+      expect(section).toContain("If the item only proves that a comparison side exists, identifies a source family, or provides a cumulative/period route");
       expect(section).toContain("Because one evidence item has only one `claimDirection`");
       expect(section).toContain("list multiple claim IDs on a shared item only when that same direction is valid for every listed claim");
       expect(section).toContain("emit a separate evidence item scoped to that companion claim");

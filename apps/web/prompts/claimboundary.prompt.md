@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-26T23:05:00Z"
+lastModified: "2026-04-26T23:25:00Z"
 variables:
   - currentDate
   - analysisInput
@@ -1212,6 +1212,14 @@ Given a claim and source content, extract evidence items with full metadata incl
 - `isDerivative`: **boolean** — true if this evidence cites another source's underlying study rather than presenting independent findings
 - `derivedFromSourceUrl`: **string (optional)** — URL of the original source if `isDerivative` is true
 - `relevantClaimIds`: Array of claim IDs this evidence relates to
+
+### Evidence Direction Contract
+
+`claimDirection` is a truth-direction label, not a relevance label. Do not use `supports` or `contradicts` merely because an item is direct, source-native, authoritative, or supplies a needed side/component/route. A direct evidence item can be `contextual` when it helps frame the route but does not itself make the claim more true or false.
+
+For substantive numeric comparison, stock, standing-population, threshold, endpoint, or current-snapshot claims, report existence, archive existence, methodology descriptions, source-portfolio summaries, and dataset availability are not directional by themselves. Extract them only when useful as context, and classify them as `contextual` unless the claim itself is about the existence, structure, methodology, or availability of that source/report/archive/dataset.
+
+For numeric comparison claims, classify the direction by the asserted relation under the claim/profile's metric route. A one-sided source-native value can support or contradict when the other side is supplied by the claim/profile, but it must satisfy the claimed relation to be `supports`. If the item only proves that a comparison side exists, identifies a source family, or provides a cumulative/period route while the claim/profile needs an endpoint/stock route, use `contextual` unless the claim/profile explicitly accepts that route for the asserted relation.
 
 ### Rules
 
