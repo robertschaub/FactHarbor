@@ -337,7 +337,7 @@ export async function extractResearchEvidence(
     let missingSourceUrlAssignmentCount = 0;
     let unmatchedSourceUrlFallbackCount = 0;
     let contextualMappedToNeutralCount = 0;
-    let directionalCompanionClaimSuppressedCount = 0;
+    let directionalCompanionClaimRetainedCount = 0;
     const knownClaimIds = new Set(claimSet.map((claim) => claim.id));
 
     const evidenceItems = validated.evidenceItems.map((ei) => {
@@ -350,11 +350,9 @@ export async function extractResearchEvidence(
         claimId !== targetClaim.id && knownClaimIds.has(claimId),
       );
       if (mappedClaimDirection !== "neutral" && validCompanionClaimIds.length > 0) {
-        directionalCompanionClaimSuppressedCount++;
+        directionalCompanionClaimRetainedCount++;
       }
-      const relevantClaimIds = mappedClaimDirection === "neutral"
-        ? Array.from(new Set([targetClaim.id, ...validCompanionClaimIds]))
-        : [targetClaim.id];
+      const relevantClaimIds = Array.from(new Set([targetClaim.id, ...validCompanionClaimIds]));
       
       const normalizedCategoryInput = ei.category.toLowerCase().replace(/[_\s-]+/g, "_");
       const mappedCategory = mapCategory(ei.category);
@@ -404,9 +402,8 @@ export async function extractResearchEvidence(
         probativeValue: ei.probativeValue,
         sourceType: mapSourceType(ei.sourceType),
         // Extraction targets a single claim, so always preserve the target ID.
-        // Directional evidence has one global claimDirection, so companion IDs
-        // are kept only for neutral/contextual items until the data model can
-        // represent per-claim directions.
+        // The prompt permits shared directional mappings only when the same
+        // claimDirection is valid for every listed claim.
         relevantClaimIds,
         isDerivative: ei.isDerivative ?? false,
         derivedFromSourceUrl: ei.derivedFromSourceUrl ?? undefined,
@@ -420,7 +417,7 @@ export async function extractResearchEvidence(
       || missingSourceUrlAssignmentCount > 0
       || unmatchedSourceUrlFallbackCount > 0
       || contextualMappedToNeutralCount > 0
-      || directionalCompanionClaimSuppressedCount > 0
+      || directionalCompanionClaimRetainedCount > 0
     ) {
       debugLogFileOnly(`[Stage2] Extraction normalizations for ${targetClaim.id}`, {
         claimIdMismatches: claimIdMismatchCount,
@@ -429,7 +426,7 @@ export async function extractResearchEvidence(
         missingSourceUrlAssignments: missingSourceUrlAssignmentCount,
         unmatchedSourceUrlFallbacks: unmatchedSourceUrlFallbackCount,
         contextualMappedToNeutral: contextualMappedToNeutralCount,
-        directionalCompanionClaimSuppressed: directionalCompanionClaimSuppressedCount,
+        directionalCompanionClaimRetained: directionalCompanionClaimRetainedCount,
       });
     }
 

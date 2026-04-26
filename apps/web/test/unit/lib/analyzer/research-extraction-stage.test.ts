@@ -599,9 +599,19 @@ describe("Research Extraction Stage", () => {
       expect(result[0].claimDirection).toBe("neutral");
     });
 
-    it("should suppress companion claim IDs on directional extraction output", async () => {
-      const targetClaim = createClaim({ id: "AC_01", statement: "Side-specific directional claim" });
-      const companionClaim = createClaim({ id: "AC_02", statement: "Companion comparison claim" });
+    it("should preserve valid same-direction companion claim IDs on directional extraction output", async () => {
+      const targetClaim = createClaim({
+        id: "AC_01",
+        statement: "Entity A's current metric M is about 100 units.",
+      });
+      const companionClaim = createClaim({
+        id: "AC_02",
+        statement: "Entity A's current metric M is about the same magnitude as reference metric N.",
+        expectedEvidenceProfile: {
+          primaryMetric: "approximate magnitude comparison",
+          componentMetrics: ["Entity A current metric M", "reference metric N"],
+        },
+      });
       const sources = [{ url: "https://example.com/1", title: "S1", text: "text" }];
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
@@ -609,7 +619,7 @@ describe("Research Extraction Stage", () => {
       mockExtractOutput.mockReturnValue({
         evidenceItems: [
           {
-            statement: "Official source directionally supports the side-specific claim.",
+            statement: "Official source reports Entity A's current metric M at 100 units and reference metric N at 105 units.",
             category: "statistic",
             claimDirection: "supports",
             evidenceScope: { methodology: "Official statistics", temporal: "current" },
@@ -628,7 +638,7 @@ describe("Research Extraction Stage", () => {
       );
 
       expect(result[0].claimDirection).toBe("supports");
-      expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+      expect(result[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
     });
 
     it("should override wrong-format LLM claim IDs with targetClaim.id", async () => {
@@ -799,7 +809,7 @@ describe("Research Extraction Stage", () => {
           missingSourceUrlAssignments: 2,
           unmatchedSourceUrlFallbacks: 1,
           contextualMappedToNeutral: 1,
-          directionalCompanionClaimSuppressed: 0,
+          directionalCompanionClaimRetained: 0,
         },
       );
       expect(mockDebugLog).not.toHaveBeenCalledWith(
