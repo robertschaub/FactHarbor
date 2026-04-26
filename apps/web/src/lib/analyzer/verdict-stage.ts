@@ -1500,6 +1500,64 @@ export async function validateVerdicts(
             });
           };
 
+          if (repairContext) {
+            const originalClaimDirections = new Map(evidence.map((item) => [item.id, item.claimDirection]));
+            const neutralAdjudicationWarnings: AnalysisWarning[] = [];
+            let keepNeutralAdjudication = false;
+            try {
+              const [neutralAdjudicated] = await adjudicateNeutralCitationDirections(
+                [current],
+                evidence,
+                repairContext.claims,
+                llmCall,
+                config,
+                neutralAdjudicationWarnings,
+                repairContext.deferredCitationIntegrityCollapses,
+              );
+              const neutralChanged = Boolean(neutralAdjudicated) && (
+                neutralAdjudicated.supportingEvidenceIds.length !== current.supportingEvidenceIds.length
+                || neutralAdjudicated.contradictingEvidenceIds.length !== current.contradictingEvidenceIds.length
+                || neutralAdjudicated.supportingEvidenceIds.some((id, index) => id !== current.supportingEvidenceIds[index])
+                || neutralAdjudicated.contradictingEvidenceIds.some((id, index) => id !== current.contradictingEvidenceIds[index])
+              );
+
+              if (neutralChanged) {
+                const neutralDirection = await validateDirectionOnly(
+                  neutralAdjudicated,
+                  evidence,
+                  llmCall,
+                  validationTier,
+                  validationProvider,
+                );
+
+                if (neutralDirection.valid !== false) {
+                  const neutralAccepted = await acceptGroundedCandidate(
+                    neutralAdjudicated,
+                    `Claim ${verdict.claimId}: post-neutral-citation adjudication grounding check unavailable; accepted adjudicated citations.`,
+                  );
+                  if (neutralAccepted.accepted) {
+                    keepNeutralAdjudication = true;
+                    warnings?.push(...neutralAdjudicationWarnings);
+                    current = neutralAccepted.accepted;
+                    validated.push(current);
+                    continue;
+                  }
+                  warnings?.push({
+                    type: "verdict_grounding_issue",
+                    severity: "info",
+                    message: `Claim ${verdict.claimId}: neutral-citation-adjudicated verdict failed grounding check: ${joinIssues(neutralAccepted.grounding.issues)}`,
+                  });
+                }
+              }
+            } finally {
+              if (!keepNeutralAdjudication) {
+                for (const item of evidence) {
+                  item.claimDirection = originalClaimDirections.get(item.id);
+                }
+              }
+            }
+          }
+
           const repairSeedVerdict = normalizeVerdictCitationDirections(current, evidence);
           const normalizedDirection = await validateDirectionOnly(
             repairSeedVerdict,

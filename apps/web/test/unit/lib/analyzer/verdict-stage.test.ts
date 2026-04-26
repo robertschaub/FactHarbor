@@ -1324,6 +1324,177 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
   });
 
+  it("adjudicates direct neutral candidates before direction safe downgrade when cited evidence is one-sided", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 35,
+        verdict: "LEANING-FALSE",
+        supportingEvidenceIds: ["EV_SUPPORT"],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "contradicts",
+            reasoning: "The direct evidence provides the missing contrary side.",
+          }],
+        };
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        throw new Error("direction repair should not run after neutral adjudication fixes the citation sides");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+      },
+    );
+
+    expect(mockLLM).toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.objectContaining({
+        adjudicationCases: [
+          expect.objectContaining({
+            claimId: "AC_01",
+            decisiveSide: "contradicting",
+            candidates: [expect.objectContaining({ evidenceId: "EV_NEUTRAL" })],
+          }),
+        ],
+      }),
+      expect.objectContaining({ tier: "budget" }),
+    );
+    expect(evidence[1].claimDirection).toBe("contradicts");
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_NEUTRAL"]);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
+    expect(warnings.some((warning) => warning.type === "verdict_citation_integrity_guard")).toBe(false);
+  });
+
+  it("does not leak tentative neutral adjudication when grounding rejects it", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 35,
+        verdict: "LEANING-FALSE",
+        supportingEvidenceIds: ["EV_SUPPORT"],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_SUPPORT",
+        claimDirection: "supports",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+      createEvidenceItem({
+        id: "EV_NEUTRAL",
+        claimDirection: "neutral",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    let groundingCalls = 0;
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        groundingCalls += 1;
+        return groundingCalls === 1
+          ? [{ claimId: "AC_01", groundingValid: true, issues: [] }]
+          : [{ claimId: "AC_01", groundingValid: false, issues: ["Tentative citation not grounded"] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_NEUTRAL",
+            claimDirection: "contradicts",
+            reasoning: "The direct evidence provides the missing contrary side.",
+          }],
+        };
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        throw new Error("test repairExecutor should intercept direction repair");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+        repairExecutor: async () => null,
+      },
+    );
+
+    expect(evidence[1].claimDirection).toBe("neutral");
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(warnings.some((warning) => warning.type === "verdict_grounding_issue"
+      && warning.message.includes("neutral-citation-adjudicated verdict failed grounding check"))).toBe(true);
+    expect(warnings.some((warning) => warning.message.includes("LLM adjudicated"))).toBe(false);
+  });
+
   it("does not adjudicate multi-claim neutral candidates for an empty decisive citation side", async () => {
     const verdicts = [
       createCBVerdict({
