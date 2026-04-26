@@ -142,6 +142,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("does not independently reassert that side's factual truth");
       expect(section).toContain("source-native route when available");
       expect(section).toContain("set the repaired claim's `freshnessRequirement`");
+      expect(section).toContain("A ratio or approximation metric alone is not enough");
+      expect(section).toContain("side-specific source family or measurement route");
+      expect(section).toContain("even when the comparator/reference route is historical");
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
       expect(section).toContain("folding the relation and approximation strength into the comparator/reference-side claim");
       expect(section).toContain("removing the redundant whole-comparison claim");
@@ -524,6 +527,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("expectedEvidenceProfile` must carry the referenced side's input-authored anchor");
       expect(pass2).toContain("likely source-native measurement route/source family");
       expect(pass2).toContain("expectedEvidenceProfile.sourceNativeRoutes");
+      expect(pass2).toContain("A ratio, approximation, relation label, or restated numeric anchor is not a substitute");
+      expect(pass2).toContain("source family or measurement route needed to retrieve evidence for that side");
       expect(pass2).toContain("Apply this both-side profile rule to every thesis-direct quantitative comparison claim");
       expect(pass2).toContain("does not replace the comparison claim's own need");
       expect(pass2).toContain("preserve that freshness contract on the companion claim");
@@ -564,8 +569,12 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
       expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
+      expect(contract).toContain("does not count as the current/present side route");
+      expect(contract).toContain("source-native route or source family needed to retrieve and cite evidence");
+      expect(contract).toContain("the companion's freshness contract follows the freshest side needed for evidence");
       expect(contract).toContain("profile omits the route needed to retrieve and cite evidence for that side");
-      expect(contract).toContain("the summary must name missing current-side evidence-profile or freshness loss");
+      expect(contract).toContain("the summary must name missing current-side source route");
+      expect(contract).toContain("because the profile only names a ratio/relation back to that side");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");
