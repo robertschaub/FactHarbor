@@ -930,6 +930,15 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("do not let applicability alone erase the distinction");
     });
 
+    it("can map side-specific evidence to decomposed comparison claims through expectedEvidenceProfile", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("evidence applicability and claim-mapping engine");
+      expect(section).toContain("directly reports one side, component, denominator, reference class, or source-native measurement route");
+      expect(section).toContain("first gathered for a separate side-specific companion claim");
+      expect(section).toContain("Include both the side-specific claim ID and the comparison claim ID in `relevantClaimIds`");
+      expect(section).toContain("Do not broadcast evidence to every sibling claim");
+    });
+
     it("uses abstract examples without domain-specific terms", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       const forbiddenTerms = [

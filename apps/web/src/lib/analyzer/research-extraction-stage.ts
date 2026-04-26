@@ -68,6 +68,7 @@ export const ApplicabilityAssessmentOutputSchema = z.object({
   assessments: z.array(z.object({
     evidenceIndex: z.number(),
     applicability: z.enum(["direct", "contextual", "foreign_reaction"]).catch("direct"),
+    relevantClaimIds: z.array(z.string()).optional(),
     reasoning: z.string(),
   })),
 });
@@ -491,6 +492,7 @@ export async function assessEvidenceApplicability(
     category: item.category,
     claimDirection: item.claimDirection ?? "neutral",
     evidenceScope: item.evidenceScope ?? null,
+    currentRelevantClaimIds: item.relevantClaimIds ?? [],
   }));
 
   const rendered = await loadAndRenderSection("claimboundary", "APPLICABILITY_ASSESSMENT", {
@@ -549,15 +551,26 @@ export async function assessEvidenceApplicability(
       timestamp: new Date(),
     });
 
-    // Apply classifications to evidence items
+    // Apply classifications and LLM claim-mapping additions to evidence items.
+    // Existing mappings are preserved; this pass only fills missing multi-claim
+    // links found by the same LLM call that already sees all claims together.
+    const knownClaimIds = new Set(claims.map((claim) => claim.id));
     const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
+    const claimMappingAdditions = new Map<number, string[]>();
     for (const assessment of validated.assessments) {
       classificationMap.set(assessment.evidenceIndex, assessment.applicability);
+      const validClaimIds = (assessment.relevantClaimIds ?? []).filter((claimId) =>
+        knownClaimIds.has(claimId),
+      );
+      if (validClaimIds.length > 0) {
+        claimMappingAdditions.set(assessment.evidenceIndex, Array.from(new Set(validClaimIds)));
+      }
     }
 
     // Debug: count by category
     const counts = { direct: 0, contextual: 0, foreign_reaction: 0, unclassified: 0 };
     const foreignDomains: string[] = [];
+    let claimMappingExtensions = 0;
 
     const assessed = evidenceItems.map((item, index) => {
       const applicability = classificationMap.get(index) ?? "direct";
@@ -566,7 +579,16 @@ export async function assessEvidenceApplicability(
         const domain = item.sourceUrl?.match(/^https?:\/\/([^/?#]+)/)?.[1] ?? "unknown";
         foreignDomains.push(domain);
       }
-      return { ...item, applicability };
+      const existingClaimIds = item.relevantClaimIds ?? [];
+      const addedClaimIds = claimMappingAdditions.get(index) ?? [];
+      const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...addedClaimIds]));
+      if (relevantClaimIds.length > existingClaimIds.length) {
+        claimMappingExtensions++;
+      }
+      const assessedItem = { ...item, applicability };
+      return relevantClaimIds.length > 0
+        ? { ...assessedItem, relevantClaimIds }
+        : assessedItem;
     });
 
     // Count unclassified (items not in LLM response — default to "direct")
@@ -575,6 +597,7 @@ export async function assessEvidenceApplicability(
     debugLogFileOnly(
       `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
       `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
+      `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(

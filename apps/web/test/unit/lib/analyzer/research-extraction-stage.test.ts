@@ -766,6 +766,49 @@ describe("Research Extraction Stage", () => {
       );
     });
 
+    it("should preserve existing claim mappings and add LLM-assessed comparison claim mappings", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
+        createClaim({
+          id: "AC_02",
+          statement: "Entity A's current metric M is approximately comparable to reference metric N",
+          expectedEvidenceProfile: {
+            componentMetrics: ["current metric M", "reference metric N"],
+            expectedSourceTypes: ["official_record"],
+          },
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "Official source reports current metric M for Entity A.",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02", "AC_UNKNOWN"],
+            reasoning: "measures a side needed by the comparison claim",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+      expect(result[0].applicability).toBe("direct");
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Claim mapping extensions: 1."),
+      );
+    });
+
     it("should skip assessment when inferredGeography is null", async () => {
       const claims = [createClaim({ statement: "Generic claim" })];
       const evidence = [createEvidence({ id: "EV_01" })];

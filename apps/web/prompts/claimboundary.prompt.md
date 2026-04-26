@@ -2361,11 +2361,11 @@ Return a JSON object:
 
 ## APPLICABILITY_ASSESSMENT
 
-You are an evidence applicability engine. Given a set of evidence items and the claim's jurisdiction context, classify each item's applicability.
+You are an evidence applicability and claim-mapping engine. Given a set of evidence items, the claim set, and the jurisdiction context, classify each item's applicability and identify any claim IDs the item materially helps verify.
 
 ### Task
 
-For each evidence item, determine whether it was produced by actors within the claim's jurisdiction or by external/foreign actors.
+For each evidence item, determine whether it was produced by actors within the claim's jurisdiction or by external/foreign actors. Also return the full set of atomic claim IDs for which the evidence item directly reports, materially measures, or otherwise supplies a necessary side/component/route of the claim's expected evidence profile.
 
 ### Applicability Categories
 
@@ -2385,6 +2385,8 @@ For each evidence item, determine whether it was produced by actors within the c
 - For claims about whether an activity is systematic, institutionalized, organized, or otherwise established within a jurisdiction or entity, mark an item `"direct"` only when it evaluates the existence, absence, or structure of that broader ecosystem itself. Evidence about one topical use case, one platform-specific program, or one isolated implementation is usually `"contextual"` unless the source explicitly presents it as representative of the system being assessed.
 - For such claims, evidence about the governance, legal framework, or regulation of a broader policy problem or harm domain remains `"contextual"` unless it explicitly inventories, governs, certifies, funds, or structurally describes the named activity ecosystem itself.
 - For approximate current-versus-historical or current-versus-reference comparisons, evidence that directly reports a comparator route named in `expectedEvidenceProfile` is `"direct"` even when it is a source-native period/window total rather than an endpoint stock. If the evidence uses a different metric class from the route the claim most naturally implies, keep it direct only as caveated comparator evidence and preserve the mismatch in `evidenceScope`; do not let applicability alone erase the distinction.
+- For decomposed comparison claims, an evidence item that directly reports one side, component, denominator, reference class, or source-native measurement route named in a claim's `expectedEvidenceProfile` is relevant to that comparison claim even when the item was first gathered for a separate side-specific companion claim. Include both the side-specific claim ID and the comparison claim ID in `relevantClaimIds` when the item is needed to evaluate the comparison.
+- Do not broadcast evidence to every sibling claim. Add claim IDs only when the evidence item materially helps verify that claim's own assertion or an explicit route/side/component carried in its `expectedEvidenceProfile`.
 - When `inferredGeography` is null or the claim has no clear jurisdiction, mark all items "direct."
 - When `relevantGeographies` lists multiple jurisdictions, treat evidence from any listed jurisdiction as potentially direct/contextual. Do not classify it as `foreign_reaction` merely because it comes from a different listed jurisdiction.
 - International bodies (UN, ICC, ECHR) are "direct" when the claim invokes international standards AND the finding is about the directly evaluated target; otherwise "contextual."
@@ -2402,7 +2404,7 @@ For each evidence item, determine whether it was produced by actors within the c
 ```
 ${claims}
 ```
-Each claim may include `expectedEvidenceProfile`; use it to preserve the intended metric route, comparator class, source-native quantities, and decisive evidence type when assessing applicability.
+Each claim may include `expectedEvidenceProfile`; use it to preserve the intended metric route, comparator class, source-native quantities, and decisive evidence type when assessing applicability and claim mapping.
 
 **Inferred Geography:**
 ```
@@ -2428,11 +2430,17 @@ Return a JSON object:
     {
       "evidenceIndex": 0,
       "applicability": "direct | contextual | foreign_reaction",
+      "relevantClaimIds": ["AC_01"],
       "reasoning": "string — brief justification"
     }
   ]
 }
 ```
+
+- Include one assessment for every evidence item index.
+- Use only the three applicability labels above.
+- `relevantClaimIds` must contain only IDs from the provided claims list. It may contain zero, one, or multiple claim IDs. Return an empty array when the item is not materially relevant to any claim after applicability assessment.
+- Reasoning should be one sentence.
 
 ---
 
