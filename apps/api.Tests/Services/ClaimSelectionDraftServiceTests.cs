@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FactHarbor.Api.Data;
@@ -114,6 +115,52 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.Null(error);
         Assert.Equal(0, statusCode);
         Assert.Equal(2, (await db.InviteCodes.FindAsync("INVITE"))?.UsedJobs);
+    }
+
+    [Fact]
+    public async Task CreateDraftAsync_InviteSlotContentionRetriesAndThenSucceeds()
+    {
+        await using var database = await TestDatabase.CreateFileBackedAsync(defaultTimeoutSeconds: 0);
+        await using (var seedDb = database.CreateContext())
+        {
+            seedDb.InviteCodes.Add(new InviteCodeEntity
+            {
+                Code = "INVITE",
+                MaxJobs = 10,
+                DailyLimit = 10,
+                HourlyLimit = 10,
+                IsActive = true,
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var lockDb = database.CreateContext();
+        await using var tx = await lockDb.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+        var createTask = Task.Run(async () =>
+        {
+            await using var workerDb = database.CreateContext();
+            var service = CreateDraftService(workerDb);
+            return await service.CreateDraftAsync(
+                "text",
+                "A verifiable claim under contention",
+                "interactive",
+                "INVITE",
+                isAdmin: false);
+        });
+
+        await Task.Delay(90);
+        await tx.RollbackAsync();
+
+        var (result, error, statusCode) = await createTask;
+
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+        Assert.NotNull(result);
+
+        await using var verifyDb = database.CreateContext();
+        Assert.Equal(1, await verifyDb.ClaimSelectionDrafts.CountAsync(d => d.InviteCode == "INVITE"));
+        Assert.Equal(1, (await verifyDb.InviteCodes.FindAsync("INVITE"))?.UsedJobs);
     }
 
     [Fact]
@@ -278,6 +325,42 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.Equal(1, await db.JobEvents.CountAsync(e => e.JobId == firstJob.JobId));
     }
 
+    [Fact]
+    public async Task CreateJobFromDraftAsync_ParallelCallsReturnOneDraftJob()
+    {
+        await using var database = await TestDatabase.CreateFileBackedAsync();
+        string draftId;
+        await using (var seedDb = database.CreateContext())
+        {
+            var draft = SeedDraft(
+                seedDb,
+                status: "AWAITING_CLAIM_SELECTION",
+                draftStateJson: PreparedState(["AC_01"], selectedClaimIds: ["AC_01"]));
+            draftId = draft.DraftId;
+            await seedDb.SaveChangesAsync();
+        }
+
+        var tasks = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        {
+            await using var workerDb = database.CreateContext();
+            var draft = await workerDb.ClaimSelectionDrafts.SingleAsync(d => d.DraftId == draftId);
+            var service = CreateJobService(workerDb);
+            return await service.CreateJobFromDraftAsync(draft, ["AC_01"]);
+        }));
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.All(results, result => Assert.Null(result.error));
+        var jobs = results.Select(result => result.job).ToArray();
+        Assert.All(jobs, Assert.NotNull);
+        Assert.Single(jobs.Select(job => job!.JobId).Distinct());
+
+        await using var verifyDb = database.CreateContext();
+        var finalJobId = jobs[0]!.JobId;
+        Assert.Equal(1, await verifyDb.Jobs.CountAsync(j => j.ClaimSelectionDraftId == draftId));
+        Assert.Equal(1, await verifyDb.JobEvents.CountAsync(e => e.JobId == finalJobId));
+    }
+
     private static ClaimSelectionDraftService CreateDraftService(
         FhDbContext db,
         IDictionary<string, string?>? config = null)
@@ -379,13 +462,18 @@ public sealed class ClaimSelectionDraftServiceTests
 
     private sealed class TestDatabase : IAsyncDisposable
     {
-        private readonly SqliteConnection _connection;
+        private readonly SqliteConnection? _connection;
         private readonly DbContextOptions<FhDbContext> _options;
+        private readonly string? _databasePath;
 
-        private TestDatabase(SqliteConnection connection, DbContextOptions<FhDbContext> options)
+        private TestDatabase(
+            SqliteConnection? connection,
+            DbContextOptions<FhDbContext> options,
+            string? databasePath = null)
         {
             _connection = connection;
             _options = options;
+            _databasePath = databasePath;
         }
 
         public static async Task<TestDatabase> CreateAsync()
@@ -400,11 +488,52 @@ public sealed class ClaimSelectionDraftServiceTests
             return new TestDatabase(connection, options);
         }
 
+        public static async Task<TestDatabase> CreateFileBackedAsync(int defaultTimeoutSeconds = 30)
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"factharbor-api-tests-{Guid.NewGuid():N}.db");
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = path,
+                DefaultTimeout = defaultTimeoutSeconds,
+            }.ToString();
+            var options = new DbContextOptionsBuilder<FhDbContext>()
+                .UseSqlite(connectionString)
+                .Options;
+            await using var db = new FhDbContext(options);
+            await db.Database.EnsureCreatedAsync();
+            return new TestDatabase(null, options, path);
+        }
+
         public FhDbContext CreateContext() => new(_options);
 
         public async ValueTask DisposeAsync()
         {
-            await _connection.DisposeAsync();
+            if (_connection is not null)
+            {
+                await _connection.DisposeAsync();
+            }
+
+            if (_databasePath is not null)
+            {
+                TryDelete(_databasePath);
+                TryDelete($"{_databasePath}-shm");
+                TryDelete($"{_databasePath}-wal");
+            }
+        }
+
+        private static void TryDelete(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
         }
     }
 }
