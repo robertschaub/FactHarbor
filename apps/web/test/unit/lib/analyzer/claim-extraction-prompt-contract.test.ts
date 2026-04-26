@@ -550,7 +550,12 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("A ratio, approximation, relation label, or restated numeric anchor is not a substitute");
       expect(pass2).toContain("source family or measurement route needed to retrieve evidence for that side");
       expect(pass2).toContain("Apply this both-side profile rule to every thesis-direct quantitative comparison claim");
+      expect(pass2).toContain("whether the comparison remains unsplit, near-verbatim, whole-relation");
       expect(pass2).toContain("does not replace the comparison claim's own need");
+      expect(pass2).toContain("each side's route, metric class, source family or publisher family");
+      expect(pass2).toContain("numerically anchors, or compactly references a current/present side");
+      expect(pass2).toContain("list that current-side evidence route as its own side route");
+      expect(pass2).toContain("not enough if it does not name the route/source family needed to retrieve and cite the current-side evidence");
       expect(pass2).toContain("preserve that freshness contract on the companion claim");
       expect(pass2).toContain("current_snapshot");
       expect(pass2).toContain("retrieve both sides");
@@ -604,7 +609,10 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("must not describe the corrected companion as the comparator/reference side being approximately that metric");
       expect(contract).toContain("orientation/copied-value violation, missing referenced-side route/profile, and freshness loss");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
-      expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
+      expect(contract).toContain("Comparison profile and freshness");
+      expect(contract).toContain("Apply these profile checks to every thesis-direct quantitative comparison claim");
+      expect(contract).toContain("including unsplit, near-verbatim, whole-relation, and decomposed companion forms");
+      expect(contract).toContain("When a thesis-direct comparison claim mentions, quotes, numerically anchors, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
       expect(contract).toContain("does not count as the current/present side route");
       expect(contract).toContain("A side-specific metric label, number, or comparison target");
