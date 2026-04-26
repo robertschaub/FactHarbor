@@ -2165,3 +2165,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 ---
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Debt Guard Cross-Tool Docs Sync -- [Standard] [open-items: no]
 **For next agent:** Related agent docs now expose `/debt-guard` beyond the root/Gemini surfaces: Claude, Copilot, Cursor, Cline/RooCode, and Windsurf wrappers point bugfixing agents to `.claude/skills/debt-guard/SKILL.md`; `Docs/AGENTS/README.md`, `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md` document the cross-tool expectation. Keep the generated index files out of this commit unless they are intentionally regenerated after unrelated untracked handoffs/WIP files are handled.
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Debt Guard Post-Review Amendments -- [Standard] [open-items: no]
+**For next agent:** Post-commit review/debate of `8ab00f01` found fixable governance issues, not a bad workflow concept. The follow-up amendment clarifies `/debt-guard` Full Path phase obligations, normalizes verifier-tier wording, aligns bugfix trigger text across Gemini/Claude/Copilot/Cursor/Cline/Windsurf wrappers, documents `factharbor-agent.skill` as a repo-coupled helper, refreshes the Gemini helper package, and commits a clean handoff-index entry generated without unrelated untracked handoffs.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Debt_Guard_Post_Review_Amendments.md

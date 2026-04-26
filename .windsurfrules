@@ -33,7 +33,7 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 ## Bugfixing
 
-For every bugfix, regression, failing test/build, runtime defect, or failed-validation recovery, read `.claude/skills/debt-guard/SKILL.md` before editing. Compare undo/amend against adding code; choose the evidence-backed lowest net complexity.
+For every bugfix, regression, failing test/build, review finding, runtime defect, or failed-validation recovery, read `.claude/skills/debt-guard/SKILL.md` before editing. Compare undo/amend against adding code; choose the evidence-backed lowest net complexity.
 
 ## Roles
 

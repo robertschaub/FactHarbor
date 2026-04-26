@@ -43,7 +43,7 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 
 ## Bugfixing Standard
 
-- For every bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
+- For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
 - Debt Guard is balanced: compare undoing/amending previous code against adding new code, then choose the evidence-backed path with the lowest net complexity.
 
 ## Commands

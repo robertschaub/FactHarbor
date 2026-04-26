@@ -74,7 +74,7 @@ Residual risk:
 
 If `Net mechanisms` is `increases`, stop and use Full Path.
 
-Phases 1, 2, 3, 4, 5b, and 7 are mandatory for Full Path. For Compact Path, only the Compact Debt-Guard block plus final verification is required. Phase 6 is required only under its stated triggers.
+Phases 0, 1, 2, 3, 4, 5, 5b, and 7 are mandatory for Full Path. For Compact Path, only the Compact Debt-Guard block plus final verification is required. Phase 6 is required only under its stated triggers.
 
 Evaluate these fix families before editing:
 
@@ -246,11 +246,16 @@ If `Net mechanisms` is `increases`, require a `missing-capability` justification
 
 If `Small-change plan` is not `single patch`, stop after the smallest verifier-backed slice and record follow-up slices separately.
 
-Classify the verifier tier before editing:
+Classify the verifier tier before editing. `quality-affecting` is a cost/risk reason for escalating verification, not a verifier tier.
 
 - `safe-local`: structural code/tests/docs changes where targeted tests or `npm test` answer the question.
 - `build`: TypeScript, config schema, runtime surface, or package changes where build coverage is required.
-- `quality-affecting`: prompts, UCM analysis defaults, model routing, evidence extraction, boundary clustering, verdict generation, aggregation, warning severity, or live-job behavior.
+- `manual-inspection`: documentation, workflow, or generated-artifact checks where source inspection answers the question.
+- `expensive-LLM`: real LLM test suites such as `test:llm`, `test:neutrality`, `test:cb-integration`, or `test:expensive`.
+- `live-job`: a live analysis job used as verification evidence.
+- `validation-batch`: a validation matrix or batch run.
+
+Mark the change as `quality-affecting` when it changes prompts, UCM analysis defaults, model routing, evidence extraction, boundary clustering, verdict generation, aggregation, warning severity, or live-job behavior. Quality-affecting changes may justify an expensive/live verifier only when safe local verification cannot answer the question.
 
 Default to `npm test`, targeted tests, targeted builds, and manual inspection. Do not run `npm -w apps/web run test:llm`, `npm -w apps/web run test:neutrality`, `npm -w apps/web run test:cb-integration`, `npm -w apps/web run test:expensive`, `npm run validate:run -- ...`, validation batches, or live analysis jobs unless the user explicitly requested it or the change is quality-affecting and a safe verifier cannot answer the question. Record the exact command, expected cost class, Captain-approved input set, and why safe local verification is insufficient.
 

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-24T20:21:58.462Z",
-  "count": 363,
+  "generatedAt": "2026-04-26T06:31:31.541Z",
+  "count": 371,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,23 +4462,6 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
-      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
-      "date": "2026-04-19",
-      "roles": [
-        "llm_expert"
-      ],
-      "topics": [
-        "claim",
-        "extraction",
-        "atomicity",
-        "review"
-      ],
-      "files_touched": [
-        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
-      ],
-      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
-    },
-    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -5744,13 +5727,15 @@
         "senior_developer"
       ],
       "topics": [
-        "build",
-        "index",
+        "build_index",
+        "handoff_index",
         "parser",
-        "regression",
-        "tests"
+        "regression_tests"
       ],
-      "files_touched": [],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts"
+      ],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -7245,6 +7230,25 @@
       "summary": "Internal Agent Knowledge MCP Schema Validation And Parity Hardening"
     },
     {
+      "file": "2026-04-24_Lead_Architect_Preparation_Jobs_Admin_Control_Assessment.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "preparation",
+        "jobs",
+        "admin",
+        "control",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Preparation_Jobs_Admin_Control_Assessment.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Add a dedicated admin-only draft list endpoint and Next.js proxy, surface rows in an admin preparation/session view or a separate section on `/jobs`, and keep actions constrained to existing service methods. Add tests for admin-only visibility, hidden filtering, cancel while preparing, retry failed "
+    },
+    {
       "file": "2026-04-24_Senior_Developer_Claim_Selection_Draft_State_Runtime_Guard.md",
       "date": "2026-04-24",
       "roles": [
@@ -7313,7 +7317,8 @@
         "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_Runner_Diagnostics_Pipeline_Improvements.md",
         "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Pipeline_Quality_Speed_Cost_Improvement_Plan.md",
         "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Pipeline_Integrity_Fixes.md",
-        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md"
+        "Docs/AGENTS/Handoffs/2026-04-24_Unassigned_Verdict_Citation_Guard_Live_Validation.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Stage1_Distinct_Events_Validator_Context.md"
       ],
       "summary": "Start from `Docs/STATUS/Backlog.md` section \"Immediate Priorities (2026-04-24 Monitor Session)\" and this handoff. The highest-priority implementation path is `MON-EVID-1` / `MON-VCI-1` / `MON-STG1-LAT`, with prompt edits requiring Captain approval."
     },
@@ -7337,6 +7342,33 @@
         "apps/web/test/unit/lib/claim-selection-flow.test.ts"
       ],
       "summary": "Relevant helpers are `enforceVerdictCitationIntegrity`, `missingCurrentDecisiveCitationSide`, `safeDowngradeCollapsedCitationVerdicts`, and `resolveInitialClaimSelection`. Focused verification passed: `npm -w apps/web run test -- test/unit/lib/claim-selection-flow.test.ts test/unit/lib/analyzer/verd"
+    },
+    {
+      "file": "2026-04-24_Senior_Developer_LLM_Expert_Stage1_Distinct_Events_Validator_Context.md",
+      "date": "2026-04-24",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "stage1",
+        "claim-extraction",
+        "contract-validation",
+        "atomicity",
+        "monitor"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/verdict-generation-stage.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-contract-validation.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-multi-event.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-generation-stage-config.test.ts",
+        "Docs/STATUS/Backlog.md",
+        "Docs/STATUS/Current_Status.md"
+      ],
+      "summary": "Primary root cause for `d1689df...` and `466c86...`: the initial contract validator and single-claim atomicity checks saw only the original input plus the near-verbatim one claim, approved it, then MT-5(C) generated a larger candidate but rejected it because the retry did not revalidate cleanly. The"
     },
     {
       "file": "2026-04-24_Senior_Developer_Runner_Diagnostics_Pipeline_Improvements.md",
@@ -7546,6 +7578,160 @@
         "apps/web/test/unit/lib/analyzer/verdict-citation-sanitization.test.ts"
       ],
       "summary": "If validating with live jobs, commit/restart first, then use the Captain-approved inputs already exercised in the monitoring run. Compare for disappearance of `verdict_grounding_issue` / `verdict_direction_issue` cases where invalid/non-direct IDs survive in final `supportingEvidenceIds` or `contrad"
+    },
+    {
+      "file": "2026-04-25_Agents_Supervisor_Debt_Guard_Workflow_Skill.md",
+      "date": "2026-04-25",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "debt_guard",
+        "workflow_skill",
+        "additive_repair_drift",
+        "bugfix_complexity"
+      ],
+      "files_touched": [
+        ".claude/skills/debt-guard/SKILL.md",
+        "AGENTS.md",
+        "GEMINI.md",
+        "CLAUDE.md",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "Docs/AGENTS/README.md",
+        "Docs/AGENTS/Multi_Agent_Collaboration_Rules.md",
+        ".github/copilot-instructions.md",
+        ".cursor/rules/factharbor-core.mdc",
+        ".clinerules/00-factharbor-rules.md",
+        ".windsurfrules",
+        "factharbor-agent.skill",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "`/debt-guard` is mandatory for every bugfix and for failed validation recovery. Do not treat it as rollback-first: it explicitly requires balancing undoing/amending prior code against adding new code, with a Complexity Budget before edits and a diff reconciliation before final response. If a bugfix "
+    },
+    {
+      "file": "2026-04-25_Senior_Developer_LLM_Expert_235000_Comparison_Evidence_Profile_Fix.md",
+      "date": "2026-04-25",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "report-review",
+        "prompt-diagnosis",
+        "pipeline-debug",
+        "comparison-evidence",
+        "verdict-citations"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/verdict-stage.ts",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts",
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-stage.test.ts"
+      ],
+      "summary": "Investigate and fix report degradation for the Captain-defined input `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.` and related live jobs."
+    },
+    {
+      "file": "2026-04-25_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Fixes.md",
+      "date": "2026-04-25",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "monitor",
+        "pipeline",
+        "debug",
+        "fixes"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts"
+      ],
+      "summary": "Start from commits `12783ed1`, `6a697718`, `dfa96a3f`, `237c4ed6`, `61971249`, and `49f9cea6`. The services are on `main` and were restarted after the latest commit."
+    },
+    {
+      "file": "2026-04-25_Senior_Developer_LLM_Expert_SR_Prefetch_And_Stage3_Observability_Fix.md",
+      "date": "2026-04-25",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "sr",
+        "prefetch",
+        "and",
+        "stage3",
+        "observability",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-25 - SR Prefetch And Stage 3 Observability Fix"
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Debt_Guard_Post_Review_Amendments.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "debt_guard",
+        "workflow_skill",
+        "post_review_amendment",
+        "handoff_index"
+      ],
+      "files_touched": [
+        ".claude/skills/debt-guard/SKILL.md",
+        "GEMINI.md",
+        "CLAUDE.md",
+        ".github/copilot-instructions.md",
+        ".cursor/rules/factharbor-core.mdc",
+        ".clinerules/00-factharbor-rules.md",
+        ".windsurfrules",
+        ".gemini/skills/factharbor-agent/SKILL.md",
+        "Docs/DEVELOPMENT/Claude_Code_Skills.md",
+        "factharbor-agent.skill",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Treat `/debt-guard` as accepted after the post-review amendment. If you regenerate all agent indexes in a dirty worktree, inspect the handoff index before committing because untracked handoff files are included by the index script."
+    },
+    {
+      "file": "2026-04-26_Code_Reviewer_Pipeline_Review_Since_ACS_Baseline.md",
+      "date": "2026-04-26",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "pipeline",
+        "review",
+        "since",
+        "acs",
+        "baseline"
+      ],
+      "files_touched": [],
+      "summary": "The comparison evidence profile threading is architecturally consistent across all 7 pipeline stages — good work."
+    },
+    {
+      "file": "2026-04-26_Senior_Developer_LLM_Expert_235000_Comparison_Profile_Open.md",
+      "date": "2026-04-26",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "235000",
+        "comparison",
+        "profile",
+        "open"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-26 - Senior Developer / LLM Expert - 235000 Comparison Profile Follow-up"
     }
   ]
 }

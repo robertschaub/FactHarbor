@@ -1,6 +1,6 @@
 ---
 name: factharbor-agent
-description: Specialized agent for handling role activation, task completion logging, shared workflow-skill discovery, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, needing to follow FactHarbor's Senior Engineer engineering standards, or doing any FactHarbor bugfix, regression fix, failing test/build fix, runtime defect repair, or failed-validation recovery so `.claude/skills/debt-guard/SKILL.md` is applied before editing.
+description: Specialized agent for handling role activation, task completion logging, shared workflow-skill discovery, and following project-specific protocols (Role Activation Protocol, Agent Exchange Protocol). Use when switching roles, finishing non-trivial tasks, needing to follow FactHarbor's Senior Engineer engineering standards, or doing any FactHarbor bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery so `.claude/skills/debt-guard/SKILL.md` is applied before editing.
 ---
 
 # FactHarbor Agent
@@ -20,7 +20,7 @@ This skill ensures that Gemini CLI follows the FactHarbor development lifecycle 
 
 ### 2. Executing a Task
 - **Engineering Standard**: All analysis-affecting logic MUST use LLM intelligence (no regex/heuristics).
-- **Bugfixing Standard**: For every bugfix, regression fix, failing test/build fix, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
+- **Bugfixing Standard**: For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
 - **Architecture Reference**: Follow patterns in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
 - **Multilingual Support**: Ensure analysis handles non-English inputs correctly.
 

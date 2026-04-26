@@ -449,6 +449,8 @@ All thirteen skills are discoverable by non-Claude agents:
 - **Codex / GPT agents** read the **Named Workflows** table in [AGENTS.md](../../AGENTS.md).
 - **Gemini** reads the mirrored workflow list in [GEMINI.md](../../GEMINI.md) and can also
   enter through [`.gemini/skills/factharbor-agent/SKILL.md`](../../.gemini/skills/factharbor-agent/SKILL.md).
+  `factharbor-agent.skill` is a repo-coupled helper package for that entrypoint; it does not
+  bundle the `.claude/skills/` workflow files and must be used from a FactHarbor checkout.
 - **GitHub Copilot, Cursor, Cline, and Windsurf** have lightweight wrapper files that point
   back to [AGENTS.md](../../AGENTS.md). Their bugfixing summaries explicitly point agents to
   `/debt-guard` before editing, then agents open the referenced `.claude/skills/<name>/SKILL.md`

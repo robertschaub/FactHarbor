@@ -29,7 +29,7 @@ You are an expert software engineer working on **FactHarbor**.
 
 ## Behavior
 *   **Reasoning:** Use the high-reasoning capabilities of Gemini 3.0 for architectural decisions and complex refactors.
-*   **Bugfixing:** For every bugfix, regression fix, failing test/build fix, or failed-validation recovery, first read and apply `.claude/skills/debt-guard/SKILL.md`.
+*   **Bugfixing:** For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, first read and apply `.claude/skills/debt-guard/SKILL.md`.
 *   **Code Style:** Follow patterns in `apps/web/src/lib/analyzer/`.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
