@@ -130,6 +130,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("neutral anaphoric reference");
       expect(section).toContain("compact reference-link to the already-isolated side's input-authored number");
       expect(section).toContain("does not independently reassert that side's factual truth");
+      expect(section).toContain("source-native route when available");
+      expect(section).toContain("set the repaired claim's `freshnessRequirement`");
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
       expect(section).toContain("folding the relation and approximation strength into the comparator/reference-side claim");
       expect(section).toContain("removing the redundant whole-comparison claim");
@@ -139,6 +141,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not shift it onto a different clause");
       expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
       expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
+      expect(section).toContain('"freshnessRequirement": "none"');
     });
   });
 
@@ -511,6 +514,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("expectedEvidenceProfile` must carry the referenced side's input-authored anchor");
       expect(pass2).toContain("likely source-native measurement route/source family");
       expect(pass2).toContain("expectedEvidenceProfile.sourceNativeRoutes");
+      expect(pass2).toContain("Apply this both-side profile rule to every thesis-direct quantitative comparison claim");
+      expect(pass2).toContain("does not replace the comparison claim's own need");
       expect(pass2).toContain("preserve that freshness contract on the companion claim");
       expect(pass2).toContain("current_snapshot");
       expect(pass2).toContain("retrieve both sides");
