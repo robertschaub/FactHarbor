@@ -33,7 +33,8 @@ Before writing or reloading an artifact, choose the owning workflow:
 | Find startup context, role fit, prior handoffs, stage owners | `fhAgentKnowledge.preflight_task` / AGENTS startup protocol | Use only after preflight when the active session needs a local working checkpoint |
 | Complete a non-trivial task or role handoff | Exchange Protocol / `/handoff` | Link or promote selected working notes; never replace the durable output |
 | Run adversarial decision-making | `/debate` | Store the compact debated conclusion and rejected alternatives after debate |
-| Clean living docs or archive WIP/handoffs | `/docs-update` or `/wip-update` | Checkpoint investigation state only if the doc cleanup is long-running |
+| Clean living docs | `/docs-update` | Checkpoint investigation state only if the doc cleanup is long-running |
+| Consolidate WIP or archive completed work | `/wip-update` | Checkpoint investigation state only if the WIP consolidation is long-running |
 | Analyze pipeline, reports, prompts, debug logs, or validation | `/pipeline`, `/report-review`, `/prompt-diagnosis`, `/debug`, `/validate`, `/audit` | Store reload pointers and intermediate state; do not duplicate those workflows' analysis rules |
 | Explain code to a human | `/explain-code` | Usually none; use only if the explanation session becomes long and needs a reload packet |
 
@@ -64,6 +65,8 @@ Use one explicit mode per write or reload action:
 | `agent-exchange` | Bounded packet for another agent or future session | keep until `superseded` or `promoted-to-handoff` |
 | `subagent-return` | Compact return packet from a delegated agent | parent verifies and merges selected content |
 | `reload` | Rehydrate prior working context | read-only until freshness checks pass |
+
+If no receiving agent acts on an `agent-exchange` artifact within the current task, the originating agent marks it `superseded` at task completion.
 
 Keep the three record types distinct:
 

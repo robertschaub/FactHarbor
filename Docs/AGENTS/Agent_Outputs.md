@@ -2179,3 +2179,8 @@ Learnings: Mocked pipeline tests were insufficient for prompt-file integrity. A 
 Amendment: overlap review added an explicit Overlap Gate and Efficiency Budget so context-extension stays a compact transport/checkpoint layer around `preflight_task`, `/handoff`, `/debate`, docs/WIP workflows, and analysis workflows rather than duplicating them.
 
 Debate follow-up: Reconciler accepted the current design with a narrow suppression rule — phase-boundary and after-debate artifacts are optional only when reconstruction cost is high, and no artifact should be created when the owning workflow output already preserves enough state.
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Skill Review Amendments -- [Standard] [open-items: no]
+**For next agent:** Applied the five accepted amendments from `.codex/context-extension/2026-04-26_skill-review-debate_context.md`: `/debt-guard` Compact Path now has `Mechanism touched`, a compact worked example, and concrete Phase 6 triggers; `/context-extension` now has a separate `/wip-update` Overlap Gate row and explicit `agent-exchange` supersession endpoint. Repo and user-level context-extension skills validate and hash-match.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Skill_Review_Amendments.md

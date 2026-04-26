@@ -64,12 +64,25 @@ COMPACT DEBT-GUARD
 Path: Compact
 Symptom:
 Existing mechanism:
+Mechanism touched: <function/file:line>
 Prior attempt: N/A | keep | quarantine | revert
 Lowest-complexity fix:
 Rejected path:
 Verifier: <tier / command / provenance>
 Net mechanisms: decreases | unchanged | increases
 Residual risk:
+```
+
+Compact example:
+
+```
+COMPACT DEBT-GUARD
+Symptom: one focused test expects `cancelled` but route returns `canceled`
+Existing mechanism: status normalization in `mapJobStatus`
+Mechanism touched: `mapJobStatus` / `apps/web/src/lib/jobs.ts:42`
+Lowest-complexity fix: amend the existing status mapping; no new branch or fallback
+Verifier: safe-local / `npm -w apps/web test -- jobs-status.test.ts`
+Net mechanisms: unchanged
 ```
 
 If `Net mechanisms` is `increases`, stop and use Full Path.
@@ -298,7 +311,7 @@ If the actual diff violates the budget, stop and classify the extra change as `k
 
 ## Phase 6 - Review And Debate
 
-Use this phase for non-trivial changes, suspicious additive fixes, or when the Captain asks for review/debate. For trivial isolated fixes with no new mechanism, no ownership ambiguity, and no analysis behavior impact, skip review/debate after recording the compact path.
+Use this phase when `Net mechanisms` increases, the fix is `failed-attempt recovery`, the patch touches more than one stage boundary, or the Captain asks for review/debate. For trivial isolated fixes with no new mechanism, no ownership ambiguity, and no analysis behavior impact, skip review/debate after recording the compact path.
 
 ### Review Pass
 
