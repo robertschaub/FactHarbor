@@ -39,6 +39,10 @@ Before writing or reloading an artifact, choose the owning workflow:
 
 If another workflow owns the outcome, run that workflow first. Context-extension may carry the state between phases, but it must not become the place where the real work is performed or recorded.
 
+Phase-boundary and after-debate checkpointing is optional. Create a context-extension artifact only when the state would be materially expensive to reconstruct from existing outputs, tool logs, handoffs, or workflow return values.
+
+Do not create a context-extension artifact when the owning workflow final output, required handoff, `Agent_Outputs.md` entry, or subagent return already preserves the needed state with enough fidelity for continuation.
+
 ## Session Rhythm
 
 For long-running work, consider context-extension at these points:
@@ -77,6 +81,7 @@ Use the smallest artifact that preserves continuity:
 - Keep `Verified observations` and `Reload plan` short enough to scan quickly; split only when a single artifact would become harder to use than rereading sources.
 - Keep `.codex/context-extension/index.md` to active or recently superseded artifacts only; remove stale rows when artifacts are deleted or promoted.
 - If writing the artifact would take longer than reconstructing the context from authoritative files, do not write it.
+- If the owning workflow output already preserves the needed state, do not write a duplicate context-extension artifact.
 
 ## Authority Rules
 

@@ -28,6 +28,7 @@
 - Synced discovery surfaces across `AGENTS.md`, `GEMINI.md`, `.gemini/skills/factharbor-agent/SKILL.md`, `factharbor-agent.skill`, and `Docs/DEVELOPMENT/Claude_Code_Skills.md`.
 - Ran a small externalized design review: one subagent focused on governance/failure modes, one on install conventions, then a two-role debate over sufficiency. Challenger findings drove the canonical-source, gitignore, sensitivity-check, and lifecycle tightening amendments.
 - Post-commit overlap review classified the follow-up as an incomplete existing workflow boundary, not a reason to add another mechanism. The skill now has an explicit Overlap Gate assigning ownership to `preflight_task`, `/handoff`, `/debate`, docs/WIP workflows, and analysis workflows, plus an Efficiency Budget to prevent artifact sprawl.
+- Follow-up overlap debate reconciled to a narrow `MODIFY`: phase-boundary and after-debate checkpointing are optional only when state is materially expensive to reconstruct, and artifacts are suppressed when the owning workflow output, required handoff, `Agent_Outputs.md` entry, or subagent return already preserves enough state.
 
 **Warnings:**
 - `PyYAML` was missing from the default Python environment, so the first `quick_validate.py` attempt failed. I installed `PyYAML` with `python -m pip install PyYAML`, after which both skill validators passed.
@@ -49,6 +50,7 @@
 - Do not let `.codex/context-extension/` become a permanent memory store. Temporary artifacts must be deleted, superseded, or promoted selectively into the normal Exchange Protocol output when a task ends.
 - Use explicit modes when writing artifacts: `session-checkpoint`, `agent-exchange`, `subagent-return`, or `reload`.
 - Before using the skill, apply the Overlap Gate: if another workflow owns the work, use context-extension only to carry compact state between phases.
+- Default to no artifact when the owning workflow already preserves enough state for continuation.
 - If other tool wrappers need stronger automatic behavior later, mirror the trigger language from `AGENTS.md` and `Docs/DEVELOPMENT/Claude_Code_Skills.md` instead of adding a second workflow.
 
 **Learnings:** Appended to `Role_Learnings.md`? **Yes** — added an LLM Expert learning about dual-installed skills needing one canonical repo source plus mirrored user-level trigger copies and validation.

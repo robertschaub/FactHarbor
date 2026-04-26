@@ -273,6 +273,8 @@ Context Extension is a transport layer for working memory, not the owner of the 
 
 Efficiency rule: write one compact active artifact per task only at phase boundaries, delegation points, subagent returns, pause/compaction, or explicit user request. If the artifact would be more expensive than rereading the source, do not write it.
 
+Suppression rule: do not create a context-extension artifact when the owning workflow's final output, required handoff, `Agent_Outputs.md` entry, or subagent return already preserves the needed state with enough fidelity for continuation.
+
 ### Discovery and authority
 
 | Tool surface | Trigger mechanism | Canonical source |
