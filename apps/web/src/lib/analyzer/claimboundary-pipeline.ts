@@ -1128,41 +1128,41 @@ export async function runClaimBoundaryAnalysis(
       }
     }
 
-    // Fix 3: Post-extraction applicability assessment (safety net for jurisdiction contamination)
-    if (initialPipelineConfig.applicabilityFilterEnabled ?? true) {
-      checkAbortSignal(input.jobId);
-      onEvent("Assessing evidence applicability...", 58);
-      onEvent(`LLM call: evidence applicability — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
-      const beforeApplicability = state.evidenceItems.length;
-      const assessed = await assessEvidenceApplicability(
+    // Fix 3: Post-extraction applicability assessment and claim mapping.
+    // Claim mapping is quality-critical and must still run when applicability filtering is disabled.
+    checkAbortSignal(input.jobId);
+    onEvent("Assessing evidence applicability and claim mapping...", 58);
+    onEvent(`LLM call: evidence applicability and claim mapping — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
+    const beforeApplicability = state.evidenceItems.length;
+    const assessed = await assessEvidenceApplicability(
+      understanding.atomicClaims,
+      state.evidenceItems,
+      understanding.inferredGeography ?? null,
+      initialPipelineConfig,
+      getClaimsRelevantGeographies(
         understanding.atomicClaims,
-        state.evidenceItems,
         understanding.inferredGeography ?? null,
-        initialPipelineConfig,
-        getClaimsRelevantGeographies(
-          understanding.atomicClaims,
-          understanding.inferredGeography ?? null,
-        ),
+      ),
+    );
+    const shouldFilterApplicability = initialPipelineConfig.applicabilityFilterEnabled ?? true;
+    const removedItems = shouldFilterApplicability
+      ? assessed.filter((item) => item.applicability === "foreign_reaction")
+      : [];
+    recordApplicabilityRemovalTelemetry(state, removedItems);
+    state.evidenceItems = shouldFilterApplicability
+      ? assessed.filter((item) => item.applicability !== "foreign_reaction")
+      : assessed;
+    const removedCount = beforeApplicability - state.evidenceItems.length;
+    if (removedCount > 0) {
+      console.info(
+        `[Fix3] Removed ${removedCount} foreign_reaction evidence items (${beforeApplicability} → ${state.evidenceItems.length})`
       );
-      const removedItems = assessed.filter(
-        (item) => item.applicability === "foreign_reaction"
-      );
-      recordApplicabilityRemovalTelemetry(state, removedItems);
-      state.evidenceItems = assessed.filter(
-        (item) => item.applicability !== "foreign_reaction"
-      );
-      const removedCount = beforeApplicability - state.evidenceItems.length;
-      if (removedCount > 0) {
-        console.info(
-          `[Fix3] Removed ${removedCount} foreign_reaction evidence items (${beforeApplicability} → ${state.evidenceItems.length})`
-        );
-        state.warnings.push({
-          type: "evidence_applicability_filter" as const,
-          severity: "info" as const,
-          message: `Applicability filter removed ${removedCount} foreign-jurisdiction evidence items.`,
-          details: { removedCount, beforeCount: beforeApplicability, afterCount: state.evidenceItems.length },
-        });
-      }
+      state.warnings.push({
+        type: "evidence_applicability_filter" as const,
+        severity: "info" as const,
+        message: `Applicability filter removed ${removedCount} foreign-jurisdiction evidence items.`,
+        details: { removedCount, beforeCount: beforeApplicability, afterCount: state.evidenceItems.length },
+      });
     }
 
     // Stage 3: Cluster Boundaries

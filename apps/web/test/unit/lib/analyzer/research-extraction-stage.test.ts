@@ -3,6 +3,7 @@ import {
   classifyRelevance,
   extractResearchEvidence,
   assessEvidenceApplicability,
+  ApplicabilityAssessmentOutputSchema,
   assessScopeQuality,
   assessEvidenceBalance,
   applyPerSourceCap,
@@ -734,6 +735,19 @@ describe("Research Extraction Stage", () => {
   describe("assessEvidenceApplicability", () => {
     const mockConfig = {} as any;
 
+    it("should require relevantClaimIds in structured applicability output", () => {
+      expect(() => ApplicabilityAssessmentOutputSchema.parse({
+        assessments: [
+          { evidenceIndex: 0, applicability: "direct", reasoning: "missing mapping" },
+        ],
+      })).toThrow();
+      expect(ApplicabilityAssessmentOutputSchema.parse({
+        assessments: [
+          { evidenceIndex: 0, applicability: "direct", relevantClaimIds: [], reasoning: "explicitly unmapped" },
+        ],
+      }).assessments[0].relevantClaimIds).toEqual([]);
+    });
+
     it("should classify evidence and populate applicability field", async () => {
       const claims = [createClaim({ statement: "Country A courts followed due process" })];
       const evidence = [
@@ -746,9 +760,9 @@ describe("Research Extraction Stage", () => {
       mockGenerateText.mockResolvedValue({ text: "" } as any);
       mockExtractOutput.mockReturnValue({
         assessments: [
-          { evidenceIndex: 0, applicability: "direct", reasoning: "domestic court ruling" },
-          { evidenceIndex: 1, applicability: "foreign_reaction", reasoning: "foreign sanctions" },
-          { evidenceIndex: 2, applicability: "contextual", reasoning: "international NGO" },
+          { evidenceIndex: 0, applicability: "direct", relevantClaimIds: ["AC_01"], reasoning: "domestic court ruling" },
+          { evidenceIndex: 1, applicability: "foreign_reaction", relevantClaimIds: [], reasoning: "foreign sanctions" },
+          { evidenceIndex: 2, applicability: "contextual", relevantClaimIds: [], reasoning: "international NGO" },
         ],
       });
 
@@ -809,26 +823,51 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("should skip assessment when inferredGeography is null", async () => {
-      const claims = [createClaim({ statement: "Generic claim" })];
-      const evidence = [createEvidence({ id: "EV_01" })];
+    it("should still run claim mapping when inferredGeography is null without applying applicability", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Generic side claim" }),
+        createClaim({ id: "AC_02", statement: "Generic comparison claim" }),
+      ];
+      const evidence = [createEvidence({ id: "EV_01", relevantClaimIds: ["AC_01"] })];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          { evidenceIndex: 0, applicability: "direct", relevantClaimIds: ["AC_01", "AC_02"], reasoning: "side evidence" },
+        ],
+      });
 
       const result = await assessEvidenceApplicability(claims, evidence, null, mockConfig);
 
       expect(result).toHaveLength(1);
       expect(result[0].applicability).toBeUndefined();
-      expect(mockGenerateText).not.toHaveBeenCalled();
+      expect(result[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+      expect(mockGenerateText).toHaveBeenCalledTimes(1);
     });
 
-    it("should skip assessment when applicabilityFilterEnabled is false", async () => {
-      const claims = [createClaim({ statement: "Test" })];
-      const evidence = [createEvidence({ id: "EV_01" })];
+    it("should still run claim mapping when applicabilityFilterEnabled is false without applying applicability", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Side claim" }),
+        createClaim({ id: "AC_02", statement: "Comparison claim" }),
+      ];
+      const evidence = [createEvidence({ id: "EV_01", relevantClaimIds: ["AC_01"] })];
       const disabledConfig = { applicabilityFilterEnabled: false } as any;
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          { evidenceIndex: 0, applicability: "foreign_reaction", relevantClaimIds: ["AC_01", "AC_02"], reasoning: "mapping still runs" },
+        ],
+      });
 
       const result = await assessEvidenceApplicability(claims, evidence, "BR", disabledConfig);
 
       expect(result).toHaveLength(1);
-      expect(mockGenerateText).not.toHaveBeenCalled();
+      expect(result[0].applicability).toBeUndefined();
+      expect(result[0].relevantClaimIds).toEqual(["AC_01", "AC_02"]);
+      expect(mockGenerateText).toHaveBeenCalledTimes(1);
     });
 
     it("should default unclassified items to 'direct' (fail-open for missing indices)", async () => {
@@ -843,7 +882,7 @@ describe("Research Extraction Stage", () => {
       // LLM only returns assessment for index 0
       mockExtractOutput.mockReturnValue({
         assessments: [
-          { evidenceIndex: 0, applicability: "contextual", reasoning: "external observer" },
+          { evidenceIndex: 0, applicability: "contextual", relevantClaimIds: [], reasoning: "external observer" },
         ],
       });
 
@@ -892,7 +931,7 @@ describe("Research Extraction Stage", () => {
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockResolvedValue({ text: "" } as any);
       mockExtractOutput.mockReturnValue({
-        assessments: [{ evidenceIndex: 0, applicability: "direct", reasoning: "ok" }],
+        assessments: [{ evidenceIndex: 0, applicability: "direct", relevantClaimIds: [], reasoning: "ok" }],
       });
 
       await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
@@ -934,7 +973,7 @@ describe("Research Extraction Stage", () => {
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockResolvedValue({ text: "" } as any);
       mockExtractOutput.mockReturnValue({
-        assessments: [{ evidenceIndex: 0, applicability: "contextual", reasoning: "comparative evidence" }],
+        assessments: [{ evidenceIndex: 0, applicability: "contextual", relevantClaimIds: [], reasoning: "comparative evidence" }],
       });
 
       await assessEvidenceApplicability(claims, evidence, "CH", mockConfig, ["CH", "DE"]);

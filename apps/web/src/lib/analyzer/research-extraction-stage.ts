@@ -68,7 +68,7 @@ export const ApplicabilityAssessmentOutputSchema = z.object({
   assessments: z.array(z.object({
     evidenceIndex: z.number(),
     applicability: z.enum(["direct", "contextual", "foreign_reaction"]).catch("direct"),
-    relevantClaimIds: z.array(z.string()).optional(),
+    relevantClaimIds: z.array(z.string()),
     reasoning: z.string(),
   })),
 });
@@ -448,11 +448,13 @@ export async function extractResearchEvidence(
 }
 
 /**
- * Fix 3: Post-extraction applicability assessment — safety net for jurisdiction contamination.
+ * Fix 3: Post-extraction applicability assessment and claim mapping.
  *
  * Batches all evidence items into a single Haiku-tier LLM call to classify each item
- * as "direct", "contextual", or "foreign_reaction". Items classified as "foreign_reaction"
- * are filtered out by the caller.
+ * as "direct", "contextual", or "foreign_reaction", and to fill missing claim mappings
+ * when evidence gathered for one claim also materially verifies a companion claim.
+ * Items classified as "foreign_reaction" are filtered out by the caller only when the
+ * applicability filter is enabled.
  *
  * Called between research completion and clusterBoundaries() in the main pipeline.
  *
@@ -473,10 +475,9 @@ export async function assessEvidenceApplicability(
     relevantGeographies,
     inferredGeography,
   );
-  // Skip if no geography or disabled
-  if (normalizedRelevantGeographies.length === 0 || !(pipelineConfig.applicabilityFilterEnabled ?? true)) {
-    return evidenceItems;
-  }
+  const shouldApplyApplicability =
+    normalizedRelevantGeographies.length > 0 &&
+    (pipelineConfig.applicabilityFilterEnabled ?? true);
 
   // Skip if no evidence
   if (evidenceItems.length === 0) {
@@ -526,7 +527,7 @@ export async function assessEvidenceApplicability(
           content: rendered.content,
           providerOptions: getPromptCachingOptions(model.provider),
         },
-        { role: "user", content: "Classify each evidence item by applicability." },
+        { role: "user", content: "Classify each evidence item by applicability and claim relevance." },
       ],
       temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
       output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
@@ -559,7 +560,7 @@ export async function assessEvidenceApplicability(
     const claimMappingAdditions = new Map<number, string[]>();
     for (const assessment of validated.assessments) {
       classificationMap.set(assessment.evidenceIndex, assessment.applicability);
-      const validClaimIds = (assessment.relevantClaimIds ?? []).filter((claimId) =>
+      const validClaimIds = assessment.relevantClaimIds.filter((claimId) =>
         knownClaimIds.has(claimId),
       );
       if (validClaimIds.length > 0) {
@@ -585,7 +586,7 @@ export async function assessEvidenceApplicability(
       if (relevantClaimIds.length > existingClaimIds.length) {
         claimMappingExtensions++;
       }
-      const assessedItem = { ...item, applicability };
+      const assessedItem = shouldApplyApplicability ? { ...item, applicability } : item;
       return relevantClaimIds.length > 0
         ? { ...assessedItem, relevantClaimIds }
         : assessedItem;
@@ -597,6 +598,7 @@ export async function assessEvidenceApplicability(
     debugLogFileOnly(
       `[Fix3] Applicability assessment: ${counts.direct} direct, ${counts.contextual} contextual, ` +
       `${counts.foreign_reaction} foreign_reaction, ${counts.unclassified} unclassified (defaulted to direct). ` +
+      `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
