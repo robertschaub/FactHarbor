@@ -740,5 +740,6 @@ Before marking any task complete:
 
 ---
 
-**Document Maintainer:** Lead Architect
-**Last Reviewed:** 2026-03-23
+**Document Owner:** Robert Schaub (Captain)
+**Document Maintainer:** Agents Supervisor
+**Last Reviewed:** 2026-04-26

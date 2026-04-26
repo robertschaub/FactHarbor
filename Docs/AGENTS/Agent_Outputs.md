@@ -2188,3 +2188,23 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ---
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Skill Selection Routing Docs Sync -- [Standard] [open-items: no]
 **For next agent:** Skill routing guidance is intentionally docs-only: no `skill-user` or `skill-selection` meta-skill was added. `AGENTS.md` now defines the canonical selection order, and related Claude/Gemini/shared skill docs mirror it: mandatory gates, explicit assignment, `fhAgentKnowledge.preflight_task` for role-activated or ambiguous tasks, then metadata/table matching. Overlapping workflows rely on their own scope guards.
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Readiness Challenge -- [Standard] [open-items: yes]
+**For next agent:** The ACE readiness review is directionally useful but overstates several claims: all five original skill amendments are applied, its D3 Full Path example is a new recommendation, the "zero debt-guard output" claim is false but compliance telemetry is still weak, the 44% dead-weight audit is not reproducible enough to act on, and several literature attributions are overextended, especially MAST 79%, "attractive nuisance", and Agent Evaluator priority.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Readiness_Challenge.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Re-Audit Consolidation -- [Significant] [open-items: yes]
+**For next agent:** Use `Docs/WIP/2026-04-26_ACE_Governance_Reaudit_Consolidated.md` as the operative baseline. Debate verdict is `MODIFY`: cleanup is justified, but first do factual stabilization, ownership clarification, passive governance/debt-guard telemetry, and a reproducible `Multi_Agent_Collaboration_Rules.md` audit before restructure/archive/delete work.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Reaudit_Consolidation.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Stabilization Decisions -- [Significant] [open-items: yes]
+**For next agent:** Captain accepted the GPT re-audit corrections. The original ACE review now has a supersession banner; the consolidated re-audit records resolved decisions; `Multi_Agent_Collaboration_Rules.md` names Captain as owner and Agents Supervisor as maintainer; debt-guard telemetry starts by passively parsing existing `DEBT-GUARD RESULT` / `DEBT-GUARD COMPACT RESULT` blocks in `scripts/build-index.mjs`. Regenerate `handoff-index.json` only from a clean/intentional handoff set.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Stabilization_Decisions.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | ACE Governance Implementation Plan -- [Significant] [open-items: yes]
+**For next agent:** `Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md` is the execution plan for the accepted re-audit corrections. It preserves the staged path: commit stabilization baseline, rebuild passive debt-guard telemetry index from a clean/intentional handoff set, then produce a reproducible `Multi_Agent_Collaboration_Rules.md` audit before any restructure or Agent Evaluator work.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_ACE_Governance_Implementation_Plan.md

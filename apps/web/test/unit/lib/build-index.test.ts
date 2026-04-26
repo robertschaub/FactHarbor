@@ -56,4 +56,68 @@ describe("parseHandoff", () => {
     expect(parsed.roles).toEqual(["senior_developer", "devops_expert"]);
     expect(parsed.topics).toEqual(["runner", "admin", "reads", "for", "hidden", "jobs"]);
   });
+
+  it("extracts debt-guard result blocks as passive governance telemetry", async () => {
+    const { parseHandoff } = await loadBuildIndexModule();
+    const content = [
+      "---",
+      "roles: [senior_developer]",
+      "topics: [bugfix, debt_guard]",
+      "---",
+      "# Focused Bugfix",
+      "",
+      "```",
+      "DEBT-GUARD RESULT",
+      "Classification: incomplete-existing-mechanism",
+      "Chosen option: amend",
+      "Net mechanism count: unchanged",
+      "Verification: safe-local / npm -w apps/web test -- build-index.test.ts",
+      "```",
+    ].join("\n");
+
+    const parsed = parseHandoff("2026-04-26_Senior_Developer_Focused_Bugfix.md", content);
+
+    expect(parsed.governance?.debt_guard).toEqual({
+      present: true,
+      result_type: "full_result",
+      block_header: "DEBT-GUARD RESULT",
+      fields: {
+        classification: "incomplete-existing-mechanism",
+        chosen_option: "amend",
+        net_mechanism_count: "unchanged",
+        verification: "safe-local / npm -w apps/web test -- build-index.test.ts",
+      },
+    });
+  });
+
+  it("prefers final debt-guard result telemetry over pre-edit compact blocks", async () => {
+    const { parseHandoff } = await loadBuildIndexModule();
+    const content = [
+      "# Compact Bugfix",
+      "",
+      "```",
+      "COMPACT DEBT-GUARD",
+      "Path: Compact",
+      "Verifier: safe-local",
+      "```",
+      "",
+      "```",
+      "DEBT-GUARD COMPACT RESULT",
+      "Chosen option: amend",
+      "Net mechanism count: unchanged",
+      "Verification: safe-local / npm -w apps/web test -- build-index.test.ts",
+      "Residual debt: none",
+      "```",
+    ].join("\n");
+
+    const parsed = parseHandoff("2026-04-26_Senior_Developer_Compact_Bugfix.md", content);
+
+    expect(parsed.governance?.debt_guard.result_type).toBe("compact_result");
+    expect(parsed.governance?.debt_guard.fields).toEqual({
+      chosen_option: "amend",
+      net_mechanism_count: "unchanged",
+      verification: "safe-local / npm -w apps/web test -- build-index.test.ts",
+      residual_debt: "none",
+    });
+  });
 });

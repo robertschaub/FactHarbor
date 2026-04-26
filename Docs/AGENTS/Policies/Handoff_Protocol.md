@@ -129,6 +129,7 @@ Field requirements by mode:
   → Docs/AGENTS/Handoffs/<filename>.md
   ```
 - **Lifecycle:** Consumed by the next agent. Handoff files and their index rows are archived together on the 1st of each month (see §Archival Thresholds). NOT long-lived design docs (those go in `Docs/WIP/`).
+- **Debt-guard telemetry:** For bugfix, regression, failing-test/build, runtime-defect, or failed-validation tasks where `/debt-guard` applies, include the Phase 7 fenced result block (`DEBT-GUARD RESULT` or `DEBT-GUARD COMPACT RESULT`) in the handoff body. The handoff index parses these blocks passively for compliance visibility; absence should not become a failing gate until telemetry quality has been reviewed.
 
 #### Role Handoff — incoming role checklist
 

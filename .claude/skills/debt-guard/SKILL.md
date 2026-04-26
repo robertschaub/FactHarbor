@@ -364,7 +364,7 @@ Treat the Reconciler's decision as the default recommendation, but the active ag
 
 ## Phase 7 - Output
 
-For implementation work, include this in the final response or handoff:
+For implementation work, include this in the final response and in any handoff written for the task so the handoff index can parse passive compliance telemetry:
 
 ```
 DEBT-GUARD RESULT
@@ -380,7 +380,7 @@ Debt accepted and removal trigger:
 Residual debt:
 ```
 
-For Compact Path fixes, the final response may be compact:
+For Compact Path fixes, the final response and handoff block may be compact:
 
 ```
 DEBT-GUARD COMPACT RESULT

@@ -214,6 +214,60 @@ function parseRoleList(rawRoles) {
   )];
 }
 
+const DEBT_GUARD_BLOCK_RE = /```[^\n]*\r?\n\s*(DEBT-GUARD RESULT|DEBT-GUARD COMPACT RESULT|COMPACT DEBT-GUARD)\s*\r?\n([\s\S]*?)```/gi;
+
+function normalizeFieldKey(label) {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function parseLabelValueFields(blockBody) {
+  const fields = {};
+
+  for (const line of blockBody.split(/\r?\n/)) {
+    const match = line.match(/^\s*([^:\n]+):\s*(.*)$/);
+    if (!match) continue;
+
+    const key = normalizeFieldKey(match[1]);
+    if (!key || Object.hasOwn(fields, key)) continue;
+    fields[key] = match[2].trim();
+  }
+
+  return fields;
+}
+
+function parseDebtGuardTelemetry(content) {
+  const matches = [...content.matchAll(DEBT_GUARD_BLOCK_RE)];
+  if (matches.length === 0) return null;
+
+  const match = matches.sort((a, b) =>
+    debtGuardBlockPriority(a[1]) - debtGuardBlockPriority(b[1])
+  )[0];
+  const blockHeader = match[1].toUpperCase();
+  const resultType = blockHeader === 'DEBT-GUARD RESULT'
+    ? 'full_result'
+    : blockHeader === 'DEBT-GUARD COMPACT RESULT'
+      ? 'compact_result'
+      : 'compact_pre_edit';
+
+  return {
+    present: true,
+    result_type: resultType,
+    block_header: blockHeader,
+    fields: parseLabelValueFields(match[2]),
+  };
+}
+
+function debtGuardBlockPriority(header) {
+  const normalized = header.toUpperCase();
+  if (normalized === 'DEBT-GUARD RESULT') return 0;
+  if (normalized === 'DEBT-GUARD COMPACT RESULT') return 1;
+  return 2;
+}
+
 const ROLE_VARIANTS = (() => {
   const variants = new Map();
 
@@ -368,7 +422,15 @@ export function parseHandoff(file, content) {
     }
   }
 
-  return { file, date, roles, topics, files_touched, summary };
+  const parsed = { file, date, roles, topics, files_touched, summary };
+  const debtGuardTelemetry = parseDebtGuardTelemetry(content);
+  if (debtGuardTelemetry) {
+    parsed.governance = {
+      debt_guard: debtGuardTelemetry,
+    };
+  }
+
+  return parsed;
 }
 
 function buildHandoffIndex() {
