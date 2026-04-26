@@ -131,12 +131,14 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Validation-Summary Compliance");
       expect(section).toContain("must directly satisfy its corrected claim shape and failure reasons");
       expect(section).toContain("repair the relevant `statement`, `expectedEvidenceProfile`, and `freshnessRequirement` fields together");
+      expect(section).toContain("not a license to violate the original input's comparison orientation");
       expect(section).toContain("Comparison-Side Repair Fidelity");
       expect(section).toContain("named/current-side proposition from a comparison");
       expect(section).toContain("remaining comparison or parity proposition");
       expect(section).toContain("Preserve the original comparison operator, approximation strength, and comparison orientation");
       expect(section).toContain("comparison orientation wherever possible");
       expect(section).toContain("attaching the named/current-side number as though it were the comparator/reference value");
+      expect(section).toContain("Do not treat an inverted repair target from the validation summary as permission to invert the input");
       expect(section).toContain("do not repair by copying the named/current-side numeric anchor onto the comparator/reference side");
       expect(section).toContain("Keep the approximation as a relation");
       expect(section).toContain("neutral anaphoric reference");
@@ -575,6 +577,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("When this rule fails a side-plus-relation triplet");
       expect(contract).toContain("Do NOT recommend or require a third separate whole-relation claim");
       expect(contract).toContain("describe the corrected two-claim shape");
+      expect(contract).toContain("the corrective summary must preserve that orientation");
+      expect(contract).toContain("unless the input itself used that orientation");
       expect(contract).toContain("do not list side A, standalone side B, and a separate A-vs-B relation as the target retry shape");
       expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
