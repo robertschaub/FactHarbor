@@ -789,7 +789,10 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       expect(section).toContain("Because one evidence item has only one `claimDirection`");
       expect(section).toContain("list multiple claim IDs on a shared item only when that same direction is valid for every listed claim");
-      expect(section).toContain("emit a separate `contextual` evidence item scoped to that companion claim");
+      expect(section).toContain("emit a separate evidence item scoped to that companion claim");
+      expect(section).toContain("assign the companion's own direction");
+      expect(section).toContain("supports or refutes that claim's required side, component, route, or asserted relation");
+      expect(section).toContain("Use `contextual` only when the companion evidence is genuinely non-directional background");
     });
 
     it("comparator guidance classifies historical precedent as contextual by default", () => {
