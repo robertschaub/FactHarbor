@@ -648,5 +648,18 @@ describe("Stage-1 prompt contract", () => {
       expect(queries).toContain("If a quantitative comparison side is represented mainly by source inventories");
       expect(queries).toContain("pivot the next queries toward concise quantitative syntheses");
     });
+
+    it("keeps source-existence meta evidence contextual when no decisive value is published", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).not.toBeNull();
+      expect(section).toContain("Quantified findings outrank generic meta-evidence");
+      expect(section).toContain("extract the quantitative finding as the primary evidence item");
+      expect(section).toContain("needs a substantive value, finding, event/outcome, rule outcome, or measured condition");
+      expect(section).toContain("without publishing that decisive content");
+      expect(section).toContain("classify that meta-evidence as `contextual`");
+      expect(section).toContain("Do not mark source-existence evidence as directional");
+      expect(section).toContain("This does NOT demote source-native inventories");
+      expect(section).toContain("when the claim itself is about their existence, structure, scope, methodology, or availability");
+    });
   });
 });
