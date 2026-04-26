@@ -810,7 +810,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("treat `expectedEvidenceProfile` as part of the claim context");
       expect(section).toContain("source-native measurement route");
       expect(section).toContain("Preserve the metric class in `evidenceScope`");
-      expect(section).toContain("mismatch caveat rather than treating it as automatically decisive");
+      expect(section).toContain("Do not relabel a period/window total or cumulative-through-period value as an endpoint/timepoint stock value");
+      expect(section).toContain("When the claim/profile route requires an endpoint or standing stock");
+      expect(section).toContain("keep period/window or cumulative values `contextual` unless the claim/profile explicitly accepts that metric class");
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");
       expect(section).toContain("classify the evidence as `supports` or `contradicts` when the numeric relationship is clear");
       expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied");
