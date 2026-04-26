@@ -146,7 +146,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("does not independently reassert that side's factual truth");
       expect(section).toContain("source-native route when available");
       expect(section).toContain("set the repaired claim's `freshnessRequirement`");
-      expect(section).toContain("A ratio or approximation metric alone is not enough");
+      expect(section).toContain("A ratio, approximation metric");
+      expect(section).toContain("side-specific metric label, or numeric target alone is not enough");
       expect(section).toContain("side-specific source family or measurement route");
       expect(section).toContain("even when the comparator/reference route is historical");
       expect(section).toContain("Side-Plus-Relation Triplet Repair");
@@ -240,6 +241,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Fall back to the base validator behavior");
       expect(section).toContain("Binding mode does not relax comparison-companion metadata rules");
       expect(section).toContain("a sibling claim that isolates that side is not enough");
+      expect(section).toContain("metric label, number, ratio target, or comparison target");
       expect(section).toContain("statement-atomicity reasons only");
     });
   });
@@ -583,6 +585,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("When a thesis-direct comparison companion mentions, quotes, or compactly references a current");
       expect(contract).toContain("Do NOT approve a historical-only or comparator-only profile");
       expect(contract).toContain("does not count as the current/present side route");
+      expect(contract).toContain("A side-specific metric label, number, or comparison target");
+      expect(contract).toContain("publisher family, or evidence source family");
       expect(contract).toContain("source-native route or source family needed to retrieve and cite evidence");
       expect(contract).toContain("the companion's freshness contract follows the freshest side needed for evidence");
       expect(contract).toContain("profile omits the route needed to retrieve and cite evidence for that side");
