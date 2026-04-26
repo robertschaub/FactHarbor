@@ -500,13 +500,13 @@ export async function extractClaims(
         const retryPass2StartedAt = Date.now();
         let retryPass2;
         try {
-          // Contract-correction retries must repair claim-text fidelity without
-          // stripping evidence-profile context. The prompt and re-validation
-          // guard statements against evidence leakage, while preliminary
-          // evidence remains necessary for source-native routes and metrics.
+          // Contract-correction retries must repair fidelity to the input.
+          // Reusing preliminary evidence here has caused evidence-specific
+          // dates/titles to leak into claim statements while input anchors were
+          // dropped. Stage 2 can still enrich evidence profiles after Stage 1.
           retryPass2 = await runPass2(
             state.originalInput,
-            preliminaryEvidence,
+            [],
             pipelineConfig,
             currentDate,
             state,
