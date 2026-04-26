@@ -2223,3 +2223,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Index GeneratedAt Stability -- [Standard] [open-items: yes]
 **For next agent:** `scripts/build-index.mjs` now skips generated index rewrites when only top-level `generatedAt` changes, so post-commit tracked-only handoff indexing should stop dirtying `Docs/AGENTS/index/handoff-index.json` with timestamp-only churn. Continue ACE governance work from `Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md`.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Index_GeneratedAt_Stability.md
+
+---
+### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Collaboration Rules Restructure Proposal -- [Standard] [open-items: yes]
+**For next agent:** Phase 3 is now a proposal only: `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` gives a slice-by-slice approval matrix for shrinking `Multi_Agent_Collaboration_Rules.md` into a routing doc while preserving hub-and-spoke and WIP templates as procedures. Do not edit the rules file until Captain approves slices.
+→ Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Collaboration_Rules_Restructure_Proposal.md

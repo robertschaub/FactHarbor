@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T19:04:44.452Z",
-  "count": 380,
+  "generatedAt": "2026-04-26T19:07:24.513Z",
+  "count": 381,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -7806,6 +7806,24 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "If revising the ACE review, correct D3 scope, soften or re-source the \"attractive nuisance\" framing, replace the unsupported 79% MAST claim, and make the governance dead-weight audit reproducible before acting on the 44% cleanup number."
+    },
+    {
+      "file": "2026-04-26_Agents_Supervisor_Collaboration_Rules_Restructure_Proposal.md",
+      "date": "2026-04-26",
+      "roles": [
+        "agents_supervisor"
+      ],
+      "topics": [
+        "ace_governance",
+        "collaboration_rules",
+        "restructure_proposal"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md",
+        "Docs/WIP/2026-04-26_ACE_Governance_Implementation_Plan.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Use `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` as the approval matrix. Do not edit `Multi_Agent_Collaboration_Rules.md` until Captain decides which slices are approved."
     },
     {
       "file": "2026-04-26_Agents_Supervisor_Context_Extension_Skill.md",

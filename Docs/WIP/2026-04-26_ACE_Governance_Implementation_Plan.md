@@ -53,6 +53,7 @@ Implementation progress:
 - Phase 1 implemented a tracked-only handoff-index mode, regenerated `handoff-index.json` without unrelated untracked handoffs, and updated the post-commit hook to use tracked-only handoff indexing.
 - Follow-up stabilization keeps generated indexes from being rewritten when only top-level `generatedAt` changes, preventing post-commit timestamp churn after tracked-only regeneration.
 - Phase 2 produced `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md`.
+- Phase 3 produced `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` for Captain review.
 
 ## Implementation Sequence
 
@@ -132,6 +133,8 @@ Acceptance criteria:
 - Captain can approve, reject, or modify each section movement independently.
 - No section is moved before approval unless it is clearly metadata-only.
 
+Status: proposal created at `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md`. No restructure edits have been made to `Multi_Agent_Collaboration_Rules.md`; Captain approval is still required before Phase 4.
+
 ### Phase 4 - Approved Rules Edit
 
 Goal: perform the approved restructure with minimal behavior drift.
@@ -177,7 +180,7 @@ Acceptance criteria:
 
 ## Open Decisions
 
-Captain review is needed before Phase 3 restructure proposal becomes an edit plan. Phase 1 no longer requires cleaning unrelated untracked files when `--tracked-only` is used. Post-commit uses tracked-only indexing; PostToolUse hook-time indexing still scans the filesystem for immediate local discoverability.
+Captain review is needed before the Phase 3 restructure proposal becomes a Phase 4 edit. Phase 1 no longer requires cleaning unrelated untracked files when `--tracked-only` is used. Post-commit uses tracked-only indexing; PostToolUse hook-time indexing still scans the filesystem for immediate local discoverability.
 
 ## Done Criteria
 
