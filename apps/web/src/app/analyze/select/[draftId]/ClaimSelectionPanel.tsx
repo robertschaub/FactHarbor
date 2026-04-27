@@ -12,6 +12,7 @@ type ClaimSelectionPanelProps = {
   claims: AtomicClaim[];
   assessmentsByClaimId: AssessmentMap;
   recommendedClaimIds: Set<string>;
+  deferredClaimIds: Set<string>;
   selectedClaimIds: Set<string>;
   selectionDisabled?: boolean;
   selectionLimitReached?: boolean;
@@ -52,6 +53,7 @@ export function ClaimSelectionPanel({
   claims,
   assessmentsByClaimId,
   recommendedClaimIds,
+  deferredClaimIds,
   selectedClaimIds,
   selectionDisabled = false,
   selectionLimitReached = false,
@@ -62,6 +64,7 @@ export function ClaimSelectionPanel({
       {claims.map((claim, index) => {
         const assessment = assessmentsByClaimId[claim.id];
         const isRecommended = recommendedClaimIds.has(claim.id);
+        const isDeferred = deferredClaimIds.has(claim.id);
         const isSelected = selectedClaimIds.has(claim.id);
         const disableCheckbox = selectionDisabled || (!isSelected && selectionLimitReached);
 
@@ -84,6 +87,7 @@ export function ClaimSelectionPanel({
                   <span className={styles.claimRank}>#{index + 1}</span>
                   <span className={styles.claimId}>{claim.id}</span>
                   {isRecommended && <span className={styles.recommendedBadge}>Recommended</span>}
+                  {isDeferred && <span className={styles.deferredBadge}>Deferred</span>}
                   {assessment && (
                     <span className={`${styles.triageBadge} ${triageBadgeClass(assessment.triageLabel)}`}>
                       {formatTriageLabel(assessment.triageLabel)}
@@ -118,6 +122,11 @@ export function ClaimSelectionPanel({
 
             {assessment?.recommendationRationale && (
               <div className={styles.claimRationale}>{assessment.recommendationRationale}</div>
+            )}
+            {assessment?.budgetTreatmentRationale && (
+              <div className={styles.claimRationale}>
+                Budget treatment: {assessment.budgetTreatmentRationale}
+              </div>
             )}
           </label>
         );

@@ -1,15 +1,47 @@
 export const CLAIM_SELECTION_MODE_VALUES = ["interactive", "automatic"] as const;
 export type ClaimSelectionMode = (typeof CLAIM_SELECTION_MODE_VALUES)[number];
 
+export const CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES = [
+  "off",
+  "explain_only",
+  "allow_fewer_recommendations",
+] as const;
+export type ClaimSelectionBudgetFitMode = (typeof CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES)[number];
+
 export const CLAIM_SELECTION_ABSOLUTE_MAX = 5;
 export const CLAIM_SELECTION_DEFAULT_CAP = 5;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS = 3600000;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_MAX_MS = 3600000;
+export const CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED = false;
+export const CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE: ClaimSelectionBudgetFitMode = "off";
+export const CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT = 1;
 
 export function normalizeClaimSelectionMode(
   configuredMode: string | null | undefined,
 ): ClaimSelectionMode {
   return configuredMode === "automatic" ? "automatic" : "interactive";
+}
+
+export function normalizeClaimSelectionBudgetFitMode(
+  configuredMode: string | null | undefined,
+): ClaimSelectionBudgetFitMode {
+  return CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES.includes(configuredMode as ClaimSelectionBudgetFitMode)
+    ? (configuredMode as ClaimSelectionBudgetFitMode)
+    : CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE;
+}
+
+export function normalizeClaimSelectionMinRecommendedClaims(
+  configuredMin: number | null | undefined,
+): number {
+  if (!Number.isFinite(configuredMin)) {
+    return CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT;
+  }
+
+  const normalizedMin = configuredMin as number;
+  return Math.max(
+    1,
+    Math.min(CLAIM_SELECTION_ABSOLUTE_MAX, Math.trunc(normalizedMin)),
+  );
 }
 
 export function normalizeClaimSelectionCap(

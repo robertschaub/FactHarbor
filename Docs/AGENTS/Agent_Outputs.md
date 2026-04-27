@@ -2419,3 +2419,9 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** Consolidated the LLM Expert and Senior Developer reviews into an implementation contract. Decision: stop source reuse for now, proceed with budget-aware ACS design by extending the existing ACS recommendation path. `claimSelectionCap` remains an upper bound; fewer-than-cap recommendations require LLM `budgetFitRationale`, explicit deferred-claim state, persistence through draft/final metadata, and UI/API disclosure. Prompt/config behavior still requires explicit Captain approval before code edits.
 **Warnings:** Do not add a second selector, deterministic semantic filtering, hidden caps, final-runner claim dropping, or global default changes from the single SVP run. Operational UCM mitigation for unattended validation is allowed but must be measured and treated as reversible setup.
 -> Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Budget_Aware_ACS_Slice5_Review_Design.md
+
+---
+### 2026-04-27 | Lead Architect | Codex (GPT-5) | Budget-Aware ACS Phase 5A Implementation -- [Significant] [open-items: yes]
+**For next agent:** Implemented only the debated low-risk Phase 5A subset: default-off UCM fields, optional ACS budget/deferred metadata validation, draft/final-job JSON persistence, and selection/admin disclosure. No prompt behavior was enabled, and no claim-selection cap/default was changed.
+**Warnings:** `npm test` full suite still times out in the existing runner heartbeat integration case, but the same runner test passes in isolation and all touched focused verifiers/builds passed. Phase 5B still needs explicit approval before prompt behavior.
+-> Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Budget_Aware_ACS_Phase5A_Implementation.md

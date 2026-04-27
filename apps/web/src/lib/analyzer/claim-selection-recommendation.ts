@@ -25,8 +25,14 @@ const TRIAGE_LABELS = [
 ] as const;
 
 const LEVEL_LABELS = ["high", "medium", "low"] as const;
+const BUDGET_TREATMENT_LABELS = [
+  "selected",
+  "deferred_budget_limited",
+  "not_recommended",
+] as const;
 const MAX_RECOMMENDATION_RATIONALE_CHARS = 160;
 const MAX_BATCH_RATIONALE_CHARS = 240;
+const MAX_BUDGET_FIT_RATIONALE_CHARS = 240;
 
 const ClaimSelectionRecommendationAssessmentSchema = z.object({
   claimId: z.string(),
@@ -36,11 +42,15 @@ const ClaimSelectionRecommendationAssessmentSchema = z.object({
   coversDistinctRelevantDimension: z.boolean(),
   redundancyWithClaimIds: z.array(z.string()).catch([]),
   recommendationRationale: z.string(),
+  budgetTreatment: z.enum(BUDGET_TREATMENT_LABELS).optional(),
+  budgetTreatmentRationale: z.string().optional(),
 });
 
 export const ClaimSelectionRecommendationOutputSchema = z.object({
   rankedClaimIds: z.array(z.string()),
   recommendedClaimIds: z.array(z.string()),
+  deferredClaimIds: z.array(z.string()).optional(),
+  budgetFitRationale: z.string().optional(),
   assessments: z.array(ClaimSelectionRecommendationAssessmentSchema),
   rationale: z.string(),
 });
@@ -110,6 +120,25 @@ function validateRecommendationAssessment(
     `assessment ${assessment.claimId} recommendationRationale`,
     MAX_RECOMMENDATION_RATIONALE_CHARS,
   );
+  const budgetTreatmentRationale =
+    typeof assessment.budgetTreatmentRationale === "string"
+      ? normalizeBoundedText(
+        assessment.budgetTreatmentRationale,
+        `assessment ${assessment.claimId} budgetTreatmentRationale`,
+        MAX_RECOMMENDATION_RATIONALE_CHARS,
+      )
+      : undefined;
+
+  if (assessment.budgetTreatment && !budgetTreatmentRationale) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      `assessment ${assessment.claimId} budgetTreatment requires budgetTreatmentRationale`,
+    );
+  }
+  if (!assessment.budgetTreatment && budgetTreatmentRationale) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      `assessment ${assessment.claimId} budgetTreatmentRationale requires budgetTreatment`,
+    );
+  }
 
   if (!candidateSet.has(assessment.claimId)) {
     throw new ClaimSelectionRecommendationInvariantError(
@@ -139,6 +168,7 @@ function validateRecommendationAssessment(
   return {
     ...assessment,
     recommendationRationale,
+    budgetTreatmentRationale,
   };
 }
 
@@ -207,13 +237,61 @@ export function validateClaimSelectionRecommendation(
     }
   }
 
+  const deferredClaimIds = Array.isArray(recommendation.deferredClaimIds)
+    ? recommendation.deferredClaimIds
+    : undefined;
+  if (deferredClaimIds) {
+    if (!hasUniqueValues(deferredClaimIds)) {
+      throw new ClaimSelectionRecommendationInvariantError(
+        "deferredClaimIds must be unique",
+      );
+    }
+    const recommendedSet = new Set(recommendation.recommendedClaimIds);
+    for (const claimId of deferredClaimIds) {
+      if (!rankedOrder.has(claimId)) {
+        throw new ClaimSelectionRecommendationInvariantError(
+          `deferred claim ${claimId} is not present in rankedClaimIds`,
+        );
+      }
+      if (recommendedSet.has(claimId)) {
+        throw new ClaimSelectionRecommendationInvariantError(
+          `deferred claim ${claimId} cannot also be recommended`,
+        );
+      }
+    }
+  }
+
+  const deferredClaimIdSet = new Set(deferredClaimIds ?? []);
+  for (const assessment of normalizedAssessments) {
+    if (assessment.budgetTreatment === "deferred_budget_limited" && !deferredClaimIdSet.has(assessment.claimId)) {
+      throw new ClaimSelectionRecommendationInvariantError(
+        `assessment ${assessment.claimId} is budget-deferred but is missing from deferredClaimIds`,
+      );
+    }
+  }
+
   const normalizedRecommendedClaimIds = [...recommendation.recommendedClaimIds].sort(
     (left, right) => (rankedOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (rankedOrder.get(right) ?? Number.MAX_SAFE_INTEGER),
   );
+  const normalizedDeferredClaimIds = deferredClaimIds
+    ? [...deferredClaimIds].sort(
+      (left, right) => (rankedOrder.get(left) ?? Number.MAX_SAFE_INTEGER) - (rankedOrder.get(right) ?? Number.MAX_SAFE_INTEGER),
+    )
+    : undefined;
 
   return {
     rankedClaimIds: [...recommendation.rankedClaimIds],
     recommendedClaimIds: normalizedRecommendedClaimIds,
+    ...(normalizedDeferredClaimIds ? { deferredClaimIds: normalizedDeferredClaimIds } : {}),
+    ...(typeof recommendation.budgetFitRationale === "string"
+      ? {
+        budgetFitRationale: normalizeBoundedText(
+          recommendation.budgetFitRationale,
+          "budgetFitRationale",
+          MAX_BUDGET_FIT_RATIONALE_CHARS,
+        ),
+      }
+      : {}),
     assessments: normalizedAssessments,
     rationale: normalizeBoundedText(
       recommendation.rationale,

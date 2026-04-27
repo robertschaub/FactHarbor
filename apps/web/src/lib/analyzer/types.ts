@@ -816,11 +816,20 @@ export interface ClaimSelectionRecommendationAssessment {
   coversDistinctRelevantDimension: boolean;
   redundancyWithClaimIds: string[];
   recommendationRationale: string;
+  budgetTreatment?: ClaimSelectionBudgetTreatment;
+  budgetTreatmentRationale?: string;
 }
+
+export type ClaimSelectionBudgetTreatment =
+  | "selected"
+  | "deferred_budget_limited"
+  | "not_recommended";
 
 export interface ClaimSelectionRecommendation {
   rankedClaimIds: string[];
   recommendedClaimIds: string[]; // max = effective claim-selection cap
+  deferredClaimIds?: string[];
+  budgetFitRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
   rationale: string;
 }
@@ -873,11 +882,13 @@ export interface ClaimSelectionDraftState {
   selectionIdleAutoProceedMs?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
+  deferredClaimIds?: string[];
   // Persisted last valid selection. Invalid transient UI states must not overwrite this.
   selectedClaimIds: string[];
   // ISO timestamp of the last checkbox interaction considered by the inactivity timer.
   lastSelectionInteractionUtc?: string;
   recommendationRationale?: string;
+  budgetFitRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
   observability?: ClaimSelectionDraftObservability;
   lastError?: {
@@ -914,8 +925,10 @@ export interface ClaimSelectionMetadata {
   selectionCap?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
+  deferredClaimIds?: string[];
   selectedClaimIds: string[];
   recommendationRationale?: string;
+  budgetFitRationale?: string;
   assessments: ClaimSelectionRecommendationAssessment[];
 }
 

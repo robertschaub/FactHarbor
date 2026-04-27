@@ -58,8 +58,10 @@ type DraftState = {
   };
   rankedClaimIds?: string[];
   recommendedClaimIds?: string[];
+  deferredClaimIds?: string[];
   selectedClaimIds?: string[];
   recommendationRationale?: string;
+  budgetFitRationale?: string;
   lastError?: {
     code?: string;
     message?: string;
@@ -160,6 +162,7 @@ export default function AdminPreparationDetailPage() {
   const candidateClaims = draftState?.preparedStage1?.preparedUnderstanding?.atomicClaims ?? [];
   const rankedClaimIds = readStringArray(draftState?.rankedClaimIds);
   const recommendedClaimIds = readStringArray(draftState?.recommendedClaimIds);
+  const deferredClaimIds = readStringArray(draftState?.deferredClaimIds);
   const selectedClaimIds = readStringArray(draftState?.selectedClaimIds);
   const canCancel = draft !== null &&
     draft.finalJobId === null &&
@@ -301,10 +304,14 @@ export default function AdminPreparationDetailPage() {
             <dl className={styles.detailGrid}>
               <div><dt>Ranked</dt><dd>{rankedClaimIds.length ? rankedClaimIds.join(", ") : "None"}</dd></div>
               <div><dt>Recommended</dt><dd>{recommendedClaimIds.length ? recommendedClaimIds.join(", ") : "None"}</dd></div>
+              <div><dt>Deferred</dt><dd>{deferredClaimIds.length ? deferredClaimIds.join(", ") : "None"}</dd></div>
               <div><dt>Selected</dt><dd>{selectedClaimIds.length ? selectedClaimIds.join(", ") : "None"}</dd></div>
             </dl>
             {draftState?.recommendationRationale ? (
               <pre className={styles.textBlock}>{draftState.recommendationRationale}</pre>
+            ) : null}
+            {draftState?.budgetFitRationale ? (
+              <pre className={styles.textBlock}>{draftState.budgetFitRationale}</pre>
             ) : null}
           </section>
 

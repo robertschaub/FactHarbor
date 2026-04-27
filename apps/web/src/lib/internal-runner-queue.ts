@@ -1218,9 +1218,11 @@ async function runDraftPreparationBackground(draftId: string) {
     const buildDraftState = (params: {
       rankedClaimIds: string[];
       recommendedClaimIds: string[];
+      deferredClaimIds?: string[];
       selectedClaimIds: string[];
       lastSelectionInteractionUtc?: string;
       recommendationRationale?: string;
+      budgetFitRationale?: string;
       assessments?: ClaimSelectionDraftState["assessments"];
       observability: ClaimSelectionDraftObservability;
     }): ClaimSelectionDraftState => ({
@@ -1230,9 +1232,11 @@ async function runDraftPreparationBackground(draftId: string) {
       selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
       rankedClaimIds: params.rankedClaimIds,
       recommendedClaimIds: params.recommendedClaimIds,
+      ...(params.deferredClaimIds ? { deferredClaimIds: params.deferredClaimIds } : {}),
       selectedClaimIds: params.selectedClaimIds,
       lastSelectionInteractionUtc: params.lastSelectionInteractionUtc,
       recommendationRationale: params.recommendationRationale,
+      ...(params.budgetFitRationale ? { budgetFitRationale: params.budgetFitRationale } : {}),
       assessments: params.assessments ?? [],
       observability: params.observability,
     });
@@ -1415,8 +1419,10 @@ async function runDraftPreparationBackground(draftId: string) {
       const draftState = buildDraftState({
         rankedClaimIds: recommendation.rankedClaimIds,
         recommendedClaimIds: automaticRecommendedClaimIds,
+        deferredClaimIds: recommendation.deferredClaimIds,
         selectedClaimIds: automaticRecommendedClaimIds,
         recommendationRationale: recommendation.rationale,
+        budgetFitRationale: recommendation.budgetFitRationale,
         assessments: recommendation.assessments,
         observability: buildObservability({
           phaseCode: "auto_continue",
@@ -1448,8 +1454,10 @@ async function runDraftPreparationBackground(draftId: string) {
     const draftState = buildDraftState({
       rankedClaimIds: recommendation.rankedClaimIds,
       recommendedClaimIds: recommendation.recommendedClaimIds,
+      deferredClaimIds: recommendation.deferredClaimIds,
       selectedClaimIds: recommendation.recommendedClaimIds,
       recommendationRationale: recommendation.rationale,
+      budgetFitRationale: recommendation.budgetFitRationale,
       assessments: recommendation.assessments,
       observability: buildObservability({
         phaseCode: "awaiting_claim_selection",
@@ -1494,9 +1502,11 @@ async function runDraftPreparationBackground(draftId: string) {
             selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
             rankedClaimIds: failureDraftState?.rankedClaimIds ?? [],
             recommendedClaimIds: failureDraftState?.recommendedClaimIds ?? [],
+            deferredClaimIds: failureDraftState?.deferredClaimIds,
             selectedClaimIds: failureDraftState?.selectedClaimIds ?? [],
             lastSelectionInteractionUtc: failureDraftState?.lastSelectionInteractionUtc,
             recommendationRationale: failureDraftState?.recommendationRationale,
+            budgetFitRationale: failureDraftState?.budgetFitRationale,
             assessments: failureDraftState?.assessments ?? [],
             observability: failureObservability,
           }

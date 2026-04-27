@@ -640,8 +640,10 @@ public sealed class JobService
         string? preparedStage1Json = null;
         var rankedClaimIds = Array.Empty<string>();
         var recommendedClaimIds = Array.Empty<string>();
+        var deferredClaimIds = Array.Empty<string>();
         int? selectionCap = null;
         string? recommendationRationale = null;
+        string? budgetFitRationale = null;
         var assessments = Array.Empty<object>();
 
         if (!string.IsNullOrWhiteSpace(draft.DraftStateJson))
@@ -656,6 +658,8 @@ public sealed class JobService
                     rankedClaimIds = rp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
                 if (root.TryGetProperty("recommendedClaimIds", out var rcp) && rcp.ValueKind == JsonValueKind.Array)
                     recommendedClaimIds = rcp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
+                if (root.TryGetProperty("deferredClaimIds", out var dcp) && dcp.ValueKind == JsonValueKind.Array)
+                    deferredClaimIds = dcp.EnumerateArray().Select(e => e.GetString() ?? "").Where(s => s.Length > 0).ToArray();
                 if (root.TryGetProperty("selectionCap", out var scp) &&
                     scp.ValueKind == JsonValueKind.Number &&
                     scp.TryGetInt32(out var parsedSelectionCap))
@@ -664,6 +668,8 @@ public sealed class JobService
                 }
                 if (root.TryGetProperty("recommendationRationale", out var rrp) && rrp.ValueKind == JsonValueKind.String)
                     recommendationRationale = rrp.GetString();
+                if (root.TryGetProperty("budgetFitRationale", out var bfrp) && bfrp.ValueKind == JsonValueKind.String)
+                    budgetFitRationale = bfrp.GetString();
                 if (root.TryGetProperty("assessments", out var ap) && ap.ValueKind == JsonValueKind.Array)
                     assessments = ap.EnumerateArray().Select(e => (object)e.GetRawText()).ToArray();
             }
@@ -692,8 +698,10 @@ public sealed class JobService
             selectionCap,
             rankedClaimIds,
             recommendedClaimIds,
+            deferredClaimIds,
             selectedClaimIds,
             recommendationRationale,
+            budgetFitRationale,
             assessments = assessmentJsonElements,
         }, new JsonSerializerOptions { WriteIndented = false });
 

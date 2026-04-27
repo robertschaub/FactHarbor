@@ -93,7 +93,7 @@ function parseDraftState(draftStateJson: string | null): ClaimSelectionDraftStat
 
 function getDraftStateStringArray(
   draftState: ClaimSelectionDraftState | null,
-  key: "rankedClaimIds" | "recommendedClaimIds" | "selectedClaimIds",
+  key: "rankedClaimIds" | "recommendedClaimIds" | "deferredClaimIds" | "selectedClaimIds",
 ): string[] {
   const value = draftState?.[key];
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
@@ -334,6 +334,10 @@ export default function ClaimSelectionDraftPage() {
     () => getDraftStateStringArray(draftState, "recommendedClaimIds"),
     [draftState],
   );
+  const deferredClaimIds = useMemo(
+    () => getDraftStateStringArray(draftState, "deferredClaimIds"),
+    [draftState],
+  );
   const persistedSelectedClaimIds = useMemo(
     () => getDraftStateStringArray(draftState, "selectedClaimIds"),
     [draftState],
@@ -346,6 +350,10 @@ export default function ClaimSelectionDraftPage() {
   const recommendedClaimSet = useMemo(
     () => new Set(recommendedClaimIds),
     [recommendedClaimIds],
+  );
+  const deferredClaimSet = useMemo(
+    () => new Set(deferredClaimIds),
+    [deferredClaimIds],
   );
   const assessmentsByClaimId = useMemo(() => {
     const assessments = Array.isArray(draftState?.assessments) ? draftState.assessments : [];
@@ -1080,6 +1088,11 @@ export default function ClaimSelectionDraftPage() {
             {draftState?.recommendationRationale && (
               <p className={styles.recommendationRationale}>{draftState.recommendationRationale}</p>
             )}
+            {draftState?.budgetFitRationale ? (
+              <p className={styles.budgetFitRationale}>
+                Budget fit: {draftState.budgetFitRationale}
+              </p>
+            ) : null}
             {preparationTimingSummary ? (
               <p className={styles.infoText}>Preparation summary: {preparationTimingSummary}</p>
             ) : null}
@@ -1099,6 +1112,7 @@ export default function ClaimSelectionDraftPage() {
                 claims={candidateClaims}
                 assessmentsByClaimId={assessmentsByClaimId}
                 recommendedClaimIds={recommendedClaimSet}
+                deferredClaimIds={deferredClaimSet}
                 selectedClaimIds={selectedClaimSet}
                 selectionLimitReached={selectionLimitReached}
                 onToggleClaim={handleToggleClaim}

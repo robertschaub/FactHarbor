@@ -788,6 +788,9 @@ describe("Default Config Values", () => {
     it("surfaces schema-backed pipeline defaults in the authoritative default object", () => {
       expect(DEFAULT_PIPELINE_CONFIG.centralityThreshold).toBe("medium");
       expect(DEFAULT_PIPELINE_CONFIG.claimSpecificityMinimum).toBe(0.6);
+      expect(DEFAULT_PIPELINE_CONFIG.claimSelectionBudgetAwarenessEnabled).toBe(false);
+      expect(DEFAULT_PIPELINE_CONFIG.claimSelectionBudgetFitMode).toBe("off");
+      expect(DEFAULT_PIPELINE_CONFIG.claimSelectionMinRecommendedClaims).toBe(1);
       expect(DEFAULT_PIPELINE_CONFIG.maxAtomicClaims).toBe(5);
       expect(DEFAULT_PIPELINE_CONFIG.maxAtomicClaimsBase).toBe(3);
       expect(DEFAULT_PIPELINE_CONFIG.atomicClaimsInputCharsPerClaim).toBe(500);
@@ -870,6 +873,9 @@ describe("Default Config Values", () => {
     it("restored runtime defaults are present in the seed file", () => {
       expect(seed.centralityThreshold).toBe(DEFAULT_PIPELINE_CONFIG.centralityThreshold);
       expect(seed.claimSpecificityMinimum).toBe(DEFAULT_PIPELINE_CONFIG.claimSpecificityMinimum);
+      expect(seed.claimSelectionBudgetAwarenessEnabled).toBe(DEFAULT_PIPELINE_CONFIG.claimSelectionBudgetAwarenessEnabled);
+      expect(seed.claimSelectionBudgetFitMode).toBe(DEFAULT_PIPELINE_CONFIG.claimSelectionBudgetFitMode);
+      expect(seed.claimSelectionMinRecommendedClaims).toBe(DEFAULT_PIPELINE_CONFIG.claimSelectionMinRecommendedClaims);
       expect(seed.maxAtomicClaims).toBe(DEFAULT_PIPELINE_CONFIG.maxAtomicClaims);
       expect(seed.preliminarySearchQueriesPerClaim).toBe(DEFAULT_PIPELINE_CONFIG.preliminarySearchQueriesPerClaim);
       expect(seed.claimSufficiencyThreshold).toBe(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold);

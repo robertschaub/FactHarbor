@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
   CLAIM_SELECTION_ABSOLUTE_MAX,
+  CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED,
+  CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
   CLAIM_SELECTION_DEFAULT_CAP,
   CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
+  CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
   getClaimSelectionIdleRemainingMs,
   getClaimSelectionCap,
   isValidClaimSelection,
+  normalizeClaimSelectionBudgetFitMode,
   normalizeClaimSelectionCap,
   normalizeClaimSelectionIdleAutoProceedMs,
   normalizeClaimSelectionMode,
+  normalizeClaimSelectionMinRecommendedClaims,
   resolveIdleAutoProceedSelection,
   resolveInitialClaimSelection,
   shouldAutoContinueWithoutSelection,
@@ -32,6 +37,20 @@ describe("claim-selection-flow", () => {
     expect(normalizeClaimSelectionMode("interactive")).toBe("interactive");
     expect(normalizeClaimSelectionMode("automatic")).toBe("automatic");
     expect(normalizeClaimSelectionMode("AUTO")).toBe("interactive");
+  });
+
+  it("keeps budget-aware ACS controls guarded by default", () => {
+    expect(CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED).toBe(false);
+    expect(CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE).toBe("off");
+    expect(CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT).toBe(1);
+    expect(normalizeClaimSelectionBudgetFitMode(undefined)).toBe("off");
+    expect(normalizeClaimSelectionBudgetFitMode("explain_only")).toBe("explain_only");
+    expect(normalizeClaimSelectionBudgetFitMode("allow_fewer_recommendations")).toBe("allow_fewer_recommendations");
+    expect(normalizeClaimSelectionBudgetFitMode("enabled")).toBe("off");
+    expect(normalizeClaimSelectionMinRecommendedClaims(undefined)).toBe(1);
+    expect(normalizeClaimSelectionMinRecommendedClaims(0)).toBe(1);
+    expect(normalizeClaimSelectionMinRecommendedClaims(3.8)).toBe(3);
+    expect(normalizeClaimSelectionMinRecommendedClaims(10)).toBe(5);
   });
 
   it("auto-continues only while candidate count stays below the configured threshold", () => {

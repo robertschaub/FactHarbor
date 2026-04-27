@@ -187,6 +187,7 @@ describe("validateClaimSelectionRecommendation", () => {
   it("trims overlong rationale fields to the documented caps", () => {
     const recommendation = createRecommendation({
       rationale: `  ${"R".repeat(260)}  `,
+      budgetFitRationale: `  ${"B".repeat(260)}  `,
       assessments: [
         {
           ...createRecommendation().assessments[0],
@@ -198,7 +199,49 @@ describe("validateClaimSelectionRecommendation", () => {
 
     const validated = validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]);
     expect(validated.rationale).toHaveLength(240);
+    expect(validated.budgetFitRationale).toHaveLength(240);
     expect(validated.assessments[0].recommendationRationale).toHaveLength(160);
+  });
+
+  it("accepts budget-fit metadata and normalizes deferred claims into ranked order", () => {
+    const recommendation = createRecommendation({
+      rankedClaimIds: ["AC_03", "AC_01", "AC_02"],
+      recommendedClaimIds: ["AC_01"],
+      deferredClaimIds: ["AC_02", "AC_03"],
+      budgetFitRationale: "Budget can cover the first claim while preserving review of deferred candidates.",
+      assessments: [
+        {
+          claimId: "AC_03",
+          triageLabel: "fact_check_worthy",
+          thesisDirectness: "medium",
+          expectedEvidenceYield: "medium",
+          coversDistinctRelevantDimension: true,
+          redundancyWithClaimIds: [],
+          recommendationRationale: "A distinct but budget-limited candidate.",
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred so research can finish within the protected budget.",
+        },
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected as the strongest budget-fit candidate.",
+        },
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred because it overlaps the selected candidate under budget pressure.",
+        },
+      ],
+    });
+
+    const validated = validateClaimSelectionRecommendation(
+      recommendation,
+      ["AC_01", "AC_02", "AC_03"],
+    );
+
+    expect(validated.deferredClaimIds).toEqual(["AC_03", "AC_02"]);
+    expect(validated.budgetFitRationale).toContain("Budget can cover");
+    expect(validated.assessments[0].budgetTreatment).toBe("deferred_budget_limited");
   });
 
   it("rejects missing assessment coverage", () => {
@@ -229,6 +272,66 @@ describe("validateClaimSelectionRecommendation", () => {
     expect(() =>
       validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
     ).toThrow(/not present in rankedClaimIds/i);
+  });
+
+  it("rejects deferred claims that overlap recommended claims", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: ["AC_01"],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
+    ).toThrow(/cannot also be recommended/i);
+  });
+
+  it("rejects budget-deferred assessments missing deferredClaimIds membership", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: [],
+      assessments: [
+        createRecommendation().assessments[0],
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred due to budget pressure.",
+        },
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
+    ).toThrow(/missing from deferredClaimIds/i);
+  });
+
+  it("rejects budget treatment without a rationale", () => {
+    const recommendation = createRecommendation({
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+        },
+        createRecommendation().assessments[1],
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
+    ).toThrow(/budgetTreatment requires budgetTreatmentRationale/i);
+  });
+
+  it("rejects budget rationale without a treatment", () => {
+    const recommendation = createRecommendation({
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatmentRationale: "Budget-related explanation without a typed treatment.",
+        },
+        createRecommendation().assessments[1],
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
+    ).toThrow(/budgetTreatmentRationale requires budgetTreatment/i);
   });
 
   it("normalizes recommended claims into ranked order", () => {
