@@ -240,7 +240,9 @@ export default function AdminPreparationPage() {
               data.items.map((draft) => (
                 <tr key={draft.draftId}>
                   <td>
-                    <code title={draft.draftId}>{draft.draftId.slice(0, 10)}...</code>
+                    <Link href={`/admin/preparation/${encodeURIComponent(draft.draftId)}`}>
+                      <code title={draft.draftId}>{draft.draftId.slice(0, 10)}...</code>
+                    </Link>
                     <div className={styles.flags}>
                       {draft.isHidden ? <span>hidden</span> : null}
                       {draft.restartedViaOther ? <span>restarted</span> : null}

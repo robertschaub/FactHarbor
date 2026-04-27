@@ -1,0 +1,218 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+
+import commonStyles from "../../../../styles/common.module.css";
+import { useAdminAuth } from "../../admin-auth-context";
+import styles from "../preparation.module.css";
+
+type DraftResponse = {
+  draftId: string;
+  status: string;
+  progress: number;
+  isHidden: boolean;
+  lastEventMessage: string | null;
+  selectionMode: string;
+  originalInputType: string | null;
+  originalInputValue: string | null;
+  activeInputType: string | null;
+  activeInputValue: string | null;
+  restartedViaOther: boolean;
+  restartCount: number;
+  draftStateJson: string | null;
+  finalJobId: string | null;
+  createdUtc: string;
+  updatedUtc: string;
+  expiresUtc: string;
+};
+
+type CandidateClaim = {
+  id?: string;
+  statement?: string;
+};
+
+type DraftState = {
+  preparedStage1?: {
+    preparedUnderstanding?: {
+      atomicClaims?: CandidateClaim[];
+    };
+  };
+  rankedClaimIds?: string[];
+  recommendedClaimIds?: string[];
+  selectedClaimIds?: string[];
+  recommendationRationale?: string;
+  lastError?: {
+    code?: string;
+    message?: string;
+    failedUtc?: string;
+  };
+  failureHistory?: Array<{
+    code?: string;
+    message?: string;
+    failedUtc?: string;
+  }>;
+};
+
+function parseDraftState(draftStateJson: string | null): DraftState | null {
+  if (!draftStateJson) return null;
+  try {
+    return JSON.parse(draftStateJson) as DraftState;
+  } catch {
+    return null;
+  }
+}
+
+function formatDateTime(value: string | null | undefined): string {
+  if (!value) return "Unknown";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Unknown";
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(parsed);
+}
+
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+export default function AdminPreparationDetailPage() {
+  const params = useParams<{ draftId: string }>();
+  const draftId = typeof params?.draftId === "string" ? params.draftId : "";
+  const { getHeaders } = useAdminAuth();
+  const [draft, setDraft] = useState<DraftResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!draftId) {
+      setError("Missing session id");
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/fh/admin/claim-selection-drafts/${encodeURIComponent(draftId)}`, {
+          cache: "no-store",
+          headers: getHeaders(),
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error ?? `Failed to load preparation session (${response.status})`);
+        }
+        if (!cancelled) setDraft(payload as DraftResponse);
+      } catch (loadError: any) {
+        if (!cancelled) setError(loadError?.message ?? "Failed to load preparation session");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftId, getHeaders]);
+
+  const draftState = useMemo(() => parseDraftState(draft?.draftStateJson ?? null), [draft?.draftStateJson]);
+  const candidateClaims = draftState?.preparedStage1?.preparedUnderstanding?.atomicClaims ?? [];
+  const rankedClaimIds = readStringArray(draftState?.rankedClaimIds);
+  const recommendedClaimIds = readStringArray(draftState?.recommendedClaimIds);
+  const selectedClaimIds = readStringArray(draftState?.selectedClaimIds);
+
+  return (
+    <div className={commonStyles.container}>
+      <div className={styles.headerRow}>
+        <div>
+          <Link href="/admin/preparation" className={styles.backLink}>Back to preparation sessions</Link>
+          <h1 className={commonStyles.title}>Preparation Session Detail</h1>
+          <p className={commonStyles.subtitle}>{draftId}</p>
+        </div>
+      </div>
+
+      {error ? <div className={commonStyles.errorBox}>{error}</div> : null}
+      {loading && !draft ? <p className={commonStyles.loading}>Loading preparation session...</p> : null}
+
+      {draft ? (
+        <>
+          <section className={styles.detailSection}>
+            <h2>Session</h2>
+            <dl className={styles.detailGrid}>
+              <div><dt>Status</dt><dd>{draft.status} ({draft.progress}%)</dd></div>
+              <div><dt>Mode</dt><dd>{draft.selectionMode}</dd></div>
+              <div><dt>Hidden</dt><dd>{draft.isHidden ? "Yes" : "No"}</dd></div>
+              <div><dt>Restart Count</dt><dd>{draft.restartCount}</dd></div>
+              <div><dt>Created</dt><dd>{formatDateTime(draft.createdUtc)}</dd></div>
+              <div><dt>Updated</dt><dd>{formatDateTime(draft.updatedUtc)}</dd></div>
+              <div><dt>Expires</dt><dd>{formatDateTime(draft.expiresUtc)}</dd></div>
+              <div>
+                <dt>Final Job</dt>
+                <dd>{draft.finalJobId ? <Link href={`/jobs/${encodeURIComponent(draft.finalJobId)}`}>{draft.finalJobId}</Link> : "None"}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Input</h2>
+            <dl className={styles.detailGrid}>
+              <div><dt>Active Type</dt><dd>{draft.activeInputType ?? "Unknown"}</dd></div>
+              <div><dt>Original Type</dt><dd>{draft.originalInputType ?? "Unknown"}</dd></div>
+            </dl>
+            <pre className={styles.textBlock}>{draft.activeInputValue ?? draft.originalInputValue ?? "No input value"}</pre>
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Prepared Claims</h2>
+            {draftState === null && draft.draftStateJson ? (
+              <div className={commonStyles.errorBox}>Draft state JSON is malformed.</div>
+            ) : candidateClaims.length > 0 ? (
+              <ol className={styles.claimList}>
+                {candidateClaims.map((claim, index) => (
+                  <li key={claim.id ?? index}>
+                    <code>{claim.id ?? `claim-${index + 1}`}</code>
+                    <p>{claim.statement ?? "No statement"}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className={commonStyles.textMuted}>No prepared candidate claims are stored yet.</p>
+            )}
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Selection State</h2>
+            <dl className={styles.detailGrid}>
+              <div><dt>Ranked</dt><dd>{rankedClaimIds.length ? rankedClaimIds.join(", ") : "None"}</dd></div>
+              <div><dt>Recommended</dt><dd>{recommendedClaimIds.length ? recommendedClaimIds.join(", ") : "None"}</dd></div>
+              <div><dt>Selected</dt><dd>{selectedClaimIds.length ? selectedClaimIds.join(", ") : "None"}</dd></div>
+            </dl>
+            {draftState?.recommendationRationale ? (
+              <pre className={styles.textBlock}>{draftState.recommendationRationale}</pre>
+            ) : null}
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Diagnostics</h2>
+            <dl className={styles.detailGrid}>
+              <div><dt>Last Event</dt><dd>{draft.lastEventMessage ?? "None"}</dd></div>
+              <div><dt>Last Error Code</dt><dd>{draftState?.lastError?.code ?? "None"}</dd></div>
+              <div><dt>Last Error Time</dt><dd>{formatDateTime(draftState?.lastError?.failedUtc)}</dd></div>
+              <div><dt>Failure History</dt><dd>{draftState?.failureHistory?.length ?? 0}</dd></div>
+            </dl>
+          </section>
+        </>
+      ) : null}
+    </div>
+  );
+}

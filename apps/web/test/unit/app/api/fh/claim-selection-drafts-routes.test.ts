@@ -172,6 +172,45 @@ describe("claim-selection draft proxy routes", () => {
     expect(mockDrainDraftQueue).not.toHaveBeenCalled();
   });
 
+  it("rejects admin detail reads before upstream fetch or queue recovery when admin auth is missing", async () => {
+    const { GET } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/route");
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1"),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Admin key required" });
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+  });
+
+  it("forwards admin detail reads without queue recovery", async () => {
+    const { GET } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ draftId: "draft-1", status: "PREPARING" }));
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1", {
+        headers: { "x-admin-key": "secret" },
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store",
+        headers: { "X-Admin-Key": "secret" },
+      }),
+    );
+  });
+
   it("persists a draft access cookie when session creation succeeds", async () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
 
