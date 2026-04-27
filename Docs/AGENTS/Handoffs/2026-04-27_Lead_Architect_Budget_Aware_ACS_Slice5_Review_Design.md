@@ -1,0 +1,9 @@
+---
+### 2026-04-27 | Lead Architect | Codex (GPT-5) | Budget-Aware ACS Slice 5 Review Design
+**Task:** Consolidate the second-review outcome for budget-aware ACS after live SVP metrics showed selected-claim research budget exhaustion.
+**Files touched:** `Docs/WIP/2026-04-27_Budget_Aware_ACS_Slice5_Review_Design.md`; `Docs/WIP/2026-04-27_SVP_ACS_Gated_Implementation_Plan.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
+**Key decisions:** Source artifact reuse stays stopped for now because the live run showed zero exact Stage 1 -> Stage 2 URL overlap. The next lever is Slice 5 budget-aware ACS, implemented by extending the existing ACS recommendation path with explicit LLM budget-fit rationale and deferred-claim metadata. `claimSelectionCap` remains an upper bound, not a target. Reduced recommendations are allowed only when the LLM reasons over the full candidate set and deferred claims remain visible.
+**Open items:** Explicit Captain approval is still required before editing analysis prompt/config behavior. A Senior Developer can then implement schema/UCM/UI/API changes against the contract in `Docs/WIP/2026-04-27_Budget_Aware_ACS_Slice5_Review_Design.md`.
+**Warnings:** Do not add deterministic semantic filtering, a second hidden cap, or final-runner claim dropping. Do not change global defaults from the single SVP run. Operational UCM mitigation for validation is allowed, but it is not a product fix.
+**For next agent:** Start from the new WIP design. Keep source reuse out of scope. Implement optional budget/deferred fields through `ClaimSelectionRecommendation`, `ClaimSelectionDraftState`, `ClaimSelectionMetadata`, internal auto-confirm, the select UI, and admin/final metadata. Prompt edits need explicit Captain approval and must stay topic-neutral/multilingual.
+**Learnings:** No `Role_Learnings.md` entry added; the actionable learning is captured in the WIP design and prior Slice 3 handoff.

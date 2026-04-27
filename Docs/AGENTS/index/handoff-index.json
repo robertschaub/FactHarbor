@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T20:05:37.587Z",
-  "count": 403,
+  "generatedAt": "2026-04-27T20:13:45.293Z",
+  "count": 404,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8153,6 +8153,27 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Admin Preparation Plan Rebase Debate"
+    },
+    {
+      "file": "2026-04-27_Lead_Architect_Budget_Aware_ACS_Slice5_Review_Design.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "budget",
+        "aware",
+        "acs",
+        "slice5",
+        "review",
+        "design"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-27_Budget_Aware_ACS_Slice5_Review_Design.md",
+        "Docs/WIP/2026-04-27_SVP_ACS_Gated_Implementation_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from the new WIP design. Keep source reuse out of scope. Implement optional budget/deferred fields through `ClaimSelectionRecommendation`, `ClaimSelectionDraftState`, `ClaimSelectionMetadata`, internal auto-confirm, the select UI, and admin/final metadata. Prompt edits need explicit Captain ap"
     },
     {
       "file": "2026-04-27_Lead_Architect_SVP_ACS_Debate_Consolidation.md",

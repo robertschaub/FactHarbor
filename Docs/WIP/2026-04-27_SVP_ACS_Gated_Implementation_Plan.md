@@ -347,3 +347,43 @@ Recommended next gate:
 - Review whether ACS should expose a budget-fit rationale and deferred-claim state, or whether operators should tune UCM values such as `claimSelectionCap`, `researchTimeBudgetMs`, and `contradictionProtectedTimeMs`.
 - For unattended validation runs, temporarily setting `claimSelectionDefaultMode=automatic` is operationally useful, but it does not solve the budget mismatch by itself.
 - Do not lower the broad-input claim contract or silently drop selected claims.
+
+## 9. Slice 5 Review Outcome - 2026-04-27
+
+Detailed design record:
+
+- `Docs/WIP/2026-04-27_Budget_Aware_ACS_Slice5_Review_Design.md`
+
+Reviewers:
+
+- LLM Expert: `MODIFY before implementation`
+- Senior Developer: approve design direction, not implementation yet
+
+Consolidated outcome:
+
+- Proceed with budget-aware ACS design as the next lever.
+- Keep source artifact reuse stopped for now; the live SVP run had zero exact URL overlap, so reuse would not have reduced final-job budget pressure.
+- Extend the existing ACS recommendation path instead of adding a second selector.
+- Keep `claimSelectionCap` as an upper bound, not a target.
+- Permit fewer-than-cap recommendations only when the batched ACS LLM reasons over the full final Stage 1 candidate set and returns explicit `budgetFitRationale` plus deferred-claim state.
+- Persist deferred claims through draft state, final job metadata, and admin/debug surfaces. Deferred means budget-limited, not dropped, failed, disproven, unimportant, or hidden.
+- Manual users may override by selecting deferred claims within the existing cap.
+- Automatic mode may auto-confirm recommended IDs only if it also preserves budget-fit/deferred metadata.
+
+Required implementation contract:
+
+- Add budget-awareness behavior behind UCM, default guarded.
+- Add optional schema fields such as `budgetFitRationale`, `deferredClaimIds`, and per-assessment `budgetTreatment`.
+- Keep all semantic select/defer/rank decisions inside the batched ACS LLM output.
+- Use structural budget arithmetic only as exposed context, never as an enforced semantic post-filter.
+- Show reduced-selection reasoning in the UI/API, especially when automatic mode is active.
+
+Required approval:
+
+- Prompt/config behavior changes still need explicit Captain approval before direct code edits to `apps/web/prompts/claimboundary.prompt.md` or default-on behavior.
+
+Operational mitigation before product implementation:
+
+- For unattended validation runs, use a scoped UCM profile: set `claimSelectionDefaultMode=automatic`, then either lower `claimSelectionCap` to reduce breadth/cost or raise `researchTimeBudgetMs` and `contradictionProtectedTimeMs` to preserve breadth.
+- Measure the profile with `analysisObservability.acsResearchWaste.selectedClaimResearch` and `contradictionReachability`.
+- Treat this as reversible validation setup, not a product fix.
