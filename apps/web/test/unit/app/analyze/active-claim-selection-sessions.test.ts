@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  fetchDraftSnapshot,
   getResumeTarget,
   getSessionStatusLabel,
   getSessionSummary,
@@ -24,6 +25,10 @@ function buildRef(overrides: Partial<StoredClaimSelectionSessionRef> = {}): Stor
 }
 
 describe("ActiveClaimSelectionSessions helpers", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("drops sessions from the resume registry once the final job id is known", () => {
     const item = {
       ref: buildRef({
@@ -81,5 +86,25 @@ describe("ActiveClaimSelectionSessions helpers", () => {
 
     expect(getResumeTarget(item)).toBeNull();
     expect(getSessionSummary(item)).toBe("Session access is no longer available in this browser profile.");
+  });
+
+  it("removes stale same-browser resume refs when draft access is gone", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchDraftSnapshot("draft-1", null)).resolves.toEqual({
+      draft: null,
+      error: null,
+      accessUnavailable: true,
+      remove: true,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/fh/claim-selection-drafts/draft-1",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store",
+      }),
+    );
   });
 });

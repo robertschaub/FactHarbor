@@ -147,7 +147,7 @@ function getDisplayInputPreview(item: ActiveSessionItem): string {
   return item.ref.inputPreview;
 }
 
-async function fetchDraftSnapshot(
+export async function fetchDraftSnapshot(
   draftId: string,
   adminKey: string | null,
 ): Promise<{
@@ -173,7 +173,7 @@ async function fetchDraftSnapshot(
     }
 
     if (response.status === 401) {
-      return { draft: null, error: null, accessUnavailable: true, remove: false };
+      return { draft: null, error: null, accessUnavailable: true, remove: true };
     }
 
     if (!response.ok) {
