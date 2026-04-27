@@ -386,6 +386,95 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     });
   }, 10_000);
 
+  it("hydrates ACS research-waste metrics before filtering deselected prepared artifacts", async () => {
+    const preparedStage1 = withPreparationProvenance({
+      version: 1,
+      resolvedInputText: "resolved text after preparation",
+      preparedUnderstanding: {
+        detectedLanguage: "en",
+        detectedInputType: "text",
+        atomicClaims: [
+          { id: "AC_A", statement: "Claim A" },
+          { id: "AC_B", statement: "Claim B" },
+        ],
+        preliminaryEvidence: [
+          { claimId: "AC_A", relevantClaimIds: ["AC_A"], sourceUrl: "https://example.com/a" },
+          { claimId: "AC_B", relevantClaimIds: ["AC_B"], sourceUrl: "https://example.com/b" },
+          { claimId: "", relevantClaimIds: [], sourceUrl: "https://example.com/unmapped" },
+        ],
+      },
+      researchWasteMetrics: {
+        preparedCandidateCount: 2,
+        selectedClaimCount: 2,
+        droppedCandidateCount: 0,
+        preliminaryTotals: {
+          queryCount: 2,
+          fetchAttemptCount: 3,
+          successfulFetchCount: 3,
+          evidenceItemCount: 3,
+          sourceUrlCount: 3,
+          sourceTextByteCount: 900,
+        },
+        preliminaryByOutcome: {
+          selected: { queryCount: 0, fetchAttemptCount: 0, successfulFetchCount: 0, evidenceItemCount: 0, sourceUrlCount: 0, sourceTextByteCount: 0 },
+          dropped: { queryCount: 0, fetchAttemptCount: 0, successfulFetchCount: 0, evidenceItemCount: 0, sourceUrlCount: 0, sourceTextByteCount: 0 },
+          unmapped: { queryCount: 2, fetchAttemptCount: 3, successfulFetchCount: 3, evidenceItemCount: 3, sourceUrlCount: 3, sourceTextByteCount: 900 },
+        },
+        stage1ToStage2UrlOverlap: {
+          stage1UrlCount: 3,
+          stage2UrlCount: 0,
+          exactOverlapCount: 0,
+          documentOverlapCount: 0,
+          dataOverlapCount: 0,
+          htmlOverlapCount: 0,
+          unknownOverlapCount: 0,
+          normalizedOverlapUrls: [],
+        },
+        selectedClaimResearch: [],
+        contradictionReachability: {
+          started: false,
+          remainingMsWhenMainResearchEnded: null,
+          iterationsUsed: 0,
+          sourcesFound: 0,
+        },
+      },
+    } as any);
+
+    await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "resolved text after preparation",
+      preparedStage1,
+      selectedClaimIds: ["AC_B"],
+    });
+
+    const state = mockResearchEvidence.mock.calls[0][0];
+    expect(state.researchWasteMetrics).toMatchObject({
+      preparedCandidateCount: 2,
+      selectedClaimCount: 1,
+      droppedCandidateCount: 1,
+      preliminaryTotals: {
+        queryCount: 2,
+        fetchAttemptCount: 3,
+        successfulFetchCount: 3,
+        evidenceItemCount: 3,
+        sourceUrlCount: 3,
+        sourceTextByteCount: 900,
+      },
+      preliminaryByOutcome: {
+        selected: { evidenceItemCount: 1, sourceUrlCount: 1 },
+        dropped: { evidenceItemCount: 1, sourceUrlCount: 1 },
+        unmapped: {
+          queryCount: 2,
+          fetchAttemptCount: 3,
+          successfulFetchCount: 3,
+          evidenceItemCount: 1,
+          sourceUrlCount: 1,
+          sourceTextByteCount: 900,
+        },
+      },
+    });
+  }, 10_000);
+
   it("fails closed when selected claim ids are missing from the prepared snapshot", async () => {
     await expect(
       runClaimBoundaryAnalysis({

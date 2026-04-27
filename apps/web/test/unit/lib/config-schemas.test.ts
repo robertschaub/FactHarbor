@@ -798,6 +798,8 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold).toBe(3);
       expect(DEFAULT_PIPELINE_CONFIG.sufficiencyMinMainIterations).toBe(1);
       expect(DEFAULT_PIPELINE_CONFIG.contradictionReservedIterations).toBe(1);
+      expect(DEFAULT_PIPELINE_CONFIG.contradictionAdmissionEnabled).toBe(true);
+      expect(DEFAULT_PIPELINE_CONFIG.contradictionProtectedTimeMs).toBe(120000);
       expect(DEFAULT_PIPELINE_CONFIG.researchTimeBudgetMs).toBe(600000);
       expect(DEFAULT_PIPELINE_CONFIG.researchZeroYieldBreakThreshold).toBe(2);
       expect(DEFAULT_PIPELINE_CONFIG.maxClaimBoundaries).toBe(6);
@@ -871,6 +873,8 @@ describe("Default Config Values", () => {
       expect(seed.maxAtomicClaims).toBe(DEFAULT_PIPELINE_CONFIG.maxAtomicClaims);
       expect(seed.preliminarySearchQueriesPerClaim).toBe(DEFAULT_PIPELINE_CONFIG.preliminarySearchQueriesPerClaim);
       expect(seed.claimSufficiencyThreshold).toBe(DEFAULT_PIPELINE_CONFIG.claimSufficiencyThreshold);
+      expect(seed.contradictionAdmissionEnabled).toBe(DEFAULT_PIPELINE_CONFIG.contradictionAdmissionEnabled);
+      expect(seed.contradictionProtectedTimeMs).toBe(DEFAULT_PIPELINE_CONFIG.contradictionProtectedTimeMs);
       expect(seed.researchTimeBudgetMs).toBe(DEFAULT_PIPELINE_CONFIG.researchTimeBudgetMs);
       expect(seed.maxClaimBoundaries).toBe(DEFAULT_PIPELINE_CONFIG.maxClaimBoundaries);
       expect(seed.boundaryCoherenceMinimum).toBe(DEFAULT_PIPELINE_CONFIG.boundaryCoherenceMinimum);

@@ -143,6 +143,13 @@ import {
 import {
   generateResearchQueries,
 } from "./research-query-stage";
+import {
+  createResearchWasteMetrics,
+  finalizeResearchWasteMetrics,
+  finalizeStage1ResearchWasteMetrics,
+  hydratePreparedResearchWasteMetrics,
+  sanitizeResearchWasteMetrics,
+} from "./research-waste-metrics";
 
 // Config loading
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig, loadPromptConfig } from "@/lib/config-loader";
@@ -317,6 +324,7 @@ export function buildClaimBoundaryResultJson(params: {
     | "mainIterationsUsed"
     | "contradictionIterationsUsed"
     | "contradictionSourcesFound"
+    | "researchWasteMetrics"
   >;
   detectedUrl?: string;
   llmProvider?: string;
@@ -348,6 +356,7 @@ export function buildClaimBoundaryResultJson(params: {
     promptContentHash,
     boundaryCount,
   } = params;
+  const acsResearchWaste = sanitizeResearchWasteMetrics(state.researchWasteMetrics);
 
   return {
     _schemaVersion: "3.2.0-cb",
@@ -403,6 +412,7 @@ export function buildClaimBoundaryResultJson(params: {
     citedSources: selectEvidenceReferencedSources(state.sources, state.evidenceItems).map(serializeFetchedSource),
     searchQueries: state.searchQueries,
     claimAcquisitionLedger: state.claimAcquisitionLedger,
+    ...(acsResearchWaste ? { analysisObservability: { acsResearchWaste } } : {}),
     qualityGates: assessment.qualityGates,
     analysisWarnings: state.warnings,
   };
@@ -606,6 +616,7 @@ function createInitialResearchState(params: {
     contradictionIterationsReserved: pipelineConfig.contradictionReservedIterations ?? 1,
     contradictionIterationsUsed: 0,
     contradictionSourcesFound: 0,
+    researchWasteMetrics: createResearchWasteMetrics(),
     claimBoundaries: [],
     llmCalls: 0,
     onEvent,
@@ -783,10 +794,22 @@ function buildPreparedResearchState(params: {
     if (invalidClaimIds.length > 0) {
       throw new Error(`Prepared Stage 1 snapshot is missing selected claim IDs: ${invalidClaimIds.join(", ")}`);
     }
+    hydratePreparedResearchWasteMetrics({
+      state,
+      preparedUnderstanding: understanding,
+      selectedClaimIds,
+      preparedMetrics: preparedStage1.researchWasteMetrics,
+    });
     filterPreparedUnderstandingForSelectedClaims(understanding, selectedOrder);
     if (understanding.atomicClaims.length === 0) {
       throw new Error("Prepared Stage 1 snapshot yielded no surviving claims for the selected claim IDs");
     }
+  } else {
+    hydratePreparedResearchWasteMetrics({
+      state,
+      preparedUnderstanding: understanding,
+      preparedMetrics: preparedStage1.researchWasteMetrics,
+    });
   }
 
   state.understanding = understanding;
@@ -905,12 +928,14 @@ export async function prepareStage1Snapshot(
   const understanding = await extractClaims(state);
   state.understanding = understanding;
   state.languageIntent = deriveLanguageIntent(understanding);
+  const researchWasteMetrics = finalizeStage1ResearchWasteMetrics(state);
 
   return {
     preparedStage1: {
       version: 1,
       resolvedInputText: analysisText,
       preparedUnderstanding: understanding,
+      researchWasteMetrics: sanitizeResearchWasteMetrics(researchWasteMetrics),
       preparationProvenance: {
         pipelineVariant: "claimboundary",
         sourceInputType: input.inputType,
@@ -1286,6 +1311,10 @@ export async function runClaimBoundaryAnalysis(
     const boundaries = await clusterBoundaries(state);
     state.claimBoundaries = boundaries;
     finalizeClaimAcquisitionTelemetry(state);
+    finalizeResearchWasteMetrics(state, {
+      claimSufficiencyThreshold: initialPipelineConfig.claimSufficiencyThreshold ?? 3,
+      researchStartMs: state.pipelineStartMs ?? Date.now(),
+    });
     onEvent(`Clustering complete: ${boundaries.length} boundary group(s).`, -1);
     endPhase("cluster");
 

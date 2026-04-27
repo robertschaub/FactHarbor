@@ -196,6 +196,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** When the web runner uses public `/v1/jobs` endpoints as its internal source of truth, those reads are still subject to the API's hidden/admin gating rules. Forwarding `X-Admin-Key` only on write paths is not enough: execution-start detail loads, queue scans, orphan refreshes, and late status guards also need the admin header or hidden jobs can fail before Stage 1 with a misleading `Job not found`.
 **Files:** `apps/web/src/lib/internal-runner-queue.ts`, `apps/web/test/unit/lib/drain-runner-pause.integration.test.ts`
 
+### 2026-04-27 — Admission flags must preserve the existing loop they guard
+**Role:** Senior Developer  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** When adding a UCM flag for an admission/protection guard, the disabled path should preserve the pre-existing behavior unless the plan explicitly authorizes disabling the underlying mechanism. For Stage 2 contradiction admission, `contradictionAdmissionEnabled=false` must disable only the protected-time transition, not the reserved contradiction loop itself; add a disabled-guard regression test whenever a guard wraps an existing loop.
+**Files:** `apps/web/src/lib/analyzer/research-orchestrator.ts`, `apps/web/test/unit/lib/analyzer/research-contradiction-admission.test.ts`
+
 ## Technical Writer
 
 ### 2026-02-15 — External link syntax for the xWiki viewer

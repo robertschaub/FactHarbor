@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-04-27
-**Status**: Consolidation #13 complete. 2 files archived. 56 active markdown docs remain.
+**Status**: Consolidation #13 complete. 2 files archived. 57 active markdown docs remain.
 
 ---
 
@@ -84,6 +84,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-04-22_Check_Worthiness_Recommendation_Design.md](2026-04-22_Check_Worthiness_Recommendation_Design.md) — consolidated implementation design for ACS check-worthiness recommendation authority
 - [2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md](2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md) — architecture assessment for Stage 1 atomic claims and ACS check-worthiness unification
 - [2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md](2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md) — reviewed, partially implemented selection-readiness root-cause/fix plan
+- [2026-04-27_SVP_ACS_Gated_Implementation_Plan.md](2026-04-27_SVP_ACS_Gated_Implementation_Plan.md) — active gated plan for broad-input ACS research waste: instrumentation and contradiction admission first; source reuse and budget-aware ACS gated by metrics/review
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md) — Stage 4.5 SR calibration. Feature-flagged/off.
 - [LLM_Triangulation_Assessment_Plan_2026-03-17.md](LLM_Triangulation_Assessment_Plan_2026-03-17.md) — LLM-assessed aggregation weight factors (v4 ready for implementation approval)
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — long-run retrieval-first roadmap
@@ -145,7 +146,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
-| 2026-04-27 | **#13** | 2 files archived (implemented prompt-read plan, superseded text-first session-prep proposal); WIP README synced with recent active docs | 56 |
+| 2026-04-27 | **#13** | 2 files archived (implemented prompt-read plan, superseded text-first session-prep proposal); WIP README synced with recent active docs; one SVP ACS gated implementation plan added after consolidation | 57 |
 | 2026-04-18 | **#12** | 48 files archived (Phase 2-6 execution artefacts, completed investigations, historical reviews, event prep, superseded proposals, abandoned MCP investigation) | 37 |
 | 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |
 | 2026-04-04 | **#10** | 28 historical/completed files archived (investigations, decided debates, implemented reviews, subagent reports) | 38 |

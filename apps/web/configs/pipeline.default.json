@@ -164,6 +164,8 @@
   "sufficiencyMinResearchedIterationsPerClaim": 1,
   "contradictionReservedIterations": 1,
   "contradictionReservedQueries": 2,
+  "contradictionAdmissionEnabled": true,
+  "contradictionProtectedTimeMs": 120000,
   "researchTimeBudgetMs": 600000,
   "researchZeroYieldBreakThreshold": 2,
   "diversityAwareSufficiency": true,

@@ -367,6 +367,7 @@ export interface ClaimAcquisitionIterationEntry {
   directionCounts: ClaimAcquisitionDirectionCounts;
   losses: ClaimAcquisitionIterationLosses;
   laneReason?: string;
+  durationMs?: number;
   /** True when the iteration was interrupted by an error before completing all steps. */
   incomplete?: boolean;
 }
@@ -724,6 +725,7 @@ export interface PreparedStage1Snapshot {
   resolvedInputText: string;
   preparedUnderstanding: CBClaimUnderstanding;
   preparationProvenance?: PreparedStage1Provenance;
+  researchWasteMetrics?: ResearchWasteMetrics;
 }
 
 export interface PreparedStage1Provenance {
@@ -737,6 +739,69 @@ export interface PreparedStage1Provenance {
   searchConfigHash: string;
   calcConfigHash: string;
   selectionCap: number;
+}
+
+export type ResearchWasteOutcome = "selected" | "dropped" | "unmapped";
+export type ResearchWasteSourceFamily = "document" | "data" | "html" | "unknown";
+
+export interface ResearchWasteCounterSet {
+  queryCount: number;
+  fetchAttemptCount: number;
+  successfulFetchCount: number;
+  evidenceItemCount: number;
+  sourceUrlCount: number;
+  sourceTextByteCount: number;
+}
+
+export interface ResearchWasteByOutcome {
+  selected: ResearchWasteCounterSet;
+  dropped: ResearchWasteCounterSet;
+  unmapped: ResearchWasteCounterSet;
+}
+
+export interface ResearchWasteUrlOverlap {
+  stage1UrlCount: number;
+  stage2UrlCount: number;
+  exactOverlapCount: number;
+  documentOverlapCount: number;
+  dataOverlapCount: number;
+  htmlOverlapCount: number;
+  unknownOverlapCount: number;
+  normalizedOverlapUrls: string[];
+}
+
+export interface SelectedClaimResearchMetrics {
+  claimId: string;
+  iterations: number;
+  queryCount: number;
+  fetchAttemptCount: number;
+  evidenceItemCount: number;
+  elapsedMs: number;
+  sufficiencyState: "sufficient" | "insufficient" | "unknown";
+}
+
+export interface ContradictionReachabilityMetrics {
+  started: boolean;
+  remainingMsWhenMainResearchEnded: number | null;
+  iterationsUsed: number;
+  sourcesFound: number;
+  notRunReason?:
+    | "no_reserved_iterations"
+    | "time_budget_exhausted"
+    | "query_budget_exhausted"
+    | "no_target_claim"
+    | "not_reached";
+}
+
+export interface ResearchWasteMetrics {
+  preparedCandidateCount: number;
+  selectedClaimCount: number;
+  droppedCandidateCount: number;
+  preliminaryTotals: ResearchWasteCounterSet;
+  preliminaryByOutcome: ResearchWasteByOutcome;
+  stage1ToStage2UrlOverlap: ResearchWasteUrlOverlap;
+  selectedClaimResearch: SelectedClaimResearchMetrics[];
+  contradictionReachability: ContradictionReachabilityMetrics;
 }
 
 export interface ClaimSelectionRecommendationAssessment {
@@ -1443,6 +1508,8 @@ export interface CBResearchState {
   onEvent?: (message: string, progress: number) => void;
   // Stage 1 draft-preparation observability carried to the draft runner.
   stage1Observability?: ClaimSelectionStage1Observability;
+  // Cross-stage ACS research-waste observability. Diagnostic only.
+  researchWasteMetrics?: ResearchWasteMetrics;
   // Quality warnings accumulated during pipeline execution
   warnings: AnalysisWarning[];
 }

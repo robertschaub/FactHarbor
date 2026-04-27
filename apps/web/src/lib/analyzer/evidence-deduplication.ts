@@ -8,6 +8,7 @@
  */
 
 import type { EvidenceItem } from "./types";
+import { normalizeUrlForEvidence } from "./url-normalization";
 
 /**
  * State interface for tracking processed URLs
@@ -36,28 +37,11 @@ export class EvidenceDeduplicator {
   ) {}
 
   /**
-   * Normalize URL for deduplication by:
-   * - Removing tracking parameters (utm_*, ref, source)
-   * - Removing hash fragments
-   * - Lowercasing and removing www prefix
+   * Normalize URL for deduplication by delegating to the shared evidence URL
+   * normalizer used by Stage 1/Stage 2 observability.
    */
   normalizeUrl(url: string): string {
-    try {
-      const parsed = new URL(url);
-      // Remove common tracking params
-      const trackingParams = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'ref', 'source'];
-      for (const param of trackingParams) {
-        parsed.searchParams.delete(param);
-      }
-      // Remove hash fragment
-      parsed.hash = "";
-      // Normalize hostname: lowercase and remove www prefix
-      parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
-      return parsed.toString().toLowerCase();
-    } catch {
-      // If URL parsing fails, return lowercased original
-      return url.toLowerCase();
-    }
+    return normalizeUrlForEvidence(url);
   }
 
   /**

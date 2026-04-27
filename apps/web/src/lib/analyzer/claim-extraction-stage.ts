@@ -40,6 +40,12 @@ import {
 import { loadAndRenderSection } from "./prompt-loader";
 import { classifyRelevance } from "./research-extraction-stage";
 import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure } from "./pipeline-utils";
+import {
+  recordPreliminaryEvidenceMetric,
+  recordPreliminaryFetchAttemptMetric,
+  recordPreliminaryFetchSuccessMetric,
+  recordPreliminaryQueryMetric,
+} from "./research-waste-metrics";
 
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
@@ -1890,12 +1896,17 @@ export async function runPreliminarySearch(
     }
 
     const fetchPromise: Promise<SharedFetchResult> = (async (): Promise<SharedFetchResult> => {
+      recordPreliminaryFetchAttemptMetric(state);
       try {
         const content = await extractTextFromUrl(searchResult.url, {
           timeoutMs: fetchTimeoutMs,
           maxLength: pipelineConfig?.sourceExtractionMaxLength ?? 15000,
         });
         if (content.text.length > 100) {
+          recordPreliminaryFetchSuccessMetric(state, {
+            url: searchResult.url,
+            sourceTextByteCount: content.text.length,
+          });
           return {
             ok: true,
             url: searchResult.url,
@@ -1984,6 +1995,7 @@ export async function runPreliminarySearch(
               timestamp: new Date().toISOString(),
               searchProvider: response.providersUsed.join(", "),
             });
+            recordPreliminaryQueryMetric(state);
             if (response.results.length > 0) {
               state.onEvent?.(`Preliminary search: ${response.providersUsed.join(", ")} — ${response.results.length} results`, -1);
             }
@@ -2106,6 +2118,7 @@ export async function runPreliminarySearch(
             );
             local.llmCalls++;
             local.evidence.push(...evidence);
+            recordPreliminaryEvidenceMetric(state, evidence.length);
           } catch (err: any) {
             console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
             if (err?.name === "SearchProviderError" && err?.provider) {

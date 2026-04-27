@@ -61,6 +61,12 @@ import {
   applyPerSourceCap,
 } from "./research-extraction-stage";
 import { upsertSearchProviderWarning } from "./claim-extraction-stage";
+import {
+  markContradictionMainResearchEnded,
+  markContradictionNotRun,
+  markContradictionStarted,
+  updateContradictionReachability,
+} from "./research-waste-metrics";
 
 function createEmptyDirectionCounts(): ClaimAcquisitionDirectionCounts {
   return {
@@ -622,6 +628,11 @@ export async function researchEvidence(
   const zeroYieldBreakThreshold = pipelineConfig.researchZeroYieldBreakThreshold ?? 2;
   // Fix 4: Reserve query budget for contradiction loop so main loop cannot starve it.
   const contradictionReservedQueries = pipelineConfig.contradictionReservedQueries ?? 2;
+  const contradictionAdmissionEnabled = pipelineConfig.contradictionAdmissionEnabled ?? true;
+  const contradictionProtectedTimeMs = Math.max(
+    0,
+    pipelineConfig.contradictionProtectedTimeMs ?? 2 * 60 * 1000,
+  );
   // MT-3: distinct event count for coverage guard
   const distinctEventCount = state.understanding?.distinctEvents?.length ?? 0;
 
@@ -657,6 +668,21 @@ export async function researchEvidence(
         message: `Research time budget reached after ${Math.round(elapsedMs / 60000)} minutes - analysis may have incomplete evidence.`,
         details: { elapsedMs, budgetMs: timeBudgetMs, iterationsCompleted: iteration },
       });
+      break;
+    }
+
+    if (
+      contradictionAdmissionEnabled
+      && reservedContradiction > 0
+      && contradictionProtectedTimeMs > 0
+      && elapsedMs + contradictionProtectedTimeMs > timeBudgetMs
+    ) {
+      const remainingMs = Math.max(0, timeBudgetMs - elapsedMs);
+      markContradictionMainResearchEnded(state, remainingMs);
+      state.onEvent?.(
+        `Protected contradiction research window reached (${Math.round(remainingMs / 1000)}s remaining), transitioning...`,
+        55,
+      );
       break;
     }
 
@@ -738,6 +764,13 @@ export async function researchEvidence(
     }
   }
 
+  const elapsedAfterMainMs = Date.now() - researchStartMs;
+  markContradictionMainResearchEnded(state, Math.max(0, timeBudgetMs - elapsedAfterMainMs));
+
+  if (reservedContradiction <= 0) {
+    markContradictionNotRun(state, "no_reserved_iterations");
+  }
+
   // ------------------------------------------------------------------
   // Step 3: Contradiction search (reserved iterations)
   // ------------------------------------------------------------------
@@ -749,6 +782,9 @@ export async function researchEvidence(
     const contradictionElapsedMs = Date.now() - researchStartMs;
     if (contradictionElapsedMs > timeBudgetMs) {
       state.onEvent?.(`Research time budget reached during contradiction search, proceeding...`, 58);
+      if (state.contradictionIterationsUsed === 0) {
+        markContradictionNotRun(state, "time_budget_exhausted");
+      }
       if (!timeBudgetWarned) {
         timeBudgetWarned = true;
         state.warnings.push({
@@ -773,6 +809,9 @@ export async function researchEvidence(
     );
     if (budgetEligibleClaims.length === 0) {
       console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; skipping contradiction loop.");
+      if (state.contradictionIterationsUsed === 0) {
+        markContradictionNotRun(state, "query_budget_exhausted");
+      }
       if (!budgetExhaustionWarned) {
         budgetExhaustionWarned = true;
         const perClaimBudget = getPerClaimQueryBudget(pipelineConfig);
@@ -792,7 +831,12 @@ export async function researchEvidence(
       break;
     }
     const targetClaim = findLeastContradictedClaim(budgetEligibleClaims, state.evidenceItems);
-    if (!targetClaim) break;
+    if (!targetClaim) {
+      if (state.contradictionIterationsUsed === 0) {
+        markContradictionNotRun(state, "no_target_claim");
+      }
+      break;
+    }
 
     // Emit progress update for contradiction search (55% → 58%)
     if (state.onEvent) {
@@ -800,6 +844,7 @@ export async function researchEvidence(
       state.onEvent(`Searching for contradicting evidence (${cIter + 1}/${reservedContradiction})...`, progress);
     }
 
+    markContradictionStarted(state);
     await runResearchIteration(
       targetClaim,
       "contradiction",
@@ -811,6 +856,36 @@ export async function researchEvidence(
     );
 
     state.contradictionIterationsUsed++;
+    updateContradictionReachability(state);
+  }
+  updateContradictionReachability(state);
+  if (
+    reservedContradiction > 0
+    && claims.length > 0
+    && state.contradictionIterationsUsed === 0
+  ) {
+    markContradictionNotRun(state, state.researchWasteMetrics?.contradictionReachability.notRunReason ?? "not_reached");
+    const reachability = state.researchWasteMetrics?.contradictionReachability;
+    const alreadyWarned = state.warnings.some(
+      (warning) =>
+        warning.type === "unverified_research_incomplete"
+        && warning.details?.stage === "research_contradiction_admission",
+    );
+    if (!alreadyWarned) {
+      state.warnings.push({
+        type: "unverified_research_incomplete",
+        severity: "warning",
+        message: "Contradiction research was not attempted before Stage 2 ended; verdict reliability may be reduced.",
+        details: {
+          stage: "research_contradiction_admission",
+          notRunReason: reachability?.notRunReason ?? "not_reached",
+          remainingMsWhenMainResearchEnded: reachability?.remainingMsWhenMainResearchEnded ?? null,
+          mainIterationsUsed: state.mainIterationsUsed,
+          contradictionIterationsUsed: state.contradictionIterationsUsed,
+          contradictionSourcesFound: state.contradictionSourcesFound,
+        },
+      });
+    }
   }
 
   // ------------------------------------------------------------------
@@ -1271,6 +1346,7 @@ export async function runResearchIteration(
     );
     return;
   }
+  const iterationStartedAt = Date.now();
   state.researchedIterationsByClaim ??= {};
   const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
   const evidenceCountBeforeIteration = state.evidenceItems.length;
@@ -1574,6 +1650,7 @@ export async function runResearchIteration(
   };
 
   await executeGeneratedQueries(queries, iterationType, iterationTelemetry);
+  iterationTelemetry.durationMs = Date.now() - iterationStartedAt;
   recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
 
   const remainingBudgetAfterMainQueries = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
@@ -1631,6 +1708,7 @@ export async function runResearchIteration(
     ).slice(0, refinementBudget);
 
     if (selectedRefinementQueries.length > 0) {
+      const refinementStartedAt = Date.now();
       const refinementTelemetry = createClaimIterationTelemetryEntry(
         iterationIndex,
         "refinement",
@@ -1643,6 +1721,7 @@ export async function runResearchIteration(
       refinementTelemetry.laneReason = recoveredPrimaryCoverage
         ? "primary_source_refinement:recovered_non_seeded_primary_coverage"
         : "primary_source_refinement:no_new_primary_coverage";
+      refinementTelemetry.durationMs = Date.now() - refinementStartedAt;
       recordClaimIterationTelemetry(state, targetClaim.id, refinementTelemetry);
       debugLog(
         `[Stage2] Primary-source refinement ${recoveredPrimaryCoverage ? "recovered" : "did not recover"} ` +
@@ -1746,6 +1825,7 @@ export async function maybeRunSupplementaryEnglishLane(
   state.llmCalls++;
 
   if (enQueries.length === 0) return;
+  const enIterationStartedAt = Date.now();
   const enTelemetry: ClaimAcquisitionIterationEntry = {
     iteration: iterationIndex,
     iterationType: iterationType as "main" | "contradiction" | "contrarian",
@@ -1875,6 +1955,7 @@ export async function maybeRunSupplementaryEnglishLane(
       0,
     );
     if (fetchedSources.length === 0) {
+      enTelemetry.durationMs = Date.now() - enIterationStartedAt;
       recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
       return;
     }
@@ -1923,10 +2004,12 @@ export async function maybeRunSupplementaryEnglishLane(
       incrementDirectionCounts(enTelemetry.directionCounts, item.claimDirection);
     }
     state.onEvent?.(`Admitted ${claimLocalCappedItems.length} English supplementary evidence item(s) for ${targetClaim.id}.`, -1);
+    enTelemetry.durationMs = Date.now() - enIterationStartedAt;
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   } catch (err) {
     console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
     enTelemetry.incomplete = true;
+    enTelemetry.durationMs = Date.now() - enIterationStartedAt;
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   }
 }

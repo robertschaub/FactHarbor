@@ -592,6 +592,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
   contradictionReservedQueries: z.number().int().min(0).max(10).optional()
     .describe("Query budget reserved per claim for contradiction search (default: 2). Main loop stops when remaining budget equals this value, ensuring contradiction has queries to spend."),
+  contradictionAdmissionEnabled: z.boolean().optional()
+    .describe("When true, Stage 2 preserves a fixed wall-clock window for contradiction search before admitting another main research iteration. Default: true."),
+  contradictionProtectedTimeMs: z.number().int().min(0).max(600000).optional()
+    .describe("Protected wall-clock budget for contradiction search in ms. If elapsed + protected time would exceed researchTimeBudgetMs, Stage 2 transitions from main research to contradiction search. Default: 120000."),
   researchTimeBudgetMs: z.number().int().min(60000).max(3600000).optional()
     .describe("Wall-clock time budget for Stage 2 research loop in ms (default: 600000 = 10 min)"),
   researchZeroYieldBreakThreshold: z.number().int().min(1).max(5).optional()
@@ -902,6 +906,12 @@ export const PipelineConfigSchema = z.object({
   if (data.contradictionReservedQueries === undefined) {
     data.contradictionReservedQueries = 2;
   }
+  if (data.contradictionAdmissionEnabled === undefined) {
+    data.contradictionAdmissionEnabled = true;
+  }
+  if (data.contradictionProtectedTimeMs === undefined) {
+    data.contradictionProtectedTimeMs = 2 * 60 * 1000;
+  }
   if (data.researchTimeBudgetMs === undefined) {
     data.researchTimeBudgetMs = 10 * 60 * 1000; // 10 minutes
   }
@@ -1208,6 +1218,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   sufficiencyMinResearchedIterationsPerClaim: 1,
   contradictionReservedIterations: 1,
   contradictionReservedQueries: 2,
+  contradictionAdmissionEnabled: true,
+  contradictionProtectedTimeMs: 2 * 60 * 1000,
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
   diversityAwareSufficiency: true,

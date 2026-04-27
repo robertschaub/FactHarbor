@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T17:26:00.882Z",
-  "count": 398,
+  "generatedAt": "2026-04-27T19:06:08.767Z",
+  "count": 401,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8155,6 +8155,37 @@
       "summary": "Admin Preparation Plan Rebase Debate"
     },
     {
+      "file": "2026-04-27_Lead_Architect_SVP_ACS_Debate_Consolidation.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "svp",
+        "acs",
+        "debate",
+        "consolidation"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-27 - Lead Architect - SVP ACS Debate Consolidation"
+    },
+    {
+      "file": "2026-04-27_Lead_Architect_SVP_ACS_Research_Waste_Investigation.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "svp",
+        "acs",
+        "research",
+        "waste",
+        "investigation"
+      ],
+      "files_touched": [],
+      "summary": "Investigate whether large `AtomicClaim` candidate sets waste evidence-search time and money before/after claim selection, using the SVP PDF input as the motivating case."
+    },
+    {
       "file": "2026-04-27_Lead_Developer_Admin_Preparation_Sessions_Risk_Review.md",
       "date": "2026-04-27",
       "roles": [
@@ -8245,6 +8276,45 @@
             "verification": "`npm -w apps/web test -- runner-concurrency-split.integration.test.ts` passed.",
             "debt_accepted_and_removal_trigger": "none.",
             "residual_debt": "Exact LLM-call hang cause remains unknown, but the recovery behavior is now bounded."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_ACS_Research_Waste_Slices_1_2_Implementation.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "research",
+        "waste",
+        "slices",
+        "1",
+        "2",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/url-normalization.ts"
+      ],
+      "summary": "Start with `research-waste-metrics.ts` and the final JSON field `analysisObservability.acsResearchWaste` when inspecting whether ACS preparation work is being wasted.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "missing-capability plus incomplete-existing-mechanism.",
+            "chosen_option": "add narrowly scoped observability where no selected-vs-dropped ACS waste metric existed, and amend existing Stage 2 budget management in place for contradiction admission.",
+            "rejected_path_and_why": "rejected source artifact reuse, ACS prompt/config tuning, and Stage 1 redesign because the approved first branch was instrumentation plus contradiction reachability, and those later mechanisms need evidence from the new metrics first.",
+            "what_was_removed_simplified": "duplicated URL normalization logic was removed from EvidenceDeduplicator and replaced by a shared normalizer; the self-review-only mistaken disabled-admission loop gate was removed before final validation.",
+            "what_was_added": "researchWasteMetrics types/helpers, final-job analysis observability, prepared snapshot metric hydration, contradiction protected-time UCM fields, contradiction reachability telemetry, and focused tests.",
+            "net_mechanism_count": "increases, justified as missing diagnostic capability plus a bounded admission guard using existing Stage 2 loop structure.",
+            "budget_reconciliation": "stayed within approved Slices 1-2; no source persistence/reuse, no prompt changes, no live jobs, no expensive tests.",
+            "verification": "`npm -w apps/web test -- test/unit/lib/analyzer/url-normalization.test.ts test/unit/lib/analyzer/research-contradiction-admission.test.ts test/unit/lib/analyzer/claimboundary-prepared-stage1.test.ts test/unit/lib/config-drift.test.ts test/unit/lib/config-schemas.test.ts`; `npm -w apps/web test -- test/unit/lib/analyzer/claim-extraction-preliminary-search-dedupe.test.ts test/unit/lib/analyzer/research-orchestrator.test.ts test/unit/lib/analyzer/research-orchestrator-progress.test.ts test/unit/lib/analyzer/primary-source-refinement.test.ts test/unit/lib/analyzer/claimboundary-pipeline.test.ts`; `npm -w apps/web run build`; `npm test`; `git diff --check`.",
+            "debt_accepted_and_removal_trigger": "diagnostic URL overlap stores normalized overlap URLs only; revisit if metrics prove source reuse should be designed.",
+            "residual_debt": "later gates still need real run data before artifact reuse or ACS budget-aware behavior is safe to implement."
           }
         }
       }
