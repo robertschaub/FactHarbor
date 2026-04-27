@@ -7,6 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. "$PSScriptRoot\service-process-cleanup.ps1"
 
 Write-Host "== FactHarbor POC1 Clean Restart =="
 Write-Host ""
@@ -14,32 +15,6 @@ Write-Host ""
 Write-Host "Validating configuration..."
 powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\validate-config.ps1"
 Write-Host ""
-
-function Stop-Gracefully([string]$label, $cimProcesses) {
-    if (!$cimProcesses) {
-        Write-Host "No running $label processes found."
-        return
-    }
-
-    foreach ($cim in $cimProcesses) {
-        try {
-            $proc = Get-Process -Id $cim.ProcessId -ErrorAction Stop
-            Write-Host "Stopping $label PID $($proc.Id) ($($proc.ProcessName))..." -ForegroundColor Yellow
-            $closed = $proc.CloseMainWindow()
-            if (-not $closed) {
-                Write-Host "  Could not signal graceful close for PID $($proc.Id). Close it manually if needed." -ForegroundColor Yellow
-                continue
-            }
-            Wait-Process -Id $proc.Id -Timeout 10 -ErrorAction SilentlyContinue
-            if (Get-Process -Id $proc.Id -ErrorAction SilentlyContinue) {
-                Write-Host "  PID $($proc.Id) is still running; force-killing." -ForegroundColor Yellow
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-            }
-        } catch {
-            Write-Host "  Could not stop PID $($cim.ProcessId): $($_.Exception.Message)" -ForegroundColor Red
-        }
-    }
-}
 
 function Get-ConfiguredPorts([string]$urls, [int[]]$fallbackPorts) {
     $ports = @()
@@ -98,6 +73,8 @@ $webShells = Get-CimInstance Win32_Process | Where-Object {
 
 Stop-Gracefully -label "API" -cimProcesses $apiShells
 Stop-Gracefully -label "Web" -cimProcesses $webShells
+Stop-FactHarborServiceProcesses
+Stop-OrphanedDotnetWatchProcesses
 Write-Host ""
 
 $apiPorts = Get-ConfiguredPorts -urls $ApiUrls -fallbackPorts @(5000)
