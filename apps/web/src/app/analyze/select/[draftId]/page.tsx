@@ -36,6 +36,7 @@ import jobStyles from "../../../jobs/[id]/page.module.css";
 import { ClaimSelectionPanel } from "./ClaimSelectionPanel";
 import {
   formatClaimCount,
+  canCancelDraftStatus,
   getDraftPageTitle,
   getStatusHeadline,
   getStatusSummary,
@@ -707,9 +708,8 @@ export default function ClaimSelectionDraftPage() {
   }, [draft, draftState]);
   const activeInputValue = draft?.activeInputValue?.trim() || draft?.originalInputValue?.trim() || "";
   const formattedCreatedAt = formatDateTime(draft?.createdUtc);
-  const canCancelSession = draft
-    ? !["CANCELLED", "COMPLETED", "EXPIRED"].includes(draft.status)
-    : false;
+  const isPreparationInProgress = draft?.status === "PREPARING";
+  const canCancelSession = draft ? canCancelDraftStatus(draft.status) : false;
   const canRetryPreparation = draft?.status === "FAILED";
   const canToggleHidden = Boolean(draft && adminKey);
   const headerCardStatusClass =
@@ -919,6 +919,16 @@ export default function ClaimSelectionDraftPage() {
               >
                 {isCancelling ? "⏳" : "🗑"}
               </button>
+            ) : isPreparationInProgress ? (
+              <button
+                type="button"
+                className={`${jobStyles.tab} ${jobStyles.deleteTab}`}
+                disabled
+                title="Preparation in progress"
+                aria-label="Preparation in progress"
+              >
+                ⏳
+              </button>
             ) : null}
           </div>
         )}
@@ -941,6 +951,7 @@ export default function ClaimSelectionDraftPage() {
           <div className={styles.headerStatusRow}>
             <b>Status:</b>{" "}
             <code className={headerCardStatusClass}>{draft.status}</code> ({displayProgress}%)
+            {isPreparationInProgress ? <span className={styles.headerStatusNote}>Preparation in progress</span> : null}
             {draft.isHidden ? <span className={styles.headerStatusNote}>Hidden from default lists</span> : null}
             {draft.restartedViaOther ? <span className={styles.headerStatusNote}>Restarted via other input</span> : null}
           </div>

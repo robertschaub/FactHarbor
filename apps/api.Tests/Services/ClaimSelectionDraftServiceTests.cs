@@ -226,6 +226,53 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task CancelDraftAsync_PreparingDraftReturnsConflictWithoutMutation()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(db, status: "PREPARING");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CancelDraftAsync(draft.DraftId);
+
+        Assert.Null(result);
+        Assert.Equal("Draft preparation is in progress and cannot be cancelled", error);
+        Assert.Equal(409, statusCode);
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        Assert.Equal("PREPARING", reloaded?.Status);
+        Assert.Null(reloaded?.LastEventMessage);
+    }
+
+    [Fact]
+    public async Task CancelDraftAsync_FinalJobDraftReturnsExistingDraftWithoutMutation()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            finalJobId: "job-1");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.CancelDraftAsync(draft.DraftId);
+
+        Assert.NotNull(result);
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
+        Assert.Equal("job-1", result!.FinalJobId);
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        Assert.Equal("AWAITING_CLAIM_SELECTION", reloaded?.Status);
+        Assert.Equal("job-1", reloaded?.FinalJobId);
+        Assert.Null(reloaded?.LastEventMessage);
+    }
+
+    [Fact]
     public async Task StorePreparedResultAsync_MergesPriorLastErrorIntoDeduplicatedFailureHistory()
     {
         await using var database = await TestDatabase.CreateAsync();
@@ -385,7 +432,8 @@ public sealed class ClaimSelectionDraftServiceTests
         string? draftStateJson = null,
         string? inviteCode = null,
         DateTime? createdUtc = null,
-        DateTime? expiresUtc = null)
+        DateTime? expiresUtc = null,
+        string? finalJobId = null)
     {
         var created = createdUtc ?? DateTime.UtcNow;
         var draft = new ClaimSelectionDraftEntity
@@ -401,6 +449,7 @@ public sealed class ClaimSelectionDraftServiceTests
             InviteCode = inviteCode,
             SelectionMode = "interactive",
             DraftStateJson = draftStateJson,
+            FinalJobId = finalJobId,
             CreatedUtc = created,
             UpdatedUtc = created,
             ExpiresUtc = expiresUtc ?? DateTime.UtcNow.AddHours(1),

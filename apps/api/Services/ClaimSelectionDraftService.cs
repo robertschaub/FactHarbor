@@ -332,6 +332,9 @@ public sealed class ClaimSelectionDraftService
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
         if (draft is null) return (null, "Draft not found", 404);
+        if (draft.FinalJobId != null)
+            return (draft, null, 0);
+
         if (EnforceLazyExpiry(draft))
             await _db.SaveChangesAsync();
 
@@ -339,6 +342,8 @@ public sealed class ClaimSelectionDraftService
         {
             return (draft, null, 0);
         }
+        if (draft.Status == "PREPARING")
+            return (null, "Draft preparation is in progress and cannot be cancelled", 409);
 
         draft.Status = "CANCELLED";
         draft.LastEventMessage = "Draft cancelled.";

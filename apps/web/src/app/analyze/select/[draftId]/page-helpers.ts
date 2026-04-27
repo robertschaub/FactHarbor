@@ -95,6 +95,10 @@ export function getStatusSummary(
   }
 }
 
+export function canCancelDraftStatus(status: DraftStatus): boolean {
+  return !["CANCELLED", "COMPLETED", "EXPIRED", "PREPARING"].includes(status);
+}
+
 export function shouldShowDraftSummary(status: DraftStatus): boolean {
   return status !== "QUEUED" && status !== "PREPARING" && status !== "COMPLETED";
 }
