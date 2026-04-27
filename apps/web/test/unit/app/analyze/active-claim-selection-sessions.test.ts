@@ -4,6 +4,7 @@ import {
   getResumeTarget,
   getSessionStatusLabel,
   getSessionSummary,
+  shouldDropSessionFromRegistry,
 } from "@/app/analyze/ActiveClaimSelectionSessions";
 import type { StoredClaimSelectionSessionRef } from "@/lib/claim-selection-client";
 
@@ -23,7 +24,7 @@ function buildRef(overrides: Partial<StoredClaimSelectionSessionRef> = {}): Stor
 }
 
 describe("ActiveClaimSelectionSessions helpers", () => {
-  it("keeps the report link available when draft access is gone but the final job id is known", () => {
+  it("drops sessions from the resume registry once the final job id is known", () => {
     const item = {
       ref: buildRef({
         lastKnownStatus: "COMPLETED",
@@ -34,12 +35,29 @@ describe("ActiveClaimSelectionSessions helpers", () => {
       accessUnavailable: true,
     };
 
-    expect(getResumeTarget(item)).toEqual({
-      destination: "/jobs/job-1",
-      linkLabel: "Open report",
-    });
-    expect(getSessionStatusLabel(item)).toBe("REPORT PROCESSING");
-    expect(getSessionSummary(item)).toBe("Preparation has completed and the report job is processing.");
+    expect(shouldDropSessionFromRegistry(null, item.ref)).toBe(true);
+    expect(getResumeTarget(item)).toBeNull();
+  });
+
+  it("drops refreshed drafts when the server reports a final job id", () => {
+    expect(
+      shouldDropSessionFromRegistry({
+        draftId: "draft-1",
+        status: "COMPLETED",
+        progress: 100,
+        isHidden: false,
+        lastEventMessage: null,
+        selectionMode: "interactive",
+        originalInputType: "url",
+        originalInputValue: "https://example.com/article",
+        activeInputType: "url",
+        activeInputValue: "https://example.com/article",
+        finalJobId: "job-1",
+        createdUtc: "2026-04-23T18:01:29.000Z",
+        updatedUtc: "2026-04-23T18:02:29.000Z",
+        expiresUtc: "2026-04-24T18:01:29.000Z",
+      }),
+    ).toBe(true);
   });
 
   it("labels claim-selection-ready sessions without exposing the raw internal status", () => {

@@ -2232,3 +2232,7 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Collaboration Rules Restructure Proposal -- [Standard] [open-items: yes]
 **For next agent:** Phase 3 is now a proposal only: `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` gives a slice-by-slice approval matrix for shrinking `Multi_Agent_Collaboration_Rules.md` into a routing doc while preserving hub-and-spoke and WIP templates as procedures. Do not edit the rules file until Captain approves slices.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Collaboration_Rules_Restructure_Proposal.md
+---
+### 2026-04-27 | Lead Developer | Codex (GPT-5) | Analyze Screen Report Processing Sessions -- [Standard] [open-items: no]
+**For next agent:** `/analyze` no longer shows `REPORT PROCESSING` resume entries once `finalJobId` is known. `ActiveClaimSelectionSessions.shouldDropSessionFromRegistry()` now treats `draft.finalJobId` / `ref.lastKnownFinalJobId` as cleanup signals, storage sync removes old refs before display, refresh removes server-returned final-job drafts, and the obsolete `Open report` branch was deleted. Focused Vitest passed.
+→ Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md

@@ -57,11 +57,6 @@ function getStatusTone(status: string): { background: string; color: string } {
 }
 
 export function getSessionStatusLabel(item: ActiveSessionItem): string {
-  const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
-  if (finalJobId) {
-    return "REPORT PROCESSING";
-  }
-
   const status = item.draft?.status ?? item.ref.lastKnownStatus;
   if (status === "AWAITING_CLAIM_SELECTION") {
     return "READY";
@@ -71,14 +66,6 @@ export function getSessionStatusLabel(item: ActiveSessionItem): string {
 }
 
 export function getResumeTarget(item: ActiveSessionItem): { destination: string; linkLabel: string } | null {
-  const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
-  if (finalJobId) {
-    return {
-      destination: `/jobs/${finalJobId}`,
-      linkLabel: "Open report",
-    };
-  }
-
   if (item.accessUnavailable) {
     return null;
   }
@@ -90,11 +77,6 @@ export function getResumeTarget(item: ActiveSessionItem): { destination: string;
 }
 
 export function getSessionSummary(item: ActiveSessionItem): string {
-  const finalJobId = item.draft?.finalJobId ?? item.ref.lastKnownFinalJobId;
-  if (finalJobId) {
-    return "Preparation has completed and the report job is processing.";
-  }
-
   if (item.accessUnavailable) {
     return "Session access is no longer available in this browser profile.";
   }
@@ -106,10 +88,6 @@ export function getSessionSummary(item: ActiveSessionItem): string {
   const draft = item.draft;
   if (!draft) {
     return "Waiting for the next refresh.";
-  }
-
-  if (draft.finalJobId) {
-    return "Preparation has completed and the report job is processing.";
   }
 
   switch (draft.status) {
@@ -126,7 +104,11 @@ export function getSessionSummary(item: ActiveSessionItem): string {
   }
 }
 
-function shouldDropSessionFromRegistry(draft: DraftResponse | null): boolean {
+export function shouldDropSessionFromRegistry(
+  draft: DraftResponse | null,
+  ref?: Pick<StoredClaimSelectionSessionRef, "lastKnownFinalJobId"> | null,
+): boolean {
+  if (draft?.finalJobId || ref?.lastKnownFinalJobId) return true;
   if (!draft) return false;
   return draft.status === "CANCELLED" || draft.status === "EXPIRED";
 }
@@ -237,7 +219,12 @@ export function ActiveClaimSelectionSessions({ adminKey }: { adminKey: string | 
 
   useEffect(() => {
     const syncFromStorage = () => {
-      setSessionRefs(getStoredActiveClaimSelectionSessions());
+      const storedRefs = getStoredActiveClaimSelectionSessions();
+      const activeRefs = storedRefs.filter((ref) => !shouldDropSessionFromRegistry(null, ref));
+      if (activeRefs.length !== storedRefs.length) {
+        setStoredActiveClaimSelectionSessions(activeRefs);
+      }
+      setSessionRefs(activeRefs);
     };
 
     syncFromStorage();
@@ -276,7 +263,7 @@ export function ActiveClaimSelectionSessions({ adminKey }: { adminKey: string | 
         );
 
         for (const { ref, snapshot } of sliceResults) {
-          if (snapshot.remove) {
+          if (snapshot.remove || shouldDropSessionFromRegistry(snapshot.draft, ref)) {
             nextRefs = nextRefs.filter((entry) => entry.draftId !== ref.draftId);
             continue;
           }
@@ -307,7 +294,6 @@ export function ActiveClaimSelectionSessions({ adminKey }: { adminKey: string | 
         const item = results.get(ref.draftId);
         if (!item) return false;
         if (item.accessUnavailable) return false;
-        if (item.draft?.finalJobId) return false;
         return item.draft?.status === "QUEUED" || item.draft?.status === "PREPARING";
       });
 
@@ -424,11 +410,6 @@ export function ActiveClaimSelectionSessions({ adminKey }: { adminKey: string | 
                   {resumeTarget ? (
                     <Link
                       href={resumeTarget.destination}
-                      onClick={() => {
-                        if ((draft?.finalJobId ?? item.ref.lastKnownFinalJobId) !== null) {
-                          dismissSession(item.ref.draftId);
-                        }
-                      }}
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
