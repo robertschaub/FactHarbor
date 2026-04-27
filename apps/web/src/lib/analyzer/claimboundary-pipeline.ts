@@ -623,6 +623,94 @@ function deriveLanguageIntent(understanding: CBClaimUnderstanding) {
   };
 }
 
+function sha256Utf8(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function stableJsonStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJsonStringify(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, child]) => child !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right));
+    return `{${entries
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJsonStringify(child)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashEffectiveConfig(value: unknown): string {
+  return sha256Utf8(stableJsonStringify(value));
+}
+
+function assertPreparedStage1ProvenanceMatches(params: {
+  input: AnalysisInput;
+  preparedStage1: PreparedStage1Snapshot;
+  pipelineConfig: PipelineConfig;
+  current: {
+    promptContentHash: string | null;
+    pipelineConfigHash: string;
+    searchConfigHash: string;
+    calcConfigHash: string;
+    selectionCap: number;
+  };
+}): void {
+  const { input, preparedStage1, pipelineConfig, current } = params;
+  if (pipelineConfig.provenanceValidationEnabled === false) {
+    return;
+  }
+
+  const provenance = preparedStage1.preparationProvenance;
+  if (!provenance) {
+    throw new Error(
+      "Prepared Stage 1 snapshot is missing preparationProvenance. Retry preparation before continuing.",
+    );
+  }
+
+  const mismatches: string[] = [];
+  const compareRequiredHash = (
+    label: "promptContentHash" | "pipelineConfigHash" | "searchConfigHash" | "calcConfigHash",
+    preparedValue: string | null | undefined,
+    currentValue: string | null | undefined,
+  ) => {
+    if (!preparedValue) {
+      mismatches.push(`${label} missing from prepared snapshot`);
+    } else if (!currentValue) {
+      mismatches.push(`current ${label} unavailable`);
+    } else if (preparedValue !== currentValue) {
+      mismatches.push(`${label} changed`);
+    }
+  };
+
+  if (provenance.pipelineVariant !== "claimboundary") {
+    mismatches.push(`pipelineVariant changed from ${provenance.pipelineVariant} to claimboundary`);
+  }
+  if (provenance.sourceInputType !== input.inputType) {
+    mismatches.push(`sourceInputType changed from ${provenance.sourceInputType} to ${input.inputType}`);
+  }
+  if (provenance.resolvedInputSha256 !== sha256Utf8(preparedStage1.resolvedInputText)) {
+    mismatches.push("resolvedInputSha256 does not match prepared resolvedInputText");
+  }
+
+  compareRequiredHash("promptContentHash", provenance.promptContentHash, current.promptContentHash);
+  compareRequiredHash("pipelineConfigHash", provenance.pipelineConfigHash, current.pipelineConfigHash);
+  compareRequiredHash("searchConfigHash", provenance.searchConfigHash, current.searchConfigHash);
+  compareRequiredHash("calcConfigHash", provenance.calcConfigHash, current.calcConfigHash);
+
+  if (provenance.selectionCap !== current.selectionCap) {
+    mismatches.push(`selectionCap changed from ${provenance.selectionCap} to ${current.selectionCap}`);
+  }
+
+  if (mismatches.length > 0) {
+    throw new Error(
+      `Prepared Stage 1 snapshot is stale or incompatible with the current analyzer configuration: ${mismatches.join("; ")}. Retry preparation before continuing.`,
+    );
+  }
+}
+
 async function resolveAnalysisText(params: {
   inputType: "text" | "url";
   inputValue: string;
@@ -827,12 +915,12 @@ export async function prepareStage1Snapshot(
         pipelineVariant: "claimboundary",
         sourceInputType: input.inputType,
         sourceUrl: detectedUrl,
-        resolvedInputSha256: createHash("sha256").update(analysisText, "utf8").digest("hex"),
+        resolvedInputSha256: sha256Utf8(analysisText),
         executedWebGitCommitHash: getWebGitCommitHash() ?? null,
         promptContentHash: promptResult?.contentHash ?? null,
-        pipelineConfigHash: pipelineConfigResult.contentHash,
-        searchConfigHash: searchConfigResult.contentHash,
-        calcConfigHash: calcConfigResult.contentHash,
+        pipelineConfigHash: hashEffectiveConfig(effectivePipelineConfig),
+        searchConfigHash: hashEffectiveConfig(searchConfigResult.config),
+        calcConfigHash: hashEffectiveConfig(calcConfigResult.config),
         selectionCap: normalizeClaimSelectionCap(effectivePipelineConfig.claimSelectionCap),
       },
     },
@@ -872,12 +960,15 @@ export async function runClaimBoundaryAnalysis(
   // Record prompt + SR usage once at startup and persist a full resolved snapshot
   // for the job. This restores per-job provenance without changing analysis logic.
   let promptContentHash: string | null = null;
-  if (input.jobId) {
-    await Promise.all([
-      loadPromptConfig("claimboundary", input.jobId),
-      getConfig("sr", "default", { jobId: input.jobId }),
-    ]).then(([promptResult, srConfigResult]) => {
+  if (input.jobId || input.preparedStage1) {
+    await loadPromptConfig("claimboundary", input.jobId).then((promptResult) => {
       promptContentHash = promptResult?.contentHash ?? null;
+    }).catch((err) => {
+      console.warn(`[Pipeline] Failed to load prompt provenance for job ${input.jobId ?? "unknown"}:`, err);
+    });
+  }
+  if (input.jobId) {
+    await getConfig("sr", "default", { jobId: input.jobId }).then((srConfigResult) => {
       void captureConfigSnapshotAsync(
         input.jobId!,
         initialPipelineConfig,
@@ -885,7 +976,7 @@ export async function runClaimBoundaryAnalysis(
         getSRConfigSummary(srConfigResult.config, initialCalcConfig),
       );
     }).catch((err) => {
-      console.warn(`[Pipeline] Failed to capture startup config provenance for job ${input.jobId}:`, err);
+      console.warn(`[Pipeline] Failed to capture startup SR config provenance for job ${input.jobId}:`, err);
     });
   }
 
@@ -942,6 +1033,18 @@ export async function runClaimBoundaryAnalysis(
     let understanding: CBClaimUnderstanding;
     if (input.preparedStage1) {
       checkAbortSignal(input.jobId);
+      assertPreparedStage1ProvenanceMatches({
+        input,
+        preparedStage1: input.preparedStage1,
+        pipelineConfig: initialPipelineConfig,
+        current: {
+          promptContentHash,
+          pipelineConfigHash: hashEffectiveConfig(initialPipelineConfig),
+          searchConfigHash: hashEffectiveConfig(initialSearchConfig),
+          calcConfigHash: hashEffectiveConfig(initialCalcConfig),
+          selectionCap: normalizeClaimSelectionCap(initialPipelineConfig.claimSelectionCap),
+        },
+      });
       onEvent("Reusing prepared Stage 1 snapshot...", 10);
       startPhase("understand");
       const prepared = buildPreparedResearchState({

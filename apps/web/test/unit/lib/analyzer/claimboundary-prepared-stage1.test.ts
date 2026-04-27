@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockExtractClaims = vi.fn();
@@ -224,6 +225,64 @@ import {
   prepareStage1Snapshot,
   runClaimBoundaryAnalysis,
 } from "@/lib/analyzer/claimboundary-pipeline";
+import { loadPipelineConfig } from "@/lib/config-loader";
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function stableJsonStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJsonStringify(item)).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, child]) => child !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right));
+    return `{${entries
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableJsonStringify(child)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function hashEffectiveConfig(value: unknown): string {
+  return sha256Text(stableJsonStringify(value));
+}
+
+function withPreparationProvenance<T extends { resolvedInputText: string }>(
+  preparedStage1: T,
+  overrides: Record<string, unknown> = {},
+): T & { preparationProvenance: Record<string, unknown> } {
+  return {
+    ...preparedStage1,
+    preparationProvenance: {
+      pipelineVariant: "claimboundary",
+      sourceInputType: "text",
+      resolvedInputSha256: sha256Text(preparedStage1.resolvedInputText),
+      executedWebGitCommitHash: "test-web-commit",
+      promptContentHash: "test-prompt",
+      pipelineConfigHash: hashEffectiveConfig({}),
+      searchConfigHash: hashEffectiveConfig({ provider: "mock-search" }),
+      calcConfigHash: hashEffectiveConfig({}),
+      selectionCap: 5,
+      ...overrides,
+    },
+  };
+}
+
+function buildMinimalPreparedStage1(overrides: Record<string, unknown> = {}) {
+  return withPreparationProvenance({
+    version: 1,
+    resolvedInputText: "resolved text",
+    preparedUnderstanding: {
+      detectedLanguage: "en",
+      detectedInputType: "text",
+      atomicClaims: [{ id: "AC_A", statement: "Claim A" }],
+      preliminaryEvidence: [],
+    },
+  } as any, overrides);
+}
 
 describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
   beforeEach(() => {
@@ -247,7 +306,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
   });
 
   it("reuses resolved input text, skips cold-start Stage 1, and strips deselected artifacts before research", async () => {
-    const preparedStage1 = {
+    const preparedStage1 = withPreparationProvenance({
       version: 1,
       resolvedInputText: "resolved text after URL fetch",
       preparedUnderstanding: {
@@ -290,7 +349,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
           },
         },
       },
-    } as any;
+    } as any, { sourceInputType: "url" });
 
     await runClaimBoundaryAnalysis({
       inputType: "url",
@@ -332,7 +391,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
       runClaimBoundaryAnalysis({
         inputType: "text",
         inputValue: "Captain-defined input placeholder",
-        preparedStage1: {
+        preparedStage1: withPreparationProvenance({
           version: 1,
           resolvedInputText: "resolved text",
           preparedUnderstanding: {
@@ -341,7 +400,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
             atomicClaims: [{ id: "AC_A", statement: "Claim A" }],
             preliminaryEvidence: [],
           },
-        } as any,
+        } as any),
         selectedClaimIds: ["AC_MISSING"],
       }),
     ).rejects.toThrow(
@@ -353,7 +412,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
   }, 10_000);
 
   it("preserves unresolved preliminary evidence when all prepared claims are selected", async () => {
-    const preparedStage1 = {
+    const preparedStage1 = withPreparationProvenance({
       version: 1,
       resolvedInputText: "resolved text",
       preparedUnderstanding: {
@@ -372,7 +431,7 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
           },
         ],
       },
-    } as any;
+    } as any);
 
     await runClaimBoundaryAnalysis({
       inputType: "text",
@@ -390,6 +449,92 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
         snippet: "Unmapped preliminary evidence that Stage 2 can remap semantically.",
       },
     ]);
+  }, 10_000);
+
+  it("rejects prepared snapshots without provenance before research starts", async () => {
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputType: "text",
+        inputValue: "resolved text",
+        preparedStage1: {
+          version: 1,
+          resolvedInputText: "resolved text",
+          preparedUnderstanding: {
+            detectedLanguage: "en",
+            detectedInputType: "text",
+            atomicClaims: [{ id: "AC_A", statement: "Claim A" }],
+            preliminaryEvidence: [],
+          },
+        } as any,
+        selectedClaimIds: ["AC_A"],
+      }),
+    ).rejects.toThrow("missing preparationProvenance");
+
+    expect(mockResearchEvidence).not.toHaveBeenCalled();
+    expect(mockExtractClaims).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it("rejects stale prepared snapshots when prompt provenance changed", async () => {
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputType: "text",
+        inputValue: "resolved text",
+        preparedStage1: buildMinimalPreparedStage1({ promptContentHash: "old-prompt" }) as any,
+        selectedClaimIds: ["AC_A"],
+      }),
+    ).rejects.toThrow("promptContentHash changed");
+
+    expect(mockResearchEvidence).not.toHaveBeenCalled();
+    expect(mockExtractClaims).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it.each([
+    ["pipelineConfigHash", { pipelineConfigHash: "old-pipeline" }, "pipelineConfigHash changed"],
+    ["searchConfigHash", { searchConfigHash: "old-search" }, "searchConfigHash changed"],
+    ["calcConfigHash", { calcConfigHash: "old-calc" }, "calcConfigHash changed"],
+    ["selectionCap", { selectionCap: 4 }, "selectionCap changed from 4 to 5"],
+    ["resolvedInputSha256", { resolvedInputSha256: "stale-hash" }, "resolvedInputSha256 does not match"],
+  ])("rejects prepared snapshots when %s does not match", async (_field, overrides, message) => {
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputType: "text",
+        inputValue: "resolved text",
+        preparedStage1: buildMinimalPreparedStage1(overrides) as any,
+        selectedClaimIds: ["AC_A"],
+      }),
+    ).rejects.toThrow(message);
+
+    expect(mockResearchEvidence).not.toHaveBeenCalled();
+    expect(mockExtractClaims).not.toHaveBeenCalled();
+  }, 10_000);
+
+  it("allows legacy prepared snapshots only when provenance validation is disabled", async () => {
+    vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
+      config: { provenanceValidationEnabled: false },
+      contentHash: "test-pipeline",
+      overrides: [],
+      fromCache: false,
+      fromDefault: false,
+    } as any);
+
+    await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "resolved text",
+      preparedStage1: {
+        version: 1,
+        resolvedInputText: "resolved text",
+        preparedUnderstanding: {
+          detectedLanguage: "en",
+          detectedInputType: "text",
+          atomicClaims: [{ id: "AC_A", statement: "Claim A" }],
+          preliminaryEvidence: [],
+        },
+      } as any,
+      selectedClaimIds: ["AC_A"],
+    });
+
+    expect(mockResearchEvidence).toHaveBeenCalledTimes(1);
+    expect(mockExtractClaims).not.toHaveBeenCalled();
   }, 10_000);
 });
 
@@ -418,9 +563,9 @@ describe("prepareStage1Snapshot provenance", () => {
       sourceInputType: "url",
       executedWebGitCommitHash: "test-web-commit",
       promptContentHash: "test-prompt",
-      pipelineConfigHash: "test-pipeline",
-      searchConfigHash: "test-search",
-      calcConfigHash: "test-calc",
+      pipelineConfigHash: hashEffectiveConfig({}),
+      searchConfigHash: hashEffectiveConfig({ provider: "mock-search" }),
+      calcConfigHash: hashEffectiveConfig({}),
       selectionCap: 5,
     });
     expect(prepared.preparedStage1.preparationProvenance?.resolvedInputSha256).toEqual(expect.any(String));
