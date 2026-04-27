@@ -1312,6 +1312,53 @@ describe("Stage 1: runPass1", () => {
     expect(mockLoadSection).toHaveBeenCalledWith("claimboundary", "CLAIM_EXTRACTION_PASS1", expect.any(Object));
   });
 
+  it("retries Pass 1 when structured output generation fails and then uses the recovered object", async () => {
+    const recoveredPass1 = {
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "Context about entity A and metrics",
+      roughClaims: [
+        { statement: "Entity A increased metric X", searchHint: "entity A metric X increase" },
+      ],
+      detectedLanguage: "en",
+      inferredGeography: null,
+    };
+
+    mockLoadSection.mockResolvedValue({ content: "system prompt content", variables: {} });
+    mockGenerateText
+      .mockRejectedValueOnce(new Error("No object generated: response did not match schema."))
+      .mockResolvedValueOnce({ text: "" } as any);
+    mockExtractOutput.mockReturnValueOnce(recoveredPass1);
+
+    const result = await runPass1("test input", mockPipelineConfig, "2026-02-17");
+
+    expect(result.impliedClaim).toBe("Entity A achieved metric X");
+    expect(result.roughClaims).toHaveLength(1);
+    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    const retryCall = mockGenerateText.mock.calls[1][0] as any;
+    expect(retryCall.messages[1].content).toBe("test input");
+  });
+
+  it("normalizes Pass 1 rough claim strings into searchable structural objects", async () => {
+    mockLoadSection.mockResolvedValue({ content: "system prompt content", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      impliedClaim: "Entity A achieved metric X",
+      backgroundDetails: "",
+      roughClaims: ["Entity A increased metric X"],
+      detectedLanguage: "en",
+      inferredGeography: null,
+    });
+
+    const result = await runPass1("test input", mockPipelineConfig, "2026-02-17");
+
+    expect(result.roughClaims).toEqual([
+      {
+        statement: "Entity A increased metric X",
+        searchHint: "Entity A increased metric X",
+      },
+    ]);
+  });
+
   it("should throw when prompt section is not found", async () => {
     mockLoadSection.mockResolvedValue(null as any);
 

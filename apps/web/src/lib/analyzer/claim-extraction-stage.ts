@@ -51,13 +51,30 @@ import { extractTextFromUrl } from "@/lib/retrieval";
 
 // --- Zod schemas for Stage 1 LLM output parsing ---
 
+const Pass1RoughClaimSchema = z.union([
+  z.object({
+    statement: z.string().catch(""),
+    searchHint: z.string().optional().catch(undefined),
+  }),
+  z.string(),
+]).transform((value) => {
+  if (typeof value === "string") {
+    const statement = value.trim();
+    return { statement, searchHint: statement };
+  }
+
+  const statement = value.statement.trim();
+  const searchHint =
+    typeof value.searchHint === "string" && value.searchHint.trim().length > 0
+      ? value.searchHint.trim()
+      : statement;
+  return { statement, searchHint };
+}).catch({ statement: "", searchHint: "" });
+
 const Pass1OutputSchema = z.object({
-  impliedClaim: z.string(),
-  backgroundDetails: z.string(),
-  roughClaims: z.array(z.object({
-    statement: z.string(),
-    searchHint: z.string(),
-  })),
+  impliedClaim: z.string().catch(""),
+  backgroundDetails: z.string().catch(""),
+  roughClaims: z.array(Pass1RoughClaimSchema).catch([]),
   /** BCP-47 language code detected from input text (e.g., "de", "en", "fr") */
   detectedLanguage: z.string().catch("en"),
   /** ISO 3166-1 alpha-2 country inferred from claim content, or null if not geographically specific */
@@ -1546,6 +1563,41 @@ export function getAtomicityGuidance(level: number): string {
   }
 }
 
+function normalizePass1Output(
+  output: z.infer<typeof Pass1OutputSchema>,
+): z.infer<typeof Pass1OutputSchema> {
+  const roughClaims = output.roughClaims
+    .map((claim) => {
+      const statement = claim.statement.trim();
+      const searchHint = claim.searchHint.trim() || statement;
+      return { statement, searchHint };
+    })
+    .filter((claim) => claim.statement.length > 0);
+
+  return {
+    ...output,
+    impliedClaim: output.impliedClaim.trim(),
+    backgroundDetails: output.backgroundDetails.trim(),
+    detectedLanguage: output.detectedLanguage.trim() || "en",
+    inferredGeography:
+      typeof output.inferredGeography === "string" && output.inferredGeography.trim().length > 0
+        ? output.inferredGeography.trim()
+        : null,
+    roughClaims,
+  };
+}
+
+function assessPass1Quality(output: z.infer<typeof Pass1OutputSchema>): string[] {
+  const issues: string[] = [];
+  if (!output.impliedClaim.trim()) {
+    issues.push("impliedClaim is empty");
+  }
+  if (output.roughClaims.length === 0) {
+    issues.push("roughClaims has no usable claim statements");
+  }
+  return issues;
+}
+
 /**
  * Pass 1: Rapid claim scan using Haiku.
  * Extracts impliedClaim, backgroundDetails, and roughClaims from input text.
@@ -1564,64 +1616,88 @@ export async function runPass1(
   }
 
   const model = getModelForTask("understand", undefined, pipelineConfig);
-  const llmCallStartedAt = Date.now();
-  let result: any;
-  try {
-    result = await generateText({
-      model: model.model,
-      messages: [
-        {
-          role: "system",
-          content: rendered.content,
-          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
-        },
-        { role: "user", content: inputText },
-      ],
-      temperature: (pipelineConfig.understandTemperature ?? 0.15),
-      output: Output.object({ schema: Pass1OutputSchema }),
-      providerOptions: getStructuredOutputProviderOptions(
-        pipelineConfig.llmProvider ?? "anthropic",
-      ),
-    });
+  const maxRetries = 1;
+  let lastError: Error | undefined;
 
-    const parsed = extractStructuredOutput(result);
-    if (!parsed) {
-      throw new Error("Stage 1 Pass 1: LLM returned no structured output");
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const llmCallStartedAt = Date.now();
+    let result: any;
+
+    try {
+      result = await generateText({
+        model: model.model,
+        messages: [
+          {
+            role: "system",
+            content: rendered.content,
+            providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          },
+          { role: "user", content: inputText },
+        ],
+        temperature: (pipelineConfig.understandTemperature ?? 0.15) + (attempt * 0.05),
+        output: Output.object({ schema: Pass1OutputSchema }),
+        providerOptions: getStructuredOutputProviderOptions(
+          pipelineConfig.llmProvider ?? "anthropic",
+        ),
+      });
+
+      const parsed = extractStructuredOutput(result);
+      if (!parsed) {
+        throw new Error("Stage 1 Pass 1: LLM returned no structured output");
+      }
+
+      const validated = normalizePass1Output(Pass1OutputSchema.parse(parsed));
+      const qualityIssues = assessPass1Quality(validated);
+      if (qualityIssues.length > 0) {
+        throw new Error(`Quality validation: ${qualityIssues.join("; ")}`);
+      }
+
+      if (attempt > 0) {
+        console.info(`[Stage1 Pass1] Succeeded on attempt ${attempt + 1}/${maxRetries + 1}`);
+      }
+
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: true,
+        schemaCompliant: true,
+        retries: attempt,
+        timestamp: new Date(),
+      });
+      return validated;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      const errorMessage = lastError.message;
+      recordLLMCall({
+        taskType: "understand",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result?.usage?.inputTokens ?? 0,
+        completionTokens: result?.usage?.outputTokens ?? 0,
+        totalTokens: result?.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: attempt,
+        errorMessage,
+        timestamp: new Date(),
+      });
+
+      console.warn(`[Stage1 Pass1] Attempt ${attempt + 1}/${maxRetries + 1} failed: ${errorMessage}`);
+      if (attempt === maxRetries) {
+        throw new Error(`Stage 1 Pass 1 failed after ${maxRetries + 1} attempts. Last error: ${lastError.message}`);
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
     }
-
-    const validated = Pass1OutputSchema.parse(parsed);
-    recordLLMCall({
-      taskType: "understand",
-      provider: model.provider,
-      modelName: model.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
-      durationMs: Date.now() - llmCallStartedAt,
-      success: true,
-      schemaCompliant: true,
-      retries: 0,
-      timestamp: new Date(),
-    });
-    return validated;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    recordLLMCall({
-      taskType: "understand",
-      provider: model.provider,
-      modelName: model.modelName,
-      promptTokens: result?.usage?.inputTokens ?? 0,
-      completionTokens: result?.usage?.outputTokens ?? 0,
-      totalTokens: result?.usage?.totalTokens ?? 0,
-      durationMs: Date.now() - llmCallStartedAt,
-      success: false,
-      schemaCompliant: false,
-      retries: 0,
-      errorMessage,
-      timestamp: new Date(),
-    });
-    throw error;
   }
+
+  throw lastError || new Error("Stage 1 Pass 1: Unexpected error");
 }
 
 /**
