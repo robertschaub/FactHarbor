@@ -309,6 +309,14 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Do NOT flag an evidence ID solely because it appears in reasoning but not in `citedEvidenceRegistry`");
     });
 
+    it("grounding validator does not treat empty citation sides as grounding failures", () => {
+      const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
+      expect(section).toContain("Empty `supportingEvidenceIds` or `contradictingEvidenceIds` arrays are not grounding failures by themselves");
+      expect(section).toContain("A low-truth or false verdict may legitimately cite only contradicting evidence");
+      expect(section).toContain("Do not produce issues whose only complaint is that a directional citation side is empty");
+      expect(section).toContain("Grounding validation checks existence of cited or reasoned-about material");
+    });
+
     it("advocate contains scope-of-truth rule preventing semantic drift", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
       expect(section).toContain("Scope-of-truth rule");
