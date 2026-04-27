@@ -2236,3 +2236,7 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-27 | Lead Developer | Codex (GPT-5) | Analyze Screen Report Processing Sessions -- [Standard] [open-items: no]
 **For next agent:** `/analyze` no longer shows `REPORT PROCESSING` resume entries once `finalJobId` is known. `ActiveClaimSelectionSessions.shouldDropSessionFromRegistry()` now treats `draft.finalJobId` / `ref.lastKnownFinalJobId` as cleanup signals, storage sync removes old refs before display, refresh removes server-returned final-job drafts, and the obsolete `Open report` branch was deleted. Focused Vitest passed.
 → Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md
+---
+### 2026-04-27 | Lead Developer | Codex (GPT-5) | Stale Draft Preparation Recovery -- [Standard] [open-items: no]
+**For next agent:** Draft preparation now has stale-local-running recovery parity with report jobs. `internal-runner-queue.ts` uses the shared 15-minute stale threshold to fail locally tracked `PREPARING` drafts through `/internal/v1/claim-selection-drafts/{draftId}/failed`, then clears `runningDraftIds`/running count. Local stuck draft `e410123312c44e5c961e5ae36b921273` was recovered via app-route drain and is now `FAILED`.
+→ Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Stale_Draft_Preparation_Recovery.md

@@ -128,6 +128,8 @@ function getMaxQueueWaitMs(): number {
   return 6 * 60 * 60 * 1000;
 }
 
+const STALE_RUNNING_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+
 /**
  * Check whether the current system pause was caused by a network-connectivity failure
  * (DNS, TCP refused, fetch layer) rather than a provider-side issue (auth, rate limit,
@@ -538,7 +540,6 @@ export async function drainRunnerQueue() {
     // is RUNNING but isn't in our local set was orphaned by the restart. These are immediately
     // re-queued (not failed) so they run again from scratch. Jobs that ARE locally tracked but
     // haven't updated in 15 minutes are genuinely stale and get failed.
-    const STALE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
     try {
       // Fetch all RUNNING jobs from DB (paginated API: { jobs, pagination })
       const runningJobs: Array<{ jobId: string; updatedUtc: string; progress?: number; pipelineVariant?: string }> = [];
@@ -593,7 +594,7 @@ export async function drainRunnerQueue() {
           continue;
         }
         const staleDurationMs = now - lastUpdateMs;
-        const isStale = staleDurationMs > STALE_THRESHOLD_MS;
+        const isStale = staleDurationMs > STALE_RUNNING_THRESHOLD_MS;
 
         if (!wasLocallyRunning) {
           let liveJob: any;
@@ -843,6 +844,7 @@ export async function drainDraftQueue() {
     const maxConcurrency = getDraftPreparationMaxConcurrency();
     const apiBase = getApiBaseOrThrow();
     const adminKey = getAdminKeyOrNull();
+    const now = Date.now();
 
     try {
       const payload = await apiGet(apiBase, adminKey, `/internal/v1/claim-selection-drafts/recoverable`);
@@ -857,9 +859,27 @@ export async function drainDraftQueue() {
       for (const draft of sortedDrafts) {
         const draftId = String(draft?.draftId || "");
         if (!draftId) continue;
-        if (ds.runningDraftIds.has(draftId) || inMemoryQueuedIds.has(draftId)) continue;
 
         const status = String(draft?.status || "").toUpperCase();
+        if (ds.runningDraftIds.has(draftId)) {
+          if (status === "PREPARING") {
+            const lastUpdateMs = parseApiUtcTimestampMs(draft?.updatedUtc);
+            const staleDurationMs = lastUpdateMs === null ? 0 : now - lastUpdateMs;
+            if (lastUpdateMs !== null && staleDurationMs > STALE_RUNNING_THRESHOLD_MS) {
+              const reason = `Stale draft preparation (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`;
+              console.warn(`[Runner] Failing stale draft preparation ${draftId}: ${reason}`);
+              await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
+                errorCode: "stage1_failed",
+                errorMessage: reason,
+              });
+              ds.runningDraftIds.delete(draftId);
+              ds.runningCount = Math.max(0, ds.runningCount - 1);
+            }
+          }
+          continue;
+        }
+        if (inMemoryQueuedIds.has(draftId)) continue;
+
         if (status === "PREPARING") {
           try {
             await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {

@@ -228,4 +228,60 @@ describe("runner concurrency split", () => {
     analysis.resolve({ resultJson: { meta: {} } });
     await flushMicrotasks();
   });
+
+  it("fails a locally tracked stale draft preparation", async () => {
+    vi.setSystemTime(new Date("2026-04-27T08:00:00.000Z"));
+    const failedBodies: any[] = [];
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/recoverable")) {
+        return new Response(JSON.stringify({
+          drafts: [{
+            draftId: "draft-stale",
+            status: "PREPARING",
+            createdUtc: "2026-04-27T07:00:00.000Z",
+            updatedUtc: "2026-04-27T07:40:00.000Z",
+          }],
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.endsWith("/internal/v1/claim-selection-drafts/draft-stale/failed")) {
+        failedBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/idle-auto-proceed-due")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 1,
+      queue: [],
+      runningDraftIds: new Set<string>(["draft-stale"]),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainDraftQueue } = await import("@/lib/internal-runner-queue");
+    await drainDraftQueue();
+    await flushMicrotasks();
+
+    const ds = (globalThis as any).__fhDraftQueueState;
+
+    expect(failedBodies).toEqual([
+      expect.objectContaining({
+        errorCode: "stage1_failed",
+        errorMessage: expect.stringContaining("Stale draft preparation"),
+      }),
+    ]);
+    expect(ds.runningCount).toBe(0);
+    expect(ds.runningDraftIds.has("draft-stale")).toBe(false);
+  });
 });
