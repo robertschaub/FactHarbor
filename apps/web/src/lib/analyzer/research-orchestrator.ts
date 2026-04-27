@@ -1281,6 +1281,8 @@ export async function runResearchIteration(
     searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
   );
 
+  state.onEvent?.(`Generating ${iterationType} research queries for ${targetClaim.id}...`, -1);
+
   // 1. Generate search queries via LLM (Haiku)
   const queries = sortGeneratedResearchQueries(await generateResearchQueries(
     targetClaim,
@@ -1298,6 +1300,11 @@ export async function runResearchIteration(
   ));
   state.llmCalls++;
   const generatedQueryCount = queries.length;
+  if (generatedQueryCount === 0) {
+    state.onEvent?.(`No ${iterationType} research queries generated for ${targetClaim.id}.`, -1);
+  } else {
+    state.onEvent?.(`Generated ${generatedQueryCount} ${iterationType} research query item(s) for ${targetClaim.id}.`, -1);
+  }
   const iterationTelemetry = createClaimIterationTelemetryEntry(
     iterationIndex,
     iterationType,
@@ -1327,6 +1334,7 @@ export async function runResearchIteration(
         // 2. Web search — no geo/language params sent to search providers.
         // Query generation prompt handles language; search stays unfiltered.
         // detectedLanguage is threaded for language-aware supplementary providers (Wikipedia).
+        state.onEvent?.(`Searching ${focus} source candidates for ${targetClaim.id}...`, -1);
         const response = await searchWebWithProvider({
           query: queryObj.query,
           maxResults: maxSourcesPerIteration,
@@ -1376,6 +1384,7 @@ export async function runResearchIteration(
         telemetry.searchResults += response.results.length;
 
         // 3. Relevance classification via LLM (Haiku, batched)
+        state.onEvent?.(`Classifying ${response.results.length} search result(s) for ${targetClaim.id}...`, -1);
         const {
           relevantSources,
           cacheHit: relevanceCacheHit,
@@ -1401,6 +1410,7 @@ export async function runResearchIteration(
         const { selectTopSources } = await import("./pipeline-utils");
         const topN = pipelineConfig.relevanceTopNFetch ?? 5;
         const selectedForFetch = selectTopSources(relevantSources, topN);
+        state.onEvent?.(`Fetching ${selectedForFetch.length} relevant source(s) for ${targetClaim.id}...`, -1);
         debugLog(`[Stage2] Fetching top ${selectedForFetch.length} of ${relevantSources.length} relevant sources (topN=${topN})`, selectedForFetch.map((s) => ({
           url: s.url.slice(0, 100),
           score: s.relevanceScore,
@@ -1443,6 +1453,7 @@ export async function runResearchIteration(
         // not during research iteration decisions. Deferring saves 15-25s per new domain.
 
         // 6. Evidence extraction with mandatory EvidenceScope (Haiku, batched)
+        state.onEvent?.(`Extracting evidence from ${fetchedSources.length} fetched source(s) for ${targetClaim.id}...`, -1);
         const rawEvidence = await extractResearchEvidence(
           targetClaim,
           fetchedSources,
@@ -1528,6 +1539,7 @@ export async function runResearchIteration(
         for (const item of claimLocalCappedItems) {
           incrementDirectionCounts(telemetry.directionCounts, item.claimDirection);
         }
+        state.onEvent?.(`Admitted ${claimLocalCappedItems.length} evidence item(s) for ${targetClaim.id}.`, -1);
 
         // Track contradiction/contrarian sources
         if (iterationType === "contradiction" || iterationType === "contrarian") {
@@ -1585,7 +1597,7 @@ export async function runResearchIteration(
         `attempting primary-source refinement anyway using refinement-plan metadata and fallback ordering.`,
       );
     }
-    state.onEvent?.("Refining direct-source discovery...", -1);
+    state.onEvent?.(`Generating direct-source refinement queries for ${targetClaim.id}...`, -1);
     const refinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
       targetClaim,
       "refinement",
@@ -1720,6 +1732,7 @@ export async function maybeRunSupplementaryEnglishLane(
   const laneReason = `native_scarcity: ${primaryResultsCount} results / ${primaryNewEvidenceCount} evidence below thresholds`;
 
   // Generate one English query via the standard query generation path
+  state.onEvent?.(`Generating English supplementary query for ${targetClaim.id}...`, -1);
   const enQueries = await generateResearchQueries(
     targetClaim,
     iterationType as "main" | "contradiction" | "contrarian",
@@ -1758,6 +1771,7 @@ export async function maybeRunSupplementaryEnglishLane(
 
   const enQuery = enQueries[0];
   try {
+    state.onEvent?.(`Searching English supplementary source candidates for ${targetClaim.id}...`, -1);
     const response = await searchWebWithProvider({
       query: enQuery.query,
       maxResults: searchConfig.maxSourcesPerIteration ?? 5,
@@ -1806,6 +1820,7 @@ export async function maybeRunSupplementaryEnglishLane(
     }
 
     // Classify relevance through the same LLM path as primary lane (no fixed relevanceScore bypass)
+    state.onEvent?.(`Classifying ${response.results.length} English supplementary result(s) for ${targetClaim.id}...`, -1);
     const enLaneRelevantGeographies = getClaimRelevantGeographies(
       targetClaim,
       searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
@@ -1829,6 +1844,7 @@ export async function maybeRunSupplementaryEnglishLane(
       0,
     );
 
+    state.onEvent?.(`Fetching ${relevantSources.length} English supplementary source(s) for ${targetClaim.id}...`, -1);
     const fetchedSources = await fetchSources(
       relevantSources,
       enQuery.query,
@@ -1863,6 +1879,7 @@ export async function maybeRunSupplementaryEnglishLane(
       return;
     }
 
+    state.onEvent?.(`Extracting English supplementary evidence from ${fetchedSources.length} source(s) for ${targetClaim.id}...`, -1);
     const rawEvidence = await extractResearchEvidence(
       targetClaim, fetchedSources, pipelineConfig, currentDate, state.understanding?.atomicClaims ?? [targetClaim],
     );
@@ -1905,6 +1922,7 @@ export async function maybeRunSupplementaryEnglishLane(
     for (const item of claimLocalCappedItems) {
       incrementDirectionCounts(enTelemetry.directionCounts, item.claimDirection);
     }
+    state.onEvent?.(`Admitted ${claimLocalCappedItems.length} English supplementary evidence item(s) for ${targetClaim.id}.`, -1);
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   } catch (err) {
     console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
