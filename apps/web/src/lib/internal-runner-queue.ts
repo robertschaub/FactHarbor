@@ -337,7 +337,6 @@ async function runJobBackground(jobId: string) {
     const adminKey = getAdminKeyOrNull();
     const qs = getRunnerQueueState();
     const executedWebGitCommitHash = getWebGitCommitHash();
-    let acquiredSlot = false;
     let lastStageEventAt = Date.now();
     let lastStageMessage = "Starting analysis";
     let lastStageProgress: number | undefined;
@@ -401,8 +400,6 @@ async function runJobBackground(jobId: string) {
     };
 
     try {
-      acquiredSlot = true;
-
     const job = await apiGet(apiBase, adminKey, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
     const inputValue = job.inputValue as string;
@@ -555,9 +552,7 @@ async function runJobBackground(jobId: string) {
     } finally {
       await stopRunnerHeartbeat();
       const qs2 = getRunnerQueueState();
-      if (acquiredSlot) {
-        qs2.runningCount = Math.max(0, qs2.runningCount - 1);
-      }
+      qs2.runningCount = Math.max(0, qs2.runningCount - 1);
       qs2.runningJobIds.delete(jobId);
       void drainRunnerQueue();
     }
