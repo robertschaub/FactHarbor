@@ -229,6 +229,106 @@ describe("runner concurrency split", () => {
     await flushMicrotasks();
   });
 
+  it("emits a heartbeat when a report job has no recent stage event", async () => {
+    process.env.FH_RUNNER_HEARTBEAT_INTERVAL_MS = "15000";
+    let jobDetailReads = 0;
+    const statusBodies: any[] = [];
+    const analysis = createDeferred<any>();
+    vi.mocked(runClaimBoundaryAnalysis).mockImplementation(() => analysis.promise);
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/v1/jobs?page=1&pageSize=200")) {
+        return new Response(JSON.stringify({
+          jobs: [],
+          pagination: { totalPages: 1 },
+        }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/v1/jobs/job-heartbeat")) {
+        jobDetailReads++;
+        if (jobDetailReads === 1) {
+          return new Response(JSON.stringify({
+            jobId: "job-heartbeat",
+            status: "QUEUED",
+            pipelineVariant: "claimboundary",
+          }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({
+          jobId: "job-heartbeat",
+          status: "RUNNING",
+          pipelineVariant: "claimboundary",
+          inputType: "text",
+          inputValue: "queued report input",
+        }), { status: 200 });
+      }
+
+      if (method === "POST" && url.endsWith("/internal/v1/jobs/job-heartbeat/claim-runner")) {
+        return new Response(JSON.stringify({
+          claimed: true,
+          reason: "claimed",
+          status: "RUNNING",
+          runningCount: 1,
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/jobs/job-heartbeat/status")) {
+        statusBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/jobs/job-heartbeat/result")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "log").mockImplementation(() => {});
+
+    (globalThis as any).__fhRunnerQueueState = {
+      runningCount: 0,
+      queue: [{ jobId: "job-heartbeat", enqueuedAt: Date.now() }],
+      runningJobIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+      watchdogTimer: null,
+    };
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 0,
+      queue: [],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainRunnerQueue } = await import("@/lib/internal-runner-queue");
+    await drainRunnerQueue();
+    await flushMicrotasks();
+
+    expect(statusBodies).toContainEqual(expect.objectContaining({
+      status: "RUNNING",
+      progress: 5,
+      message: "Preparing input (pipeline: claimboundary)",
+    }));
+
+    await vi.advanceTimersByTimeAsync(15_000);
+    await flushMicrotasks(12);
+
+    expect(statusBodies).toContainEqual(expect.objectContaining({
+      status: "RUNNING",
+      progress: 5,
+      message: expect.stringContaining("Still running"),
+    }));
+
+    analysis.resolve({ resultJson: { meta: {} } });
+    await flushMicrotasks(20);
+  });
+
   it("fails a locally tracked stale draft preparation", async () => {
     vi.setSystemTime(new Date("2026-04-27T08:00:00.000Z"));
     const failedBodies: any[] = [];

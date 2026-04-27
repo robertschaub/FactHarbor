@@ -182,6 +182,14 @@ function getRunnerWatchdogIntervalMs(): number {
   return 30_000;
 }
 
+export function getRunnerHeartbeatIntervalMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number.parseInt(env.FH_RUNNER_HEARTBEAT_INTERVAL_MS ?? "", 10);
+  if (Number.isFinite(raw) && raw >= 15_000) {
+    return raw;
+  }
+  return 60_000;
+}
+
 function parseApiUtcTimestampMs(value: unknown): number | null {
   if (typeof value !== "string" || !value.trim()) return null;
   const hasTimezone = /(?:Z|[+\-]\d{2}:\d{2})$/i.test(value);
@@ -311,8 +319,60 @@ async function runJobBackground(jobId: string) {
     const qs = getRunnerQueueState();
     const executedWebGitCommitHash = getWebGitCommitHash();
     let acquiredSlot = false;
+    let lastStageEventAt = Date.now();
+    let lastStageMessage = "Starting analysis";
+    let lastStageProgress: number | undefined;
+    let heartbeatStopped = false;
+    let heartbeatInFlight: Promise<void> | null = null;
+    const heartbeatIntervalMs = getRunnerHeartbeatIntervalMs();
+
+    const sendRunnerHeartbeat = async () => {
+      if (heartbeatStopped || heartbeatInFlight) return;
+      const staleForMs = Date.now() - lastStageEventAt;
+      if (staleForMs < heartbeatIntervalMs) return;
+
+      heartbeatInFlight = (async () => {
+        try {
+          if (heartbeatStopped) return;
+          const staleForSeconds = Math.max(1, Math.round(staleForMs / 1000));
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+            status: "RUNNING",
+            progress: normalizeRunningProgress(lastStageProgress),
+            level: "info",
+            message: `Still running (${staleForSeconds}s since last stage event): ${lastStageMessage}`,
+          });
+        } catch (err) {
+          console.warn(`[Runner] Heartbeat update failed for job ${jobId}:`, err);
+        } finally {
+          heartbeatInFlight = null;
+        }
+      })();
+
+      await heartbeatInFlight;
+    };
+
+    const heartbeatTimer = setInterval(() => {
+      void sendRunnerHeartbeat();
+    }, heartbeatIntervalMs);
+    const heartbeatTimerHandle = heartbeatTimer as { unref?: () => void };
+    if (typeof heartbeatTimerHandle.unref === "function") {
+      heartbeatTimerHandle.unref();
+    }
+
+    const stopRunnerHeartbeat = async () => {
+      heartbeatStopped = true;
+      clearInterval(heartbeatTimer);
+      if (heartbeatInFlight) {
+        await heartbeatInFlight;
+      }
+    };
 
     const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
+      lastStageEventAt = Date.now();
+      lastStageMessage = message;
+      if (typeof progress === "number" && progress > 0) {
+        lastStageProgress = progress;
+      }
       await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
         status: "RUNNING",
         progress: normalizeRunningProgress(progress),
@@ -386,6 +446,7 @@ async function runJobBackground(jobId: string) {
       }
     }
 
+    await stopRunnerHeartbeat();
     await emit("info", "Storing result", 95);
     await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/result`, result);
 
@@ -422,6 +483,7 @@ async function runJobBackground(jobId: string) {
       );
     }
     } catch (e: any) {
+      await stopRunnerHeartbeat();
       const msg = e?.message ?? String(e);
       const stack = typeof e?.stack === "string" ? e.stack : null;
 
@@ -472,6 +534,7 @@ async function runJobBackground(jobId: string) {
         }
       } catch {}
     } finally {
+      await stopRunnerHeartbeat();
       const qs2 = getRunnerQueueState();
       if (acquiredSlot) {
         qs2.runningCount = Math.max(0, qs2.runningCount - 1);

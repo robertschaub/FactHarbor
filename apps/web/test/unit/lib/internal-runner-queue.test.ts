@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getAutomaticRecommendationSelection,
+  getRunnerHeartbeatIntervalMs,
   normalizeDraftPreparationProgress,
   normalizeRunningProgress,
   resolveRunnerConcurrencyBudget,
@@ -88,5 +89,32 @@ describe("resolveRunnerConcurrencyBudget", () => {
       jobMaxConcurrency: 2,
       draftPreparationMaxConcurrency: 1,
     });
+  });
+});
+
+describe("getRunnerHeartbeatIntervalMs", () => {
+  it("defaults to one minute", () => {
+    expect(getRunnerHeartbeatIntervalMs({} as NodeJS.ProcessEnv)).toBe(60_000);
+  });
+
+  it("accepts explicit intervals at or above fifteen seconds", () => {
+    expect(
+      getRunnerHeartbeatIntervalMs({
+        FH_RUNNER_HEARTBEAT_INTERVAL_MS: "15000",
+      } as NodeJS.ProcessEnv),
+    ).toBe(15_000);
+  });
+
+  it("falls back when the interval is too aggressive or invalid", () => {
+    expect(
+      getRunnerHeartbeatIntervalMs({
+        FH_RUNNER_HEARTBEAT_INTERVAL_MS: "14999",
+      } as NodeJS.ProcessEnv),
+    ).toBe(60_000);
+    expect(
+      getRunnerHeartbeatIntervalMs({
+        FH_RUNNER_HEARTBEAT_INTERVAL_MS: "not-a-number",
+      } as NodeJS.ProcessEnv),
+    ).toBe(60_000);
   });
 });
