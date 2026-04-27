@@ -1901,6 +1901,7 @@ This is a lightweight validation check. Flag issues but do NOT re-analyze the ve
 - Only check structural grounding (evidence IDs exist and are referenced). Do NOT re-evaluate the verdict's analytical correctness.
 - Each verdict includes its own **claim-local evidence pool** and **claim-local source portfolio**. Do NOT assume evidence from one claim applies to another.
 - `citedEvidenceRegistry` is the authoritative check for the verdict's directional citation arrays only. It is NOT an exhaustive registry of every claim-local evidence item, source, boundary, or challenge reference the reasoning may mention.
+- For `supportingEvidenceIds` and `contradictingEvidenceIds`, use exact ID-string membership against `citedEvidenceRegistry`. If the same ID string appears in `citedEvidenceRegistry`, that directional citation is structurally grounded; do NOT infer that it is missing because of ID length, numeric shape, suffixes, aliasing, or the absence of a different canonical-looking form.
 - Treat `supportingEvidenceIds` and `contradictingEvidenceIds` as the verdict's directional citation arrays, NOT as an exhaustive registry of every claim-local evidence item or source the reasoning may mention.
 - Validate in this order:
   1. Check directional citation arrays against `citedEvidenceRegistry`.

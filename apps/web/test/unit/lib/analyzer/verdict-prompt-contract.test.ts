@@ -307,6 +307,8 @@ describe("Stage-4 prompt contract", () => {
       const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
       expect(section).toContain("claim-local context (`evidencePool`, `sourcePortfolio`, `boundaryIds`, or `challengeContext`)");
       expect(section).toContain("`citedEvidenceRegistry` is the authoritative check for the verdict's directional citation arrays only");
+      expect(section).toContain("use exact ID-string membership against `citedEvidenceRegistry`");
+      expect(section).toContain("do NOT infer that it is missing because of ID length, numeric shape, suffixes, aliasing");
       expect(section).toContain("Validate in this order");
       expect(section).toContain("Do NOT flag an evidence ID solely because it appears in reasoning but not in `citedEvidenceRegistry`");
     });
