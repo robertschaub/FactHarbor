@@ -100,7 +100,8 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             req.inputValue,
             req.selectionMode ?? "interactive",
             req.inviteCode,
-            isAdmin);
+            isAdmin,
+            ResolveSourceIp(Request));
 
         if (result is null)
             return StatusCode(statusCode, new { error });
@@ -194,8 +195,11 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
     [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> Confirm(string draftId, [FromBody] ConfirmDraftRequest req)
     {
-        var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
+        var (authorizedDraft, authError) = await AuthorizeDraftAccessAsync(draftId);
         if (authError is not null) return authError;
+        var actorType = ResolveDraftActorType(Request);
+        var sourceIp = ResolveSourceIp(Request);
+        var beforeStatus = authorizedDraft!.Status;
 
         await using var tx = await _db.Database.BeginTransactionAsync();
         try
@@ -213,8 +217,17 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
                 {
                     draft.Status = "COMPLETED";
                     draft.UpdatedUtc = DateTime.UtcNow;
-                    await _db.SaveChangesAsync();
                 }
+                _drafts.RecordDraftEvent(
+                    draft,
+                    actorType,
+                    "confirm",
+                    "noop",
+                    beforeStatus,
+                    draft.Status,
+                    sourceIp,
+                    "Draft already has a final job");
+                await _db.SaveChangesAsync();
                 await tx.CommitAsync();
                 return Ok(new { draftId = draft.DraftId, status = draft.Status, finalJobId = draft.FinalJobId });
             }
@@ -237,6 +250,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             draft.FinalJobId = job.JobId;
             draft.Status = "COMPLETED";
             draft.UpdatedUtc = DateTime.UtcNow;
+            _drafts.RecordDraftEvent(draft, actorType, "confirm", "success", beforeStatus, draft.Status, sourceIp, $"JobId={job.JobId}");
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
 
@@ -281,7 +295,12 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
         if (authError is not null) return authError;
 
-        var (draft, error, statusCode) = await _drafts.RestartWithOtherAsync(draftId, req.inputType, req.inputValue);
+        var (draft, error, statusCode) = await _drafts.RestartWithOtherAsync(
+            draftId,
+            req.inputType,
+            req.inputValue,
+            ResolveDraftActorType(Request),
+            ResolveSourceIp(Request));
         if (draft is null)
             return StatusCode(statusCode, new { error });
 
@@ -296,7 +315,10 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
         if (authError is not null) return authError;
 
-        var (draft, error, statusCode) = await _drafts.CancelDraftAsync(draftId);
+        var (draft, error, statusCode) = await _drafts.CancelDraftAsync(
+            draftId,
+            ResolveDraftActorType(Request),
+            ResolveSourceIp(Request));
         if (draft is null)
             return StatusCode(statusCode, new { error });
 
@@ -309,7 +331,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         if (!AuthHelper.IsAdminKeyValid(Request))
             return Unauthorized(new { error = "Admin key required" });
 
-        var draft = await _drafts.SetHiddenAsync(draftId, true);
+        var draft = await _drafts.SetHiddenAsync(draftId, true, "admin", ResolveSourceIp(Request));
         if (draft is null) return NotFound(new { error = "Draft not found" });
         return Ok(new { ok = true, isHidden = draft.IsHidden });
     }
@@ -320,7 +342,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         if (!AuthHelper.IsAdminKeyValid(Request))
             return Unauthorized(new { error = "Admin key required" });
 
-        var draft = await _drafts.SetHiddenAsync(draftId, false);
+        var draft = await _drafts.SetHiddenAsync(draftId, false, "admin", ResolveSourceIp(Request));
         if (draft is null) return NotFound(new { error = "Draft not found" });
         return Ok(new { ok = true, isHidden = draft.IsHidden });
     }
@@ -332,7 +354,10 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
         if (authError is not null) return authError;
 
-        var (draft, error, statusCode) = await _drafts.RetryDraftAsync(draftId);
+        var (draft, error, statusCode) = await _drafts.RetryDraftAsync(
+            draftId,
+            ResolveDraftActorType(Request),
+            ResolveSourceIp(Request));
         if (draft is null)
             return StatusCode(statusCode, new { error });
 
@@ -355,6 +380,20 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             return (null, Unauthorized(new { error = "Invalid draft access token" }));
 
         return (draft, null);
+    }
+
+    private static string ResolveDraftActorType(HttpRequest request)
+    {
+        return AuthHelper.IsAdminKeyValid(request) ? "admin" : "draft_token";
+    }
+
+    private static string? ResolveSourceIp(HttpRequest request)
+    {
+        var forwardedFor = request.Headers["X-Forwarded-For"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+            return forwardedFor.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+        return request.HttpContext.Connection.RemoteIpAddress?.ToString();
     }
 
     private async Task TriggerDraftPreparationBestEffortAsync(string draftId)

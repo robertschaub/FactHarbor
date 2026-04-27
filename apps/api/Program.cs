@@ -153,6 +153,7 @@ using (var scope = app.Services.CreateScope())
     EnsureClaimSelectionDraftsTable(db);
     EnsureClaimSelectionDraftsColumn(db, "LastEventMessage", "TEXT");
     EnsureClaimSelectionDraftsColumn(db, "IsHidden", "INTEGER NOT NULL DEFAULT 0");
+    EnsureClaimSelectionDraftEventsTable(db);
     EnsureUniqueJobDraftIndex(db);
 
     // Mark RUNNING jobs as INTERRUPTED (genuinely orphaned mid-execution by restart).
@@ -266,6 +267,40 @@ static void EnsureClaimSelectionDraftsTable(FhDbContext db)
                 FinalJobId TEXT
             );
             CREATE INDEX IX_ClaimSelectionDrafts_Status ON ClaimSelectionDrafts (Status);";
+        create.ExecuteNonQuery();
+    }
+    finally
+    {
+        if (shouldClose) connection.Close();
+    }
+}
+
+static void EnsureClaimSelectionDraftEventsTable(FhDbContext db)
+{
+    var connection = db.Database.GetDbConnection();
+    var shouldClose = connection.State != ConnectionState.Open;
+    if (shouldClose) connection.Open();
+    try
+    {
+        using var check = connection.CreateCommand();
+        check.CommandText = "SELECT 1 FROM sqlite_master WHERE type='table' AND name='ClaimSelectionDraftEvents' LIMIT 1;";
+        if (check.ExecuteScalar() is not null) return;
+
+        using var create = connection.CreateCommand();
+        create.CommandText = @"
+            CREATE TABLE ClaimSelectionDraftEvents (
+                Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                DraftId TEXT NOT NULL,
+                TsUtc TEXT NOT NULL,
+                ActorType TEXT NOT NULL,
+                Action TEXT NOT NULL,
+                Result TEXT NOT NULL,
+                BeforeStatus TEXT,
+                AfterStatus TEXT,
+                SourceIp TEXT,
+                Message TEXT
+            );
+            CREATE INDEX IX_ClaimSelectionDraftEvents_DraftId_Id ON ClaimSelectionDraftEvents (DraftId, Id);";
         create.ExecuteNonQuery();
     }
     finally

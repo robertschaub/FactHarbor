@@ -137,6 +137,22 @@ public sealed class ClaimSelectionDraftEntity
     public bool IsHidden { get; set; } = false;
 }
 
+public sealed class ClaimSelectionDraftEventEntity
+{
+    [Key]
+    public long Id { get; set; }
+
+    public string DraftId { get; set; } = "";
+    public DateTime TsUtc { get; set; } = DateTime.UtcNow;
+    public string ActorType { get; set; } = "system";
+    public string Action { get; set; } = "";
+    public string Result { get; set; } = "success";
+    public string? BeforeStatus { get; set; }
+    public string? AfterStatus { get; set; }
+    public string? SourceIp { get; set; }
+    public string? Message { get; set; }
+}
+
 public sealed class JobEventEntity
 {
     [Key]

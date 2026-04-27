@@ -31,6 +31,15 @@ public sealed class ClaimSelectionDraftServiceTests
         await using var verifyDb = database.CreateContext();
         var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
         Assert.Equal("EXPIRED", reloaded?.Status);
+
+        var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
+        Assert.Equal("system", auditEvent.ActorType);
+        Assert.Equal("expire", auditEvent.Action);
+        Assert.Equal("success", auditEvent.Result);
+        Assert.Equal("QUEUED", auditEvent.BeforeStatus);
+        Assert.Equal("EXPIRED", auditEvent.AfterStatus);
     }
 
     [Fact]
@@ -73,6 +82,15 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.False(service.ValidateAccessToken(draft, null));
         Assert.Equal(1, invite?.UsedJobs);
         Assert.Equal(1, usage?.UsageCount);
+
+        var auditEvent = Assert.Single(await db.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == result!.DraftId)
+            .ToListAsync());
+        Assert.Equal("draft_token", auditEvent.ActorType);
+        Assert.Equal("create", auditEvent.Action);
+        Assert.Equal("success", auditEvent.Result);
+        Assert.Null(auditEvent.BeforeStatus);
+        Assert.Equal("QUEUED", auditEvent.AfterStatus);
     }
 
     [Fact]
@@ -244,6 +262,15 @@ public sealed class ClaimSelectionDraftServiceTests
         var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
         Assert.Equal("PREPARING", reloaded?.Status);
         Assert.Null(reloaded?.LastEventMessage);
+
+        var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
+        Assert.Equal("draft_token", auditEvent.ActorType);
+        Assert.Equal("cancel", auditEvent.Action);
+        Assert.Equal("rejected", auditEvent.Result);
+        Assert.Equal("PREPARING", auditEvent.BeforeStatus);
+        Assert.Equal("PREPARING", auditEvent.AfterStatus);
     }
 
     [Fact]
@@ -270,6 +297,55 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.Equal("AWAITING_CLAIM_SELECTION", reloaded?.Status);
         Assert.Equal("job-1", reloaded?.FinalJobId);
         Assert.Null(reloaded?.LastEventMessage);
+
+        var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
+        Assert.Equal("cancel", auditEvent.Action);
+        Assert.Equal("noop", auditEvent.Result);
+        Assert.Equal("AWAITING_CLAIM_SELECTION", auditEvent.BeforeStatus);
+        Assert.Equal("AWAITING_CLAIM_SELECTION", auditEvent.AfterStatus);
+    }
+
+    [Fact]
+    public async Task SetHiddenAsync_HidesDraftAndLinkedJobAndRecordsAdminAuditEvent()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(db, status: "COMPLETED", finalJobId: "job-1");
+        db.Jobs.Add(new JobEntity
+        {
+            JobId = "job-1",
+            Status = "SUCCEEDED",
+            InputType = "text",
+            InputValue = "A verifiable claim",
+            ClaimSelectionDraftId = draft.DraftId,
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+        });
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.SetHiddenAsync(draft.DraftId, true, "admin", "203.0.113.12");
+
+        Assert.NotNull(result);
+        Assert.True(result!.IsHidden);
+
+        await using var verifyDb = database.CreateContext();
+        var reloadedDraft = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        var reloadedJob = await verifyDb.Jobs.FindAsync("job-1");
+        Assert.True(reloadedDraft?.IsHidden == true);
+        Assert.True(reloadedJob?.IsHidden == true);
+
+        var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
+        Assert.Equal("admin", auditEvent.ActorType);
+        Assert.Equal("hide", auditEvent.Action);
+        Assert.Equal("success", auditEvent.Result);
+        Assert.Equal("COMPLETED", auditEvent.BeforeStatus);
+        Assert.Equal("COMPLETED", auditEvent.AfterStatus);
+        Assert.Equal("203.0.113.12", auditEvent.SourceIp);
     }
 
     [Fact]
@@ -402,6 +478,15 @@ public sealed class ClaimSelectionDraftServiceTests
 
         var reloaded = await db.ClaimSelectionDrafts.FindAsync(draft.DraftId);
         Assert.Equal("AWAITING_CLAIM_SELECTION", reloaded?.Status);
+
+        var auditEvent = Assert.Single(await db.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
+        Assert.Equal("runner", auditEvent.ActorType);
+        Assert.Equal("prepare", auditEvent.Action);
+        Assert.Equal("success", auditEvent.Result);
+        Assert.Equal("PREPARING", auditEvent.BeforeStatus);
+        Assert.Equal("AWAITING_CLAIM_SELECTION", auditEvent.AfterStatus);
 
         using var doc = JsonDocument.Parse(reloaded!.DraftStateJson!);
         var history = doc.RootElement.GetProperty("failureHistory");

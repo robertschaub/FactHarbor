@@ -12,6 +12,7 @@ public sealed class FhDbContext : DbContext
     public DbSet<InviteCodeEntity> InviteCodes => Set<InviteCodeEntity>();
     public DbSet<InviteCodeUsageEntity> InviteCodeUsage => Set<InviteCodeUsageEntity>();
     public DbSet<ClaimSelectionDraftEntity> ClaimSelectionDrafts => Set<ClaimSelectionDraftEntity>();
+    public DbSet<ClaimSelectionDraftEventEntity> ClaimSelectionDraftEvents => Set<ClaimSelectionDraftEventEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,6 +60,18 @@ public sealed class FhDbContext : DbContext
             e.Property(x => x.OriginalInputType).HasMaxLength(16);
             e.Property(x => x.ActiveInputType).HasMaxLength(16);
             e.HasIndex(x => x.Status);
+        });
+
+        modelBuilder.Entity<ClaimSelectionDraftEventEntity>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.DraftId, x.Id });
+            e.Property(x => x.ActorType).HasMaxLength(32);
+            e.Property(x => x.Action).HasMaxLength(64);
+            e.Property(x => x.Result).HasMaxLength(32);
+            e.Property(x => x.BeforeStatus).HasMaxLength(32);
+            e.Property(x => x.AfterStatus).HasMaxLength(32);
+            e.Property(x => x.SourceIp).HasMaxLength(128);
         });
 
         modelBuilder.Entity<Models.AnalysisMetrics>(e =>

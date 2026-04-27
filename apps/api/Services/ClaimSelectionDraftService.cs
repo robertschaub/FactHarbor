@@ -57,6 +57,8 @@ public sealed class ClaimSelectionDraftService
     private const int MaxFailureHistoryEntries = 5;
     private const int AdminDraftInputPreviewMaxLength = 96;
     private const int AdminDraftEventSummaryMaxLength = 120;
+    private const int DraftAuditSourceIpMaxLength = 128;
+    private const int DraftAuditMessageMaxLength = 512;
 
     private static readonly string[] ActiveAdminDraftStatuses =
     [
@@ -104,7 +106,8 @@ public sealed class ClaimSelectionDraftService
         string inputValue,
         string selectionMode,
         string? inviteCode,
-        bool isAdmin)
+        bool isAdmin,
+        string? sourceIp = null)
     {
         var (valid, validationError) = AnalyzeInputValidator.Validate(inputType, inputValue);
         if (!valid) return (null, validationError, 400);
@@ -140,6 +143,14 @@ public sealed class ClaimSelectionDraftService
         };
 
         _db.ClaimSelectionDrafts.Add(draft);
+        RecordDraftEvent(
+            draft,
+            isAdmin ? "admin" : "draft_token",
+            "create",
+            "success",
+            null,
+            draft.Status,
+            sourceIp);
         await _db.SaveChangesAsync();
 
         return (new CreateDraftResult(draft.DraftId, accessToken, draft.Status, draft.CreatedUtc, draft.ExpiresUtc), null, 0);
@@ -392,7 +403,9 @@ public sealed class ClaimSelectionDraftService
     public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> RestartWithOtherAsync(
         string draftId,
         string newInputType,
-        string newInputValue)
+        string newInputValue,
+        string actorType = "draft_token",
+        string? sourceIp = null)
     {
         var (valid, validationError) = AnalyzeInputValidator.Validate(newInputType, newInputValue);
         if (!valid) return (null, validationError, 400);
@@ -403,16 +416,39 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
 
         if (draft.Status == "EXPIRED")
+        {
+            RecordDraftEvent(draft, actorType, "restart", "rejected", draft.Status, draft.Status, sourceIp, "Draft has expired");
+            await _db.SaveChangesAsync();
             return (null, "Draft has expired", 410);
+        }
         if (draft.Status == "COMPLETED")
+        {
+            RecordDraftEvent(draft, actorType, "restart", "rejected", draft.Status, draft.Status, sourceIp, "Draft already confirmed");
+            await _db.SaveChangesAsync();
             return (null, "Draft already confirmed", 409);
+        }
         if (draft.Status == "CANCELLED")
+        {
+            RecordDraftEvent(draft, actorType, "restart", "rejected", draft.Status, draft.Status, sourceIp, "Draft has been cancelled");
+            await _db.SaveChangesAsync();
             return (null, "Draft has been cancelled", 409);
+        }
         if (draft.Status == "PREPARING")
+        {
+            const string preparingMessage = "Draft is currently being prepared; wait for it to finish or cancel it first";
+            RecordDraftEvent(draft, actorType, "restart", "rejected", draft.Status, draft.Status, sourceIp, preparingMessage);
+            await _db.SaveChangesAsync();
             return (null, "Draft is currently being prepared — wait for it to finish or cancel it first", 409);
+        }
         if (draft.RestartCount >= _maxRestartsPerDraft)
+        {
+            var message = BuildRestartLimitError(_maxRestartsPerDraft);
+            RecordDraftEvent(draft, actorType, "restart", "rejected", draft.Status, draft.Status, sourceIp, message);
+            await _db.SaveChangesAsync();
             return (null, BuildRestartLimitError(_maxRestartsPerDraft), 429);
+        }
 
+        var beforeStatus = draft.Status;
         draft.ActiveInputType = newInputType;
         draft.ActiveInputValue = newInputValue;
         draft.RestartedViaOther = true;
@@ -423,35 +459,62 @@ public sealed class ClaimSelectionDraftService
         draft.LastEventMessage = null;
         draft.UpdatedUtc = DateTime.UtcNow;
 
+        RecordDraftEvent(draft, actorType, "restart", "success", beforeStatus, draft.Status, sourceIp);
         await _db.SaveChangesAsync();
         return (draft, null, 0);
     }
 
-    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> CancelDraftAsync(string draftId)
+    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> CancelDraftAsync(
+        string draftId,
+        string actorType = "draft_token",
+        string? sourceIp = null)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
         if (draft is null) return (null, "Draft not found", 404);
         if (draft.FinalJobId != null)
+        {
+            RecordDraftEvent(draft, actorType, "cancel", "noop", draft.Status, draft.Status, sourceIp, "Draft already has a final job");
+            await _db.SaveChangesAsync();
             return (draft, null, 0);
+        }
 
         if (EnforceLazyExpiry(draft))
             await _db.SaveChangesAsync();
 
         if (draft.Status is "COMPLETED" or "CANCELLED" or "EXPIRED")
         {
+            RecordDraftEvent(draft, actorType, "cancel", "noop", draft.Status, draft.Status, sourceIp);
+            await _db.SaveChangesAsync();
             return (draft, null, 0);
         }
         if (draft.Status == "PREPARING")
+        {
+            RecordDraftEvent(
+                draft,
+                actorType,
+                "cancel",
+                "rejected",
+                draft.Status,
+                draft.Status,
+                sourceIp,
+                "Draft preparation is in progress and cannot be cancelled");
+            await _db.SaveChangesAsync();
             return (null, "Draft preparation is in progress and cannot be cancelled", 409);
+        }
 
+        var beforeStatus = draft.Status;
         draft.Status = "CANCELLED";
         draft.LastEventMessage = "Draft cancelled.";
         draft.UpdatedUtc = DateTime.UtcNow;
+        RecordDraftEvent(draft, actorType, "cancel", "success", beforeStatus, draft.Status, sourceIp);
         await _db.SaveChangesAsync();
         return (draft, null, 0);
     }
 
-    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> RetryDraftAsync(string draftId)
+    public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> RetryDraftAsync(
+        string draftId,
+        string actorType = "draft_token",
+        string? sourceIp = null)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
         if (draft is null) return (null, "Draft not found", 404);
@@ -459,19 +522,34 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
 
         if (draft.Status == "EXPIRED")
+        {
+            RecordDraftEvent(draft, actorType, "retry", "rejected", draft.Status, draft.Status, sourceIp, "Draft has expired");
+            await _db.SaveChangesAsync();
             return (null, "Draft has expired", 410);
+        }
         if (draft.Status != "FAILED")
+        {
+            var message = $"Only FAILED drafts can be retried, current status: {draft.Status}";
+            RecordDraftEvent(draft, actorType, "retry", "rejected", draft.Status, draft.Status, sourceIp, message);
+            await _db.SaveChangesAsync();
             return (null, $"Only FAILED drafts can be retried, current status: {draft.Status}", 409);
+        }
 
+        var beforeStatus = draft.Status;
         draft.Status = "QUEUED";
         draft.Progress = 0;
         draft.LastEventMessage = null;
         draft.UpdatedUtc = DateTime.UtcNow;
+        RecordDraftEvent(draft, actorType, "retry", "success", beforeStatus, draft.Status, sourceIp);
         await _db.SaveChangesAsync();
         return (draft, null, 0);
     }
 
-    public async Task<ClaimSelectionDraftEntity?> SetHiddenAsync(string draftId, bool hidden)
+    public async Task<ClaimSelectionDraftEntity?> SetHiddenAsync(
+        string draftId,
+        bool hidden,
+        string actorType = "admin",
+        string? sourceIp = null)
     {
         var draft = await _db.ClaimSelectionDrafts.FindAsync(draftId);
         if (draft is null) return null;
@@ -479,7 +557,11 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
 
         if (draft.IsHidden == hidden)
+        {
+            RecordDraftEvent(draft, actorType, hidden ? "hide" : "unhide", "noop", draft.Status, draft.Status, sourceIp);
+            await _db.SaveChangesAsync();
             return draft;
+        }
 
         draft.IsHidden = hidden;
         draft.UpdatedUtc = DateTime.UtcNow;
@@ -494,6 +576,7 @@ public sealed class ClaimSelectionDraftService
             }
         }
 
+        RecordDraftEvent(draft, actorType, hidden ? "hide" : "unhide", "success", draft.Status, draft.Status, sourceIp);
         await _db.SaveChangesAsync();
         return draft;
     }
@@ -512,10 +595,13 @@ public sealed class ClaimSelectionDraftService
         if (draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
+        var beforeStatus = draft.Status;
         draft.Status = status;
         if (progress.HasValue) draft.Progress = progress.Value;
         if (!string.IsNullOrWhiteSpace(eventMessage)) draft.LastEventMessage = eventMessage;
         draft.UpdatedUtc = DateTime.UtcNow;
+        if (!string.Equals(beforeStatus, draft.Status, StringComparison.Ordinal))
+            RecordDraftEvent(draft, "runner", "status", "success", beforeStatus, draft.Status, null, eventMessage);
         await _db.SaveChangesAsync();
     }
 
@@ -532,6 +618,7 @@ public sealed class ClaimSelectionDraftService
             return;
 
         var mergedDraftStateJson = MergePriorFailureDiagnostics(draft.DraftStateJson, draftStateJson);
+        var beforeStatus = draft.Status;
         draft.DraftStateJson = mergedDraftStateJson;
         draft.Status = "AWAITING_CLAIM_SELECTION";
         draft.Progress = 100;
@@ -539,6 +626,7 @@ public sealed class ClaimSelectionDraftService
             TryExtractObservabilityEventMessage(mergedDraftStateJson)
             ?? "Prepared claim set awaiting selection.";
         draft.UpdatedUtc = DateTime.UtcNow;
+        RecordDraftEvent(draft, "runner", "prepare", "success", beforeStatus, draft.Status, null, draft.LastEventMessage);
         await _db.SaveChangesAsync();
     }
 
@@ -640,6 +728,7 @@ public sealed class ClaimSelectionDraftService
         if (IsTerminalDraftState(draft) || draft.Status is "FAILED" or "AWAITING_CLAIM_SELECTION")
             return;
 
+        var beforeStatus = draft.Status;
         var failedUtc = DateTime.UtcNow;
         draft.Status = "FAILED";
         draft.LastEventMessage = errorMessage;
@@ -657,6 +746,7 @@ public sealed class ClaimSelectionDraftService
         };
         draft.DraftStateJson = stateNode.ToJsonString();
 
+        RecordDraftEvent(draft, "runner", "fail", "success", beforeStatus, draft.Status, null, errorCode);
         await _db.SaveChangesAsync();
     }
 
@@ -668,6 +758,30 @@ public sealed class ClaimSelectionDraftService
         return CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(draft.DraftAccessTokenHash),
             Encoding.UTF8.GetBytes(hash));
+    }
+
+    public void RecordDraftEvent(
+        ClaimSelectionDraftEntity draft,
+        string actorType,
+        string action,
+        string result,
+        string? beforeStatus,
+        string? afterStatus,
+        string? sourceIp = null,
+        string? message = null)
+    {
+        _db.ClaimSelectionDraftEvents.Add(new ClaimSelectionDraftEventEntity
+        {
+            DraftId = draft.DraftId,
+            TsUtc = DateTime.UtcNow,
+            ActorType = NormalizeAuditField(actorType, "system", 32)!,
+            Action = NormalizeAuditField(action, "unknown", 64)!,
+            Result = NormalizeAuditField(result, "success", 32)!,
+            BeforeStatus = NormalizeAuditField(beforeStatus, null, 32),
+            AfterStatus = NormalizeAuditField(afterStatus, null, 32),
+            SourceIp = NormalizeAuditField(sourceIp, null, DraftAuditSourceIpMaxLength),
+            Message = NormalizeAuditField(message, null, DraftAuditMessageMaxLength),
+        });
     }
 
     private static bool TryMergeDraftStateSelectedClaims(ClaimSelectionDraftEntity draft, string[] selectedClaimIds)
@@ -703,8 +817,10 @@ public sealed class ClaimSelectionDraftService
         if (draft.Status is "COMPLETED" or "CANCELLED" or "EXPIRED") return false;
         if (draft.ExpiresUtc < DateTime.UtcNow)
         {
+            var beforeStatus = draft.Status;
             draft.Status = "EXPIRED";
             draft.UpdatedUtc = DateTime.UtcNow;
+            RecordDraftEvent(draft, "system", "expire", "success", beforeStatus, draft.Status);
             return true;
         }
         return false;
@@ -1258,6 +1374,21 @@ public sealed class ClaimSelectionDraftService
             return normalized;
 
         return $"{normalized[..Math.Max(0, maxLength - 3)]}...";
+    }
+
+    private static string? NormalizeAuditField(string? value, string? fallback, int maxLength)
+    {
+        var normalized = string.IsNullOrWhiteSpace(value)
+            ? fallback
+            : string.Join(" ", value.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        if (string.IsNullOrWhiteSpace(normalized))
+            return null;
+
+        if (normalized.Length <= maxLength)
+            return normalized;
+
+        return normalized[..maxLength];
     }
 
     private static string GenerateAccessToken()

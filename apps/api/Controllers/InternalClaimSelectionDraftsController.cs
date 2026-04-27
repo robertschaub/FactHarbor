@@ -69,14 +69,24 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
                 return StatusCode(statusCode, new { error });
             }
 
+            var beforeStatus = draft.Status;
             if (draft.FinalJobId != null)
             {
                 if (draft.Status != "COMPLETED")
                 {
                     draft.Status = "COMPLETED";
                     draft.UpdatedUtc = DateTime.UtcNow;
-                    await _db.SaveChangesAsync();
                 }
+                _drafts.RecordDraftEvent(
+                    draft,
+                    "system",
+                    "auto_confirm",
+                    "noop",
+                    beforeStatus,
+                    draft.Status,
+                    null,
+                    "Draft already has a final job");
+                await _db.SaveChangesAsync();
 
                 await tx.CommitAsync();
                 return Ok(new { draftId = draft.DraftId, status = draft.Status, finalJobId = draft.FinalJobId });
@@ -92,6 +102,7 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
             draft.FinalJobId = job.JobId;
             draft.Status = "COMPLETED";
             draft.UpdatedUtc = DateTime.UtcNow;
+            _drafts.RecordDraftEvent(draft, "system", "auto_confirm", "success", beforeStatus, draft.Status, null, $"JobId={job.JobId}");
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
 
