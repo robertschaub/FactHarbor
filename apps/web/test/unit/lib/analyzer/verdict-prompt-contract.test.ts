@@ -299,6 +299,8 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Defensive legacy rule for source references");
       expect(section).toContain("Defensive legacy rule for boundary references");
       expect(section).toContain("Defensive legacy rule for challenge references");
+      expect(section).toContain("challengeContext.challengeValidation.invalidIds");
+      expect(section).toContain("treat that invalid-ID list itself as valid challenge context");
     });
 
     it("grounding validator accepts uncited but claim-local reasoning references", () => {
