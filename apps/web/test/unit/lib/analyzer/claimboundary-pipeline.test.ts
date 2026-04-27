@@ -4282,7 +4282,7 @@ describe("Stage 2: runResearchIteration", () => {
       claim,
       "main",
       mockSearchConfig,
-      { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any,
+      { perClaimQueryBudget: 1, contradictionReservedQueries: 0, queryStrategyMode: "legacy" } as any,
       8,
       "2026-02-17",
       state,
@@ -4320,7 +4320,7 @@ describe("Stage 2: runResearchIteration", () => {
       claim,
       "main",
       mockSearchConfig,
-      { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any,
+      { perClaimQueryBudget: 1, contradictionReservedQueries: 0, queryStrategyMode: "legacy" } as any,
       8,
       "2026-02-17",
       state,
@@ -4329,6 +4329,105 @@ describe("Stage 2: runResearchIteration", () => {
     expect(state.searchQueries).toHaveLength(1);
     expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(1);
     expect(mockSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it("preserves contradiction-reserved query budget during main iterations", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: { AC_01: 4 },
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "query one", rationale: "test" },
+        { query: "query two", rationale: "test" },
+        { query: "query three", rationale: "test" },
+        { query: "query four", rationale: "test" },
+      ],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runResearchIteration(
+      claim,
+      "main",
+      mockSearchConfig,
+      {
+        perClaimQueryBudget: 8,
+        contradictionReservedQueries: 2,
+        researchMaxQueriesPerIteration: 4,
+        primarySourceRefinementEnabled: false,
+        queryStrategyMode: "legacy",
+      } as any,
+      8,
+      "2026-02-17",
+      state,
+    );
+
+    expect(state.searchQueries.map((query: any) => query.query)).toEqual([
+      "query one",
+      "query two",
+    ]);
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(6);
+    expect(mockSearch).toHaveBeenCalledTimes(2);
+  });
+
+  it("allows contradiction iterations to consume the reserved query budget", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [],
+      queryBudgetUsageByClaim: { AC_01: 4 },
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "query one", rationale: "test" },
+        { query: "query two", rationale: "test" },
+        { query: "query three", rationale: "test" },
+        { query: "query four", rationale: "test" },
+      ],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runResearchIteration(
+      claim,
+      "contradiction",
+      mockSearchConfig,
+      {
+        perClaimQueryBudget: 8,
+        contradictionReservedQueries: 2,
+        researchMaxQueriesPerIteration: 4,
+        queryStrategyMode: "legacy",
+      } as any,
+      8,
+      "2026-02-17",
+      state,
+    );
+
+    expect(state.searchQueries.map((query: any) => query.query)).toEqual([
+      "query one",
+      "query two",
+      "query three",
+      "query four",
+    ]);
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(8);
+    expect(mockSearch).toHaveBeenCalledTimes(4);
   });
 
   it("tracks query budget per claim (not global)", async () => {
@@ -4352,7 +4451,11 @@ describe("Stage 2: runResearchIteration", () => {
     });
     mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
 
-    const budgetConfig = { perClaimQueryBudget: 1, queryStrategyMode: "legacy" } as any;
+    const budgetConfig = {
+      perClaimQueryBudget: 1,
+      contradictionReservedQueries: 0,
+      queryStrategyMode: "legacy",
+    } as any;
     await runResearchIteration(claimA, "main", mockSearchConfig, budgetConfig, 8, "2026-02-17", state);
     await runResearchIteration(claimB, "main", mockSearchConfig, budgetConfig, 8, "2026-02-17", state);
 

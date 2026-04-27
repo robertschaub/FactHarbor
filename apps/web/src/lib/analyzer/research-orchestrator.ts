@@ -1261,6 +1261,16 @@ export async function runResearchIteration(
     console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
     return;
   }
+  const contradictionReservedQueries = pipelineConfig.contradictionReservedQueries ?? 2;
+  const availableQueryBudget = iterationType === "main"
+    ? Math.max(0, remainingBudget - contradictionReservedQueries)
+    : remainingBudget;
+  if (availableQueryBudget <= 0) {
+    console.info(
+      `[Stage2] Query budget reserved for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`,
+    );
+    return;
+  }
   state.researchedIterationsByClaim ??= {};
   const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
   const evidenceCountBeforeIteration = state.evidenceItems.length;
@@ -1279,7 +1289,7 @@ export async function runResearchIteration(
     pipelineConfig,
     currentDate,
     state.understanding?.distinctEvents ?? [],
-    remainingBudget,
+    availableQueryBudget,
     {
       language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
@@ -1554,9 +1564,11 @@ export async function runResearchIteration(
   await executeGeneratedQueries(queries, iterationType, iterationTelemetry);
   recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
 
+  const remainingBudgetAfterMainQueries = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
+  const availableRefinementBudget = Math.max(0, remainingBudgetAfterMainQueries - contradictionReservedQueries);
   const refinementBudget = Math.min(
     pipelineConfig.primarySourceRefinementMaxQueries ?? 1,
-    getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig),
+    availableRefinementBudget,
   );
   const refinementNeeded = claimNeedsPrimarySourceRefinement(targetClaim, state.evidenceItems);
   const hasMainQueryMetadata = queries.some(hasExplicitRetrievalMetadata);

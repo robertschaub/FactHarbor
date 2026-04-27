@@ -902,6 +902,7 @@ describe("primary-source refinement", () => {
       { maxSourcesPerIteration: 5 } as any,
       {
         perClaimQueryBudget: 1,
+        contradictionReservedQueries: 0,
         relevanceTopNFetch: 5,
         maxEvidenceItemsPerSource: 5,
         primarySourceRefinementEnabled: true,
@@ -915,6 +916,63 @@ describe("primary-source refinement", () => {
 
     expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
     expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+  });
+
+  it("does not let refinement consume the contradiction-reserved query budget", async () => {
+    const claim = {
+      id: "AC_01",
+      statement: "current total claim",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: ["current total"],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState({
+      queryBudgetUsageByClaim: { AC_01: 5 },
+      evidenceItems: [
+        {
+          id: "EV_seeded",
+          statement: "seeded official",
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: "https://example.com/seeded",
+          sourceTitle: "Seeded",
+          sourceExcerpt: "seeded",
+          claimDirection: "supports",
+          probativeValue: "medium",
+          sourceType: "government_report",
+          relevantClaimIds: ["AC_01"],
+          isSeeded: true,
+        },
+      ],
+    });
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 8,
+        contradictionReservedQueries: 2,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(6);
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
   });
 
