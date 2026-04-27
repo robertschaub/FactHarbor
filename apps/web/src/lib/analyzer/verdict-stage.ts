@@ -1710,15 +1710,25 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
+          const repairedCitationSideGapIssues = repairContext
+            ? getMissingClaimLocalDirectionalCitationSideIssues(normalizedRepaired, evidence)
+            : [];
           const repairedPlausible = retryDirection.valid !== false
-            || isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig);
+            || (
+              repairedCitationSideGapIssues.length === 0
+              && isVerdictDirectionPlausible(normalizedRepaired, evidence, repairContext?.calculationConfig)
+            );
 
           if (!repairedPlausible) {
+            const postRepairDirectionIssues = Array.from(new Set([
+              ...retryDirection.issues,
+              ...repairedCitationSideGapIssues,
+            ]));
             emitDirectionIssue();
             current = safeDowngradeVerdict(
               normalizedRepaired,
               "direction",
-              retryDirection.issues,
+              postRepairDirectionIssues,
               warnings,
               config.mixedConfidenceThreshold,
             );
