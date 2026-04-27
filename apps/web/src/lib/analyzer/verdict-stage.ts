@@ -1219,6 +1219,65 @@ function dealiasGroundingIssues(issues: string[], map: GroundingAliasMap): strin
   });
 }
 
+const EVIDENCE_ID_PATTERN = /\bEV_[A-Za-z0-9_]+\b/g;
+
+function extractEvidenceIdsFromText(text: string): string[] {
+  return Array.from(new Set(text.match(EVIDENCE_ID_PATTERN) ?? []));
+}
+
+function collectChallengeContextEvidenceIds(challengeContext: GroundingChallengeContextEntry[]): Set<string> {
+  const ids = new Set<string>();
+  for (const entry of challengeContext) {
+    for (const id of entry.citedEvidenceIds) ids.add(id);
+    if (!entry.challengeValidation) continue;
+    for (const id of entry.challengeValidation.validIds) ids.add(id);
+    for (const id of entry.challengeValidation.invalidIds) ids.add(id);
+  }
+  return ids;
+}
+
+function suppressStructurallyResolvedGroundingIssues(
+  validation: NormalizedValidationEntry,
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+  challengeContext: GroundingChallengeContextEntry[],
+): NormalizedValidationEntry {
+  if (validation.valid || validation.issues.length === 0) return validation;
+
+  const claimLocalIds = new Set(getGroundingClaimLocalEvidence(verdict.claimId, evidence).map((item) => item.id));
+  const registryIds = new Set(getCitedEvidenceRegistry(verdict, evidence).map((item) => item.id));
+  const citedIds = new Set([
+    ...verdict.supportingEvidenceIds,
+    ...verdict.contradictingEvidenceIds,
+  ]);
+  const challengeContextIds = collectChallengeContextEvidenceIds(challengeContext);
+  const knownGroundingIds = new Set([
+    ...claimLocalIds,
+    ...registryIds,
+    ...challengeContextIds,
+  ]);
+
+  const structurallyInvalidCitedIds = new Set(
+    Array.from(citedIds).filter((id) => !registryIds.has(id) || !claimLocalIds.has(id)),
+  );
+
+  const unresolvedIssues = validation.issues.filter((issue) => {
+    const ids = extractEvidenceIdsFromText(issue);
+    if (ids.length === 0) return true;
+    if (ids.some((id) => structurallyInvalidCitedIds.has(id))) return true;
+    if (ids.some((id) => !knownGroundingIds.has(id))) return true;
+    return false;
+  });
+
+  if (unresolvedIssues.length === validation.issues.length) return validation;
+
+  return {
+    ...validation,
+    valid: unresolvedIssues.length === 0,
+    issues: unresolvedIssues,
+  };
+}
+
 /**
  * Step 5: Validate verdicts with two lightweight Haiku checks.
  * Check A (grounding): Are cited IDs and reasoning grounded in claim-local evidence context?
@@ -1355,13 +1414,24 @@ export async function validateVerdicts(
   ]);
   // De-alias grounding results: restore canonical evidence IDs in issue strings
   // so that warnings and safe-downgrade decisions reference real pipeline IDs.
-  const groundingByClaim = new Map(groundingResults.map((r) => [
-    r.claimId,
-    {
+  const verdictByClaim = new Map(verdicts.map((v) => [v.claimId, v]));
+  const groundingByClaim = new Map(groundingResults.map((r) => {
+    const verdict = verdictByClaim.get(r.claimId);
+    const dealiased = {
       ...r,
       issues: r.issues ? dealiasGroundingIssues(r.issues, groundingAliasMap) : r.issues,
-    },
-  ]));
+    };
+    if (!verdict) return [r.claimId, dealiased] as const;
+    return [
+      r.claimId,
+      suppressStructurallyResolvedGroundingIssues(
+        dealiased,
+        verdict,
+        evidence,
+        buildClaimChallengeContext(verdict.claimId, repairContext?.validatedChallengeDoc),
+      ),
+    ] as const;
+  }));
   const directionByClaim = new Map(directionResults.map((r) => [r.claimId, r]));
 
   const validated: CBClaimVerdict[] = [];
@@ -2006,10 +2076,16 @@ async function validateGroundingOnly(
     };
   }
 
-  return {
+  const dealiased = {
     ...normalized[0],
     issues: dealiasGroundingIssues(normalized[0].issues, groundingAliasMap),
   };
+  return suppressStructurallyResolvedGroundingIssues(
+    dealiased,
+    verdict,
+    evidence,
+    challengeContext,
+  );
 }
 
 function joinIssues(issues: string[]): string {

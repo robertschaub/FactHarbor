@@ -5924,6 +5924,81 @@ describe("claim-local direction validation (cross-claim contamination prevention
     ]);
   });
 
+  it("suppresses grounding false positives for structurally resolved cited IDs", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_SUPPORT__supports_AC_01"],
+      contradictingEvidenceIds: ["EV_CONTRA__contradicts_AC_01"],
+    })];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_SUPPORT__supports_AC_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "supports",
+      }),
+      createEvidenceItem({
+        id: "EV_CONTRA__contradicts_AC_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "contradicts",
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{
+          claimId: "AC_01",
+          groundingValid: false,
+          issues: [
+            "Supporting evidence ID 'EV_SUPPORT__supports_AC_01' cited in supportingEvidenceIds but not found in citedEvidenceRegistry",
+            "Contradicting evidence ID 'EV_CONTRA__contradicts_AC_01' cited in contradictingEvidenceIds but not found in citedEvidenceRegistry",
+          ],
+        }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const result = await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT__supports_AC_01"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_CONTRA__contradicts_AC_01"]);
+    expect(warnings.some((warning) => warning.type === "verdict_grounding_issue")).toBe(false);
+  });
+
+  it("preserves grounding issues for unresolved evidence IDs", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      supportingEvidenceIds: ["EV_SUPPORT"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_SUPPORT", relevantClaimIds: ["AC_01"], claimDirection: "supports" }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{
+          claimId: "AC_01",
+          groundingValid: false,
+          issues: ["Reasoning relies on evidence ID 'EV_UNKNOWN' that is absent from the claim-local context"],
+        }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM, DEFAULT_VERDICT_STAGE_CONFIG, warnings);
+
+    expect(warnings.some((warning) =>
+      warning.type === "verdict_grounding_issue"
+      && warning.message.includes("EV_UNKNOWN"),
+    )).toBe(true);
+  });
+
   it("standard single-claim validation still works (no regression)", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
