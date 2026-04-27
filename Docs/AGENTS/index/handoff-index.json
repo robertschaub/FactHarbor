@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T19:07:24.513Z",
-  "count": 381,
+  "generatedAt": "2026-04-27T16:47:35.331Z",
+  "count": 397,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -7099,6 +7099,45 @@
       "summary": "Implement the two previously deferred “low-hanging fruit” follow-ups from the Grander runtime discussion if they could be landed narrowly and safely: (1) verdict citation sanitation, and (4) SR sparse"
     },
     {
+      "file": "2026-04-24_Lead_Architect_ACS_Check_Worthiness_Unification_Assessment.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "acs",
+        "check",
+        "worthiness",
+        "unification",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md` as the current architecture decision record. The important source anchors are `apps/web/src/lib/analyzer/claim-extraction-stage.ts`, `apps/web/src/lib/analyzer/claim-selection-recommendation.ts`, `apps/web/src/li"
+    },
+    {
+      "file": "2026-04-24_Lead_Architect_Admin_Preparation_Sessions_Control_Plan.md",
+      "date": "2026-04-24",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "admin",
+        "preparation",
+        "sessions",
+        "control",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-24_Admin_Preparation_Sessions_Control_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_Admin_Preparation_Sessions_Control_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Admin Preparation Sessions Control Plan"
+    },
+    {
       "file": "2026-04-24_Lead_Architect_Internal_Agent_Knowledge_MCP_Adapter_Implementation.md",
       "date": "2026-04-24",
       "roles": [
@@ -7608,6 +7647,30 @@
       "summary": "`/debt-guard` is mandatory for every bugfix and for failed validation recovery. Do not treat it as rollback-first: it explicitly requires balancing undoing/amending prior code against adding new code, with a Complexity Budget before edits and a diff reconciliation before final response. If a bugfix "
     },
     {
+      "file": "2026-04-25_Lead_Developer_ACS_Check_Worthiness_Unification_Review_Disposition.md",
+      "date": "2026-04-25",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "acs",
+        "check_worthiness",
+        "unification",
+        "architecture_review",
+        "claim_selection",
+        "recommendation"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md",
+        "Docs/AGENTS/Handoffs/2026-04-24_Lead_Architect_ACS_Check_Worthiness_Unification_Assessment.md",
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts",
+        "apps/web/src/lib/analyzer/claim-selection-recommendation.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/lib/analyzer/types.ts"
+      ],
+      "summary": "Phase 1 implementation can start. Priority order: (1) resolve `checkWorthiness` schema/type drift at `claim-extraction-stage.ts:88` and `types.ts:993` — decide widen-type or narrow-prompt, (2) inventory UI components that display checkWorthiness and update labels to distinguish extraction-advisory f"
+    },
+    {
       "file": "2026-04-25_Senior_Developer_LLM_Expert_235000_Comparison_Evidence_Profile_Fix.md",
       "date": "2026-04-25",
       "roles": [
@@ -7976,6 +8039,27 @@
       "summary": "The comparison evidence profile threading is architecturally consistent across all 7 pipeline stages — good work."
     },
     {
+      "file": "2026-04-26_Lead_Architect_LLM_Expert_Dominant_Proposition_Plan_Codebase_Resync.md",
+      "date": "2026-04-26",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "dominant",
+        "proposition",
+        "plan",
+        "codebase",
+        "resync"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-20_Dominant_Proposition_Architecture_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-26_Lead_Architect_LLM_Expert_Dominant_Proposition_Plan_Codebase_Resync.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Treat the updated plan as the current architecture record. If implementation starts, anchor Phase A parent re-authorization to `apps/web/src/lib/analyzer/claim-extraction-stage.ts` final contract refresh and `canCarryForwardValidatedContractApproval(...)`, and anchor Phase B migration work to the li"
+    },
+    {
       "file": "2026-04-26_Senior_Developer_LLM_Expert_235000_Comparison_Profile_Open.md",
       "date": "2026-04-26",
       "roles": [
@@ -7990,6 +8074,293 @@
       ],
       "files_touched": [],
       "summary": "2026-04-26 - Senior Developer / LLM Expert - 235000 Comparison Profile Follow-up"
+    },
+    {
+      "file": "2026-04-26_Senior_Developer_LLM_Expert_235000_Current_Active_Work_Handover.md",
+      "date": "2026-04-26",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "235000_comparison",
+        "unverified",
+        "evidence_direction",
+        "stage2_extraction",
+        "live_validation"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts",
+        "apps/web/debug-analyzer.log",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/Handoffs/2026-04-26_Senior_Developer_LLM_Expert_235000_Current_Active_Work_Handover.md"
+      ],
+      "summary": "2026-04-26 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Current Active Work Handover"
+    },
+    {
+      "file": "2026-04-27_Code_Reviewer_April_24_27_Unreviewed_Changes_Review.md",
+      "date": "2026-04-27",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "april",
+        "24",
+        "27",
+        "unreviewed",
+        "changes",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": ".js build:** Clean, no type errors"
+    },
+    {
+      "file": "2026-04-27_Code_Reviewer_Full_Day_Review_25_Commits.md",
+      "date": "2026-04-27",
+      "roles": [
+        "code_reviewer"
+      ],
+      "topics": [
+        "full",
+        "day",
+        "review",
+        "25",
+        "commits"
+      ],
+      "files_touched": [],
+      "summary": ".js build:** Not re-run (prior same-day review confirmed clean)"
+    },
+    {
+      "file": "2026-04-27_Lead_Architect_Admin_Preparation_Plan_Rebase_Debate.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "admin",
+        "preparation",
+        "plan",
+        "rebase",
+        "debate"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-24_Admin_Preparation_Sessions_Control_Plan.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Admin_Preparation_Plan_Rebase_Debate.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Admin Preparation Plan Rebase Debate"
+    },
+    {
+      "file": "2026-04-27_Lead_Developer_Admin_Preparation_Sessions_Risk_Review.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "claim_selection_draft",
+        "admin_preparation",
+        "cancel_gate",
+        "operational_risk",
+        "review"
+      ],
+      "files_touched": [
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/web/src/app/analyze/select/[draftId]/page.tsx",
+        "apps/web/src/app/api/fh/claim-selection-drafts/[draftId]/route.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/api/Controllers/ClaimSelectionDraftsController.cs",
+        "apps/api/Data/Entities.cs",
+        "Docs/WIP/2026-04-24_Admin_Preparation_Sessions_Control_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Admin_Preparation_Plan_Rebase_Debate.md"
+      ],
+      "summary": "Implement Slice 0: add `\"PREPARING\"` guard returning 409 in `CancelDraftAsync` at `ClaimSelectionDraftService.cs:338`, add `FinalJobId != null` guard as idempotent 200, update `canCancelSession` at `page.tsx:710` to exclude PREPARING with visible disabled state + \"Preparation in progress\" message. F"
+    },
+    {
+      "file": "2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "analyze",
+        "report",
+        "processing",
+        "sessions"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/ActiveClaimSelectionSessions.tsx",
+        "apps/web/test/unit/app/analyze/active-claim-selection-sessions.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If similar completed entries reappear, check any new writer to `ACTIVE_CLAIM_SELECTION_SESSIONS_STORAGE_KEY`. The intended contract is that `lastKnownFinalJobId` is now a cleanup signal, not a display/recovery signal.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "Amend the existing analyze-page registry cleanup mechanism.",
+            "net_mechanism_count": "unchanged; no polling, fallback, feature flag, or new lifecycle path was added.",
+            "verification": "`npm -w apps/web test -- active-claim-selection-sessions.test.ts` passed twice after the final cleanup.",
+            "residual_debt": "none for the requested behavior; stale unrelated local-storage data is still bounded by normal storage normalization/eviction."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Lead_Developer_Stale_Draft_Preparation_Recovery.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "stale",
+        "draft",
+        "preparation",
+        "recovery"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/test/unit/lib/runner-concurrency-split.integration.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If drafts still stick in `PREPARING`, inspect whether `/internal/v1/claim-selection-drafts/recoverable` is reachable from the web runner and whether `updatedUtc` is advancing. The intended behavior is now: orphaned `PREPARING` drafts requeue after restart; locally tracked stale `PREPARING` drafts fa",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism",
+            "chosen_option": "Amend draft-preparation recovery to mirror the existing stale-running report-job guard.",
+            "rejected_path_and_why": "UI hiding would conceal the broken draft; requeueing a locally tracked stale draft could create duplicate writers while the old task is still alive.",
+            "what_was_removed_simplified": "The report-job stale threshold was lifted into a shared constant instead of keeping a draft-only duplicate.",
+            "what_was_added": "A stale locally tracked `PREPARING` draft branch that calls the existing failed-draft endpoint, clears `runningDraftIds`, and decrements draft running count.",
+            "net_mechanism_count": "unchanged; no new runner lane or status model.",
+            "budget_reconciliation": "Touched the expected runner file and focused test only; no prompt, UCM, schema, or analysis semantics changed.",
+            "verification": "`npm -w apps/web test -- runner-concurrency-split.integration.test.ts` passed.",
+            "debt_accepted_and_removal_trigger": "none.",
+            "residual_debt": "Exact LLM-call hang cause remains unknown, but the recovery behavior is now bounded."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_Draft_Runner_Queue_Admin_High_Fixes.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "draft",
+        "runner",
+        "queue",
+        "admin",
+        "high",
+        "fixes"
+      ],
+      "files_touched": [],
+      "summary": "Main anchors are `apps/web/src/lib/internal-runner-queue.ts`, `ClaimSelectionDraftService.CancelDraftAsync(...)`, `ClaimSelectionDraftsController.ResolveSourceIp(...)`, and `ClaimSelectionDraftsControllerTests`. PREPARING is now cancellable; late prepared-result writes remain guarded by terminal-sta"
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_LLM_Evidence_Direction_Prompt_Refinement.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "llm",
+        "evidence",
+        "direction",
+        "prompt",
+        "refinement"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts"
+      ],
+      "summary": "Treat this as a prompt-contract clarification, not a new mechanism. Do not introduce a fixed percentage for `materially` without an explicit UCM/design decision; it would become a hidden analysis threshold.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism.",
+            "chosen_option": "amend existing prompt wording and tests.",
+            "rejected_path": "numeric materiality threshold or broad rewrite, because that would add a hidden analysis parameter and widen the blast radius.",
+            "what_was_added": "one positive numeric-comparison direction procedure, one mirrored claim-local direction paragraph, and prompt-contract assertions.",
+            "what_was_removed_simplified": "no runtime code or prompt sections removed.",
+            "net_mechanism_count": "unchanged.",
+            "debt_accepted": "existing repeated comparison-direction wording remains until a separate prompt-consolidation pass has live-verification backing."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_LLM_Expert_235000_Stabilization_Heartbeat_And_Grounding.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "235000_comparison",
+        "live_validation",
+        "progress_heartbeat",
+        "verdict_grounding",
+        "prompt_contract"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/test/unit/lib/analyzer/research-orchestrator-progress.test.ts",
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts"
+      ],
+      "summary": "2026-04-27 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Stabilization, Heartbeat, And Grounding"
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_Post_Repair_Verdict_Rescue_Guard.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "post",
+        "repair",
+        "verdict",
+        "rescue",
+        "guard"
+      ],
+      "files_touched": [],
+      "summary": "Commit `950cab26` contains the code slice. Main anchors: `apps/web/src/lib/analyzer/verdict-stage.ts` and `apps/web/test/unit/lib/analyzer/verdict-post-repair-side-gap.test.ts`."
+    },
+    {
+      "file": "2026-04-27_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+      "date": "2026-04-27",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "no",
+        "confirmed",
+        "regression"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-27_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Baseline for the post-`2026-04-26T06:01:37.495Z` window is still \"no confirmed regression.\" If a concrete failure appears, start with the Stage 2 chain (`0daf0e42`, `6293c705`, `6b1507e7`) and the JobService terminal-state guard in `dcc48eb3`, because those were the highest-risk logic changes review"
     }
   ]
 }

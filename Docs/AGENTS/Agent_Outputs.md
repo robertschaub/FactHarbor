@@ -7,6 +7,21 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-27 | Code Reviewer | Claude Opus 4.6 | Full Day Review 25 Commits -- [Significant] [open-items: yes]
+**For next agent:** 5 code HIGH + 3 LLM HIGH, 12 code MEDIUM + 4 LLM MEDIUM, 19 LOW across 25 commits. All code findings verified (6 agents, 2 rounds). LLM Expert assessed prompt changes as PARTIALLY EFFECTIVE: metric route separation works, but negation density + undefined "materially" threshold + contextual inflation risk Haiku-class evidence pool weakening. Top code priorities: draft heartbeat, X-Forwarded-For, rate limiting. Top prompt priorities: restructure as decision tree, define approximate-parity threshold, promote side-premise support rule. All TS tests pass (2037).
+-> Docs/AGENTS/Handoffs/2026-04-27_Code_Reviewer_Full_Day_Review_25_Commits.md
+
+---
+### 2026-04-27 | Lead Developer | Claude Opus 4.6 | Admin Preparation Sessions Operational Risk Review -- [Standard] [open-items: yes]
+**For next agent:** APPROVE WITH MODIFICATIONS. 7 findings (3 high, 2 medium, 2 low). PREPARING cancel must return 409 (not no-op); health counters merged into read-only admin list; destructive retention gated on audit. Slice 0 ready: `CancelDraftAsync` at `ClaimSelectionDraftService.cs:338` + `canCancelSession` at `page.tsx:710`. Apply `/debt-guard` — state-machine gate change.
+-> Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Admin_Preparation_Sessions_Risk_Review.md
+
+---
+### 2026-04-27 | Unassigned | Codex (GPT-5) | Daily Bug Scan No Confirmed Regression -- [Standard] [open-items: yes]
+**For next agent:** Post-`2026-04-26T06:01:37.495Z` commits through `c1513ac8` produced no concrete regression signal. Targeted analyzer Vitest suites and `npm -w apps/web run build` passed, `git diff --check` was clean, and the only blocked verification was API-side `dotnet test` because the live `FactHarbor.Api` process locked `apps/api/bin/Debug/net8.0/FactHarbor.Api.dll`.
+→ Docs/AGENTS/Handoffs/2026-04-27_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md
+
+---
 ### 2026-04-26 | Code Reviewer | Claude Opus 4.6 | Pipeline Review Since ACS Baseline (2f7a2805) -- [Significant] [open-items: yes]
 **For next agent:** 11 findings ranked by severity. #1 (high): no C# tests for `ClaimSelectionDraftService.cs` (1,057-line state machine). #2 (medium): verdict citation integrity fallback skips re-enforcement on adjudication failure. #3 (medium): relevance cache key missing model/provider. Comparison evidence profile threading is consistent across all 7 stages; ACS security is strong.
 → Docs/AGENTS/Handoffs/2026-04-26_Code_Reviewer_Pipeline_Review_Since_ACS_Baseline.md
@@ -2232,11 +2247,85 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-26 | Agents Supervisor | Codex (GPT-5) | Collaboration Rules Restructure Proposal -- [Standard] [open-items: yes]
 **For next agent:** Phase 3 is now a proposal only: `Docs/WIP/2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md` gives a slice-by-slice approval matrix for shrinking `Multi_Agent_Collaboration_Rules.md` into a routing doc while preserving hub-and-spoke and WIP templates as procedures. Do not edit the rules file until Captain approves slices.
 → Docs/AGENTS/Handoffs/2026-04-26_Agents_Supervisor_Collaboration_Rules_Restructure_Proposal.md
+
+---
+### 2026-04-26 | Lead Architect + LLM Expert | Codex (GPT-5) | Dominant Proposition Plan Codebase Resync — [Standard] [open-items: yes]
+**For next agent:** The dominant-proposition plan was resynced to the current codebase. The material updates are: ACS-CW is now called out as the post-Gate-1 recommendation authority distinct from Stage 1 validity, Phase A parent re-authorization must mirror the live final contract-refresh retry/carry-forward discipline, and Phase B migration semantics now preserve the full current Option G audit shape including `borderlineAdjudication`.
+→ Docs/AGENTS/Handoffs/2026-04-26_Lead_Architect_LLM_Expert_Dominant_Proposition_Plan_Codebase_Resync.md
+
+---
+### 2026-04-26 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Current Active Work Handover -- [Significant] [open-items: yes]
+**For next agent:** Continue from job `76c8a6f256f240c5890349c1532ee630`: `d26fa84a` improved SEM 2025 AC_02 support, but historical endpoint comparator evidence (`115'000` at 8 May 1945) is still extracted as neutral, dropped by citation integrity, and can yield `UNVERIFIED`. Next likely fix is a generic `EXTRACT_EVIDENCE` numeric-comparison direction prompt amendment plus focused tests, not deterministic code repair.
+→ Docs/AGENTS/Handoffs/2026-04-26_Senior_Developer_LLM_Expert_235000_Current_Active_Work_Handover.md
+
+---
+### 2026-04-26 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Comparison Direction Prompt Stack -- [Standard] [open-items: yes]
+**For next agent:** Six prompt/test commits landed on `main` (`571cb17d`, `9d8d0933`, `385d88f8`, `84d7827a`, `e2ecd2b2`, `2cccd210`) to keep numeric comparison side evidence directional, separate endpoint/stock from cumulative period totals, require comparison profiles to carry both side routes, and map side evidence to comparison claims. Final live validation job `ebeb768cf803491d872cf6bfd57d2a5f` for exact approved input succeeded as `MOSTLY-FALSE` 25/65 with no `UNVERIFIED`, no citation-integrity warning, and progress 100. Residual: current-side 235k evidence still did not clone/map to AC_02 in that run, and several historical comparison items remain neutral; next work should inspect why `APPLICABILITY_ASSESSMENT` still under-maps decisive side evidence despite the improved profile, without adding deterministic semantic repair.
+
+---
+### 2026-04-27 | Senior Developer / LLM Expert | Codex (GPT-5) | 235000 Comparison Reserve/Profile Fix -- [Significant] [open-items: yes]
+**For next agent:** `235000 Flüchtlinge...` no longer reproduced as `UNVERIFIED` after commits `0daf0e42`, `6293c705`, `991d1c3c`, and `16ed9fda`. Root causes addressed: evidence direction was routed to the understand tier instead of extract-evidence tier; main/refinement research could spend contradiction reserve before contradiction iteration; comparison side evidence needed clearer prompt direction; and comparison claim profiles needed their own current-side route/freshness. Live jobs: `e86c8b...` and `2c2bf...` on `6293c705` succeeded false-direction with 115,000 endpoint contradiction; `da5f30...` on `991d1c3c` succeeded but still lacked AC_02 current-side supports; `9db754...` on `16ed9fda` succeeded `LEANING-FALSE` 38/68 with AC_02 `current_snapshot`, SEM current-side route, 5 supports, 6 contradicts, no `UNVERIFIED`, no grounding/citation warning, progress 100. Warnings were info-level fetch/degradation/cap/partition/direction-rescue diagnostics only. Residual: the run still logs long but live progress plateaus around 30/55/60/70%; one final live-job budget slot remained unused.
+
 ---
 ### 2026-04-27 | Lead Developer | Codex (GPT-5) | Analyze Screen Report Processing Sessions -- [Standard] [open-items: no]
 **For next agent:** `/analyze` no longer shows `REPORT PROCESSING` resume entries once `finalJobId` is known. `ActiveClaimSelectionSessions.shouldDropSessionFromRegistry()` now treats `draft.finalJobId` / `ref.lastKnownFinalJobId` as cleanup signals, storage sync removes old refs before display, refresh removes server-returned final-job drafts, and the obsolete `Open report` branch was deleted. Focused Vitest passed.
 → Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md
+
 ---
 ### 2026-04-27 | Lead Developer | Codex (GPT-5) | Stale Draft Preparation Recovery -- [Standard] [open-items: no]
 **For next agent:** Draft preparation now has stale-local-running recovery parity with report jobs. `internal-runner-queue.ts` uses the shared 15-minute stale threshold to fail locally tracked `PREPARING` drafts through `/internal/v1/claim-selection-drafts/{draftId}/failed`, then clears `runningDraftIds`/running count. Local stuck draft `e410123312c44e5c961e5ae36b921273` was recovered via app-route drain and is now `FAILED`.
 → Docs/AGENTS/Handoffs/2026-04-27_Lead_Developer_Stale_Draft_Preparation_Recovery.md
+
+---
+### 2026-04-27 | Lead Architect | Codex (GPT-5) | Admin Preparation Plan Rebase Debate -- [Standard] [open-items: yes]
+**For next agent:** [2026-04-24_Admin_Preparation_Sessions_Control_Plan.md](/c:/DEV/FactHarbor/Docs/WIP/2026-04-24_Admin_Preparation_Sessions_Control_Plan.md) is now rebased after the April 27 fixes and debate. Verdict is `MODIFY`: full admin preparation-session tooling still makes architectural sense, but only Slice 0 is recommended now: block `PREPARING` cancellation in `ClaimSelectionDraftService.CancelDraftAsync(...)` and the existing selection UI. Add API test foundation before read-only admin list/detail, and require durable `ClaimSelectionDraftEventEntity` before admin mutation controls.
+→ Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Admin_Preparation_Plan_Rebase_Debate.md
+
+---
+### 2026-04-27 | Code Reviewer | Claude Opus 4.6 | April 24-27 Unreviewed Changes Review -- [Significant] [open-items: yes]
+**For next agent:** Formal code review of 98 unreviewed commits (April 24-27). 5 parallel passes covering verdict logic, prompt changes, SR budget, stage 1/pipeline/runner, and ACS/C# API. **1 HIGH:** prepared Stage 1 snapshots reused without provenance hash validation (`claimboundary-pipeline.ts:943`). **8 MEDIUM:** prompt density hotspots, undefined terms ("companion claim", "comparison orientation"), shallow evidence cloning, missing TryClaimRunnerSlotAsync tests, cross-worker queue state documentation. **18 LOW.** All 5 prior-review findings resolved. All tests pass (2019 TS + 12 C#), build clean. Priority action: add provenance validation before snapshot reuse.
+→ Docs/AGENTS/Handoffs/2026-04-27_Code_Reviewer_April_24_27_Unreviewed_Changes_Review.md
+
+---
+### 2026-04-27 | Lead Architect | Codex (GPT-5) | April 24-27 Review Triage -- [Standard] [open-items: yes]
+**For next agent:** Do not treat the April 24-27 review as a blind approval queue. The HIGH finding is code-validated: `runClaimBoundaryAnalysis(...)` reuses `input.preparedStage1` at `claimboundary-pipeline.ts:943-954` while `prepareStage1Snapshot(...)` captures `preparationProvenance` hashes at `claimboundary-pipeline.ts:826-836`, and current tests only assert capture, not validation. Recommendation: implement a narrow provenance-reuse guard before broader admin preparation tooling; prompt MEDIUM items need LLM Expert review before editing prompts, and C# concurrency tests can follow as a normal hardening slice.
+
+---
+### 2026-04-27 | Lead Developer | Codex (GPT-5) | Prepared Stage 1 Provenance Guard Implementation -- [Standard] [open-items: yes]
+**For next agent:** P4-011 is implemented. `runClaimBoundaryAnalysis(...)` now validates prepared Stage 1 snapshots before reuse: missing `preparationProvenance`, prompt/pipeline/search/calc hash drift, source input type drift, selection-cap drift, and resolved-input hash mismatch all fail before Stage 2 research unless `provenanceValidationEnabled === false`. Focused tests in `claimboundary-prepared-stage1.test.ts` cover valid reuse, missing provenance, stale prompt/config/calc/search/input hashes, selection-cap drift, and explicit legacy bypass. Verification passed: focused Vitest, `npm -w apps/web run build`, `npm test`, and `git diff --check`.
+**Warnings:** Existing stored draft/job prepared snapshots without provenance will now reject on continuation while provenance validation is enabled; that is deliberate fail-closed behavior. No live jobs or expensive LLM tests were run.
+**DEBT-GUARD RESULT:** Classification: incomplete-existing-mechanism. Chosen option: amend existing prepared-snapshot path. Rejected path: silently rerun Stage 1 at execution time because it invalidates the user's selected claim IDs. What was added: one provenance assertion helper and focused tests. Net mechanism count: unchanged. Debt accepted: existing opt-out via `provenanceValidationEnabled` remains for legacy recovery; remove only if no longer needed after stale draft cleanup.
+
+---
+### 2026-04-27 | Lead Developer | Codex (GPT-5) | Admin Preparation Sessions Implementation -- [Standard] [open-items: yes]
+**For next agent:** Admin preparation-session tooling has landed through controlled mutations. Commits: `dee70865` blocks `PREPARING` cancellation; `525d1082` adds passive admin list; `26cc2cee` adds read-only detail; `750f9352` adds `ClaimSelectionDraftEventEntity` plus audit writes for create/hide/unhide/cancel/retry/restart/status transitions/prepared/fail/confirm/auto-confirm/expiry; `9f8eb419` adds admin detail action controls and audit-history display. Verification passed: focused C# draft-service tests, web proxy-route Vitest, `npm -w apps/web run build`, temp-output API builds, and diff checks. Remaining deferred item: do not add explicit queue-recovery kick or destructive retention cleanup without a separate audited design decision; the current GET surfaces remain passive.
+
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | Stage 1 Pass 1 Structured Output Recovery -- [Standard] [open-items: no]
+**For next agent:** Fixed draft preparation failure `1226a041334644eb8d641af78d0594cb` class where URL/PDF Stage 1 stopped at 12% with raw `No object generated: response did not match schema.` Root cause was uneven Stage 1 structured-output hardening: Pass 2 already retried and normalized schema drift, but Pass 1 used one strict `Output.object` call and rethrew AI SDK schema errors. `apps/web/src/lib/analyzer/claim-extraction-stage.ts` now lets Pass 1 tolerate structural rough-claim shape drift, normalizes rough-claim strings into `{ statement, searchHint }`, quality-checks non-empty `impliedClaim` plus usable rough claims, and retries once with schema-specific guidance before failing closed. Added focused tests in `apps/web/test/unit/lib/analyzer/claimboundary-pipeline.test.ts`.
+**Warnings:** No live retry of the SVP PDF draft was run because live analysis/LLM verification after source changes requires commit + runtime refresh under the repo discipline. Local verification passed: focused `Stage 1: runPass1`, full `claimboundary-pipeline.test.ts`, `claimboundary-prepared-stage1.test.ts`, `npm -w apps/web run build`, and safe `npm test`.
+**Learnings:** Stage 1 schema-recovery coverage should be kept even across passes; a draft-preparation failure at 12% is usually Pass 1, not Pass 2.
+**DEBT-GUARD RESULT:** Classification: incomplete-existing-mechanism. Chosen option: amend the existing Stage 1 Pass 1 structured-output path using the established Pass 2 retry pattern. Rejected path: draft-level retry or URL/PDF-specific handling because that would hide the real under-hardened LLM boundary. What was added: local Pass 1 normalization/quality helpers and two focused tests. What was removed/simplified: no obsolete code removed. Net mechanism count: unchanged in concept. Debt accepted and removal trigger: none.
+
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | Draft Runner Queue And Admin Mutation High Fixes -- [Standard] [open-items: no]
+**For next agent:** Five confirmed HIGH review findings are fixed: draft PREPARING heartbeat, fresh live-read guards before stale draft fail/reset, cancellable PREPARING drafts, rate limiting on admin cancel/hide/unhide, and trusted remote IP auditing instead of raw `X-Forwarded-For`. Main anchors: `internal-runner-queue.ts`, `ClaimSelectionDraftService.CancelDraftAsync(...)`, `ClaimSelectionDraftsController.ResolveSourceIp(...)`.
+→ Docs/AGENTS/Handoffs/2026-04-27_Senior_Developer_Draft_Runner_Queue_Admin_High_Fixes.md
+
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | Verdict Integrity Warning Display Fix -- [Standard] [open-items: no]
+**For next agent:** Job `b8def4575c0749288a76c138838934d9` succeeded but showed `verdict_integrity_failure` as a user-facing Analysis Quality Issue. Root cause was the centralized display registry classifying the post-hoc verdict integrity diagnostic as report-degrading, contrary to the warning policy for internal verdict direction/integrity checks. `apps/web/src/lib/analyzer/warning-display.ts` now classifies `verdict_integrity_failure` as informational; the old job page now shows only `Budget Exceeded` as a visible quality issue, while admins retain the diagnostic. Focused test updated in `apps/web/test/unit/lib/analyzer/warning-display.test.ts`.
+**Warnings:** This does not alter the stored job result, safe fallback verdict, aggregation confidence cap, or historical `analysisWarnings` JSON. It only changes display bucketing/severity for old and new jobs.
+**Learnings:** A `verdict_integrity_failure` warning can be a backend correction signal without being a user-facing report-damage signal; display severity belongs in `warning-display.ts`, not in UI components or ad hoc report rendering.
+**DEBT-GUARD RESULT:** Classification: incomplete-existing-mechanism. Chosen option: amend the existing warning-display registry. Rejected path: changing verdict generation/aggregation because the backend completed and the visible defect was warning severity display. What was removed/simplified: no code removed. What was added: one registry classification change and focused test expectation. Net mechanism count: unchanged. Budget reconciliation: stayed within the compact single-site plan. Verification: `npm -w apps/web test -- warning-display.test.ts`, browser reload of `http://localhost:3000/jobs/b8def4575c0749288a76c138838934d9`, `npm -w apps/web run build`, and targeted `git diff --check`. Debt accepted and removal trigger: none.
+
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | Post-Repair Verdict Rescue Guard -- [Standard] [open-items: yes]
+**For next agent:** VD-M1 is fixed in commit `950cab26`: post-repair direction plausibility rescue now also blocks when claim-local direct citation sides are still missing. Focused regression, full `verdict-stage.test.ts`, `npm -w apps/web run build`, `npm test`, and `git diff --check` passed. Remaining MEDIUMs are still open except VD-M1; do not edit prompt MEDIUMs without explicit human approval.
+→ Docs/AGENTS/Handoffs/2026-04-27_Senior_Developer_Post_Repair_Verdict_Rescue_Guard.md
+
+---
+### 2026-04-27 | Agents Supervisor | Codex (GPT-5) | WIP Consolidation #13 -- [Standard] [open-items: no]
+**For next agent:** Consolidation #13 archived `Docs/WIP/2026-04-20_Prompt_Split_Plan.md` as DONE and `Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` as SUPERSEDED, added `PROMPT-SPLIT-1` to Backlog for the physical prompt-split contingency, and synced `Docs/WIP/README.md` to the 56 remaining top-level WIP markdown files. `node scripts/build-index.mjs --tier=2` was run after the archive/status updates.
+**Warnings:** This pass did not adjudicate unrelated application-code changes already present in the worktree; it only reconciled the WIP/archive/backlog/index state. Existing WIP docs that explicitly say "unclear implementation status" or "verify resolution" remain active rather than being guessed closed.
+**Learnings:** A cheap README coverage check (`Docs/WIP/*.md` minus README links) is useful before and after `/wip-update`; it caught 15 unindexed recent WIP files before cleanup and confirmed zero missing entries afterward.

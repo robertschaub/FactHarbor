@@ -1,0 +1,8 @@
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | Draft Runner Queue And Admin Mutation High Fixes
+**Task:** Implement the five confirmed HIGH review findings in draft runner/queue and admin preparation APIs after re-checking the review instead of accepting it blindly.
+**Summary:** Addressed draft preparation liveness and recovery by adding PREPARING heartbeats in `internal-runner-queue.ts`, fresh single-draft reads before stale-fail/reset decisions, and PREPARING cancellation support. Hardened admin mutations by rate-limiting cancel/hide/unhide and using the trusted remote endpoint instead of raw `X-Forwarded-For` for audit source IP. Updated selection/admin UI affordances and added focused web/API tests.
+**Open items:** No code blockers remain for these five HIGHs. The broader admin-preparation plan still has deferred retention/destructive-cleanup work and should stay gated on audit semantics.
+**Warnings:** The first full safe `npm test` run hit transient runner integration timeouts under load; targeted affected suites then passed, and the full safe suite passed on rerun. No expensive LLM/live-analysis validation was run.
+**For next agent:** Main anchors are `apps/web/src/lib/internal-runner-queue.ts`, `ClaimSelectionDraftService.CancelDraftAsync(...)`, `ClaimSelectionDraftsController.ResolveSourceIp(...)`, and `ClaimSelectionDraftsControllerTests`. PREPARING is now cancellable; late prepared-result writes remain guarded by terminal-state checks.
+**Learnings:** No role-learning update needed. Debt-guard classification was `incomplete-existing-mechanism`; the chosen path amended existing runner/admin mechanisms rather than adding parallel cleanup paths.

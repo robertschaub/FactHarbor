@@ -52,7 +52,7 @@ const WARNING_CLASSIFICATION = {
   tiger_score_failed: { bucket: "analysis", impact: "informational" },
   structural_consistency: { bucket: "analysis", impact: "degrading" },
   inverse_consistency_error: { bucket: "analysis", impact: "degrading" },
-  verdict_integrity_failure: { bucket: "analysis", impact: "degrading" },
+  verdict_integrity_failure: { bucket: "analysis", impact: "informational" },
   verdict_grounding_issue: { bucket: "analysis", impact: "informational" },
   verdict_direction_issue: { bucket: "analysis", impact: "informational" },
   verdict_citation_integrity_guard: { bucket: "analysis", impact: "degrading" },

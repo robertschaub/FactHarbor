@@ -133,21 +133,21 @@ describe("warning-display classification", () => {
     expect(result.displaySeverity).toBe("info");
   });
 
-  it("keeps structural/integrity warnings degrading in analysis bucket", () => {
+  it("keeps structural warnings degrading but treats verdict integrity as informational diagnostics", () => {
     const structural = classifyWarningForDisplay(warning({
       type: "structural_consistency",
       severity: "error",
     }));
     const integrity = classifyWarningForDisplay(warning({
       type: "verdict_integrity_failure",
-      severity: "warning",
+      severity: "error",
     }));
     expect(structural.isProviderIssue).toBe(false);
     expect(structural.isReportDegrading).toBe(true);
     expect(structural.displaySeverity).toBe("error");
     expect(integrity.isProviderIssue).toBe(false);
-    expect(integrity.isReportDegrading).toBe(true);
-    expect(integrity.displaySeverity).toBe("warning");
+    expect(integrity.isReportDegrading).toBe(false);
+    expect(integrity.displaySeverity).toBe("info");
   });
 
   it("treats grounding/direction checks as informational diagnostics", () => {

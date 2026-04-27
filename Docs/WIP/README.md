@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-24
-**Status**: Consolidation #12 complete. 48 files archived. 50 active markdown docs remain.
+**Last Updated**: 2026-04-27
+**Status**: Consolidation #13 complete. 2 files archived. 56 active markdown docs remain.
 
 ---
 
@@ -29,6 +29,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ## Active Engineering / Quality Tracks
 
 ### Currently active (Phase 7 / Report Quality Restoration)
+- [2026-04-26_235000_Comparison_Fix_Working_Memory.md](2026-04-26_235000_Comparison_Fix_Working_Memory.md) — current paused working memory for the approved 235000 comparison fix loop
 - [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — current benchmark-family status matrix after the April 16 fix wave
 - [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter (Fix A/C landed, Fix B residual gap)
 - [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — current Phase 7 problem framing, implementation plan, and verification checklist
@@ -59,6 +60,11 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ### Agent tooling
 - [2026-04-16_Agent_Indexing_System_Design.md](2026-04-16_Agent_Indexing_System_Design.md) — agent indexing system design; materially executed now (JSON artifacts, shared query package, CLI, and thin MCP adapter exist; rollout docs/configs landed, client adoption remains)
 - [2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md](2026-04-22_Internal_Agent_Knowledge_MCP_V1_Spec.md) — active v1 spec for the internal knowledge layer: shared query core, CLI, thin MCP adapter, and rollout setup docs/configs are in place; client adoption and local client validation are next
+- [2026-04-26_ACE_Governance_Implementation_Plan.md](2026-04-26_ACE_Governance_Implementation_Plan.md) — active implementation plan for accepted ACE governance corrections and telemetry/index stabilization
+- [2026-04-26_ACE_Governance_Reaudit_Consolidated.md](2026-04-26_ACE_Governance_Reaudit_Consolidated.md) — consolidated ACE governance re-audit result awaiting review
+- [2026-04-26_ACE_Readiness_Review_And_Debate.md](2026-04-26_ACE_Readiness_Review_And_Debate.md) — ACE readiness findings and debate record awaiting review
+- [2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md](2026-04-26_Multi_Agent_Collaboration_Rules_Audit.md) — current audit of collaboration rules structure and duplication
+- [2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md](2026-04-26_Multi_Agent_Collaboration_Rules_Restructure_Proposal.md) — proposed collaboration-rules restructure awaiting Captain review
 - [2026-04-13_Agent_Outputs_Purpose_Review.md](2026-04-13_Agent_Outputs_Purpose_Review.md) — Agent_Outputs migration design (approved, migration PR not yet executed)
 - [2026-04-13_Migration_Case_C_Review.md](2026-04-13_Migration_Case_C_Review.md) — Case-C decision record for Agent_Outputs migration (decisions made, execution pending)
 - [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](2026-04-21_Additive_Repair_Drift_Problem_Statement.md) — problem framing for additive repair drift in agent workflows; explains why agents keep stacking failed changes and why bounded backtracking is preferred over blanket rollback
@@ -75,6 +81,9 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ### Quality / analyzer
 - [2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md](2026-04-22_Atomic_Claim_Selection_Implementation_Spec.md) - implementation-ready v1 spec for pre-job AtomicClaim selection over the current Stage 1 final claim set
+- [2026-04-22_Check_Worthiness_Recommendation_Design.md](2026-04-22_Check_Worthiness_Recommendation_Design.md) — consolidated implementation design for ACS check-worthiness recommendation authority
+- [2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md](2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md) — architecture assessment for Stage 1 atomic claims and ACS check-worthiness unification
+- [2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md](2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md) — reviewed, partially implemented selection-readiness root-cause/fix plan
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md) — Stage 4.5 SR calibration. Feature-flagged/off.
 - [LLM_Triangulation_Assessment_Plan_2026-03-17.md](LLM_Triangulation_Assessment_Plan_2026-03-17.md) — LLM-assessed aggregation weight factors (v4 ready for implementation approval)
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — long-run retrieval-first roadmap
@@ -86,6 +95,11 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — Wikipedia shipped; deeper Semantic Scholar / Fact Check integration future scope
 
 ### Infrastructure / optimization
+- [2026-04-24_Admin_Preparation_Sessions_Control_Plan.md](2026-04-24_Admin_Preparation_Sessions_Control_Plan.md) — April 27 rebased plan for admin-only preparation-session visibility/control over `ClaimSelectionDraftEntity`; recommends only immediate `PREPARING` cancel safety alignment now, then API tests, read-only admin observability, and audited mutations
+- [2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md](2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md) — active recommended direction for semantics-preserving async/session UX preparation work
+- [2026-04-23_Grander_Runtime_Followup_Options.md](2026-04-23_Grander_Runtime_Followup_Options.md) — deferred Grander runtime follow-up options, with verdict citation sanitation ranked first
+- [2026-04-22_AI_Cost_Review_Reduce_Keep_Add.md](2026-04-22_AI_Cost_Review_Reduce_Keep_Add.md) — split developer-tool/runtime cost review awaiting Captain decisions
+- [2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md](2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md) — token-reduction debate result; approved safe wins require measurement/implementation planning
 - [2026-03-18_Refactoring_Plan_Code_Cleanup.md](2026-03-18_Refactoring_Plan_Code_Cleanup.md) — residual WS-5/6/7
 - [Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md](Pipeline_Speed_Cost_Optimization_Plan_2026-03-19.md) — residual P1-A, P2-*, P3-* (require fresh baseline)
 - [Infrastructure_and_Config_fwd.md](Infrastructure_and_Config_fwd.md) — residual infrastructure items (3 open)
@@ -131,6 +145,7 @@ Historical detail from these WIP docs lives in `_arch` companion files under [Do
 
 | Date | Consolidation | Files archived | Files remaining |
 |------|--------------|---------------|-----------------|
+| 2026-04-27 | **#13** | 2 files archived (implemented prompt-read plan, superseded text-first session-prep proposal); WIP README synced with recent active docs | 56 |
 | 2026-04-18 | **#12** | 48 files archived (Phase 2-6 execution artefacts, completed investigations, historical reviews, event prep, superseded proposals, abandoned MCP investigation) | 37 |
 | 2026-04-15 | **#11** | 4 historical/supporting docs archived (Phase 7 bridge/status notes, post-rollback validation report, implemented article-adjudication review) | 79 |
 | 2026-04-04 | **#10** | 28 historical/completed files archived (investigations, decided debates, implemented reviews, subagent reports) | 38 |

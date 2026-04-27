@@ -2,7 +2,7 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-25
+**Last Updated**: 2026-04-27
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
@@ -98,6 +98,7 @@ These are still-open future-facing tracks that remain relevant, but they are not
 | **RESILIENCE-1** | **Outage resilience follow-on**: A-track is shipped (network failures feed breaker, Stage-4 preflight probe, damaged-job abort, network-only auto-resume). Remaining future work is Option B/C only: pipeline hold/resume for short outages and checkpoint/resume for long outages or restarts. | Analyzer / Reliability / Runner | low | med | `Docs/WIP/2026-03-27_Internet_Outage_Resilience_Plan.md` |
 | **LIVE-1** | **LiveCheck / Innosuisse future track**: funding and research proposal line for live audio/video fact-checking. Keep distinct from the current Alpha validation track. | Product / Research / Funding | low | med | `Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md`, `Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md` |
 | **PROV-1** | **Source Provenance Tracking**: Trace evidence back to original creator (person/org) to detect single-source amplification, propaganda, and attribution washing. Design complete (v2, post-GPT review). 3 phases: Phase 1 extraction + telemetry, Phase 1.5 challenger/reconciler prompt integration, Phase 2 LLM entity resolution. Integrates with existing `sourcePortfolioByClaim` and `independence_concern`. Implementation parked. | Analyzer / Quality / SR | low | high | `Docs/WIP/2026-04-04_Source_Provenance_Tracking_Design.md` |
+| **PROMPT-SPLIT-1** | **Physical prompt split / composite-hash manifest remains deferred**: current solution is the AGENTS large-file targeted-read exception. Reopen physical splitting only if the `claimboundary` prompt grows beyond roughly 300KB, concurrent section editing becomes common, section-level prompt versioning is requested, or agent context limits materially shrink. | Tooling / Prompt Governance | low | low | `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md` |
 
 ---
 

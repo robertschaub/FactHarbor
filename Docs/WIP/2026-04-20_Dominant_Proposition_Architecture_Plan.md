@@ -7,6 +7,7 @@
 - Goal: introduce an optional parent/top-level proposition without damaging the current flat-claim pipeline
 - Rollout posture: detection first, verdict semantics second
 - External sequencing note: this track follows ACS v1 and its Check-worthiness recommendation layer. ACS v1 is intentionally defined over the current flat `CBClaimUnderstanding.atomicClaims` seam and explicitly excludes `topLevelProposition`; do not reopen ACS semantics by introducing the parent early.
+- ACS authority note: Stage 1 remains the validity authority for final `atomicClaims`; ACS-CW remains the post-Gate-1 recommendation authority over those claims only. `topLevelProposition` is a later Stage 1 contract extension, not an ACS recommendation input.
 
 ## Consolidated Solution
 
@@ -34,7 +35,7 @@ Semantics:
 - `topLevelProposition.statement` must be independently derived from input text and must not be copied mechanically from `articleThesis`
 - when both exist, they may be semantically close, but they are not interchangeable fields
 - `topLevelProposition` is valid only when `componentClaimIds` identifies at least two child claims
-- `dominanceAssessment` remains a Stage 5 peer-conflict concept and is orthogonal to parent/component structure
+- `dominanceAssessment` remains a Stage 5 peer-claim article-adjudication concept (direction-conflict / borderline direct-claim cases) and is orthogonal to parent/component structure
 - `topLevelProposition` and `dominanceAssessment` can coexist in any combination; neither field implies, suppresses, or redefines the other
 - `topLevelProposition` is provisional until the final accepted child set has passed Stage 1 end-state validation
 
@@ -81,7 +82,13 @@ Do now:
 - Add post-retry Stage 1 structural validation at Stage 1 output finalization time, using the same cross-reference-guard pattern as the existing Stage 5 `dominantClaimId` check, so every `componentClaimId` resolves to a current `atomicClaims` entry and `componentClaimIds.length >= 2`; otherwise null out `topLevelProposition`
 - Add final Stage 1 semantic re-authorization of `topLevelProposition` against the final accepted claim set during the same end-state LLM validation pass that refreshes claim-contract fidelity after Gate 1 changes
 - If the final accepted child set survives structurally but the parent is no longer semantically justified relative to that final set, null out `topLevelProposition`
+- Mirror the current final contract-refresh discipline rather than inventing a weaker parent-only check:
+  - use the same final contract revalidation retry path
+  - do not silently fail open on the parent when final revalidation is unavailable
+  - any carry-forward of a previously accepted parent must be at least as strict as the existing contract-approved carry-forward gate for final accepted claim subsets; otherwise null the parent and surface degraded state
 - Keep ACS semantics unchanged: claim selection and any Check-worthiness recommendation continue to operate on the flat final `atomicClaims` set only
+- Once `topLevelProposition` exists, it may persist inside `PreparedStage1Snapshot.preparedUnderstanding`, but ACS-CW ranking, `recommendedClaimIds`, and `selectedClaimIds` must continue to be derived from `atomicClaims` only
+- Treat current `AtomicClaim.checkWorthiness` as advisory extraction-time metadata only; do not use it as a parent trigger or as a fallback selection authority
 - Keep Stages 2-4 unchanged
 - Keep child-claim research, clustering, and per-claim verdicting unchanged
 - Keep current report internals child-claim based
@@ -116,7 +123,7 @@ Do not:
 - reuse `articleAdjudication`
 - reuse `dominanceAssessment`
 - treat the parent as one more peer claim
-- run the existing `dominanceAssessment` path when parent-aware aggregation fires
+- run the existing Option G peer-claim adjudication path (`directionConflict` / `borderlineAdjudication` → `articleAdjudication`) when parent-aware aggregation fires
 - introduce deterministic heuristics that infer parent semantics from `claimWeightRationale`; if richer parent semantics are needed later, add them explicitly rather than deriving them heuristically
 
 ### Phase B contract additions
@@ -128,6 +135,31 @@ Recommended direction:
 ```ts
 adjudicationPath?: {
   baselineAggregate: { truthPercentage: number; confidence: number };
+  directionConflict?: boolean;
+  borderlineAdjudication?: boolean;
+  llmAdjudication?: {
+    rawTruthPercentage: number;
+    rawConfidence: number;
+    dominanceAssessment: {
+      mode: "none" | "single";
+      dominantClaimId?: string;
+      strength?: "strong" | "decisive";
+      rationale: string;
+    };
+    claimWeightRationale: Array<{
+      claimId: string;
+      effectiveInfluence: "primary" | "significant" | "moderate" | "minor";
+      reasoning: string;
+    }>;
+    adjudicationReasoning: string;
+    articleTruthRange?: { min: number; max: number };
+  };
+  guardsApplied?: {
+    deviationCapped: boolean;
+    confidenceCeiled: boolean;
+    integrityDowngraded: boolean;
+    boundsClamped: boolean;
+  };
   finalAggregate: { truthPercentage: number; confidence: number };
   path:
     | "baseline_same_direction"
@@ -156,7 +188,7 @@ Rules:
 - the illustrative `adjudicationPath` block above is an extension pattern, not a silent replacement of the current live Option G `AdjudicationPath` contract in `types.ts`
 - on non-parent runs, keep the current Option G `AdjudicationPath` contract unchanged
 - on parent-aware runs, use `adjudicationPath.path = "parent_all_must_hold"` plus `parentAggregation`; `articleAdjudication` remains absent on those runs
-- Option G-only fields such as `directionConflict`, `llmAdjudication`, and `guardsApplied` must either remain intact for non-parent runs or be intentionally redesigned in the same change; they must never be dropped implicitly
+- Option G-only fields such as `directionConflict`, `borderlineAdjudication`, `llmAdjudication`, and `guardsApplied` must either remain intact for non-parent runs or be intentionally redesigned in the same change; they must never be dropped implicitly
 
 ### Phase C: Report/UI exposure
 
@@ -292,6 +324,7 @@ Precondition:
 Sequence guard:
 
 - do not couple parent detection to ACS chooser ordering, `recommendedClaimIds`, or `selectedClaimIds`
+- do not use extraction-time `AtomicClaim.checkWorthiness`, ACS-CW assessments, or `recommendedClaimIds` as parent-detection inputs
 - parent structure is a later analysis contract, not part of the ACS v1 candidate model
 
 Tests to add:
@@ -303,7 +336,9 @@ Tests to add:
 - `plastic-en` can remain parentless
 - parent validation runs on the final post-retry claim set, not provisional IDs
 - parent survives only when the final Stage 1 semantic re-validation re-authorizes it against the accepted child set
+- on final revalidation unavailability, parent carry-forward is allowed only under the same safe subset-retention discipline as the live contract-approved carry-forward path; otherwise the parent is nulled or degraded, never silently preserved
 - when parent-aware aggregation is enabled, `dominanceAssessment` is bypassed and the adjudication path records `aggregationMode` and `constrainingClaimId`
+- non-parent runs preserve current Option G audit semantics, including `directionConflict` / `borderlineAdjudication` and any `llmAdjudication` / `guardsApplied` fields
 - unresolved required children force a non-publishable `UNVERIFIED` parent outcome
 
 ## Validation Focus

@@ -2,7 +2,20 @@
 
 **Purpose**: This directory contains historical documents that are no longer actively referenced but may be useful for context or historical review.
 
-**Last Updated**: 2026-04-18 (WIP Consolidation #12)
+**Last Updated**: 2026-04-27 (WIP Consolidation #13)
+
+---
+
+### WIP Consolidation #13 (2026-04-27)
+
+**Description**: Narrow WIP sync after the April 24-27 planning wave. Archived one implemented prompt-governance plan and one superseded session-preparation proposal; indexed the remaining recent WIP docs in `Docs/WIP/README.md`. Forward-looking prompt-split contingency extracted to Backlog.
+
+**WIP files archived** (2):
+
+| File | Reason |
+|------|--------|
+| `2026-04-20_Prompt_Split_Plan.md` | DONE — AGENTS large-file targeted-read exception already landed; physical split remains deferred in Backlog |
+| `2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` | SUPERSEDED — Captain rejected text-first semantics change for the current problem; semantics-preserving async/session proposal is the active direction |
 
 ---
 
