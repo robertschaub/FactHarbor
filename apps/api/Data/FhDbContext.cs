@@ -72,6 +72,7 @@ public sealed class FhDbContext : DbContext
             e.Property(x => x.BeforeStatus).HasMaxLength(32);
             e.Property(x => x.AfterStatus).HasMaxLength(32);
             e.Property(x => x.SourceIp).HasMaxLength(128);
+            e.Property(x => x.Message).HasMaxLength(512);
         });
 
         modelBuilder.Entity<Models.AnalysisMetrics>(e =>

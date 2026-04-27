@@ -63,6 +63,22 @@ function Stop-ListeningProcesses([int[]]$ports, [string]$label) {
     }
 }
 
+function ConvertTo-PowerShellSingleQuotedLiteral([AllowNull()][string]$value) {
+    if ($null -eq $value) {
+        $value = ""
+    }
+
+    return "'" + ($value -replace "'", "''") + "'"
+}
+
+function New-EnvAssignment([string]$name, [AllowNull()][string]$value) {
+    if ($name -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+        throw "Invalid environment variable name: $name"
+    }
+
+    return "`$env:$name = $(ConvertTo-PowerShellSingleQuotedLiteral $value); "
+}
+
 Write-Host "Stopping existing services (graceful)..."
 $apiShells = Get-CimInstance Win32_Process | Where-Object {
     $_.Name -eq "powershell.exe" -and $_.CommandLine -match "apps\\\\api" -and $_.CommandLine -match "dotnet watch run"
@@ -85,18 +101,21 @@ Write-Host "Starting API and Web services..."
 
 # Start API in new terminal (creates DB on startup if missing)
 Write-Host "Starting API..."
-$apiEnvPrefix = "`$env:ASPNETCORE_ENVIRONMENT='Development'; `$env:ASPNETCORE_URLS='$ApiUrls'; "
+$apiEnvPrefix = ""
+$apiEnvPrefix += New-EnvAssignment "ASPNETCORE_ENVIRONMENT" "Development"
+$apiEnvPrefix += New-EnvAssignment "ASPNETCORE_URLS" $ApiUrls
 if (-not $RunnerBaseUrl) {
     $RunnerBaseUrl = "http://localhost:$WebPort"
 }
-$apiEnvPrefix += "`$env:Runner__BaseUrl='$RunnerBaseUrl'; "
+$apiEnvPrefix += New-EnvAssignment "Runner__BaseUrl" $RunnerBaseUrl
 if ($ApiDbPath) {
-    $apiEnvPrefix += "`$env:ConnectionStrings__FhDbSqlite='Data Source=$ApiDbPath'; "
+    $apiEnvPrefix += New-EnvAssignment "ConnectionStrings__FhDbSqlite" "Data Source=$ApiDbPath"
 }
+$apiWorkingDir = Join-Path $PSScriptRoot "..\apps\api"
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\api`"; $apiEnvPrefix dotnet watch run"
+  "Set-Location -LiteralPath $(ConvertTo-PowerShellSingleQuotedLiteral $apiWorkingDir); $apiEnvPrefix dotnet watch run"
 )
 
 # Propagate select env vars into the spawned Web dev-server shell explicitly.
@@ -109,13 +128,13 @@ if (Test-Path $envLocalPath) {
         if ($_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') {
             $key = $matches[1]
             $val = $matches[2].Trim('"', "'", ' ')
-            $webEnvPrefix += "`$env:$key='$val'; "
+            $webEnvPrefix += New-EnvAssignment $key $val
         }
     }
 }
 # Allow explicit shell env to override .env.local
 if ($env:FH_RUNNER_MAX_CONCURRENCY) {
-    $webEnvPrefix += "`$env:FH_RUNNER_MAX_CONCURRENCY='$($env:FH_RUNNER_MAX_CONCURRENCY)'; "
+    $webEnvPrefix += New-EnvAssignment "FH_RUNNER_MAX_CONCURRENCY" $env:FH_RUNNER_MAX_CONCURRENCY
 }
 $selectedApiUrl = ""
 if ($ApiUrls) {
@@ -131,7 +150,8 @@ if (-not $ApiBaseUrl) {
     $ApiBaseUrl = "http://localhost:5000"
 }
 $ApiBaseUrl = $ApiBaseUrl.TrimEnd('/')
-$webEnvPrefix += "`$env:FH_API_BASE_URL='$ApiBaseUrl'; `$env:PORT='$WebPort'; "
+$webEnvPrefix += New-EnvAssignment "FH_API_BASE_URL" $ApiBaseUrl
+$webEnvPrefix += New-EnvAssignment "PORT" $WebPort
 
 # Reseed prompts and configs into config.db so the dev server picks up file changes
 Write-Host "Reseeding prompts and configs..."
@@ -149,10 +169,11 @@ Write-Host ""
 
 # Start Web in new terminal
 Write-Host "Starting Web..."
+$webWorkingDir = Join-Path $PSScriptRoot "..\apps\web"
 Start-Process -FilePath "powershell.exe" -ArgumentList @(
   "-NoExit",
   "-Command",
-  "cd `"$PSScriptRoot\..\apps\web`"; $webEnvPrefix npm run dev"
+  "Set-Location -LiteralPath $(ConvertTo-PowerShellSingleQuotedLiteral $webWorkingDir); $webEnvPrefix npm run dev"
 )
 
 Write-Host ""

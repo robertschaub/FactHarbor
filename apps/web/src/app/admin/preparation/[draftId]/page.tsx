@@ -174,7 +174,7 @@ export default function AdminPreparationDetailPage() {
 
     try {
       const response = await fetch(
-        `/api/fh/claim-selection-drafts/${encodeURIComponent(draftId)}/${action}`,
+        `/api/fh/admin/claim-selection-drafts/${encodeURIComponent(draftId)}/${action}`,
         {
           method: "POST",
           headers: getHeaders(),

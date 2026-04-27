@@ -126,6 +126,7 @@ namespace FactHarbor.Api.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Message")
+                        .HasMaxLength(512)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Result")

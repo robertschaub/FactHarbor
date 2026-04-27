@@ -20,6 +20,7 @@ const mockForwardTextResponse = vi.fn(async (response: Response) => {
 });
 const mockGetClaimSelectionDraftApiBase = vi.fn(() => "http://api.local");
 const mockResolveDraftId = vi.fn(async () => "draft-1");
+const mockValidateDraftId = vi.fn((draftId: string) => /^[a-zA-Z0-9_-]+$/.test(draftId) && draftId.length > 0 && draftId.length <= 128);
 const mockDrainDraftQueue = vi.fn();
 const mockLoadPipelineConfig = vi.fn();
 const mockFetch = vi.fn();
@@ -36,6 +37,7 @@ vi.mock("@/lib/claim-selection-draft-proxy", () => ({
   getClaimSelectionDraftApiBase: (...args: unknown[]) => mockGetClaimSelectionDraftApiBase(...args),
   persistDraftAccessCookie: (...args: unknown[]) => mockPersistDraftAccessCookie(...args),
   resolveDraftId: (...args: unknown[]) => mockResolveDraftId(...args),
+  validateDraftId: (...args: [string]) => mockValidateDraftId(...args),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -234,6 +236,72 @@ describe("claim-selection draft proxy routes", () => {
         headers: { "X-Admin-Key": "secret" },
       }),
     );
+  });
+
+  it("rejects admin draft actions before upstream fetch or queue recovery when admin auth is missing", async () => {
+    const { POST } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/[action]/route");
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1/cancel", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ draftId: "draft-1", action: "cancel" }) },
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Admin key required" });
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+  });
+
+  it("forwards admin draft actions through the admin proxy route", async () => {
+    const { POST } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/[action]/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+    mockBuildClaimSelectionDraftForwardHeaders.mockReturnValueOnce({ "X-Admin-Key": "secret" });
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ draftId: "draft-1", status: "CANCELLED" }));
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1/cancel", {
+        method: "POST",
+        headers: { "x-admin-key": "secret" },
+      }),
+      { params: Promise.resolve({ draftId: "draft-1", action: "cancel" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+    expect(mockBuildClaimSelectionDraftForwardHeaders).toHaveBeenCalledWith(expect.any(Request));
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/cancel",
+      expect.objectContaining({
+        method: "POST",
+        cache: "no-store",
+        headers: { "X-Admin-Key": "secret" },
+      }),
+    );
+  });
+
+  it("rejects unsupported admin draft actions before upstream fetch", async () => {
+    const { POST } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/[action]/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+
+    const response = await POST(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1/delete", {
+        method: "POST",
+        headers: { "x-admin-key": "secret" },
+      }),
+      { params: Promise.resolve({ draftId: "draft-1", action: "delete" }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: "Unsupported preparation session action",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
   });
 
   it("persists a draft access cookie when session creation succeeds", async () => {

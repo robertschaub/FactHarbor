@@ -6,6 +6,7 @@ using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -429,6 +430,43 @@ public sealed class ClaimSelectionDraftServiceTests
         await using var verifyDb = database.CreateContext();
         var reloadedExpired = await verifyDb.ClaimSelectionDrafts.FindAsync(expiredQueued.DraftId);
         Assert.Equal("EXPIRED", reloadedExpired?.Status);
+    }
+
+    [Fact]
+    public async Task ListDraftsForAdminAsync_ExpiresDueDraftsInBatchesBeforeCounting()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var stillActive = SeedDraft(db, status: "QUEUED");
+        for (var i = 0; i < 205; i++)
+        {
+            SeedDraft(db, status: "QUEUED", expiresUtc: DateTime.UtcNow.AddMinutes(-1));
+        }
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.ListDraftsForAdminAsync(AdminDraftQuery());
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(stillActive.DraftId, item.DraftId);
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.StatusCounts["QUEUED"]);
+
+        await using var verifyDb = database.CreateContext();
+        Assert.Equal(205, await verifyDb.ClaimSelectionDrafts.CountAsync(d => d.Status == "EXPIRED"));
+        Assert.Equal(205, await verifyDb.ClaimSelectionDraftEvents.CountAsync(e => e.Action == "expire"));
+    }
+
+    [Fact]
+    public async Task ClaimSelectionDraftEventMessage_HasModelMaxLength()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+
+        var entityType = db.Model.FindEntityType(typeof(ClaimSelectionDraftEventEntity));
+        var messageProperty = entityType?.FindProperty(nameof(ClaimSelectionDraftEventEntity.Message));
+
+        Assert.Equal(512, messageProperty?.GetMaxLength());
     }
 
     [Fact]

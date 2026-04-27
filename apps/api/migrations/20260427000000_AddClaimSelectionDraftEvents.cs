@@ -24,7 +24,7 @@ namespace FactHarbor.Api.Migrations
                     BeforeStatus = table.Column<string>(type: "TEXT", maxLength: 32, nullable: true),
                     AfterStatus = table.Column<string>(type: "TEXT", maxLength: 32, nullable: true),
                     SourceIp = table.Column<string>(type: "TEXT", maxLength: 128, nullable: true),
-                    Message = table.Column<string>(type: "TEXT", nullable: true)
+                    Message = table.Column<string>(type: "TEXT", maxLength: 512, nullable: true)
                 },
                 constraints: table =>
                 {

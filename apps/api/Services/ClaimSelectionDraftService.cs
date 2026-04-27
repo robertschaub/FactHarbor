@@ -71,6 +71,7 @@ public sealed class ClaimSelectionDraftService
     private const int AdminDraftEventSummaryMaxLength = 120;
     private const int DraftAuditSourceIpMaxLength = 128;
     private const int DraftAuditMessageMaxLength = 512;
+    private const int LazyExpiryBatchSize = 200;
 
     private static readonly string[] ActiveAdminDraftStatuses =
     [
@@ -265,23 +266,7 @@ public sealed class ClaimSelectionDraftService
 
     public async Task<AdminDraftListPage> ListDraftsForAdminAsync(AdminDraftListQuery query)
     {
-        var expiredDrafts = await _db.ClaimSelectionDrafts
-            .Where(d =>
-                d.Status != "COMPLETED" &&
-                d.Status != "CANCELLED" &&
-                d.Status != "EXPIRED" &&
-                d.ExpiresUtc < DateTime.UtcNow)
-            .ToListAsync();
-
-        var mutated = false;
-        foreach (var draft in expiredDrafts)
-        {
-            if (EnforceLazyExpiry(draft))
-                mutated = true;
-        }
-
-        if (mutated)
-            await _db.SaveChangesAsync();
+        await ExpireDueDraftsAsync(DateTime.UtcNow);
 
         var filtered = ApplyAdminDraftFilters(_db.ClaimSelectionDrafts.AsNoTracking(), query);
         var totalCount = await filtered.CountAsync();
@@ -307,6 +292,39 @@ public sealed class ClaimSelectionDraftService
             totalCount,
             totalPages,
             statusCounts);
+    }
+
+    private async Task ExpireDueDraftsAsync(DateTime nowUtc)
+    {
+        while (true)
+        {
+            var expiredDrafts = await _db.ClaimSelectionDrafts
+                .Where(d =>
+                    d.Status != "COMPLETED" &&
+                    d.Status != "CANCELLED" &&
+                    d.Status != "EXPIRED" &&
+                    d.ExpiresUtc < nowUtc)
+                .OrderBy(d => d.ExpiresUtc)
+                .ThenBy(d => d.DraftId)
+                .Take(LazyExpiryBatchSize)
+                .ToListAsync();
+
+            if (expiredDrafts.Count == 0)
+                return;
+
+            var mutated = false;
+            foreach (var draft in expiredDrafts)
+            {
+                if (EnforceLazyExpiry(draft))
+                    mutated = true;
+            }
+
+            if (mutated)
+                await _db.SaveChangesAsync();
+
+            if (expiredDrafts.Count < LazyExpiryBatchSize)
+                return;
+        }
     }
 
     public async Task<IReadOnlyList<AdminDraftEvent>> ListDraftEventsForAdminAsync(string draftId, int limit = 100)
