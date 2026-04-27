@@ -831,6 +831,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Do not reserve it only for a standalone side-specific sibling claim");
       expect(section).toContain("assign the comparison-scoped `claimDirection` from the side's effect on that relation");
       expect(section).toContain("confirms an input-authored or profile-carried current/target-side quantity");
+      expect(section).toContain("Positive direction procedure for numeric comparison evidence");
+      expect(section).toContain("classify by effect on the relation");
+      expect(section).toContain("Side-premise evidence can be directional");
+      expect(section).toContain("It is not a fixed percentage");
       expect(section).toContain("side-premise support");
       expect(section).toContain("Do not mark it `contextual` solely because the other comparison side is absent");
     });
@@ -1048,6 +1052,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Highly direct side evidence can still be `\"contradicts\"`");
       expect(section).toContain("decide each `claimDirectionByClaimId` entry by the claim/profile's comparison relation");
       expect(section).toContain("if the reported side is materially above or below the other side under the same metric route");
+      expect(section).toContain("Use the same positive claim-local direction procedure for comparison evidence");
+      expect(section).toContain("assign `\"supports\"`, `\"contradicts\"`, or `\"neutral\"` by the item's effect on that claim's relation");
+      expect(section).toContain("not a fixed percentage");
+      expect(section).not.toContain("25%");
       expect(section).toContain("Keep metric routes separate.");
       expect(section).toContain("source-existence or route-availability evidence");
       expect(section).toContain("directly reports one side, component, denominator, reference class, or source-native measurement route");

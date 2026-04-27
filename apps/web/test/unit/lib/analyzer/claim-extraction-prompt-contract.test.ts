@@ -682,6 +682,12 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not mark a direct quantitative source value as `contextual` merely because it carries a metric-class, temporal-window, or category-scope caveat");
       expect(section).toContain("classify it as `supports` or `contradicts` and preserve the caveat in `evidenceScope`");
       expect(section).toContain("source-native values for either side can be directional even if no source states the full comparison sentence");
+      expect(section).toContain("Positive direction procedure for numeric comparison evidence");
+      expect(section).toContain("classify by effect on the relation");
+      expect(section).toContain("Side-premise evidence can be directional");
+      expect(section).toContain("It is not a fixed percentage");
+      expect(section).toContain("Treat borderline closeness as unresolved or confidence-limiting");
+      expect(section).not.toContain("25%");
     });
 
     it("targets concise quantitative artifacts for weak reference-side comparison coverage", () => {
