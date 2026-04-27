@@ -198,6 +198,25 @@ function parseApiUtcTimestampMs(value: unknown): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+type DraftRecoverySnapshot = {
+  draftId: string;
+  status: string;
+  createdUtc: string;
+  updatedUtc: string;
+};
+
+function normalizeDraftRecoverySnapshot(draft: any): DraftRecoverySnapshot | null {
+  const draftId = String(draft?.draftId || "");
+  if (!draftId) return null;
+
+  return {
+    draftId,
+    status: String(draft?.status || "").toUpperCase(),
+    createdUtc: String(draft?.createdUtc || ""),
+    updatedUtc: String(draft?.updatedUtc || ""),
+  };
+}
+
 function ensureQueueWatchdogStarted(): void {
   const qs = getRunnerQueueState();
   if (qs.watchdogTimer) return;
@@ -920,16 +939,61 @@ export async function drainDraftQueue() {
       });
 
       for (const draft of sortedDrafts) {
-        const draftId = String(draft?.draftId || "");
-        if (!draftId) continue;
+        const snapshot = normalizeDraftRecoverySnapshot(draft);
+        if (!snapshot) continue;
 
-        const status = String(draft?.status || "").toUpperCase();
+        const draftId = snapshot.draftId;
+        let status = snapshot.status;
         if (ds.runningDraftIds.has(draftId)) {
           if (status === "PREPARING") {
-            const lastUpdateMs = parseApiUtcTimestampMs(draft?.updatedUtc);
-            const staleDurationMs = lastUpdateMs === null ? 0 : now - lastUpdateMs;
-            if (lastUpdateMs !== null && staleDurationMs > STALE_RUNNING_THRESHOLD_MS) {
-              const reason = `Stale draft preparation (no progress update for ${Math.round(staleDurationMs / 60000)} minutes)`;
+            const lastUpdateMs = parseApiUtcTimestampMs(snapshot.updatedUtc);
+            if (lastUpdateMs === null) {
+              console.warn(`[Runner] Skipping stale draft check for ${draftId}: invalid updatedUtc "${snapshot.updatedUtc}"`);
+              continue;
+            }
+
+            const staleDurationMs = now - lastUpdateMs;
+            if (staleDurationMs > STALE_RUNNING_THRESHOLD_MS) {
+              let liveDraft: DraftRecoverySnapshot | null = null;
+              try {
+                liveDraft = normalizeDraftRecoverySnapshot(
+                  await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`),
+                );
+              } catch (err) {
+                console.warn(`[Runner] Skipping stale draft failure for ${draftId}: failed to refresh live status`, err);
+                continue;
+              }
+
+              if (!liveDraft) {
+                console.warn(`[Runner] Skipping stale draft failure for ${draftId}: live draft response was invalid`);
+                continue;
+              }
+
+              const snapshotStillCurrent = liveDraft.updatedUtc === snapshot.updatedUtc;
+              if (liveDraft.status !== "PREPARING" || !snapshotStillCurrent) {
+                console.info(
+                  `[Runner] Skipping stale draft failure for ${draftId}: snapshot stale or draft no longer PREPARING ` +
+                  `(snapshot updatedUtc=${snapshot.updatedUtc}, live status=${liveDraft.status || "unknown"}, live updatedUtc=${liveDraft.updatedUtc || "missing"})`,
+                );
+                if (liveDraft.status !== "PREPARING") {
+                  ds.runningDraftIds.delete(draftId);
+                  ds.runningCount = Math.max(0, ds.runningCount - 1);
+                }
+                continue;
+              }
+
+              const liveLastUpdateMs = parseApiUtcTimestampMs(liveDraft.updatedUtc);
+              if (liveLastUpdateMs === null) {
+                console.warn(`[Runner] Skipping stale draft failure for ${draftId}: invalid live updatedUtc "${liveDraft.updatedUtc}"`);
+                continue;
+              }
+
+              const liveStaleDurationMs = now - liveLastUpdateMs;
+              if (liveStaleDurationMs <= STALE_RUNNING_THRESHOLD_MS) {
+                continue;
+              }
+
+              const reason = `Stale draft preparation (no progress update for ${Math.round(liveStaleDurationMs / 60000)} minutes)`;
               console.warn(`[Runner] Failing stale draft preparation ${draftId}: ${reason}`);
               await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/failed`, {
                 errorCode: "stage1_failed",
@@ -944,6 +1008,39 @@ export async function drainDraftQueue() {
         if (inMemoryQueuedIds.has(draftId)) continue;
 
         if (status === "PREPARING") {
+          let liveDraft: DraftRecoverySnapshot | null = null;
+          try {
+            liveDraft = normalizeDraftRecoverySnapshot(
+              await apiGet(apiBase, adminKey, `/v1/claim-selection-drafts/${draftId}`),
+            );
+          } catch (err) {
+            console.warn(`[Runner] Skipping PREPARING draft reset for ${draftId}: failed to refresh live status`, err);
+            continue;
+          }
+
+          if (!liveDraft) {
+            console.warn(`[Runner] Skipping PREPARING draft reset for ${draftId}: live draft response was invalid`);
+            continue;
+          }
+
+          const snapshotStillCurrent = liveDraft.updatedUtc === snapshot.updatedUtc;
+          if (liveDraft.status !== "PREPARING") {
+            if (liveDraft.status === "QUEUED") {
+              status = "QUEUED";
+            } else {
+              console.info(
+                `[Runner] Skipping PREPARING draft reset for ${draftId}: live status is ${liveDraft.status || "unknown"}`,
+              );
+              continue;
+            }
+          } else if (!snapshotStillCurrent) {
+            console.info(
+              `[Runner] Skipping PREPARING draft reset for ${draftId}: snapshot stale ` +
+              `(snapshot updatedUtc=${snapshot.updatedUtc}, live updatedUtc=${liveDraft.updatedUtc || "missing"})`,
+            );
+            continue;
+          }
+
           try {
             await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
               status: "QUEUED",
@@ -954,10 +1051,11 @@ export async function drainDraftQueue() {
             console.warn(`[Runner] Failed to reset PREPARING draft ${draftId} to QUEUED:`, err);
             continue;
           }
+          status = "QUEUED";
         }
 
         const enqueuedAt =
-          parseApiUtcTimestampMs(status === "PREPARING" ? draft?.updatedUtc : draft?.createdUtc) ?? Date.now();
+          parseApiUtcTimestampMs(status === "PREPARING" ? snapshot.updatedUtc : snapshot.createdUtc) ?? Date.now();
         ds.queue.push({ draftId, enqueuedAt });
         inMemoryQueuedIds.add(draftId);
       }
@@ -1029,8 +1127,73 @@ async function runDraftPreparationBackground(draftId: string) {
     let recommendationMs: number | undefined;
     let preparationStartedAt: number | undefined;
     let lastPreparationEventMessage = "Draft preparation started";
+    let lastPreparationEventAt = Date.now();
+    let lastPreparationProgress: number | undefined;
+    let heartbeatStopped = false;
+    let heartbeatInFlight: Promise<void> | null = null;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+    const heartbeatIntervalMs = getRunnerHeartbeatIntervalMs();
     let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
     let configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(undefined);
+
+    const sendDraftHeartbeat = async () => {
+      if (heartbeatStopped || heartbeatInFlight) return;
+      const staleForMs = Date.now() - lastPreparationEventAt;
+      if (staleForMs < heartbeatIntervalMs) return;
+
+      heartbeatInFlight = (async () => {
+        try {
+          if (heartbeatStopped) return;
+          const staleForSeconds = Math.max(1, Math.round(staleForMs / 1000));
+          await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+            status: "PREPARING",
+            progress: normalizeDraftPreparationProgress(lastPreparationProgress),
+            eventMessage: `Still preparing (${staleForSeconds}s since last preparation event): ${lastPreparationEventMessage}`,
+          });
+        } catch (err) {
+          console.warn(`[Runner] Draft preparation heartbeat update failed for ${draftId}:`, err);
+        } finally {
+          heartbeatInFlight = null;
+        }
+      })();
+
+      await heartbeatInFlight;
+    };
+
+    const startDraftHeartbeat = () => {
+      if (heartbeatTimer) return;
+      heartbeatTimer = setInterval(() => {
+        void sendDraftHeartbeat();
+      }, heartbeatIntervalMs);
+      const heartbeatTimerHandle = heartbeatTimer as { unref?: () => void };
+      if (typeof heartbeatTimerHandle.unref === "function") {
+        heartbeatTimerHandle.unref();
+      }
+    };
+
+    const stopDraftHeartbeat = async () => {
+      heartbeatStopped = true;
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+      if (heartbeatInFlight) {
+        await heartbeatInFlight;
+      }
+    };
+
+    const emitDraftStatus = async (message: string, progress?: number) => {
+      lastPreparationEventAt = Date.now();
+      lastPreparationEventMessage = message;
+      if (typeof progress === "number" && progress > 0) {
+        lastPreparationProgress = progress;
+      }
+      await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
+        status: "PREPARING",
+        progress: normalizeDraftPreparationProgress(progress),
+        eventMessage: message,
+      });
+    };
 
     const buildObservability = (params: {
       phaseCode: ClaimSelectionDraftObservability["phaseCode"];
@@ -1102,11 +1265,8 @@ async function runDraftPreparationBackground(draftId: string) {
     );
     preparationStartedAt = Date.now();
 
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
-      status: "PREPARING",
-      progress: 5,
-      eventMessage: lastPreparationEventMessage,
-    });
+    await emitDraftStatus(lastPreparationEventMessage, 5);
+    startDraftHeartbeat();
 
     let stage1Snapshot;
     const stage1StartedAt = Date.now();
@@ -1116,12 +1276,7 @@ async function runDraftPreparationBackground(draftId: string) {
           inputType,
           inputValue,
           onEvent: async (message, progress) => {
-            lastPreparationEventMessage = message;
-            await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
-              status: "PREPARING",
-              progress: normalizeDraftPreparationProgress(progress),
-              eventMessage: message,
-            });
+            await emitDraftStatus(message, progress);
           },
         },
         pipelineConfig,
@@ -1236,11 +1391,7 @@ async function runDraftPreparationBackground(draftId: string) {
       }),
     });
 
-    await apiPutInternal(apiBase, adminKey, `/internal/v1/claim-selection-drafts/${draftId}/status`, {
-      status: "PREPARING",
-      progress: 32,
-      eventMessage: lastPreparationEventMessage,
-    });
+    await emitDraftStatus(lastPreparationEventMessage, 32);
 
     let recommendation;
     const recommendationStartedAt = Date.now();
@@ -1361,6 +1512,7 @@ async function runDraftPreparationBackground(draftId: string) {
         draftStateJson: resolvedFailureDraftState ? JSON.stringify(resolvedFailureDraftState) : undefined,
       }).catch(() => {});
     } finally {
+      await stopDraftHeartbeat();
       const ds2 = getDraftQueueState();
       ds2.runningCount = Math.max(0, ds2.runningCount - 1);
       ds2.runningDraftIds.delete(draftId);

@@ -244,7 +244,7 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
-    public async Task CancelDraftAsync_PreparingDraftReturnsConflictWithoutMutation()
+    public async Task CancelDraftAsync_PreparingDraftCancelsWithoutWaitingForRunner()
     {
         await using var database = await TestDatabase.CreateAsync();
         await using var db = database.CreateContext();
@@ -254,23 +254,43 @@ public sealed class ClaimSelectionDraftServiceTests
         var service = CreateDraftService(db);
         var (result, error, statusCode) = await service.CancelDraftAsync(draft.DraftId);
 
-        Assert.Null(result);
-        Assert.Equal("Draft preparation is in progress and cannot be cancelled", error);
-        Assert.Equal(409, statusCode);
+        Assert.NotNull(result);
+        Assert.Null(error);
+        Assert.Equal(0, statusCode);
 
         await using var verifyDb = database.CreateContext();
         var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
-        Assert.Equal("PREPARING", reloaded?.Status);
-        Assert.Null(reloaded?.LastEventMessage);
+        Assert.Equal("CANCELLED", reloaded?.Status);
+        Assert.Equal("Draft cancelled.", reloaded?.LastEventMessage);
 
         var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
             .Where(e => e.DraftId == draft.DraftId)
             .ToListAsync());
         Assert.Equal("draft_token", auditEvent.ActorType);
         Assert.Equal("cancel", auditEvent.Action);
-        Assert.Equal("rejected", auditEvent.Result);
+        Assert.Equal("success", auditEvent.Result);
         Assert.Equal("PREPARING", auditEvent.BeforeStatus);
-        Assert.Equal("PREPARING", auditEvent.AfterStatus);
+        Assert.Equal("CANCELLED", auditEvent.AfterStatus);
+    }
+
+    [Fact]
+    public async Task StorePreparedResultAsync_CancelledDraftDoesNotOverwriteCancellation()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(db, status: "CANCELLED");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        await service.StorePreparedResultAsync(draft.DraftId, PreparedState(["AC_01"]));
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
+        Assert.Equal("CANCELLED", reloaded?.Status);
+        Assert.Null(reloaded?.DraftStateJson);
+        Assert.Empty(await verifyDb.ClaimSelectionDraftEvents
+            .Where(e => e.DraftId == draft.DraftId)
+            .ToListAsync());
     }
 
     [Fact]

@@ -340,6 +340,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
     }
 
     [HttpPost("{draftId}/cancel")]
+    [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> Cancel(string draftId)
     {
         var (_, authError) = await AuthorizeDraftAccessAsync(draftId);
@@ -356,6 +357,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
     }
 
     [HttpPost("{draftId}/hide")]
+    [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> HideDraft(string draftId)
     {
         if (!AuthHelper.IsAdminKeyValid(Request))
@@ -367,6 +369,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
     }
 
     [HttpPost("{draftId}/unhide")]
+    [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> UnhideDraft(string draftId)
     {
         if (!AuthHelper.IsAdminKeyValid(Request))
@@ -419,10 +422,6 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
 
     private static string? ResolveSourceIp(HttpRequest request)
     {
-        var forwardedFor = request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrWhiteSpace(forwardedFor))
-            return forwardedFor.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-
         return request.HttpContext.Connection.RemoteIpAddress?.ToString();
     }
 

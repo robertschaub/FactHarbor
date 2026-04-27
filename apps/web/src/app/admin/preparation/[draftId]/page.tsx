@@ -163,7 +163,7 @@ export default function AdminPreparationDetailPage() {
   const selectedClaimIds = readStringArray(draftState?.selectedClaimIds);
   const canCancel = draft !== null &&
     draft.finalJobId === null &&
-    !["PREPARING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(draft.status);
+    !["COMPLETED", "CANCELLED", "EXPIRED"].includes(draft.status);
   const canRetry = draft?.status === "FAILED";
 
   const runDraftAction = useCallback(async (action: "cancel" | "retry" | "hide" | "unhide") => {
@@ -263,7 +263,7 @@ export default function AdminPreparationDetailPage() {
               </button>
             </div>
             {draft.status === "PREPARING" ? (
-              <p className={styles.actionHint}>Preparation in progress. Cancellation is blocked until preparation finishes.</p>
+              <p className={styles.actionHint}>Preparation is running. Cancelling prevents this session from creating a job.</p>
             ) : null}
             {actionError ? <div className={commonStyles.errorBox}>{actionError}</div> : null}
             {actionMessage ? <p className={styles.actionHint}>{actionMessage}</p> : null}

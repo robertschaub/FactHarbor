@@ -521,21 +521,6 @@ public sealed class ClaimSelectionDraftService
             await _db.SaveChangesAsync();
             return (draft, null, 0);
         }
-        if (draft.Status == "PREPARING")
-        {
-            RecordDraftEvent(
-                draft,
-                actorType,
-                "cancel",
-                "rejected",
-                draft.Status,
-                draft.Status,
-                sourceIp,
-                "Draft preparation is in progress and cannot be cancelled");
-            await _db.SaveChangesAsync();
-            return (null, "Draft preparation is in progress and cannot be cancelled", 409);
-        }
-
         var beforeStatus = draft.Status;
         draft.Status = "CANCELLED";
         draft.LastEventMessage = "Draft cancelled.";
