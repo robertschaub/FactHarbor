@@ -1143,7 +1143,7 @@ export async function runClaimBoundaryAnalysis(
     // Claim mapping is quality-critical and must still run when applicability filtering is disabled.
     checkAbortSignal(input.jobId);
     onEvent("Assessing evidence applicability and claim mapping...", 58);
-    onEvent(`LLM call: evidence applicability and claim mapping — ${getModelForTask("understand", undefined, initialPipelineConfig).modelName}`, -1);
+    onEvent(`LLM call: evidence applicability and claim mapping — ${getModelForTask("extract_evidence", undefined, initialPipelineConfig).modelName}`, -1);
     const beforeApplicability = state.evidenceItems.length;
     const assessed = await assessEvidenceApplicability(
       understanding.atomicClaims,

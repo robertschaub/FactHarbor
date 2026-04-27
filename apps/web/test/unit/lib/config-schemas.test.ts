@@ -672,7 +672,7 @@ describe("Default Config Values", () => {
   describe("DEFAULT_PIPELINE_CONFIG", () => {
     it("has correct model strength defaults", () => {
       expect(DEFAULT_PIPELINE_CONFIG.modelUnderstand).toBe("budget");
-      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("budget");
+      expect(DEFAULT_PIPELINE_CONFIG.modelExtractEvidence).toBe("standard");
       expect(DEFAULT_PIPELINE_CONFIG.modelVerdict).toBe("standard");
     });
 

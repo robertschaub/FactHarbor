@@ -3,7 +3,7 @@
   "llmProvider": "anthropic",
   "llmTiering": true,
   "modelUnderstand": "budget",
-  "modelExtractEvidence": "budget",
+  "modelExtractEvidence": "standard",
   "modelVerdict": "standard",
   "modelOpus": "premium",
   "llmInputClassification": true,

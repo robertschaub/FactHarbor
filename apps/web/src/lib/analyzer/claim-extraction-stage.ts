@@ -2564,11 +2564,11 @@ export async function runPass2(
   }
 
   // Rec-A: Pass 2 is extraction/understanding, not verdict reasoning.
-  // Using "extract_evidence" routes to Haiku (budget) and makes UCM modelExtractEvidence
-  // effective for this step. Was "verdict" (Sonnet) which bypassed modelUnderstand.
+  // Using "extract_evidence" makes UCM modelExtractEvidence effective for this
+  // step. Was "verdict" (Sonnet) which bypassed the extraction model setting.
   // C6 (Phase 5): caller may override the task tier for the contract-failure retry
   // path only — that invocation escalates to `context_refinement` (Sonnet) because
-  // Haiku has ~10–15% residual non-compliance on the multi-rule PASS2 prompt and
+  // budget models have residual non-compliance on the multi-rule PASS2 prompt and
   // retrying on the same tier reproduces the failure.
   const model = getModelForTask(modelTaskOverride ?? "extract_evidence", undefined, pipelineConfig);
 

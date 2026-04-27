@@ -476,7 +476,7 @@ export async function extractResearchEvidence(
 /**
  * Fix 3: Post-extraction applicability assessment and claim mapping.
  *
- * Batches all evidence items into a single Haiku-tier LLM call to classify each item
+ * Batches all evidence items into a single extraction-tier LLM call to classify each item
  * as "direct", "contextual", or "foreign_reaction", and to fill missing claim mappings
  * when evidence gathered for one claim also materially verifies a companion claim.
  * Items classified as "foreign_reaction" are filtered out by the caller only when the
@@ -540,7 +540,7 @@ export async function assessEvidenceApplicability(
     return evidenceItems;
   }
 
-  const model = getModelForTask("understand", undefined, pipelineConfig);
+  const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
   const llmCallStartedAt = Date.now();
   let result: any;
 
@@ -565,7 +565,7 @@ export async function assessEvidenceApplicability(
     const validated = extractStructuredOutput(result) as z.infer<typeof ApplicabilityAssessmentOutputSchema>;
 
     recordLLMCall({
-      taskType: "understand",
+      taskType: "research",
       provider: model.provider,
       modelName: model.modelName,
       promptTokens: result.usage?.inputTokens ?? 0,
@@ -711,7 +711,7 @@ export async function assessEvidenceApplicability(
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     recordLLMCall({
-      taskType: "understand",
+      taskType: "research",
       provider: model.provider,
       modelName: model.modelName,
       promptTokens: result?.usage?.inputTokens ?? 0,

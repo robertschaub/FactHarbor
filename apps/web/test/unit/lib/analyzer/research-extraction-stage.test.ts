@@ -58,6 +58,7 @@ const mockExtractOutput = vi.mocked(extractStructuredOutput);
 const mockDebugLog = vi.mocked(debugLog);
 const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
+const mockGetModelForTask = vi.mocked(getModelForTask);
 
 // ============================================================================
 // HELPERS
@@ -882,6 +883,23 @@ describe("Research Extraction Stage", () => {
       expect(mockDebugLog).not.toHaveBeenCalledWith(
         "[Fix3] Applicability: 1D/1C/1F (3 total, geography: BR)",
       );
+    });
+
+    it("routes applicability direction decisions through the extraction model tier", async () => {
+      const claims = [createClaim({ statement: "Entity A's current metric is comparable to reference metric B" })];
+      const evidence = [createEvidence({ statement: "Source-native metric value for the reference side." })];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          { evidenceIndex: 0, applicability: "direct", relevantClaimIds: ["AC_01"], reasoning: "comparison-side evidence" },
+        ],
+      });
+
+      await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(mockGetModelForTask).toHaveBeenCalledWith("extract_evidence", undefined, mockConfig);
     });
 
     it("should preserve existing claim mappings and add LLM-assessed comparison claim mappings", async () => {

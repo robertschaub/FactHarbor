@@ -16,17 +16,17 @@ describe("tiered model routing", () => {
     expect(getModelForTask("verdict", undefined, config).modelName).toBe(legacy.modelName);
   });
 
-  it("uses provider defaults per task when tiering is on", () => {
+  it("uses configured OpenAI defaults per task when tiering is on", () => {
     const config = buildConfig({ llmProvider: "openai", llmTiering: true });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("gpt-4.1-mini");
-    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("gpt-4.1-mini");
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("gpt-4.1");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("gpt-4.1");
   });
 
-  it("uses Anthropic defaults per task when tiering is on", () => {
+  it("uses configured Anthropic defaults per task when tiering is on", () => {
     const config = buildConfig({ llmProvider: "anthropic", llmTiering: true });
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-haiku-4-5-20251001");
-    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-haiku-4-5-20251001");
+    expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-sonnet-4-6");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-6");
   });
 

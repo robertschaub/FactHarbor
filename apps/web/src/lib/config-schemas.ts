@@ -289,7 +289,7 @@ export const PipelineConfigSchema = z.object({
   llmProvider: z.enum(["anthropic", "openai", "google", "mistral"]).optional().describe("Primary LLM provider for analysis"),
   llmTiering: z.boolean().describe("Enable tiered model selection for cost optimization"),
   modelUnderstand: z.string().min(1).describe("Model for UNDERSTAND phase (claim comprehension)"),
-  modelExtractEvidence: z.string().min(1).describe("Model for EXTRACT_EVIDENCE phase"),
+  modelExtractEvidence: z.string().min(1).describe("Model for Stage 1 Pass 2, EXTRACT_EVIDENCE, and evidence applicability/direction mapping"),
   modelVerdict: z.string().min(1).describe("Model for VERDICT phase (final verdicts)"),
   modelOpus: z.string().min(1).optional().describe("Model for OPUS debate tier (B-5b). Used when a debate role is set to 'opus'. Falls back to modelVerdict if not set."),
 
@@ -1043,7 +1043,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   llmProvider: "anthropic",
   llmTiering: true,
   modelUnderstand: "budget",
-  modelExtractEvidence: "budget",
+  modelExtractEvidence: "standard",
   modelVerdict: "standard",
   modelOpus: "premium",
 
