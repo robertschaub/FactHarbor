@@ -295,3 +295,55 @@ Live validation is not part of the initial local branch. If a live SVP rerun is 
 2. refresh runtime/config state;
 3. submit the live job;
 4. compare against stored SVP same-input history and the new instrumentation metrics.
+
+## 8. Slice 3 Metrics Review - 2026-04-27 Live SVP Run
+
+Live run:
+
+- Draft `b041b493b1294bba8253ef807de88720`
+- Final job `73fb6650d4674540bb91354e3705423f`
+- Commit `b43f6b53a03222b293f6614e732bf080a3ae3d88`
+- Input `https://www.svp.ch/wp-content/uploads/260324_Argumentarium-ohne-Q-A-DE.pdf`
+- Result `LEANING-TRUE`, truth `58`, confidence `40`
+
+Observed preparation and selection:
+
+- Stage 1 prepared `28` candidate claims.
+- ACS recommended and selected `5` claims: `AC_19`, `AC_23`, `AC_09`, `AC_04`, `AC_14`.
+- Preparation took about `464s`: Stage 1 about `414s`, recommendation generation about `50s`.
+- Preliminary Stage 1 work was `6` queries, `6` fetch attempts, `5` successful fetches, `15` evidence items, `5` source URLs, and `52,104` source-text bytes.
+
+Observed waste and overlap:
+
+- Final `researchWasteMetrics` correctly resolved `preparedCandidateCount=28`, `selectedClaimCount=5`, `droppedCandidateCount=23`.
+- Preliminary evidence attributed to selected claims: `0` items.
+- Preliminary evidence attributed to dropped claims: `11` items across `2` source URLs.
+- Preliminary evidence unmapped: `4` items across `2` source URLs.
+- Exact normalized Stage 1 to Stage 2 URL overlap: `0/5` Stage 1 URLs and `0/31` Stage 2 URLs.
+- Source-family overlap was `0` for document, data, HTML, and unknown.
+
+Observed Stage 2 budget behavior:
+
+- Stage 2 produced `43` evidence items from `31` sources and `14` search queries.
+- Research budget was exhausted after about `722s` against a configured `600s` budget.
+- Only `3` of `5` selected claims received research iterations:
+  - `AC_19`: `1` iteration, `4` queries, `12` fetch attempts, `17` evidence items, about `225s`, sufficient.
+  - `AC_23`: `2` iterations, `5` queries, `19` fetch attempts, `11` evidence items, about `233s`, sufficient.
+  - `AC_09`: `2` iterations, `5` queries, `14` fetch attempts, `15` evidence items, about `253s`, sufficient.
+  - `AC_04`: `0` iterations, `0` evidence items, insufficient.
+  - `AC_14`: `0` iterations, `0` evidence items, insufficient.
+- Contradiction research did not start: `notRunReason=time_budget_exhausted`, `remainingMsWhenMainResearchEnded=0`.
+- The run emitted both `budget_exceeded` and `unverified_research_incomplete`.
+
+Slice 3 decision:
+
+- Source artifact reuse is not justified by this live run. Exact overlap was zero, so document/data reuse would not have reduced the final-job budget pressure for this case.
+- Proceed to Slice 4 source-reuse design is not warranted from this evidence.
+- The next improvement should target budget fit, not source reuse. The live run shows that ACS selected more claims than the current Stage 2 time budget can research with contradiction opportunity.
+
+Recommended next gate:
+
+- Move to Slice 5 budget-aware ACS review/design before implementation.
+- Review whether ACS should expose a budget-fit rationale and deferred-claim state, or whether operators should tune UCM values such as `claimSelectionCap`, `researchTimeBudgetMs`, and `contradictionProtectedTimeMs`.
+- For unattended validation runs, temporarily setting `claimSelectionDefaultMode=automatic` is operationally useful, but it does not solve the budget mismatch by itself.
+- Do not lower the broad-input claim contract or silently drop selected claims.

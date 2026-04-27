@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T19:11:59.992Z",
-  "count": 402,
+  "generatedAt": "2026-04-27T20:05:37.587Z",
+  "count": 403,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8184,6 +8184,23 @@
       ],
       "files_touched": [],
       "summary": "Investigate whether large `AtomicClaim` candidate sets waste evidence-search time and money before/after claim selection, using the SVP PDF input as the motivating case."
+    },
+    {
+      "file": "2026-04-27_Lead_Architect_SVP_ACS_Slice3_Live_Metrics_Review.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "svp",
+        "acs",
+        "slice3",
+        "live",
+        "metrics",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "Lead Architect Handoff - SVP ACS Slice 3 Live Metrics Review"
     },
     {
       "file": "2026-04-27_Lead_Developer_Admin_Preparation_Sessions_Risk_Review.md",
