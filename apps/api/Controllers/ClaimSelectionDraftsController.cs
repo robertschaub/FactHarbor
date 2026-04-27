@@ -191,6 +191,36 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         });
     }
 
+    [HttpGet("{draftId}/events")]
+    [EnableRateLimiting("ReadPerIp")]
+    public async Task<IActionResult> ListEvents(string draftId)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var draft = await _drafts.GetDraftAsync(draftId);
+        if (draft is null)
+            return NotFound(new { error = "Draft not found" });
+
+        var events = await _drafts.ListDraftEventsForAdminAsync(draftId);
+        return Ok(new
+        {
+            events = events.Select(item => new
+            {
+                id = item.Id,
+                draftId = item.DraftId,
+                tsUtc = item.TsUtc.ToString("o"),
+                actorType = item.ActorType,
+                action = item.Action,
+                result = item.Result,
+                beforeStatus = item.BeforeStatus,
+                afterStatus = item.AfterStatus,
+                sourceIp = item.SourceIp,
+                message = item.Message,
+            }),
+        });
+    }
+
     [HttpPost("{draftId}/confirm")]
     [EnableRateLimiting("AnalyzePerIp")]
     public async Task<IActionResult> Confirm(string draftId, [FromBody] ConfirmDraftRequest req)

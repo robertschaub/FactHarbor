@@ -46,6 +46,18 @@ public sealed record AdminDraftListPage(
     int TotalPages,
     IReadOnlyDictionary<string, int> StatusCounts);
 
+public sealed record AdminDraftEvent(
+    long Id,
+    string DraftId,
+    DateTime TsUtc,
+    string ActorType,
+    string Action,
+    string Result,
+    string? BeforeStatus,
+    string? AfterStatus,
+    string? SourceIp,
+    string? Message);
+
 public sealed class ClaimSelectionDraftService
 {
     // Compatibility fallback for legacy drafts created before selectionCap was persisted.
@@ -295,6 +307,28 @@ public sealed class ClaimSelectionDraftService
             totalCount,
             totalPages,
             statusCounts);
+    }
+
+    public async Task<IReadOnlyList<AdminDraftEvent>> ListDraftEventsForAdminAsync(string draftId, int limit = 100)
+    {
+        var clampedLimit = Math.Clamp(limit, 1, 200);
+        return await _db.ClaimSelectionDraftEvents
+            .AsNoTracking()
+            .Where(e => e.DraftId == draftId)
+            .OrderByDescending(e => e.Id)
+            .Take(clampedLimit)
+            .Select(e => new AdminDraftEvent(
+                e.Id,
+                e.DraftId,
+                e.TsUtc,
+                e.ActorType,
+                e.Action,
+                e.Result,
+                e.BeforeStatus,
+                e.AfterStatus,
+                e.SourceIp,
+                e.Message))
+            .ToListAsync();
     }
 
     public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> UpdateSelectionStateAsync(

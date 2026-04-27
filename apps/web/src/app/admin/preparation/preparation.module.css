@@ -256,6 +256,28 @@
   margin: 4px 0 0;
 }
 
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionsRow button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.actionHint {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.auditTable {
+  min-width: 920px;
+}
+
 @media (max-width: 900px) {
   .headerRow,
   .pagination {

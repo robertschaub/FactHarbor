@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 
 import commonStyles from "../../../../styles/common.module.css";
@@ -26,6 +26,23 @@ type DraftResponse = {
   createdUtc: string;
   updatedUtc: string;
   expiresUtc: string;
+};
+
+type DraftEvent = {
+  id: number;
+  draftId: string;
+  tsUtc: string;
+  actorType: string;
+  action: string;
+  result: string;
+  beforeStatus: string | null;
+  afterStatus: string | null;
+  sourceIp: string | null;
+  message: string | null;
+};
+
+type DraftEventsResponse = {
+  events: DraftEvent[];
 };
 
 type CandidateClaim = {
@@ -88,48 +105,94 @@ export default function AdminPreparationDetailPage() {
   const draftId = typeof params?.draftId === "string" ? params.draftId : "";
   const { getHeaders } = useAdminAuth();
   const [draft, setDraft] = useState<DraftResponse | null>(null);
+  const [events, setEvents] = useState<DraftEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadDraft = useCallback(async () => {
     if (!draftId) {
       setError("Missing session id");
       setLoading(false);
       return;
     }
 
-    let cancelled = false;
     setLoading(true);
     setError(null);
 
-    void (async () => {
-      try {
-        const response = await fetch(`/api/fh/admin/claim-selection-drafts/${encodeURIComponent(draftId)}`, {
+    try {
+      const [draftResponse, eventsResponse] = await Promise.all([
+        fetch(`/api/fh/admin/claim-selection-drafts/${encodeURIComponent(draftId)}`, {
           cache: "no-store",
           headers: getHeaders(),
-        });
-        const payload = await response.json().catch(() => null);
-        if (!response.ok) {
-          throw new Error(payload?.error ?? `Failed to load preparation session (${response.status})`);
-        }
-        if (!cancelled) setDraft(payload as DraftResponse);
-      } catch (loadError: any) {
-        if (!cancelled) setError(loadError?.message ?? "Failed to load preparation session");
-      } finally {
-        if (!cancelled) setLoading(false);
+        }),
+        fetch(`/api/fh/admin/claim-selection-drafts/${encodeURIComponent(draftId)}/events`, {
+          cache: "no-store",
+          headers: getHeaders(),
+        }),
+      ]);
+      const draftPayload = await draftResponse.json().catch(() => null);
+      if (!draftResponse.ok) {
+        throw new Error(draftPayload?.error ?? `Failed to load preparation session (${draftResponse.status})`);
       }
-    })();
 
-    return () => {
-      cancelled = true;
-    };
+      const eventsPayload = await eventsResponse.json().catch(() => null);
+      if (!eventsResponse.ok) {
+        throw new Error(eventsPayload?.error ?? `Failed to load audit trail (${eventsResponse.status})`);
+      }
+
+      setDraft(draftPayload as DraftResponse);
+      setEvents(((eventsPayload as DraftEventsResponse | null)?.events ?? []) as DraftEvent[]);
+    } catch (loadError: any) {
+      setError(loadError?.message ?? "Failed to load preparation session");
+    } finally {
+      setLoading(false);
+    }
   }, [draftId, getHeaders]);
+
+  useEffect(() => {
+    void loadDraft();
+  }, [loadDraft]);
 
   const draftState = useMemo(() => parseDraftState(draft?.draftStateJson ?? null), [draft?.draftStateJson]);
   const candidateClaims = draftState?.preparedStage1?.preparedUnderstanding?.atomicClaims ?? [];
   const rankedClaimIds = readStringArray(draftState?.rankedClaimIds);
   const recommendedClaimIds = readStringArray(draftState?.recommendedClaimIds);
   const selectedClaimIds = readStringArray(draftState?.selectedClaimIds);
+  const canCancel = draft !== null &&
+    draft.finalJobId === null &&
+    !["PREPARING", "COMPLETED", "CANCELLED", "EXPIRED"].includes(draft.status);
+  const canRetry = draft?.status === "FAILED";
+
+  const runDraftAction = useCallback(async (action: "cancel" | "retry" | "hide" | "unhide") => {
+    if (!draftId) return;
+    setPendingAction(action);
+    setActionError(null);
+    setActionMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/fh/claim-selection-drafts/${encodeURIComponent(draftId)}/${action}`,
+        {
+          method: "POST",
+          headers: getHeaders(),
+        },
+      );
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(payload?.error ?? `Failed to ${action} preparation session (${response.status})`);
+      }
+
+      setActionMessage(`${action} succeeded`);
+      await loadDraft();
+    } catch (actionFailure: any) {
+      setActionError(actionFailure?.message ?? `Failed to ${action} preparation session`);
+    } finally {
+      setPendingAction(null);
+    }
+  }, [draftId, getHeaders, loadDraft]);
 
   return (
     <div className={commonStyles.container}>
@@ -161,6 +224,49 @@ export default function AdminPreparationDetailPage() {
                 <dd>{draft.finalJobId ? <Link href={`/jobs/${encodeURIComponent(draft.finalJobId)}`}>{draft.finalJobId}</Link> : "None"}</dd>
               </div>
             </dl>
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Actions</h2>
+            <div className={styles.actionsRow}>
+              <button
+                type="button"
+                className={commonStyles.btnSecondary}
+                disabled={!canCancel || pendingAction !== null}
+                onClick={() => void runDraftAction("cancel")}
+              >
+                {pendingAction === "cancel" ? "Cancelling..." : "Cancel"}
+              </button>
+              <button
+                type="button"
+                className={commonStyles.btnSecondary}
+                disabled={!canRetry || pendingAction !== null}
+                onClick={() => void runDraftAction("retry")}
+              >
+                {pendingAction === "retry" ? "Retrying..." : "Retry"}
+              </button>
+              <button
+                type="button"
+                className={commonStyles.btnSecondary}
+                disabled={draft.isHidden || pendingAction !== null}
+                onClick={() => void runDraftAction("hide")}
+              >
+                {pendingAction === "hide" ? "Hiding..." : "Hide"}
+              </button>
+              <button
+                type="button"
+                className={commonStyles.btnSecondary}
+                disabled={!draft.isHidden || pendingAction !== null}
+                onClick={() => void runDraftAction("unhide")}
+              >
+                {pendingAction === "unhide" ? "Unhiding..." : "Unhide"}
+              </button>
+            </div>
+            {draft.status === "PREPARING" ? (
+              <p className={styles.actionHint}>Preparation in progress. Cancellation is blocked until preparation finishes.</p>
+            ) : null}
+            {actionError ? <div className={commonStyles.errorBox}>{actionError}</div> : null}
+            {actionMessage ? <p className={styles.actionHint}>{actionMessage}</p> : null}
           </section>
 
           <section className={styles.detailSection}>
@@ -210,6 +316,42 @@ export default function AdminPreparationDetailPage() {
               <div><dt>Last Error Time</dt><dd>{formatDateTime(draftState?.lastError?.failedUtc)}</dd></div>
               <div><dt>Failure History</dt><dd>{draftState?.failureHistory?.length ?? 0}</dd></div>
             </dl>
+          </section>
+
+          <section className={styles.detailSection}>
+            <h2>Audit Trail</h2>
+            {events.length > 0 ? (
+              <div className={styles.tableWrap}>
+                <table className={`${styles.table} ${styles.auditTable}`}>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Actor</th>
+                      <th>Action</th>
+                      <th>Result</th>
+                      <th>Status</th>
+                      <th>Source</th>
+                      <th>Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((event) => (
+                      <tr key={event.id}>
+                        <td>{formatDateTime(event.tsUtc)}</td>
+                        <td>{event.actorType}</td>
+                        <td>{event.action}</td>
+                        <td>{event.result}</td>
+                        <td>{event.beforeStatus ?? "-"} -&gt; {event.afterStatus ?? "-"}</td>
+                        <td>{event.sourceIp ?? "-"}</td>
+                        <td>{event.message ?? "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className={commonStyles.textMuted}>No audit events recorded.</p>
+            )}
           </section>
         </>
       ) : null}

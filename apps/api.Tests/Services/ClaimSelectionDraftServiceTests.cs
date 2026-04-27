@@ -349,6 +349,30 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task ListDraftEventsForAdminAsync_ReturnsRecentMetadataEventsOnly()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(db, status: "FAILED");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        service.RecordDraftEvent(draft, "runner", "fail", "success", "PREPARING", "FAILED", message: "stage1_failed");
+        service.RecordDraftEvent(draft, "admin", "retry", "success", "FAILED", "QUEUED", sourceIp: "203.0.113.12");
+        await db.SaveChangesAsync();
+
+        var events = await service.ListDraftEventsForAdminAsync(draft.DraftId, limit: 1);
+
+        var auditEvent = Assert.Single(events);
+        Assert.Equal("admin", auditEvent.ActorType);
+        Assert.Equal("retry", auditEvent.Action);
+        Assert.Equal("success", auditEvent.Result);
+        Assert.Equal("FAILED", auditEvent.BeforeStatus);
+        Assert.Equal("QUEUED", auditEvent.AfterStatus);
+        Assert.Equal("203.0.113.12", auditEvent.SourceIp);
+    }
+
+    [Fact]
     public async Task ListDraftsForAdminAsync_DefaultActiveListExpiresBeforeCountsAndIncludesHidden()
     {
         await using var database = await TestDatabase.CreateAsync();

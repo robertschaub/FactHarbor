@@ -211,6 +211,31 @@ describe("claim-selection draft proxy routes", () => {
     );
   });
 
+  it("forwards admin event history reads without queue recovery", async () => {
+    const { GET } = await import("@/app/api/fh/admin/claim-selection-drafts/[draftId]/events/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+    mockFetch.mockResolvedValueOnce(createJsonResponse({ events: [] }));
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/admin/claim-selection-drafts/draft-1/events", {
+        headers: { "x-admin-key": "secret" },
+      }),
+      { params: Promise.resolve({ draftId: "draft-1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      "http://api.local/v1/claim-selection-drafts/draft-1/events",
+      expect.objectContaining({
+        method: "GET",
+        cache: "no-store",
+        headers: { "X-Admin-Key": "secret" },
+      }),
+    );
+  });
+
   it("persists a draft access cookie when session creation succeeds", async () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/route");
 
