@@ -402,6 +402,9 @@ export default function AdminPage() {
           Job Audit & Debugging
         </h2>
         <div style={{ display: "grid", gap: "12px" }}>
+          <Link href="/admin/preparation" className={styles.btnPrimary} style={{ background: "#0f766e" }}>
+            Preparation Sessions
+          </Link>
           <form
             onSubmit={(e) => {
               e.preventDefault();

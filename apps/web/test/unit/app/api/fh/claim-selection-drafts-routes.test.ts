@@ -8,6 +8,7 @@ const mockPersistDraftAccessCookie = vi.fn((response: Response, draftId: string,
 const mockClearDraftAccessCookie = vi.fn((response: Response, draftId: string) => {
   response.headers.set("set-cookie", `fh_claim_selection_draft_${draftId}=; Max-Age=0`);
 });
+const mockCheckAdminKey = vi.fn(() => false);
 const mockForwardTextResponse = vi.fn(async (response: Response) => {
   const text = await response.text();
   return new Response(text, {
@@ -35,6 +36,10 @@ vi.mock("@/lib/claim-selection-draft-proxy", () => ({
   getClaimSelectionDraftApiBase: (...args: unknown[]) => mockGetClaimSelectionDraftApiBase(...args),
   persistDraftAccessCookie: (...args: unknown[]) => mockPersistDraftAccessCookie(...args),
   resolveDraftId: (...args: unknown[]) => mockResolveDraftId(...args),
+}));
+
+vi.mock("@/lib/auth", () => ({
+  checkAdminKey: (...args: unknown[]) => mockCheckAdminKey(...args),
 }));
 
 vi.mock("@/lib/internal-runner-queue", () => ({
@@ -65,6 +70,7 @@ describe("claim-selection draft proxy routes", () => {
     mockEvaluateInputPolicy.mockResolvedValue({ decision: "allow" });
     mockGetClaimSelectionDraftApiBase.mockReturnValue("http://api.local");
     mockResolveDraftId.mockResolvedValue("draft-1");
+    mockCheckAdminKey.mockReturnValue(false);
     mockDrainDraftQueue.mockReset();
     mockLoadPipelineConfig.mockResolvedValue({
       config: { claimSelectionDefaultMode: "interactive" },
@@ -96,6 +102,74 @@ describe("claim-selection draft proxy routes", () => {
     });
     expect(mockEvaluateInputPolicy).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects admin list reads before upstream fetch or queue recovery when admin auth is missing", async () => {
+    const { GET } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/claim-selection-drafts?scope=all"),
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Admin key required" });
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+  });
+
+  it("forwards admin list reads with whitelisted params and no queue recovery", async () => {
+    const { GET } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+    mockFetch.mockResolvedValueOnce(createJsonResponse({
+      items: [],
+      pagination: { page: 2, pageSize: 50, totalCount: 0, totalPages: 0 },
+      statusCounts: {},
+    }));
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/claim-selection-drafts?scope=all&page=2&pageSize=50&q=claim&status=preparing&status=FAILED", {
+        headers: { "x-admin-key": "secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    const [url, init] = mockFetch.mock.calls[0];
+    const calledUrl = new URL(String(url));
+    expect(calledUrl.origin).toBe("http://api.local");
+    expect(calledUrl.pathname).toBe("/v1/claim-selection-drafts");
+    expect(calledUrl.searchParams.get("scope")).toBe("all");
+    expect(calledUrl.searchParams.get("page")).toBe("2");
+    expect(calledUrl.searchParams.get("pageSize")).toBe("50");
+    expect(calledUrl.searchParams.get("q")).toBe("claim");
+    expect(calledUrl.searchParams.getAll("status")).toEqual(["PREPARING", "FAILED"]);
+    expect(init).toEqual(expect.objectContaining({
+      method: "GET",
+      cache: "no-store",
+      headers: { "X-Admin-Key": "secret" },
+    }));
+  });
+
+  it("rejects unsupported admin list params before upstream fetch", async () => {
+    const { GET } = await import("@/app/api/fh/claim-selection-drafts/route");
+
+    mockCheckAdminKey.mockReturnValueOnce(true);
+
+    const response = await GET(
+      new Request("http://localhost/api/fh/claim-selection-drafts?draftStateJson=1", {
+        headers: { "x-admin-key": "secret" },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Unsupported query parameter: draftStateJson",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockDrainDraftQueue).not.toHaveBeenCalled();
   });
 
   it("persists a draft access cookie when session creation succeeds", async () => {
@@ -364,6 +438,7 @@ describe("claim-selection draft proxy routes", () => {
   it("forwards hide requests to the upstream draft visibility endpoint", async () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/hide/route");
 
+    mockCheckAdminKey.mockReturnValueOnce(true);
     mockFetch.mockResolvedValueOnce(createJsonResponse({ isHidden: true }));
 
     const response = await POST(
@@ -385,6 +460,7 @@ describe("claim-selection draft proxy routes", () => {
   it("forwards unhide requests to the upstream draft visibility endpoint", async () => {
     const { POST } = await import("@/app/api/fh/claim-selection-drafts/[draftId]/unhide/route");
 
+    mockCheckAdminKey.mockReturnValueOnce(true);
     mockFetch.mockResolvedValueOnce(createJsonResponse({ isHidden: false }));
 
     const response = await POST(

@@ -1,0 +1,200 @@
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.metricsRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.metric {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+}
+
+.metricLabel {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.metric strong {
+  font-size: 22px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(130px, 1fr)) minmax(220px, 2fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.filters select,
+.filters input {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.searchField {
+  min-width: 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1080px;
+}
+
+.table th {
+  text-align: left;
+  padding: 11px 12px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.statusPending {
+  background: #e8f1ff;
+  color: #174ea6;
+}
+
+.statusActive {
+  background: #fff7d6;
+  color: #8a5a00;
+}
+
+.statusSuccess {
+  background: #ddf7e8;
+  color: #126334;
+}
+
+.statusDanger {
+  background: #fde2e2;
+  color: #a11a1a;
+}
+
+.statusMuted {
+  background: #eef0f3;
+  color: #4b5563;
+}
+
+.flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.flags span {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.inputCell {
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+
+.inputType {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #eef7ff;
+  color: #1565c0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.emptyCell {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 28px 12px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 16px;
+  color: var(--text-secondary);
+}
+
+.pagination div {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 900px) {
+  .headerRow,
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .searchField {
+    grid-column: span 2;
+  }
+}

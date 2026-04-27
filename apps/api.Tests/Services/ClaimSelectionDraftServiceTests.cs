@@ -273,6 +273,109 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task ListDraftsForAdminAsync_DefaultActiveListExpiresBeforeCountsAndIncludesHidden()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var expiredQueued = SeedDraft(db, status: "QUEUED", expiresUtc: DateTime.UtcNow.AddMinutes(-1));
+        var preparingHidden = SeedDraft(
+            db,
+            status: "PREPARING",
+            activeInputValue: $"{new string('x', 120)}\nsecond line",
+            isHidden: true,
+            lastEventMessage: "Preparing stage 1");
+        var awaiting = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(["AC_01"]),
+            lastEventMessage: "Prepared claim set awaiting selection.");
+        SeedDraft(db, status: "COMPLETED");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.ListDraftsForAdminAsync(AdminDraftQuery());
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(1, result.StatusCounts["PREPARING"]);
+        Assert.Equal(1, result.StatusCounts["AWAITING_CLAIM_SELECTION"]);
+        Assert.Contains(result.Items, item => item.DraftId == preparingHidden.DraftId && item.IsHidden);
+        Assert.Contains(result.Items, item => item.DraftId == awaiting.DraftId && item.HasPreparedStage1);
+        Assert.All(result.Items, item => Assert.NotEqual(expiredQueued.DraftId, item.DraftId));
+        Assert.All(result.Items, item => Assert.NotEqual("COMPLETED", item.Status));
+        Assert.All(result.Items, item => Assert.True(item.InputPreview is null || item.InputPreview.Length <= 96));
+        Assert.Contains(result.Items, item => item.EventSummary == "Prepared claim set awaiting selection.");
+
+        await using var verifyDb = database.CreateContext();
+        var reloadedExpired = await verifyDb.ClaimSelectionDrafts.FindAsync(expiredQueued.DraftId);
+        Assert.Equal("EXPIRED", reloadedExpired?.Status);
+    }
+
+    [Fact]
+    public async Task ListDraftsForAdminAsync_StatusOverridesScopeAndToleratesMalformedDraftState()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var completed = SeedDraft(
+            db,
+            status: "COMPLETED",
+            draftStateJson: "{malformed",
+            lastEventMessage: "Completed");
+        SeedDraft(db, status: "PREPARING");
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.ListDraftsForAdminAsync(AdminDraftQuery(
+            scope: "active",
+            statuses: ["COMPLETED"]));
+
+        Assert.Equal(1, result.TotalCount);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(completed.DraftId, item.DraftId);
+        Assert.Equal("COMPLETED", item.Status);
+        Assert.False(item.HasPreparedStage1);
+        Assert.Null(item.LastErrorCode);
+        Assert.Equal("Completed", item.EventSummary);
+    }
+
+    [Fact]
+    public async Task ListDraftsForAdminAsync_FiltersMetadataAndSuppressesFailedEventSummary()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var failedState = new JsonObject
+        {
+            ["lastError"] = new JsonObject
+            {
+                ["code"] = "stage1_failed",
+                ["message"] = "Raw failure detail",
+            },
+        }.ToJsonString();
+        var target = SeedDraft(
+            db,
+            status: "FAILED",
+            draftStateJson: failedState,
+            finalJobId: "job-1",
+            isHidden: true,
+            lastEventMessage: "Exception detail should stay out of the list",
+            selectionMode: "automatic");
+        SeedDraft(db, status: "FAILED", draftStateJson: failedState);
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.ListDraftsForAdminAsync(AdminDraftQuery(
+            scope: "all",
+            hidden: "only",
+            linked: "withFinalJob",
+            selectionMode: "automatic"));
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(target.DraftId, item.DraftId);
+        Assert.Equal("stage1_failed", item.LastErrorCode);
+        Assert.Null(item.EventSummary);
+    }
+
+    [Fact]
     public async Task StorePreparedResultAsync_MergesPriorLastErrorIntoDeduplicatedFailureHistory()
     {
         await using var database = await TestDatabase.CreateAsync();
@@ -426,6 +529,27 @@ public sealed class ClaimSelectionDraftServiceTests
         return new JobService(db, NullLogger<JobService>.Instance, new AppBuildInfo());
     }
 
+    private static AdminDraftListQuery AdminDraftQuery(
+        string scope = "active",
+        string[]? statuses = null,
+        string hidden = "include",
+        string linked = "any",
+        string? selectionMode = null,
+        string? q = null,
+        int page = 1,
+        int pageSize = 25)
+    {
+        return new AdminDraftListQuery(
+            scope,
+            statuses ?? [],
+            hidden,
+            linked,
+            selectionMode,
+            q,
+            page,
+            pageSize);
+    }
+
     private static ClaimSelectionDraftEntity SeedDraft(
         FhDbContext db,
         string status = "QUEUED",
@@ -433,7 +557,11 @@ public sealed class ClaimSelectionDraftServiceTests
         string? inviteCode = null,
         DateTime? createdUtc = null,
         DateTime? expiresUtc = null,
-        string? finalJobId = null)
+        string? finalJobId = null,
+        string? activeInputValue = null,
+        bool isHidden = false,
+        string? lastEventMessage = null,
+        string selectionMode = "interactive")
     {
         var created = createdUtc ?? DateTime.UtcNow;
         var draft = new ClaimSelectionDraftEntity
@@ -443,13 +571,15 @@ public sealed class ClaimSelectionDraftServiceTests
             Progress = status == "AWAITING_CLAIM_SELECTION" ? 100 : 0,
             OriginalInputType = "text",
             ActiveInputType = "text",
-            OriginalInputValue = "A verifiable claim",
-            ActiveInputValue = "A verifiable claim",
+            OriginalInputValue = activeInputValue ?? "A verifiable claim",
+            ActiveInputValue = activeInputValue ?? "A verifiable claim",
             PipelineVariant = "claimboundary",
             InviteCode = inviteCode,
-            SelectionMode = "interactive",
+            SelectionMode = selectionMode,
             DraftStateJson = draftStateJson,
             FinalJobId = finalJobId,
+            LastEventMessage = lastEventMessage,
+            IsHidden = isHidden,
             CreatedUtc = created,
             UpdatedUtc = created,
             ExpiresUtc = expiresUtc ?? DateTime.UtcNow.AddHours(1),

@@ -1,6 +1,7 @@
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Text.Json;
@@ -22,6 +23,49 @@ public sealed record RestartDraftRequest(string inputType, string inputValue);
 [Route("v1/claim-selection-drafts")]
 public sealed class ClaimSelectionDraftsController : ControllerBase
 {
+    private const int AdminDraftDefaultPage = 1;
+    private const int AdminDraftDefaultPageSize = 25;
+    private const int AdminDraftMaxPageSize = 100;
+    private const int AdminDraftMaxSearchLength = 120;
+
+    private static readonly Dictionary<string, string> AdminDraftScopes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["active"] = "active",
+        ["terminal"] = "terminal",
+        ["all"] = "all",
+    };
+
+    private static readonly Dictionary<string, string> AdminDraftHiddenFilters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["include"] = "include",
+        ["exclude"] = "exclude",
+        ["only"] = "only",
+    };
+
+    private static readonly Dictionary<string, string> AdminDraftLinkedFilters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["any"] = "any",
+        ["withFinalJob"] = "withFinalJob",
+        ["withoutFinalJob"] = "withoutFinalJob",
+    };
+
+    private static readonly Dictionary<string, string> AdminDraftSelectionModes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["interactive"] = "interactive",
+        ["automatic"] = "automatic",
+    };
+
+    private static readonly HashSet<string> AdminDraftStatuses = new(StringComparer.Ordinal)
+    {
+        "QUEUED",
+        "PREPARING",
+        "AWAITING_CLAIM_SELECTION",
+        "FAILED",
+        "COMPLETED",
+        "CANCELLED",
+        "EXPIRED",
+    };
+
     private readonly ClaimSelectionDraftService _drafts;
     private readonly JobService _jobs;
     private readonly RunnerClient _runner;
@@ -70,6 +114,50 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             status = result.Status,
             createdUtc = result.CreatedUtc,
             expiresUtc = result.ExpiresUtc,
+        });
+    }
+
+    [HttpGet]
+    [EnableRateLimiting("ReadPerIp")]
+    public async Task<IActionResult> List()
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        var (query, validationError) = TryParseAdminDraftListQuery(Request.Query);
+        if (query is null)
+            return BadRequest(new { error = validationError });
+
+        var result = await _drafts.ListDraftsForAdminAsync(query);
+        return Ok(new
+        {
+            items = result.Items.Select(item => new
+            {
+                draftId = item.DraftId,
+                status = item.Status,
+                progress = item.Progress,
+                isHidden = item.IsHidden,
+                selectionMode = item.SelectionMode,
+                activeInputType = item.ActiveInputType,
+                inputPreview = item.InputPreview,
+                finalJobId = item.FinalJobId,
+                createdUtc = item.CreatedUtc.ToString("o"),
+                updatedUtc = item.UpdatedUtc.ToString("o"),
+                expiresUtc = item.ExpiresUtc.ToString("o"),
+                restartCount = item.RestartCount,
+                restartedViaOther = item.RestartedViaOther,
+                hasPreparedStage1 = item.HasPreparedStage1,
+                lastErrorCode = item.LastErrorCode,
+                eventSummary = item.EventSummary,
+            }),
+            pagination = new
+            {
+                page = result.Page,
+                pageSize = result.PageSize,
+                totalCount = result.TotalCount,
+                totalPages = result.TotalPages,
+            },
+            statusCounts = result.StatusCounts,
         });
     }
 
@@ -334,5 +422,108 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
 
         state["selectedClaimIds"] = new JsonArray(selectedClaimIds.Select(id => JsonValue.Create(id)).ToArray());
         draft.DraftStateJson = state.ToJsonString();
+    }
+
+    private static (AdminDraftListQuery? query, string? error) TryParseAdminDraftListQuery(IQueryCollection values)
+    {
+        var (scope, scopeError) = NormalizeAdminDraftEnum(
+            values["scope"].FirstOrDefault(),
+            AdminDraftScopes,
+            "active",
+            "scope");
+        if (scopeError is not null) return (null, scopeError);
+
+        var (hidden, hiddenError) = NormalizeAdminDraftEnum(
+            values["hidden"].FirstOrDefault(),
+            AdminDraftHiddenFilters,
+            "include",
+            "hidden");
+        if (hiddenError is not null) return (null, hiddenError);
+
+        var (linked, linkedError) = NormalizeAdminDraftEnum(
+            values["linked"].FirstOrDefault(),
+            AdminDraftLinkedFilters,
+            "any",
+            "linked");
+        if (linkedError is not null) return (null, linkedError);
+
+        var (selectionMode, selectionModeError) = NormalizeAdminDraftEnum(
+            values["selectionMode"].FirstOrDefault(),
+            AdminDraftSelectionModes,
+            null,
+            "selectionMode");
+        if (selectionModeError is not null) return (null, selectionModeError);
+
+        if (!TryParsePositiveInt(values["page"].FirstOrDefault(), AdminDraftDefaultPage, "page", out var page, out var pageError))
+            return (null, pageError);
+        if (!TryParsePositiveInt(values["pageSize"].FirstOrDefault(), AdminDraftDefaultPageSize, "pageSize", out var pageSize, out var pageSizeError))
+            return (null, pageSizeError);
+
+        pageSize = Math.Min(pageSize, AdminDraftMaxPageSize);
+
+        var q = values["q"].FirstOrDefault()?.Trim();
+        if (q?.Length > AdminDraftMaxSearchLength)
+            return (null, $"q must be {AdminDraftMaxSearchLength} characters or fewer");
+        if (q == "")
+            q = null;
+
+        var statuses = values["status"]
+            .SelectMany(value => (value ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Select(value => value.ToUpperInvariant())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var status in statuses)
+        {
+            if (!AdminDraftStatuses.Contains(status))
+                return (null, $"Unsupported status filter: {status}");
+        }
+
+        return (new AdminDraftListQuery(
+            scope!,
+            statuses,
+            hidden!,
+            linked!,
+            selectionMode,
+            q,
+            page,
+            pageSize), null);
+    }
+
+    private static (string? value, string? error) NormalizeAdminDraftEnum(
+        string? rawValue,
+        IReadOnlyDictionary<string, string> allowedValues,
+        string? defaultValue,
+        string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+            return (defaultValue, null);
+
+        var trimmed = rawValue.Trim();
+        if (allowedValues.TryGetValue(trimmed, out var normalized))
+            return (normalized, null);
+
+        return (null, $"Unsupported {parameterName} filter: {trimmed}");
+    }
+
+    private static bool TryParsePositiveInt(
+        string? rawValue,
+        int defaultValue,
+        string parameterName,
+        out int value,
+        out string? error)
+    {
+        error = null;
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            value = defaultValue;
+            return true;
+        }
+
+        if (int.TryParse(rawValue, out value) && value >= 1)
+            return true;
+
+        error = $"{parameterName} must be a positive integer";
+        return false;
     }
 }

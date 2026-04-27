@@ -10,6 +10,42 @@ using Microsoft.Extensions.Configuration;
 
 namespace FactHarbor.Api.Services;
 
+public sealed record AdminDraftListQuery(
+    string Scope,
+    IReadOnlyList<string> Statuses,
+    string Hidden,
+    string Linked,
+    string? SelectionMode,
+    string? Q,
+    int Page,
+    int PageSize);
+
+public sealed record AdminDraftSummary(
+    string DraftId,
+    string Status,
+    int Progress,
+    bool IsHidden,
+    string SelectionMode,
+    string ActiveInputType,
+    string? InputPreview,
+    string? FinalJobId,
+    DateTime CreatedUtc,
+    DateTime UpdatedUtc,
+    DateTime ExpiresUtc,
+    int RestartCount,
+    bool RestartedViaOther,
+    bool HasPreparedStage1,
+    string? LastErrorCode,
+    string? EventSummary);
+
+public sealed record AdminDraftListPage(
+    IReadOnlyList<AdminDraftSummary> Items,
+    int Page,
+    int PageSize,
+    int TotalCount,
+    int TotalPages,
+    IReadOnlyDictionary<string, int> StatusCounts);
+
 public sealed class ClaimSelectionDraftService
 {
     // Compatibility fallback for legacy drafts created before selectionCap was persisted.
@@ -19,6 +55,23 @@ public sealed class ClaimSelectionDraftService
     private const int DefaultMaxRestartsPerDraft = 1;
     private const int AbsoluteMaxRestartsPerDraft = 5;
     private const int MaxFailureHistoryEntries = 5;
+    private const int AdminDraftInputPreviewMaxLength = 96;
+    private const int AdminDraftEventSummaryMaxLength = 120;
+
+    private static readonly string[] ActiveAdminDraftStatuses =
+    [
+        "QUEUED",
+        "PREPARING",
+        "AWAITING_CLAIM_SELECTION",
+        "FAILED",
+    ];
+
+    private static readonly string[] TerminalAdminDraftStatuses =
+    [
+        "COMPLETED",
+        "CANCELLED",
+        "EXPIRED",
+    ];
 
     private readonly FhDbContext _db;
     private readonly ILogger<ClaimSelectionDraftService> _log;
@@ -185,6 +238,52 @@ public sealed class ClaimSelectionDraftService
         }
 
         return dueDrafts;
+    }
+
+    public async Task<AdminDraftListPage> ListDraftsForAdminAsync(AdminDraftListQuery query)
+    {
+        var expiredDrafts = await _db.ClaimSelectionDrafts
+            .Where(d =>
+                d.Status != "COMPLETED" &&
+                d.Status != "CANCELLED" &&
+                d.Status != "EXPIRED" &&
+                d.ExpiresUtc < DateTime.UtcNow)
+            .ToListAsync();
+
+        var mutated = false;
+        foreach (var draft in expiredDrafts)
+        {
+            if (EnforceLazyExpiry(draft))
+                mutated = true;
+        }
+
+        if (mutated)
+            await _db.SaveChangesAsync();
+
+        var filtered = ApplyAdminDraftFilters(_db.ClaimSelectionDrafts.AsNoTracking(), query);
+        var totalCount = await filtered.CountAsync();
+        var statusCounts = await filtered
+            .GroupBy(d => d.Status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.Status, item => item.Count);
+        var totalPages = totalCount == 0
+            ? 0
+            : (int)Math.Ceiling(totalCount / (double)query.PageSize);
+
+        var drafts = await filtered
+            .OrderByDescending(d => d.UpdatedUtc)
+            .ThenBy(d => d.DraftId)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync();
+
+        return new AdminDraftListPage(
+            drafts.Select(BuildAdminDraftSummary).ToList(),
+            query.Page,
+            query.PageSize,
+            totalCount,
+            totalPages,
+            statusCounts);
     }
 
     public async Task<(ClaimSelectionDraftEntity? draft, string? error, int statusCode)> UpdateSelectionStateAsync(
@@ -1046,6 +1145,119 @@ public sealed class ClaimSelectionDraftService
         }
 
         return (false, "Service temporarily unavailable due to database contention. Please retry.", true);
+    }
+
+    private static IQueryable<ClaimSelectionDraftEntity> ApplyAdminDraftFilters(
+        IQueryable<ClaimSelectionDraftEntity> drafts,
+        AdminDraftListQuery query)
+    {
+        if (query.Statuses.Count > 0)
+        {
+            drafts = drafts.Where(d => query.Statuses.Contains(d.Status));
+        }
+        else if (query.Scope == "active")
+        {
+            drafts = drafts.Where(d => ActiveAdminDraftStatuses.Contains(d.Status));
+        }
+        else if (query.Scope == "terminal")
+        {
+            drafts = drafts.Where(d => TerminalAdminDraftStatuses.Contains(d.Status));
+        }
+
+        drafts = query.Hidden switch
+        {
+            "exclude" => drafts.Where(d => !d.IsHidden),
+            "only" => drafts.Where(d => d.IsHidden),
+            _ => drafts,
+        };
+
+        drafts = query.Linked switch
+        {
+            "withFinalJob" => drafts.Where(d => d.FinalJobId != null),
+            "withoutFinalJob" => drafts.Where(d => d.FinalJobId == null),
+            _ => drafts,
+        };
+
+        if (!string.IsNullOrWhiteSpace(query.SelectionMode))
+            drafts = drafts.Where(d => d.SelectionMode == query.SelectionMode);
+
+        if (!string.IsNullOrWhiteSpace(query.Q))
+        {
+            var search = query.Q.Trim();
+            drafts = drafts.Where(d =>
+                d.ActiveInputValue.Contains(search) ||
+                d.OriginalInputValue.Contains(search));
+        }
+
+        return drafts;
+    }
+
+    private static AdminDraftSummary BuildAdminDraftSummary(ClaimSelectionDraftEntity draft)
+    {
+        var metadata = ExtractAdminDraftMetadata(draft.DraftStateJson);
+        return new AdminDraftSummary(
+            draft.DraftId,
+            draft.Status,
+            draft.Progress,
+            draft.IsHidden,
+            draft.SelectionMode,
+            draft.ActiveInputType,
+            BuildAdminPreview(string.IsNullOrWhiteSpace(draft.ActiveInputValue)
+                ? draft.OriginalInputValue
+                : draft.ActiveInputValue, AdminDraftInputPreviewMaxLength),
+            draft.FinalJobId,
+            draft.CreatedUtc,
+            draft.UpdatedUtc,
+            draft.ExpiresUtc,
+            draft.RestartCount,
+            draft.RestartedViaOther,
+            metadata.hasPreparedStage1,
+            metadata.lastErrorCode,
+            draft.Status == "FAILED"
+                ? null
+                : BuildAdminPreview(draft.LastEventMessage, AdminDraftEventSummaryMaxLength));
+    }
+
+    private static (bool hasPreparedStage1, string? lastErrorCode) ExtractAdminDraftMetadata(string? draftStateJson)
+    {
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+            return (false, null);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(draftStateJson);
+            var root = doc.RootElement;
+            var hasPreparedStage1 =
+                root.TryGetProperty("preparedStage1", out var preparedStage1) &&
+                preparedStage1.ValueKind == JsonValueKind.Object;
+            var lastErrorCode =
+                root.TryGetProperty("lastError", out var lastError) &&
+                lastError.ValueKind == JsonValueKind.Object &&
+                lastError.TryGetProperty("code", out var code) &&
+                code.ValueKind == JsonValueKind.String
+                    ? code.GetString()
+                    : null;
+            return (hasPreparedStage1, BuildAdminPreview(lastErrorCode, AdminDraftEventSummaryMaxLength));
+        }
+        catch (JsonException)
+        {
+            return (false, null);
+        }
+    }
+
+    private static string? BuildAdminPreview(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = string.Join(" ", value
+            .Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+        if (normalized.Length <= maxLength)
+            return normalized;
+
+        return $"{normalized[..Math.Max(0, maxLength - 3)]}...";
     }
 
     private static string GenerateAccessToken()
