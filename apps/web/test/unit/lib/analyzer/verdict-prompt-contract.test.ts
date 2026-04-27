@@ -860,6 +860,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("materially above or below the other side");
       expect(section).toContain("classify it as `contradicts`, not weak support");
       expect(section).toContain("Do not offset that contradiction with period totals, cumulative totals, sub-counts, or alternate metric classes");
+      expect(section).toContain("confirming the referenced side exists is not directional support");
+      expect(section).toContain("do not mark it `supports` merely because it names the correct reference side");
       expect(section).toContain("Same order of magnitude, shared unit, or a broad magnitude bucket is not enough for approximate-parity `supports`");
     });
 
@@ -1049,6 +1051,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Keep period totals, cumulative totals, sub-counts, or alternate metric classes separate");
       expect(section).toContain("Route acceptance must come from the decisive metric route");
       expect(section).toContain("`componentMetrics` list does not by itself accept an alternate route");
+      expect(section).toContain("do not use `\"supports\"` to mean \"this is the correct side.\"");
+      expect(section).toContain("set that claim's `claimDirectionByClaimId` entry to `\"contradicts\"`");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
     });
 
