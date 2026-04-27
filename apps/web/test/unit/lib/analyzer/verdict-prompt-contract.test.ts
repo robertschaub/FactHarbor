@@ -841,6 +841,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Explicit route acceptance must appear in the claim/profile's decisive metric route");
       expect(section).toContain("componentMetrics` entry is not enough");
       expect(section).toContain("does not make an alternate metric class directional support");
+      expect(section).toContain("admitted, hosted, served, processed, ever counted");
+      expect(section).toContain("Do not classify those items as `supports` for an endpoint/timepoint stock");
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");
       expect(section).toContain("classify the evidence as `supports` or `contradicts` when the numeric relationship is clear");
       expect(section).toContain("A one-sided value can be directional when the missing comparator value is supplied");
@@ -1051,6 +1053,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Keep period totals, cumulative totals, sub-counts, or alternate metric classes separate");
       expect(section).toContain("Route acceptance must come from the decisive metric route");
       expect(section).toContain("`componentMetrics` list does not by itself accept an alternate route");
+      expect(section).toContain("Treat totals for units admitted, hosted, served, processed, ever counted");
+      expect(section).toContain("not endpoint/standing-stock support");
       expect(section).toContain("do not use `\"supports\"` to mean \"this is the correct side.\"");
       expect(section).toContain("set that claim's `claimDirectionByClaimId` entry to `\"contradicts\"`");
       expect(section).toContain("Do not broadcast evidence to every sibling claim");
