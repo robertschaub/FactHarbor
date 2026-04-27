@@ -33,11 +33,11 @@ describe("claim-selection draft page helpers", () => {
     );
   });
 
-  it("blocks cancellation only for terminal sessions", () => {
+  it("blocks cancellation for preparing and terminal sessions", () => {
     expect(canCancelDraftStatus("QUEUED")).toBe(true);
     expect(canCancelDraftStatus("AWAITING_CLAIM_SELECTION")).toBe(true);
     expect(canCancelDraftStatus("FAILED")).toBe(true);
-    expect(canCancelDraftStatus("PREPARING")).toBe(true);
+    expect(canCancelDraftStatus("PREPARING")).toBe(false);
     expect(canCancelDraftStatus("COMPLETED")).toBe(false);
     expect(canCancelDraftStatus("CANCELLED")).toBe(false);
     expect(canCancelDraftStatus("EXPIRED")).toBe(false);

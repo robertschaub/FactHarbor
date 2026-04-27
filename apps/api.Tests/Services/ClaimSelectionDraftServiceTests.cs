@@ -245,7 +245,7 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
-    public async Task CancelDraftAsync_PreparingDraftCancelsWithoutWaitingForRunner()
+    public async Task CancelDraftAsync_PreparingDraftReturnsConflictWithoutMutation()
     {
         await using var database = await TestDatabase.CreateAsync();
         await using var db = database.CreateContext();
@@ -255,23 +255,23 @@ public sealed class ClaimSelectionDraftServiceTests
         var service = CreateDraftService(db);
         var (result, error, statusCode) = await service.CancelDraftAsync(draft.DraftId);
 
-        Assert.NotNull(result);
-        Assert.Null(error);
-        Assert.Equal(0, statusCode);
+        Assert.Null(result);
+        Assert.Equal("Draft is currently being prepared; wait for preparation to finish before cancelling", error);
+        Assert.Equal(409, statusCode);
 
         await using var verifyDb = database.CreateContext();
         var reloaded = await verifyDb.ClaimSelectionDrafts.FindAsync(draft.DraftId);
-        Assert.Equal("CANCELLED", reloaded?.Status);
-        Assert.Equal("Draft cancelled.", reloaded?.LastEventMessage);
+        Assert.Equal("PREPARING", reloaded?.Status);
+        Assert.Null(reloaded?.LastEventMessage);
 
         var auditEvent = Assert.Single(await verifyDb.ClaimSelectionDraftEvents
             .Where(e => e.DraftId == draft.DraftId)
             .ToListAsync());
         Assert.Equal("draft_token", auditEvent.ActorType);
         Assert.Equal("cancel", auditEvent.Action);
-        Assert.Equal("success", auditEvent.Result);
+        Assert.Equal("rejected", auditEvent.Result);
         Assert.Equal("PREPARING", auditEvent.BeforeStatus);
-        Assert.Equal("CANCELLED", auditEvent.AfterStatus);
+        Assert.Equal("PREPARING", auditEvent.AfterStatus);
     }
 
     [Fact]

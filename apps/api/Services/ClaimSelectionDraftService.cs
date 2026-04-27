@@ -533,6 +533,14 @@ public sealed class ClaimSelectionDraftService
         if (EnforceLazyExpiry(draft))
             await _db.SaveChangesAsync();
 
+        if (draft.Status == "PREPARING")
+        {
+            const string preparingMessage = "Draft is currently being prepared; wait for preparation to finish before cancelling";
+            RecordDraftEvent(draft, actorType, "cancel", "rejected", draft.Status, draft.Status, sourceIp, preparingMessage);
+            await _db.SaveChangesAsync();
+            return (null, preparingMessage, 409);
+        }
+
         if (draft.Status is "COMPLETED" or "CANCELLED" or "EXPIRED")
         {
             RecordDraftEvent(draft, actorType, "cancel", "noop", draft.Status, draft.Status, sourceIp);
