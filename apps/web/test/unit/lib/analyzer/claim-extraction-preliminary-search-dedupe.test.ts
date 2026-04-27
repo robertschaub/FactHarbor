@@ -118,6 +118,56 @@ describe("runPreliminarySearch exact URL fetch reuse", () => {
     expect(state.llmCalls).toBe(3);
   });
 
+  it("records preliminary source text byte counts as UTF-8 bytes", async () => {
+    const sourceText = "é".repeat(120);
+    mockSearchWebWithProvider.mockResolvedValue({
+      results: [
+        { url: "https://example.com/utf8", title: "UTF-8 source", snippet: "snippet" },
+      ],
+      providersUsed: ["google"],
+      errors: [],
+    });
+    mockExtractTextFromUrl.mockResolvedValue({
+      text: sourceText,
+      title: "UTF-8 title",
+      contentType: "text/html",
+    });
+    mockClassifyRelevance.mockResolvedValue([
+      {
+        url: "https://example.com/utf8",
+        originalRank: 1,
+        relevanceScore: 0.92,
+        jurisdictionMatch: "direct",
+        reasoning: "direct match",
+      },
+    ]);
+    mockExtractStructuredOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence found in source",
+          evidenceScope: { methodology: "analysis", temporal: "2026" },
+          relevantClaimIds: ["AC_01"],
+        },
+      ],
+    });
+
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
+    await runPreliminarySearch(
+      [{ statement: "Test claim", searchHint: "utf8 result" }],
+      mockSearchConfig,
+      { ...mockPipelineConfig, preliminarySearchQueriesPerClaim: 1 },
+      "2026-04-24",
+      state,
+    );
+
+    expect(state.researchWasteMetrics.preliminaryTotals.sourceTextByteCount).toBe(
+      new TextEncoder().encode(sourceText).length,
+    );
+    expect(state.researchWasteMetrics.preliminaryTotals.sourceTextByteCount).toBeGreaterThan(
+      sourceText.length,
+    );
+  });
+
   it("reuses the fetch across claims while still extracting evidence separately per claim", async () => {
     mockSearchWebWithProvider.mockResolvedValue({
       results: [

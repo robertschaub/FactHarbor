@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T19:06:08.767Z",
-  "count": 401,
+  "generatedAt": "2026-04-27T19:11:59.992Z",
+  "count": 402,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8276,6 +8276,43 @@
             "verification": "`npm -w apps/web test -- runner-concurrency-split.integration.test.ts` passed.",
             "debt_accepted_and_removal_trigger": "none.",
             "residual_debt": "Exact LLM-call hang cause remains unknown, but the recovery behavior is now bounded."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_ACS_Research_Waste_Acceptance_Hardening.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "research",
+        "waste",
+        "acceptance",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-waste-metrics.ts"
+      ],
+      "summary": "Use `research-waste-metrics.test.ts` as the local contract for Slice 1 acceptance details before changing `researchWasteMetrics` shape.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism.",
+            "chosen_option": "amend the existing research-waste metrics helper and focused tests.",
+            "rejected_path_and_why": "rejected a second attribution mechanism because `buildPreliminaryByOutcome(...)` already owns the selected/dropped/unmapped contract.",
+            "what_was_removed_simplified": "no obsolete production code removed; the mistaken test fixture expectation was corrected after failed validation.",
+            "what_was_added": "non-exclusive bucket attribution, UTF-8 byte counting, and acceptance tests for overlap/privacy.",
+            "net_mechanism_count": "unchanged for production behavior; test coverage increased.",
+            "budget_reconciliation": "stayed inside Slice 1 observability; no analysis behavior, prompt, source reuse, or live-job path changed.",
+            "verification": "focused Vitest for research-waste/preliminary/prepared/URL tests, `npm -w apps/web run build`, `npm test`, and `git diff --check`.",
+            "debt_accepted_and_removal_trigger": "none.",
+            "residual_debt": "live metrics review is still required before Slice 4 source-reuse design can be considered."
           }
         }
       }

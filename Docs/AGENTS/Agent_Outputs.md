@@ -2389,3 +2389,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 ### 2026-04-27 | Senior Developer | Codex (GPT-5) | ACS Research Waste Slices 1-2 Implementation -- [Significant] [open-items: yes]
 **For next agent:** Implemented `analysisObservability.acsResearchWaste` via `research-waste-metrics.ts`, shared URL normalization via `url-normalization.ts`, and UCM-backed Stage 2 contradiction admission using `elapsedMs + contradictionProtectedTimeMs > researchTimeBudgetMs`. Source artifact reuse and ACS budget-aware behavior remain gated; use the new metrics before deciding later slices.
 -> Docs/AGENTS/Handoffs/2026-04-27_Senior_Developer_ACS_Research_Waste_Slices_1_2_Implementation.md
+
+---
+### 2026-04-27 | Senior Developer | Codex (GPT-5) | ACS Research Waste Acceptance Hardening -- [Standard] [open-items: yes]
+**For next agent:** Hardened the Slice 1 local contract after commit `9efd8eda`: shared preliminary evidence linked to selected+dropped IDs now counts in both buckets, `sourceTextByteCount` uses UTF-8 bytes, and `research-waste-metrics.test.ts` covers structural URL overlap, source-family counts, selected-claim cost, and no source text/excerpt persistence.
+-> Docs/AGENTS/Handoffs/2026-04-27_Senior_Developer_ACS_Research_Waste_Acceptance_Hardening.md

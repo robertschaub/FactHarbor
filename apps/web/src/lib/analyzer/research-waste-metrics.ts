@@ -327,10 +327,12 @@ function buildPreliminaryByOutcome(
   };
 
   for (const entry of preliminaryEvidence) {
-    const outcome = classifyPreliminaryOutcome(entry, selectedIds, allCandidateIds);
-    byOutcome[outcome].evidenceItemCount++;
+    const outcomes = classifyPreliminaryOutcomes(entry, selectedIds, allCandidateIds);
     const normalizedUrl = normalizeOptionalUrl(entry.sourceUrl);
-    if (normalizedUrl) sourceUrlsByOutcome[outcome].add(normalizedUrl);
+    for (const outcome of outcomes) {
+      byOutcome[outcome].evidenceItemCount++;
+      if (normalizedUrl) sourceUrlsByOutcome[outcome].add(normalizedUrl);
+    }
   }
 
   byOutcome.selected.sourceUrlCount = sourceUrlsByOutcome.selected.size;
@@ -342,11 +344,11 @@ function buildPreliminaryByOutcome(
   return byOutcome;
 }
 
-function classifyPreliminaryOutcome(
+function classifyPreliminaryOutcomes(
   entry: NonNullable<CBClaimUnderstanding["preliminaryEvidence"]>[number],
   selectedIds: Set<string>,
   allCandidateIds: Set<string>,
-): ResearchWasteOutcome {
+): ResearchWasteOutcome[] {
   const ids = new Set<string>();
   if (typeof entry.claimId === "string" && entry.claimId.trim().length > 0) {
     ids.add(entry.claimId.trim());
@@ -357,10 +359,18 @@ function classifyPreliminaryOutcome(
     }
   }
 
-  if (ids.size === 0) return "unmapped";
-  if (Array.from(ids).some((claimId) => selectedIds.has(claimId))) return "selected";
-  if (Array.from(ids).some((claimId) => allCandidateIds.has(claimId))) return "dropped";
-  return "unmapped";
+  if (ids.size === 0) return ["unmapped"];
+
+  const outcomes = new Set<ResearchWasteOutcome>();
+  for (const claimId of ids) {
+    if (selectedIds.has(claimId)) {
+      outcomes.add("selected");
+    } else if (allCandidateIds.has(claimId)) {
+      outcomes.add("dropped");
+    }
+  }
+
+  return outcomes.size > 0 ? Array.from(outcomes) : ["unmapped"];
 }
 
 function buildUrlOverlap(

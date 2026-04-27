@@ -1905,7 +1905,7 @@ export async function runPreliminarySearch(
         if (content.text.length > 100) {
           recordPreliminaryFetchSuccessMetric(state, {
             url: searchResult.url,
-            sourceTextByteCount: content.text.length,
+            sourceTextByteCount: utf8ByteLength(content.text),
           });
           return {
             ok: true,
@@ -2168,6 +2168,10 @@ export async function runPreliminarySearch(
   }
 
   return allEvidence;
+}
+
+function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
 }
 
 function normalizeWarningCounterMap(value: unknown): Record<string, number> {
