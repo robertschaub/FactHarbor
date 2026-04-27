@@ -901,6 +901,7 @@ export type AnalysisWarningType =
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
+  | "unverified_research_incomplete"   // Article-level UNVERIFIED was produced before required research exhaustion
   | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
   | "structural_consistency"           // Verdict structural consistency check found issues
   | "inverse_consistency_error"        // Strict inverse pair complementarity check failed

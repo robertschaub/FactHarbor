@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-26T17:31:16.587Z",
+  "generatedAt": "2026-04-27T17:26:01.100Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -12,6 +12,7 @@
         "generateVerdictNarrative",
         "evaluateTigerScore",
         "buildQualityGates",
+        "enforceUnverifiedResearchExhaustionGate",
         "checkExplanationStructure",
         "evaluateExplanationRubric"
       ]

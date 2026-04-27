@@ -53,10 +53,17 @@ describe("warning-display classification", () => {
       type: "insufficient_evidence",
       severity: "error",
     }));
+    const incompleteUnverified = classifyWarningForDisplay(warning({
+      type: "unverified_research_incomplete",
+      severity: "info",
+    }));
 
     expect(warningLevel.isReportDegrading).toBe(true);
     expect(warningLevel.displaySeverity).toBe("warning");
     expect(errorLevel.displaySeverity).toBe("error");
+    expect(incompleteUnverified.isProviderIssue).toBe(false);
+    expect(incompleteUnverified.isReportDegrading).toBe(true);
+    expect(incompleteUnverified.displaySeverity).toBe("warning");
   });
 
   it("forces non-degrading provider warnings to info", () => {

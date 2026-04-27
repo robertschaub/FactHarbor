@@ -265,6 +265,36 @@ Analyze each target report across the following dimensions. Record findings but 
 
 Pre-3a failures skip Phase 4 entirely (same short-circuit as 3h INFRASTRUCTURE) and go straight to Phase 5 as `stage-code-structural` or `workflow-gate` fixes.
 
+**UNVERIFIED Ambiguity Escalation (mandatory for every UNVERIFIED report):**
+
+`UNVERIFIED` is an observed outcome, not a root cause. Treat it as an unresolved suspicious outcome for review purposes. It may be accepted as genuine evidence scarcity only after local acquisition health appears sound and a bounded external evidence check shows accessible material evidence is insufficient.
+
+For every `TARGET-REPORT` where the article verdict or a central/direct claim verdict is `UNVERIFIED`, record `UNVERIFIED-AMBIGUITY` in Phase 7a:
+
+- exact job status and inspection source
+- job-local signals: prepared claim count, selected `AtomicClaim` set, selection provenance, evidence count, source count, warning types, confidence tier, contradiction iterations used/found, evidence direction balance, budget/query/source-acquisition warnings
+- escalation status: `same-input-history+web-search` or `blocked:<reason>`
+- provisional classification: `analytical-reality`, `factharbor-miss`, `mixed`, or `inconclusive`
+
+Escalation beyond the exact job is mandatory for every `UNVERIFIED` report reviewed by this skill. The reviewer must compare same-input history when local data exists and perform a documented bounded external evidence check before accepting the outcome. The following signals make `factharbor-miss`, `mixed`, or `inconclusive` more likely and must be called out explicitly:
+
+- job-local signals are suspicious: budget/query exhaustion, source-acquisition collapse, zero/very-low evidence or source count, no contradiction exploration where the report says counter-evidence matters, report-damaged/fallback warnings, or direct same-input verdict variance
+- a prior exact same-input run exists with materially different prepared/selected `AtomicClaims`, verdict, truth percentage, confidence, evidence count, or boundary count
+- external web research finds materially relevant accessible evidence that the report did not use or did not reason from
+
+Escalation procedure:
+
+1. Exact job first. Do not replace a requested job with a nearby or newer run.
+2. Same-input local history. Query exact `InputValue` matches in `apps/api/factharbor.db`, compare prepared claim counts plus selected/recommended/ranked `AtomicClaim` IDs and statements, and scan matching `test-output/` artifacts when available.
+3. Bounded external evidence check. Use the original input, source URL/title when available, source-language and multilingual neutral search variants, and likely authoritative or primary-source repositories. Preserve the input language where practical. Stop when the reviewer can document one of these outcomes: materially relevant accessible evidence exists; enough missed evidence exists to classify a likely retrieval/reasoning failure; or multiple reasonable searches across authoritative/primary-source paths did not surface material evidence. Cite the queries/source paths used and why the search stopped.
+4. Classify ambiguity:
+   - `analytical-reality`: deep external research and prior runs do not reveal materially relevant accessible evidence, and job-local acquisition was healthy.
+   - `factharbor-miss`: materially relevant accessible evidence exists, or prior same-input runs found substantially better evidence/verdicts, and current job-local signals show acquisition/reasoning failure.
+   - `mixed`: some subclaims appear genuinely under-evidenced while others show missed evidence or unstable handling.
+   - `inconclusive`: required comparison data is unavailable or contradictory.
+
+This workflow does not authorize automatic live LLM jobs, validation batches, or expensive tests. Reruns require explicit Captain approval or separate verifier-backed justification under rule 13 and AGENTS.md Live Job Submission Discipline.
+
 **Post-3a gate (mandatory — runs after 3a has produced its expectation-delta):**
 
 - **Q-HF6 Confidence publication floor.** If `confidence < 40` AND the report was published (or would be), flag MEDIUM finding. The root cause is usually visible in pre-3a (Q-HF4 failure) or 3d (clustering collapse). This gate exists to surface presentation-contract violations that lower-tier findings would otherwise obscure.
@@ -603,6 +633,7 @@ Degenerate count:  <count where isDegenerate=true>
 Families in scope: <list of slugs from benchmark-expectations.json>
 LLM-timeout rate:  <match count from 3h grep, or n/a>
 Active prompt:     <active_hash[:16] — activated_utc>  (for claimboundary profile)
+UNVERIFIED-AMBIGUITY: <jobId or n/a> — signals <summary>; escalation <same-input-history+web-search|blocked:reason|n/a>; classification <analytical-reality|factharbor-miss|mixed|inconclusive|n/a>
 ```
 
 ### 7b. Per-report snapshot

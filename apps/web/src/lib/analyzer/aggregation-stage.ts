@@ -13,7 +13,9 @@ import { z } from "zod";
 
 import type {
   AdjudicationPath,
+  AnalysisWarningType,
   ArticleAdjudication,
+  ArticleVerdict7Point,
   CBClaimUnderstanding,
   CBClaimVerdict,
   CBResearchState,
@@ -51,6 +53,18 @@ type NarrativeMethodologyHighlight = {
   count: number;
   origins: string[];
 };
+
+const UNVERIFIED_RESEARCH_INCOMPLETE_WARNING: AnalysisWarningType =
+  "unverified_research_incomplete";
+
+const UNVERIFIED_RESEARCH_BLOCKING_WARNING_TYPES = new Set<AnalysisWarningType>([
+  "report_damaged",
+  "budget_exceeded",
+  "query_budget_exhausted",
+  "no_successful_sources",
+  "source_acquisition_collapse",
+  "analysis_generation_failed",
+]);
 
 function normalizeNarrativeHighlightLabel(value?: string | null): string | null {
   if (typeof value !== "string") return null;
@@ -458,6 +472,7 @@ export async function aggregateAssessment(
     evidence,
     state,
   );
+  enforceUnverifiedResearchExhaustionGate(finalVerdictLabel, qualityGates, state);
 
   let overallRange: { min: number; max: number } | undefined;
   const claimsWithRange = claimVerdicts.filter((v) => v.truthPercentageRange);
@@ -1143,6 +1158,54 @@ export function buildQualityGates(
       contradictionSearchPerformed: state.contradictionIterationsUsed > 0,
     },
   };
+}
+
+export function enforceUnverifiedResearchExhaustionGate(
+  finalVerdict: ArticleVerdict7Point,
+  qualityGates: QualityGates,
+  state: CBResearchState,
+): void {
+  if (finalVerdict !== "UNVERIFIED") return;
+
+  const warnings = state.warnings ?? (state.warnings = []);
+  const contradictionIterationsReserved = state.contradictionIterationsReserved ?? 0;
+  const contradictionIterationsUsed = state.contradictionIterationsUsed ?? 0;
+  const contradictionSourcesFound = state.contradictionSourcesFound ?? 0;
+  const mainIterationsUsed = state.mainIterationsUsed ?? 0;
+  const blockingWarningTypes = warnings
+    .map((warning) => warning.type)
+    .filter((type) => UNVERIFIED_RESEARCH_BLOCKING_WARNING_TYPES.has(type));
+  const uniqueBlockingWarningTypes = [...new Set(blockingWarningTypes)];
+  const contradictionResearchRequired = contradictionIterationsReserved > 0;
+  const contradictionResearchIncomplete =
+    contradictionResearchRequired && contradictionIterationsUsed === 0;
+
+  if (!contradictionResearchIncomplete && uniqueBlockingWarningTypes.length === 0) {
+    return;
+  }
+
+  qualityGates.passed = false;
+
+  if (warnings.some((warning) => warning.type === UNVERIFIED_RESEARCH_INCOMPLETE_WARNING)) {
+    return;
+  }
+
+  warnings.push({
+    type: UNVERIFIED_RESEARCH_INCOMPLETE_WARNING,
+    severity: "error",
+    message:
+      "UNVERIFIED verdict produced before the required research path completed; treat this as a pipeline quality failure, not proven evidence scarcity.",
+    details: {
+      finalVerdict,
+      blockingWarningTypes: uniqueBlockingWarningTypes,
+      contradictionResearchRequired,
+      contradictionResearchIncomplete,
+      contradictionIterationsReserved,
+      contradictionIterationsUsed,
+      contradictionSourcesFound,
+      mainIterationsUsed,
+    },
+  });
 }
 
 export function checkExplanationStructure(

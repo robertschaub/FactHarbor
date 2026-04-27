@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T16:47:35.331Z",
-  "count": 397,
+  "generatedAt": "2026-04-27T17:26:00.882Z",
+  "count": 398,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8340,6 +8340,20 @@
       ],
       "files_touched": [],
       "summary": "Commit `950cab26` contains the code slice. Main anchors: `apps/web/src/lib/analyzer/verdict-stage.ts` and `apps/web/test/unit/lib/analyzer/verdict-post-repair-side-gap.test.ts`."
+    },
+    {
+      "file": "2026-04-27_Senior_Developer_UNVERIFIED_Ambiguity_Discipline.md",
+      "date": "2026-04-27",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "unverified",
+        "ambiguity",
+        "discipline"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-27 - Senior Developer - UNVERIFIED Ambiguity Discipline"
     },
     {
       "file": "2026-04-27_Unassigned_Daily_Bug_Scan_No_Confirmed_Regression.md",
