@@ -95,6 +95,30 @@ export interface EvidenceBalanceMetrics {
   isSkewed: boolean;
 }
 
+function cloneEvidenceScope(scope: EvidenceItem["evidenceScope"]): EvidenceItem["evidenceScope"] {
+  if (!scope) return scope;
+  return {
+    ...scope,
+    additionalDimensions: scope.additionalDimensions
+      ? { ...scope.additionalDimensions }
+      : scope.additionalDimensions,
+  };
+}
+
+function cloneEvidenceItem(
+  item: EvidenceItem,
+  overrides: Partial<EvidenceItem> = {},
+): EvidenceItem {
+  const merged = { ...item, ...overrides };
+  return {
+    ...merged,
+    evidenceScope: cloneEvidenceScope(merged.evidenceScope),
+    relevantClaimIds: merged.relevantClaimIds
+      ? [...merged.relevantClaimIds]
+      : merged.relevantClaimIds,
+  };
+}
+
 // ============================================================================
 // STAGE 2: CLASSIFICATION & EXTRACTION
 // ============================================================================
@@ -625,7 +649,10 @@ export async function assessEvidenceApplicability(
       const existingClaimIds = item.relevantClaimIds ?? [];
       const assessedClaimIds = claimMappingAdditions.get(index) ?? [];
       const claimDirections = claimDirectionAdditions.get(index) ?? new Map<string, ClaimDirection>();
-      const assessedItem = shouldApplyApplicability ? { ...item, applicability } : item;
+      const assessedItem = cloneEvidenceItem(
+        item,
+        shouldApplyApplicability ? { applicability } : {},
+      );
       const itemDirection = item.claimDirection ?? "neutral";
       if (itemDirection === "neutral") {
         const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
@@ -636,17 +663,16 @@ export async function assessEvidenceApplicability(
         if (directionalClaimIds.length > 0) {
           const neutralClaimIds = relevantClaimIds.filter((claimId) => !directionalClaimIds.includes(claimId));
           const neutralItem = neutralClaimIds.length > 0
-            ? [{ ...assessedItem, relevantClaimIds: neutralClaimIds }]
+            ? [cloneEvidenceItem(assessedItem, { relevantClaimIds: neutralClaimIds })]
             : [];
           const directionalItems = directionalClaimIds.map((claimId) => {
             const claimDirection = claimDirections.get(claimId)!;
             neutralClaimDirectionClones++;
-            return {
-              ...assessedItem,
+            return cloneEvidenceItem(assessedItem, {
               id: `${item.id}__${claimDirection}_${claimId}`,
               claimDirection,
               relevantClaimIds: [claimId],
-            };
+            });
           });
           if (relevantClaimIds.length > existingClaimIds.length) {
             claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
@@ -658,7 +684,7 @@ export async function assessEvidenceApplicability(
         }
         return [
           relevantClaimIds.length > 0
-            ? { ...assessedItem, relevantClaimIds }
+            ? cloneEvidenceItem(assessedItem, { relevantClaimIds })
             : assessedItem,
         ];
       }
@@ -677,12 +703,11 @@ export async function assessEvidenceApplicability(
         } else {
           directionalCompanionClones++;
         }
-        return {
-          ...assessedItem,
+        return cloneEvidenceItem(assessedItem, {
           id: `${item.id}__${companionDirection}_${claimId}`,
           claimDirection: companionDirection,
           relevantClaimIds: [claimId],
-        };
+        });
       });
       claimMappingExtensions += companionItems.length;
 

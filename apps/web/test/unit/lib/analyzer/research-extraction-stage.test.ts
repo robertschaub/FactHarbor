@@ -1058,6 +1058,56 @@ describe("Research Extraction Stage", () => {
       );
     });
 
+    it("should isolate EvidenceScope objects when cloning companion evidence", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),
+        createClaim({ id: "AC_02", statement: "Comparison claim" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "Official source reports current metric M for Entity A.",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+          evidenceScope: {
+            name: "Official statistics",
+            methodology: "Published statistical table",
+            temporal: "2025",
+            additionalDimensions: { route: "source-native side metric" },
+          },
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_02", claimDirection: "supports" },
+            ],
+            reasoning: "side metric supports the comparison claim",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].evidenceScope).not.toBe(result[1].evidenceScope);
+      expect(result[0].evidenceScope?.additionalDimensions)
+        .not.toBe(result[1].evidenceScope?.additionalDimensions);
+
+      (result[1].evidenceScope as any).methodology = "mutated companion scope";
+      (result[1].evidenceScope!.additionalDimensions as any).route = "mutated route";
+
+      expect(result[0].evidenceScope?.methodology).toBe("Published statistical table");
+      expect(result[0].evidenceScope?.additionalDimensions?.route).toBe("source-native side metric");
+    });
+
     it("should apply LLM claim-local direction to already-scoped neutral evidence", async () => {
       const claims = [
         createClaim({
