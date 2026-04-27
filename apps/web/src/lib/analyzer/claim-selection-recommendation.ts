@@ -2,7 +2,12 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 
 import type { PipelineConfig } from "../config-schemas";
-import { getClaimSelectionCap } from "../claim-selection-flow";
+import {
+  getClaimSelectionCap,
+  normalizeClaimSelectionBudgetFitMode,
+  normalizeClaimSelectionMinRecommendedClaims,
+  type ClaimSelectionBudgetFitMode,
+} from "../claim-selection-flow";
 import {
   extractStructuredOutput,
   getModelForTask,
@@ -58,6 +63,10 @@ export const ClaimSelectionRecommendationOutputSchema = z.object({
 class ClaimSelectionRecommendationInvariantError extends Error {}
 class ClaimSelectionRecommendationExplicitRefusalError extends Error {}
 
+type ClaimSelectionValidationBudgetFitMode =
+  | ClaimSelectionBudgetFitMode
+  | "metadata_allowed";
+
 export interface GenerateClaimSelectionRecommendationParams {
   originalInput: string;
   impliedClaim: string;
@@ -65,6 +74,11 @@ export interface GenerateClaimSelectionRecommendationParams {
   atomicClaims: AtomicClaim[];
   selectionCap?: number | null;
   pipelineConfig?: PipelineConfig;
+}
+
+export interface ValidateClaimSelectionRecommendationOptions {
+  budgetFitMode?: ClaimSelectionValidationBudgetFitMode;
+  minRecommendedClaims?: number | null;
 }
 
 function hasUniqueValues(values: string[]): boolean {
@@ -109,6 +123,51 @@ function assertValidCandidateSet(atomicClaims: AtomicClaim[]): string[] {
 function isExplicitRefusal(result: unknown): boolean {
   const finishReason = (result as Record<string, unknown> | null)?.finishReason;
   return finishReason === "content-filter" || finishReason === "other";
+}
+
+function normalizePositiveMs(value: number | null | undefined): number | undefined {
+  return Number.isFinite(value) && typeof value === "number"
+    ? Math.max(0, Math.trunc(value))
+    : undefined;
+}
+
+function resolveBudgetFitMode(pipelineConfig: PipelineConfig | undefined): ClaimSelectionBudgetFitMode {
+  if (pipelineConfig?.claimSelectionBudgetAwarenessEnabled !== true) {
+    return "off";
+  }
+  return normalizeClaimSelectionBudgetFitMode(pipelineConfig.claimSelectionBudgetFitMode);
+}
+
+function resolveBudgetPromptValues(pipelineConfig: PipelineConfig | undefined): {
+  budgetAwarenessMode: ClaimSelectionBudgetFitMode;
+  budgetResearchTimeBudgetMs: string;
+  budgetContradictionProtectedTimeMs: string;
+  budgetMainResearchTimeBudgetMs: string;
+  budgetMinRecommendedClaims: string;
+} {
+  const budgetAwarenessMode = resolveBudgetFitMode(pipelineConfig);
+  const researchTimeBudgetMs = normalizePositiveMs(pipelineConfig?.researchTimeBudgetMs);
+  const contradictionProtectedTimeMs = normalizePositiveMs(pipelineConfig?.contradictionProtectedTimeMs);
+  const mainResearchTimeBudgetMs =
+    researchTimeBudgetMs === undefined || contradictionProtectedTimeMs === undefined
+      ? undefined
+      : Math.max(0, researchTimeBudgetMs - contradictionProtectedTimeMs);
+
+  return {
+    budgetAwarenessMode,
+    budgetResearchTimeBudgetMs: budgetAwarenessMode === "off" || researchTimeBudgetMs === undefined
+      ? ""
+      : String(researchTimeBudgetMs),
+    budgetContradictionProtectedTimeMs: budgetAwarenessMode === "off" || contradictionProtectedTimeMs === undefined
+      ? ""
+      : String(contradictionProtectedTimeMs),
+    budgetMainResearchTimeBudgetMs: budgetAwarenessMode === "off" || mainResearchTimeBudgetMs === undefined
+      ? ""
+      : String(mainResearchTimeBudgetMs),
+    budgetMinRecommendedClaims: String(
+      normalizeClaimSelectionMinRecommendedClaims(pipelineConfig?.claimSelectionMinRecommendedClaims),
+    ),
+  };
 }
 
 function validateRecommendationAssessment(
@@ -176,9 +235,12 @@ export function validateClaimSelectionRecommendation(
   recommendation: ClaimSelectionRecommendation,
   candidateClaimIds: string[],
   selectionCap?: number | null,
+  options: ValidateClaimSelectionRecommendationOptions = {},
 ): ClaimSelectionRecommendation {
   const candidateSet = new Set(candidateClaimIds);
   const maxRecommendedClaims = getClaimSelectionCap(candidateClaimIds.length, selectionCap);
+  const budgetFitMode = options.budgetFitMode ?? "metadata_allowed";
+  const minRecommendedClaims = normalizeClaimSelectionMinRecommendedClaims(options.minRecommendedClaims);
 
   if (recommendation.assessments.length !== candidateClaimIds.length) {
     throw new ClaimSelectionRecommendationInvariantError(
@@ -237,6 +299,7 @@ export function validateClaimSelectionRecommendation(
     }
   }
 
+  const recommendedSet = new Set(recommendation.recommendedClaimIds);
   const deferredClaimIds = Array.isArray(recommendation.deferredClaimIds)
     ? recommendation.deferredClaimIds
     : undefined;
@@ -246,7 +309,6 @@ export function validateClaimSelectionRecommendation(
         "deferredClaimIds must be unique",
       );
     }
-    const recommendedSet = new Set(recommendation.recommendedClaimIds);
     for (const claimId of deferredClaimIds) {
       if (!rankedOrder.has(claimId)) {
         throw new ClaimSelectionRecommendationInvariantError(
@@ -262,12 +324,88 @@ export function validateClaimSelectionRecommendation(
   }
 
   const deferredClaimIdSet = new Set(deferredClaimIds ?? []);
+  const assessmentByClaimId = new Map(normalizedAssessments.map((assessment) => [assessment.claimId, assessment]));
   for (const assessment of normalizedAssessments) {
+    if (assessment.budgetTreatment === "selected" && !recommendedSet.has(assessment.claimId)) {
+      throw new ClaimSelectionRecommendationInvariantError(
+        `assessment ${assessment.claimId} is budget-selected but is missing from recommendedClaimIds`,
+      );
+    }
+    if (assessment.budgetTreatment === "not_recommended" && recommendedSet.has(assessment.claimId)) {
+      throw new ClaimSelectionRecommendationInvariantError(
+        `assessment ${assessment.claimId} cannot be not_recommended while present in recommendedClaimIds`,
+      );
+    }
     if (assessment.budgetTreatment === "deferred_budget_limited" && !deferredClaimIdSet.has(assessment.claimId)) {
       throw new ClaimSelectionRecommendationInvariantError(
         `assessment ${assessment.claimId} is budget-deferred but is missing from deferredClaimIds`,
       );
     }
+  }
+  for (const claimId of deferredClaimIdSet) {
+    const assessment = assessmentByClaimId.get(claimId);
+    if (assessment?.budgetTreatment !== "deferred_budget_limited") {
+      throw new ClaimSelectionRecommendationInvariantError(
+        `deferred claim ${claimId} must have budgetTreatment deferred_budget_limited`,
+      );
+    }
+  }
+
+  const hasBudgetTreatment = normalizedAssessments.some((assessment) => Boolean(assessment.budgetTreatment));
+  const hasBudgetMetadata =
+    hasBudgetTreatment ||
+    deferredClaimIdSet.size > 0 ||
+    typeof recommendation.budgetFitRationale === "string";
+
+  if (budgetFitMode === "off" && hasBudgetMetadata) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      "budget metadata is not allowed when claim-selection budget mode is off",
+    );
+  }
+  if (
+    budgetFitMode === "explain_only" &&
+    hasBudgetMetadata &&
+    recommendation.recommendedClaimIds.length < maxRecommendedClaims
+  ) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      "explain_only budget mode cannot reduce recommendedClaimIds below the recommendation cap",
+    );
+  }
+  if (
+    budgetFitMode === "explain_only" &&
+    (deferredClaimIdSet.size > 0 || normalizedAssessments.some((assessment) => assessment.budgetTreatment === "deferred_budget_limited"))
+  ) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      "explain_only budget mode cannot return deferred budget claims",
+    );
+  }
+  if (
+    budgetFitMode === "allow_fewer_recommendations" &&
+    hasBudgetMetadata &&
+    recommendation.recommendedClaimIds.length < maxRecommendedClaims &&
+    typeof recommendation.budgetFitRationale !== "string"
+  ) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      "budget-aware fewer-than-cap recommendations require budgetFitRationale",
+    );
+  }
+  if (
+    budgetFitMode === "allow_fewer_recommendations" &&
+    deferredClaimIdSet.size > 0 &&
+    typeof recommendation.budgetFitRationale !== "string"
+  ) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      "budget-deferred recommendations require budgetFitRationale",
+    );
+  }
+  if (
+    budgetFitMode === "allow_fewer_recommendations" &&
+    hasBudgetMetadata &&
+    recommendation.recommendedClaimIds.length < minRecommendedClaims
+  ) {
+    throw new ClaimSelectionRecommendationInvariantError(
+      `budget-aware recommendedClaimIds must contain at least ${minRecommendedClaims} claim(s)`,
+    );
   }
 
   const normalizedRecommendedClaimIds = [...recommendation.recommendedClaimIds].sort(
@@ -311,12 +449,14 @@ export async function generateClaimSelectionRecommendation({
 }: GenerateClaimSelectionRecommendationParams): Promise<ClaimSelectionRecommendation> {
   const candidateClaimIds = assertValidCandidateSet(atomicClaims);
   const maxRecommendedClaims = getClaimSelectionCap(candidateClaimIds.length, selectionCap);
+  const budgetPromptValues = resolveBudgetPromptValues(pipelineConfig);
   const rendered = await loadAndRenderSection("claimboundary", "CLAIM_SELECTION_RECOMMENDATION", {
     analysisInput: originalInput,
     impliedClaim,
     articleThesis,
     atomicClaimsJson: JSON.stringify(atomicClaims, null, 2),
     maxRecommendedClaims: String(maxRecommendedClaims),
+    ...budgetPromptValues,
   });
 
   if (!rendered) {
@@ -365,6 +505,10 @@ export async function generateClaimSelectionRecommendation({
         validated,
         candidateClaimIds,
         selectionCap,
+        {
+          budgetFitMode: budgetPromptValues.budgetAwarenessMode,
+          minRecommendedClaims: pipelineConfig?.claimSelectionMinRecommendedClaims,
+        },
       );
 
       recordLLMCall({

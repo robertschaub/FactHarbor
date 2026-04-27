@@ -1,8 +1,10 @@
 # Budget-Aware ACS Slice 5 Review Design
 
 **Date:** 2026-04-27
-**Status:** Review complete; implementation design approved, code implementation not yet started
+**Status:** Review complete; Phase 5A metadata plumbing implemented; bounded Phase 5B prompt-mode implementation prepared
 **Owner role:** Lead Architect
+
+**Implementation update (2026-04-27):** Phase 5A landed the default-off UCM fields, optional budget/deferred metadata schema, persistence, and UI/API disclosure. The bounded Phase 5B implementation keeps defaults off, passes structural budget context only through the existing ACS recommendation path, keeps `explain_only` as shadow metadata without operational deferral, and permits fewer-than-cap recommendations only under explicit `allow_fewer_recommendations` mode with `budgetFitRationale` and validated deferred-claim metadata. No source reuse, second selector, deterministic semantic filtering, hidden cap, or final-runner claim dropping is approved.
 
 ## 1. Decision
 
@@ -223,6 +225,6 @@ Live validation remains gated by commit-first and runtime/config-refresh discipl
 
 ## 12. Implementation Readiness
 
-Ready for a Senior Developer implementation plan after explicit Captain approval for prompt/config behavior.
+Phase 5A and the bounded Phase 5B local implementation are ready for commit after safe-local verification. Live validation remains a separate gate.
 
-Not ready for direct code edits to `apps/web/prompts/claimboundary.prompt.md` until that approval is recorded. The first code branch should implement the schema/UCM/UI/API contract above and keep source reuse out of scope.
+Do not enable a broad validation profile from the SVP case alone. Any live validation must follow commit-first and runtime/config-refresh discipline, use Captain-approved inputs, and inspect `analysisObservability.acsResearchWaste.selectedClaimResearch`, `contradictionReachability`, selected-claim quality, and `UNVERIFIED` rate before considering broader rollout.

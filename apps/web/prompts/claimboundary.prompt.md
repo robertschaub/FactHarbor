@@ -825,6 +825,11 @@ Assess every candidate claim together. For each claim, assign one primary treatm
 11. **No omissions, no duplicates.** Every input claim must appear once in `assessments` and once in `rankedClaimIds`. Use the exact provided claim IDs.
 12. **Non-empty rationale fields.** `rationale` and every `recommendationRationale` must be non-empty, concise, and grounded in ranking, coverage, redundancy, and expected evidence yield.
 13. **Language discipline.** Reason from semantic content, not English-specific wording. Keep the output usable for multilingual inputs.
+14. **Budget mode discipline.** Active budget mode is `${budgetAwarenessMode}`.
+   - `off`: ignore budget fields and do not return `deferredClaimIds`, `budgetFitRationale`, `budgetTreatment`, or `budgetTreatmentRationale`.
+   - `explain_only`: keep `recommendedClaimIds` governed by the normal recommendation rules above. Budget metadata is shadow explanation only; do not return `deferredClaimIds` or use `deferred_budget_limited`, and do not recommend fewer claims because of budget fit. If the normal recommendation set is below the cap for non-budget reasons, do not use budget metadata to justify that smaller set.
+   - `allow_fewer_recommendations`: first apply the normal recommendation rules above. Budget fit may justify recommending fewer than `${maxRecommendedClaims}` claims only when adding the next otherwise-recommendable claim would materially reduce research depth or protected contradiction work. In that case, return `budgetFitRationale`, mark budget-limited non-selections as deferred, and keep at least `${budgetMinRecommendedClaims}` recommended claim(s) when any claim is recommendable.
+15. **Deferred means visible, not rejected.** When `allow_fewer_recommendations` returns deferred claims, those claims remain valid manual-selection candidates. Do not imply deferred claims are false, weak, irrelevant, disproven, or removed.
 
 ### Input
 
@@ -839,6 +844,13 @@ Article thesis:
 
 Atomic claims:
 `${atomicClaimsJson}`
+
+Budget context:
+- Active budget mode: `${budgetAwarenessMode}`
+- Research time budget ms: `${budgetResearchTimeBudgetMs}`
+- Protected contradiction budget ms: `${budgetContradictionProtectedTimeMs}`
+- Main research budget before protected contradiction budget ms: `${budgetMainResearchTimeBudgetMs}`
+- Minimum recommended claims in allow-fewer mode: `${budgetMinRecommendedClaims}`
 
 ### Output
 
@@ -862,9 +874,26 @@ Return a JSON object:
 }
 ```
 
+When budget metadata is active, add only the relevant optional fields in their correct locations:
+```json
+{
+  "deferredClaimIds": ["AC_02"],
+  "budgetFitRationale": "short budget-fit explanation",
+  "assessments": [
+    {
+      "claimId": "AC_02",
+      "budgetTreatment": "deferred_budget_limited",
+      "budgetTreatmentRationale": "short treatment explanation"
+    }
+  ]
+}
+```
+
 Field constraints:
 - `rankedClaimIds`: unique ordered permutation of all input claim IDs.
 - `recommendedClaimIds`: unique ordered subset of `rankedClaimIds`, size `0..${maxRecommendedClaims}`.
+- `deferredClaimIds`: omit unless budget mode is `allow_fewer_recommendations`; when present, use only non-recommended claim IDs from `rankedClaimIds`.
+- `budgetFitRationale`: omit unless budget mode requires budget explanation; non-empty and max 240 characters when present.
 - `assessments`: one entry for each input claim, with unique `claimId` values matching the input claim IDs exactly.
 - `triageLabel`: `"fact_check_worthy"` | `"fact_non_check_worthy"` | `"opinion_or_subjective"` | `"unclear"`.
 - `thesisDirectness`: `"high"` | `"medium"` | `"low"`.
@@ -872,6 +901,8 @@ Field constraints:
 - `coversDistinctRelevantDimension`: boolean.
 - `redundancyWithClaimIds`: only exact claim IDs from the input set, never the claim's own ID.
 - `recommendationRationale`: non-empty; max 160 characters.
+- `budgetTreatment`: omit in `off` mode; otherwise one of `"selected"`, `"deferred_budget_limited"`, or `"not_recommended"` when budget metadata is returned. Use `"selected"` only for recommended claims. Use `"deferred_budget_limited"` only in `allow_fewer_recommendations` mode and only for IDs also listed in `deferredClaimIds`.
+- `budgetTreatmentRationale`: required and max 160 characters whenever `budgetTreatment` is present; omit when `budgetTreatment` is omitted.
 - `rationale`: non-empty; max 240 characters.
 - If no claim should be recommended, return an empty `recommendedClaimIds` array while still returning the full ranking and full assessment set.
 

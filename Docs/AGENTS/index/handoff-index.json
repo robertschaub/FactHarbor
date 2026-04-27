@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T20:33:18.681Z",
-  "count": 405,
+  "generatedAt": "2026-04-27T21:06:57.306Z",
+  "count": 406,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8193,6 +8193,48 @@
             "rejected_paths": "enabling prompt behavior now, adding deterministic budget-based claim filtering, changing global caps, or broadening into unrelated runner-test refactors.",
             "failed_validation_recovery": "keep the implementation; the repeated full-suite timeout is isolated to a runner concurrency test that passes alone, while touched focused tests pass.",
             "verification": "focused claim-selection recommendation tests; claim-selection-flow/config/config-drift tests; internal-runner-queue and claim-selection draft route tests; runner concurrency test in isolation; web build; isolated-output API build; git diff --check."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-27_Lead_Architect_Budget_Aware_ACS_Phase5B_Gated_Prompt.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "budget",
+        "aware",
+        "acs",
+        "phase5b",
+        "gated",
+        "prompt"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md",
+        "apps/web/src/lib/analyzer/claim-selection-recommendation.ts",
+        "apps/web/test/unit/lib/analyzer/claim-selection-recommendation.test.ts",
+        "Docs/WIP/2026-04-27_Budget_Aware_ACS_Slice5_Review_Design.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Do not add a second selector, final-runner drop logic, deterministic budget filtering, or source reuse. If running live validation, commit first, restart/reseed runtime, use automatic ACS only as an operational profile, and compare selected-claim research coverage plus contradiction reachability.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "missing-capability bounded by existing mechanism.",
+            "chosen_option": "amend the existing ACS recommendation prompt/generator/validator path.",
+            "rejected_path_and_why": "rejected second selectors, final-runner dropping, hidden caps, and deterministic budget filtering because they would add competing mechanisms and violate analysis rules.",
+            "what_was_removed_simplified": "no removal; constrained Phase 5B to existing prompt and validator.",
+            "what_was_added": "structural budget prompt variables, mode-aware validation for off/explain_only/allow_fewer_recommendations, and focused prompt/validator tests.",
+            "net_mechanism_count": "unchanged.",
+            "budget_reconciliation": "actual diff matched expected prompt/generator/test/docs scope; no new fallback or parallel selector was added.",
+            "verification": "focused ACS recommendation tests; config/config-drift tests; internal-runner/draft-route tests; runner concurrency file in isolation; web build; git diff --check.",
+            "debt_accepted_and_removal_trigger": "no live validation evidence yet; run a small committed validation before broader rollout or default changes.",
+            "residual_debt": "full safe suite still has a known runner heartbeat timeout only when run as the full suite."
           }
         }
       }

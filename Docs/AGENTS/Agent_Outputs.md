@@ -2425,3 +2425,9 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** Implemented only the debated low-risk Phase 5A subset: default-off UCM fields, optional ACS budget/deferred metadata validation, draft/final-job JSON persistence, and selection/admin disclosure. No prompt behavior was enabled, and no claim-selection cap/default was changed.
 **Warnings:** `npm test` full suite still times out in the existing runner heartbeat integration case, but the same runner test passes in isolation and all touched focused verifiers/builds passed. Phase 5B still needs explicit approval before prompt behavior.
 -> Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Budget_Aware_ACS_Phase5A_Implementation.md
+
+---
+### 2026-04-27 | Lead Architect | Codex (GPT-5) | Budget-Aware ACS Phase 5B Gated Prompt -- [Significant] [open-items: yes]
+**For next agent:** After a MODIFY debate and exact prompt-diff review, implemented budget-aware ACS prompt behavior only inside the existing recommendation path. Defaults remain off; `explain_only` is shadow-only and cannot defer or reduce recommendations; `allow_fewer_recommendations` is the only explicit mode that can recommend fewer than cap and requires `budgetFitRationale` plus validated deferred metadata.
+**Warnings:** No live validation was run. Do not broaden defaults from the SVP case; commit/restart before any live jobs. Full `npm test` was not rerun due the known full-suite runner heartbeat timeout, but the runner file passed in isolation and all focused verifiers/build passed.
+-> Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Budget_Aware_ACS_Phase5B_Gated_Prompt.md

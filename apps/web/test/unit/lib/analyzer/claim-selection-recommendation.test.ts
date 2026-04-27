@@ -148,6 +148,11 @@ describe("CLAIM_SELECTION_RECOMMENDATION prompt contract", () => {
       2,
     ),
     maxRecommendedClaims: "2",
+    budgetAwarenessMode: "off",
+    budgetResearchTimeBudgetMs: "",
+    budgetContradictionProtectedTimeMs: "",
+    budgetMainResearchTimeBudgetMs: "",
+    budgetMinRecommendedClaims: "1",
   };
 
   it("exists and resolves all loader variables", () => {
@@ -166,9 +171,12 @@ describe("CLAIM_SELECTION_RECOMMENDATION prompt contract", () => {
     expect(section).toContain("Joint reasoning is mandatory.");
     expect(section).toContain("Use exactly one primary treatment label per claim.");
     expect(section).toContain("Rank the entire candidate set.");
+    expect(section).toContain("Budget mode discipline.");
+    expect(section).toContain("Active budget mode is `${budgetAwarenessMode}`.");
     expect(section).toContain("Recommend from `fact_check_worthy` first.");
     expect(section).toContain("Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.");
     expect(section).toContain("unique ordered permutation of all input claim IDs");
+    expect(section).toContain("`deferredClaimIds`: omit unless budget mode is `allow_fewer_recommendations`");
     expect(section).toContain("If no claim should be recommended, return an empty `recommendedClaimIds` array");
   });
 });
@@ -237,6 +245,8 @@ describe("validateClaimSelectionRecommendation", () => {
     const validated = validateClaimSelectionRecommendation(
       recommendation,
       ["AC_01", "AC_02", "AC_03"],
+      3,
+      { budgetFitMode: "allow_fewer_recommendations" },
     );
 
     expect(validated.deferredClaimIds).toEqual(["AC_03", "AC_02"]);
@@ -284,6 +294,99 @@ describe("validateClaimSelectionRecommendation", () => {
     ).toThrow(/cannot also be recommended/i);
   });
 
+  it("rejects budget metadata when budget mode is off", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: ["AC_02"],
+      budgetFitRationale: "Budget metadata should not be active in off mode.",
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected claim.",
+        },
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred claim.",
+        },
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"], 2, { budgetFitMode: "off" }),
+    ).toThrow(/budget metadata is not allowed/i);
+  });
+
+  it("rejects explain-only budget metadata that reduces recommendations below the cap", () => {
+    const recommendation = createRecommendation({
+      rankedClaimIds: ["AC_01", "AC_02", "AC_03"],
+      recommendedClaimIds: ["AC_01"],
+      deferredClaimIds: ["AC_02"],
+      budgetFitRationale: "Budget metadata cannot reduce the selected set in explain-only mode.",
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected claim.",
+        },
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred claim.",
+        },
+        {
+          claimId: "AC_03",
+          triageLabel: "fact_check_worthy",
+          thesisDirectness: "medium",
+          expectedEvidenceYield: "medium",
+          coversDistinctRelevantDimension: true,
+          redundancyWithClaimIds: [],
+          recommendationRationale: "Distinct candidate.",
+        },
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02", "AC_03"], 3, { budgetFitMode: "explain_only" }),
+    ).toThrow(/explain_only budget mode cannot reduce/i);
+  });
+
+  it("rejects deferred budget claims in explain-only mode", () => {
+    const recommendation = createRecommendation({
+      rankedClaimIds: ["AC_01", "AC_02", "AC_03"],
+      recommendedClaimIds: ["AC_01", "AC_02"],
+      deferredClaimIds: ["AC_03"],
+      budgetFitRationale: "Shadow mode cannot operationally defer claims.",
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected claim.",
+        },
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected claim.",
+        },
+        {
+          claimId: "AC_03",
+          triageLabel: "fact_check_worthy",
+          thesisDirectness: "medium",
+          expectedEvidenceYield: "medium",
+          coversDistinctRelevantDimension: true,
+          redundancyWithClaimIds: [],
+          recommendationRationale: "Distinct candidate.",
+          budgetTreatment: "deferred_budget_limited",
+          budgetTreatmentRationale: "Deferred claim.",
+        },
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02", "AC_03"], 2, { budgetFitMode: "explain_only" }),
+    ).toThrow(/cannot return deferred budget claims/i);
+  });
+
   it("rejects budget-deferred assessments missing deferredClaimIds membership", () => {
     const recommendation = createRecommendation({
       deferredClaimIds: [],
@@ -300,6 +403,78 @@ describe("validateClaimSelectionRecommendation", () => {
     expect(() =>
       validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
     ).toThrow(/missing from deferredClaimIds/i);
+  });
+
+  it("rejects allow-fewer budget metadata without a top-level budget rationale", () => {
+    const recommendation = createRecommendation({
+      rankedClaimIds: ["AC_01", "AC_02", "AC_03"],
+      recommendedClaimIds: ["AC_01"],
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Selected claim.",
+        },
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "not_recommended",
+          budgetTreatmentRationale: "Budget-aware treatment without top-level rationale.",
+        },
+        {
+          claimId: "AC_03",
+          triageLabel: "fact_check_worthy",
+          thesisDirectness: "medium",
+          expectedEvidenceYield: "medium",
+          coversDistinctRelevantDimension: true,
+          redundancyWithClaimIds: [],
+          recommendationRationale: "Distinct candidate.",
+        },
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02", "AC_03"], 3, { budgetFitMode: "allow_fewer_recommendations" }),
+    ).toThrow(/fewer-than-cap recommendations require budgetFitRationale/i);
+  });
+
+  it("rejects deferred IDs without matching per-claim budget treatment", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: ["AC_02"],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(recommendation, ["AC_01", "AC_02"]),
+    ).toThrow(/must have budgetTreatment deferred_budget_limited/i);
+  });
+
+  it("rejects inconsistent selected and not-recommended budget treatments", () => {
+    const selectedMismatch = createRecommendation({
+      assessments: [
+        createRecommendation().assessments[0],
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "selected",
+          budgetTreatmentRationale: "Claims marked selected must be recommended.",
+        },
+      ],
+    });
+    const notRecommendedMismatch = createRecommendation({
+      assessments: [
+        {
+          ...createRecommendation().assessments[0],
+          budgetTreatment: "not_recommended",
+          budgetTreatmentRationale: "Recommended claims cannot be budget not-recommended.",
+        },
+        createRecommendation().assessments[1],
+      ],
+    });
+
+    expect(() =>
+      validateClaimSelectionRecommendation(selectedMismatch, ["AC_01", "AC_02"]),
+    ).toThrow(/missing from recommendedClaimIds/i);
+    expect(() =>
+      validateClaimSelectionRecommendation(notRecommendedMismatch, ["AC_01", "AC_02"]),
+    ).toThrow(/cannot be not_recommended/i);
   });
 
   it("rejects budget treatment without a rationale", () => {
@@ -491,8 +666,93 @@ describe("generateClaimSelectionRecommendation", () => {
     expect(mockLoadAndRenderSection).toHaveBeenCalledWith(
       "claimboundary",
       "CLAIM_SELECTION_RECOMMENDATION",
-      expect.objectContaining({ maxRecommendedClaims: "1" }),
+      expect.objectContaining({
+        maxRecommendedClaims: "1",
+        budgetAwarenessMode: "off",
+        budgetResearchTimeBudgetMs: "",
+      }),
     );
+  });
+
+  it("passes structural budget context when budget awareness is enabled", async () => {
+    mockGenerateText.mockResolvedValue({
+      structured: createRecommendation(),
+      usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22 },
+    } as any);
+
+    await generateClaimSelectionRecommendation({
+      originalInput: "Entity A made claim X under condition Y",
+      impliedClaim: "Entity A asserts claim X.",
+      articleThesis: "The input presents claim X for verification.",
+      atomicClaims: [
+        createAtomicClaim(),
+        createAtomicClaim({
+          id: "AC_02",
+          statement: "Entity A also claimed related condition Z",
+          thesisRelevance: "indirect",
+          checkWorthiness: "medium",
+        }),
+      ],
+      selectionCap: 2,
+      pipelineConfig: {
+        claimSelectionBudgetAwarenessEnabled: true,
+        claimSelectionBudgetFitMode: "explain_only",
+        claimSelectionMinRecommendedClaims: 1,
+        researchTimeBudgetMs: 600000,
+        contradictionProtectedTimeMs: 120000,
+      } as any,
+    });
+
+    expect(mockLoadAndRenderSection).toHaveBeenCalledWith(
+      "claimboundary",
+      "CLAIM_SELECTION_RECOMMENDATION",
+      expect.objectContaining({
+        budgetAwarenessMode: "explain_only",
+        budgetResearchTimeBudgetMs: "600000",
+        budgetContradictionProtectedTimeMs: "120000",
+        budgetMainResearchTimeBudgetMs: "480000",
+        budgetMinRecommendedClaims: "1",
+      }),
+    );
+  });
+
+  it("rejects model-returned budget metadata while budget awareness is off", async () => {
+    mockGenerateText.mockResolvedValue({
+      structured: createRecommendation({
+        deferredClaimIds: ["AC_02"],
+        budgetFitRationale: "Budget metadata should not be accepted while disabled.",
+        assessments: [
+          {
+            ...createRecommendation().assessments[0],
+            budgetTreatment: "selected",
+            budgetTreatmentRationale: "Selected claim.",
+          },
+          {
+            ...createRecommendation().assessments[1],
+            budgetTreatment: "deferred_budget_limited",
+            budgetTreatmentRationale: "Deferred claim.",
+          },
+        ],
+      }),
+      usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22 },
+    } as any);
+
+    await expect(
+      generateClaimSelectionRecommendation({
+        originalInput: "Entity A made claim X under condition Y",
+        impliedClaim: "Entity A asserts claim X.",
+        articleThesis: "The input presents claim X for verification.",
+        atomicClaims: [
+          createAtomicClaim(),
+          createAtomicClaim({
+            id: "AC_02",
+            statement: "Entity A also claimed related condition Z",
+            thesisRelevance: "indirect",
+            checkWorthiness: "medium",
+          }),
+        ],
+      }),
+    ).rejects.toThrow(/budget metadata is not allowed/i);
   });
 
   it("accepts out-of-order recommended claims without retrying", async () => {
