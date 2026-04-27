@@ -385,6 +385,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("explicitly preserve the comparator metric class");
       expect(section).toContain("do not replace endpoint or stock wording with a cumulative/flow total");
       expect(section).toContain("keep both plausible routes and mark the mismatch as a caveat");
+      expect(section).toContain("For every thesis-direct quantitative comparison claim");
+      expect(section).toContain("the same claim's profile must carry that current/present side's metric class");
+      expect(section).toContain("Do not leave it as `\"none\"` solely because the comparator/reference side is historical");
       expect(section).toContain("present-state proposition rather than leaving its time window ambiguous");
       expect(section).toContain("recurring official statistics series");
       expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
@@ -627,6 +630,9 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("revise the decision before returning");
       expect(contract).toContain('set `rePromptRequired: true`');
       expect(contract).toContain("statement-atomicity reasons only");
+      expect(contract).toContain("Quantitative comparison profile gate");
+      expect(contract).toContain("that same claim must carry the current/present side's metric class plus source-native route");
+      expect(contract).toContain("A sibling claim that separately verifies the side does not satisfy the comparison claim's own profile contract");
       expect(contract).toContain("Explicit conjunct coverage audit (MANDATORY)");
       expect(contract).toContain("preserve each explicit proposition unit");
       expect(contract).toContain("omitting another explicit independently verifiable conjunct");

@@ -386,7 +386,9 @@ Before returning the JSON:
 1. Identify the thesis-defining modifier or predicate component, if any.
 2. Verify at least one direct atomic claim preserves it with the original action/status proposition. A standalone modifier/status claim counts only when the modifier is separately verifiable and the branch chronology/procedure is preserved in separate direct claims.
 3. Verify that no direct atomic claim adds legality, constitutionality, validity, or other normative implications not present in the input.
-4. If any check fails, revise the extraction before output.
+4. For every thesis-direct quantitative comparison claim, inspect its `statement` and `expectedEvidenceProfile` together. If the claim mentions, numerically anchors, or compactly references a current/present side, the same claim's profile must carry that current/present side's metric class and source-native route or source family, even when a sibling claim separately isolates that side.
+5. If a comparison claim needs a current/present side, set that claim's `freshnessRequirement` from the current/present side. Do not leave it as `"none"` solely because the comparator/reference side is historical, fixed, or not freshness-sensitive.
+6. If any check fails, revise the extraction before output.
 
 ### Output Schema
 
@@ -499,6 +501,9 @@ Then decide whether the extraction should be accepted as-is or whether Pass 2 sh
 Your judgment must be traceable. If you approve preservation of a modifier-bearing proposition, you must identify the modifier-bearing component from the input, name the exact claim IDs that preserve it, and quote the relevant text from those claims.
 
 ### Rules
+
+0. **Quantitative comparison profile gate.**
+   Before approving any thesis-direct quantitative comparison claim, inspect that claim's own `statement`, `freshnessRequirement`, and `expectedEvidenceProfile`. If the claim mentions, numerically anchors, or compactly references a current/present/latest side, that same claim must carry the current/present side's metric class plus source-native route, publisher family, or evidence source family needed to retrieve and cite that side. A sibling claim that separately verifies the side does not satisfy the comparison claim's own profile contract. If the comparison depends on that current/present side and `freshnessRequirement` is `"none"`, set `rePromptRequired: true`.
 
 1. **Meaning preservation first.**
    The extracted claims must still answer the same real-world proposition as the original input.
