@@ -1415,7 +1415,11 @@ export async function validateVerdicts(
       // truth percentage is actually mathematically plausible given the evidence ratio.
       const isPlausible = isVerdictDirectionPlausible(current, evidence, repairContext?.calculationConfig);
 
-      if (isPlausible) {
+      const initialCitationSideGapIssues = repairContext
+        ? getMissingClaimLocalDirectionalCitationSideIssues(current, evidence)
+        : [];
+
+      if (isPlausible && initialCitationSideGapIssues.length === 0) {
         const rescuedByConsistency = current.consistencyResult?.stable === true && current.consistencyResult?.assessed === true;
         const rescueReason = rescuedByConsistency ? "stable_consistency" : "evidence_ratio";
         const rescueDetail = rescuedByConsistency
@@ -1571,8 +1575,14 @@ export async function validateVerdicts(
             validationTier,
             validationProvider,
           );
+          const normalizedCitationSideGapIssues = repairContext
+            ? getMissingClaimLocalDirectionalCitationSideIssues(repairSeedVerdict, evidence)
+            : [];
           const normalizedPlausible = normalizedDirection.valid !== false
-            || isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig);
+            || (
+              normalizedCitationSideGapIssues.length === 0
+              && isVerdictDirectionPlausible(repairSeedVerdict, evidence, repairContext?.calculationConfig)
+            );
 
           if (normalizedPlausible) {
             if (normalizedDirection.valid === false) {
@@ -1594,9 +1604,15 @@ export async function validateVerdicts(
             });
           }
 
+          const repairDirectionIssues = Array.from(new Set([
+            ...mergedDirectionIssues,
+            ...initialCitationSideGapIssues,
+            ...normalizedCitationSideGapIssues,
+          ]));
+
           const repaired = await attemptDirectionRepair(
             repairSeedVerdict,
-            mergedDirectionIssues,
+            repairDirectionIssues,
             evidence,
             llmCall,
             config,
@@ -2195,6 +2211,40 @@ function normalizeVerdictCitationDirections(
     supportingEvidenceIds,
     contradictingEvidenceIds,
   };
+}
+
+function getMissingClaimLocalDirectionalCitationSideIssues(
+  verdict: CBClaimVerdict,
+  evidence: EvidenceItem[],
+): string[] {
+  const localEvidence = getClaimLocalEvidence(verdict.claimId, verdict, evidence);
+  let hasDirectSupport = false;
+  let hasDirectContradiction = false;
+  let citesDirectSupport = false;
+  let citesDirectContradiction = false;
+  const supportingIds = new Set(verdict.supportingEvidenceIds);
+  const contradictingIds = new Set(verdict.contradictingEvidenceIds);
+
+  for (const item of localEvidence) {
+    if (item.applicability && item.applicability !== "direct") continue;
+    if (item.claimDirection === "supports") {
+      hasDirectSupport = true;
+      if (supportingIds.has(item.id)) citesDirectSupport = true;
+    }
+    if (item.claimDirection === "contradicts") {
+      hasDirectContradiction = true;
+      if (contradictingIds.has(item.id)) citesDirectContradiction = true;
+    }
+  }
+
+  const issues: string[] = [];
+  if (hasDirectSupport && !citesDirectSupport) {
+    issues.push("Claim-local direct supporting evidence exists, but supportingEvidenceIds cites no direct supporting item.");
+  }
+  if (hasDirectContradiction && !citesDirectContradiction) {
+    issues.push("Claim-local direct contradicting evidence exists, but contradictingEvidenceIds cites no direct contradicting item.");
+  }
+  return issues;
 }
 
 function safeDowngradeVerdict(

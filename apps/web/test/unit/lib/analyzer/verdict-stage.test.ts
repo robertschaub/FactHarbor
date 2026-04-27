@@ -2583,6 +2583,95 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((w) => w.type === "verdict_direction_issue" && w.message.includes("Initial mismatch"))).toBe(false);
   });
 
+  it("does not let plausibility rescue skip repair when a direct citation side is absent", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_02",
+      truthPercentage: 30,
+      verdict: "LEANING-FALSE",
+      confidence: 70,
+      supportingEvidenceIds: [],
+      contradictingEvidenceIds: ["EV_CONTRA"],
+      consistencyResult: { claimId: "AC_02", percentages: [30], average: 30, spread: 0, stable: false, assessed: false },
+    })];
+    const claims = [createAtomicClaim({ id: "AC_02" })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_SUPPORT",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_02"],
+        claimDirection: "supports",
+        applicability: "direct",
+      }),
+      createEvidenceItem({
+        id: "EV_CONTRA",
+        claimBoundaryId: "CB_01",
+        relevantClaimIds: ["AC_02"],
+        claimDirection: "contradicts",
+        applicability: "direct",
+      }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const warnings: AnalysisWarning[] = [];
+
+    let directionValidationCalls = 0;
+    let repairInput: Record<string, unknown> | undefined;
+    const mockLLM = vi.fn(async (key: string, input?: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_02", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        const verdictInput = (input?.verdicts as Array<Record<string, unknown>> | undefined)?.[0];
+        if (directionValidationCalls === 1) {
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Initial validator saw incomplete comparison citations"] }];
+        }
+        if (directionValidationCalls === 2) {
+          expect(verdictInput?.supportingEvidenceIds).toEqual([]);
+          expect(verdictInput?.contradictingEvidenceIds).toEqual(["EV_CONTRA"]);
+          return [{ claimId: "AC_02", directionValid: false, issues: ["Citation side remains incomplete after normalization"] }];
+        }
+        expect(verdictInput?.supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+        expect(verdictInput?.contradictingEvidenceIds).toEqual(["EV_CONTRA"]);
+        return [{ claimId: "AC_02", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        repairInput = input;
+        return {
+          claimId: "AC_02",
+          truthPercentage: 30,
+          reasoning: "Preserved the low-truth verdict while keeping both direct citation sides available.",
+          supportingEvidenceIds: ["EV_SUPPORT"],
+          contradictingEvidenceIds: ["EV_CONTRA"],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      warnings,
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(30);
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_SUPPORT"]);
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_CONTRA"]);
+    expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+    expect(repairInput?.directionIssues).toContain(
+      "Claim-local direct supporting evidence exists, but supportingEvidenceIds cites no direct supporting item.",
+    );
+    expect(warnings.some((w) => w.type === "direction_rescue_plausible")).toBe(false);
+  });
+
   it("safe-downgrades when repaired verdict still fails direction re-validation", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_02",
