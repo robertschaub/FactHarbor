@@ -114,6 +114,13 @@ const PRIMARY_SOURCE_REFINEMENT_TYPES = new Set<NonNullable<EvidenceItem["source
   "organization_report",
 ]);
 
+type ResearchIterationTimingGuard = {
+  enabled: boolean;
+  researchStartMs: number;
+  timeBudgetMs: number;
+  protectedTimeMs: number;
+};
+
 export type RelevanceSearchResult = {
   url: string;
   title: string;
@@ -746,6 +753,12 @@ export async function researchEvidence(
       maxSourcesPerIteration,
       currentDate,
       state,
+      {
+        enabled: contradictionAdmissionEnabled && reservedContradiction > 0,
+        researchStartMs,
+        timeBudgetMs,
+        protectedTimeMs: contradictionProtectedTimeMs,
+      },
     );
 
     state.mainIterationsUsed++;
@@ -1331,6 +1344,7 @@ export async function runResearchIteration(
   maxSourcesPerIteration: number,
   currentDate: string,
   state: CBResearchState,
+  timingGuard?: ResearchIterationTimingGuard,
 ): Promise<void> {
   const checkResearchAbort = () => checkAbortSignal(state.jobId);
   checkResearchAbort();
@@ -1350,6 +1364,10 @@ export async function runResearchIteration(
     );
     return;
   }
+  const maxQueriesThisIteration = Math.min(
+    availableQueryBudget,
+    Math.max(1, pipelineConfig.researchMaxQueriesPerIteration ?? 4),
+  );
   const iterationStartedAt = Date.now();
   state.researchedIterationsByClaim ??= {};
   const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
@@ -1372,13 +1390,13 @@ export async function runResearchIteration(
     pipelineConfig,
     currentDate,
     state.understanding?.distinctEvents ?? [],
-    availableQueryBudget,
+    maxQueriesThisIteration,
     {
       language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
       geographies: claimRelevantGeographies,
     },
-  ));
+  )).slice(0, maxQueriesThisIteration);
   state.llmCalls++;
   checkResearchAbort();
   const generatedQueryCount = queries.length;
@@ -1394,6 +1412,29 @@ export async function runResearchIteration(
     targetClaim.freshnessRequirement,
   );
 
+  let protectedTimeEventEmitted = false;
+  const isProtectedContradictionWindowReached = (): boolean => {
+    if (iterationType !== "main") return false;
+    if (!timingGuard?.enabled || timingGuard.protectedTimeMs <= 0) return false;
+    const elapsedMs = Date.now() - timingGuard.researchStartMs;
+    return elapsedMs + timingGuard.protectedTimeMs > timingGuard.timeBudgetMs;
+  };
+  const shouldStopForProtectedTime = (
+    focus: "main" | "contradiction" | "contrarian" | "refinement" | "supplementary",
+  ): boolean => {
+    if (!isProtectedContradictionWindowReached()) return false;
+    if (!protectedTimeEventEmitted) {
+      const elapsedMs = Date.now() - timingGuard!.researchStartMs;
+      const remainingMs = Math.max(0, timingGuard!.timeBudgetMs - elapsedMs);
+      state.onEvent?.(
+        `Protected contradiction research window reached during ${focus} research for ${targetClaim.id} (${Math.round(remainingMs / 1000)}s remaining), stopping main query spending...`,
+        -1,
+      );
+      protectedTimeEventEmitted = true;
+    }
+    return true;
+  };
+
   const executeGeneratedQueries = async (
     generatedQueries: GeneratedResearchQuery[],
     focus: "main" | "contradiction" | "contrarian" | "refinement",
@@ -1401,6 +1442,10 @@ export async function runResearchIteration(
   ): Promise<void> => {
     for (const queryObj of generatedQueries) {
       checkResearchAbort();
+
+      if (shouldStopForProtectedTime(focus)) {
+        break;
+      }
 
       if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
         console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}" during ${focus} iteration.`);
@@ -1684,6 +1729,7 @@ export async function runResearchIteration(
     && (pipelineConfig.primarySourceRefinementEnabled ?? true)
     && refinementBudget > 0
     && refinementNeeded
+    && !shouldStopForProtectedTime("refinement")
   ) {
     if (!hasMainQueryMetadata) {
       console.warn(
@@ -1762,10 +1808,12 @@ export async function runResearchIteration(
     .filter((q) => q.languageLane === "primary" || !q.languageLane)
     .reduce((sum, q) => sum + q.resultsCount, 0);
   const newEvidenceThisIteration = state.evidenceItems.length - evidenceCountBeforeIteration;
-  await maybeRunSupplementaryEnglishLane(
-    targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
-    totalResultsThisIteration, newEvidenceThisIteration,
-  );
+  if (!shouldStopForProtectedTime("supplementary")) {
+    await maybeRunSupplementaryEnglishLane(
+      targetClaim, iterationType, searchConfig, pipelineConfig, currentDate, state,
+      totalResultsThisIteration, newEvidenceThisIteration,
+    );
+  }
 
   // Late-stage additions (contrarian iterations and supplementary EN lane) can
   // append evidence after the batch Stage-2 reconciliation pass. Reconcile
