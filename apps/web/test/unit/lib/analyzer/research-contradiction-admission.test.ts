@@ -312,4 +312,33 @@ describe("researchEvidence contradiction admission", () => {
     expect(state.contradictionIterationsUsed).toBe(1);
     expect(events.some((message) => message.includes("Protected contradiction research window reached"))).toBe(true);
   });
+
+  it("continues to other claims after one claim reaches the zero-yield threshold", async () => {
+    mockConfigs({
+      contradictionAdmissionEnabled: false,
+      maxTotalIterations: 5,
+      researchZeroYieldBreakThreshold: 1,
+      perClaimQueryBudget: 4,
+    });
+    const state = makeState({
+      understanding: {
+        atomicClaims: [
+          { id: "AC_01", statement: "Entity A made measurable claim one.", freshnessRequirement: "none" },
+          { id: "AC_02", statement: "Entity A made measurable claim two.", freshnessRequirement: "none" },
+          { id: "AC_03", statement: "Entity A made measurable claim three.", freshnessRequirement: "none" },
+        ],
+        preliminaryEvidence: [],
+        distinctEvents: [],
+        detectedLanguage: "en",
+      } as any,
+    });
+
+    await researchEvidence(state);
+
+    const mainClaimIds = mockGenerateResearchQueries.mock.calls
+      .filter((call) => call[1] === "main")
+      .map((call) => call[0].id);
+    expect(mainClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(state.searchQueries.filter((query) => query.focus === "main")).toHaveLength(3);
+  });
 });

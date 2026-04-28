@@ -657,7 +657,8 @@ export async function researchEvidence(
     : undefined;
 
   const researchStartMs = Date.now();
-  let consecutiveZeroYield = 0;
+  const consecutiveZeroYieldByClaim: Record<string, number> = {};
+  const zeroYieldExhaustedClaimIds = new Set<string>();
   let budgetExhaustionWarned = false;
   let timeBudgetWarned = false;
 
@@ -711,10 +712,10 @@ export async function researchEvidence(
     // Find claim with fewest evidence items that still has budget remaining.
     // Fix 4: Stop main loop when remaining budget equals contradiction reserve,
     // so the contradiction loop (which checks > 0) can use the reserved queries.
-    const budgetEligibleClaims = claims.filter(
+    const queryBudgetEligibleClaims = claims.filter(
       (claim) => getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > contradictionReservedQueries,
     );
-    if (budgetEligibleClaims.length === 0) {
+    if (queryBudgetEligibleClaims.length === 0) {
       console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; ending main research loop.");
       if (!budgetExhaustionWarned) {
         budgetExhaustionWarned = true;
@@ -732,6 +733,16 @@ export async function researchEvidence(
           },
         });
       }
+      break;
+    }
+    const budgetEligibleClaims = queryBudgetEligibleClaims.filter(
+      (claim) => !zeroYieldExhaustedClaimIds.has(claim.id),
+    );
+    if (budgetEligibleClaims.length === 0) {
+      state.onEvent?.(
+        `No new evidence found after ${zeroYieldBreakThreshold} zero-yield iteration(s) for each remaining claim, proceeding...`,
+        55,
+      );
       break;
     }
     const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
@@ -768,13 +779,17 @@ export async function researchEvidence(
     // Diminishing returns detection
     const newItems = state.evidenceItems.length - beforeCount;
     if (newItems === 0) {
-      consecutiveZeroYield++;
-      if (consecutiveZeroYield >= zeroYieldBreakThreshold) {
-        state.onEvent?.(`No new evidence found in ${consecutiveZeroYield} consecutive iterations, proceeding...`, 55);
-        break;
+      const zeroYieldCount = (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1;
+      consecutiveZeroYieldByClaim[targetClaim.id] = zeroYieldCount;
+      if (zeroYieldCount >= zeroYieldBreakThreshold) {
+        zeroYieldExhaustedClaimIds.add(targetClaim.id);
+        state.onEvent?.(
+          `No new evidence found for ${targetClaim.id} in ${zeroYieldCount} consecutive iteration(s), trying other claims...`,
+          -1,
+        );
       }
     } else {
-      consecutiveZeroYield = 0;
+      consecutiveZeroYieldByClaim[targetClaim.id] = 0;
     }
   }
 
