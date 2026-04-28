@@ -34,6 +34,22 @@ When the `grounding-check.ts` dependency is migrated to `claimboundary.prompt.md
 
 The `claimboundary.prompt.md` frontmatter `requiredSections` list is the contract between the file and the runtime. A test (`prompt-frontmatter-drift.test.ts`) asserts that every `## SECTION` heading in the body is listed in frontmatter and vice versa, so any drift fails the build.
 
+## Split Manifest Support
+
+Prompt source files may be split for maintainability, but UCM still stores one composite prompt per profile. If `prompts/<profile>/manifest.json` exists, reseeding assembles the composite from the manifest's `frontmatterPath` plus ordered `files` entries before saving `prompt|<profile>` to `config_blobs`.
+
+Manifest constraints:
+
+- `schemaVersion` is `1`.
+- `profile` must match the requested prompt profile.
+- `frontmatterPath` points to the YAML frontmatter source.
+- Each ordered file entry lists its relative `path` and the exact `## SECTION` headings it owns.
+- The ordered section list from all files must exactly match frontmatter `requiredSections`.
+- Manifest paths must stay inside the manifest directory.
+- Parts are joined with one blank line by default; an explicit `joiner` may override this only when equivalence tests prove the composite is valid.
+
+Admin diff/export/job provenance continue to operate on the composite prompt blob and content hash. Section-level admin profiles are intentionally not introduced by the split source layout.
+
 ## Source Reliability
 
 The source-reliability prompt is **fully authoritative** for:

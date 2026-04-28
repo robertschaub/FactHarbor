@@ -1,7 +1,7 @@
 # Prompt Split and LLM Runtime Efficiency Execution Plan
 
 **Date:** 2026-04-28  
-**Status:** Ready for implementation planning; no prompt behavior approved yet  
+**Status:** In execution; Phase 1 telemetry committed and Phase 2 manifest source layer underway; no prompt wording changes
 **Roles:** Lead Developer, LLM Expert  
 **Supersedes / extends:** `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md`, `Docs/WIP/2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md`  
 **Related backlog:** `PROMPT-SPLIT-1`
@@ -99,6 +99,14 @@ Acceptance:
 ### Phase 2 — Prompt Manifest Design
 
 Goal: specify the physical split contract before moving files.
+
+Implementation checkpoint (2026-04-28):
+
+- Add a source-layout helper that detects `prompts/<profile>/manifest.json` and assembles one deterministic composite prompt from `frontmatterPath` plus ordered section files.
+- Keep UCM storage, admin export/diff, job provenance, and `/jobs/[id]/prompts` on the single composite `prompt|claimboundary` blob hash.
+- Require manifest file entries to declare the exact `## SECTION` headings they own.
+- Fail closed when manifest-declared sections, actual file headings, and frontmatter `requiredSections` drift.
+- Keep current monolithic `claimboundary.prompt.md` as the active source until the physical split phase.
 
 Design decisions to document and test before implementation:
 

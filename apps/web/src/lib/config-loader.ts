@@ -448,10 +448,16 @@ export async function loadPromptConfig(
   const now = Date.now();
 
   try {
-    // Refresh system-seeded prompts from files if they changed (safe no-op for user edits)
-    await refreshPromptFromFileIfSystemSeed(profile).catch((err) => {
+    // Refresh system-seeded prompts from files if they changed (safe no-op for user edits).
+    // Split-manifest errors fail closed because otherwise runtime would silently use stale DB content.
+    const refreshResult = await refreshPromptFromFileIfSystemSeed(profile).catch((err) => {
       console.warn(`[Config-Loader] Prompt refresh skipped for ${profile}: ${err?.message || err}`);
+      return null;
     });
+    if (refreshResult?.error && refreshResult.sourceKind === "manifest") {
+      console.error(`[Config-Loader] Prompt manifest refresh failed for ${profile}: ${refreshResult.error}`);
+      return null;
+    }
 
     // Check pointer (is active hash still valid?)
     let hash = await refreshPointer(configType, profile);

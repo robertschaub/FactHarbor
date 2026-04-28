@@ -96,7 +96,10 @@ export async function POST(req: Request, context: RouteParams) {
       success: true,
       seeded: true,
       contentHash: result.contentHash,
-      fromFile: `${profile}.prompt.md`,
+      fromFile: result.sourceKind === "manifest"
+        ? `${profile}/manifest.json`
+        : `${profile}.prompt.md`,
+      sourceKind: result.sourceKind ?? "monolith",
       profile,
     });
   } catch (err: unknown) {

@@ -30,6 +30,7 @@ import {
   DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG,
 } from "./config-schemas";
+import { loadPromptSourceContent, PromptSourceError, type PromptSourceKind } from "./prompt-source";
 
 // Re-export types for API routes
 export type { ConfigType, SchemaVersion, ValidationResult, ConfigSchemaTypes };
@@ -1271,9 +1272,6 @@ export async function closeConfigDb(): Promise<void> {
 // PROMPT SEEDING
 // ============================================================================
 
-import { readFile } from "fs/promises";
-import { existsSync } from "fs";
-
 export const VALID_PROMPT_PROFILES = [
   "source-reliability",
   // ClaimBoundary pipeline prompts (all stages)
@@ -1289,31 +1287,18 @@ export function isValidPromptProfile(profile: string): profile is PromptProfile 
 }
 
 /**
- * Get the prompts directory path
- */
-function getPromptDir(): string {
-  return process.env.FH_PROMPT_DIR || path.join(process.cwd(), "prompts");
-}
-
-/**
- * Get the file path for a prompt profile.
- * Text-analysis prompts are in the text-analysis/ subfolder.
- */
-function getPromptFilePath(profile: string): string {
-  const promptDir = getPromptDir();
-  if (profile.startsWith("text-analysis-")) {
-    return path.join(promptDir, "text-analysis", `${profile}.prompt.md`);
-  }
-  return path.join(promptDir, `${profile}.prompt.md`);
-}
-
-/**
  * Refresh a prompt from file if the active config is a system seed.
  * Safe: does not overwrite user-edited prompts.
  */
 export async function refreshPromptFromFileIfSystemSeed(
   profile: string,
-): Promise<{ refreshed: boolean; contentHash: string | null; error?: string }> {
+): Promise<{
+  refreshed: boolean;
+  contentHash: string | null;
+  error?: string;
+  sourceKind?: PromptSourceKind;
+  sourcePath?: string;
+}> {
   if (!isValidPromptProfile(profile)) {
     return { refreshed: false, contentHash: null, error: `Invalid profile: ${profile}` };
   }
@@ -1334,17 +1319,18 @@ export async function refreshPromptFromFileIfSystemSeed(
     return { refreshed: false, contentHash: active.contentHash };
   }
 
-  const filePath = getPromptFilePath(profile);
-  if (!existsSync(filePath)) {
-    return { refreshed: false, contentHash: active.contentHash, error: `Prompt file not found: ${filePath}` };
-  }
-
   try {
-    const content = await readFile(filePath, "utf-8");
+    const source = await loadPromptSourceContent(profile);
+    const content = source.content;
     const canonical = canonicalizeContent("prompt", content);
 
     if (canonical === active.content) {
-      return { refreshed: false, contentHash: active.contentHash };
+      return {
+        refreshed: false,
+        contentHash: active.contentHash,
+        sourceKind: source.sourceKind,
+        sourcePath: source.primaryPath,
+      };
     }
 
     const versionMatch = content.match(/^version:\s*["']?([^"'\n]+)["']?/m);
@@ -1364,11 +1350,21 @@ export async function refreshPromptFromFileIfSystemSeed(
       `[Config-Storage] Refreshed prompt ${profile} from file (hash: ${blob.contentHash.substring(0, 12)}...)`,
     );
 
-    return { refreshed: true, contentHash: blob.contentHash };
+    return {
+      refreshed: true,
+      contentHash: blob.contentHash,
+      sourceKind: source.sourceKind,
+      sourcePath: source.primaryPath,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[Config-Storage] Failed to refresh prompt ${profile}:`, message);
-    return { refreshed: false, contentHash: active.contentHash, error: message };
+    return {
+      refreshed: false,
+      contentHash: active.contentHash,
+      error: message,
+      sourceKind: err instanceof PromptSourceError ? err.sourceKind : undefined,
+    };
   }
 }
 
@@ -1385,7 +1381,13 @@ export async function seedPromptFromFile(
   profile: string,
   force = false,
   seededBy?: string,
-): Promise<{ seeded: boolean; contentHash: string | null; error?: string }> {
+): Promise<{
+  seeded: boolean;
+  contentHash: string | null;
+  error?: string;
+  sourceKind?: PromptSourceKind;
+  sourcePath?: string;
+}> {
   if (!isValidPromptProfile(profile)) {
     return { seeded: false, contentHash: null, error: `Invalid profile: ${profile}` };
   }
@@ -1399,15 +1401,9 @@ export async function seedPromptFromFile(
     }
   }
 
-  // Find and read prompt file
-  const filePath = getPromptFilePath(profile);
-
-  if (!existsSync(filePath)) {
-    return { seeded: false, contentHash: null, error: `Prompt file not found: ${filePath}` };
-  }
-
   try {
-    const content = await readFile(filePath, "utf-8");
+    const source = await loadPromptSourceContent(profile);
+    const content = source.content;
 
     // Extract version from frontmatter for label
     const versionMatch = content.match(/^version:\s*["']?([^"'\n]+)["']?/m);
@@ -1431,11 +1427,21 @@ export async function seedPromptFromFile(
       `[Config-Storage] Seeded prompt ${profile} from file (hash: ${blob.contentHash.substring(0, 12)}..., isNew: ${isNew})`,
     );
 
-    return { seeded: true, contentHash: blob.contentHash };
+    return {
+      seeded: true,
+      contentHash: blob.contentHash,
+      sourceKind: source.sourceKind,
+      sourcePath: source.primaryPath,
+    };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[Config-Storage] Failed to seed prompt ${profile}:`, message);
-    return { seeded: false, contentHash: null, error: message };
+    return {
+      seeded: false,
+      contentHash: null,
+      error: message,
+      sourceKind: err instanceof PromptSourceError ? err.sourceKind : undefined,
+    };
   }
 }
 
