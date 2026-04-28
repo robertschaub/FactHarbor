@@ -1,7 +1,7 @@
 # Prompt Split and LLM Runtime Efficiency Execution Plan
 
 **Date:** 2026-04-28  
-**Status:** In execution; Phase 1 telemetry, Phase 2 manifest source layer, and first Phase 3 prompt-payload splits underway; no prompt wording changes
+**Status:** In execution; Phase 1 telemetry, Phase 2 manifest source layer, Phase 3 prompt-payload splits, and Phase 4 split source layout landed; no prompt wording changes
 **Roles:** Lead Developer, LLM Expert  
 **Supersedes / extends:** `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md`, `Docs/WIP/2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md`  
 **Related backlog:** `PROMPT-SPLIT-1`
@@ -216,16 +216,28 @@ Acceptance:
 
 Goal: split files after the manifest/provenance contract is stable.
 
-Likely file layout:
+Implementation checkpoint (2026-04-28):
+
+- Added the active split source layout at `apps/web/prompts/claimboundary/manifest.json` plus dedicated section files.
+- Kept UCM/admin/job provenance on one composite `prompt|claimboundary` blob and content hash.
+- Kept `claimboundary.prompt.md` as a byte-equivalence reference during the migration; it is not the active source when the manifest exists.
+- Added real-source equivalence coverage proving the manifest composite is byte-for-byte equal to the monolith.
+- Adjusted the manifest contract so file-local section ordering is strict, while frontmatter `requiredSections` is validated as the required-section inventory. This preserves the existing composite prompt because `CLAIM_CONTRACT_REPAIR` was listed earlier in frontmatter than it appeared in the body.
+- Reseed reported `Prompts: 0 changed, 3 unchanged, 0 errors`, confirming no composite prompt hash change.
+
+Current file layout:
 
 ```text
 apps/web/prompts/claimboundary/
   manifest.json
-  stage1-understand.prompt.md
-  stage2-research.prompt.md
-  stage3-boundary.prompt.md
-  stage4-verdict.prompt.md
-  stage5-aggregation-report.prompt.md
+  frontmatter.prompt.md
+  01-stage1-understand.prompt.md
+  02-stage2-research.prompt.md
+  03-stage3-boundary.prompt.md
+  04-stage4-verdict.prompt.md
+  05-stage5-aggregation-report.prompt.md
+  06-late-research-and-calibration.prompt.md
+  07-stage1-contract-repair.prompt.md
 ```
 
 Constraints:
@@ -241,6 +253,13 @@ Acceptance:
 - Monolith-to-manifest equivalence test passes before any prompt wording edits.
 - Reseed and config activation tests pass.
 - Admin prompt provenance still shows one active composite prompt version.
+
+Live verification checkpoint (2026-04-28):
+
+- Job `3c411d86be024e288133332b279c570e` ran before a full service refresh and returned `FALSE`, confidence `77`; functional direction was good but prompt-runtime telemetry was inconclusive.
+- After restarting both web and API services, job `bf3d4dd99862436d9de9345588215f43` returned `FALSE`, confidence `80`.
+- The refreshed job persisted prompt-runtime telemetry for `CLAIM_EXTRACTION_PASS2`, `CLAIM_CONTRACT_VALIDATION`, `EXTRACT_EVIDENCE`, and Stage 4 verdict sections. `EXTRACT_EVIDENCE` showed cache creation on the first comparable call and cache reads on later calls.
+- Live job budget used for this execution: 2 of 8.
 
 ### Phase 5 — Retry Prevention
 

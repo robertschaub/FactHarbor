@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { mkdir, mkdtemp, rm, writeFile } from "fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import path from "path";
 import { loadPromptSourceContent } from "@/lib/prompt-source";
@@ -129,6 +129,52 @@ describe("prompt source loading", () => {
     ].join("\n"));
   });
 
+  it("lets manifest file order define the composite while frontmatter lists required sections", async () => {
+    const manifestDir = path.join(tempDir!, "claimboundary");
+    await mkdir(manifestDir, { recursive: true });
+    await writeFile(
+      path.join(manifestDir, "frontmatter.prompt.md"),
+      [
+        "---",
+        'version: "1.0.0"',
+        'pipeline: "claimboundary"',
+        "requiredSections:",
+        '  - "EXTRACT_EVIDENCE"',
+        '  - "CLAIM_EXTRACTION_PASS1"',
+        "---",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+    await writeFile(
+      path.join(manifestDir, "stage1-understand.prompt.md"),
+      ["## CLAIM_EXTRACTION_PASS1", "", "Extract claims."].join("\n"),
+      "utf-8",
+    );
+    await writeFile(
+      path.join(manifestDir, "stage2-research.prompt.md"),
+      ["## EXTRACT_EVIDENCE", "", "Extract evidence."].join("\n"),
+      "utf-8",
+    );
+    await writeFile(
+      path.join(manifestDir, "manifest.json"),
+      JSON.stringify({
+        schemaVersion: 1,
+        profile: "claimboundary",
+        frontmatterPath: "frontmatter.prompt.md",
+        files: [
+          { path: "stage1-understand.prompt.md", sections: ["CLAIM_EXTRACTION_PASS1"] },
+          { path: "stage2-research.prompt.md", sections: ["EXTRACT_EVIDENCE"] },
+        ],
+      }),
+      "utf-8",
+    );
+
+    const source = await loadPromptSourceContent("claimboundary");
+
+    expect(source.content).toContain("## CLAIM_EXTRACTION_PASS1\n\nExtract claims.\n\n## EXTRACT_EVIDENCE");
+  });
+
   it("fails closed when manifest section mapping does not match file headings", async () => {
     const manifestDir = path.join(tempDir!, "claimboundary");
     await mkdir(manifestDir, { recursive: true });
@@ -230,5 +276,28 @@ describe("prompt source loading", () => {
     await expect(loadPromptSourceContent("claimboundary")).rejects.toThrow(
       /escapes manifest directory/,
     );
+  });
+});
+
+describe("claimboundary split prompt source", () => {
+  afterEach(() => {
+    if (originalPromptDir === undefined) {
+      delete process.env.FH_PROMPT_DIR;
+    } else {
+      process.env.FH_PROMPT_DIR = originalPromptDir;
+    }
+  });
+
+  it("assembles the split claimboundary manifest byte-equivalent to the monolith", async () => {
+    const promptDir = path.resolve(__dirname, "../../../prompts");
+    process.env.FH_PROMPT_DIR = promptDir;
+
+    const monolith = await readFile(path.join(promptDir, "claimboundary.prompt.md"), "utf-8");
+    const source = await loadPromptSourceContent("claimboundary");
+
+    expect(source.sourceKind).toBe("manifest");
+    expect(source.primaryPath).toBe(path.join(promptDir, "claimboundary", "manifest.json"));
+    expect(source.sourceFiles).toContain(path.join(promptDir, "claimboundary", "frontmatter.prompt.md"));
+    expect(source.content).toBe(monolith);
   });
 });

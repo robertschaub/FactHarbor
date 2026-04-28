@@ -17,7 +17,7 @@ This directory contains LLM prompt source files. Prompts are stored in the datab
 
 | Profile | File | Purpose |
 |---------|------|---------|
-| `claimboundary` | `claimboundary.prompt.md` | **Primary pipeline.** All five ClaimBoundary stages (extraction, contract validation, research, clustering, verdict, narrative, article adjudication, grouping). Single source of truth for the live pipeline. |
+| `claimboundary` | `claimboundary/manifest.json` | **Primary pipeline.** All five ClaimBoundary stages (extraction, contract validation, research, clustering, verdict, narrative, article adjudication, grouping). The manifest assembles one composite prompt for UCM; `claimboundary.prompt.md` is retained as an equivalence reference during the migration. |
 | `source-reliability` | `source-reliability.prompt.md` | Source reliability evaluation prompts (per-source rating). |
 | `text-analysis-*` | `text-analysis/*.prompt.md` | Lightweight LLM text analysis helpers used outside the main pipeline. |
 | `input-policy-gate` | `input-policy-gate.prompt.md` | Input policy gate prompts. |
@@ -30,9 +30,9 @@ This directory contains LLM prompt source files. Prompts are stored in the datab
 
 When the `grounding-check.ts` dependency is migrated to `claimboundary.prompt.md` (or replaced), the `orchestrated` profile can be removed from the database and `prompt-loader.ts` together.
 
-## Authoritative ClaimBoundary sections
+## ClaimBoundary Sections
 
-The `claimboundary.prompt.md` frontmatter `requiredSections` list is the contract between the file and the runtime. A test (`prompt-frontmatter-drift.test.ts`) asserts that every `## SECTION` heading in the body is listed in frontmatter and vice versa, so any drift fails the build.
+The `claimboundary` manifest owns runtime section order. Its frontmatter `requiredSections` list is the required-section inventory. Tests assert that every `## SECTION` heading is listed in frontmatter and vice versa, and that the manifest composite remains byte-equivalent to `claimboundary.prompt.md` while the reference file is retained.
 
 ## Split Manifest Support
 
@@ -44,7 +44,8 @@ Manifest constraints:
 - `profile` must match the requested prompt profile.
 - `frontmatterPath` points to the YAML frontmatter source.
 - Each ordered file entry lists its relative `path` and the exact `## SECTION` headings it owns.
-- The ordered section list from all files must exactly match frontmatter `requiredSections`.
+- The ordered section list from each file must exactly match that file's headings.
+- The full manifest section set must match frontmatter `requiredSections`; manifest file order defines the composite order.
 - Manifest paths must stay inside the manifest directory.
 - Parts are joined with one blank line by default; an explicit `joiner` may override this only when equivalence tests prove the composite is valid.
 

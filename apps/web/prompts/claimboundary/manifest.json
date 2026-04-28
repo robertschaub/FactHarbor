@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "profile": "claimboundary",
+  "frontmatterPath": "frontmatter.prompt.md",
+  "files": [
+    {
+      "path": "01-stage1-understand.prompt.md",
+      "sections": [
+        "CLAIM_EXTRACTION_PASS1",
+        "CLAIM_SALIENCE_COMMITMENT",
+        "CLAIM_EXTRACTION_PASS2",
+        "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX",
+        "CLAIM_CONTRACT_VALIDATION",
+        "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION",
+        "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX",
+        "CLAIM_SELECTION_RECOMMENDATION",
+        "CLAIM_VALIDATION"
+      ]
+    },
+    {
+      "path": "02-stage2-research.prompt.md",
+      "sections": [
+        "GENERATE_QUERIES",
+        "RELEVANCE_CLASSIFICATION",
+        "EXTRACT_EVIDENCE",
+        "SCOPE_NORMALIZATION"
+      ]
+    },
+    {
+      "path": "03-stage3-boundary.prompt.md",
+      "sections": [
+        "BOUNDARY_CLUSTERING"
+      ]
+    },
+    {
+      "path": "04-stage4-verdict.prompt.md",
+      "sections": [
+        "VERDICT_ADVOCATE",
+        "VERDICT_CHALLENGER",
+        "VERDICT_RECONCILIATION",
+        "VERDICT_GROUNDING_VALIDATION",
+        "VERDICT_DIRECTION_VALIDATION",
+        "VERDICT_DIRECTION_REPAIR",
+        "VERDICT_CITATION_DIRECTION_ADJUDICATION"
+      ]
+    },
+    {
+      "path": "05-stage5-aggregation-report.prompt.md",
+      "sections": [
+        "VERDICT_NARRATIVE",
+        "ARTICLE_ADJUDICATION",
+        "CLAIM_GROUPING",
+        "EXPLANATION_QUALITY_RUBRIC",
+        "TIGER_SCORE_EVAL"
+      ]
+    },
+    {
+      "path": "06-late-research-and-calibration.prompt.md",
+      "sections": [
+        "APPLICABILITY_ASSESSMENT",
+        "SR_CALIBRATION",
+        "REMAP_SEEDED_EVIDENCE"
+      ]
+    },
+    {
+      "path": "07-stage1-contract-repair.prompt.md",
+      "sections": [
+        "CLAIM_CONTRACT_REPAIR"
+      ]
+    }
+  ]
+}

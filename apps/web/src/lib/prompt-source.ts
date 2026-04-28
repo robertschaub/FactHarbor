@@ -211,6 +211,28 @@ function assertSameOrderedList(label: string, expected: string[], actual: string
   }
 }
 
+function assertSameSectionSet(label: string, expected: string[], actual: string[]): void {
+  const expectedCounts = new Map<string, number>();
+  const actualCounts = new Map<string, number>();
+  for (const value of expected) {
+    expectedCounts.set(value, (expectedCounts.get(value) ?? 0) + 1);
+  }
+  for (const value of actual) {
+    actualCounts.set(value, (actualCounts.get(value) ?? 0) + 1);
+  }
+
+  const allValues = Array.from(new Set([...expectedCounts.keys(), ...actualCounts.keys()])).sort();
+  const mismatches = allValues.filter((value) => expectedCounts.get(value) !== actualCounts.get(value));
+  if (mismatches.length > 0) {
+    throw new PromptSourceError(
+      "section_mismatch",
+      "manifest",
+      `${label} mismatch for section(s): ${mismatches.join(", ")}. ` +
+        `Expected [${expected.join(", ")}], got [${actual.join(", ")}]`,
+    );
+  }
+}
+
 function asManifestSourceError(err: unknown): PromptSourceError {
   if (err instanceof PromptSourceError) {
     return err;
@@ -242,7 +264,7 @@ async function loadManifestSource(profile: string, manifestPath: string): Promis
     contentParts.push(fileContent);
   }
 
-  assertSameOrderedList("Manifest files vs frontmatter requiredSections", requiredSections, manifestSections);
+  assertSameSectionSet("Manifest files vs frontmatter requiredSections", requiredSections, manifestSections);
 
   return {
     content: ensureFinalNewline(contentParts.map((part) => part.trimEnd()).join(manifest.joiner)),
