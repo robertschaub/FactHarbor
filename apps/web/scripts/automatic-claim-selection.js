@@ -270,6 +270,10 @@ function extractValidationSummary({
   const claimSelection = parseJsonValue(job?.claimSelectionJson, "ClaimSelectionJson", metadataIssues);
   const result = parseResultJson(job?.resultJson);
 
+  const effectiveSubmissionPath =
+    typeof job?.submissionPath === "string" && job.submissionPath.length > 0
+      ? job.submissionPath
+      : submissionPath;
   const preparedClaimIds = getPreparedClaimIds(preparedStage1);
   const rankedClaimIds = getStringArray(claimSelection?.rankedClaimIds);
   const recommendedClaimIds = getStringArray(claimSelection?.recommendedClaimIds);
@@ -285,6 +289,22 @@ function extractValidationSummary({
   const budgetTreatmentSummary = summarizeBudgetTreatments(claimSelection?.assessments);
   const selectedClaimResearchCoverage = getSelectedClaimResearchCoverage(acsResearchWaste);
   const zeroTargetedSelectedClaimIds = getZeroTargetedSelectedClaimIds(acsResearchWaste);
+  const preparedProvenance = preparedStage1?.preparationProvenance || null;
+  const createdGitCommitHash =
+    job?.createdGitCommitHash ||
+    job?.gitCommitHash ||
+    result?.meta?.gitCommitHash ||
+    null;
+  const executedWebGitCommitHash =
+    job?.executedWebGitCommitHash ||
+    result?.meta?.executedWebGitCommitHash ||
+    preparedProvenance?.executedWebGitCommitHash ||
+    null;
+  const promptContentHash =
+    job?.promptContentHash ||
+    result?.meta?.promptContentHash ||
+    preparedProvenance?.promptContentHash ||
+    null;
   const historicalDirectReference = normalizeHistoricalDirectReference(
     family?.historicalDirectReference,
   );
@@ -298,17 +318,46 @@ function extractValidationSummary({
 
   return {
     schemaVersion: "2.0.0",
-    submissionPath,
+    submissionPath: effectiveSubmissionPath,
     draftId: draftId || job?.claimSelectionDraftId || null,
     jobId: job?.jobId || job?.id || null,
     claimSelectionDraftId: job?.claimSelectionDraftId || draftId || null,
     draftStatus: draftStatus || null,
     jobStatus: jobStatus || normalizeStatus(job?.status) || null,
     gitCommitHash:
-      job?.gitCommitHash ||
-      result?.meta?.executedWebGitCommitHash ||
-      result?.meta?.gitCommitHash ||
+      executedWebGitCommitHash ||
+      createdGitCommitHash ||
       null,
+    createdGitCommitHash,
+    executedWebGitCommitHash,
+    promptContentHash,
+    analysisRunProvenance: {
+      version: 1,
+      submissionPath: effectiveSubmissionPath,
+      draftId: draftId || job?.claimSelectionDraftId || null,
+      jobId: job?.jobId || job?.id || null,
+      claimSelectionDraftId: job?.claimSelectionDraftId || draftId || null,
+      createdGitCommitHash,
+      executedWebGitCommitHash,
+      promptContentHash,
+      preparedStage1: preparedProvenance
+        ? {
+            pipelineVariant: preparedProvenance.pipelineVariant || null,
+            sourceInputType: preparedProvenance.sourceInputType || null,
+            resolvedInputSha256: preparedProvenance.resolvedInputSha256 || null,
+            promptContentHash: preparedProvenance.promptContentHash || null,
+            pipelineConfigHash: preparedProvenance.pipelineConfigHash || null,
+            searchConfigHash: preparedProvenance.searchConfigHash || null,
+            calcConfigHash: preparedProvenance.calcConfigHash || null,
+            selectionCap:
+              typeof preparedProvenance.selectionCap === "number"
+                ? preparedProvenance.selectionCap
+                : null,
+            executedWebGitCommitHash:
+              preparedProvenance.executedWebGitCommitHash || null,
+          }
+        : null,
+    },
     metadataUnavailable: computedMetadataUnavailable,
     metadataUnavailableReason: computedMetadataUnavailableReason,
     preparedClaimCount: preparedClaimIds.length,

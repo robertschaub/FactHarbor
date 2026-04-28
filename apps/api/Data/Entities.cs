@@ -68,6 +68,12 @@ public sealed class JobEntity
     /// </summary>
     public string? ExecutedWebGitCommitHash { get; set; }
 
+    /// <summary>
+    /// Structural submission path that created the job.
+    /// Examples: "direct-api", "acs-automatic-draft", "retry".
+    /// </summary>
+    public string? SubmissionPath { get; set; }
+
     // Claim selection (ACS-1)
     public string? ClaimSelectionDraftId { get; set; }
     public string? PreparedStage1Json { get; set; }

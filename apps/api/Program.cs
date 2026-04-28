@@ -147,6 +147,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
     EnsureJobsColumn(db, "GitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
+    EnsureJobsColumn(db, "SubmissionPath", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionDraftId", "TEXT");
     EnsureJobsColumn(db, "PreparedStage1Json", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");

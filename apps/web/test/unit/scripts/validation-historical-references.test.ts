@@ -131,7 +131,22 @@ describe("Captain-approved validation historical references", () => {
       job: {
         id: "job-id",
         status: "SUCCEEDED",
+        submissionPath: "acs-automatic-draft",
+        createdGitCommitHash: "created-commit",
+        executedWebGitCommitHash: "executed-commit",
+        promptContentHash: "prompt-hash",
         preparedStage1Json: JSON.stringify({
+          preparationProvenance: {
+            pipelineVariant: "claimboundary",
+            sourceInputType: "text",
+            resolvedInputSha256: "input-hash",
+            executedWebGitCommitHash: "prepared-executed-commit",
+            promptContentHash: "prepared-prompt-hash",
+            pipelineConfigHash: "pipeline-hash",
+            searchConfigHash: "search-hash",
+            calcConfigHash: "calc-hash",
+            selectionCap: 5,
+          },
           preparedUnderstanding: {
             atomicClaims: [
               { id: "AC_01", claim: "Approved fixture claim one" },
@@ -226,5 +241,26 @@ describe("Captain-approved validation historical references", () => {
     expect(summary.selectedClaimResearch).toHaveLength(1);
     expect(summary.zeroTargetedSelectedClaimCount).toBe(1);
     expect(summary.zeroTargetedSelectedClaimIds).toEqual(["AC_01"]);
+    expect(summary.submissionPath).toBe("acs-automatic-draft");
+    expect(summary.gitCommitHash).toBe("executed-commit");
+    expect(summary.createdGitCommitHash).toBe("created-commit");
+    expect(summary.executedWebGitCommitHash).toBe("executed-commit");
+    expect(summary.promptContentHash).toBe("prompt-hash");
+    expect(summary.analysisRunProvenance).toMatchObject({
+      version: 1,
+      submissionPath: "acs-automatic-draft",
+      jobId: "job-id",
+      createdGitCommitHash: "created-commit",
+      executedWebGitCommitHash: "executed-commit",
+      promptContentHash: "prompt-hash",
+      preparedStage1: {
+        pipelineVariant: "claimboundary",
+        resolvedInputSha256: "input-hash",
+        pipelineConfigHash: "pipeline-hash",
+        searchConfigHash: "search-hash",
+        calcConfigHash: "calc-hash",
+        selectionCap: 5,
+      },
+    });
   });
 });

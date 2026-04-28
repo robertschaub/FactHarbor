@@ -32,7 +32,12 @@ public sealed class JobService
         };
     }
 
-    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "claimboundary", string? inviteCode = null)
+    public async Task<JobEntity> CreateJobAsync(
+        string inputType,
+        string inputValue,
+        string pipelineVariant = "claimboundary",
+        string? inviteCode = null,
+        string submissionPath = "direct-api")
     {
         var job = new JobEntity
         {
@@ -44,6 +49,7 @@ public sealed class JobService
             InputPreview = MakePreview(inputType, inputValue),
             PipelineVariant = pipelineVariant,
             InviteCode = inviteCode,
+            SubmissionPath = submissionPath,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
@@ -611,6 +617,7 @@ public sealed class JobService
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
+            SubmissionPath = "retry",
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),  // Current build hash at retry creation time
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
@@ -718,6 +725,7 @@ public sealed class JobService
             ClaimSelectionDraftId = draft.DraftId,
             PreparedStage1Json = preparedStage1Json,
             ClaimSelectionJson = selectionJson,
+            SubmissionPath = "acs-automatic-draft",
             IsHidden = draft.IsHidden,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,
