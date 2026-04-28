@@ -23,6 +23,7 @@ import { getConfig } from "@/lib/config-storage";
 import {
   checkAbortSignal,
   extractDomain,
+  isJobAbortError,
   mapSourceType,
   classifySourceFetchFailure,
 } from "./pipeline-utils";
@@ -1331,6 +1332,9 @@ export async function runResearchIteration(
   currentDate: string,
   state: CBResearchState,
 ): Promise<void> {
+  const checkResearchAbort = () => checkAbortSignal(state.jobId);
+  checkResearchAbort();
+
   const remainingBudget = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
   if (remainingBudget <= 0) {
     console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
@@ -1357,6 +1361,7 @@ export async function runResearchIteration(
     searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography ?? null,
   );
 
+  checkResearchAbort();
   state.onEvent?.(`Generating ${iterationType} research queries for ${targetClaim.id}...`, -1);
 
   // 1. Generate search queries via LLM (Haiku)
@@ -1375,6 +1380,7 @@ export async function runResearchIteration(
     },
   ));
   state.llmCalls++;
+  checkResearchAbort();
   const generatedQueryCount = queries.length;
   if (generatedQueryCount === 0) {
     state.onEvent?.(`No ${iterationType} research queries generated for ${targetClaim.id}.`, -1);
@@ -1394,6 +1400,8 @@ export async function runResearchIteration(
     telemetry: ClaimAcquisitionIterationEntry,
   ): Promise<void> => {
     for (const queryObj of generatedQueries) {
+      checkResearchAbort();
+
       if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) {
         console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}" during ${focus} iteration.`);
         break;
@@ -1420,6 +1428,7 @@ export async function runResearchIteration(
           dateRestrict,
           cacheTtlDaysOverride,
         });
+        checkResearchAbort();
 
         state.searchQueries.push({
           query: queryObj.query,
@@ -1474,6 +1483,7 @@ export async function runResearchIteration(
           relevantGeographies: claimRelevantGeographies,
         });
         if (!relevanceCacheHit) state.llmCalls++;
+        checkResearchAbort();
         telemetry.relevanceAccepted += relevantSources.length;
         telemetry.losses.relevanceRejected += Math.max(
           response.results.length - relevantSources.length,
@@ -1516,6 +1526,7 @@ export async function runResearchIteration(
             },
           },
         );
+        checkResearchAbort();
         telemetry.sourcesFetched += fetchedSources.length;
         telemetry.losses.fetchRejected += Math.max(
           relevantSources.length - fetchedSources.length,
@@ -1538,6 +1549,7 @@ export async function runResearchIteration(
           state.understanding?.atomicClaims ?? [targetClaim],
         );
         state.llmCalls++;
+        checkResearchAbort();
         telemetry.rawEvidenceItems += rawEvidence.length;
         const extractedSourceUrls = new Set(
           rawEvidence
@@ -1622,6 +1634,10 @@ export async function runResearchIteration(
           state.contradictionSourcesFound += fetchedSources.length;
         }
       } catch (err) {
+        if (isJobAbortError(err)) {
+          throw err;
+        }
+
         console.warn(`[Stage2] Research iteration failed for query "${queryObj.query}":`, err);
 
         // Surface LLM provider errors as warnings (once per error type)
@@ -1661,6 +1677,7 @@ export async function runResearchIteration(
   );
   const refinementNeeded = claimNeedsPrimarySourceRefinement(targetClaim, state.evidenceItems);
   const hasMainQueryMetadata = queries.some(hasExplicitRetrievalMetadata);
+  checkResearchAbort();
   if (
     iterationType === "main"
     && priorMainIterationsForClaim === 0
@@ -1674,6 +1691,7 @@ export async function runResearchIteration(
         `attempting primary-source refinement anyway using refinement-plan metadata and fallback ordering.`,
       );
     }
+    checkResearchAbort();
     state.onEvent?.(`Generating direct-source refinement queries for ${targetClaim.id}...`, -1);
     const refinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
       targetClaim,
@@ -1690,6 +1708,7 @@ export async function runResearchIteration(
       },
     ));
     state.llmCalls++;
+    checkResearchAbort();
 
     if (!refinementPlan.some(hasExplicitRetrievalMetadata)) {
       console.warn(

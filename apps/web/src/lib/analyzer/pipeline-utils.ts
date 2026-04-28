@@ -14,13 +14,21 @@ import type {
 } from "./types";
 import { isJobAborted } from "@/lib/job-abort";
 
+export const JOB_ABORT_ERROR_NAME = "JobAbortError";
+
+export function isJobAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === JOB_ABORT_ERROR_NAME;
+}
+
 /**
  * Checks if a job has been aborted via the abort-job endpoint.
  * Throws an error if the job was cancelled.
  */
 export function checkAbortSignal(jobId: string | undefined): void {
   if (jobId && isJobAborted(jobId)) {
-    throw new Error(`Job ${jobId} was cancelled`);
+    const error = new Error(`Job ${jobId} was cancelled`);
+    error.name = JOB_ABORT_ERROR_NAME;
+    throw error;
   }
 }
 

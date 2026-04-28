@@ -83,7 +83,11 @@ import type {
   EvidenceItem,
   EvidenceScope,
 } from "@/lib/analyzer/types";
-import { createUnverifiedFallbackVerdict } from "@/lib/analyzer/pipeline-utils";
+import {
+  checkAbortSignal,
+  createUnverifiedFallbackVerdict,
+  JOB_ABORT_ERROR_NAME,
+} from "@/lib/analyzer/pipeline-utils";
 import { Pass2AtomicClaimSchema } from "@/lib/analyzer/claim-extraction-stage";
 
 // ============================================================================
@@ -1278,6 +1282,7 @@ const mockExtractOutput = vi.mocked(extractStructuredOutput);
 const mockLoadSection = vi.mocked(loadAndRenderSection);
 const mockSearch = vi.mocked(searchWebWithProvider);
 const mockFetchUrl = vi.mocked(extractTextFromUrl);
+const mockCheckAbortSignal = vi.mocked(checkAbortSignal);
 const mockLoadPromptConfig = vi.mocked(loadPromptConfig);
 const mockGetConfig = vi.mocked(getConfig);
 const mockCaptureConfigSnapshotAsync = vi.mocked(captureConfigSnapshotAsync);
@@ -4124,10 +4129,50 @@ describe("Stage 2: fetchSources", () => {
 describe("Stage 2: runResearchIteration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCheckAbortSignal.mockImplementation(() => {});
   });
 
   const mockSearchConfig = {} as any;
   const mockPipelineConfig = {} as any;
+
+  it("rethrows abort signals during a query so cancellation stops Stage 2 work", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
+    const state = {
+      jobId: "job-abort",
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 0,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValueOnce({
+      queries: [{ query: "test query", rationale: "test" }],
+    });
+    mockSearch.mockImplementationOnce(async () => {
+      mockCheckAbortSignal.mockImplementation(() => {
+        const error = new Error("Job job-abort was cancelled");
+        error.name = JOB_ABORT_ERROR_NAME;
+        throw error;
+      });
+      return {
+        results: [{ url: "https://example.com/1", title: "Source 1", snippet: "text" }],
+        providersUsed: ["google"],
+      } as any;
+    });
+
+    await expect(
+      runResearchIteration(claim, "main", mockSearchConfig, mockPipelineConfig, 8, "2026-02-17", state),
+    ).rejects.toMatchObject({ name: JOB_ABORT_ERROR_NAME });
+
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(mockFetchUrl).not.toHaveBeenCalled();
+  });
 
   it("should run full iteration pipeline: queries → search → relevance → fetch → extract → filter", async () => {
     const claim = createAtomicClaim({ id: "AC_01", statement: "Test claim" });
