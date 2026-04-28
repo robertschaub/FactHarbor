@@ -745,7 +745,19 @@ export async function researchEvidence(
       );
       break;
     }
-    const targetClaim = findLeastResearchedClaim(budgetEligibleClaims, state.evidenceItems, diversityConfig, sufficiencyThreshold);
+    const targetingPool = sufficiencyMinResearchedIterationsPerClaim > 0
+      ? budgetEligibleClaims.filter(
+          (claim) =>
+            (state.researchedIterationsByClaim?.[claim.id] ?? 0)
+            < sufficiencyMinResearchedIterationsPerClaim,
+        )
+      : [];
+    const targetClaim = findLeastResearchedClaim(
+      targetingPool.length > 0 ? targetingPool : budgetEligibleClaims,
+      state.evidenceItems,
+      diversityConfig,
+      sufficiencyThreshold,
+    );
     if (!targetClaim) break;
 
     // Emit progress update for this iteration (30% → 55%)
