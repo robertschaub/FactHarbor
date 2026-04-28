@@ -261,15 +261,34 @@ Do not use them to claim:
 - direct full-analysis should be rerun;
 - current prompt/analyzer behavior is equivalent to historical behavior.
 
-Known partial inventory:
+Implementation fixture:
+
+`scripts/validation/captain-approved-families.json` carries the current
+read-only historical direct references for all 8 Captain-approved validation
+families. These rows are passive comparator metadata only. They must not be
+used to submit direct reruns or to claim current ACS parity is proven.
+
+| Family | Historical direct reference | ACS job that exposed concern |
+|---|---|---|
+| `bundesrat_eu_rechtskraeftig` | `bb040bdd292746db94c3f4d02f5882c3` | pending fresh ACS canary |
+| `bundesrat_eu_bevor` | `a6b0e0fc14984926a678a462456bc110` (stale direct; best available) | pending fresh ACS canary |
+| `asyl_schweiz_235000` | `8707c63709a64b6489a9a31d1fd0f979` | pending fresh ACS canary |
+| `fluechtlinge_schweiz_235000` | `c5c8956d57944a92ac56398470c2270b` | pending fresh ACS canary |
+| `bolsonaro_en_legal_fair_trial` | `790573c784214a97b7fa75365960f13a` | `7ece4b51add7470685ceb56387c715da` |
+| `bolsonaro_pt_processo` | `93eb78a0e53b4e3f93e2279f88ad8880` | pending fresh ACS canary |
+| `hydrogen_cars_efficiency` | `99b663a5a13040f88e1d81ae56cde337` | pending fresh ACS canary |
+| `plastic_recycling_pointless` | `f174e02fa0c54070b0a25c6922b13836` | pending fresh ACS canary |
+
+Previously reviewed URL triage references remain useful context but are not in
+the current Captain-approved validation fixture:
 
 | Family | Historical direct reference | ACS job that exposed concern |
 |---|---|---|
 | SVP PDF | `9acde15a85c24512845d7255aa7e5d96` | `9f338d563781412f80e7a2edf43f1dd6` |
-| Bolsonaro EN | `790573c784214a97b7fa75365960f13a` | `7ece4b51add7470685ceb56387c715da` |
 | RT URL | No clean successful direct comparator in reviewed set | `18b07fa8efa345178f5eb59406ea2805` |
 
-Slice 4 must attempt to map all Captain-approved validation families to their best available historical direct reference, including noting families with no clean comparator.
+Slice 4 maps all Captain-approved validation families to their best available
+historical direct reference, including marking stale comparators explicitly.
 
 ## 9. Stage 2 Baseline and Budget-Aware ACS Follow-Up
 

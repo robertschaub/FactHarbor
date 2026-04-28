@@ -107,6 +107,7 @@ async function run() {
       if (!validation.ok || !summary) {
         const draftLabel = typeof draftId === "string" ? draftId.slice(0, 8) : "none";
         const jobLabel = typeof jobId === "string" ? jobId.slice(0, 8) : "none";
+        const historicalDirectReference = family.historicalDirectReference || null;
         process.stdout.write(`draft=${draftLabel} job=${jobLabel}... `);
         console.log(`FAILED (${validation.status})`);
         manifest.results.push({
@@ -114,6 +115,9 @@ async function run() {
           status: validation.status,
           draftId,
           jobId,
+          historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,
+          historicalDirectReferenceStatus:
+            historicalDirectReference?.referenceQuality || "missing",
           metadataUnavailable: validation.metadataUnavailable,
           metadataUnavailableReason: validation.metadataUnavailableReason,
           resultUnavailable: validation.resultUnavailable,
@@ -142,11 +146,20 @@ async function run() {
         metadataUnavailable: summary.metadataUnavailable,
         preparedClaimCount: summary.preparedClaimCount,
         selectedClaimCount: summary.selectedClaimCount,
+        historicalDirectReferenceJobId: summary.historicalDirectReferenceJobId,
+        historicalDirectReferenceStatus: summary.historicalDirectReferenceStatus,
       });
       passed++;
     } catch (err) {
       console.log(`ERROR: ${err.message}`);
-      manifest.results.push({ familyName: family.familyName, status: "ERROR", error: err.message });
+      manifest.results.push({
+        familyName: family.familyName,
+        status: "ERROR",
+        error: err.message,
+        historicalDirectReferenceJobId: family.historicalDirectReference?.jobId || null,
+        historicalDirectReferenceStatus:
+          family.historicalDirectReference?.referenceQuality || "missing",
+      });
       failed++;
     }
   }

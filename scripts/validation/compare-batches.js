@@ -39,7 +39,7 @@ function loadBatch(dir) {
   const summaries = {};
   for (const f of files) {
     const data = JSON.parse(fs.readFileSync(path.join(dir, f), "utf-8"));
-    const key = data.run?.familyName || path.basename(f, ".json");
+    const key = data.family?.familyName || data.run?.familyName || path.basename(f, ".json");
     summaries[key] = data;
   }
   return summaries;
@@ -51,11 +51,42 @@ function loadManifest(dir) {
   return null;
 }
 
+function readArticle(summary) {
+  return {
+    verdict: summary.article?.verdict ?? summary.verdict ?? null,
+    truthPercentage: summary.article?.truthPercentage ?? summary.truthPercentage ?? null,
+    confidence: summary.article?.confidence ?? summary.confidence ?? null,
+  };
+}
+
+function readWarningCount(summary, severity) {
+  return summary.warnings?.bySeverity?.[severity] || 0;
+}
+
+function readClaimCount(summary) {
+  if (Array.isArray(summary.claims)) return summary.claims.length;
+  if (typeof summary.claimVerdictCount === "number") return summary.claimVerdictCount;
+  if (Array.isArray(summary.claimSummaries)) return summary.claimSummaries.length;
+  return 0;
+}
+
+function readHistoricalReference(summary) {
+  return summary.historicalDirectReference || null;
+}
+
+function shortReferenceLabel(reference) {
+  if (!reference?.jobId) return "missing";
+  const quality = reference.referenceQuality || "unknown";
+  return `${reference.jobId.slice(0, 8)} (${quality})`;
+}
+
 function classifyChange(oldS, newS) {
-  const tpDelta = newS.article.truthPercentage - oldS.article.truthPercentage;
-  const confDelta = newS.article.confidence - oldS.article.confidence;
-  const oldRank = VERDICT_RANK[oldS.article.verdict] ?? 4;
-  const newRank = VERDICT_RANK[newS.article.verdict] ?? 4;
+  const oldArticle = readArticle(oldS);
+  const newArticle = readArticle(newS);
+  const tpDelta = (newArticle.truthPercentage ?? 0) - (oldArticle.truthPercentage ?? 0);
+  const confDelta = (newArticle.confidence ?? 0) - (oldArticle.confidence ?? 0);
+  const oldRank = VERDICT_RANK[oldArticle.verdict] ?? 4;
+  const newRank = VERDICT_RANK[newArticle.verdict] ?? 4;
 
   const flags = [];
 
@@ -63,7 +94,7 @@ function classifyChange(oldS, newS) {
   if (confDelta < -10) flags.push("conf_drop");
 
   // Verdict worsened toward UNVERIFIED
-  if (newS.article.verdict === "UNVERIFIED" && oldS.article.verdict !== "UNVERIFIED") {
+  if (newArticle.verdict === "UNVERIFIED" && oldArticle.verdict !== "UNVERIFIED") {
     flags.push("became_unverified");
   }
 
@@ -77,13 +108,13 @@ function classifyChange(oldS, newS) {
   }
 
   // New error-severity warnings
-  const oldErrors = oldS.warnings?.bySeverity?.error || 0;
-  const newErrors = newS.warnings?.bySeverity?.error || 0;
+  const oldErrors = readWarningCount(oldS, "error");
+  const newErrors = readWarningCount(newS, "error");
   if (newErrors > oldErrors) flags.push("new_errors");
 
   // Claim count change (decomposition instability)
-  const oldClaims = oldS.claims?.length || 0;
-  const newClaims = newS.claims?.length || 0;
+  const oldClaims = readClaimCount(oldS);
+  const newClaims = readClaimCount(newS);
   if (oldClaims !== newClaims) flags.push("claim_count_change");
 
   if (flags.some((f) => ["conf_drop", "became_unverified", "direction_flip", "new_errors"].includes(f))) {
@@ -125,10 +156,18 @@ for (const family of [...allFamilies].sort()) {
 // Header
 const oldLabel = oldManifest?.batchLabel || path.basename(oldDir);
 const newLabel = newManifest?.batchLabel || path.basename(newDir);
-const oldGit = matched.length > 0 ? (oldBatch[matched[0]]?.run?.gitCommit || "?").slice(0, 7) : "?";
-const newGit = matched.length > 0 ? (newBatch[matched[0]]?.run?.gitCommit || "?").slice(0, 7) : "?";
-const oldPrompt = matched.length > 0 ? (oldBatch[matched[0]]?.run?.promptHash || "?").slice(0, 8) : "?";
-const newPrompt = matched.length > 0 ? (newBatch[matched[0]]?.run?.promptHash || "?").slice(0, 8) : "?";
+const oldGit = matched.length > 0
+  ? (oldBatch[matched[0]]?.run?.gitCommit || oldBatch[matched[0]]?.gitCommitHash || "?").slice(0, 7)
+  : "?";
+const newGit = matched.length > 0
+  ? (newBatch[matched[0]]?.run?.gitCommit || newBatch[matched[0]]?.gitCommitHash || "?").slice(0, 7)
+  : "?";
+const oldPrompt = matched.length > 0
+  ? (oldBatch[matched[0]]?.run?.promptHash || oldBatch[matched[0]]?.promptHash || "?").slice(0, 8)
+  : "?";
+const newPrompt = matched.length > 0
+  ? (newBatch[matched[0]]?.run?.promptHash || newBatch[matched[0]]?.promptHash || "?").slice(0, 8)
+  : "?";
 const promptChanged = oldPrompt !== newPrompt;
 
 console.log(`## Validation Batch Comparison`);
@@ -137,8 +176,8 @@ console.log(`**Git:** ${oldGit} → ${newGit}  |  **Prompt:** ${oldPrompt} → $
 console.log();
 
 // Table
-console.log(`| Family | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | Status |`);
-console.log(`|--------|------------|------------|------|--------|--------|----------|--------|`);
+console.log(`| Family | Historical Direct Ref | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | Status |`);
+console.log(`|--------|-----------------------|------------|------------|------|--------|--------|----------|--------|`);
 
 let regressions = 0;
 let improvements = 0;
@@ -150,6 +189,9 @@ for (const family of matched) {
   const oldS = oldBatch[family];
   const newS = newBatch[family];
   const change = classifyChange(oldS, newS);
+  const oldArticle = readArticle(oldS);
+  const newArticle = readArticle(newS);
+  const historicalReference = readHistoricalReference(newS) || readHistoricalReference(oldS);
 
   totalTpDelta += change.tpDelta;
   totalConfDelta += change.confDelta;
@@ -158,10 +200,10 @@ for (const family of matched) {
   else if (change.status === "IMPROVED") improvements++;
   else stable++;
 
-  const oldV = `${oldS.article.verdict} (${oldS.article.truthPercentage})`;
-  const newV = `${newS.article.verdict} (${newS.article.truthPercentage})`;
-  const oldClaims = oldS.claims?.length || 0;
-  const newClaims = newS.claims?.length || 0;
+  const oldV = `${oldArticle.verdict ?? "?"} (${oldArticle.truthPercentage ?? "?"})`;
+  const newV = `${newArticle.verdict ?? "?"} (${newArticle.truthPercentage ?? "?"})`;
+  const oldClaims = readClaimCount(oldS);
+  const newClaims = readClaimCount(newS);
   const claimsStr = oldClaims === newClaims ? `${newClaims}` : `${oldClaims}→${newClaims}`;
   const oldWarn = oldS.warnings?.total || 0;
   const newWarn = newS.warnings?.total || 0;
@@ -170,7 +212,7 @@ for (const family of matched) {
   const statusStr = `${change.status}${flags}`;
 
   console.log(
-    `| ${family} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${statusStr} |`
+    `| ${family} | ${shortReferenceLabel(historicalReference)} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${statusStr} |`
   );
 }
 

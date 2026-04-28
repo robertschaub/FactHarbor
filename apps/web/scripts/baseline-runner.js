@@ -21,6 +21,7 @@ function loadValidationCases() {
     inputType: testCase.inputType,
     input: testCase.input || testCase.inputValue,
     expectedVerdict: testCase.expectedVerdict || null,
+    historicalDirectReference: testCase.historicalDirectReference || null,
   }));
 }
 
@@ -67,6 +68,7 @@ async function runBaseline() {
           familyName: testCase.id,
           inputType: testCase.inputType,
           inputValue: testCase.input,
+          historicalDirectReference: testCase.historicalDirectReference,
         },
       });
       const { draftId, jobId, summary } = validation;
@@ -96,6 +98,9 @@ async function runBaseline() {
           metadataUnavailable: summary.metadataUnavailable,
           preparedClaimCount: summary.preparedClaimCount,
           selectedClaimCount: summary.selectedClaimCount,
+          historicalDirectReference: summary.historicalDirectReference,
+          historicalDirectReferenceJobId: summary.historicalDirectReferenceJobId,
+          historicalDirectReferenceStatus: summary.historicalDirectReferenceStatus,
         },
         success: true,
       });

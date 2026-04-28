@@ -2,41 +2,153 @@
   {
     "familyName": "bundesrat_eu_rechtskraeftig",
     "inputType": "text",
-    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben"
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "historicalDirectReference": {
+      "jobId": "bb040bdd292746db94c3f4d02f5882c3",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "LEANING-TRUE",
+      "truthPercentage": 60,
+      "confidence": 82,
+      "createdUtc": "2026-04-28 11:52:33.4174043",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "bundesrat_eu_bevor",
     "inputType": "text",
-    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben"
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
+    "historicalDirectReference": {
+      "jobId": "a6b0e0fc14984926a678a462456bc110",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "stale-direct",
+      "status": "SUCCEEDED",
+      "verdict": "TRUE",
+      "truthPercentage": 97,
+      "confidence": 89,
+      "createdUtc": "2026-04-21 14:57:32.3703588",
+      "gitCommitHash": "eaacd9ce411c84a4271378502b315b5c93874e99+39837e3a",
+      "executedWebGitCommitHash": "eaacd9ce411c84a4271378502b315b5c93874e99+39837e3a",
+      "promptContentHash": null,
+      "notes": "Best available direct comparator in local Jobs exact-input inventory; older than the 2026-04-28 same-day set."
+    }
   },
   {
     "familyName": "asyl_schweiz_235000",
     "inputType": "text",
-    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz"
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
+    "historicalDirectReference": {
+      "jobId": "8707c63709a64b6489a9a31d1fd0f979",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "MOSTLY-TRUE",
+      "truthPercentage": 85,
+      "confidence": 78,
+      "createdUtc": "2026-04-28 11:52:02.903516",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "fluechtlinge_schweiz_235000",
     "inputType": "text",
-    "inputValue": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges."
+    "inputValue": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.",
+    "historicalDirectReference": {
+      "jobId": "c5c8956d57944a92ac56398470c2270b",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "MOSTLY-FALSE",
+      "truthPercentage": 28,
+      "confidence": 65,
+      "createdUtc": "2026-04-28 11:52:18.1305765",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "bolsonaro_en_legal_fair_trial",
     "inputType": "text",
-    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?"
+    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
+    "historicalDirectReference": {
+      "jobId": "790573c784214a97b7fa75365960f13a",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "MOSTLY-FALSE",
+      "truthPercentage": 27,
+      "confidence": 40,
+      "createdUtc": "2026-04-28 11:52:48.6966155",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "bolsonaro_pt_processo",
     "inputType": "text",
-    "inputValue": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"
+    "inputValue": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
+    "historicalDirectReference": {
+      "jobId": "93eb78a0e53b4e3f93e2279f88ad8880",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "LEANING-TRUE",
+      "truthPercentage": 65,
+      "confidence": 60,
+      "createdUtc": "2026-04-28 12:43:49.4703479",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "hydrogen_cars_efficiency",
     "inputType": "text",
-    "inputValue": "Using hydrogen for cars is more efficient than using electricity"
+    "inputValue": "Using hydrogen for cars is more efficient than using electricity",
+    "historicalDirectReference": {
+      "jobId": "99b663a5a13040f88e1d81ae56cde337",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "FALSE",
+      "truthPercentage": 10,
+      "confidence": 68,
+      "createdUtc": "2026-04-28 11:51:31.3673914",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   },
   {
     "familyName": "plastic_recycling_pointless",
     "inputType": "text",
-    "inputValue": "Plastic recycling is pointless"
+    "inputValue": "Plastic recycling is pointless",
+    "historicalDirectReference": {
+      "jobId": "f174e02fa0c54070b0a25c6922b13836",
+      "submissionPath": "direct-api-historical",
+      "referenceQuality": "same-day-direct",
+      "status": "SUCCEEDED",
+      "verdict": "LEANING-FALSE",
+      "truthPercentage": 38,
+      "confidence": 72,
+      "createdUtc": "2026-04-28 11:51:47.6585683",
+      "gitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "executedWebGitCommitHash": "945de23604450311199f983a0416f6e54c4cfa53+f547d562",
+      "promptContentHash": null,
+      "notes": "Read-only direct comparator from local Jobs exact-input inventory; do not rerun direct path."
+    }
   }
 ]

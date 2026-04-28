@@ -2586,3 +2586,10 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **Warnings:** This is a test-gate cleanup only. It does not fix the ACS selected-claim research-distribution issue exposed by live canary `260c2539326b4d4eac47a6724665cf6d`, and it does not complete historical direct-reference mapping.
 **Learnings:** Runner queue tests need explicit control over background watchdog/drain scheduling; otherwise full-suite order can leak delayed work into unrelated tests while focused suites remain green.
 -> Docs/AGENTS/Handoffs/2026-04-28_Unassigned_Daily_Bug_Scan_Runner_Bootstrap_Leak_Fix.md
+
+---
+### 2026-04-28 | Senior Developer | Codex (GPT-5) | ACS Validation Slice 4 Historical Mapping -- [Standard] [open-items: yes]
+**For next agent:** Slice 4 is implemented as passive metadata. `scripts/validation/captain-approved-families.json` now maps all 8 current Captain-approved families to read-only historical direct references; 7 are `same-day-direct`, and `bundesrat_eu_bevor` is `stale-direct` because it is the best exact-input comparator in the local Jobs inventory. The shared ACS summary, validation batch manifest, matrix rows, baseline output, and compare script now surface those references without submitting direct jobs.
+**Warnings:** No live canary was submitted. This does not solve selected-claim research distribution; it only makes the next ACS-only canary cheaper to interpret. The first full `npm test` attempt failed while running in parallel with `next build`; the affected runner suites and then the full safe suite passed when run sequentially.
+**Learnings:** Historical direct references belong in the Captain-approved fixture and schema-v2 summary stream, not in a second execution path.
+-> Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Slice4_Historical_Mapping.md

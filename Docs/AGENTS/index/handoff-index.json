@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T19:54:59.521Z",
-  "count": 415,
+  "generatedAt": "2026-04-28T20:07:00.077Z",
+  "count": 416,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8756,6 +8756,32 @@
       ],
       "files_touched": [],
       "summary": "2026-04-28 - Senior Developer - ACS Validation Slice 1 Implementation"
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Slice4_Historical_Mapping.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "slice4",
+        "historical_mapping"
+      ],
+      "files_touched": [
+        "apps/web/scripts/automatic-claim-selection.js",
+        "apps/web/scripts/baseline-runner.js",
+        "scripts/run-validation-matrix.js",
+        "scripts/validation/captain-approved-families.json",
+        "scripts/validation/compare-batches.js",
+        "scripts/validation/extract-validation-summary.js",
+        "apps/web/test/unit/scripts/validation-historical-references.test.ts",
+        "Docs/WIP/2026-04-28_ACS_Validation_Path_Deployment_Solution.md",
+        "Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Slice4_Historical_Mapping.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start Slice 5 only after commit/runtime refresh. Use the shared ACS validation client, capture UCM, and treat zero-iteration selected claims as reported pipeline-quality findings, not tooling blockers."
     },
     {
       "file": "2026-04-28_Senior_Developer_ACS_Validation_Slices2_3_Implementation.md",

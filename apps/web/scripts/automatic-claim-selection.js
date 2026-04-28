@@ -165,6 +165,41 @@ function buildClaimSummaries(result, preparedStage1) {
   });
 }
 
+function normalizeHistoricalDirectReference(reference) {
+  if (!reference || typeof reference !== "object") return null;
+
+  const jobId = typeof reference.jobId === "string" && reference.jobId.length > 0
+    ? reference.jobId
+    : null;
+  if (!jobId) return null;
+
+  return {
+    jobId,
+    submissionPath:
+      typeof reference.submissionPath === "string" && reference.submissionPath.length > 0
+        ? reference.submissionPath
+        : "direct-api-historical",
+    referenceQuality:
+      typeof reference.referenceQuality === "string" && reference.referenceQuality.length > 0
+        ? reference.referenceQuality
+        : "unknown",
+    status: typeof reference.status === "string" ? reference.status : null,
+    verdict: typeof reference.verdict === "string" ? reference.verdict : null,
+    truthPercentage:
+      typeof reference.truthPercentage === "number" ? reference.truthPercentage : null,
+    confidence: typeof reference.confidence === "number" ? reference.confidence : null,
+    createdUtc: typeof reference.createdUtc === "string" ? reference.createdUtc : null,
+    gitCommitHash: typeof reference.gitCommitHash === "string" ? reference.gitCommitHash : null,
+    executedWebGitCommitHash:
+      typeof reference.executedWebGitCommitHash === "string"
+        ? reference.executedWebGitCommitHash
+        : null,
+    promptContentHash:
+      typeof reference.promptContentHash === "string" ? reference.promptContentHash : null,
+    notes: typeof reference.notes === "string" ? reference.notes : null,
+  };
+}
+
 function extractValidationSummary({
   family,
   job,
@@ -192,6 +227,9 @@ function extractValidationSummary({
   const evidenceItems = Array.isArray(result?.evidenceItems) ? result.evidenceItems : [];
   const sources = Array.isArray(result?.sources) ? result.sources : [];
   const acsResearchWaste = result?.analysisObservability?.acsResearchWaste;
+  const historicalDirectReference = normalizeHistoricalDirectReference(
+    family?.historicalDirectReference,
+  );
   const computedMetadataUnavailable = metadataUnavailable || metadataIssues.length > 0;
   const computedMetadataUnavailableReason = [
     metadataUnavailableReason,
@@ -241,6 +279,11 @@ function extractValidationSummary({
     warnings: summarizeWarnings(result?.analysisWarnings),
     selectedClaimResearch: acsResearchWaste?.selectedClaimResearch || null,
     contradictionReachability: acsResearchWaste?.contradictionReachability || null,
+    historicalDirectReference,
+    historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,
+    historicalDirectReferenceStatus: historicalDirectReference
+      ? historicalDirectReference.referenceQuality
+      : "missing",
     claimSummaries: buildClaimSummaries(result, preparedStage1),
     family: family
       ? {
@@ -578,6 +621,7 @@ module.exports = {
   extractValidationSummary,
   fetchJobDetail,
   hasAdminSelectionMetadata,
+  normalizeHistoricalDirectReference,
   submitAutomaticDraftAndWaitForJob,
   submitAutomaticValidationJob,
   waitForAutomaticDraftJob,
