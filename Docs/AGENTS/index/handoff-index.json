@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-27T21:06:57.306Z",
-  "count": 406,
+  "generatedAt": "2026-04-28T05:51:00.538Z",
+  "count": 408,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8605,6 +8622,43 @@
         "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
       ],
       "summary": "Baseline for the post-`2026-04-26T06:01:37.495Z` window is still \"no confirmed regression.\" If a concrete failure appears, start with the Stage 2 chain (`0daf0e42`, `6293c705`, `6b1507e7`) and the JobService terminal-state guard in `dcc48eb3`, because those were the highest-risk logic changes review"
+    },
+    {
+      "file": "2026-04-28_Lead_Architect_ACS_Draft_Config_Provenance_Fix.md",
+      "date": "2026-04-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "acs",
+        "draft",
+        "config",
+        "provenance",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts"
+      ],
+      "summary": "If another draft-backed job reports `pipelineConfigHash changed`, inspect the prepared draft provenance and the active UCM hash first. For final-job execution, only persisted ACS orchestration knob changes should be tolerated; prompt content, search config, calc config, and real pipeline-analysis se",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism.",
+            "chosen_option": "amend the existing prepared Stage 1 provenance and admin config activation mechanisms.",
+            "rejected_path_and_why": "rejected disabling provenance validation, auto-continuing stale snapshots, and adding a full frozen-config execution path because they either hide real analysis drift or introduce a larger parallel mechanism than the verified failure requires.",
+            "what_was_removed_simplified": "no production path removed; the effective provenance comparison is narrowed to the Stage 1-relevant pipeline config subset.",
+            "what_was_added": "a scoped pipeline-config hash helper, focused prepared-snapshot regression coverage, admin activation/rollback cache invalidation, and cache-invalidation route tests.",
+            "net_mechanism_count": "unchanged for analysis flow; one small structural helper added inside the existing provenance mechanism.",
+            "budget_reconciliation": "actual diff stayed within prepared Stage 1 provenance plus UCM cache invalidation; no prompt changes, schema changes, live reruns, retries, fallback modes, or claim-selection behavior changes were added.",
+            "verification": "focused prepared Stage 1 tests; ACS flow/draft route tests; runner split tests; admin config API tests; config schema/drift tests; `npm -w apps/web run build`; `git diff --check`.",
+            "debt_accepted_and_removal_trigger": "UX recovery for truly stale drafts remains follow-up work; implement only if stale-draft user friction recurs or admin config changes during in-flight preparation become common.",
+            "residual_debt": "generic failed-job retry still does not preserve claim-selection context, so failed draft-backed jobs should be reprepared rather than retried blindly."
+          }
+        }
+      }
     }
   ]
 }

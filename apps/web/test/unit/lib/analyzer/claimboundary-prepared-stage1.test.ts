@@ -250,6 +250,29 @@ function hashEffectiveConfig(value: unknown): string {
   return sha256Text(stableJsonStringify(value));
 }
 
+const PREPARED_STAGE1_PIPELINE_CONFIG_HASH_IGNORED_KEYS = new Set([
+  "claimSelectionDefaultMode",
+  "claimSelectionIdleAutoProceedMs",
+  "claimSelectionCap",
+  "claimSelectionBudgetAwarenessEnabled",
+  "claimSelectionBudgetFitMode",
+  "claimSelectionMinRecommendedClaims",
+]);
+
+function omitPreparedStage1PipelineOrchestrationConfig(value: unknown): unknown {
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([key]) => !PREPARED_STAGE1_PIPELINE_CONFIG_HASH_IGNORED_KEYS.has(key)),
+    );
+  }
+  return value;
+}
+
+function hashPreparedStage1PipelineConfig(value: unknown): string {
+  return hashEffectiveConfig(omitPreparedStage1PipelineOrchestrationConfig(value));
+}
+
 function withPreparationProvenance<T extends { resolvedInputText: string }>(
   preparedStage1: T,
   overrides: Record<string, unknown> = {},
@@ -262,7 +285,7 @@ function withPreparationProvenance<T extends { resolvedInputText: string }>(
       resolvedInputSha256: sha256Text(preparedStage1.resolvedInputText),
       executedWebGitCommitHash: "test-web-commit",
       promptContentHash: "test-prompt",
-      pipelineConfigHash: hashEffectiveConfig({}),
+      pipelineConfigHash: hashPreparedStage1PipelineConfig({}),
       searchConfigHash: hashEffectiveConfig({ provider: "mock-search" }),
       calcConfigHash: hashEffectiveConfig({}),
       selectionCap: 5,
@@ -597,6 +620,33 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     expect(mockExtractClaims).not.toHaveBeenCalled();
   }, 10_000);
 
+  it("does not reject prepared snapshots when only claim-selection orchestration config changed", async () => {
+    vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
+      config: {
+        claimSelectionDefaultMode: "automatic",
+        claimSelectionIdleAutoProceedMs: 0,
+        claimSelectionCap: 5,
+        claimSelectionBudgetAwarenessEnabled: true,
+        claimSelectionBudgetFitMode: "allow_fewer_recommendations",
+        claimSelectionMinRecommendedClaims: 1,
+      },
+      contentHash: "test-pipeline",
+      overrides: [],
+      fromCache: false,
+      fromDefault: false,
+    } as any);
+
+    await runClaimBoundaryAnalysis({
+      inputType: "text",
+      inputValue: "resolved text",
+      preparedStage1: buildMinimalPreparedStage1() as any,
+      selectedClaimIds: ["AC_A"],
+    });
+
+    expect(mockResearchEvidence).toHaveBeenCalledTimes(1);
+    expect(mockExtractClaims).not.toHaveBeenCalled();
+  }, 10_000);
+
   it("allows legacy prepared snapshots only when provenance validation is disabled", async () => {
     vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
       config: { provenanceValidationEnabled: false },
@@ -652,7 +702,7 @@ describe("prepareStage1Snapshot provenance", () => {
       sourceInputType: "url",
       executedWebGitCommitHash: "test-web-commit",
       promptContentHash: "test-prompt",
-      pipelineConfigHash: hashEffectiveConfig({}),
+      pipelineConfigHash: hashPreparedStage1PipelineConfig({}),
       searchConfigHash: hashEffectiveConfig({ provider: "mock-search" }),
       calcConfigHash: hashEffectiveConfig({}),
       selectionCap: 5,

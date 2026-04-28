@@ -72,6 +72,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Rev 2 of the Phase 2 Gate G2 replay plan carried Phase 3/4 judgments ("keep Option G", "refactor `isVerdictDirectionPlausible`", "queue for Phase 4") inside the G2 package body. Both the LLM Expert and Captain Deputy reviewers independently flagged this as scope drift — decisions being made outside the gate they belong to. The fix was a dedicated "Strong priors (NOT decisions)" section at the end of the plan that (a) explicitly labels each hypothesis as a prior, (b) gives each prior a "replay may show" falsification condition, (c) states "none of these priors are being acted on until Phase 3 data is in". This preserves the value of the investigator's intuition without letting it bleed into premature decisions. Reuse this pattern whenever a plan document drifts into pre-solving later work. Also surfaced by the same review: per-input acceptance criteria (e.g. "R2 must have `rechtskräftig` in primary claim + verdict in 11–31 range") are more useful than generic Stage-1 signals (e.g. "Q-S1.3 modifier preservation") when the replay set is narrow, because they give concrete measurable pass/fail per input without forcing the Phase 3 analyst to re-derive the mapping.
 **Files:** `Docs/WIP/2026-04-11_Phase2_Gate_G2_Replay_Plan.md`, `Docs/WIP/2026-04-11_Phase2_Per_Input_Expectations.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_LLM_Expert_Review.md`, `Docs/WIP/2026-04-11_Phase2_Gate_G2_Captain_Deputy_Review.md`
 
+### 2026-04-28 — ACS draft provenance must separate analysis config from selection orchestration
+**Role:** Lead Architect  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** Prepared Stage 1 snapshots should stay fail-closed for real analysis config drift, but broad hashing of the full pipeline config can invalidate in-flight ACS drafts when only already-persisted selection orchestration knobs change. Hash the Stage 1-relevant config subset, keep explicit checks for selection cap and prompt/search/calc hashes, and invalidate analyzer loader cache on UCM activation/rollback.
+**Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/app/api/admin/config/[type]/[profile]/activate/route.ts`, `apps/web/src/app/api/admin/config/[type]/[profile]/rollback/route.ts`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas

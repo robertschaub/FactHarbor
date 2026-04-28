@@ -18,14 +18,23 @@ const mockGetActiveConfig = vi.fn();
 const mockSaveConfigBlob = vi.fn();
 const mockValidateConfigContent = vi.fn();
 const mockActivateConfig = vi.fn();
+const mockRollbackConfig = vi.fn();
+const mockGetActiveConfigHash = vi.fn();
 const mockGetConfigHistory = vi.fn();
+const mockInvalidateLoaderConfigCache = vi.fn();
 
 vi.mock("@/lib/config-storage", () => ({
   getActiveConfig: (...args: unknown[]) => mockGetActiveConfig(...args),
   saveConfigBlob: (...args: unknown[]) => mockSaveConfigBlob(...args),
   validateConfigContent: (...args: unknown[]) => mockValidateConfigContent(...args),
   activateConfig: (...args: unknown[]) => mockActivateConfig(...args),
+  rollbackConfig: (...args: unknown[]) => mockRollbackConfig(...args),
+  getActiveConfigHash: (...args: unknown[]) => mockGetActiveConfigHash(...args),
   getConfigHistory: (...args: unknown[]) => mockGetConfigHistory(...args),
+}));
+
+vi.mock("@/lib/config-loader", () => ({
+  invalidateConfigCache: (...args: unknown[]) => mockInvalidateLoaderConfigCache(...args),
 }));
 
 // Store original env
@@ -523,6 +532,74 @@ describe("Admin Config API - Error Handling", () => {
     expect(response.status).toBe(500);
     const data = await response.json();
     expect(data.error).toContain("Validation error");
+  });
+});
+
+// ============================================================================
+// ACTIVATION CACHE TESTS
+// ============================================================================
+
+describe("Admin Config API - Activation cache invalidation", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    process.env = { ...originalEnv };
+    delete process.env.FH_ADMIN_KEY;
+    process.env.NODE_ENV = "development";
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+
+  it("invalidates analyzer config-loader cache after activation", async () => {
+    vi.resetModules();
+    const { POST } = await import(
+      "@/app/api/admin/config/[type]/[profile]/activate/route"
+    );
+
+    mockActivateConfig.mockResolvedValue({
+      configType: "pipeline",
+      profileKey: "default",
+      activeHash: "new-hash",
+      activatedUtc: "2026-04-28T00:00:00.000Z",
+      activatedBy: "admin",
+      activationReason: "test",
+    });
+
+    const req = createMockRequest({
+      method: "POST",
+      body: { contentHash: "new-hash", reason: "test" },
+    });
+    const response = await POST(req, createRouteParams("pipeline", "default"));
+
+    expect(response.status).toBe(200);
+    expect(mockInvalidateLoaderConfigCache).toHaveBeenCalledWith("pipeline", "default");
+  });
+
+  it("invalidates analyzer config-loader cache after rollback", async () => {
+    vi.resetModules();
+    const { POST } = await import(
+      "@/app/api/admin/config/[type]/[profile]/rollback/route"
+    );
+
+    mockGetActiveConfigHash.mockResolvedValue("previous-hash");
+    mockRollbackConfig.mockResolvedValue({
+      configType: "pipeline",
+      profileKey: "default",
+      activeHash: "rollback-hash",
+      activatedUtc: "2026-04-28T00:00:00.000Z",
+      activatedBy: "admin",
+      activationReason: "rollback",
+    });
+
+    const req = createMockRequest({
+      method: "POST",
+      body: { contentHash: "rollback-hash" },
+    });
+    const response = await POST(req, createRouteParams("pipeline", "default"));
+
+    expect(response.status).toBe(200);
+    expect(mockInvalidateLoaderConfigCache).toHaveBeenCalledWith("pipeline", "default");
   });
 });
 

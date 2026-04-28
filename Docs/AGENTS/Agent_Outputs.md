@@ -2431,3 +2431,8 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** After a MODIFY debate and exact prompt-diff review, implemented budget-aware ACS prompt behavior only inside the existing recommendation path. Defaults remain off; `explain_only` is shadow-only and cannot defer or reduce recommendations; `allow_fewer_recommendations` is the only explicit mode that can recommend fewer than cap and requires `budgetFitRationale` plus validated deferred metadata.
 **Warnings:** No live validation was run. Do not broaden defaults from the SVP case; commit/restart before any live jobs. Full `npm test` was not rerun due the known full-suite runner heartbeat timeout, but the runner file passed in isolation and all focused verifiers/build passed.
 -> Docs/AGENTS/Handoffs/2026-04-27_Lead_Architect_Budget_Aware_ACS_Phase5B_Gated_Prompt.md
+
+---
+### 2026-04-28 | Lead Architect | Codex (GPT-5) | ACS Draft Config Provenance Fix -- [Standard] [open-items: yes]
+**For next agent:** Draft-backed final job `21a53a95b6a246f0af4f385062d7be04` failed because active UCM `pipelineConfigHash` changed between prepared Stage 1 and final execution, not because restart alone invalidated it. `claimboundary-pipeline.ts` now hashes only the Stage 1-relevant pipeline config subset for prepared snapshots while keeping explicit `selectionCap`, prompt, search, and calc guards fail-closed; admin activation/rollback routes now invalidate analyzer `config-loader` cache.
+-> Docs/AGENTS/Handoffs/2026-04-28_Lead_Architect_ACS_Draft_Config_Provenance_Fix.md

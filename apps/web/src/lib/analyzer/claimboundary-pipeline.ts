@@ -657,6 +657,32 @@ function hashEffectiveConfig(value: unknown): string {
   return sha256Utf8(stableJsonStringify(value));
 }
 
+const PREPARED_STAGE1_PIPELINE_CONFIG_HASH_IGNORED_KEYS = new Set([
+  // Draft/selection orchestration is persisted in draft metadata before the
+  // final job starts. Selection cap remains a separate explicit provenance
+  // check because it bounds the prepared candidate set.
+  "claimSelectionDefaultMode",
+  "claimSelectionIdleAutoProceedMs",
+  "claimSelectionCap",
+  "claimSelectionBudgetAwarenessEnabled",
+  "claimSelectionBudgetFitMode",
+  "claimSelectionMinRecommendedClaims",
+]);
+
+function omitPreparedStage1PipelineOrchestrationConfig(value: unknown): unknown {
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([key]) => !PREPARED_STAGE1_PIPELINE_CONFIG_HASH_IGNORED_KEYS.has(key)),
+    );
+  }
+  return value;
+}
+
+function hashPreparedStage1PipelineConfig(value: PipelineConfig): string {
+  return hashEffectiveConfig(omitPreparedStage1PipelineOrchestrationConfig(value));
+}
+
 function assertPreparedStage1ProvenanceMatches(params: {
   input: AnalysisInput;
   preparedStage1: PreparedStage1Snapshot;
@@ -943,7 +969,7 @@ export async function prepareStage1Snapshot(
         resolvedInputSha256: sha256Utf8(analysisText),
         executedWebGitCommitHash: getWebGitCommitHash() ?? null,
         promptContentHash: promptResult?.contentHash ?? null,
-        pipelineConfigHash: hashEffectiveConfig(effectivePipelineConfig),
+        pipelineConfigHash: hashPreparedStage1PipelineConfig(effectivePipelineConfig),
         searchConfigHash: hashEffectiveConfig(searchConfigResult.config),
         calcConfigHash: hashEffectiveConfig(calcConfigResult.config),
         selectionCap: normalizeClaimSelectionCap(effectivePipelineConfig.claimSelectionCap),
@@ -1064,7 +1090,7 @@ export async function runClaimBoundaryAnalysis(
         pipelineConfig: initialPipelineConfig,
         current: {
           promptContentHash,
-          pipelineConfigHash: hashEffectiveConfig(initialPipelineConfig),
+          pipelineConfigHash: hashPreparedStage1PipelineConfig(initialPipelineConfig),
           searchConfigHash: hashEffectiveConfig(initialSearchConfig),
           calcConfigHash: hashEffectiveConfig(initialCalcConfig),
           selectionCap: normalizeClaimSelectionCap(initialPipelineConfig.claimSelectionCap),

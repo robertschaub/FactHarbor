@@ -12,6 +12,7 @@ import {
 } from "@/lib/config-storage";
 import { isValidConfigType } from "@/lib/config-schemas";
 import { checkAdminKey } from "@/lib/auth";
+import { invalidateConfigCache as invalidateLoaderConfigCache } from "@/lib/config-loader";
 
 export const runtime = "nodejs";
 
@@ -62,6 +63,7 @@ export async function POST(req: Request, context: RouteParams) {
       body.contentHash,
       req.headers.get("x-admin-user") || "admin",
     );
+    invalidateLoaderConfigCache(type, profile);
 
     return NextResponse.json({
       success: true,
