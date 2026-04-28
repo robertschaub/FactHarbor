@@ -2633,3 +2633,9 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** Phase 1a is implemented in commit `46807bdf`. `AtomicClaim.checkWorthiness` now accepts high/medium/low, UI/report labels say `Stage 1 extraction hint`, and xWiki diagram enum text is synced to high/medium/low. Verification passed with required greps, `npm -w apps/web run build`, and `git diff --check`.
 **Warnings:** No prompts, UCM config, ACS selector/recommendation behavior, Gate 1 logic, C# DTOs, service restart, or live jobs were changed. `applyGate1Lite` remains uncalled and intentionally untouched. Live-job budget used: 0 of 8.
 -> Docs/AGENTS/Handoffs/2026-04-29_Senior_Developer_Check_Worthiness_Phase1a_Implementation.md
+
+---
+### 2026-04-29 | Senior Developer | Codex (GPT-5) | Remaining Unification Implementation -- [Significant] [open-items: yes]
+**For next agent:** Contract-first unification is implemented through selected-claim coverage telemetry, ACS budget validation observability, `SubmissionPath`, `analysisRunProvenance`, prompt-surface registry, xWiki updates, and implementation status docs. Key commits: `59e1c806`, `ba234200`, `78013460`, `423a49fd`, `5e5272ab`, `fc8052e3`.
+**Warnings:** This did not fix Stage 2 selected-claim research distribution; it makes zero targeted selected-claim research visible via `selectedClaimResearchCoverage` and validation zero-targeted fields. Prompt wording/defaults/selector behavior were intentionally unchanged. Live-job budget used: 0 of 8.
+-> Docs/AGENTS/Handoffs/2026-04-29_Senior_Developer_Remaining_Unification_Implementation.md

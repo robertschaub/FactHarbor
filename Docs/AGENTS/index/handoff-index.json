@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T22:42:58.002Z",
-  "count": 418,
+  "generatedAt": "2026-04-28T23:19:14.082Z",
+  "count": 420,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8871,6 +8888,51 @@
             "verification": "required greps passed; npm -w apps/web run build passed; git diff --check passed",
             "debt_accepted_and_removal_trigger": "uncalled applyGate1Lite remains out of scope; handle only under separate dead-code cleanup decision",
             "residual_debt": "future public claim-detail UI should revisit user-facing wording if this internal advisory field is exposed"
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-29_Senior_Developer_Remaining_Unification_Implementation.md",
+      "date": "2026-04-29",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "remaining",
+        "unification",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/research-waste-metrics.ts",
+        "apps/web/src/lib/analyzer/metrics.ts",
+        "apps/web/src/lib/analyzer/claim-selection-recommendation.ts",
+        "apps/web/src/lib/prompt-surface-registry.ts",
+        "apps/web/scripts/automatic-claim-selection.js",
+        "scripts/validation/extract-validation-summary.js",
+        "scripts/validation/compare-batches.js",
+        "apps/api/Data/Entities.cs",
+        "apps/api/Data/FhDbContext.cs",
+        "apps/api/Program.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/JobsController.cs",
+        "apps/api/migrations/007_add_job_submission_path.sql",
+        "Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md"
+      ],
+      "summary": "Start from commits `59e1c806`, `ba234200`, `78013460`, `423a49fd`, `5e5272ab`, and `fc8052e3`. The detailed status is in `Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md`. For Stage 2 behavior follow-up, use `analysisObservability.acsResearchWaste.selectedClaimResearchCoverage` an",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "scope": "Remaining ACS/check-worthiness contract/provenance/observability implementation.",
+            "starting_budget": "contract-first edge cleanup; no new analysis authority, selector, prompt wording, UCM default, or Stage 2 behavior change.",
+            "failed_contested_attempts": "initial test invocations used workspace-relative paths under the web package; classified as verifier-command issue and kept. Normal API output build was blocked by the running service lock; classified as environment/output lock and verified with alternate output build. Final reviewer REQUEST_CHANGES was kept as valid and fixed narrowly.",
+            "complexity_decision": "amended existing contracts and summaries rather than adding a parallel selector or metrics subsystem.",
+            "final_diff_shape": "additive telemetry/provenance/registry fields, focused tests, docs, and one API column/migration.",
+            "verification": "focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, and final reviewer re-review APPROVE."
           }
         }
       }
