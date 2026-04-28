@@ -13,6 +13,8 @@ related:
   - apps/web/src/lib/analyzer/verdict-stage.ts
 ---
 
+> **Status note (2026-04-28):** The ACS product implementation described here is now documented in the living xWiki page `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki`. This WIP remains useful for the still-open selection-readiness concerns: Stage 1 time-to-selection, broad-input Stage 1 quality, and selected-claim Stage 2 research distribution.
+
 # Selection Readiness Root Cause and Fix Plan
 
 ## 1. Purpose

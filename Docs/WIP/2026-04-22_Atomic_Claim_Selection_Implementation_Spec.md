@@ -23,6 +23,10 @@ related:
   - apps/api/Services/JobService.cs
 ---
 
+> **Superseded by:** `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki` as the living implementation reference as of 2026-04-28.
+>
+> This file remains a historical implementation spec. Do not use it as the current authority for runtime behavior: the recommendation cap is now UCM-driven with an absolute max of 5, ACS validation tooling has been added, and the active local runtime has been switched back to `interactive` after automatic canaries exposed a selected-claim Stage 2 research-distribution finding.
+
 # Atomic Claim Selection - v1 Implementation Spec
 
 ## 1. Purpose

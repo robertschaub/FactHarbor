@@ -1,0 +1,245 @@
+= Atomic Claim Selection and Validation =
+
+{{info}}
+**Developer Reference** - Current implementation of pre-job AtomicClaim selection, prepared Stage 1 reuse, interactive and automatic ACS modes, and the ACS-based validation tooling path.
+
+**Status as of 2026-04-28**: The ACS product path and validation tooling are implemented. The active local UCM mode has been switched back to ##interactive## after automatic canaries exposed a pipeline-quality issue where selected claims can receive zero targeted Stage 2 iterations. Automatic ACS remains supported and observable, but it is not evidence that the underlying research-distribution issue is fixed.
+
+**Key Files**: ##claim-selection-flow.ts##, ##claim-selection-recommendation.ts##, ##internal-runner-queue.ts##, ##claimboundary-pipeline.ts##, ##ClaimSelectionDraftService.cs##, ##ClaimSelectionDraftsController.cs##, ##JobService.cs##, ##automatic-claim-selection.js##
+{{/info}}
+
+== 1. Purpose ==
+
+Atomic Claim Selection (ACS) is the pre-job intake path that lets FactHarbor prepare the final Stage 1 ##AtomicClaim## candidate set before the final report job is created.
+
+The implementation has two connected responsibilities:
+
+* Product ACS: prepare Stage 1 once, let the user or automatic mode choose which already-valid ##AtomicClaim## IDs proceed, then run Stage 2+ only for those IDs.
+* Validation ACS: make non-interactive validation automation use the same ACS automatic draft path, while emitting passive metadata that explains prepared, ranked, recommended, deferred, not-selected, and finally analyzed claim IDs.
+
+ACS does **not** create a new analytical meaning layer. It does not merge, split, rewrite, or semantically reinterpret claims after Stage 1. It selects from the exact ##AtomicClaim## IDs emitted by the current Stage 1 pipeline.
+
+== 2. Current Runtime Posture ==
+
+|= Area |= Current implementation
+| Default product mode | ##interactive## in file-backed defaults and current local UCM after the 2026-04-28 canary.
+| Selection cap | ##claimSelectionCap##, normalized to 1..5. Current file-backed default is ##5##.
+| Automatic mode | Supported, but it still goes through claim-selection drafts and selected-ID validation. It is not a direct all-claim job path.
+| Budget-aware recommendation | Implemented as UCM-controlled recommendation metadata/plumbing. File-backed default is off; active runtime can enable ##claimSelectionBudgetAwarenessEnabled## plus ##claimSelectionBudgetFitMode##.
+| Validation tooling | Supported validation scripts submit through ##apps/web/scripts/automatic-claim-selection.js## and emit ##submissionPath: "acs-automatic-draft"##.
+| Open quality finding | Automatic canaries can select claims that later receive zero targeted Stage 2 iterations. This is a reported pipeline-quality finding, not a validation-tooling blocker.
+
+== 3. Product Flow ==
+
+{{mermaid}}
+flowchart TD
+    start["Analyze request"]
+    mode["Resolve selection mode from request or UCM"]
+    draft["Create ClaimSelectionDraftEntity"]
+    prepare["Prepare Stage 1 snapshot"]
+    candidates["Final Stage 1 AtomicClaim candidates"]
+    belowCap{"Candidate count below cap?"}
+    recommend["Run batched ACS recommendation"]
+    interactive{"Selection mode interactive?"}
+    manual["User reviews and confirms selectedClaimIds"]
+    auto["Automatic mode confirms recommendedClaimIds"]
+    job["Create draft-backed JobEntity"]
+    run["Run ClaimAssessmentBoundary Stage 2+ over selected AtomicClaims"]
+    result["Persist report result"]
+
+    start --> mode
+    mode --> draft
+    draft --> prepare
+    prepare --> candidates
+    candidates --> belowCap
+    belowCap -->|"yes"| job
+    belowCap -->|"no"| recommend
+    recommend --> interactive
+    interactive -->|"yes"| manual
+    interactive -->|"no"| auto
+    manual --> job
+    auto --> job
+    job --> run
+    run --> result
+{{/mermaid}}
+
+The below-cap path auto-continues without showing the chooser because there is no selection pressure: all valid candidates fit within the configured cap. Once the candidate count reaches the cap, the recommendation and selection surface become relevant.
+
+== 4. Draft State Machine ==
+
+{{mermaid}}
+stateDiagram-v2
+    [*] --> QUEUED
+    QUEUED --> PREPARING: runner starts draft preparation
+    PREPARING --> AWAITING_CLAIM_SELECTION: interactive selection required
+    PREPARING --> COMPLETED: below-cap auto-continue or automatic recommendation confirmed
+    AWAITING_CLAIM_SELECTION --> COMPLETED: confirm selectedClaimIds
+    AWAITING_CLAIM_SELECTION --> PREPARING: Other / retry
+    AWAITING_CLAIM_SELECTION --> CANCELLED: cancel
+    PREPARING --> FAILED: preparation failure
+    QUEUED --> EXPIRED: lazy expiry
+    PREPARING --> EXPIRED: lazy expiry
+    AWAITING_CLAIM_SELECTION --> EXPIRED: lazy expiry
+    COMPLETED --> [*]
+    FAILED --> [*]
+    CANCELLED --> [*]
+    EXPIRED --> [*]
+{{/mermaid}}
+
+Important state behavior:
+
+* ##AWAITING_CLAIM_SELECTION## is a first-class state for product sessions.
+* In validation automation, ##AWAITING_CLAIM_SELECTION## is a structured terminal outcome because an automatic validation run must not silently require a human click.
+* ##COMPLETED## means the draft has produced a final job, not that the final analysis job has finished.
+
+== 5. Prepared Stage 1 Reuse ==
+
+{{mermaid}}
+flowchart LR
+    draft["ClaimSelectionDraftEntity"]
+    prep["PreparedStage1Snapshot"]
+    selection["ClaimSelectionJson"]
+    job["JobEntity"]
+    provenance["Provenance guard"]
+    filter["Filter prepared understanding by selectedClaimIds"]
+    stage2["Stage 2 research"]
+    stage3["Stage 3 ClaimAssessmentBoundary clustering"]
+    stage4["Stage 4 verdict generation"]
+    stage5["Stage 5 aggregation"]
+    observability["analysisObservability.acsResearchWaste"]
+
+    draft --> prep
+    draft --> selection
+    prep --> job
+    selection --> job
+    job --> provenance
+    provenance --> filter
+    filter --> stage2
+    stage2 --> stage3
+    stage3 --> stage4
+    stage4 --> stage5
+    stage2 --> observability
+{{/mermaid}}
+
+The final job reuses ##PreparedStage1Json## and ##ClaimSelectionJson## persisted from the draft. The runner validates that:
+
+* ##ClaimSelectionJson.selectedClaimIds## exists and is non-empty.
+* selected IDs are unique.
+* selected IDs exist in the prepared candidate set.
+* prepared Stage 1 provenance still matches analysis-affecting runtime state.
+
+The prepared Stage 1 provenance deliberately ignores already-persisted ACS orchestration knobs, such as default mode and idle timeout, because those should not invalidate an already prepared candidate set. The persisted ##selectionCap## remains separately checked.
+
+== 6. Recommendation Contract ==
+
+The recommendation is one batched LLM call over the final Stage 1 candidates. It ranks and recommends from already-surviving candidates; it is not Gate 1 authority.
+
+|= Field |= Meaning
+| ##rankedClaimIds## | Complete ranking over the final candidate IDs.
+| ##recommendedClaimIds## | IDs recommended for selection, capped by ##claimSelectionCap##.
+| ##selectedClaimIds## | IDs actually confirmed for final analysis.
+| ##deferredClaimIds## | Explicit budget-deferred IDs when budget-aware mode allows fewer recommendations.
+| ##notRecommendedClaimIds## | Structural summary: ranked IDs not recommended.
+| ##notSelectedClaimIds## | Structural summary: prepared IDs not selected.
+| ##budgetFitMode## | UCM-controlled behavior: ##off##, ##explain_only##, or ##allow_fewer_recommendations##.
+
+Do not treat ordinary unselected claims as budget-deferred claims. ##deferredClaimIds## means explicit budget-aware allow-fewer metadata only.
+
+== 7. Validation Thin Waist ==
+
+Supported validation automation is intentionally narrow. Validation scripts submit through the shared ACS client, then read existing metadata. They do not add direct-full reruns, prompt changes, extra searches, or extra LLM work.
+
+{{mermaid}}
+flowchart TD
+    scripts["Supported validation scripts"]
+    client["Shared ACS validation client"]
+    draft["POST /api/fh/claim-selection-drafts selectionMode=automatic"]
+    waitDraft["Poll draft until finalJobId or terminal draft status"]
+    waitJob["Poll final job until terminal job status"]
+    admin["Admin-aware job detail fetch"]
+    summary["Schema v2 validation summary"]
+    refs["Captain-approved historical direct references"]
+    review["Review matrix and pipeline findings"]
+
+    scripts --> client
+    client --> draft
+    draft --> waitDraft
+    waitDraft --> waitJob
+    waitJob --> admin
+    admin --> summary
+    refs --> review
+    summary --> review
+{{/mermaid}}
+
+Supported validation callers:
+
+|= Script |= Current disposition
+| ##scripts/validation/extract-validation-summary.js## | Supported. Uses the shared ACS client.
+| ##scripts/run-validation-matrix.js## | Supported. Uses the shared ACS client and preserves historical reference fields on failure rows.
+| ##apps/web/scripts/baseline-runner.js## | Supported. Uses the shared ACS client and schema v2 fields.
+
+Quarantined or legacy callers:
+
+|= Script |= Disposition
+| ##scripts/Benchmarks/phaseA_search_experiment.py## | Quarantined as benchmark/forensic unless migrated.
+| ##scripts/Benchmarks/phase1_experiment.py## | Quarantined as benchmark/forensic unless migrated.
+| ##scripts/inverse-scope-regression.ps1## | Quarantined until migrated through the shared ACS client.
+| ##scripts/run-regression.ps1## | Quarantined until migrated through the shared ACS client.
+| ##scripts/run-baseline.ps1## | Quarantined legacy direct helper; use the JS baseline runner for supported ACS validation.
+| ##scripts/submit-hydrogen-job.ps1## | Quarantined ad hoc helper.
+| ##apps/web/test/scripts/regression-test.js## | Quarantined because the inputs and old result parsing are stale for supported validation.
+
+== 8. Validation Summary Schema ==
+
+The shared ACS validation client emits schema v2 summaries from existing draft, job, and result state.
+
+|= Field group |= Representative fields |= Source
+| Submission/provenance | ##schemaVersion##, ##submissionPath##, ##draftId##, ##jobId##, ##draftStatus##, ##jobStatus##, ##gitCommitHash## | Draft/job response plus result metadata.
+| Prepared/ranked/recommended | ##preparedClaimIds##, ##rankedClaimIds##, ##recommendedClaimIds## | ##PreparedStage1Json## and ##ClaimSelectionJson##.
+| Selection collapse | ##selectedClaimIds##, ##notSelectedClaimIds##, ##notRecommendedClaimIds##, ##deferredClaimIds## | Derived structurally from prepared/ranked/recommended/selected IDs.
+| Report shape | ##truthPercentage##, ##verdict##, ##confidence##, ##claimVerdictCount##, ##claimBoundaryCount##, ##evidenceCount##, ##sourceCount## | ##ResultJson##.
+| Stage 2 ACS telemetry | ##selectedClaimResearch##, ##contradictionReachability## | ##resultJson.analysisObservability.acsResearchWaste.selectedClaimResearch## and ##.contradictionReachability##.
+| Historical references | ##historicalDirectReferenceJobId##, ##historicalDirectReferenceQuality##, ##historicalDirectReferenceJobStatus## | ##scripts/validation/captain-approved-families.json##.
+| Metadata health | ##metadataUnavailable##, ##metadataUnavailableReason## | Client extraction result.
+
+Historical direct references are attribution metadata only. They explain how a current ACS run differs from a known old direct job; they are not a request to rerun direct all-claim analysis.
+
+== 9. Current Live Finding ==
+
+The 2026-04-28 SVP ACS job ##3a95e38c39ba4104b97e6cd0ff512b52## completed through the ACS path and selected exactly five of twenty-two prepared claims: ##AC_05##, ##AC_07##, ##AC_19##, ##AC_15##, and ##AC_17##.
+
+The job ended ##UNVERIFIED##. The important implementation lesson is structural: ##AC_17## had zero targeted Stage 2 iterations while contradiction did run. That result is a pipeline-quality finding to investigate in Stage 2 research distribution and/or budget-aware selection behavior. It is not proof that the validation tooling is broken, and it is not enough by itself to classify the result as genuine evidence scarcity.
+
+== 10. API and Storage Surfaces ==
+
+|= Surface |= Responsibility
+| ##ClaimSelectionDraftEntity## | Pre-job session, status/progress, active input, selection mode, access-token hash, draft state JSON, final job link, hidden flag.
+| ##ClaimSelectionDraftEventEntity## | Audit trail for draft actions and status transitions.
+| ##JobEntity.ClaimSelectionDraftId## | Links a final job to its draft. Unique index prevents duplicate final jobs per draft.
+| ##JobEntity.PreparedStage1Json## | Persisted prepared Stage 1 snapshot for draft-backed execution.
+| ##JobEntity.ClaimSelectionJson## | Persisted selection metadata for the final job.
+| ##POST /v1/claim-selection-drafts## | API draft creation.
+| ##POST /v1/claim-selection-drafts/{draftId}/confirm## | Confirms selected IDs and creates the final job.
+| ##GET /api/fh/jobs/{jobId}## with admin key | Web proxy that exposes prepared/selection metadata for validation summaries.
+
+== 11. Operational Rules ==
+
+* Commit source changes before submitting live validation jobs, then restart or reseed affected services if needed.
+* Keep UCM mode ##interactive## for ordinary product usage unless the Captain explicitly switches it.
+* Use only Captain-approved inputs for validation jobs.
+* Treat ##UNVERIFIED## as suspicious until inspected under the AGENTS.md UNVERIFIED ambiguity discipline.
+* Validation tooling should report structural findings; it should not hide, reinterpret, or "fix" pipeline-quality problems.
+* Do not add direct-full rerun modes to validation automation unless Captain explicitly approves a new architecture.
+
+== 12. Follow-Ups ==
+
+|= Item |= Why it remains open
+| Stage 2 selected-claim research distribution | Current ACS canaries show selected claims can receive zero targeted Stage 2 iterations.
+| Budget-aware ACS promotion | Existing metadata can explain fewer-than-cap recommendations, but promotion should wait for canary evidence.
+| API-level direct endpoint governance | Direct ##/v1/analyze## still exists for product/API use; blocking or policy enforcement is a separate design task.
+| Provenance drift tightening | Jobs can still expose different creation-time and executed/prepared provenance values; validation must keep surfacing this instead of assuming one hash is enough.
+| Stage 1 time-to-selection | Heavy URL/PDF inputs still spend meaningful time in full Stage 1 preparation before the selector appears.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]

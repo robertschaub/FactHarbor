@@ -1,10 +1,14 @@
 # ACS Validation Final Specification and Implementation Plan
 
 **Date:** 2026-04-28
-**Status:** Final consolidated specification for implementation review
+**Status:** Historical implementation plan; slices 1-4 have materially landed, and slice 5 produced diagnostic ACS canary findings
 **Decision:** Use one supported live non-interactive validation path through ACS automatic drafts. Do not add a direct-full rerun mode. Add passive metadata, read-only historical comparison, and explicit quarantine of direct-analysis callers.
 
 ---
+
+> **Superseded by:** `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki` as the living implementation reference as of 2026-04-28.
+>
+> This file remains the historical reviewed rollout plan. Current implementation status: supported validation scripts use the shared ACS client, schema v2 summary fields include `historicalDirectReferenceQuality` and `historicalDirectReferenceJobStatus`, Captain-approved historical references are mapped, and the fresh SVP ACS canary `3a95e38c39ba4104b97e6cd0ff512b52` exposed a selected-claim Stage 2 research-distribution finding (`AC_17` had zero targeted iterations). The active local UCM mode was switched back to `interactive`.
 
 ## 1. Goal
 
@@ -284,7 +288,7 @@ the current Captain-approved validation fixture:
 
 | Family | Historical direct reference | ACS job that exposed concern |
 |---|---|---|
-| SVP PDF | `9acde15a85c24512845d7255aa7e5d96` | `9f338d563781412f80e7a2edf43f1dd6` |
+| SVP PDF | `9acde15a85c24512845d7255aa7e5d96` | `9f338d563781412f80e7a2edf43f1dd6`; fresh ACS canary `3a95e38c39ba4104b97e6cd0ff512b52` reported selected-claim zero-targeted-iteration finding |
 | RT URL | No clean successful direct comparator in reviewed set | `18b07fa8efa345178f5eb59406ea2805` |
 
 Slice 4 maps all Captain-approved validation families to their best available

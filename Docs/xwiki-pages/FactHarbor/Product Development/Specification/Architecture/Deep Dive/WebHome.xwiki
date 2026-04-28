@@ -12,6 +12,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Twin-path architecture (ClaimAssessmentBoundary + Monolithic Dynamic): invariants, shared primitives, result model, variant selection, configuration | ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##
+| [[Atomic Claim Selection and Validation>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Atomic Claim Selection and Validation.WebHome]] | Pre-job AtomicClaim selection, prepared Stage 1 reuse, interactive/automatic modes, ACS validation thin waist, and current residual quality findings | ##claim-selection-flow.ts##, ##internal-runner-queue.ts##, ##claim-selection-recommendation.ts##, ##automatic-claim-selection.js##
 | [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] | Structured 5-step adversarial debate pattern: roles (Advocate, Challenger, Reconciler), model tiers, research rationale, and quality guards | ##verdict-stage.ts##, ##claimboundary.prompt.md##
 
 === Quality and Evidence ===

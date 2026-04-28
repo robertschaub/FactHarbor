@@ -1,16 +1,18 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-04-25
+**Last Updated**: 2026-04-28
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The current engineering focus has shifted from the April 15 Phase 7-only framing to the April 24 monitor-driven pipeline integrity and selection-readiness track. Recent work fixed report markdown/warning cleanup, stale verdict diagnostics, runner concurrency claiming, prepared Stage 1 retry diagnostics, stale claim-selection seeding, verdict citation integrity behavior, a Stage 1 validator-context gap where one-claim approvals did not see the input-derived `distinctEvents` inventory, and a Stage 4 deterministic-mode gap where self-consistency still ran stochastic reruns despite `deterministic=true`. Do **not** treat the session as fully closed: Stage 1 time-to-selection, broad-input Stage 1 quality, Stage 2 evidence lifecycle/provenance invariants, evidence-pool variance, runtime provenance drift, terminal-progress finalization, long-stage heartbeats, and warning materiality remain active work.
+**Status**: ClaimAssessmentBoundary pipeline is operational. Atomic Claim Selection is implemented as a pre-job draft/prepared-Stage-1 path with interactive default, automatic mode, and ACS-based validation tooling. The active local UCM mode has been switched back to `interactive` after the 2026-04-28 SVP ACS canary exposed a pipeline-quality issue: a selected `AtomicClaim` can receive zero targeted Stage 2 iterations while contradiction still runs. Do **not** treat the session as fully closed: Stage 1 time-to-selection, broad-input Stage 1 quality, selected-claim Stage 2 research distribution, Stage 2 evidence lifecycle/provenance invariants, evidence-pool variance, runtime provenance drift, terminal-progress finalization, long-stage heartbeats, and warning materiality remain active work.
 
 ---
 
 ## Current Focus (2026-04-24 Monitor Session)
 
 - **Quality and integrity remain first.** The next slice should improve evidence/provenance invariants, citation integrity, warning materiality, and Stage 1 diagnostics before broad optimization.
+- **ACS is implemented but automatic mode remains diagnostic.** The product path now uses claim-selection drafts and prepared Stage 1 reuse, and validation automation uses the shared ACS automatic client. Keep ordinary product runs on `interactive` until selected-claim research distribution is understood.
 - **Stage 1 time-to-selection is still open.** Heavy URL/PDF/article inputs still spend roughly 60-122 seconds in preparation before Atomic Claim Selection becomes available. The current diagnosis is full evidence-seeded Stage 1 latency, not the recommendation call alone.
+- **Selected-claim Stage 2 distribution is now a concrete ACS follow-up.** SVP job `3a95e38c39ba4104b97e6cd0ff512b52` selected five claims but left `AC_17` with zero targeted Stage 2 iterations. Treat this as a pipeline-quality finding, not as validation-tooling failure or proven evidence scarcity.
 - **Stage 1 quality remains a targeted investigation track.** The Bundesrat one-claim collapse now has a validator-context fix, and a follow-up prompt fix separates independently verifiable status/finality/binding-effect qualifiers from branch chronology/procedure when needed. First live validation of that split showed the contract validator still forced a retry via a self-contradictory status-carrier assessment; a validator-prompt repair is now pending live validation. Broad URL/PDF inputs such as the SVP packet remain open. Fix from concrete failing packets only; do not weaken contract validation or introduce deterministic semantic branch detection.
 - **Stage 2 evidence lifecycle/provenance is now a first-slice integrity priority.** Live runs showed normalization/fallbacks, cap drops, reconciliation deltas, and applicability/directness label inconsistencies that need invariant accounting.
 - **Duplicate-run stability remains under monitor.** Clean Bundesrat reruns now split Stage 1 into the expected Volk/Parlament claims, but evidence volume and source concentration still varied downstream. Stage 4 deterministic-mode stochastic reruns were fixed; Stage 2 evidence-pool variance remains open.
@@ -21,6 +23,12 @@
 - **Monitor UX still has gaps.** `SUCCEEDED` plus progress `99`, long clustering/reconciler plateaus, and browser-control screenshot/tool availability issues remain documented but not fully resolved.
 
 ## Recent Changes (2026-04-24)
+
+**ACS implementation and validation tooling status (2026-04-28):**
+- Atomic Claim Selection is implemented through `ClaimSelectionDraftEntity`, `PreparedStage1Json`, and `ClaimSelectionJson`, with final jobs validating and running only selected `AtomicClaim` IDs.
+- Supported validation automation now uses the shared ACS client (`apps/web/scripts/automatic-claim-selection.js`) and emits schema v2 metadata including prepared/ranked/recommended/selected IDs, historical direct-reference quality/status, and Stage 2 ACS telemetry.
+- Quarantined direct validation callers are labeled in place; historical direct jobs are read-only references, not direct-full rerun paths.
+- Fresh SVP ACS canary `3a95e38c39ba4104b97e6cd0ff512b52` completed as `UNVERIFIED` and exposed selected-claim research distribution (`AC_17` had zero targeted iterations). Active UCM was restored to `interactive`.
 
 **Monitor-driven report, runner, and verdict integrity fixes:**
 - Report markdown now renders real ClaimAssessmentBoundary content instead of the old stub and separates admin-only diagnostics from user-facing warnings.
@@ -1156,6 +1164,6 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 
 ---
 
-**Last Updated**: 2026-04-24
+**Last Updated**: 2026-04-28
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
 **Document Status**: Current Alpha snapshot. Historical sections below remain for context; current prioritization lives in the top status block and in [Backlog](Backlog.md).

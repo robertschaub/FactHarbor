@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-28 | Senior Developer | Codex (GPT-5) | ACS Implementation xWiki Documentation -- [Standard] [open-items: yes]
+**For next agent:** Current ACS implementation is now documented at `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki` with diagrams for product flow, draft state, prepared Stage 1 reuse, and validation tooling. Older ACS WIP specs are marked superseded/historical; status/backlog now track the open selected-claim Stage 2 research-distribution finding from SVP job `3a95e38c39ba4104b97e6cd0ff512b52` while keeping UCM default posture on `interactive`.
+→ Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki
+
+---
 ### 2026-04-27 | Code Reviewer | Claude Opus 4.6 | Full Day Review 25 Commits -- [Significant] [open-items: yes]
 **For next agent:** 5 code HIGH + 3 LLM HIGH, 12 code MEDIUM + 4 LLM MEDIUM, 19 LOW across 25 commits. All code findings verified (6 agents, 2 rounds). LLM Expert assessed prompt changes as PARTIALLY EFFECTIVE: metric route separation works, but negation density + undefined "materially" threshold + contextual inflation risk Haiku-class evidence pool weakening. Top code priorities: draft heartbeat, X-Forwarded-For, rate limiting. Top prompt priorities: restructure as decision tree, define approximate-parity threshold, promote side-premise support rule. All TS tests pass (2037).
 -> Docs/AGENTS/Handoffs/2026-04-27_Code_Reviewer_Full_Day_Review_25_Commits.md
