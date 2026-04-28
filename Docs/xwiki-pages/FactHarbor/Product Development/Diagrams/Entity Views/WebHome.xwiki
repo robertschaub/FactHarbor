@@ -204,7 +204,7 @@ erDiagram
         boolean isCentral "Always_true_(filtered)"
         string claimDirection "supports_thesis_contradicts_thesis_contextual"
         string verifiability "high_medium_low_none_(optional)"
-        string checkWorthiness "high_medium"
+        string checkWorthiness "high_medium_low"
         float specificityScore "0-1"
         string groundingQuality "strong_moderate_weak_none"
         json keyEntities

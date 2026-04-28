@@ -1071,7 +1071,8 @@ export interface AtomicClaim {
    *  Comparative claims may require evidence from multiple jurisdictions even when the
    *  overall input has a single dominant geography. */
   relevantGeographies?: string[];
-  checkWorthiness: "high" | "medium";
+  /** Stage 1 extraction-time advisory hint. Not ACS recommendation authority. */
+  checkWorthiness: "high" | "medium" | "low";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
   /** True when this claim is one dimension of an ambiguous_single_claim decomposition.

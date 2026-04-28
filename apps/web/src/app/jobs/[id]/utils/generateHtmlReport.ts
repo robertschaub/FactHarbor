@@ -512,7 +512,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
       ${ac.category ? `<span class="chip chip-gray">Category: ${esc(ac.category)}</span>` : ""}
       ${ac.centrality ? `<span class="chip chip-gray">Centrality: ${esc(ac.centrality)}</span>` : ""}
       ${ac.harmPotential ? `<span class="chip chip-gray">Harm potential: ${esc(ac.harmPotential)}</span>` : ""}
-      ${ac.checkWorthiness ? `<span class="chip chip-gray">Check-worthiness: ${esc(ac.checkWorthiness)}</span>` : ""}
+      ${ac.checkWorthiness ? `<span class="chip chip-gray">Stage 1 extraction hint: ${esc(ac.checkWorthiness)}</span>` : ""}
       ${ac.verifiability ? `<span class="chip chip-gray">Verifiability: ${esc(ac.verifiability)}</span>` : ""}
       ${cv.isContested ? `<span class="chip chip-gray">Contested: yes</span>` : ""}
       ${cv.misleadingness && cv.misleadingness !== "not_misleading" ? `<span class="chip chip-gray" style="border:1px solid #e53e3e;color:#fc8181">Misleadingness: ${esc(cv.misleadingness)}</span>` : ""}
