@@ -1,6 +1,8 @@
 # FactHarbor NPO Formation Checklist
 
-**Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) ASAP**
+**Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) and OpenAI for Nonprofits ASAP**
+
+> **Status update 2026-04-28**: Verein gegründet am 23. April 2026. Handelsregister-Anmeldung persönlich eingereicht am 27. April 2026 — Eintrag und Zefix-Sichtbarkeit werden in den nächsten Tagen erwartet.
 
 ## What "Internationally Recognized NPO" Means In Practice
 
@@ -47,7 +49,7 @@ For FactHarbor, the practical recognition stack is:
 - [ ] **Have statutes reviewed by Swiss lawyer** (~CHF 500–1,500)
   - Statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md` and `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`
   - Lawyer must confirm: purpose clause, dissolution clause, non-profit constraint
-- [X] **Hold founding assembly** (can be via video conference)
+- [X] **Hold founding assembly** (23 April 2026, video conference)
   - Adopt statutes
   - Elect Governing Team (minimum: President + Treasurer)
   - Set membership fee
@@ -57,7 +59,7 @@ For FactHarbor, the practical recognition stack is:
 
 ### Phase 2: Official Registration (Target: Weeks 1–3)
 
-- [ ] **Register in Handelsregister** (Commercial Register)
+- [X] **Register in Handelsregister** (Commercial Register) — filed 2026-04-27, entry expected within days
   - Official Zurich filing page: https://www.zh.ch/de/wirtschaft-arbeit/handelsregister/verein/neu-eintragen.html
   - Official Zurich factsheet: https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/wirtschaft-arbeit/handelsregister/verein/verein_merkblatt_neueintragung.pdf
   - Submit: German registration application, statutes, founding minutes / protocol, and signature-certification documents for new signatories as required
@@ -116,7 +118,7 @@ For FactHarbor, the practical recognition stack is:
 
 **Prerequisites before applying:**
 
-- [ ] Verein registered on zefix.ch (Handelsregister entry visible)
+- [ ] Verein registered on zefix.ch (Handelsregister entry visible) — filed, entry expected within days
 - [X] Org email `info@factharbor.ch` set up (for Goodstack agent verification)
 - [ ] Statutes PDF ready (signed, dated 30+ days before application)
 - [ ] Bank statement PDF ready (original electronic, dated 30+ days before application)
@@ -130,6 +132,37 @@ For FactHarbor, the practical recognition stack is:
 - [ ] Receive eligibility confirmation email from Anthropic
 - [ ] Sign up using verified email — select "With my team" (minimum 5 seats)
 - [ ] Complete Team plan setup ($8/user/month with 75% discount)
+
+### Phase 4b: OpenAI for Nonprofits Application (Target: parallel to Phase 4)
+
+**Prerequisites before applying:**
+
+- [ ] Verein registered on zefix.ch (same as Phase 4)
+- [X] Org email `info@factharbor.ch` set up
+
+**OpenAI ChatGPT Business (NPO pricing):**
+
+- [ ] Go to [OpenAI for Nonprofits](https://openai.com/index/introducing-openai-for-nonprofits/)
+- [ ] Complete Goodstack validation (same verification as Anthropic — one validation covers both)
+- [ ] Receive eligibility confirmation from OpenAI
+- [ ] Sign up for ChatGPT Business — NPO discount applies automatically at checkout
+- [ ] Pricing: **$8/month/seat** (annual) or **$10/month/seat** (monthly), down from ~$25-30
+
+**OpenAI ChatGPT Enterprise (up to 75% off):**
+
+- [ ] Contact OpenAI sales team for Enterprise NPO pricing (up to **75% discount**)
+- [ ] Only relevant if FactHarbor needs large-scale ChatGPT deployment
+
+**OpenAI API Credits:**
+
+- [ ] Apply for **Researcher Access Program** — up to **$1,000 API credits** for approved projects
+  - Requires active affiliation with university, research org, or qualifying nonprofit
+- [ ] Monitor **OpenAI Nonprofit Fund** for next open application cycle
+  - Previous cycle: $40.5M distributed to 208 US-based NPOs (closed Oct 2025)
+  - Current phase: board-directed grants (early 2026)
+  - Note: Previous cycle was US-only — check eligibility for Swiss Verein in future cycles
+
+**Important**: OpenAI API discounts are **not stackable** — the single largest discount applies, not a sum. This is different from Anthropic/Cloud where stacking is possible.
 
 ### Phase 5: International Verification And Funder Visibility (Target: after Swiss base is stable)
 
@@ -153,7 +186,7 @@ For FactHarbor, the practical recognition stack is:
 | Statutes (EN)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`      |
 | Statutes (DE)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`      |
 | Founding Assembly Minutes   | **READY**   | `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf` |
-| Handelsregister Application | Not started | —                                                  |
+| Handelsregister Application | **FILED**   | Submitted 2026-04-27, entry pending                |
 | Tax-Exemption Application   | Not started | —                                                  |
 | Budget Projection           | Not started | —                                                  |
 | Activity Description        | Not started | —                                                  |
@@ -186,11 +219,13 @@ For FactHarbor, the practical recognition stack is:
 ## Timeline Summary
 
 ```
-Week 1:  [Find co-founder] [Lawyer review] [Founding assembly] [Domain+email]
-Week 2:  [Handelsregister filing] [Bank account opening] [Tax-exempt prep]
-Week 3:  [Handelsregister processing...] [Tax-exempt application filed]
-Week 4:  [Handelsregister confirmed → visible on zefix.ch]
-Week 5+: [30-day doc age met] → [Apply via Goodstack] → [Verified in 1-72 hours]
+2026-04-23:  ✅ Founding assembly held
+2026-04-27:  ✅ Handelsregister filing submitted (in person)
+~2026-05-02: Expected: Handelsregister entry + Zefix visibility
+~2026-05-05: Bank account opening (with HR excerpt)
+~2026-05-23: 30-day doc age met → Apply Goodstack (covers both Anthropic + OpenAI)
+~2026-05-24: Goodstack verified (1-72 hours) → Claude for Nonprofits + OpenAI for Nonprofits
+Parallel:    Tax-exempt application, TechSoup, AWS/Google credits
 ```
 
 ## Key Official Sources
@@ -213,3 +248,9 @@ Week 5+: [30-day doc age met] → [Apply via Goodstack] → [Verified in 1-72 ho
   https://candid.org/claim-nonprofit-profile/how-to-earn-a-candid-seal-of-transparency/
 - NGOsource background / ED ecosystem:
   https://tenyears.ngosource.org/
+- OpenAI for Nonprofits:
+  https://openai.com/index/introducing-openai-for-nonprofits/
+- OpenAI for Nonprofits — Help Center:
+  https://help.openai.com/en/articles/9359041-openai-for-nonprofits
+- Goodstack — OpenAI discount details:
+  https://goodstack.org/software-discounts/openai
