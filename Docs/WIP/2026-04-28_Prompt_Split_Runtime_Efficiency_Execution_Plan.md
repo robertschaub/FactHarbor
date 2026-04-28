@@ -1,7 +1,7 @@
 # Prompt Split and LLM Runtime Efficiency Execution Plan
 
 **Date:** 2026-04-28  
-**Status:** In execution; Phase 1 telemetry, Phase 2 manifest source layer, Phase 3 prompt-payload splits, and Phase 4 split source layout landed; no prompt wording changes
+**Status:** In execution; Phase 1 telemetry, Phase 2 manifest source layer, Phase 3 prompt-payload splits, and Phase 4 split source layout landed; no prompt wording changes; Phase 6 prompt-hygiene follow-up planned
 **Roles:** Lead Developer, LLM Expert  
 **Supersedes / extends:** `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md`, `Docs/WIP/2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md`  
 **Related backlog:** `PROMPT-SPLIT-1`
@@ -259,7 +259,7 @@ Live verification checkpoint (2026-04-28):
 - Job `3c411d86be024e288133332b279c570e` ran before a full service refresh and returned `FALSE`, confidence `77`; functional direction was good but prompt-runtime telemetry was inconclusive.
 - After restarting both web and API services, job `bf3d4dd99862436d9de9345588215f43` returned `FALSE`, confidence `80`.
 - The refreshed job persisted prompt-runtime telemetry for `CLAIM_EXTRACTION_PASS2`, `CLAIM_CONTRACT_VALIDATION`, `EXTRACT_EVIDENCE`, and Stage 4 verdict sections. `EXTRACT_EVIDENCE` showed cache creation on the first comparable call and cache reads on later calls.
-- Live job budget used for this execution: 2 of 8.
+- Live job budget used for this execution before Captain reset: 2 of 8. Captain later reset the next-track live validation budget to 8 available jobs.
 
 ### Phase 5 — Retry Prevention
 
@@ -290,6 +290,46 @@ Likely first targets:
 4. Verdict prompts
    - Do not filter evidence before verdict.
    - Investigate LLM summarization only after telemetry proves verdict payload size is the active bottleneck.
+
+### Phase 6 — Prompt Hygiene and Redundancy Audit
+
+Goal: analyze and improve prompt structure, overlapping instructions, and redundant guidance only after the no-wording prompt-runtime baseline is stable.
+
+Source evidence:
+
+- `Docs/WIP/2026-04-19_Consolidated_Prompt_Audit_Implementation_Plan.md` is the active prior plan for prompt-structure defects.
+- `Docs/AGENTS/Handoffs/2026-04-19_Unassigned_Consolidated_Prompt_Audit_Adjudication.md` narrows the old critique: `claimboundary` is not a full-file live prompt injection problem, but it does have section-level policy duplication and cross-stage drift risk.
+- `Docs/WIP/2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md` remains relevant for context-waste controls: measure first, strip structural boilerplate safely, do not filter verdict evidence away from debate/reconciliation.
+
+Sequencing decision:
+
+- Do this after Phase 1-4 infrastructure, not before. The split source layout, section hashes, and runtime telemetry make prompt hygiene review safer and easier to localize.
+- Do not bundle wording changes with manifest/source-layout or cache-boundary changes. Prompt wording is analysis behavior.
+- Use `/prompt-audit` for static rubric findings and `/prompt-diagnosis` only when a live job or runtime prompt hash is the evidence basis.
+- Treat the refreshed live-job budget as 8 jobs for the next validation track. Spend it only after a concrete prompt change is committed, reseeded, and service state is refreshed.
+
+Recommended work order:
+
+1. Static prompt-hygiene audit over the split `claimboundary` section files plus the two highest-priority non-claimboundary prompts from the April 19 plan.
+2. Workstream 1 from the April 19 plan: harden `inverse-claim-verification.prompt.md` semantics and parse-failure handling.
+3. Workstream 2: unify source-reliability prompt/runtime contract or explicitly guard drift between the TypeScript prompt builder and markdown prompt.
+4. Workstream 3: reduce `claimboundary` ecosystem-rule duplication through a routing/synchronization contract before doing broad copyediting.
+5. Only after telemetry shows repeated structural retry waste, consider prompt wording that shortens retry context or resolves contradictory instructions in a specific section.
+
+Risk controls:
+
+- No domain-specific examples, named entities, regions, dates, or Captain-input vocabulary in landed prompt edits.
+- No deterministic semantic keyword or regex mitigations.
+- Keep each prompt hygiene slice small enough to validate with focused tests and a bounded live set.
+- Preserve all evidence visibility in verdict prompts; summarize only after a design review, never suppress evidence before debate.
+- Commit first, reseed prompts, refresh services, and confirm active hashes before any live jobs.
+
+Acceptance:
+
+- Each accepted finding has static line evidence, a generic multilingual fix proposal, and a test or runtime verifier.
+- Focused prompt/runtime contract tests pass.
+- `npm -w apps/web run build` and safe relevant tests pass.
+- Live validation uses only Captain-approved inputs and stays within the refreshed 8-job budget.
 
 ---
 
@@ -344,6 +384,7 @@ Run full `npm test` only if the touched tests or build surface suggests broader 
 | Phase 3 static/dynamic separation | Approval required because message placement can affect model behavior. |
 | Phase 4 physical split | Approval required because UCM/admin/provenance/deploy behavior changes. |
 | Phase 5 prompt wording/retry policy changes | Explicit human approval required under Analysis Prompt Rules. |
+| Phase 6 prompt hygiene and redundancy edits | Explicit human approval required; static audit may proceed read-only without live jobs. |
 | Live jobs / validation batches | Commit first, refresh runtime/config state, then run only approved Captain-defined inputs. |
 
 ---

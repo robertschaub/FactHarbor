@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T06:16:52.178Z",
-  "count": 407,
+  "generatedAt": "2026-04-28T11:33:07.348Z",
+  "count": 408,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8642,6 +8642,22 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-04-28_Lead_Developer_LLM_Expert_Prompt_Runtime_Split_Execution.md",
+      "date": "2026-04-28",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "prompt",
+        "runtime",
+        "split",
+        "execution"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-28 - Lead Developer + LLM Expert - Prompt Runtime Split Execution"
     }
   ]
 }
