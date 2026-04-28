@@ -25,6 +25,13 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
 }));
 
 vi.mock("@/lib/analyzer/metrics-integration", () => ({
+  buildPromptRuntimeFields: vi.fn(() => ({})),
+  classifyStructuralRetryCause: vi.fn(() => "unknown"),
+  extractLLMUsageFields: vi.fn((usage: any = {}) => ({
+    promptTokens: usage.inputTokens ?? 0,
+    completionTokens: usage.outputTokens ?? 0,
+    totalTokens: usage.totalTokens ?? 0,
+  })),
   recordLLMCall: (...args: unknown[]) => mockRecordLLMCall(...args),
 }));
 

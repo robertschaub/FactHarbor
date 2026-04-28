@@ -89,6 +89,18 @@ export interface LoadResult {
   fallbackUsed?: boolean;
 }
 
+/** Rendered prompt section plus provenance needed for runtime diagnostics. */
+export interface RenderedPromptSection {
+  content: string;
+  contentHash: string;
+  loadedAt: string;
+  warnings: ValidationWarning[];
+  promptProfile: Pipeline;
+  promptSection: string;
+  promptSectionHash: string;
+  promptSectionEstimatedTokens: number;
+}
+
 // ============================================================================
 // CACHE (mtime-based for hot-reload + performance)
 // ============================================================================
@@ -836,14 +848,12 @@ export async function loadAndRenderSection(
   pipeline: Pipeline,
   sectionName: string,
   variables: Record<string, string>,
-): Promise<{
-  content: string;
-  contentHash: string;
-  loadedAt: string;
-  warnings: ValidationWarning[];
-} | null> {
+): Promise<RenderedPromptSection | null> {
   const result = await loadPromptFile(pipeline);
   if (!result.success || !result.prompt) return null;
+
+  const section = getSection(result.prompt, sectionName);
+  if (!section) return null;
 
   const rendered = renderSection(result.prompt, sectionName, variables);
   if (!rendered) return null;
@@ -853,6 +863,10 @@ export async function loadAndRenderSection(
     contentHash: result.prompt.contentHash,
     loadedAt: result.prompt.loadedAt,
     warnings: [...result.warnings, ...rendered.warnings],
+    promptProfile: pipeline,
+    promptSection: sectionName,
+    promptSectionHash: hashContent(section.content),
+    promptSectionEstimatedTokens: estimateTokens(section.content),
   };
 }
 

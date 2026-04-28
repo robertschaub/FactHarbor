@@ -29,7 +29,7 @@ For FactHarbor, correctness and completeness take priority over speed and brevit
 
 ### Large File Exception — Prompt Files
 
-For prompt files over 100KB (currently: `claimboundary.prompt.md` at 212KB), use targeted reads instead of reading the full file:
+For prompt files over 100KB (currently: `claimboundary.prompt.md` at about 294KB as of 2026-04-28), use targeted reads instead of reading the full file:
 
 1. Grep for the `## SECTION_NAME` header to find the line number
 2. Grep for the next `## ` header to find the section end

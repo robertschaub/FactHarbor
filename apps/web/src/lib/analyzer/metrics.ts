@@ -21,6 +21,23 @@ export type LLMTaskType =
   | 'supplemental'
   | 'other';
 
+export type LLMRetryCause =
+  | "schema"
+  | "parse"
+  | "timeout"
+  | "contract"
+  | "repair"
+  | "provider"
+  | "validation"
+  | "unknown";
+
+export type LLMOutputBranch =
+  | "initial"
+  | "retry"
+  | "repair"
+  | "fallback"
+  | "failed";
+
 export interface LLMCallMetric {
   taskType: LLMTaskType;
   provider: string;
@@ -42,6 +59,28 @@ export interface LLMCallMetric {
   timestamp: Date;
   /** Optional: role in the debate (advocate, challenger, reconciler, etc.) */
   debateRole?: string;
+  /** Prompt profile used for this call, usually "claimboundary". */
+  promptProfile?: string;
+  /** Rendered prompt section key, e.g. "EXTRACT_EVIDENCE". */
+  promptSection?: string;
+  /** Active composite/current prompt content hash. */
+  promptContentHash?: string;
+  /** Section-local hash computed from the unrendered section template. */
+  promptSectionHash?: string;
+  /** Character count of cache-controlled system instructions actually sent. */
+  renderedSystemChars?: number;
+  /** Rough token estimate of cache-controlled system instructions actually sent. */
+  renderedSystemEstimatedTokens?: number;
+  /** Character count of dynamic payload values included in the call. */
+  dynamicPayloadChars?: number;
+  /** Rough token estimate of dynamic payload values included in the call. */
+  dynamicPayloadEstimatedTokens?: number;
+  /** Structural retry/failure cause. Does not classify text meaning. */
+  retryCause?: LLMRetryCause;
+  /** Stage-specific retry branch label, e.g. "pass2_soft_refusal_retry". */
+  retryBranch?: string;
+  /** Output branch label for initial/retry/repair/fallback/failed attempts. */
+  outputBranch?: LLMOutputBranch;
   /** Admin-only diagnostic artifact captured on parse failures (schemaCompliant=false). */
   parseFailureArtifact?: ParseFailureArtifact;
 }
@@ -231,7 +270,7 @@ export class MetricsCollector {
     this.metrics = {
       jobId,
       pipelineVariant,
-      schemaVersion: '2.6.33',
+      schemaVersion: '2.6.34',
       timestamp: new Date(),
       llmCalls: [],
       searchQueries: [],

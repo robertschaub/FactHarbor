@@ -50,7 +50,13 @@ import {
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
 
-import { recordLLMCall, recordGate1Stats } from "./metrics-integration";
+import {
+  buildPromptRuntimeFields,
+  classifyStructuralRetryCause,
+  extractLLMUsageFields,
+  recordGate1Stats,
+  recordLLMCall,
+} from "./metrics-integration";
 
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
@@ -2623,13 +2629,18 @@ export async function runPass2(
   const bindingModeActive = salienceBinding?.mode === "binding";
   const salienceBindingContextJson = buildSalienceBindingContextJson(salienceBinding);
 
-  const renderedWithEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
+  const pass2PromptVariablesWithEvidence = {
     currentDate,
     analysisInput: inputText,
     preliminaryEvidence: buildPreliminaryEvidencePayload(preliminaryEvidence),
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
     inferredGeography: inferredGeography ?? "not geographically specific",
-  });
+  };
+  const renderedWithEvidence = await loadAndRenderSection(
+    "claimboundary",
+    "CLAIM_EXTRACTION_PASS2",
+    pass2PromptVariablesWithEvidence,
+  );
   if (!renderedWithEvidence) {
     throw new Error("Stage 1 Pass 2: Failed to load CLAIM_EXTRACTION_PASS2 prompt section");
   }
@@ -2637,13 +2648,18 @@ export async function runPass2(
   // Soft-refusal mitigation: keep a pre-rendered input-only prompt variant for retries.
   // If the model refuses with evidence context, retrying with no preliminary evidence
   // often avoids policy over-triggering while preserving claim fidelity to user input.
-  const renderedWithoutEvidence = await loadAndRenderSection("claimboundary", "CLAIM_EXTRACTION_PASS2", {
+  const pass2PromptVariablesWithoutEvidence = {
     currentDate,
     analysisInput: inputText,
     preliminaryEvidence: "[]",
     atomicityGuidance: getAtomicityGuidance(pipelineConfig.claimAtomicityLevel ?? 3),
     inferredGeography: inferredGeography ?? "not geographically specific",
-  }) ?? renderedWithEvidence;
+  };
+  const renderedWithoutEvidence = await loadAndRenderSection(
+    "claimboundary",
+    "CLAIM_EXTRACTION_PASS2",
+    pass2PromptVariablesWithoutEvidence,
+  ) ?? renderedWithEvidence;
 
   let pass2BindingAppendix = "";
   if (bindingModeActive) {
@@ -2675,6 +2691,7 @@ export async function runPass2(
   let retryGuidance: string | null = null;
   let wasTotalRefusal = false;
   let retryWithoutPreliminaryEvidence = false;
+  let retryCauseForAttempt: ReturnType<typeof classifyStructuralRetryCause> | undefined;
 
   // Appended to every user message (not just retries) to establish the verification-only
   // frame before the model evaluates topic sensitivity. Sonnet 4.x soft-refuses politically
@@ -2713,6 +2730,10 @@ export async function runPass2(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const attemptStartedAt = Date.now();
     let attemptResult: any;
+    let userContent = inputText;
+    let activeSystemPrompt = renderedWithEvidence.content + pass2BindingAppendix;
+    let activeRendered = renderedWithEvidence;
+    let activePromptVariables = pass2PromptVariablesWithEvidence;
     try {
       // Always anchor with fact-checking context; on retry also append schema/quality guidance.
       // Structured as [user input] + [context] + [retry guidance if any] to keep the
@@ -2728,10 +2749,14 @@ export async function runPass2(
       if (languageDirective) {
         guidanceParts.push(languageDirective);
       }
-      const userContent = guidanceParts.join("\n\n");
-      const activeSystemPrompt = retryWithoutPreliminaryEvidence
-        ? renderedWithoutEvidence.content + pass2BindingAppendix
-        : renderedWithEvidence.content + pass2BindingAppendix;
+      userContent = guidanceParts.join("\n\n");
+      activeRendered = retryWithoutPreliminaryEvidence
+        ? renderedWithoutEvidence
+        : renderedWithEvidence;
+      activePromptVariables = retryWithoutPreliminaryEvidence
+        ? pass2PromptVariablesWithoutEvidence
+        : pass2PromptVariablesWithEvidence;
+      activeSystemPrompt = activeRendered.content + pass2BindingAppendix;
 
       attemptResult = await generateText({
         model: model.model,
@@ -2821,13 +2846,26 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         taskType: "understand",
         provider: model.provider,
         modelName: model.modelName,
-        promptTokens: attemptResult.usage?.inputTokens ?? 0,
-        completionTokens: attemptResult.usage?.outputTokens ?? 0,
-        totalTokens: attemptResult.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(attemptResult?.usage),
         durationMs: Date.now() - attemptStartedAt,
         success: true,
         schemaCompliant: true,
         retries: attempt,
+        ...buildPromptRuntimeFields(activeRendered, {
+          renderedSystemContent: activeSystemPrompt,
+          dynamicPayload: [
+            activePromptVariables,
+            userContent,
+            bindingModeActive ? salienceBindingContextJson : undefined,
+          ],
+          retryCause: attempt > 0 ? retryCauseForAttempt ?? "unknown" : undefined,
+          retryBranch: attempt > 0
+            ? retryWithoutPreliminaryEvidence
+              ? "pass2_input_only_retry"
+              : "pass2_guided_retry"
+            : undefined,
+          outputBranch: attempt > 0 ? "retry" : "initial",
+        }),
         timestamp: new Date(),
       });
 
@@ -2835,20 +2873,35 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
     } catch (err) {
       lastError = err as Error;
       const errorMessage = err instanceof Error ? err.message : String(err);
+      const structuralRetryCause = classifyStructuralRetryCause(err);
       recordLLMCall({
         taskType: "understand",
         provider: model.provider,
         modelName: model.modelName,
-        promptTokens: attemptResult?.usage?.inputTokens ?? 0,
-        completionTokens: attemptResult?.usage?.outputTokens ?? 0,
-        totalTokens: attemptResult?.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(attemptResult?.usage),
         durationMs: Date.now() - attemptStartedAt,
         success: false,
         schemaCompliant: false,
         retries: attempt,
         errorMessage,
+        ...buildPromptRuntimeFields(activeRendered, {
+          renderedSystemContent: activeSystemPrompt,
+          dynamicPayload: [
+            activePromptVariables,
+            userContent,
+            bindingModeActive ? salienceBindingContextJson : undefined,
+          ],
+          retryCause: structuralRetryCause,
+          retryBranch: attempt > 0
+            ? retryWithoutPreliminaryEvidence
+              ? "pass2_input_only_retry"
+              : "pass2_guided_retry"
+            : undefined,
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
       });
+      retryCauseForAttempt = structuralRetryCause;
 
       // Log detailed Zod validation errors for diagnostics
       if (err instanceof z.ZodError) {
@@ -2872,18 +2925,23 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
         const fallbackModel = getModelForTask("understand", undefined, pipelineConfig);
         if (fallbackModel.modelName !== model.modelName) {
           console.warn(`[Stage1 Pass2] Total refusal after ${maxRetries + 1} attempts with ${model.modelName}. Attempting fallback with ${fallbackModel.modelName}.`);
+          const fallbackStartedAt = Date.now();
+          let fallbackResult: any;
+          const fallbackRendered = retryWithoutPreliminaryEvidence
+            ? renderedWithoutEvidence
+            : renderedWithEvidence;
+          const fallbackSystemPrompt = fallbackRendered.content + pass2BindingAppendix;
+          let fallbackUserContent = inputText;
           try {
-            const fallbackUserContent = retryGuidance
+            fallbackUserContent = retryGuidance
               ? `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}\n\n${retryGuidance}${languageDirective ? `\n\n${languageDirective}` : ""}`
               : `${inputText}\n\n---\n${FACT_CHECK_CONTEXT}${languageDirective ? `\n\n${languageDirective}` : ""}`;
-            const fallbackResult = await generateText({
+            fallbackResult = await generateText({
               model: fallbackModel.model,
               messages: [
                 {
                   role: "system" as const,
-                  content: retryWithoutPreliminaryEvidence
-                    ? renderedWithoutEvidence.content + pass2BindingAppendix
-                    : renderedWithEvidence.content + pass2BindingAppendix,
+                  content: fallbackSystemPrompt,
                   providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
                 },
                 { role: "user" as const, content: fallbackUserContent },
@@ -2910,6 +2968,30 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
                   }
                 });
                 console.log(`[Stage1 Pass2] Fallback model ${fallbackModel.modelName} succeeded (recovered from soft refusal).`);
+                recordLLMCall({
+                  taskType: "understand",
+                  provider: fallbackModel.provider,
+                  modelName: fallbackModel.modelName,
+                  ...extractLLMUsageFields(fallbackResult?.usage),
+                  durationMs: Date.now() - fallbackStartedAt,
+                  success: true,
+                  schemaCompliant: true,
+                  retries: maxRetries + 1,
+                  ...buildPromptRuntimeFields(fallbackRendered, {
+                    renderedSystemContent: fallbackSystemPrompt,
+                    dynamicPayload: [
+                      retryWithoutPreliminaryEvidence
+                        ? pass2PromptVariablesWithoutEvidence
+                        : pass2PromptVariablesWithEvidence,
+                      fallbackUserContent,
+                      bindingModeActive ? salienceBindingContextJson : undefined,
+                    ],
+                    retryCause: retryCauseForAttempt ?? "validation",
+                    retryBranch: "pass2_fallback_model",
+                    outputBranch: "fallback",
+                  }),
+                  timestamp: new Date(),
+                });
                 if (state) {
                   state.warnings.push({
                     type: "structured_output_failure",
@@ -2932,8 +3014,60 @@ If prior evidence context was too sensitive, focus strictly on extracting claims
               }
               console.warn(`[Stage1 Pass2] Fallback model returned low-quality output: ${fallbackQualityIssues.join("; ")}`);
             }
+            recordLLMCall({
+              taskType: "understand",
+              provider: fallbackModel.provider,
+              modelName: fallbackModel.modelName,
+              ...extractLLMUsageFields(fallbackResult?.usage),
+              durationMs: Date.now() - fallbackStartedAt,
+              success: false,
+              schemaCompliant: false,
+              retries: maxRetries + 1,
+              errorMessage: fallbackParsed
+                ? "Stage 1 Pass 2 fallback model returned low-quality output"
+                : "Stage 1 Pass 2 fallback model returned no structured output",
+              ...buildPromptRuntimeFields(fallbackRendered, {
+                renderedSystemContent: fallbackSystemPrompt,
+                dynamicPayload: [
+                  retryWithoutPreliminaryEvidence
+                    ? pass2PromptVariablesWithoutEvidence
+                    : pass2PromptVariablesWithEvidence,
+                  fallbackUserContent,
+                  bindingModeActive ? salienceBindingContextJson : undefined,
+                ],
+                retryCause: fallbackParsed ? "validation" : "parse",
+                retryBranch: "pass2_fallback_model",
+                outputBranch: "failed",
+              }),
+              timestamp: new Date(),
+            });
             console.warn(`[Stage1 Pass2] Fallback model also returned empty output.`);
           } catch (fallbackErr) {
+            recordLLMCall({
+              taskType: "understand",
+              provider: fallbackModel.provider,
+              modelName: fallbackModel.modelName,
+              ...extractLLMUsageFields(fallbackResult?.usage),
+              durationMs: Date.now() - fallbackStartedAt,
+              success: false,
+              schemaCompliant: false,
+              retries: maxRetries + 1,
+              errorMessage: fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr),
+              ...buildPromptRuntimeFields(fallbackRendered, {
+                renderedSystemContent: fallbackSystemPrompt,
+                dynamicPayload: [
+                  retryWithoutPreliminaryEvidence
+                    ? pass2PromptVariablesWithoutEvidence
+                    : pass2PromptVariablesWithEvidence,
+                  fallbackUserContent,
+                  bindingModeActive ? salienceBindingContextJson : undefined,
+                ],
+                retryCause: classifyStructuralRetryCause(fallbackErr),
+                retryBranch: "pass2_fallback_model",
+                outputBranch: "failed",
+              }),
+              timestamp: new Date(),
+            });
             console.warn(`[Stage1 Pass2] Fallback model failed: ${(fallbackErr as Error).message}`);
           }
         }

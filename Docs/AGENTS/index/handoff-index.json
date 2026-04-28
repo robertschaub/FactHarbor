@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T05:51:00.538Z",
-  "count": 408,
+  "generatedAt": "2026-04-28T06:16:52.178Z",
+  "count": 407,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,23 +4462,6 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
-      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
-      "date": "2026-04-19",
-      "roles": [
-        "llm_expert"
-      ],
-      "topics": [
-        "claim",
-        "extraction",
-        "atomicity",
-        "review"
-      ],
-      "files_touched": [
-        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
-      ],
-      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
-    },
-    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8653,7 +8636,7 @@
             "what_was_added": "a scoped pipeline-config hash helper, focused prepared-snapshot regression coverage, admin activation/rollback cache invalidation, and cache-invalidation route tests.",
             "net_mechanism_count": "unchanged for analysis flow; one small structural helper added inside the existing provenance mechanism.",
             "budget_reconciliation": "actual diff stayed within prepared Stage 1 provenance plus UCM cache invalidation; no prompt changes, schema changes, live reruns, retries, fallback modes, or claim-selection behavior changes were added.",
-            "verification": "focused prepared Stage 1 tests; ACS flow/draft route tests; runner split tests; admin config API tests; config schema/drift tests; `npm -w apps/web run build`; `git diff --check`.",
+            "verification": "focused prepared Stage 1 tests; ACS flow/draft route tests; runner split tests; admin config API tests; config schema/drift tests; live probe `92d5e1c4252d4936b733a96009464ffa`; Stage 2 abort regression test; Stage 2 research/refinement focused tests; `npm -w apps/web run build`; `git diff --check`.",
             "debt_accepted_and_removal_trigger": "UX recovery for truly stale drafts remains follow-up work; implement only if stale-draft user friction recurs or admin config changes during in-flight preparation become common.",
             "residual_debt": "generic failed-job retry still does not preserve claim-selection context, so failed draft-backed jobs should be reprepared rather than retried blindly."
           }

@@ -84,3 +84,45 @@ describe("MetricsCollector cost estimation", () => {
     },
   );
 });
+
+describe("MetricsCollector prompt runtime diagnostics", () => {
+  it("preserves optional prompt-runtime fields on individual LLM calls", () => {
+    const metrics = finalizeMetricsForSingleCall({
+      promptProfile: "claimboundary",
+      promptSection: "EXTRACT_EVIDENCE",
+      promptContentHash: "composite-hash",
+      promptSectionHash: "section-hash",
+      renderedSystemChars: 1400,
+      renderedSystemEstimatedTokens: 400,
+      dynamicPayloadChars: 700,
+      dynamicPayloadEstimatedTokens: 200,
+      retryCause: "schema",
+      retryBranch: "pass2_guided_retry",
+      outputBranch: "retry",
+    });
+
+    expect(metrics.llmCalls[0]).toMatchObject({
+      promptProfile: "claimboundary",
+      promptSection: "EXTRACT_EVIDENCE",
+      promptContentHash: "composite-hash",
+      promptSectionHash: "section-hash",
+      renderedSystemChars: 1400,
+      renderedSystemEstimatedTokens: 400,
+      dynamicPayloadChars: 700,
+      dynamicPayloadEstimatedTokens: 200,
+      retryCause: "schema",
+      retryBranch: "pass2_guided_retry",
+      outputBranch: "retry",
+    });
+  });
+
+  it("aggregates provider cache read and creation token fields", () => {
+    const metrics = finalizeMetricsForSingleCall({
+      cacheReadInputTokens: 120,
+      cacheCreationInputTokens: 80,
+    });
+
+    expect(metrics.tokenCounts.cacheReadInputTokens).toBe(120);
+    expect(metrics.tokenCounts.cacheCreationInputTokens).toBe(80);
+  });
+});

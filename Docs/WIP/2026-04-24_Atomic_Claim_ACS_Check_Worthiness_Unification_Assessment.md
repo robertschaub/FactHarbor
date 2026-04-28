@@ -176,7 +176,7 @@ This is the right boundary for lean unification. It avoids re-running extraction
 
 ### Retired alternatives
 
-`Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` is retired. Text-first or pre-ACS shortcuts are not the current direction because preliminary evidence can affect final atomic claims.
+`Docs/ARCHIVE/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` is retired. Text-first or pre-ACS shortcuts are not the current direction because preliminary evidence can affect final atomic claims.
 
 Conclusion: A full merge would contradict the recent architecture record. A service-contract unification matches it.
 
@@ -497,7 +497,7 @@ The claim `statement` fields are derived from input text alone. A fallback path 
 
 ### Why this was already rejected
 
-The retired text-first proposal (`Docs/WIP/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md`) proposed exactly this: run Pass 2 text-only, show selection earlier, run evidence grounding later. The Captain rejected it as a **semantics-changing redesign** because:
+The retired text-first proposal (`Docs/ARCHIVE/2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md`) proposed exactly this: run Pass 2 text-only, show selection earlier, run evidence grounding later. The Captain rejected it as a **semantics-changing redesign** because:
 
 - Preliminary evidence helps calibrate `groundingQuality` on difficult inputs (campaign pages, long PDFs, manifesto-style content).
 - The quality loss from removing it is **not yet measured**.

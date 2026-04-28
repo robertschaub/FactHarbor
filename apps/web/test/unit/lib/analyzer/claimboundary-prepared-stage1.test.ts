@@ -26,7 +26,14 @@ vi.mock("@/lib/config-snapshots", () => ({
 }));
 
 vi.mock("@/lib/analyzer/metrics-integration", () => ({
+  buildPromptRuntimeFields: vi.fn(() => ({})),
+  classifyStructuralRetryCause: vi.fn(() => "unknown"),
   runWithMetrics: vi.fn(async (_jobId: string, _pipeline: string, _pipelineConfig: unknown, _searchConfig: unknown, fn: () => Promise<unknown>) => fn()),
+  extractLLMUsageFields: vi.fn((usage: any = {}) => ({
+    promptTokens: usage.inputTokens ?? 0,
+    completionTokens: usage.outputTokens ?? 0,
+    totalTokens: usage.totalTokens ?? 0,
+  })),
   startPhase: vi.fn(),
   endPhase: vi.fn(),
   recordLLMCall: vi.fn(),

@@ -14,7 +14,7 @@
 
 | File | Reason |
 |------|--------|
-| `2026-04-20_Prompt_Split_Plan.md` | DONE — AGENTS large-file targeted-read exception already landed; physical split remains deferred in Backlog |
+| `2026-04-20_Prompt_Split_Plan.md` | DONE/MIXED — AGENTS large-file targeted-read exception already landed; physical split/runtime-efficiency follow-up is active in `Docs/WIP/2026-04-28_Prompt_Split_Runtime_Efficiency_Execution_Plan.md` |
 | `2026-04-23_Session_Preparation_Text_First_Follow_On_Proposal.md` | SUPERSEDED — Captain rejected text-first semantics change for the current problem; semantics-preserving async/session proposal is the active direction |
 
 ---

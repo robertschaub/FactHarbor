@@ -9,7 +9,14 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { createMetricsCollector, persistMetrics, type MetricsCollector } from './metrics';
-import type { FailureModeMetrics, LLMCallMetric, QualityHealthMetrics, SearchQueryMetric } from './metrics';
+import type {
+  FailureModeMetrics,
+  LLMCallMetric,
+  LLMOutputBranch,
+  LLMRetryCause,
+  QualityHealthMetrics,
+  SearchQueryMetric,
+} from './metrics';
 import { DEFAULT_PIPELINE_CONFIG, DEFAULT_SEARCH_CONFIG, type PipelineConfig, type SearchConfig } from '../config-schemas';
 
 /**
@@ -77,6 +84,132 @@ export function endPhase(phase: 'understand' | 'research' | 'cluster' | 'verdict
  */
 export function recordLLMCall(call: LLMCallMetric): void {
   getJobMetrics()?.recordLLMCall(call);
+}
+
+interface PromptRuntimeSource {
+  content?: string;
+  contentHash?: string;
+  promptProfile?: string;
+  promptSection?: string;
+  promptSectionHash?: string;
+}
+
+interface PromptRuntimeMetricOptions {
+  promptProfile?: string;
+  promptSection?: string;
+  promptContentHash?: string;
+  promptSectionHash?: string;
+  renderedSystemContent?: string;
+  dynamicPayload?: unknown;
+  retryCause?: LLMRetryCause;
+  retryBranch?: string;
+  outputBranch?: LLMOutputBranch;
+}
+
+interface LLMUsageShape {
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  promptTokens?: number;
+  completionTokens?: number;
+  inputTokenDetails?: {
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+    cacheCreationTokens?: number;
+  };
+  cacheReadInputTokens?: number;
+  cacheCreationInputTokens?: number;
+}
+
+function countDynamicPayloadChars(payload: unknown): number {
+  if (payload === undefined || payload === null) return 0;
+  if (typeof payload === "string") return payload.length;
+  if (typeof payload === "number" || typeof payload === "boolean" || typeof payload === "bigint") {
+    return String(payload).length;
+  }
+  if (Array.isArray(payload)) {
+    return payload.reduce((sum, item) => sum + countDynamicPayloadChars(item), 0);
+  }
+  try {
+    return JSON.stringify(payload)?.length ?? 0;
+  } catch {
+    return String(payload).length;
+  }
+}
+
+function estimateTokensFromChars(chars: number): number {
+  return chars <= 0 ? 0 : Math.ceil(chars / 3.5);
+}
+
+function asUsageShape(usage: unknown): LLMUsageShape {
+  return usage && typeof usage === "object" ? usage as LLMUsageShape : {};
+}
+
+export function extractLLMUsageFields(usage: unknown): Pick<
+  LLMCallMetric,
+  | "promptTokens"
+  | "completionTokens"
+  | "totalTokens"
+  | "cacheReadInputTokens"
+  | "cacheCreationInputTokens"
+> {
+  const shaped = asUsageShape(usage);
+  const promptTokens = shaped.inputTokens ?? shaped.promptTokens ?? 0;
+  const completionTokens = shaped.outputTokens ?? shaped.completionTokens ?? 0;
+  const totalTokens = shaped.totalTokens ?? promptTokens + completionTokens;
+  const cacheReadInputTokens =
+    shaped.cacheReadInputTokens
+    ?? shaped.inputTokenDetails?.cacheReadTokens
+    ?? 0;
+  const cacheCreationInputTokens =
+    shaped.cacheCreationInputTokens
+    ?? shaped.inputTokenDetails?.cacheWriteTokens
+    ?? shaped.inputTokenDetails?.cacheCreationTokens
+    ?? 0;
+
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    cacheReadInputTokens,
+    cacheCreationInputTokens,
+  };
+}
+
+export function buildPromptRuntimeFields(
+  rendered: PromptRuntimeSource | null | undefined,
+  options: PromptRuntimeMetricOptions = {},
+): Partial<LLMCallMetric> {
+  const renderedSystemContent = options.renderedSystemContent ?? rendered?.content ?? "";
+  const dynamicPayloadChars = countDynamicPayloadChars(options.dynamicPayload);
+
+  return {
+    promptProfile: options.promptProfile ?? rendered?.promptProfile,
+    promptSection: options.promptSection ?? rendered?.promptSection,
+    promptContentHash: options.promptContentHash ?? rendered?.contentHash,
+    promptSectionHash: options.promptSectionHash ?? rendered?.promptSectionHash,
+    renderedSystemChars: renderedSystemContent.length,
+    renderedSystemEstimatedTokens: estimateTokensFromChars(renderedSystemContent.length),
+    dynamicPayloadChars,
+    dynamicPayloadEstimatedTokens: estimateTokensFromChars(dynamicPayloadChars),
+    retryCause: options.retryCause,
+    retryBranch: options.retryBranch,
+    outputBranch: options.outputBranch,
+  };
+}
+
+export function classifyStructuralRetryCause(error: unknown): LLMRetryCause {
+  if (error instanceof Error) {
+    if (error.name === "ZodError") return "schema";
+    const message = error.message.toLowerCase();
+    if (message.includes("quality validation")) return "validation";
+    if (message.includes("no structured output") || message.includes("no object generated")) return "parse";
+    if (message.includes("contract")) return "contract";
+    if (message.includes("schema") || message.includes("validation")) return "schema";
+    if (message.includes("timeout") || message.includes("timed out")) return "timeout";
+    if (message.includes("provider") || message.includes("api call")) return "provider";
+  }
+  return "unknown";
 }
 
 /**

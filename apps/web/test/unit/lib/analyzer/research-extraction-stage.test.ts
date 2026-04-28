@@ -16,6 +16,7 @@ import {
   getModelForTask,
   extractStructuredOutput
 } from "@/lib/analyzer/llm";
+import { recordLLMCall } from "@/lib/analyzer/metrics-integration";
 import { generateText } from "ai";
 import { mapCategory } from "@/lib/analyzer/pipeline-utils";
 
@@ -42,6 +43,27 @@ vi.mock("@/lib/analyzer/debug", () => ({
 }));
 
 vi.mock("@/lib/analyzer/metrics-integration", () => ({
+  buildPromptRuntimeFields: vi.fn((rendered: any, options: any = {}) => ({
+    promptProfile: options.promptProfile ?? rendered?.promptProfile,
+    promptSection: options.promptSection ?? rendered?.promptSection,
+    promptContentHash: options.promptContentHash ?? rendered?.contentHash,
+    promptSectionHash: options.promptSectionHash ?? rendered?.promptSectionHash,
+    renderedSystemChars: (options.renderedSystemContent ?? rendered?.content ?? "").length,
+    renderedSystemEstimatedTokens: 1,
+    dynamicPayloadChars: JSON.stringify(options.dynamicPayload ?? "")?.length ?? 0,
+    dynamicPayloadEstimatedTokens: 1,
+    retryCause: options.retryCause,
+    retryBranch: options.retryBranch,
+    outputBranch: options.outputBranch,
+  })),
+  classifyStructuralRetryCause: vi.fn(() => "unknown"),
+  extractLLMUsageFields: vi.fn((usage: any = {}) => ({
+    promptTokens: usage.inputTokens ?? 0,
+    completionTokens: usage.outputTokens ?? 0,
+    totalTokens: usage.totalTokens ?? 0,
+    cacheReadInputTokens: usage.inputTokenDetails?.cacheReadTokens ?? 0,
+    cacheCreationInputTokens: usage.inputTokenDetails?.cacheWriteTokens ?? 0,
+  })),
   recordLLMCall: vi.fn(),
 }));
 
@@ -59,6 +81,7 @@ const mockDebugLog = vi.mocked(debugLog);
 const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
 const mockGetModelForTask = vi.mocked(getModelForTask);
+const mockRecordLLMCall = vi.mocked(recordLLMCall);
 
 // ============================================================================
 // HELPERS
@@ -432,8 +455,28 @@ describe("Research Extraction Stage", () => {
       const claim = createClaim({ id: "AC_01", statement: "Test claim" });
       const sources = [{ url: "https://example.com/1", title: "Source 1", text: "text" }];
 
-      mockLoadSection.mockResolvedValue({ content: "extraction prompt", variables: {} });
-      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockLoadSection.mockResolvedValue({
+        content: "extraction prompt",
+        contentHash: "composite-hash",
+        loadedAt: "2026-04-28T00:00:00.000Z",
+        warnings: [],
+        promptProfile: "claimboundary",
+        promptSection: "EXTRACT_EVIDENCE",
+        promptSectionHash: "section-hash",
+        promptSectionEstimatedTokens: 11,
+      });
+      mockGenerateText.mockResolvedValue({
+        text: "",
+        usage: {
+          inputTokens: 120,
+          outputTokens: 30,
+          totalTokens: 150,
+          inputTokenDetails: {
+            cacheReadTokens: 80,
+            cacheWriteTokens: 40,
+          },
+        },
+      } as any);
       mockExtractOutput.mockReturnValue({
         evidenceItems: [
           {
@@ -452,6 +495,19 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0].statement).toBe("extracted evidence");
       expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+      expect(mockRecordLLMCall).toHaveBeenCalledWith(expect.objectContaining({
+        promptProfile: "claimboundary",
+        promptSection: "EXTRACT_EVIDENCE",
+        promptContentHash: "composite-hash",
+        promptSectionHash: "section-hash",
+        renderedSystemChars: "extraction prompt".length,
+        renderedSystemEstimatedTokens: expect.any(Number),
+        dynamicPayloadChars: expect.any(Number),
+        dynamicPayloadEstimatedTokens: expect.any(Number),
+        cacheReadInputTokens: 80,
+        cacheCreationInputTokens: 40,
+        outputBranch: "initial",
+      }));
     });
 
     it("passes the expected evidence profile to the extraction prompt", async () => {

@@ -12,7 +12,12 @@ import {
   formatPromptRelevantGeographies,
   normalizeRelevantGeographies,
 } from "./jurisdiction-context";
-import { recordLLMCall } from "./metrics-integration";
+import {
+  buildPromptRuntimeFields,
+  classifyStructuralRetryCause,
+  extractLLMUsageFields,
+  recordLLMCall,
+} from "./metrics-integration";
 import { debugLogFileOnly } from "./debug";
 import { 
   mapCategory, 
@@ -295,7 +300,7 @@ export async function extractResearchEvidence(
   const claimSet = allClaims.some((claim) => claim.id === targetClaim.id)
     ? allClaims
     : [targetClaim, ...allClaims];
-  const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
+  const promptVariables = {
     currentDate,
     claim: targetClaim.statement,
     expectedEvidenceProfile: JSON.stringify(targetClaim.expectedEvidenceProfile ?? {}, null, 2),
@@ -308,7 +313,8 @@ export async function extractResearchEvidence(
       `[Source ${i + 1}: ${s.title}]\nURL: ${s.url}\n${s.text}`
     ).join("\n\n---\n\n"),
     sourceUrl: sources.map((s) => s.url).join(", "),
-  });
+  };
+  const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", promptVariables);
   if (!rendered) return [];
 
   const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
@@ -342,14 +348,17 @@ export async function extractResearchEvidence(
         taskType: "research",
         provider: model.provider,
         modelName: model.modelName,
-        promptTokens: result.usage?.inputTokens ?? 0,
-        completionTokens: result.usage?.outputTokens ?? 0,
-        totalTokens: result.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(result?.usage),
         durationMs: Date.now() - llmCallStartedAt,
         success: false,
         schemaCompliant: false,
         retries: 0,
         errorMessage: "Stage 2 evidence extraction returned no structured output",
+        ...buildPromptRuntimeFields(rendered, {
+          dynamicPayload: promptVariables,
+          retryCause: "parse",
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
       });
       return [];
@@ -462,13 +471,15 @@ export async function extractResearchEvidence(
       taskType: "research",
       provider: model.provider,
       modelName: model.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
+      ...extractLLMUsageFields(result?.usage),
       durationMs: Date.now() - llmCallStartedAt,
       success: true,
       schemaCompliant: true,
       retries: 0,
+      ...buildPromptRuntimeFields(rendered, {
+        dynamicPayload: promptVariables,
+        outputBranch: "initial",
+      }),
       timestamp: new Date(),
     });
 
@@ -479,14 +490,17 @@ export async function extractResearchEvidence(
       taskType: "research",
       provider: model.provider,
       modelName: model.modelName,
-      promptTokens: result?.usage?.inputTokens ?? 0,
-      completionTokens: result?.usage?.outputTokens ?? 0,
-      totalTokens: result?.usage?.totalTokens ?? 0,
+      ...extractLLMUsageFields(result?.usage),
       durationMs: Date.now() - llmCallStartedAt,
       success: false,
       schemaCompliant: false,
       retries: 0,
       errorMessage,
+      ...buildPromptRuntimeFields(rendered, {
+        dynamicPayload: promptVariables,
+        retryCause: classifyStructuralRetryCause(err),
+        outputBranch: "failed",
+      }),
       timestamp: new Date(),
     });
     debugLogFileOnly("[Stage2] Evidence extraction failed", {
