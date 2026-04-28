@@ -2579,3 +2579,10 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **Warnings:** Do not submit live jobs yet. `npm -w apps/web run build`, script checks, mocked ACS checks, fixture normalization, and focused runner tests passed, but `npm test` is currently failing in unrelated runner/search/admin tests with timeout/global-mock symptoms. The affected runner suites pass directly, and `apps/web/src/lib/internal-runner-queue.ts` is already dirty from another agent.
 **Learnings:** Schema v2 summaries should only be produced for final `SUCCEEDED` jobs with parseable `resultJson`; draft/job interruptions, missing result JSON, and metadata loss should stay structured non-OK outcomes rather than half-comparable summaries.
 -> Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Slices2_3_Implementation.md
+
+---
+### 2026-04-28 | Senior Developer | Codex (GPT-5) | Runner Queue Test-Gate Stabilization -- [Standard] [open-items: no]
+**For next agent:** The ACS validation tooling slice no longer carries a broad `npm test` waiver. `apps/web/src/lib/internal-runner-queue.ts` now centralizes Vitest/test suppression for background-only queue scheduling while preserving explicit drain calls and production scheduling. The connectivity probe also passes `fetchImpl: globalThis.fetch` so suite-level fetch spies are consistently honored.
+**Warnings:** This is a test-gate cleanup only. It does not fix the ACS selected-claim research-distribution issue exposed by live canary `260c2539326b4d4eac47a6724665cf6d`, and it does not complete historical direct-reference mapping.
+**Learnings:** Runner queue tests need explicit control over background watchdog/drain scheduling; otherwise full-suite order can leak delayed work into unrelated tests while focused suites remain green.
+-> Docs/AGENTS/Handoffs/2026-04-28_Unassigned_Daily_Bug_Scan_Runner_Bootstrap_Leak_Fix.md

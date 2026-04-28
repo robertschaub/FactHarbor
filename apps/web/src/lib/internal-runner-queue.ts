@@ -162,7 +162,10 @@ async function probeAndMaybeResume(): Promise<boolean> {
     return false;
   }
 
-  const probe = await probeLLMConnectivity({ provider: "anthropic" });
+  const probe = await probeLLMConnectivity({
+    provider: "anthropic",
+    fetchImpl: globalThis.fetch,
+  });
   if (!probe.reachable) {
     return false;
   }
@@ -218,6 +221,8 @@ function normalizeDraftRecoverySnapshot(draft: any): DraftRecoverySnapshot | nul
 }
 
 function ensureQueueWatchdogStarted(): void {
+  if (!shouldScheduleBackgroundQueueWork()) return;
+
   const qs = getRunnerQueueState();
   if (qs.watchdogTimer) return;
 
@@ -554,7 +559,9 @@ async function runJobBackground(jobId: string) {
       const qs2 = getRunnerQueueState();
       qs2.runningCount = Math.max(0, qs2.runningCount - 1);
       qs2.runningJobIds.delete(jobId);
-      void drainRunnerQueue();
+      if (shouldScheduleBackgroundQueueWork()) {
+        void drainRunnerQueue();
+      }
     }
   });
 }
@@ -845,7 +852,9 @@ export async function drainRunnerQueue() {
     qs.isDraining = false;
     if (qs.drainRequested) {
       qs.drainRequested = false;
-      void drainRunnerQueue();
+      if (shouldScheduleBackgroundQueueWork()) {
+        void drainRunnerQueue();
+      }
     }
   }
 }
@@ -1104,7 +1113,9 @@ export async function drainDraftQueue() {
     ds.isDraining = false;
     if (ds.drainRequested) {
       ds.drainRequested = false;
-      void drainDraftQueue();
+      if (shouldScheduleBackgroundQueueWork()) {
+        void drainDraftQueue();
+      }
     }
   }
 }
@@ -1521,16 +1532,24 @@ async function runDraftPreparationBackground(draftId: string) {
       const ds2 = getDraftQueueState();
       ds2.runningCount = Math.max(0, ds2.runningCount - 1);
       ds2.runningDraftIds.delete(draftId);
-      void drainDraftQueue();
-      void drainRunnerQueue();
+      if (shouldScheduleBackgroundQueueWork()) {
+        void drainDraftQueue();
+        void drainRunnerQueue();
+      }
     }
   });
 }
 
+function shouldScheduleBackgroundQueueWork(): boolean {
+  return process.env.NODE_ENV !== "test" && process.env.VITEST !== "true";
+}
+
 // Bootstrap: start watchdog on module load so persisted QUEUED jobs are
 // recovered after a process restart without waiting for a new job trigger.
-// Short delay lets the server finish initializing before the first drain
-// attempts API calls (failures are non-fatal and retry on next watchdog tick).
-ensureQueueWatchdogStarted();
-setTimeout(() => void drainRunnerQueue(), 5_000);
-setTimeout(() => void drainDraftQueue(), 5_000);
+// Tests import this module directly and drive drains manually, so skip the
+// background bootstrap there to avoid cross-suite timer leakage.
+if (shouldScheduleBackgroundQueueWork()) {
+  ensureQueueWatchdogStarted();
+  setTimeout(() => void drainRunnerQueue(), 5_000);
+  setTimeout(() => void drainDraftQueue(), 5_000);
+}

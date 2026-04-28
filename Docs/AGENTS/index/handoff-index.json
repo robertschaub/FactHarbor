@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T11:33:07.348Z",
-  "count": 408,
+  "generatedAt": "2026-04-28T19:54:59.521Z",
+  "count": 415,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8658,6 +8675,126 @@
       ],
       "files_touched": [],
       "summary": "2026-04-28 - Lead Developer + LLM Expert - Prompt Runtime Split Execution"
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Full_Debate_Spec.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer",
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "debate",
+        "architecture",
+        "metadata",
+        "thin_waist"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-28_ACS_Validation_Path_Deployment_Solution.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Full_Debate_Spec.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start with Slice 1 from `Docs/WIP/2026-04-28_ACS_Validation_Path_Deployment_Solution.md`: inventory/quarantine direct callers, mark quarantined scripts in place, and extend `apps/web/scripts/automatic-claim-selection.js` into an admin-aware shared validation client. Then implement Slice 2 Tier 1 pas"
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Path_Documentation.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "direct_full_baseline",
+        "claim_selection",
+        "deployment"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-28_ACS_Validation_Path_Deployment_Solution.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Path_Documentation.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement the documented validation-tooling amendment next: default to `acs-automatic-draft`, add a two-flag `direct-full-baseline` mode, emit submission-path and selected/prepared claim-count metadata, then run safe tests/build before any live jobs."
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Simplified_Review_Plan.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "simplification",
+        "metadata",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-28_ACS_Validation_Path_Deployment_Solution.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Simplified_Review_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Review and implement only the simplified slice: shared ACS automatic submission helper, passive metadata extraction, read-only historical comparator mapping, safe tests/build, then commit/restart before any live ACS validation jobs."
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Slice1_Implementation.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "slice1",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-28 - Senior Developer - ACS Validation Slice 1 Implementation"
+    },
+    {
+      "file": "2026-04-28_Senior_Developer_ACS_Validation_Slices2_3_Implementation.md",
+      "date": "2026-04-28",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "validation",
+        "slices2",
+        "3",
+        "implementation"
+      ],
+      "files_touched": [],
+      "summary": "2026-04-28 - Senior Developer - ACS Validation Slices 2-3 Implementation"
+    },
+    {
+      "file": "2026-04-28_Unassigned_Daily_Bug_Scan_Runner_Bootstrap_Leak_Fix.md",
+      "date": "2026-04-28",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "daily",
+        "bug",
+        "scan",
+        "runner",
+        "bootstrap",
+        "leak",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "Docs/AGENTS/Handoffs/2026-04-28_Unassigned_Daily_Bug_Scan_Runner_Bootstrap_Leak_Fix.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
+      ],
+      "summary": "Baseline after this run is: recent committed changes are green on `npm test` and `npm -w apps/web run build`, and the previous \"known full-suite runner heartbeat timeout\" warning is resolved. If another runner flake appears, start with `apps/web/src/lib/internal-runner-queue.ts` background schedulin"
     }
   ]
 }
