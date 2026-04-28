@@ -32,6 +32,11 @@ public sealed class JobService
         };
     }
 
+    private static string GetDraftSubmissionPath(string? selectionMode)
+        => string.Equals(selectionMode, "automatic", StringComparison.OrdinalIgnoreCase)
+            ? "acs-automatic-draft"
+            : "acs-interactive-draft";
+
     public async Task<JobEntity> CreateJobAsync(
         string inputType,
         string inputValue,
@@ -725,7 +730,7 @@ public sealed class JobService
             ClaimSelectionDraftId = draft.DraftId,
             PreparedStage1Json = preparedStage1Json,
             ClaimSelectionJson = selectionJson,
-            SubmissionPath = "acs-automatic-draft",
+            SubmissionPath = GetDraftSubmissionPath(draft.SelectionMode),
             IsHidden = draft.IsHidden,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,

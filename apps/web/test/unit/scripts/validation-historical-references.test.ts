@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -262,5 +264,54 @@ describe("Captain-approved validation historical references", () => {
         selectionCap: 5,
       },
     });
+  });
+
+  it("batch comparator reads promptContentHash from schema v2 summaries", () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fh-compare-batches-"));
+    const oldDir = path.join(tmpRoot, "old");
+    const newDir = path.join(tmpRoot, "new");
+    fs.mkdirSync(oldDir);
+    fs.mkdirSync(newDir);
+
+    const baseSummary = {
+      family: { familyName: "fixture_family" },
+      verdict: "MIXED",
+      truthPercentage: 50,
+      confidence: 70,
+      claimVerdictCount: 1,
+      warnings: { total: 0, bySeverity: {} },
+      selectedClaimCount: 1,
+      preparedClaimCount: 1,
+      deferredClaimCount: 0,
+      zeroTargetedSelectedClaimCount: 0,
+    };
+
+    fs.writeFileSync(
+      path.join(oldDir, "fixture_family.json"),
+      JSON.stringify({
+        ...baseSummary,
+        gitCommitHash: "1111111abcdef",
+        promptContentHash: "old-prompt-content-hash",
+      }),
+    );
+    fs.writeFileSync(
+      path.join(newDir, "fixture_family.json"),
+      JSON.stringify({
+        ...baseSummary,
+        gitCommitHash: "2222222abcdef",
+        promptContentHash: "new-prompt-content-hash",
+      }),
+    );
+
+    const output = execFileSync(
+      "node",
+      [path.join(repoRoot, "scripts", "validation", "compare-batches.js"), oldDir, newDir],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      },
+    );
+
+    expect(output).toContain("**Prompt:** old-prom → new-prom (CHANGED)");
   });
 });

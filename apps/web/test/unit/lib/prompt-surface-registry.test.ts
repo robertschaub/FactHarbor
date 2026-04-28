@@ -14,12 +14,16 @@ describe("prompt surface registry", () => {
       "source-reliability-core",
       "input-policy-gate",
       "grounding-check-legacy",
+      "claimboundary-pass2-inline-framing",
+      "source-reliability-evidence-pack-inline",
       "inverse-claim-verification",
     ]);
 
     expect(listPromptSurfaceExceptions().map((entry) => entry.id)).toEqual([
       "source-reliability-core",
       "grounding-check-legacy",
+      "claimboundary-pass2-inline-framing",
+      "source-reliability-evidence-pack-inline",
       "inverse-claim-verification",
     ]);
   });
@@ -51,6 +55,18 @@ describe("prompt surface registry", () => {
       adminEditable: true,
       reseedSupported: false,
       ucmProfile: "orchestrated",
+    });
+    expect(getPromptSurfaceRegistryEntry("claimboundary-pass2-inline-framing")).toMatchObject({
+      management: "inline_code",
+      stability: "intentional_exception",
+      adminEditable: false,
+      reseedSupported: false,
+    });
+    expect(getPromptSurfaceRegistryEntry("source-reliability-evidence-pack-inline")).toMatchObject({
+      management: "inline_code",
+      stability: "intentional_exception",
+      adminEditable: false,
+      reseedSupported: false,
     });
     expect(getPromptSurfaceRegistryEntry("inverse-claim-verification")).toMatchObject({
       management: "disk_only_calibration",

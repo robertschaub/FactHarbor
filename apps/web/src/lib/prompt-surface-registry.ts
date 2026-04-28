@@ -2,6 +2,7 @@ export type PromptSurfaceManagement =
   | "manifest_backed_ucm"
   | "ucm"
   | "db_only_legacy"
+  | "inline_code"
   | "code_built"
   | "disk_only_calibration";
 
@@ -95,6 +96,30 @@ export const PROMPT_SURFACE_REGISTRY: PromptSurfaceRegistryEntry[] = [
     sourcePaths: [],
     notes:
       "Current exception: grounding checks load two sections from the DB-only legacy orchestrated profile; no repo prompt file should be re-added for this removed pipeline.",
+  },
+  {
+    id: "claimboundary-pass2-inline-framing",
+    label: "ClaimBoundary Pass 2 inline framing",
+    management: "inline_code",
+    stability: "intentional_exception",
+    adminEditable: false,
+    reseedSupported: false,
+    runtimeOwners: ["apps/web/src/lib/analyzer/claim-extraction-stage.ts"],
+    sourcePaths: ["apps/web/src/lib/analyzer/claim-extraction-stage.ts"],
+    notes:
+      "Current exception: Stage 1 Pass 2 appends model-facing fact-check framing and retry/language directives in code around UCM prompt sections.",
+  },
+  {
+    id: "source-reliability-evidence-pack-inline",
+    label: "Source reliability evidence-pack language helpers",
+    management: "inline_code",
+    stability: "intentional_exception",
+    adminEditable: false,
+    reseedSupported: false,
+    runtimeOwners: ["apps/web/src/lib/source-reliability/sr-eval-evidence-pack.ts"],
+    sourcePaths: ["apps/web/src/lib/source-reliability/sr-eval-evidence-pack.ts"],
+    notes:
+      "Current exception: SR evidence-pack language detection and search-term translation helpers build model-facing prompt text in code.",
   },
   {
     id: "inverse-claim-verification",

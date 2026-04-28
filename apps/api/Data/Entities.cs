@@ -70,7 +70,7 @@ public sealed class JobEntity
 
     /// <summary>
     /// Structural submission path that created the job.
-    /// Examples: "direct-api", "acs-automatic-draft", "retry".
+    /// Examples: "direct-api", "acs-interactive-draft", "acs-automatic-draft", "retry".
     /// </summary>
     public string? SubmissionPath { get; set; }
 
