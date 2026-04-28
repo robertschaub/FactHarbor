@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T22:22:56.652Z",
-  "count": 418,
+  "generatedAt": "2026-04-28T22:42:48.279Z",
+  "count": 419,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8855,6 +8855,42 @@
         "Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md"
       ],
       "summary": "Start with `Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md`. The exact live source surfaces identified were `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/app/analyze/select/[draftId]/ClaimSelectionPanel.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, and th"
+    },
+    {
+      "file": "2026-04-29_Senior_Developer_Check_Worthiness_Phase1a_Implementation.md",
+      "date": "2026-04-29",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "check",
+        "worthiness",
+        "phase1a",
+        "implementation"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/types.ts"
+      ],
+      "summary": "Implementation commit is `46807bdf` (`fix: align check-worthiness contract and labels`), following planning commit `49773c9b`. Verification passed with source/API/xWiki greps, `npm -w apps/web run build`, and `git diff --check`. No service restart was needed because this was no-behavior source/displ",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism",
+            "chosen_option": "amend existing type/display/doc contracts in place",
+            "rejected_path_and_why": "adding a shared enum/DTO or prompt/model behavior would increase mechanisms and exceed Phase 1a; reverting low support would contradict Stage 1 schema",
+            "what_was_removed_simplified": "stale high/medium-only interface/doc strings and ambiguous Check-worthiness display labels",
+            "what_was_added": "one explanatory TypeScript comment and widened low enum member",
+            "net_mechanism_count": "unchanged",
+            "budget_reconciliation": "touched only the planned source/doc surfaces; no new branches, flags, fallbacks, helpers, or behavior paths",
+            "verification": "required greps passed; npm -w apps/web run build passed; git diff --check passed",
+            "debt_accepted_and_removal_trigger": "uncalled applyGate1Lite remains out of scope; handle only under separate dead-code cleanup decision",
+            "residual_debt": "future public claim-detail UI should revisit user-facing wording if this internal advisory field is exposed"
+          }
+        }
+      }
     }
   ]
 }
