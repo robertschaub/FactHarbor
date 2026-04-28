@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T23:19:14.082Z",
-  "count": 420,
+  "generatedAt": "2026-04-28T23:19:25.733Z",
+  "count": 419,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4460,23 +4460,6 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
-    },
-    {
-      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
-      "date": "2026-04-19",
-      "roles": [
-        "llm_expert"
-      ],
-      "topics": [
-        "claim",
-        "extraction",
-        "atomicity",
-        "review"
-      ],
-      "files_touched": [
-        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
-      ],
-      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
     },
     {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
