@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-28 | Lead Architect / Code Reviewer | Codex (GPT-5) | Remaining Unification Assessment Review -- [Standard] [open-items: yes]
+**For next agent:** Review disposition is APPROVE WITH COMMENTS. The assessment correctly preserves Stage 1 validity authority vs ACS-CW recommendation authority and the contract-first plan is sound; tighten the check-worthiness type-drift claim to name the exact remaining narrow `AtomicClaim` surface and split Phase 1 so prompt/model attribution inventory does not ride with no-behavior UI/type cleanup.
+→ Docs/WIP/2026-04-28_Remaining_Unification_Architecture_Assessment.md
+
+---
 ### 2026-04-28 | Senior Developer | Codex (GPT-5) | ACS Implementation xWiki Documentation -- [Standard] [open-items: yes]
 **For next agent:** Current ACS implementation is now documented at `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki` with diagrams for product flow, draft state, prepared Stage 1 reuse, and validation tooling. Older ACS WIP specs are marked superseded/historical; status/backlog now track the open selected-claim Stage 2 research-distribution finding from SVP job `3a95e38c39ba4104b97e6cd0ff512b52` while keeping UCM default posture on `interactive`.
 → Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki
@@ -2610,3 +2615,15 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** Runtime UCM `pipeline/default` was switched back to `claimSelectionDefaultMode=interactive` after SVP ACS automatic canary job `3a95e38c39ba4104b97e6cd0ff512b52` completed `UNVERIFIED`. Active hash is `0e4ebb72b0580213015304e92ac37acccf35a75d12e7ce41cd955511765aedff`; effective config also reports `claimSelectionCap=5`, `claimSelectionBudgetAwarenessEnabled=true`, `claimSelectionBudgetFitMode=allow_fewer_recommendations`, and `claimSelectionMinRecommendedClaims=1`.
 **Warnings:** This is a runtime UCM change, not a source-code change. Automatic ACS remains useful for validation tooling, but the SVP job exposed a pipeline-quality issue: selected claim `AC_17` had zero targeted Stage 2 iterations while contradiction did run. Treat future automatic-mode canaries as diagnostic until selected-claim research distribution is fixed.
 **Learnings:** Switching to interactive is the lowest-risk operator move after a diagnostic automatic canary exposes selected-claim research starvation; it preserves manual claim control while keeping the shared ACS tooling available for later controlled canaries.
+
+---
+### 2026-04-28 | Lead Architect | Codex (GPT-5) | Remaining Unification Architecture Assessment -- [Significant] [open-items: yes]
+**For next agent:** The follow-up architecture decision is contract-first unification only. Reviewer disposition was APPROVE WITH COMMENTS and the comments were applied: the doc now names the exact remaining narrow `AtomicClaim.checkWorthiness` contract and splits Phase 1a type/UI cleanup from Phase 1b attribution/prompt-governance inventory. Remaining targets are ACS budget/deferred metadata consistency, selected-claim Stage 2 coverage observability, provenance, direct analyze entrypoint governance, prompt-governance exceptions, and a thin observability metadata contract.
+**Warnings:** Do not broaden this into Stage 1/ACS merger, a second selector, deterministic semantic shortcuts, source artifact reuse, or prompt wording edits. Selected claims with zero targeted Stage 2 iterations remain a pipeline-quality finding.
+-> Docs/AGENTS/Handoffs/2026-04-28_Lead_Architect_Remaining_Unification_Assessment.md
+
+---
+### 2026-04-29 | Lead Architect | Codex (GPT-5) | Check-Worthiness Phase 1a Implementation Plan -- [Significant] [open-items: yes]
+**For next agent:** Implement `Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md`. The review-debated plan is APPROVE WITH COMMENTS and limits Phase 1a to `AtomicClaim.checkWorthiness` high/medium/low type alignment, `Stage 1 extraction hint` labels in UI/report surfaces, xWiki diagram enum sync, and focused verification for downstream assumptions.
+**Warnings:** Do not add ACS-CW behavior, prompt wording, model-routing, Gate 1 filtering, selector fallback, generated DTO/shared enum work, or `applyGate1Lite` cleanup. Run the required source/API/xWiki greps before deciding C# and dead-code cleanup are out of scope.
+-> Docs/AGENTS/Handoffs/2026-04-29_Lead_Architect_Check_Worthiness_Phase1a_Implementation_Plan.md

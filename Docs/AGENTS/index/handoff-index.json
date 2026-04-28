@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T20:07:00.077Z",
-  "count": 416,
+  "generatedAt": "2026-04-28T22:22:56.652Z",
+  "count": 418,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8661,6 +8661,22 @@
       }
     },
     {
+      "file": "2026-04-28_Lead_Architect_Remaining_Unification_Assessment.md",
+      "date": "2026-04-28",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "remaining",
+        "unification",
+        "assessment"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-28_Remaining_Unification_Architecture_Assessment.md"
+      ],
+      "summary": "Treat `Docs/WIP/2026-04-28_Remaining_Unification_Architecture_Assessment.md` as the current follow-up to the April 24 ACS/check-worthiness unification assessment. It deliberately complements, rather than replaces, `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/"
+    },
+    {
       "file": "2026-04-28_Lead_Developer_LLM_Expert_Prompt_Runtime_Split_Execution.md",
       "date": "2026-04-28",
       "roles": [
@@ -8821,6 +8837,24 @@
         "C:/Users/rober/.codex/automations/daily-bug-scan/memory.md"
       ],
       "summary": "Baseline after this run is: recent committed changes are green on `npm test` and `npm -w apps/web run build`, and the previous \"known full-suite runner heartbeat timeout\" warning is resolved. If another runner flake appears, start with `apps/web/src/lib/internal-runner-queue.ts` background schedulin"
+    },
+    {
+      "file": "2026-04-29_Lead_Architect_Check_Worthiness_Phase1a_Implementation_Plan.md",
+      "date": "2026-04-29",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "check",
+        "worthiness",
+        "phase1a",
+        "implementation",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md"
+      ],
+      "summary": "Start with `Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md`. The exact live source surfaces identified were `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/app/analyze/select/[draftId]/ClaimSelectionPanel.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, and th"
     }
   ]
 }
