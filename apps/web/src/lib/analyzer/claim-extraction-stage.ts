@@ -37,7 +37,8 @@ import {
   getPromptCachingOptions,
   type ModelTask,
 } from "./llm";
-import { loadAndRenderSection } from "./prompt-loader";
+import { loadAndRenderSection, type RenderedPromptSection } from "./prompt-loader";
+import { joinPromptUserContent, splitRenderedPromptAtHeader } from "./prompt-message-parts";
 import { classifyRelevance } from "./research-extraction-stage";
 import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure } from "./pipeline-utils";
 import {
@@ -3302,6 +3303,55 @@ export interface SingleClaimAtomicityValidationResult {
   coordinatedBranchFinding: z.infer<typeof SingleClaimCoordinatedBranchFindingSchema>;
 }
 
+interface BindingAppendixMessageParts {
+  systemContent: string;
+  userContent: string;
+  separated: boolean;
+}
+
+export function splitContractBindingAppendix(content: string): BindingAppendixMessageParts {
+  const contextHeader = "Precommitted salience context:";
+  const contextFence = "```json";
+  const closingFence = "\n```";
+  const rulesHeader = "Binding-mode audit rules:";
+  const contextIndex = content.indexOf(contextHeader);
+  const contextHeaderEnd = contextIndex >= 0 ? contextIndex + contextHeader.length : -1;
+  const fenceStart = contextHeaderEnd >= 0 ? content.indexOf(contextFence, contextHeaderEnd) : -1;
+  const fenceEnd = fenceStart >= 0
+    ? content.indexOf(closingFence, fenceStart + contextFence.length)
+    : -1;
+  const rulesIndex = fenceEnd >= 0
+    ? content.indexOf(rulesHeader, fenceEnd + closingFence.length)
+    : -1;
+
+  if (contextIndex < 0 || fenceStart < 0 || fenceEnd < 0 || rulesIndex <= fenceEnd) {
+    return {
+      systemContent: content,
+      userContent: "",
+      separated: false,
+    };
+  }
+
+  const intro = content.slice(0, contextIndex).trimEnd();
+  const contextBlock = content.slice(contextIndex, rulesIndex).trim();
+  const rules = content.slice(rulesIndex).trimStart();
+  const systemContent = joinPromptUserContent([intro, rules]);
+
+  if (!systemContent || !contextBlock) {
+    return {
+      systemContent: content,
+      userContent: "",
+      separated: false,
+    };
+  }
+
+  return {
+    systemContent,
+    userContent: contextBlock,
+    separated: true,
+  };
+}
+
 export async function runClaimContractValidationWithRetry(
   runValidation: () => Promise<ClaimContractValidationResult | undefined>,
   maxAttempts = 2,
@@ -4384,9 +4434,12 @@ async function validateClaimContract(
   const llmCallStartedAt = Date.now();
   const bindingModeActive = salienceBinding?.mode === "binding";
   const salienceBindingContextJson = buildSalienceBindingContextJson(salienceBinding);
+  let renderedForMetrics: RenderedPromptSection | null = null;
+  let renderedSystemContentForMetrics = "";
+  let dynamicPayloadForMetrics: unknown;
 
   try {
-    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", {
+    const promptVariables = {
       analysisInput: originalInput,
       inputClassification,
       impliedClaim,
@@ -4415,7 +4468,8 @@ async function validateClaimContract(
         null,
         2,
       ),
-    });
+    };
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION", promptVariables);
 
     if (!rendered) {
       recordLLMCall({
@@ -4436,6 +4490,11 @@ async function validateClaimContract(
     }
 
     let contractBindingAppendix = "";
+    let contractBindingAppendixParts: BindingAppendixMessageParts = {
+      systemContent: "",
+      userContent: "",
+      separated: true,
+    };
     if (bindingModeActive) {
       const bindingAppendix = await loadAndRenderSection("claimboundary", "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX", {
         salienceBindingContextJson,
@@ -4458,19 +4517,43 @@ async function validateClaimContract(
         return undefined;
       }
       contractBindingAppendix = `\n\n${bindingAppendix.content}`;
+      contractBindingAppendixParts = splitContractBindingAppendix(bindingAppendix.content);
     }
+
+    const promptParts = splitRenderedPromptAtHeader(rendered, "### Input");
+    const validationInstruction = `Validate claim contract fidelity for ${claims.length} extracted claim(s).`;
+    const promptSeparated = promptParts.separated && contractBindingAppendixParts.separated;
+    const systemContent = promptSeparated
+      ? joinPromptUserContent([
+        promptParts.systemContent,
+        contractBindingAppendixParts.systemContent,
+      ])
+      : rendered.content + contractBindingAppendix;
+    const userContent = promptSeparated
+      ? joinPromptUserContent([
+        promptParts.userContent,
+        contractBindingAppendixParts.userContent,
+        validationInstruction,
+      ])
+      : validationInstruction;
+    renderedForMetrics = rendered;
+    renderedSystemContentForMetrics = systemContent;
+    dynamicPayloadForMetrics = [
+      promptVariables,
+      bindingModeActive ? salienceBindingContextJson : undefined,
+    ];
 
     const result = await generateText({
       model: model.model,
       messages: [
         {
           role: "system",
-          content: rendered.content + contractBindingAppendix,
-          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          content: systemContent,
+          providerOptions: promptSeparated ? getPromptCachingOptions(model.provider) : undefined,
         },
         {
           role: "user" as const,
-          content: `Validate claim contract fidelity for ${claims.length} extracted claim(s).`,
+          content: userContent,
         },
       ],
       temperature: pipelineConfig?.claimContractValidationTemperature ?? 0.1,
@@ -4486,14 +4569,18 @@ async function validateClaimContract(
         taskType: "other",
         provider: model.provider,
         modelName: model.modelName,
-        promptTokens: result.usage?.inputTokens ?? 0,
-        completionTokens: result.usage?.outputTokens ?? 0,
-        totalTokens: result.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(result.usage),
         durationMs: Date.now() - llmCallStartedAt,
         success: false,
         schemaCompliant: false,
         retries: 0,
         errorMessage: "Claim contract validation returned no structured output",
+        ...buildPromptRuntimeFields(renderedForMetrics, {
+          renderedSystemContent: renderedSystemContentForMetrics,
+          dynamicPayload: dynamicPayloadForMetrics,
+          retryCause: "parse",
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
       });
       return undefined;
@@ -4519,14 +4606,18 @@ async function validateClaimContract(
         taskType: "other",
         provider: model.provider,
         modelName: model.modelName,
-        promptTokens: result.usage?.inputTokens ?? 0,
-        completionTokens: result.usage?.outputTokens ?? 0,
-        totalTokens: result.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(result.usage),
         durationMs: Date.now() - llmCallStartedAt,
         success: false,
         schemaCompliant: false,
         retries: 0,
         errorMessage: `Claim contract validation batch contract violated: expected [${[...expectedClaimIds].join(",")}], got [${[...returnedClaimIds].join(",")}]`,
+        ...buildPromptRuntimeFields(renderedForMetrics, {
+          renderedSystemContent: renderedSystemContentForMetrics,
+          dynamicPayload: dynamicPayloadForMetrics,
+          retryCause: "contract",
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
       });
       return validated;
@@ -4536,13 +4627,16 @@ async function validateClaimContract(
       taskType: "other",
       provider: model.provider,
       modelName: model.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
+      ...extractLLMUsageFields(result.usage),
       durationMs: Date.now() - llmCallStartedAt,
       success: true,
       schemaCompliant: true,
       retries: 0,
+      ...buildPromptRuntimeFields(renderedForMetrics, {
+        renderedSystemContent: renderedSystemContentForMetrics,
+        dynamicPayload: dynamicPayloadForMetrics,
+        outputBranch: "initial",
+      }),
       timestamp: new Date(),
     });
 
@@ -4561,6 +4655,12 @@ async function validateClaimContract(
       schemaCompliant: false,
       retries: 0,
       errorMessage: `Claim contract validation failed: ${errorMessage}`,
+      ...buildPromptRuntimeFields(renderedForMetrics, {
+        renderedSystemContent: renderedSystemContentForMetrics,
+        dynamicPayload: dynamicPayloadForMetrics,
+        retryCause: classifyStructuralRetryCause(error),
+        outputBranch: "failed",
+      }),
       timestamp: new Date(),
     });
     return undefined;

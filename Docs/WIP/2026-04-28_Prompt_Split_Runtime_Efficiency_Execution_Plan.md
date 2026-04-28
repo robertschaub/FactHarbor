@@ -1,7 +1,7 @@
 # Prompt Split and LLM Runtime Efficiency Execution Plan
 
 **Date:** 2026-04-28  
-**Status:** In execution; Phase 1 telemetry committed and Phase 2 manifest source layer underway; no prompt wording changes
+**Status:** In execution; Phase 1 telemetry, Phase 2 manifest source layer, and first Phase 3 prompt-payload splits underway; no prompt wording changes
 **Roles:** Lead Developer, LLM Expert  
 **Supersedes / extends:** `Docs/ARCHIVE/2026-04-20_Prompt_Split_Plan.md`, `Docs/WIP/2026-04-20_Token_Reduction_Chunking_Debate_Consolidated.md`  
 **Related backlog:** `PROMPT-SPLIT-1`
@@ -149,6 +149,16 @@ Implementation checkpoint (2026-04-28):
 - If the delimiter is absent or malformed, preserve the old message shape but disable prompt caching for that call so dynamic source payloads are not cache-controlled.
 - Use the resolved model provider for cache-control options.
 - Cover the real `claimboundary.prompt.md` section with sentinel values to guard against heading drift and dynamic payload leakage into the system message.
+
+Implementation checkpoint (2026-04-28, second Phase 3 slice):
+
+- Extend the same static/dynamic split pattern to `CLAIM_CONTRACT_VALIDATION`.
+- Keep base contract-validation instructions before `### Input` in the cache-controlled system message.
+- Move the rendered original input, extracted atomic claims, output schema, binding salience JSON, and validation instruction to the user message.
+- Split `CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX` so static binding-mode audit rules remain system/cacheable while only the fenced `Precommitted salience context` JSON block is user-only.
+- Fail closed if either the base prompt or binding appendix markers drift: preserve the old full-system message shape and disable prompt caching for that call.
+- Record prompt-runtime fields for contract validation success, parse failure, contract violation, and thrown failure paths.
+- Cover the real prompt with sentinel tests, add marker-collision and incomplete-marker tests for the binding appendix split, and add a mocked pipeline test proving user input and binding JSON do not enter the system message.
 
 Current risk:
 

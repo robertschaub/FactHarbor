@@ -23,6 +23,7 @@ import {
   selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
   shouldRunSingleClaimAtomicityValidation,
+  splitContractBindingAppendix,
   type ClaimContractValidationResult,
   type EvaluatedClaimContractValidation,
 } from "@/lib/analyzer/claim-extraction-stage";
@@ -30,6 +31,10 @@ import type { AtomicClaim } from "@/lib/analyzer/types";
 import {
   DEFAULT_CALC_CONFIG,
 } from "@/lib/config-schemas";
+import {
+  joinPromptUserContent,
+  splitRenderedPromptAtHeader,
+} from "@/lib/analyzer/prompt-message-parts";
 
 // ---------------------------------------------------------------------------
 // Read the actual prompt file once for prompt-contract assertions
@@ -58,6 +63,14 @@ function extractSection(content: string, sectionName: string): string | null {
     }
   }
   return capturing ? captured.join("\n").trim() : null;
+}
+
+function renderTemplate(content: string, variables: Record<string, string>): string {
+  return content.replace(/\$\{(\w+)\}/g, (match, varName: string) => {
+    return Object.prototype.hasOwnProperty.call(variables, varName)
+      ? variables[varName]
+      : match;
+  });
 }
 
 // ============================================================================
@@ -1571,6 +1584,134 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("the modifier/status claim is a valid preservation carrier");
     expect(section).toContain('Do not mark that carrier as `recommendedAction: "retry"` or `proxyDriftSeverity: "material"` solely because');
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
+  });
+
+  it("splits the real contract-validation prompt so input and binding context are user-only", () => {
+    const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+    const appendix = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX");
+    expect(section).not.toBeNull();
+    expect(appendix).not.toBeNull();
+    if (!section || !appendix) return;
+
+    const sentinelInput = "SENTINEL_CONTRACT_DYNAMIC_INPUT";
+    const sentinelClaim = "SENTINEL_CONTRACT_DYNAMIC_CLAIM with prompt-like heading ### Input";
+    const sentinelBinding = "SENTINEL_CONTRACT_BINDING_CONTEXT";
+    const renderedContent = renderTemplate(section, {
+      analysisInput: sentinelInput,
+      inputClassification: "single_atomic_claim",
+      impliedClaim: "SENTINEL_CONTRACT_IMPLIED_CLAIM",
+      articleThesis: "SENTINEL_CONTRACT_ARTICLE_THESIS",
+      salienceBindingContextJson: JSON.stringify({ mode: "binding", marker: sentinelBinding }, null, 2),
+      distinctEventsContextJson: JSON.stringify({ count: 0, events: [] }, null, 2),
+      atomicClaimsJson: JSON.stringify(
+        [
+          {
+            claimId: "AC_01",
+            statement: sentinelClaim,
+            category: "factual",
+            thesisRelevance: "direct",
+            freshnessRequirement: "none",
+            expectedEvidenceProfile: {},
+          },
+        ],
+        null,
+        2,
+      ),
+    });
+    const renderedAppendix = renderTemplate(appendix, {
+      salienceBindingContextJson: JSON.stringify({ mode: "binding", marker: sentinelBinding }, null, 2),
+    });
+
+    const promptParts = splitRenderedPromptAtHeader({
+      content: renderedContent,
+      contentHash: "composite-hash",
+      loadedAt: "2026-04-28T00:00:00.000Z",
+      warnings: [],
+      promptProfile: "claimboundary",
+      promptSection: "CLAIM_CONTRACT_VALIDATION",
+      promptSectionHash: "section-hash",
+      promptSectionEstimatedTokens: 1,
+    }, "### Input");
+    const appendixParts = splitContractBindingAppendix(renderedAppendix);
+    expect(appendixParts.separated).toBe(true);
+    const systemContent = joinPromptUserContent([
+      promptParts.systemContent,
+      appendixParts.systemContent,
+    ]);
+    const userContent = joinPromptUserContent([
+      promptParts.userContent,
+      appendixParts.userContent,
+      "Validate claim contract fidelity for 1 extracted claim(s).",
+    ]);
+
+    expect(promptParts.separated).toBe(true);
+    expect(systemContent).toContain("You are a claim-contract validator");
+    expect(systemContent).toContain("Binding-mode audit rules");
+    expect(systemContent).not.toContain("Precommitted salience context");
+    expect(systemContent).not.toContain(sentinelInput);
+    expect(systemContent).not.toContain(sentinelClaim);
+    expect(systemContent).not.toContain(sentinelBinding);
+    expect(userContent).toContain("### Input");
+    expect(userContent).toContain("### Output");
+    expect(userContent).toContain("Precommitted salience context");
+    expect(userContent).not.toContain("Binding-mode audit rules");
+    expect(userContent).toContain(sentinelInput);
+    expect(userContent).toContain(sentinelClaim);
+    expect(userContent).toContain(sentinelBinding);
+  });
+
+  it("does not treat marker text inside binding JSON as static appendix rules", () => {
+    const appendix = [
+      "Static binding intro.",
+      "",
+      "Precommitted salience context:",
+      "```json",
+      JSON.stringify(
+        {
+          anchors: [
+            {
+              text: "Dynamic anchor containing Binding-mode audit rules: as user text",
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+      "```",
+      "",
+      "Binding-mode audit rules:",
+      "- Static rule after the dynamic JSON block.",
+    ].join("\n");
+
+    const parts = splitContractBindingAppendix(appendix);
+
+    expect(parts.separated).toBe(true);
+    expect(parts.systemContent).toContain("Static binding intro.");
+    expect(parts.systemContent).toContain("Binding-mode audit rules:");
+    expect(parts.systemContent).toContain("Static rule after the dynamic JSON block.");
+    expect(parts.systemContent).not.toContain("Dynamic anchor containing");
+    expect(parts.userContent).toContain("Dynamic anchor containing Binding-mode audit rules: as user text");
+  });
+
+  it("fails closed when binding appendix markers are incomplete", () => {
+    const appendix = [
+      "Static binding intro.",
+      "",
+      "Precommitted salience context:",
+      "```json",
+      "{\"mode\":\"binding\"}",
+      "```",
+      "",
+      "Rules heading renamed unexpectedly.",
+    ].join("\n");
+
+    const parts = splitContractBindingAppendix(appendix);
+
+    expect(parts).toEqual({
+      systemContent: appendix,
+      userContent: "",
+      separated: false,
+    });
   });
 });
 

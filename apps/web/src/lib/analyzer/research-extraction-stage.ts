@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { loadAndRenderSection, type RenderedPromptSection } from "./prompt-loader";
+import { loadAndRenderSection } from "./prompt-loader";
+import { splitRenderedPromptAtHeader } from "./prompt-message-parts";
 import { 
   getModelForTask, 
   getPromptCachingOptions, 
@@ -127,53 +128,6 @@ function cloneEvidenceItem(
 // ============================================================================
 // STAGE 2: CLASSIFICATION & EXTRACTION
 // ============================================================================
-
-interface PromptMessageParts {
-  systemContent: string;
-  userContent: string;
-  separated: boolean;
-}
-
-function splitRenderedPromptAtHeader(
-  rendered: RenderedPromptSection,
-  header: string,
-): PromptMessageParts {
-  const inlineHeader = `${header}\n`;
-  const bodyHeader = `\n${header}\n`;
-  const headerIndex = rendered.content.startsWith(inlineHeader)
-    ? 0
-    : rendered.content.indexOf(bodyHeader);
-  const splitIndex = headerIndex === 0
-    ? 0
-    : headerIndex >= 0
-      ? headerIndex + 1
-      : -1;
-
-  if (splitIndex < 0) {
-    return {
-      systemContent: rendered.content,
-      userContent: "",
-      separated: false,
-    };
-  }
-
-  const systemContent = rendered.content.slice(0, splitIndex).trimEnd();
-  const userContent = rendered.content.slice(splitIndex).trimStart();
-
-  if (!systemContent || !userContent) {
-    return {
-      systemContent: rendered.content,
-      userContent: "",
-      separated: false,
-    };
-  }
-
-  return {
-    systemContent,
-    userContent,
-    separated: true,
-  };
-}
 
 /**
  * Classify search results for relevance to a claim using LLM (Haiku, batched).

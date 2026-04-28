@@ -10807,6 +10807,176 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     });
   });
 
+  it("keeps contract-validation payload and binding context out of the cache-controlled system message", async () => {
+    const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
+    const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
+
+    vi.mocked(loadPipelineConfig).mockResolvedValue({
+      config: { centralityThreshold: "medium", maxAtomicClaims: 5 } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadSearchConfig).mockResolvedValue({
+      config: {} as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+    vi.mocked(loadCalcConfig).mockResolvedValue({
+      config: {
+        claimDecomposition: { minCoreClaimsPerContext: 1, supplementalRepromptMaxAttempts: 0 },
+        claimContractValidation: { enabled: true, maxRetries: 1 },
+        salienceCommitment: { enabled: true, mode: "binding" },
+        mixedConfidenceThreshold: 40,
+      } as any,
+      contentHash: "__TEST__", fromDefault: false, fromCache: false, overrides: [],
+    } as any);
+
+    const sentinelInput = "SENTINEL_CONTRACT_INPUT_FOR_CACHE_TEST";
+    const sentinelClaim = "SENTINEL_CONTRACT_CLAIM_FOR_CACHE_TEST";
+    const sentinelBinding = "SENTINEL_CONTRACT_BINDING_FOR_CACHE_TEST";
+    mockLoadSection.mockImplementation(async (_pipeline, section, vars) => {
+      if (section === "CLAIM_CONTRACT_VALIDATION") {
+        return {
+          content: [
+            "CONTRACT_STATIC_RULES",
+            "",
+            "### Input",
+            "",
+            `Original input: ${vars?.analysisInput}`,
+            "",
+            `Atomic claims: ${vars?.atomicClaimsJson}`,
+            "",
+            "### Output",
+            "",
+            "Return JSON.",
+          ].join("\n"),
+          variables: vars,
+        } as any;
+      }
+      if (section === "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX") {
+        return {
+          content: [
+            "APPENDIX_STATIC_INTRO",
+            "",
+            "Precommitted salience context:",
+            "```json",
+            vars?.salienceBindingContextJson,
+            "```",
+            "",
+            "Binding-mode audit rules:",
+            "- APPENDIX_STATIC_RULE",
+          ].join("\n"),
+          variables: vars,
+        } as any;
+      }
+      return { content: `section:${section}`, variables: vars } as any;
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    let llmCallIndex = 0;
+    mockExtractOutput.mockImplementation(() => {
+      llmCallIndex++;
+      switch (llmCallIndex) {
+        case 1:
+          return pass1Fixture;
+        case 2:
+          return {
+            anchors: [
+              {
+                text: sentinelBinding,
+                inputSpan: sentinelBinding,
+                type: "modal_illocutionary",
+                rationale: "Binding marker changes the proposition.",
+                truthConditionShiftIfRemoved: "The claim becomes weaker.",
+              },
+            ],
+          };
+        case 3:
+          return makePass2(1, {
+            inputClassification: "single_atomic_claim",
+            statementPrefix: sentinelClaim,
+          });
+        case 4:
+          return {
+            inputAssessment: {
+              preservesOriginalClaimContract: true,
+              rePromptRequired: false,
+              summary: "contract preserved",
+            },
+            claims: [
+              {
+                claimId: "AC_01",
+                preservesEvaluativeMeaning: true,
+                usesNeutralDimensionQualifier: false,
+                proxyDriftSeverity: "none",
+                recommendedAction: "keep",
+                reasoning: "anchor preserved",
+              },
+            ],
+            truthConditionAnchor: {
+              presentInInput: true,
+              anchorText: sentinelBinding,
+              preservedInClaimIds: ["AC_01"],
+              preservedByQuotes: [sentinelBinding],
+            },
+            antiInferenceCheck: {
+              normativeClaimInjected: false,
+              injectedClaimIds: [],
+              reasoning: "",
+            },
+          };
+        case 5:
+          return makeGate1Pass(1);
+        default:
+          throw new Error(`Unexpected LLM call #${llmCallIndex}`);
+      }
+    });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+
+    const state: any = {
+      originalInput: sentinelInput,
+      inputType: "claim",
+      understanding: null,
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      queryBudgetUsageByClaim: {},
+      mainIterationsUsed: 0,
+      contradictionIterationsReserved: 1,
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      claimBoundaries: [],
+      llmCalls: 0,
+      warnings: [],
+    };
+
+    await extractClaims(state);
+
+    const contractCall = mockGenerateText.mock.calls
+      .map(([args]) => args as any)
+      .find((args) => args.messages?.[0]?.content?.includes("CONTRACT_STATIC_RULES"));
+    expect(contractCall).toBeTruthy();
+    expect(contractCall.messages[0]).toMatchObject({
+      role: "system",
+      providerOptions: {},
+    });
+    expect(contractCall.messages[0].content).toContain("CONTRACT_STATIC_RULES");
+    expect(contractCall.messages[0].content).toContain("APPENDIX_STATIC_INTRO");
+    expect(contractCall.messages[0].content).toContain("Binding-mode audit rules:");
+    expect(contractCall.messages[0].content).toContain("APPENDIX_STATIC_RULE");
+    expect(contractCall.messages[0].content).not.toContain(sentinelInput);
+    expect(contractCall.messages[0].content).not.toContain(sentinelClaim);
+    expect(contractCall.messages[0].content).not.toContain(sentinelBinding);
+    expect(contractCall.messages[0].content).not.toContain("Precommitted salience context:");
+    expect(contractCall.messages[0].content).not.toContain('"mode": "binding"');
+    expect(contractCall.messages[1].content).toContain("### Input");
+    expect(contractCall.messages[1].content).toContain("### Output");
+    expect(contractCall.messages[1].content).toContain(sentinelInput);
+    expect(contractCall.messages[1].content).toContain(sentinelClaim);
+    expect(contractCall.messages[1].content).toContain("Precommitted salience context:");
+    expect(contractCall.messages[1].content).toContain('"mode": "binding"');
+    expect(contractCall.messages[1].content).not.toContain("APPENDIX_STATIC_RULE");
+    expect(contractCall.messages[1].content).toContain("Validate claim contract fidelity for 1 extracted claim(s).");
+  });
+
   it("should let contract validation fall back to base behavior when binding mode has success=false", async () => {
     const { extractClaims } = await import("@/lib/analyzer/claimboundary-pipeline");
     const { loadPipelineConfig, loadSearchConfig, loadCalcConfig } = await import("@/lib/config-loader");
