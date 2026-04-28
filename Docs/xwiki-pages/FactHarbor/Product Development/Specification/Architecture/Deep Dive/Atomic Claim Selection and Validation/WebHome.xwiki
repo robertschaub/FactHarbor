@@ -3,9 +3,9 @@
 {{info}}
 **Developer Reference** - Current implementation of pre-job AtomicClaim selection, prepared Stage 1 reuse, interactive and automatic ACS modes, and the ACS-based validation tooling path.
 
-**Status as of 2026-04-28**: The ACS product path and validation tooling are implemented. The active local UCM mode has been switched back to ##interactive## after automatic canaries exposed a pipeline-quality issue where selected claims can receive zero targeted Stage 2 iterations. Automatic ACS remains supported and observable, but it is not evidence that the underlying research-distribution issue is fixed.
+**Status as of 2026-04-29**: The ACS product path and validation tooling are implemented. The active local UCM mode remains ##interactive## after automatic canaries exposed a pipeline-quality issue where selected claims can receive zero targeted Stage 2 iterations. Automatic ACS remains supported and now surfaces selected-claim coverage, budget treatment, submission path, and run-provenance metadata; this makes the condition auditable, but it is not evidence that the underlying research-distribution issue is fixed.
 
-**Key Files**: ##claim-selection-flow.ts##, ##claim-selection-recommendation.ts##, ##internal-runner-queue.ts##, ##claimboundary-pipeline.ts##, ##ClaimSelectionDraftService.cs##, ##ClaimSelectionDraftsController.cs##, ##JobService.cs##, ##automatic-claim-selection.js##
+**Key Files**: ##claim-selection-flow.ts##, ##claim-selection-recommendation.ts##, ##research-waste-metrics.ts##, ##internal-runner-queue.ts##, ##claimboundary-pipeline.ts##, ##ClaimSelectionDraftService.cs##, ##ClaimSelectionDraftsController.cs##, ##JobService.cs##, ##automatic-claim-selection.js##
 {{/info}}
 
 == 1. Purpose ==
@@ -27,6 +27,7 @@ ACS does **not** create a new analytical meaning layer. It does not merge, split
 | Automatic mode | Supported, but it still goes through claim-selection drafts and selected-ID validation. It is not a direct all-claim job path.
 | Budget-aware recommendation | Implemented as UCM-controlled recommendation metadata/plumbing. File-backed default is off; active runtime can enable ##claimSelectionBudgetAwarenessEnabled## plus ##claimSelectionBudgetFitMode##.
 | Validation tooling | Supported validation scripts submit through ##apps/web/scripts/automatic-claim-selection.js## and emit ##submissionPath: "acs-automatic-draft"##.
+| Entrypoint provenance | ##JobEntity.SubmissionPath## identifies direct API, retry, ACS interactive draft, and ACS automatic draft jobs. Admin job details expose creation/execution/prompt hashes for validation attribution.
 | Open quality finding | Automatic canaries can select claims that later receive zero targeted Stage 2 iterations. This is a reported pipeline-quality finding, not a validation-tooling blocker.
 
 == 3. Product Flow ==
@@ -194,11 +195,12 @@ Quarantined or legacy callers:
 The shared ACS validation client emits schema v2 summaries from existing draft, job, and result state.
 
 |= Field group |= Representative fields |= Source
-| Submission/provenance | ##schemaVersion##, ##submissionPath##, ##draftId##, ##jobId##, ##draftStatus##, ##jobStatus##, ##gitCommitHash## | Draft/job response plus result metadata.
+| Submission/provenance | ##schemaVersion##, ##submissionPath##, ##draftId##, ##jobId##, ##draftStatus##, ##jobStatus##, ##gitCommitHash##, ##createdGitCommitHash##, ##executedWebGitCommitHash##, ##promptContentHash##, ##analysisRunProvenance## | Draft/job response plus result metadata.
 | Prepared/ranked/recommended | ##preparedClaimIds##, ##rankedClaimIds##, ##recommendedClaimIds## | ##PreparedStage1Json## and ##ClaimSelectionJson##.
 | Selection collapse | ##selectedClaimIds##, ##notSelectedClaimIds##, ##notRecommendedClaimIds##, ##deferredClaimIds## | Derived structurally from prepared/ranked/recommended/selected IDs.
+| Budget treatment | ##budgetFitRationale##, ##budgetTreatmentCounts##, ##budgetTreatmentByClaimId## | ##ClaimSelectionJson## recommendation metadata.
 | Report shape | ##truthPercentage##, ##verdict##, ##confidence##, ##claimVerdictCount##, ##claimBoundaryCount##, ##evidenceCount##, ##sourceCount## | ##ResultJson##.
-| Stage 2 ACS telemetry | ##selectedClaimResearch##, ##contradictionReachability## | ##resultJson.analysisObservability.acsResearchWaste.selectedClaimResearch## and ##.contradictionReachability##.
+| Stage 2 ACS telemetry | ##selectedClaimResearchCoverage##, ##selectedClaimResearch##, ##zeroTargetedSelectedClaimCount##, ##zeroTargetedSelectedClaimIds##, ##contradictionReachability## | ##resultJson.analysisObservability.acsResearchWaste##.
 | Historical references | ##historicalDirectReferenceJobId##, ##historicalDirectReferenceQuality##, ##historicalDirectReferenceJobStatus## | ##scripts/validation/captain-approved-families.json##.
 | Metadata health | ##metadataUnavailable##, ##metadataUnavailableReason## | Client extraction result.
 
@@ -210,12 +212,15 @@ The 2026-04-28 SVP ACS job ##3a95e38c39ba4104b97e6cd0ff512b52## completed throug
 
 The job ended ##UNVERIFIED##. The important implementation lesson is structural: ##AC_17## had zero targeted Stage 2 iterations while contradiction did run. That result is a pipeline-quality finding to investigate in Stage 2 research distribution and/or budget-aware selection behavior. It is not proof that the validation tooling is broken, and it is not enough by itself to classify the result as genuine evidence scarcity.
 
+As of 2026-04-29, this condition is first-class telemetry through ##selectedClaimResearchCoverage## and the validation-summary ##zeroTargetedSelectedClaim*## fields. That implementation is observational only; it does not change Stage 2 scheduling, ACS recommendation behavior, warning severity, or verdict generation.
+
 == 10. API and Storage Surfaces ==
 
 |= Surface |= Responsibility
 | ##ClaimSelectionDraftEntity## | Pre-job session, status/progress, active input, selection mode, access-token hash, draft state JSON, final job link, hidden flag.
 | ##ClaimSelectionDraftEventEntity## | Audit trail for draft actions and status transitions.
 | ##JobEntity.ClaimSelectionDraftId## | Links a final job to its draft. Unique index prevents duplicate final jobs per draft.
+| ##JobEntity.SubmissionPath## | Records whether a job came from direct API, retry, ACS interactive draft, or ACS automatic draft submission.
 | ##JobEntity.PreparedStage1Json## | Persisted prepared Stage 1 snapshot for draft-backed execution.
 | ##JobEntity.ClaimSelectionJson## | Persisted selection metadata for the final job.
 | ##POST /v1/claim-selection-drafts## | API draft creation.
@@ -237,7 +242,8 @@ The job ended ##UNVERIFIED##. The important implementation lesson is structural:
 | Stage 2 selected-claim research distribution | Current ACS canaries show selected claims can receive zero targeted Stage 2 iterations.
 | Budget-aware ACS promotion | Existing metadata can explain fewer-than-cap recommendations, but promotion should wait for canary evidence.
 | API-level direct endpoint governance | Direct ##/v1/analyze## still exists for product/API use; blocking or policy enforcement is a separate design task.
-| Provenance drift tightening | Jobs can still expose different creation-time and executed/prepared provenance values; validation must keep surfacing this instead of assuming one hash is enough.
+| Provenance interpretation | Creation-time, prepared, executed, and prompt hashes are now surfaced together. Follow-up work should classify material drift rather than assuming one hash is enough.
+| Prompt-surface migration decisions | Prompt-governance exceptions are now registered, but SR core, grounding-check legacy, Stage 1 inline framing, SR evidence-pack inline helpers, and inverse calibration prompt handling still need explicit long-term decisions.
 | Stage 1 time-to-selection | Heavy URL/PDF inputs still spend meaningful time in full Stage 1 preparation before the selector appears.
 
 ----
