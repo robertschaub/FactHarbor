@@ -2593,3 +2593,9 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **Warnings:** No live canary was submitted. This does not solve selected-claim research distribution; it only makes the next ACS-only canary cheaper to interpret. The first full `npm test` attempt failed while running in parallel with `next build`; the affected runner suites and then the full safe suite passed when run sequentially.
 **Learnings:** Historical direct references belong in the Captain-approved fixture and schema-v2 summary stream, not in a second execution path.
 -> Docs/AGENTS/Handoffs/2026-04-28_Senior_Developer_ACS_Validation_Slice4_Historical_Mapping.md
+
+---
+### 2026-04-28 | Senior Developer | Codex (GPT-5) | ACS Historical Reference Review Fixes -- [Standard] [open-items: no]
+**For next agent:** Addressed reviewer findings on Slice 4 metadata. The schema now emits `historicalDirectReferenceQuality` for comparator freshness/quality and `historicalDirectReferenceJobStatus` for the actual historical job status; the ambiguous `historicalDirectReferenceStatus` / `historical_direct_reference_status` fields were removed from active outputs. Matrix, baseline, and batch-summary failure rows now preserve historical comparator context, and the focused fixture test pins the exact 8 Captain-approved family names, input types, and input strings.
+**Warnings:** No live jobs were submitted. The pinned fixture test intentionally duplicates the approved input list from `AGENTS.md`; future Captain-approved input changes must update both the fixture and the test.
+**Learnings:** Comparator quality and job status are separate facts. Keeping them separate avoids downstream review confusion without adding a new validation mechanism.

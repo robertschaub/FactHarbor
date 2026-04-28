@@ -281,9 +281,10 @@ function extractValidationSummary({
     contradictionReachability: acsResearchWaste?.contradictionReachability || null,
     historicalDirectReference,
     historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,
-    historicalDirectReferenceStatus: historicalDirectReference
+    historicalDirectReferenceQuality: historicalDirectReference
       ? historicalDirectReference.referenceQuality
       : "missing",
+    historicalDirectReferenceJobStatus: historicalDirectReference?.status || "missing",
     claimSummaries: buildClaimSummaries(result, preparedStage1),
     family: family
       ? {

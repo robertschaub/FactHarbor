@@ -146,8 +146,10 @@ async function runMatrix() {
             resultUnavailable: validation.resultUnavailable,
             resultUnavailableReason: validation.resultUnavailableReason,
             historical_direct_reference_job_id: claim.historicalDirectReference?.jobId || null,
-            historical_direct_reference_status:
+            historical_direct_reference_quality:
               claim.historicalDirectReference?.referenceQuality || 'missing',
+            historical_direct_reference_job_status:
+              claim.historicalDirectReference?.status || 'missing',
           };
           fs.appendFileSync(OUTPUT_FILE, JSON.stringify(row) + '\n');
           allResults.push(row);
@@ -184,7 +186,8 @@ async function runMatrix() {
           system_paused_after_run: false,
           analysis_warnings_count: summary.warnings.total,
           historical_direct_reference_job_id: summary.historicalDirectReferenceJobId,
-          historical_direct_reference_status: summary.historicalDirectReferenceStatus,
+          historical_direct_reference_quality: summary.historicalDirectReferenceQuality,
+          historical_direct_reference_job_status: summary.historicalDirectReferenceJobStatus,
         };
 
         fs.appendFileSync(OUTPUT_FILE, JSON.stringify(row) + '\n');
@@ -208,6 +211,11 @@ async function runMatrix() {
           run,
           status: 'ERROR',
           error: error.message,
+          historical_direct_reference_job_id: claim.historicalDirectReference?.jobId || null,
+          historical_direct_reference_quality:
+            claim.historicalDirectReference?.referenceQuality || 'missing',
+          historical_direct_reference_job_status:
+            claim.historicalDirectReference?.status || 'missing',
         };
         fs.appendFileSync(OUTPUT_FILE, JSON.stringify(row) + '\n');
         allResults.push(row);

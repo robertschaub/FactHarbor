@@ -116,8 +116,10 @@ async function run() {
           draftId,
           jobId,
           historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,
-          historicalDirectReferenceStatus:
+          historicalDirectReferenceQuality:
             historicalDirectReference?.referenceQuality || "missing",
+          historicalDirectReferenceJobStatus:
+            historicalDirectReference?.status || "missing",
           metadataUnavailable: validation.metadataUnavailable,
           metadataUnavailableReason: validation.metadataUnavailableReason,
           resultUnavailable: validation.resultUnavailable,
@@ -147,18 +149,22 @@ async function run() {
         preparedClaimCount: summary.preparedClaimCount,
         selectedClaimCount: summary.selectedClaimCount,
         historicalDirectReferenceJobId: summary.historicalDirectReferenceJobId,
-        historicalDirectReferenceStatus: summary.historicalDirectReferenceStatus,
+        historicalDirectReferenceQuality: summary.historicalDirectReferenceQuality,
+        historicalDirectReferenceJobStatus: summary.historicalDirectReferenceJobStatus,
       });
       passed++;
     } catch (err) {
+      const historicalDirectReference = family.historicalDirectReference || null;
       console.log(`ERROR: ${err.message}`);
       manifest.results.push({
         familyName: family.familyName,
         status: "ERROR",
         error: err.message,
-        historicalDirectReferenceJobId: family.historicalDirectReference?.jobId || null,
-        historicalDirectReferenceStatus:
-          family.historicalDirectReference?.referenceQuality || "missing",
+        historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,
+        historicalDirectReferenceQuality:
+          historicalDirectReference?.referenceQuality || "missing",
+        historicalDirectReferenceJobStatus:
+          historicalDirectReference?.status || "missing",
       });
       failed++;
     }

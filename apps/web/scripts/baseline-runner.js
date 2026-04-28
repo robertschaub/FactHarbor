@@ -100,7 +100,8 @@ async function runBaseline() {
           selectedClaimCount: summary.selectedClaimCount,
           historicalDirectReference: summary.historicalDirectReference,
           historicalDirectReferenceJobId: summary.historicalDirectReferenceJobId,
-          historicalDirectReferenceStatus: summary.historicalDirectReferenceStatus,
+          historicalDirectReferenceQuality: summary.historicalDirectReferenceQuality,
+          historicalDirectReferenceJobStatus: summary.historicalDirectReferenceJobStatus,
         },
         success: true,
       });
@@ -112,6 +113,12 @@ async function runBaseline() {
       results.push({
         testCase: { id: testCase.id, category: testCase.category },
         error: error.message,
+        historicalDirectReference: testCase.historicalDirectReference,
+        historicalDirectReferenceJobId: testCase.historicalDirectReference?.jobId || null,
+        historicalDirectReferenceQuality:
+          testCase.historicalDirectReference?.referenceQuality || 'missing',
+        historicalDirectReferenceJobStatus:
+          testCase.historicalDirectReference?.status || 'missing',
         success: false,
       });
     }
