@@ -1,47 +1,27 @@
-# Claude API Cost Reduction Strategy
+# API Cost Reduction Strategy — Index
 
-**Date:** 2026-02-13  
-**Status:** Active as an **external cost/funding strategy reference**. Historical spend baseline and obsolete prompt-caching discussion were moved to archive.  
-**Historical detail:** [API_Cost_Reduction_Strategy_2026-02-13_arch.md](../ARCHIVE/API_Cost_Reduction_Strategy_2026-02-13_arch.md)
-
----
-
-## 1. Document Role
-
-This file remains useful for the **future non-code cost track**, not for current runtime decisions.
-
-The still-relevant strategy areas are:
-- Anthropic Batch API evaluation
-- nonprofit / OSS / research credit applications
-- cloud-credit programs
-- cost-governance ideas that do not depend on immediate analyzer changes
+**Date:** 2026-02-13 (created), 2026-04-28 (updated)
+**Status:** Active — NPO/funding track live, technical layers partially implemented
 
 ---
 
-## 2. Important Current Updates
+## Full Document
 
-- **Prompt caching is already active** in the current codebase and should no longer be tracked as an open item here.
-- The Feb 2026 spend figures are **historical context**, not a current cost baseline.
-- Any future Batch API evaluation must be checked against current runtime behavior, especially the validated Stage-4 provider guard and the current job architecture.
+The complete strategy with all program details, pricing tables, and stacking analysis is in:
+
+**[API_Cost_Reduction_Strategy_2026-02-13_full.md](API_Cost_Reduction_Strategy_2026-02-13_full.md)**
 
 ---
 
-## 3. Still-Relevant Future Items
+## Quick Reference
 
-### A. Batch API Feasibility
+### Already implemented
+- Prompt caching (`getPromptCachingOptions()` in `llm.ts`)
 
-Still worth evaluating later for non-latency-sensitive work, but only after the current validation/control gate closes.
+### Active — next steps
+- **NPO credit applications** (Anthropic, OpenAI, AWS, Google) — blocked on Zefix entry (~early May 2026)
+- **Batch API** evaluation for non-latency-sensitive work
 
-### B. External Funding / Credit Applications
-
-Still fully relevant:
-- nonprofit discounts
-- research credits
-- cloud credits
-
-### C. Cost Governance
-
-Still relevant as a future policy topic:
-- per-job / per-day budgeting
-- admin-facing cost visibility
-- explicit cost controls before broader public exposure
+### Historical context only
+- Feb 2026 spend figures ($340/13 days) — no longer current baseline
+- Pipeline config tuning (Layer C) — some already applied via UCM

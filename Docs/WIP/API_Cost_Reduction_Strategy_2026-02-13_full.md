@@ -1,9 +1,11 @@
-# Claude API Cost Reduction Strategy
+# API Cost Reduction Strategy
 
-**Date**: 2026-02-13
-**Status**: Draft — Awaiting review
-**Scope**: Anthropic API spend reduction via pricing plans, provider alternatives, NPO/OSS programs, and pipeline configuration
+**Date**: 2026-02-13 (created), 2026-04-28 (updated — OpenAI programs added, NPO status updated)
+**Status**: Active — NPO/funding track live, technical layers partially implemented
+**Scope**: Anthropic + OpenAI API spend reduction via pricing plans, provider alternatives, NPO/OSS programs, and pipeline configuration
 **Related**: [LLM_Call_Optimization_Goals_Proposal.md](LLM_Call_Optimization_Goals_Proposal.md) (pipeline-level code optimizations)
+
+> **Note**: Prompt caching is already active in the codebase (`getPromptCachingOptions()` in `llm.ts`). The Feb 2026 spend figures are historical context, not current baseline. This document's primary active value is the NPO/funding program catalog (Layer B) and Batch API evaluation (Layer A1).
 
 ---
 
@@ -219,19 +221,44 @@ Reference: [Google.org AI Accelerator](https://blog.google/company-news/outreach
 
 Reference: [Google Cloud Research Credits](https://cloud.google.com/blog/topics/public-sector/google-cloud-research-credits-expand-nonprofit-researchers)
 
+### B11. OpenAI — ChatGPT for Nonprofits
+
+- **Discount**: Up to **75% off** ChatGPT Enterprise; **$8/seat/month** (annual) for ChatGPT Business
+- **Eligibility**: 501(c)(3) or international equivalent. Academic, medical, religious, and government institutions **excluded**
+- **Verification**: Via Goodstack (same validation as Anthropic — one verification covers both)
+- **Launched**: February 2026
+- **Note**: Discount applies to ChatGPT Business/Enterprise plans. API token pricing is separate (see B12)
+
+Reference: [OpenAI for Nonprofits](https://openai.com/index/introducing-openai-for-nonprofits/) | [Help Center](https://help.openai.com/en/articles/9359041-openai-for-nonprofits) | [Goodstack Details](https://goodstack.org/software-discounts/openai)
+
+### B12. OpenAI — Researcher Access Program (API Credits)
+
+- **Credits**: Up to **$1,000 in API credits** for approved projects
+- **Eligibility**: Active affiliation with university, research organization, or qualifying nonprofit
+- **Note**: API discounts for nonprofits reported at **40-80%** off standard pricing (not officially published). Discounts are **not stackable** — the single largest discount applies
+
+### B13. OpenAI — Nonprofit Fund
+
+- **Grants**: Unrestricted cash grants to US-based nonprofits
+- **Previous cycle**: $40.5M distributed to 208 organizations (application window closed October 2025)
+- **Current status**: Board-directed phase ongoing (early 2026). Next open application cycle TBD
+- **Note**: Previous cycle was US-only — eligibility for Swiss Verein in future cycles uncertain
+
 ### NPO Stacking Strategy
 
-A qualifying nonprofit organization could potentially access Claude through **multiple independent programs simultaneously**:
+A qualifying nonprofit organization could potentially access AI services through **multiple independent programs simultaneously**:
 
-| Source | Credits/Discount | Provider Path |
-|--------|-----------------|---------------|
-| Anthropic Claude for Nonprofits | 75% off plans | Direct |
-| Anthropic AI for Science | $20,000 API credits | Direct |
-| AWS TechSoup | $1,000/year | Bedrock |
-| AWS Imagine Grant | Up to $100,000 credits | Bedrock |
-| Google for Nonprofits | $10,000/year | Vertex AI |
+| Source | Credits/Discount | Provider Path | Stackable? |
+|--------|-----------------|---------------|:----------:|
+| Anthropic Claude for Nonprofits | 75% off plans | Direct | Yes |
+| Anthropic AI for Science | $20,000 API credits | Direct | Yes |
+| OpenAI ChatGPT for Nonprofits | 75% off Enterprise / $8/seat Business | Direct | No (single largest) |
+| OpenAI Researcher Access | $1,000 API credits | Direct | No (single largest) |
+| AWS TechSoup | $1,000/year | Bedrock (Claude + GPT) | Yes |
+| AWS Imagine Grant | Up to $100,000 credits | Bedrock (Claude + GPT) | Yes |
+| Google for Nonprofits | $10,000/year | Vertex AI (Claude) | Yes |
 
-**Important**: There is currently **no dedicated open-source program** from Anthropic. Open-source projects must qualify through the nonprofit, research, or startup programs.
+**Important**: Anthropic and cloud credits are stackable across providers. OpenAI discounts are **not stackable** within OpenAI — only the single largest discount applies. There is currently **no dedicated open-source program** from either Anthropic or OpenAI. Open-source projects must qualify through the nonprofit, research, or startup programs.
 
 ---
 
