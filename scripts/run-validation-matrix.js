@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { submitAutomaticDraftAndWaitForJob } = require('../apps/web/scripts/automatic-claim-selection');
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
 const SESSION_LABEL = process.argv[2] || 'current';
@@ -95,15 +96,13 @@ async function runMatrix() {
       process.stdout.write(`${runLabel}: submitting... `);
 
       try {
-        const response = await fetch(`${API_URL}/api/fh/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputType: 'text', inputValue: claim.text }),
+        const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+          apiUrl: API_URL,
+          inputType: 'text',
+          inputValue: claim.text,
         });
 
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const { jobId } = await response.json();
-        process.stdout.write(`job=${jobId.slice(0,8)}... `);
+        process.stdout.write(`draft=${draftId.slice(0,8)} job=${jobId.slice(0,8)}... `);
 
         const job = await waitForJob(jobId);
         if (job.status !== 'SUCCEEDED') {
@@ -114,6 +113,7 @@ async function runMatrix() {
             claim: claim.text,
             pipeline: 'orchestrated',
             run,
+            draft_id: draftId,
             job_id: jobId,
             status: job.status,
             error: 'Job failed',
@@ -139,6 +139,7 @@ async function runMatrix() {
           claim: claim.text,
           pipeline: 'orchestrated',
           run,
+          draft_id: draftId,
           job_id: jobId,
           status: 'SUCCEEDED',
           answer: metrics.answer,

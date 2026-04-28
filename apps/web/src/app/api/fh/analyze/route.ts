@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { evaluateInputPolicy } from "@/lib/input-policy-gate";
 import { getClientIp } from "@/lib/auth";
+import { normalizeClaimSelectionMode } from "@/lib/claim-selection-flow";
+import { loadPipelineConfig } from "@/lib/config-loader";
 
 export const runtime = "nodejs";
 
@@ -16,11 +18,49 @@ export async function POST(req: Request) {
   }
 
   // Parse body to extract input for policy gate evaluation
-  let parsedBody: { inputValue?: unknown; inputType?: unknown } = {};
+  let parsedBody: { inputValue?: unknown; inputType?: unknown; selectionMode?: unknown } = {};
   try {
     parsedBody = JSON.parse(body);
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const explicitSelectionMode =
+    parsedBody.selectionMode === "interactive" || parsedBody.selectionMode === "automatic"
+      ? parsedBody.selectionMode
+      : null;
+
+  let effectiveSelectionMode = normalizeClaimSelectionMode(explicitSelectionMode);
+  if (!explicitSelectionMode) {
+    try {
+      const pipelineConfigResult = await loadPipelineConfig("default");
+      if (
+        pipelineConfigResult.contentHash === "__ERROR_FALLBACK__" ||
+        (pipelineConfigResult.fromDefault === true && pipelineConfigResult.contentHash !== "__DEFAULT__")
+      ) {
+        return NextResponse.json(
+          { error: "Unable to determine claim-selection mode; direct analysis was not started" },
+          { status: 503 },
+        );
+      }
+      const { config } = pipelineConfigResult;
+      effectiveSelectionMode = normalizeClaimSelectionMode(config.claimSelectionDefaultMode);
+    } catch {
+      return NextResponse.json(
+        { error: "Unable to determine claim-selection mode; direct analysis was not started" },
+        { status: 503 },
+      );
+    }
+  }
+
+  if (effectiveSelectionMode === "automatic") {
+    return NextResponse.json(
+      {
+        error: "Automatic claim selection requires the claim-selection draft endpoint",
+        claimSelectionDraftEndpoint: "/api/fh/claim-selection-drafts",
+      },
+      { status: 409 },
+    );
   }
 
   // Semantic input gate: LLM-based policy classification (fail-open on errors)

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { prepareStage1Snapshot, runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import { generateClaimSelectionRecommendation } from "@/lib/analyzer/claim-selection-recommendation";
 
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(() => new Promise(() => {})),
@@ -142,6 +143,89 @@ describe("runner concurrency split", () => {
     expect(qs.runningCount).toBe(1);
     expect(ds.runningCount).toBe(1);
     expect(ds.runningDraftIds.has("draft-1")).toBe(true);
+  });
+
+  it("auto-confirms only the configured recommendation subset for automatic drafts", async () => {
+    const claimIds = ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05", "AC_06"];
+    const autoConfirmBodies: any[] = [];
+
+    vi.mocked(prepareStage1Snapshot).mockResolvedValueOnce({
+      preparedStage1: {
+        version: 1,
+        resolvedInputText: "queued session input",
+        preparedUnderstanding: {
+          impliedClaim: "Input implies several checkable claims.",
+          articleThesis: "Input thesis",
+          atomicClaims: claimIds.map((id) => ({ id, statement: `Statement ${id}` })),
+          preliminaryEvidence: [],
+        },
+      },
+      state: { stage1Observability: { candidateClaimCount: claimIds.length } },
+    } as any);
+    vi.mocked(generateClaimSelectionRecommendation).mockResolvedValueOnce({
+      rankedClaimIds: [...claimIds],
+      recommendedClaimIds: [...claimIds],
+      assessments: [],
+      rationale: "Recommended in ranked order.",
+    } as any);
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/recoverable")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/idle-auto-proceed-due")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/v1/claim-selection-drafts/draft-auto")) {
+        return new Response(JSON.stringify({
+          draftId: "draft-auto",
+          status: "QUEUED",
+          activeInputType: "text",
+          activeInputValue: "queued session input",
+          selectionMode: "automatic",
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/claim-selection-drafts/draft-auto/status")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "POST" && url.endsWith("/internal/v1/claim-selection-drafts/draft-auto/auto-confirm")) {
+        autoConfirmBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ finalJobId: "job-auto" }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 0,
+      queue: [{ draftId: "draft-auto", enqueuedAt: Date.now() }],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainDraftQueue } = await import("@/lib/internal-runner-queue");
+    await drainDraftQueue();
+    await flushMicrotasks(30);
+
+    expect(autoConfirmBodies).toHaveLength(1);
+    expect(autoConfirmBodies[0].selectedClaimIds).toEqual([
+      "AC_01",
+      "AC_02",
+      "AC_03",
+      "AC_04",
+      "AC_05",
+    ]);
+    const draftState = JSON.parse(autoConfirmBodies[0].draftStateJson);
+    expect(draftState.recommendedClaimIds).toEqual(autoConfirmBodies[0].selectedClaimIds);
+    expect(draftState.selectedClaimIds).toEqual(autoConfirmBodies[0].selectedClaimIds);
   });
 
   it("starts a report job even when the prep lane is already busy", async () => {

@@ -14,14 +14,17 @@
  * Output: test-output/validation/<batchLabel>/<familyName>.json + manifest.json
  *
  * Environment:
- *   FH_API_URL     — API base (default: http://localhost:5000)
+ *   FH_API_URL     — API base for job polling (default: http://localhost:5000)
+ *   FH_WEB_URL     — Web base for ACS draft submission (default: http://localhost:3000)
  *   FH_INVITE_CODE — invite code (default: SELF-TEST)
  */
 
 const fs = require("fs");
 const path = require("path");
+const { submitAutomaticDraftAndWaitForJob } = require("../../apps/web/scripts/automatic-claim-selection");
 
 const API_URL = (process.env.FH_API_URL || "http://localhost:5000").replace(/\/$/, "");
+const WEB_URL = (process.env.FH_WEB_URL || "http://localhost:3000").replace(/\/$/, "");
 const INVITE_CODE = process.env.FH_INVITE_CODE || "SELF-TEST";
 const JOB_TIMEOUT_MS = 600_000; // 10 minutes per job
 const POLL_INTERVAL_MS = 5_000;
@@ -46,22 +49,13 @@ const outputDir = path.join(__dirname, "..", "..", "test-output", "validation", 
 // ---------------------------------------------------------------------------
 
 async function submitJob(family) {
-  const res = await fetch(`${API_URL}/v1/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      inputType: family.inputType,
-      inputValue: family.inputValue,
-      pipelineVariant: "claimboundary",
-      inviteCode: INVITE_CODE,
-    }),
+  const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+    apiUrl: WEB_URL,
+    inputType: family.inputType,
+    inputValue: family.inputValue,
+    inviteCode: INVITE_CODE,
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Submit failed (${res.status}): ${body.slice(0, 200)}`);
-  }
-  const data = await res.json();
-  return data.jobId;
+  return { draftId, jobId };
 }
 
 async function waitForJob(jobId) {
@@ -162,15 +156,16 @@ function extractSummary(family, job) {
 async function run() {
   console.log("=".repeat(60));
   console.log(`Validation Batch: ${batchLabel}`);
-  console.log(`Families: ${families.length} | API: ${API_URL}`);
+  console.log(`Families: ${families.length} | API: ${API_URL} | Web: ${WEB_URL}`);
   console.log(`Output: ${outputDir}`);
   console.log("=".repeat(60));
 
   // Health check
   try {
-    const h = await fetch(`${API_URL}/health`);
-    if (!h.ok) throw new Error("unhealthy");
-    console.log("\nAPI healthy\n");
+    const apiHealth = await fetch(`${API_URL}/health`);
+    const webHealth = await fetch(`${WEB_URL}/api/health`);
+    if (!apiHealth.ok || !webHealth.ok) throw new Error("unhealthy");
+    console.log("\nAPI and Web healthy\n");
   } catch {
     console.error("API not reachable. Start both services first.");
     process.exit(1);
@@ -195,13 +190,13 @@ async function run() {
     process.stdout.write(`${label}: submitting... `);
 
     try {
-      const jobId = await submitJob(family);
-      process.stdout.write(`job=${jobId.slice(0, 8)}... `);
+      const { draftId, jobId } = await submitJob(family);
+      process.stdout.write(`draft=${draftId.slice(0, 8)} job=${jobId.slice(0, 8)}... `);
 
       const job = await waitForJob(jobId);
       if (job.status !== "SUCCEEDED") {
         console.log(`FAILED (${job.status})`);
-        manifest.results.push({ familyName: family.familyName, status: "FAILED", jobId });
+        manifest.results.push({ familyName: family.familyName, status: "FAILED", draftId, jobId });
         failed++;
         continue;
       }
@@ -209,7 +204,7 @@ async function run() {
       const summary = extractSummary(family, job);
       if (!summary) {
         console.log("FAILED (no result)");
-        manifest.results.push({ familyName: family.familyName, status: "NO_RESULT", jobId });
+        manifest.results.push({ familyName: family.familyName, status: "NO_RESULT", draftId, jobId });
         failed++;
         continue;
       }
@@ -223,6 +218,7 @@ async function run() {
       manifest.results.push({
         familyName: family.familyName,
         status: "OK",
+        draftId,
         jobId,
         verdict: summary.article.verdict,
         truthPercentage: summary.article.truthPercentage,

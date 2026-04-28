@@ -4,6 +4,7 @@
  */
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
+const { submitAutomaticDraftAndWaitForJob } = require('../../scripts/automatic-claim-selection');
 
 // Test cases from user's evidence
 const REGRESSION_TEST_CASES = [
@@ -156,22 +157,15 @@ async function runRegressionTest() {
     console.log('');
     
     try {
-      // Submit new analysis
+      // Submit new analysis through ACS automatic mode so non-interactive runs
+      // use the configured recommended AtomicClaim subset.
       console.log('Running current analysis...');
-      const response = await fetch(`${API_URL}/api/fh/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputType: testCase.inputType,
-          inputValue: testCase.input,
-        }),
+      const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+        apiUrl: API_URL,
+        inputType: testCase.inputType,
+        inputValue: testCase.input,
       });
-      
-      if (!response.ok) {
-        throw new Error(`Analysis failed: ${response.statusText}`);
-      }
-      
-      const { jobId } = await response.json();
+      console.log(`Draft ID: ${draftId}`);
       console.log(`Job ID: ${jobId}`);
       
       // Wait for completion
@@ -204,6 +198,7 @@ async function runRegressionTest() {
       
       results.push({
         testCase,
+        draftId,
         jobId,
         current,
         issues,

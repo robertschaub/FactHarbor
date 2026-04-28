@@ -4,6 +4,7 @@
  */
 
 const { BASELINE_TEST_CASES } = require('../src/lib/analyzer/test-cases');
+const { submitAutomaticDraftAndWaitForJob } = require('./automatic-claim-selection');
 const fs = require('fs');
 const path = require('path');
 
@@ -40,21 +41,13 @@ async function runBaseline() {
     console.log(`[${i + 1}/${BASELINE_TEST_CASES.length}] ${testCase.id} (${testCase.category})`);
 
     try {
-      // Submit analysis
-      const response = await fetch(`${API_URL}/api/fh/analyze`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          inputType: testCase.inputType,
-          inputValue: testCase.input,
-        }),
+      // Submit analysis through ACS automatic mode so non-interactive runs use
+      // the configured recommended AtomicClaim subset instead of the legacy all-claims path.
+      const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+        apiUrl: API_URL,
+        inputType: testCase.inputType,
+        inputValue: testCase.input,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const { jobId } = await response.json();
 
       // Wait for completion
       let job = await waitForJob(jobId);
@@ -84,6 +77,7 @@ async function runBaseline() {
           input: testCase.input,
           expectedVerdict: testCase.expectedVerdict,
         },
+        draftId,
         jobId,
         result: {
           verdict: result.articleVerdict,
