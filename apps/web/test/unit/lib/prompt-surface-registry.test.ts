@@ -13,11 +13,13 @@ describe("prompt surface registry", () => {
       "source-reliability-enrichment",
       "source-reliability-core",
       "input-policy-gate",
+      "grounding-check-legacy",
       "inverse-claim-verification",
     ]);
 
     expect(listPromptSurfaceExceptions().map((entry) => entry.id)).toEqual([
       "source-reliability-core",
+      "grounding-check-legacy",
       "inverse-claim-verification",
     ]);
   });
@@ -43,6 +45,13 @@ describe("prompt surface registry", () => {
       adminEditable: false,
       reseedSupported: false,
     });
+    expect(getPromptSurfaceRegistryEntry("grounding-check-legacy")).toMatchObject({
+      management: "db_only_legacy",
+      stability: "intentional_exception",
+      adminEditable: true,
+      reseedSupported: false,
+      ucmProfile: "orchestrated",
+    });
     expect(getPromptSurfaceRegistryEntry("inverse-claim-verification")).toMatchObject({
       management: "disk_only_calibration",
       stability: "intentional_exception",
@@ -54,7 +63,9 @@ describe("prompt surface registry", () => {
   it("records ownership paths without embedding prompt text", () => {
     for (const entry of listPromptSurfaceRegistry()) {
       expect(entry.runtimeOwners.length).toBeGreaterThan(0);
-      expect(entry.sourcePaths.length).toBeGreaterThan(0);
+      if (entry.management !== "db_only_legacy") {
+        expect(entry.sourcePaths.length).toBeGreaterThan(0);
+      }
       expect(JSON.stringify(entry)).not.toContain("You are ");
       expect(JSON.stringify(entry)).not.toContain("Return only valid JSON");
     }

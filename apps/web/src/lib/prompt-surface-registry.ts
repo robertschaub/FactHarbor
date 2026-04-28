@@ -1,6 +1,7 @@
 export type PromptSurfaceManagement =
   | "manifest_backed_ucm"
   | "ucm"
+  | "db_only_legacy"
   | "code_built"
   | "disk_only_calibration";
 
@@ -81,6 +82,19 @@ export const PROMPT_SURFACE_REGISTRY: PromptSurfaceRegistryEntry[] = [
     runtimeOwners: ["apps/web/src/lib/input-policy-gate.ts"],
     sourcePaths: ["apps/web/prompts/input-policy-gate.prompt.md"],
     notes: "Pre-pipeline semantic policy gate prompt loaded through UCM.",
+  },
+  {
+    id: "grounding-check-legacy",
+    label: "Grounding check legacy profile",
+    management: "db_only_legacy",
+    stability: "intentional_exception",
+    adminEditable: true,
+    reseedSupported: false,
+    ucmProfile: "orchestrated",
+    runtimeOwners: ["apps/web/src/lib/analyzer/grounding-check.ts"],
+    sourcePaths: [],
+    notes:
+      "Current exception: grounding checks load two sections from the DB-only legacy orchestrated profile; no repo prompt file should be re-added for this removed pipeline.",
   },
   {
     id: "inverse-claim-verification",
