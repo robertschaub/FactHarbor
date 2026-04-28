@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-27
-**Status**: Consolidation #13 complete. 2 files archived. 57 active markdown docs remain.
+**Last Updated**: 2026-04-28
+**Status**: Consolidation #13 complete. 2 files archived. 58 active markdown docs remain.
 
 ---
 
@@ -85,6 +85,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md](2026-04-24_Atomic_Claim_ACS_Check_Worthiness_Unification_Assessment.md) — architecture assessment for Stage 1 atomic claims and ACS check-worthiness unification
 - [2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md](2026-04-24_Selection_Readiness_Root_Cause_And_Fix_Plan.md) — reviewed, partially implemented selection-readiness root-cause/fix plan
 - [2026-04-27_SVP_ACS_Gated_Implementation_Plan.md](2026-04-27_SVP_ACS_Gated_Implementation_Plan.md) — active gated plan for broad-input ACS research waste: instrumentation and contradiction admission first; source reuse and budget-aware ACS gated by metrics/review
+- [2026-04-28_ACS_Validation_Path_Deployment_Solution.md](2026-04-28_ACS_Validation_Path_Deployment_Solution.md) — final consolidated ACS validation specification and implementation plan: target diagrams, supported automation thin waist, Tier 1 passive metadata, Stage 2 baseline assumptions, budget-aware ACS follow-up constraints, direct-caller quarantine, read-only historical comparison, and five-slice rollout
 - [2026-03-19_SR_LLM_Calibration_Plan.md](2026-03-19_SR_LLM_Calibration_Plan.md) — Stage 4.5 SR calibration. Feature-flagged/off.
 - [LLM_Triangulation_Assessment_Plan_2026-03-17.md](LLM_Triangulation_Assessment_Plan_2026-03-17.md) — LLM-assessed aggregation weight factors (v4 ready for implementation approval)
 - [2026-03-25_Long_Run_Variance_Reduction_Roadmap.md](2026-03-25_Long_Run_Variance_Reduction_Roadmap.md) — long-run retrieval-first roadmap

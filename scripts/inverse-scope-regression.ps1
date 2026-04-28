@@ -1,3 +1,7 @@
+# QUARANTINED VALIDATION TOOLING:
+# This direct /v1/analyze regression script is not supported release/regression
+# validation automation until migrated through apps/web/scripts/automatic-claim-selection.js.
+
 param(
   [string]$ApiBase = "http://localhost:5000",
   [int]$PollIntervalMs = 2000,
@@ -202,4 +206,3 @@ Assert-Pair "safety_flying_gt_driving" "safety_driving_gt_flying" 1 3 $false
 
 Write-Host ""
 Write-Host "✅ Inverse context regression PASSED" -ForegroundColor Green
-

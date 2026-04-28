@@ -1,5 +1,10 @@
 """
 Phase 1: Binary Gate Experiment
+QUARANTINED VALIDATION TOOLING:
+This direct /v1/analyze benchmark/forensic script is not supported
+release/regression validation automation until migrated through
+apps/web/scripts/automatic-claim-selection.js.
+
 Disables all 4 suspects, runs benchmarks, then runs control with defaults.
 """
 import json, time, sys, urllib.request, urllib.error

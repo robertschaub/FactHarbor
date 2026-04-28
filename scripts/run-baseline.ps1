@@ -1,6 +1,9 @@
 # Baseline Test Execution Script
 # Runs the 30-case baseline test suite to establish quality metrics
 # Cost: $20-50 in API calls
+# QUARANTINED VALIDATION TOOLING:
+# This direct /api/fh/analyze baseline script is not supported release/regression
+# validation automation until migrated through apps/web/scripts/automatic-claim-selection.js.
 
 param(
     [string]$Provider = "anthropic",

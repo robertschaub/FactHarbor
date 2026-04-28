@@ -1,6 +1,11 @@
 """
 Phase A: Search-Stack Drift Investigation
 ==========================================
+QUARANTINED VALIDATION TOOLING:
+This direct /v1/analyze benchmark/forensic script is not supported
+release/regression validation automation until migrated through
+apps/web/scripts/automatic-claim-selection.js.
+
 Tests whether search-stack drift is the primary remaining cause of report-quality
 degradation relative to quality_window_start (9cdc8889).
 

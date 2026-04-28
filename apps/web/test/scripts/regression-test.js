@@ -1,6 +1,10 @@
 /**
  * Regression Test: Bolsonaro Quality Degradation
  * Documents the quality decline between Jan 13-19, 2026
+ *
+ * QUARANTINED VALIDATION TOOLING:
+ * This script uses the ACS helper, but its hardcoded inputs and stale result
+ * schema are not supported release/regression validation automation until migrated.
  */
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';

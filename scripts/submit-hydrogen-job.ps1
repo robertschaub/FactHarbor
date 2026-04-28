@@ -1,4 +1,7 @@
 # Hydrogen Job Submission Script (User Specific)
+# QUARANTINED VALIDATION TOOLING:
+# This direct /v1/analyze manual helper is not supported release/regression
+# validation automation until migrated through apps/web/scripts/automatic-claim-selection.js.
 
 $endpoint = "http://localhost:5000/v1/analyze"
 $inviteCode = "SELF-TEST"

@@ -1,0 +1,42 @@
+[
+  {
+    "familyName": "bundesrat_eu_rechtskraeftig",
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben"
+  },
+  {
+    "familyName": "bundesrat_eu_bevor",
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben"
+  },
+  {
+    "familyName": "asyl_schweiz_235000",
+    "inputType": "text",
+    "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz"
+  },
+  {
+    "familyName": "fluechtlinge_schweiz_235000",
+    "inputType": "text",
+    "inputValue": "235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges."
+  },
+  {
+    "familyName": "bolsonaro_en_legal_fair_trial",
+    "inputType": "text",
+    "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?"
+  },
+  {
+    "familyName": "bolsonaro_pt_processo",
+    "inputType": "text",
+    "inputValue": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas"
+  },
+  {
+    "familyName": "hydrogen_cars_efficiency",
+    "inputType": "text",
+    "inputValue": "Using hydrogen for cars is more efficient than using electricity"
+  },
+  {
+    "familyName": "plastic_recycling_pointless",
+    "inputType": "text",
+    "inputValue": "Plastic recycling is pointless"
+  }
+]

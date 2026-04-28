@@ -3,15 +3,30 @@
  * Execute via: npm run test:baseline
  */
 
-const { BASELINE_TEST_CASES } = require('../src/lib/analyzer/test-cases');
-const { submitAutomaticDraftAndWaitForJob } = require('./automatic-claim-selection');
+const { submitAutomaticValidationJob } = require('./automatic-claim-selection');
 const fs = require('fs');
 const path = require('path');
 
 const OUTPUT_FILE = path.join(__dirname, '../../baseline-results-' + new Date().toISOString().split('T')[0] + '.json');
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
+const DEFAULT_CASES_FILE = path.join(__dirname, '../../../scripts/validation/captain-approved-families.json');
+const CASES_FILE = process.env.FH_BASELINE_INPUTS_FILE || DEFAULT_CASES_FILE;
+
+function loadValidationCases() {
+  const rawCases = JSON.parse(fs.readFileSync(CASES_FILE, 'utf-8'));
+  return rawCases.map((testCase) => ({
+    id: testCase.id || testCase.familyName,
+    category: testCase.category || 'captain-approved',
+    difficulty: testCase.difficulty || null,
+    inputType: testCase.inputType,
+    input: testCase.input || testCase.inputValue,
+    expectedVerdict: testCase.expectedVerdict || null,
+  }));
+}
 
 async function runBaseline() {
+  const validationCases = loadValidationCases();
+
   console.log('========================================');
   console.log('FactHarbor Baseline Test Execution');
   console.log('========================================\n');
@@ -30,43 +45,34 @@ async function runBaseline() {
   }
 
   // Confirm execution
-  console.log(`WARNING: This will make ${BASELINE_TEST_CASES.length} real LLM API calls`);
+  console.log(`WARNING: This will make ${validationCases.length} real LLM API calls`);
   console.log('Estimated cost: $20-50\n');
   
   const results = [];
   const startTime = Date.now();
 
-  for (let i = 0; i < BASELINE_TEST_CASES.length; i++) {
-    const testCase = BASELINE_TEST_CASES[i];
-    console.log(`[${i + 1}/${BASELINE_TEST_CASES.length}] ${testCase.id} (${testCase.category})`);
+  for (let i = 0; i < validationCases.length; i++) {
+    const testCase = validationCases[i];
+    console.log(`[${i + 1}/${validationCases.length}] ${testCase.id} (${testCase.category})`);
 
     try {
       // Submit analysis through ACS automatic mode so non-interactive runs use
       // the configured recommended AtomicClaim subset instead of the legacy all-claims path.
-      const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+      const validation = await submitAutomaticValidationJob({
         apiUrl: API_URL,
         inputType: testCase.inputType,
         inputValue: testCase.input,
+        waitForFinalJob: true,
+        family: {
+          familyName: testCase.id,
+          inputType: testCase.inputType,
+          inputValue: testCase.input,
+        },
       });
+      const { draftId, jobId, summary } = validation;
 
-      // Wait for completion
-      let job = await waitForJob(jobId);
-
-      if (job.status !== 'SUCCEEDED') {
-        throw new Error(`Job failed: ${job.status}`);
-      }
-
-      const result = JSON.parse(job.resultJson);
-
-      // Fetch metrics if available
-      let metrics = null;
-      try {
-        const metricsRes = await fetch(`${API_URL}/api/fh/metrics/${jobId}`);
-        if (metricsRes.ok) {
-          metrics = await metricsRes.json();
-        }
-      } catch (e) {
-        // Metrics not available
+      if (!validation.ok || !summary) {
+        throw new Error(`Job failed: ${validation.status}`);
       }
 
       results.push({
@@ -80,17 +86,21 @@ async function runBaseline() {
         draftId,
         jobId,
         result: {
-          verdict: result.articleVerdict,
-          truthPercentage: result.articleTruthPercentage,
-          confidence: result.articleVerdictConfidence,
-          claimsCount: result.claims?.length || 0,
-          scopesCount: result.analysisContexts?.length || 0,
+          verdict: summary.verdict,
+          truthPercentage: summary.truthPercentage,
+          confidence: summary.confidence,
+          claimVerdictCount: summary.claimVerdictCount,
+          claimBoundaryCount: summary.claimBoundaryCount,
+          evidenceCount: summary.evidenceCount,
+          sourceCount: summary.sourceCount,
+          metadataUnavailable: summary.metadataUnavailable,
+          preparedClaimCount: summary.preparedClaimCount,
+          selectedClaimCount: summary.selectedClaimCount,
         },
-        metrics,
         success: true,
       });
 
-      console.log(`  ✓ ${result.articleVerdict} (${result.articleTruthPercentage}%)\n`);
+      console.log(`  ok ${summary.verdict} (${summary.truthPercentage}%) selected=${summary.selectedClaimCount}/${summary.preparedClaimCount}\n`);
 
     } catch (error) {
       console.error(`  ✗ ${error.message}\n`);
@@ -108,7 +118,8 @@ async function runBaseline() {
 
   const summary = {
     timestamp: new Date().toISOString(),
-    totalCases: BASELINE_TEST_CASES.length,
+    totalCases: validationCases.length,
+    casesFile: CASES_FILE,
     completed,
     failed,
     durationMs: duration,
@@ -131,22 +142,6 @@ async function runBaseline() {
     console.log('2. Analyze metrics and identify issues');
     console.log('3. Run A/B test to validate improvements');
   }
-}
-
-async function waitForJob(jobId, timeoutMs = 300000) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
-    const response = await fetch(`${API_URL}/api/fh/jobs/${jobId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch job: ${response.statusText}`);
-    }
-    const job = await response.json();
-    if (job.status === 'SUCCEEDED' || job.status === 'FAILED') {
-      return job;
-    }
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
-  throw new Error('Job timed out');
 }
 
 runBaseline().catch(error => {

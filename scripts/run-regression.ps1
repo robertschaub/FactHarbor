@@ -1,3 +1,7 @@
+# QUARANTINED VALIDATION TOOLING:
+# This direct /v1/analyze regression script is not supported release/regression
+# validation automation until migrated through apps/web/scripts/automatic-claim-selection.js.
+
 param(
   [string]$ApiBase = "http://localhost:5000",
   [string]$BaselineDir = "",
@@ -303,4 +307,3 @@ try {
 
 Write-Host ""
 Write-Host "Done. New regression bundle: $outDir" -ForegroundColor Cyan
-

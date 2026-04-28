@@ -2,57 +2,71 @@
  * 25-Run Validation Matrix Runner
  * 5 claims x 5 runs = 25 total orchestrated pipeline runs
  *
- * Usage: node scripts/run-validation-matrix.js [session_label] [claims_file]
- * Claims default to scripts/validation-claims.json
+ * Usage: node scripts/run-validation-matrix.js <session_label> <claims_file>
+ * The claims file must be an explicitly reviewed Captain-approved fixture.
  * Output: artifacts/session<label>_orchestrated_matrix.jsonl
  */
 
 const fs = require('fs');
 const path = require('path');
-const { submitAutomaticDraftAndWaitForJob } = require('../apps/web/scripts/automatic-claim-selection');
+const { submitAutomaticValidationJob } = require('../apps/web/scripts/automatic-claim-selection');
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
 const SESSION_LABEL = process.argv[2] || 'current';
-const CLAIMS_FILE = process.argv[3] || path.join(__dirname, 'validation-claims.json');
+const CLAIMS_FILE = process.argv[3];
 const OUTPUT_FILE = path.join(__dirname, '..', 'artifacts', `session${SESSION_LABEL}_orchestrated_matrix.jsonl`);
+
+if (!CLAIMS_FILE) {
+  console.error('Claims file is required. Use an explicitly reviewed Captain-approved fixture.');
+  console.error('Usage: node scripts/run-validation-matrix.js <session_label> <claims_file>');
+  process.exit(1);
+}
 
 if (!fs.existsSync(CLAIMS_FILE)) {
   console.error(`Claims file not found: ${CLAIMS_FILE}`);
-  console.error('Usage: node scripts/run-validation-matrix.js [session_label] [claims_file]');
+  console.error('Usage: node scripts/run-validation-matrix.js <session_label> <claims_file>');
   process.exit(1);
 }
-const CLAIMS = JSON.parse(fs.readFileSync(CLAIMS_FILE, 'utf-8'));
+const RAW_CLAIMS = JSON.parse(fs.readFileSync(CLAIMS_FILE, 'utf-8'));
 
 const RUNS_PER_CLAIM = 5;
 
-async function waitForJob(jobId, timeoutMs = 600000) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeoutMs) {
-    const response = await fetch(`${API_URL}/api/fh/jobs/${jobId}`);
-    if (!response.ok) throw new Error(`Failed to fetch job: ${response.statusText}`);
-    const job = await response.json();
-    if (job.status === 'SUCCEEDED' || job.status === 'FAILED') return job;
-    await new Promise(resolve => setTimeout(resolve, 3000));
+function normalizeClaimFixture(rawClaim, index) {
+  const id = rawClaim.id || rawClaim.familyName;
+  const text = rawClaim.text || rawClaim.inputValue || rawClaim.input;
+  const inputType = rawClaim.inputType || 'text';
+  const expectedClaimBoundaries = rawClaim.expectedClaimBoundaries ?? rawClaim.expectedContexts ?? null;
+
+  if (typeof id !== 'string' || id.length === 0) {
+    throw new Error(`Claim fixture row ${index + 1} is missing id/familyName`);
   }
-  throw new Error('Job timed out after ' + (timeoutMs / 1000) + 's');
+  if (typeof text !== 'string' || text.length === 0) {
+    throw new Error(`Claim fixture row ${index + 1} (${id}) is missing text/inputValue`);
+  }
+  if (typeof inputType !== 'string' || inputType.length === 0) {
+    throw new Error(`Claim fixture row ${index + 1} (${id}) is missing inputType`);
+  }
+
+  return {
+    ...rawClaim,
+    id,
+    text,
+    inputType,
+    expectedClaimBoundaries,
+    varianceTarget: typeof rawClaim.varianceTarget === 'number' ? rawClaim.varianceTarget : null,
+    confidenceTarget: typeof rawClaim.confidenceTarget === 'number' ? rawClaim.confidenceTarget : null,
+  };
 }
 
-function extractMetrics(result) {
-  // Result structure: result.verdictSummary.{answer, confidence, truthPercentage}
-  const vs = result.verdictSummary || {};
-  const sources = result.sources || [];
-  return {
-    answer: vs.truthPercentage ?? vs.answer,
-    confidence: vs.confidence,
-    contexts: (result.analysisContexts || []).length,
-    sources: sources.length,
-    fetchedSources: sources.filter(s => s.fetchSuccess).length,
-    domains: [...new Set(sources.filter(s => s.fetchSuccess).map(s => {
-      try { return new URL(s.url).hostname; } catch { return s.url; }
-    }))],
-    verdict: vs.displayText,
-    analysisWarnings: result.analysisWarnings || [],
-  };
+const CLAIMS = RAW_CLAIMS.map(normalizeClaimFixture);
+
+function formatTarget(value, prefix = '') {
+  return typeof value === 'number' ? `${prefix}${value}` : 'n/a';
+}
+
+function formatPass(value) {
+  if (value === null) return 'n/a';
+  return value ? 'yes' : 'no';
 }
 
 async function runMatrix() {
@@ -88,7 +102,7 @@ async function runMatrix() {
   for (const claim of CLAIMS) {
     console.log(`\n--- ${claim.id} ---`);
     console.log(`"${claim.text}"`);
-    console.log(`Expected contexts: ${claim.expectedContexts}\n`);
+    console.log(`Expected claim boundaries: ${claim.expectedClaimBoundaries ?? 'n/a'}\n`);
 
     for (let run = 1; run <= RUNS_PER_CLAIM; run++) {
       totalRuns++;
@@ -96,16 +110,25 @@ async function runMatrix() {
       process.stdout.write(`${runLabel}: submitting... `);
 
       try {
-        const { draftId, jobId } = await submitAutomaticDraftAndWaitForJob({
+        const validation = await submitAutomaticValidationJob({
           apiUrl: API_URL,
-          inputType: 'text',
+          inputType: claim.inputType,
           inputValue: claim.text,
+          waitForFinalJob: true,
+          timeoutMs: 600000,
+          pollIntervalMs: 3000,
+          family: {
+            familyName: claim.id,
+            inputType: claim.inputType,
+            inputValue: claim.text,
+          },
         });
+        const { draftId, jobId, summary } = validation;
 
-        process.stdout.write(`draft=${draftId.slice(0,8)} job=${jobId.slice(0,8)}... `);
-
-        const job = await waitForJob(jobId);
-        if (job.status !== 'SUCCEEDED') {
+        if (!validation.ok || !summary) {
+          const draftLabel = typeof draftId === 'string' ? draftId.slice(0,8) : 'none';
+          const jobLabel = typeof jobId === 'string' ? jobId.slice(0,8) : 'none';
+          process.stdout.write(`draft=${draftLabel} job=${jobLabel}... `);
           failures++;
           const row = {
             ts: new Date().toISOString(),
@@ -115,21 +138,22 @@ async function runMatrix() {
             run,
             draft_id: draftId,
             job_id: jobId,
-            status: job.status,
+            status: validation.status,
             error: 'Job failed',
+            metadataUnavailable: validation.metadataUnavailable,
+            metadataUnavailableReason: validation.metadataUnavailableReason,
+            resultUnavailable: validation.resultUnavailable,
+            resultUnavailableReason: validation.resultUnavailableReason,
           };
           fs.appendFileSync(OUTPUT_FILE, JSON.stringify(row) + '\n');
           allResults.push(row);
-          console.log(`FAILED (${job.status})`);
+          console.log(`FAILED (${validation.status})`);
           continue;
         }
 
-        const result = typeof job.resultJson === 'string' ? JSON.parse(job.resultJson) : job.resultJson;
-        const metrics = extractMetrics(result);
+        process.stdout.write(`draft=${draftId.slice(0,8)} job=${jobId.slice(0,8)}... `);
 
-        const searchProviderErrors = metrics.analysisWarnings.filter(
-          w => w.type === 'search_provider_error'
-        ).length;
+        const searchProviderErrors = summary.warnings.byType.search_provider_error || 0;
 
         if (searchProviderErrors > 0) searchErrors++;
 
@@ -142,22 +166,25 @@ async function runMatrix() {
           draft_id: draftId,
           job_id: jobId,
           status: 'SUCCEEDED',
-          answer: metrics.answer,
-          confidence: metrics.confidence,
-          contexts: metrics.contexts,
-          sources: metrics.sources,
-          fetchedSources: metrics.fetchedSources,
-          domains: metrics.domains,
+          answer: summary.truthPercentage,
+          confidence: summary.confidence,
+          verdict: summary.verdict,
+          claimBoundaries: summary.claimBoundaryCount,
+          evidenceCount: summary.evidenceCount,
+          sources: summary.sourceCount,
+          metadataUnavailable: summary.metadataUnavailable,
+          preparedClaimCount: summary.preparedClaimCount,
+          selectedClaimCount: summary.selectedClaimCount,
           search_provider_error_count: searchProviderErrors,
           has_search_provider_error: searchProviderErrors > 0,
           system_paused_after_run: false,
-          analysis_warnings_count: metrics.analysisWarnings.length,
+          analysis_warnings_count: summary.warnings.total,
         };
 
         fs.appendFileSync(OUTPUT_FILE, JSON.stringify(row) + '\n');
         allResults.push(row);
 
-        console.log(`score=${metrics.answer} conf=${metrics.confidence} ctx=${metrics.contexts} src=${metrics.sources}${searchProviderErrors > 0 ? ' ⚠SEARCH_ERR' : ''}`);
+        console.log(`score=${summary.truthPercentage} conf=${summary.confidence} boundaries=${summary.claimBoundaryCount} selected=${summary.selectedClaimCount}/${summary.preparedClaimCount}${searchProviderErrors > 0 ? ' SEARCH_ERR' : ''}`);
 
         // Check for search errors — abort if found
         if (searchProviderErrors > 0) {
@@ -196,7 +223,7 @@ async function runMatrix() {
 
   // Per-claim analysis
   console.log('--- Per-Claim Gate Results ---\n');
-  console.log('| Claim | Score Var | Target | Pass | Conf Delta | Target | Pass | Context Hit | Pass |');
+  console.log('| Claim | Score Var | Target | Pass | Conf Delta | Target | Pass | Boundary Hit | Pass |');
   console.log('|-------|-----------|--------|------|------------|--------|------|-------------|------|');
 
   let claimsPassing = 0;
@@ -210,24 +237,25 @@ async function runMatrix() {
 
     const scores = runs.map(r => r.answer);
     const confs = runs.map(r => r.confidence);
-    const ctxCounts = runs.map(r => r.contexts);
+    const boundaryCounts = runs.map(r => r.claimBoundaries);
+    const expectedBoundaries = claim.expectedClaimBoundaries;
 
     const scoreVar = Math.max(...scores) - Math.min(...scores);
     const confDelta = Math.max(...confs) - Math.min(...confs);
-    const contextHitRate = Math.round(
-      (ctxCounts.filter(c => c >= claim.expectedContexts).length / runs.length) * 100
-    );
+    const boundaryHitRate = typeof expectedBoundaries === 'number'
+      ? Math.round((boundaryCounts.filter(c => c >= expectedBoundaries).length / runs.length) * 100)
+      : null;
 
-    const scorePass = scoreVar <= claim.varianceTarget;
-    const confPass = confDelta <= claim.confidenceTarget;
-    const ctxPass = contextHitRate >= 80;
+    const scorePass = typeof claim.varianceTarget === 'number' ? scoreVar <= claim.varianceTarget : null;
+    const confPass = typeof claim.confidenceTarget === 'number' ? confDelta <= claim.confidenceTarget : null;
+    const boundaryPass = typeof boundaryHitRate === 'number' ? boundaryHitRate >= 80 : null;
 
-    const allPass = scorePass && confPass && ctxPass;
+    const allPass = scorePass && confPass && boundaryPass;
     if (allPass) claimsPassing++;
 
     const shortId = claim.id.replace('claim_', '').replace(/_/g, ' ');
     console.log(
-      `| ${shortId} | ${scoreVar} | <=${claim.varianceTarget} | ${scorePass ? '✅' : '❌'} | ${confDelta} | <=15 | ${confPass ? '✅' : '❌'} | ${contextHitRate}% (exp ${claim.expectedContexts}) | ${ctxPass ? '✅' : '❌'} |`
+      `| ${shortId} | ${scoreVar} | ${formatTarget(claim.varianceTarget, '<=')} | ${formatPass(scorePass)} | ${confDelta} | ${formatTarget(claim.confidenceTarget, '<=')} | ${formatPass(confPass)} | ${typeof boundaryHitRate === 'number' ? `${boundaryHitRate}% (exp ${expectedBoundaries})` : 'n/a'} | ${formatPass(boundaryPass)} |`
     );
   }
 
@@ -254,7 +282,8 @@ async function runMatrix() {
       const runs = allResults.filter(r => r.claim_id === claim.id && r.status === 'SUCCEEDED');
       const scores = runs.map(r => r.answer);
       const confs = runs.map(r => r.confidence);
-      const ctxCounts = runs.map(r => r.contexts);
+      const boundaryCounts = runs.map(r => r.claimBoundaries);
+      const expectedBoundaries = claim.expectedClaimBoundaries;
       return {
         claim_id: claim.id,
         runs: runs.length,
@@ -262,11 +291,13 @@ async function runMatrix() {
         scoreVariance: scores.length ? Math.max(...scores) - Math.min(...scores) : null,
         confidences: confs,
         confidenceDelta: confs.length ? Math.max(...confs) - Math.min(...confs) : null,
-        contexts: ctxCounts,
-        contextHitRate: ctxCounts.length
-          ? Math.round((ctxCounts.filter(c => c >= claim.expectedContexts).length / runs.length) * 100)
+        claimBoundaries: boundaryCounts,
+        boundaryHitRate: boundaryCounts.length && typeof expectedBoundaries === 'number'
+          ? Math.round((boundaryCounts.filter(c => c >= expectedBoundaries).length / runs.length) * 100)
           : null,
-        expectedContexts: claim.expectedContexts,
+        expectedClaimBoundaries: expectedBoundaries,
+        varianceTarget: claim.varianceTarget,
+        confidenceTarget: claim.confidenceTarget,
       };
     }),
   };
