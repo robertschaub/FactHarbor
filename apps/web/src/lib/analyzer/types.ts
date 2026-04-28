@@ -780,6 +780,23 @@ export interface SelectedClaimResearchMetrics {
   sufficiencyState: "sufficient" | "insufficient" | "unknown";
 }
 
+export interface SelectedClaimResearchCoverage {
+  claimId: string;
+  targetedMainIterations: number;
+  totalIterations: number;
+  iterationTypeCounts: Record<ClaimAcquisitionIterationEntry["iterationType"], number>;
+  queryCount: number;
+  fetchAttemptCount: number;
+  admittedEvidenceItemCount: number;
+  finalEvidenceItemCount: number;
+  elapsedMs: number;
+  sufficiencyState: "sufficient" | "insufficient" | "unknown";
+  zeroTargetedMainResearch: boolean;
+  notRunReason?:
+    | "no_claim_acquisition_ledger_entry"
+    | "no_targeted_main_iteration_recorded";
+}
+
 export interface ContradictionReachabilityMetrics {
   started: boolean;
   remainingMsWhenMainResearchEnded: number | null;
@@ -800,6 +817,7 @@ export interface ResearchWasteMetrics {
   preliminaryTotals: ResearchWasteCounterSet;
   preliminaryByOutcome: ResearchWasteByOutcome;
   stage1ToStage2UrlOverlap: ResearchWasteUrlOverlap;
+  selectedClaimResearchCoverage: SelectedClaimResearchCoverage[];
   selectedClaimResearch: SelectedClaimResearchMetrics[];
   contradictionReachability: ContradictionReachabilityMetrics;
 }

@@ -2,6 +2,7 @@ import type {
   CBClaimUnderstanding,
   CBResearchState,
   FetchedSource,
+  SelectedClaimResearchCoverage,
   ResearchWasteByOutcome,
   ResearchWasteCounterSet,
   ResearchWasteMetrics,
@@ -54,6 +55,7 @@ export function createResearchWasteMetrics(): ResearchWasteMetrics {
     preliminaryTotals: createResearchWasteCounterSet(),
     preliminaryByOutcome: createResearchWasteByOutcome(),
     stage1ToStage2UrlOverlap: createUrlOverlap(),
+    selectedClaimResearchCoverage: [],
     selectedClaimResearch: [],
     contradictionReachability: {
       started: false,
@@ -85,6 +87,22 @@ export function cloneResearchWasteMetrics(
         ? input.stage1ToStage2UrlOverlap.normalizedOverlapUrls.filter((url): url is string => typeof url === "string")
         : [],
     },
+    selectedClaimResearchCoverage: Array.isArray(input.selectedClaimResearchCoverage)
+      ? input.selectedClaimResearchCoverage.map((entry) => ({
+          claimId: entry.claimId,
+          targetedMainIterations: finiteCount(entry.targetedMainIterations),
+          totalIterations: finiteCount(entry.totalIterations),
+          iterationTypeCounts: cloneIterationTypeCounts(entry.iterationTypeCounts),
+          queryCount: finiteCount(entry.queryCount),
+          fetchAttemptCount: finiteCount(entry.fetchAttemptCount),
+          admittedEvidenceItemCount: finiteCount(entry.admittedEvidenceItemCount),
+          finalEvidenceItemCount: finiteCount(entry.finalEvidenceItemCount),
+          elapsedMs: finiteCount(entry.elapsedMs),
+          sufficiencyState: entry.sufficiencyState ?? "unknown",
+          zeroTargetedMainResearch: entry.zeroTargetedMainResearch === true,
+          ...(entry.notRunReason ? { notRunReason: entry.notRunReason } : {}),
+        }))
+      : [],
     selectedClaimResearch: Array.isArray(input.selectedClaimResearch)
       ? input.selectedClaimResearch.map((entry) => ({
           claimId: entry.claimId,
@@ -277,27 +295,18 @@ export function finalizeResearchWasteMetrics(
     metrics.preparedCandidateCount - metrics.selectedClaimCount,
   );
   metrics.stage1ToStage2UrlOverlap = buildUrlOverlap(state, metrics);
-  metrics.selectedClaimResearch = claims.map((claim) => {
-    const entry = state.claimAcquisitionLedger?.[claim.id];
-    const iterations = entry?.iterations ?? [];
-    const evidenceItemCount = state.evidenceItems.filter(
-      (item) => item.relevantClaimIds?.includes(claim.id),
-    ).length;
-    return {
-      claimId: claim.id,
-      iterations: iterations.length,
-      queryCount: iterations.reduce((sum, iteration) => sum + iteration.generatedQueries.length, 0),
-      fetchAttemptCount: iterations.reduce(
-        (sum, iteration) => sum + iteration.sourcesFetched + iteration.losses.fetchRejected,
-        0,
-      ),
-      evidenceItemCount,
-      elapsedMs: iterations.reduce((sum, iteration) => sum + (iteration.durationMs ?? 0), 0),
-      sufficiencyState: evidenceItemCount >= params.claimSufficiencyThreshold
-        ? "sufficient" as const
-        : "insufficient" as const,
-    };
-  });
+  metrics.selectedClaimResearchCoverage = claims.map((claim) =>
+    buildSelectedClaimResearchCoverage(state, claim.id, params.claimSufficiencyThreshold),
+  );
+  metrics.selectedClaimResearch = metrics.selectedClaimResearchCoverage.map((entry) => ({
+    claimId: entry.claimId,
+    iterations: entry.totalIterations,
+    queryCount: entry.queryCount,
+    fetchAttemptCount: entry.fetchAttemptCount,
+    evidenceItemCount: entry.finalEvidenceItemCount,
+    elapsedMs: entry.elapsedMs,
+    sufficiencyState: entry.sufficiencyState,
+  }));
   updateContradictionReachability(state);
   return metrics;
 }
@@ -461,6 +470,63 @@ function cloneCounterSet(input?: ResearchWasteCounterSet): ResearchWasteCounterS
     evidenceItemCount: finiteCount(input?.evidenceItemCount),
     sourceUrlCount: finiteCount(input?.sourceUrlCount),
     sourceTextByteCount: finiteCount(input?.sourceTextByteCount),
+  };
+}
+
+function cloneIterationTypeCounts(
+  input?: Partial<SelectedClaimResearchCoverage["iterationTypeCounts"]>,
+): SelectedClaimResearchCoverage["iterationTypeCounts"] {
+  return {
+    main: finiteCount(input?.main),
+    contradiction: finiteCount(input?.contradiction),
+    contrarian: finiteCount(input?.contrarian),
+    refinement: finiteCount(input?.refinement),
+  };
+}
+
+function buildSelectedClaimResearchCoverage(
+  state: CBResearchState,
+  claimId: string,
+  claimSufficiencyThreshold: number,
+): SelectedClaimResearchCoverage {
+  const entry = state.claimAcquisitionLedger?.[claimId];
+  const iterations = entry?.iterations ?? [];
+  const iterationTypeCounts = cloneIterationTypeCounts();
+  for (const iteration of iterations) {
+    iterationTypeCounts[iteration.iterationType]++;
+  }
+
+  const finalEvidenceItemCount = state.evidenceItems.filter(
+    (item) => item.relevantClaimIds?.includes(claimId),
+  ).length;
+  const zeroTargetedMainResearch = iterationTypeCounts.main === 0;
+  const notRunReason = !zeroTargetedMainResearch
+    ? undefined
+    : entry
+      ? "no_targeted_main_iteration_recorded" as const
+      : "no_claim_acquisition_ledger_entry" as const;
+
+  return {
+    claimId,
+    targetedMainIterations: iterationTypeCounts.main,
+    totalIterations: iterations.length,
+    iterationTypeCounts,
+    queryCount: iterations.reduce((sum, iteration) => sum + iteration.generatedQueries.length, 0),
+    fetchAttemptCount: iterations.reduce(
+      (sum, iteration) => sum + iteration.sourcesFetched + iteration.losses.fetchRejected,
+      0,
+    ),
+    admittedEvidenceItemCount: iterations.reduce(
+      (sum, iteration) => sum + iteration.admittedEvidenceItems,
+      0,
+    ),
+    finalEvidenceItemCount,
+    elapsedMs: iterations.reduce((sum, iteration) => sum + (iteration.durationMs ?? 0), 0),
+    sufficiencyState: finalEvidenceItemCount >= claimSufficiencyThreshold
+      ? "sufficient"
+      : "insufficient",
+    zeroTargetedMainResearch,
+    ...(notRunReason ? { notRunReason } : {}),
   };
 }
 

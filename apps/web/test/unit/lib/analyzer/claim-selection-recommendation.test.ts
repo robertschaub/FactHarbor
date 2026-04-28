@@ -32,6 +32,7 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
 
 import { generateText } from "ai";
 import { extractStructuredOutput } from "@/lib/analyzer/llm";
+import { recordLLMCall } from "@/lib/analyzer/metrics-integration";
 import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
 import {
   generateClaimSelectionRecommendation,
@@ -583,6 +584,7 @@ describe("generateClaimSelectionRecommendation", () => {
   const mockGenerateText = vi.mocked(generateText);
   const mockExtractStructuredOutput = vi.mocked(extractStructuredOutput);
   const mockLoadAndRenderSection = vi.mocked(loadAndRenderSection);
+  const mockRecordLLMCall = vi.mocked(recordLLMCall);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -620,6 +622,9 @@ describe("generateClaimSelectionRecommendation", () => {
 
     expect(result.rankedClaimIds).toEqual(["AC_01", "AC_02"]);
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockRecordLLMCall).toHaveBeenLastCalledWith(
+      expect.objectContaining({ taskType: "claim_selection", success: true }),
+    );
   });
 
   it("does not retry on explicit refusal metadata", async () => {

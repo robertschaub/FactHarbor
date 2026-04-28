@@ -123,4 +123,108 @@ describe("Captain-approved validation historical references", () => {
     expect(summary.historicalDirectReferenceJobStatus).toBe("SUCCEEDED");
     expect(summary).not.toHaveProperty("historicalDirectReferenceStatus");
   });
+
+  it("emits ACS budget treatment and selected-claim coverage telemetry", () => {
+    const [family] = JSON.parse(fs.readFileSync(familiesPath, "utf-8"));
+    const summary = extractValidationSummary({
+      family,
+      job: {
+        id: "job-id",
+        status: "SUCCEEDED",
+        preparedStage1Json: JSON.stringify({
+          preparedUnderstanding: {
+            atomicClaims: [
+              { id: "AC_01", claim: "Approved fixture claim one" },
+              { id: "AC_02", claim: "Approved fixture claim two" },
+            ],
+          },
+        }),
+        claimSelectionJson: JSON.stringify({
+          rankedClaimIds: ["AC_01", "AC_02"],
+          recommendedClaimIds: ["AC_01"],
+          selectedClaimIds: ["AC_01"],
+          deferredClaimIds: ["AC_02"],
+          budgetFitRationale: "Budget preserves contradiction work for the selected claim.",
+          assessments: [
+            {
+              claimId: "AC_01",
+              budgetTreatment: "selected",
+              budgetTreatmentRationale: "Selected as the strongest candidate.",
+            },
+            {
+              claimId: "AC_02",
+              budgetTreatment: "deferred_budget_limited",
+              budgetTreatmentRationale: "Deferred to preserve research budget.",
+            },
+          ],
+        }),
+        resultJson: JSON.stringify({
+          truthPercentage: 60,
+          verdict: "LEANING-TRUE",
+          confidence: 82,
+          claimVerdicts: [],
+          claimBoundaries: [],
+          evidenceItems: [],
+          sources: [],
+          analysisWarnings: [],
+          analysisObservability: {
+            acsResearchWaste: {
+              selectedClaimResearchCoverage: [
+                {
+                  claimId: "AC_01",
+                  targetedMainIterations: 0,
+                  totalIterations: 1,
+                  iterationTypeCounts: {
+                    main: 0,
+                    contradiction: 1,
+                    contrarian: 0,
+                    refinement: 0,
+                  },
+                  queryCount: 1,
+                  fetchAttemptCount: 1,
+                  admittedEvidenceItemCount: 0,
+                  finalEvidenceItemCount: 0,
+                  elapsedMs: 250,
+                  sufficiencyState: "insufficient",
+                  zeroTargetedMainResearch: true,
+                  notRunReason: "no_targeted_main_iteration_recorded",
+                },
+              ],
+              selectedClaimResearch: [
+                {
+                  claimId: "AC_01",
+                  iterations: 1,
+                  queryCount: 1,
+                  fetchAttemptCount: 1,
+                  evidenceItemCount: 0,
+                  elapsedMs: 250,
+                  sufficiencyState: "insufficient",
+                },
+              ],
+              contradictionReachability: {
+                started: true,
+                remainingMsWhenMainResearchEnded: 1000,
+                iterationsUsed: 1,
+                sourcesFound: 0,
+              },
+            },
+          },
+        }),
+      },
+    });
+
+    expect(summary.budgetFitRationale).toContain("Budget preserves");
+    expect(summary.budgetTreatmentCounts).toEqual({
+      selected: 1,
+      deferred_budget_limited: 1,
+    });
+    expect(summary.budgetTreatmentByClaimId).toMatchObject({
+      AC_01: { budgetTreatment: "selected" },
+      AC_02: { budgetTreatment: "deferred_budget_limited" },
+    });
+    expect(summary.selectedClaimResearchCoverage).toHaveLength(1);
+    expect(summary.selectedClaimResearch).toHaveLength(1);
+    expect(summary.zeroTargetedSelectedClaimCount).toBe(1);
+    expect(summary.zeroTargetedSelectedClaimIds).toEqual(["AC_01"]);
+  });
 });

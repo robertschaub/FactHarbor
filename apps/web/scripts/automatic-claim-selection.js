@@ -103,6 +103,61 @@ function getStringArray(value) {
   return value.filter((item) => typeof item === "string" && item.length > 0);
 }
 
+function summarizeBudgetTreatments(assessments) {
+  const counts = {};
+  const byClaimId = {};
+
+  if (!Array.isArray(assessments)) {
+    return { counts, byClaimId };
+  }
+
+  for (const assessment of assessments) {
+    const claimId = typeof assessment?.claimId === "string" ? assessment.claimId : null;
+    const treatment =
+      typeof assessment?.budgetTreatment === "string" ? assessment.budgetTreatment : null;
+    if (!claimId || !treatment) continue;
+
+    counts[treatment] = (counts[treatment] || 0) + 1;
+    byClaimId[claimId] = {
+      budgetTreatment: treatment,
+      budgetTreatmentRationale:
+        typeof assessment?.budgetTreatmentRationale === "string"
+          ? assessment.budgetTreatmentRationale
+          : null,
+    };
+  }
+
+  return { counts, byClaimId };
+}
+
+function getSelectedClaimResearchCoverage(acsResearchWaste) {
+  return Array.isArray(acsResearchWaste?.selectedClaimResearchCoverage)
+    ? acsResearchWaste.selectedClaimResearchCoverage
+    : null;
+}
+
+function getZeroTargetedSelectedClaimIds(acsResearchWaste) {
+  const coverage = getSelectedClaimResearchCoverage(acsResearchWaste);
+  if (coverage) {
+    return coverage
+      .filter((entry) =>
+        entry?.zeroTargetedMainResearch === true ||
+        entry?.targetedMainIterations === 0
+      )
+      .map((entry) => entry?.claimId)
+      .filter((claimId) => typeof claimId === "string" && claimId.length > 0);
+  }
+
+  if (!Array.isArray(acsResearchWaste?.selectedClaimResearch)) {
+    return [];
+  }
+
+  return acsResearchWaste.selectedClaimResearch
+    .filter((entry) => entry?.iterations === 0)
+    .map((entry) => entry?.claimId)
+    .filter((claimId) => typeof claimId === "string" && claimId.length > 0);
+}
+
 function stableDifference(left, right) {
   const rightSet = new Set(right);
   return left.filter((item) => !rightSet.has(item));
@@ -227,6 +282,9 @@ function extractValidationSummary({
   const evidenceItems = Array.isArray(result?.evidenceItems) ? result.evidenceItems : [];
   const sources = Array.isArray(result?.sources) ? result.sources : [];
   const acsResearchWaste = result?.analysisObservability?.acsResearchWaste;
+  const budgetTreatmentSummary = summarizeBudgetTreatments(claimSelection?.assessments);
+  const selectedClaimResearchCoverage = getSelectedClaimResearchCoverage(acsResearchWaste);
+  const zeroTargetedSelectedClaimIds = getZeroTargetedSelectedClaimIds(acsResearchWaste);
   const historicalDirectReference = normalizeHistoricalDirectReference(
     family?.historicalDirectReference,
   );
@@ -267,6 +325,12 @@ function extractValidationSummary({
     notSelectedClaimIds,
     deferredClaimCount: deferredClaimIds.length,
     deferredClaimIds,
+    budgetFitRationale:
+      typeof claimSelection?.budgetFitRationale === "string"
+        ? claimSelection.budgetFitRationale
+        : null,
+    budgetTreatmentCounts: budgetTreatmentSummary.counts,
+    budgetTreatmentByClaimId: budgetTreatmentSummary.byClaimId,
     claimSelectionCap:
       typeof claimSelection?.selectionCap === "number" ? claimSelection.selectionCap : null,
     truthPercentage: typeof result?.truthPercentage === "number" ? result.truthPercentage : null,
@@ -277,7 +341,10 @@ function extractValidationSummary({
     evidenceCount: evidenceItems.length,
     sourceCount: sources.length,
     warnings: summarizeWarnings(result?.analysisWarnings),
+    selectedClaimResearchCoverage,
     selectedClaimResearch: acsResearchWaste?.selectedClaimResearch || null,
+    zeroTargetedSelectedClaimCount: zeroTargetedSelectedClaimIds.length,
+    zeroTargetedSelectedClaimIds,
     contradictionReachability: acsResearchWaste?.contradictionReachability || null,
     historicalDirectReference,
     historicalDirectReferenceJobId: historicalDirectReference?.jobId || null,

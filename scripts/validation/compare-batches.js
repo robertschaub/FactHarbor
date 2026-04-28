@@ -70,6 +70,28 @@ function readClaimCount(summary) {
   return 0;
 }
 
+function readZeroTargetedSelectedClaimCount(summary) {
+  if (typeof summary.zeroTargetedSelectedClaimCount === "number") {
+    return summary.zeroTargetedSelectedClaimCount;
+  }
+  if (Array.isArray(summary.zeroTargetedSelectedClaimIds)) {
+    return summary.zeroTargetedSelectedClaimIds.length;
+  }
+  return 0;
+}
+
+function readDeferredClaimCount(summary) {
+  if (typeof summary.deferredClaimCount === "number") return summary.deferredClaimCount;
+  if (Array.isArray(summary.deferredClaimIds)) return summary.deferredClaimIds.length;
+  return 0;
+}
+
+function formatAcsCoverage(summary) {
+  const selected = typeof summary.selectedClaimCount === "number" ? summary.selectedClaimCount : "?";
+  const prepared = typeof summary.preparedClaimCount === "number" ? summary.preparedClaimCount : "?";
+  return `sel ${selected}/${prepared}, def ${readDeferredClaimCount(summary)}, zero ${readZeroTargetedSelectedClaimCount(summary)}`;
+}
+
 function readHistoricalReference(summary) {
   return summary.historicalDirectReference || null;
 }
@@ -117,7 +139,11 @@ function classifyChange(oldS, newS) {
   const newClaims = readClaimCount(newS);
   if (oldClaims !== newClaims) flags.push("claim_count_change");
 
-  if (flags.some((f) => ["conf_drop", "became_unverified", "direction_flip", "new_errors"].includes(f))) {
+  const oldZeroTargeted = readZeroTargetedSelectedClaimCount(oldS);
+  const newZeroTargeted = readZeroTargetedSelectedClaimCount(newS);
+  if (newZeroTargeted > oldZeroTargeted) flags.push("zero_targeted_selected_claims");
+
+  if (flags.some((f) => ["conf_drop", "became_unverified", "direction_flip", "new_errors", "zero_targeted_selected_claims"].includes(f))) {
     return { status: "REGRESSION", flags, tpDelta, confDelta };
   }
   if (tpDelta > 5 || confDelta > 5) {
@@ -176,8 +202,8 @@ console.log(`**Git:** ${oldGit} → ${newGit}  |  **Prompt:** ${oldPrompt} → $
 console.log();
 
 // Table
-console.log(`| Family | Historical Direct Ref | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | Status |`);
-console.log(`|--------|-----------------------|------------|------------|------|--------|--------|----------|--------|`);
+console.log(`| Family | Historical Direct Ref | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | ACS Coverage | Status |`);
+console.log(`|--------|-----------------------|------------|------------|------|--------|--------|----------|--------------|--------|`);
 
 let regressions = 0;
 let improvements = 0;
@@ -208,11 +234,12 @@ for (const family of matched) {
   const oldWarn = oldS.warnings?.total || 0;
   const newWarn = newS.warnings?.total || 0;
   const warnStr = oldWarn === newWarn ? `${newWarn}` : `${oldWarn}→${newWarn}`;
+  const acsCoverageStr = formatAcsCoverage(newS);
   const flags = change.flags.length > 0 ? ` (${change.flags.join(", ")})` : "";
   const statusStr = `${change.status}${flags}`;
 
   console.log(
-    `| ${family} | ${shortReferenceLabel(historicalReference)} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${statusStr} |`
+    `| ${family} | ${shortReferenceLabel(historicalReference)} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${acsCoverageStr} | ${statusStr} |`
   );
 }
 

@@ -135,7 +135,7 @@ async function run() {
       fs.writeFileSync(outFile, JSON.stringify(summary, null, 2));
 
       console.log(
-        `${summary.verdict} (TP=${summary.truthPercentage}, C=${summary.confidence}, selected=${summary.selectedClaimCount}/${summary.preparedClaimCount})`
+        `${summary.verdict} (TP=${summary.truthPercentage}, C=${summary.confidence}, selected=${summary.selectedClaimCount}/${summary.preparedClaimCount}, deferred=${summary.deferredClaimCount}, zeroTargeted=${summary.zeroTargetedSelectedClaimCount})`
       );
       manifest.results.push({
         familyName: family.familyName,
@@ -147,7 +147,12 @@ async function run() {
         confidence: summary.confidence,
         metadataUnavailable: summary.metadataUnavailable,
         preparedClaimCount: summary.preparedClaimCount,
+        rankedClaimCount: summary.rankedClaimCount,
+        recommendedClaimCount: summary.recommendedClaimCount,
         selectedClaimCount: summary.selectedClaimCount,
+        deferredClaimCount: summary.deferredClaimCount,
+        zeroTargetedSelectedClaimCount: summary.zeroTargetedSelectedClaimCount,
+        zeroTargetedSelectedClaimIds: summary.zeroTargetedSelectedClaimIds,
         historicalDirectReferenceJobId: summary.historicalDirectReferenceJobId,
         historicalDirectReferenceQuality: summary.historicalDirectReferenceQuality,
         historicalDirectReferenceJobStatus: summary.historicalDirectReferenceJobStatus,

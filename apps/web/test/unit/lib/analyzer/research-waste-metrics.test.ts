@@ -240,9 +240,161 @@ describe("research waste metrics", () => {
         sufficiencyState: "sufficient",
       },
     ]);
+    expect(metrics.selectedClaimResearchCoverage).toEqual([
+      {
+        claimId: "AC_B",
+        targetedMainIterations: 1,
+        totalIterations: 1,
+        iterationTypeCounts: {
+          main: 1,
+          contradiction: 0,
+          contrarian: 0,
+          refinement: 0,
+        },
+        queryCount: 1,
+        fetchAttemptCount: 4,
+        admittedEvidenceItemCount: 1,
+        finalEvidenceItemCount: 1,
+        elapsedMs: 1500,
+        sufficiencyState: "sufficient",
+        zeroTargetedMainResearch: false,
+      },
+    ]);
 
     const serialized = JSON.stringify(metrics);
     expect(serialized).not.toContain("SECRET_SOURCE_TEXT_SHOULD_NOT_PERSIST");
     expect(serialized).not.toContain("SECRET_EXCERPT_SHOULD_NOT_PERSIST");
+  });
+
+  it("surfaces zero targeted main research separately from non-main iterations", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [
+          { id: "AC_A", statement: "Claim A" },
+          { id: "AC_B", statement: "Claim B" },
+        ],
+        preliminaryEvidence: [],
+      },
+      evidenceItems: [
+        {
+          id: "EV_01",
+          statement: "Evidence",
+          category: "evidence",
+          specificity: "high",
+          sourceId: "S_001",
+          sourceUrl: "https://example.com/source",
+          sourceTitle: "Source",
+          sourceExcerpt: "Excerpt",
+          relevantClaimIds: ["AC_A"],
+          evidenceScope: { name: "Scope" },
+          claimDirection: "supports",
+        },
+      ],
+      sources: [],
+      searchQueries: [],
+      claimAcquisitionLedger: {
+        AC_A: {
+          seededEvidenceItems: 0,
+          iterations: [
+            {
+              iteration: 0,
+              iterationType: "contradiction",
+              languageLane: "primary",
+              generatedQueries: ["query one"],
+              searchResults: 3,
+              relevanceAccepted: 2,
+              sourcesFetched: 1,
+              rawEvidenceItems: 1,
+              admittedEvidenceItems: 1,
+              directionCounts: { supports: 0, contradicts: 1, neutral: 0 },
+              losses: {
+                relevanceRejected: 1,
+                fetchRejected: 1,
+                sourcesWithoutEvidence: 0,
+                probativeFilteredOut: 0,
+                perSourceCapDroppedNew: 0,
+                perSourceCapEvictedExisting: 0,
+              },
+              durationMs: 500,
+            },
+            {
+              iteration: 1,
+              iterationType: "refinement",
+              languageLane: "primary",
+              generatedQueries: ["query two", "query three"],
+              searchResults: 4,
+              relevanceAccepted: 2,
+              sourcesFetched: 2,
+              rawEvidenceItems: 1,
+              admittedEvidenceItems: 0,
+              directionCounts: { supports: 1, contradicts: 0, neutral: 0 },
+              losses: {
+                relevanceRejected: 2,
+                fetchRejected: 0,
+                sourcesWithoutEvidence: 1,
+                probativeFilteredOut: 0,
+                perSourceCapDroppedNew: 0,
+                perSourceCapEvictedExisting: 0,
+              },
+              durationMs: 750,
+            },
+          ],
+        },
+      },
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      researchWasteMetrics: createResearchWasteMetrics(),
+    } as unknown as CBResearchState;
+
+    const metrics = finalizeResearchWasteMetrics(state, {
+      claimSufficiencyThreshold: 1,
+      researchStartMs: 0,
+    });
+
+    expect(metrics.selectedClaimResearchCoverage).toEqual([
+      expect.objectContaining({
+        claimId: "AC_A",
+        targetedMainIterations: 0,
+        totalIterations: 2,
+        iterationTypeCounts: {
+          main: 0,
+          contradiction: 1,
+          contrarian: 0,
+          refinement: 1,
+        },
+        queryCount: 3,
+        fetchAttemptCount: 4,
+        admittedEvidenceItemCount: 1,
+        finalEvidenceItemCount: 1,
+        sufficiencyState: "sufficient",
+        zeroTargetedMainResearch: true,
+        notRunReason: "no_targeted_main_iteration_recorded",
+      }),
+      expect.objectContaining({
+        claimId: "AC_B",
+        targetedMainIterations: 0,
+        totalIterations: 0,
+        iterationTypeCounts: {
+          main: 0,
+          contradiction: 0,
+          contrarian: 0,
+          refinement: 0,
+        },
+        zeroTargetedMainResearch: true,
+        notRunReason: "no_claim_acquisition_ledger_entry",
+      }),
+    ]);
+    expect(metrics.selectedClaimResearch).toEqual([
+      expect.objectContaining({
+        claimId: "AC_A",
+        iterations: 2,
+        evidenceItemCount: 1,
+      }),
+      expect.objectContaining({
+        claimId: "AC_B",
+        iterations: 0,
+        evidenceItemCount: 0,
+      }),
+    ]);
   });
 });
