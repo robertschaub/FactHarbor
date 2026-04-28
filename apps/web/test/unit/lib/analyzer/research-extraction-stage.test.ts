@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFileSync } from "fs";
+import path from "path";
 import {
   classifyRelevance,
   extractResearchEvidence,
@@ -14,7 +16,8 @@ import {
 import { debugLog, debugLogFileOnly } from "@/lib/analyzer/debug";
 import {
   getModelForTask,
-  extractStructuredOutput
+  extractStructuredOutput,
+  getPromptCachingOptions,
 } from "@/lib/analyzer/llm";
 import { recordLLMCall } from "@/lib/analyzer/metrics-integration";
 import { generateText } from "ai";
@@ -81,7 +84,13 @@ const mockDebugLog = vi.mocked(debugLog);
 const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
 const mockGetModelForTask = vi.mocked(getModelForTask);
+const mockGetPromptCachingOptions = vi.mocked(getPromptCachingOptions);
 const mockRecordLLMCall = vi.mocked(recordLLMCall);
+
+const claimBoundaryPromptPath = path.resolve(
+  __dirname,
+  "../../../../prompts/claimboundary.prompt.md",
+);
 
 // ============================================================================
 // HELPERS
@@ -107,6 +116,26 @@ function createEvidence(overrides: Record<string, unknown> = {}) {
     relevantClaimIds: ["AC_01"],
     ...overrides,
   } as any;
+}
+
+function extractPromptSection(content: string, sectionName: string): string {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const start = lines.findIndex((line) => line.trim() === `## ${sectionName}`);
+  if (start < 0) {
+    throw new Error(`Missing prompt section ${sectionName}`);
+  }
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^## [A-Z][A-Z0-9_ ]+(?:\([^)]*\))?\s*$/.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end).join("\n").trim();
+}
+
+function renderTemplate(content: string, variables: Record<string, string>): string {
+  return content.replace(/\$\{(\w+)\}/g, (match, key) => variables[key] ?? match);
 }
 
 describe("Research Extraction Stage", () => {
@@ -508,6 +537,145 @@ describe("Research Extraction Stage", () => {
         cacheCreationInputTokens: 40,
         outputBranch: "initial",
       }));
+    });
+
+    it("keeps source payload out of the cache-controlled EXTRACT_EVIDENCE system message", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sourceText = "dynamic source payload that should not be cached as system content";
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: sourceText }];
+      const stableRules = "You are an evidence extraction engine.\n\n### Rules\n\n- Extract factual evidence.";
+
+      mockLoadSection.mockResolvedValue({
+        content: [
+          stableRules,
+          "",
+          "### Input",
+          "",
+          "**Claim:**",
+          "```",
+          "Test claim",
+          "```",
+          "",
+          "**Source Content:**",
+          "```",
+          sourceText,
+          "```",
+          "",
+          "### Output Schema",
+          "",
+          "Return JSON.",
+        ].join("\n"),
+        contentHash: "composite-hash",
+        loadedAt: "2026-04-28T00:00:00.000Z",
+        warnings: [],
+        promptProfile: "claimboundary",
+        promptSection: "EXTRACT_EVIDENCE",
+        promptSectionHash: "section-hash",
+        promptSectionEstimatedTokens: 11,
+      });
+      mockGenerateText.mockResolvedValue({ text: "", usage: { inputTokens: 40, outputTokens: 10 } } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+
+      await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
+
+      const generateCall = mockGenerateText.mock.calls[0]?.[0] as any;
+      expect(generateCall.messages[0]).toMatchObject({
+        role: "system",
+        content: stableRules,
+      });
+      expect(generateCall.messages[0].content).not.toContain(sourceText);
+      expect(mockGetPromptCachingOptions).toHaveBeenCalledWith("anthropic");
+      expect(generateCall.messages[1].role).toBe("user");
+      expect(generateCall.messages[1].content).toContain(sourceText);
+      expect(generateCall.messages[1].content).toContain("### Output Schema");
+
+      expect(mockRecordLLMCall).toHaveBeenCalledWith(expect.objectContaining({
+        renderedSystemChars: stableRules.length,
+        dynamicPayloadChars: expect.any(Number),
+        outputBranch: "initial",
+      }));
+    });
+
+    it("does not enable prompt caching when EXTRACT_EVIDENCE cannot be split", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sourceText = "dynamic source payload";
+      const unsplittableRenderedPrompt = `Rules without the expected delimiter\n\n${sourceText}`;
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: sourceText }];
+
+      mockLoadSection.mockResolvedValue({
+        content: unsplittableRenderedPrompt,
+        contentHash: "composite-hash",
+        loadedAt: "2026-04-28T00:00:00.000Z",
+        warnings: [],
+        promptProfile: "claimboundary",
+        promptSection: "EXTRACT_EVIDENCE",
+        promptSectionHash: "section-hash",
+        promptSectionEstimatedTokens: 11,
+      });
+      mockGenerateText.mockResolvedValue({ text: "", usage: { inputTokens: 40, outputTokens: 10 } } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+
+      await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
+
+      const generateCall = mockGenerateText.mock.calls[0]?.[0] as any;
+      expect(generateCall.messages[0]).toMatchObject({
+        role: "system",
+        content: unsplittableRenderedPrompt,
+      });
+      expect(generateCall.messages[0].providerOptions).toBeUndefined();
+      expect(mockGetPromptCachingOptions).not.toHaveBeenCalled();
+      expect(generateCall.messages[1].content).toBe(
+        'Extract evidence from these 1 sources relating to claim "AC_01": "Test claim"',
+      );
+    });
+
+    it("splits the real EXTRACT_EVIDENCE prompt so sentinel source data is user-only", async () => {
+      const promptContent = readFileSync(claimBoundaryPromptPath, "utf-8");
+      const extractEvidenceSection = extractPromptSection(promptContent, "EXTRACT_EVIDENCE");
+      const sentinelClaim = "SENTINEL_DYNAMIC_CLAIM_FOR_CACHE_TEST";
+      const sentinelSource = [
+        "SENTINEL_DYNAMIC_SOURCE_FOR_CACHE_TEST",
+        "### Input",
+        "```",
+        "prompt-like fenced payload",
+        "```",
+      ].join("\n");
+      const claim = createClaim({ id: "AC_01", statement: sentinelClaim });
+      const sources = [{ url: "https://example.com/sentinel", title: "Sentinel Source", text: sentinelSource }];
+      const renderedContent = renderTemplate(extractEvidenceSection, {
+        claim: sentinelClaim,
+        expectedEvidenceProfile: "{}",
+        allClaims: JSON.stringify([{ id: "AC_01", statement: sentinelClaim, expectedEvidenceProfile: {} }], null, 2),
+        sourceContent: `[Source 1: Sentinel Source]\nURL: https://example.com/sentinel\n${sentinelSource}`,
+        sourceUrl: "https://example.com/sentinel",
+      });
+
+      mockLoadSection.mockResolvedValue({
+        content: renderedContent,
+        contentHash: "composite-hash",
+        loadedAt: "2026-04-28T00:00:00.000Z",
+        warnings: [],
+        promptProfile: "claimboundary",
+        promptSection: "EXTRACT_EVIDENCE",
+        promptSectionHash: "section-hash",
+        promptSectionEstimatedTokens: 11,
+      });
+      mockGenerateText.mockResolvedValue({ text: "", usage: { inputTokens: 40, outputTokens: 10 } } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+
+      await extractResearchEvidence(claim, sources, mockConfig, "2026-03-23");
+
+      const generateCall = mockGenerateText.mock.calls[0]?.[0] as any;
+      expect(generateCall.messages[0].role).toBe("system");
+      expect(generateCall.messages[0].providerOptions).toEqual({});
+      expect(generateCall.messages[0].content).toContain("You are an evidence extraction engine");
+      expect(generateCall.messages[0].content).not.toContain(sentinelClaim);
+      expect(generateCall.messages[0].content).not.toContain("SENTINEL_DYNAMIC_SOURCE_FOR_CACHE_TEST");
+      expect(generateCall.messages[1].role).toBe("user");
+      expect(generateCall.messages[1].content).toContain("### Input");
+      expect(generateCall.messages[1].content).toContain("### Output Schema");
+      expect(generateCall.messages[1].content).toContain(sentinelClaim);
+      expect(generateCall.messages[1].content).toContain("SENTINEL_DYNAMIC_SOURCE_FOR_CACHE_TEST");
     });
 
     it("passes the expected evidence profile to the extraction prompt", async () => {

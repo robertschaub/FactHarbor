@@ -141,6 +141,15 @@ Acceptance:
 
 Goal: improve production LLM cache efficiency by keeping stable instructions stable.
 
+Implementation checkpoint (2026-04-28):
+
+- Start with Stage 2 `EXTRACT_EVIDENCE` only.
+- Keep prompt file wording and composite UCM prompt hash unchanged.
+- Split the rendered section at the existing `### Input` heading: stable rules remain in the cache-controlled system message; rendered claim/source/full-claim payload and output-schema guidance move to the user message.
+- If the delimiter is absent or malformed, preserve the old message shape but disable prompt caching for that call so dynamic source payloads are not cache-controlled.
+- Use the resolved model provider for cache-control options.
+- Cover the real `claimboundary.prompt.md` section with sentinel values to guard against heading drift and dynamic payload leakage into the system message.
+
 Current risk:
 
 - Many calls render large dynamic JSON/source/evidence payloads into the system message.

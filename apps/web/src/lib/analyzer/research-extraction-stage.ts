@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { generateText, Output } from "ai";
-import { loadAndRenderSection } from "./prompt-loader";
+import { loadAndRenderSection, type RenderedPromptSection } from "./prompt-loader";
 import { 
   getModelForTask, 
   getPromptCachingOptions, 
@@ -127,6 +127,53 @@ function cloneEvidenceItem(
 // ============================================================================
 // STAGE 2: CLASSIFICATION & EXTRACTION
 // ============================================================================
+
+interface PromptMessageParts {
+  systemContent: string;
+  userContent: string;
+  separated: boolean;
+}
+
+function splitRenderedPromptAtHeader(
+  rendered: RenderedPromptSection,
+  header: string,
+): PromptMessageParts {
+  const inlineHeader = `${header}\n`;
+  const bodyHeader = `\n${header}\n`;
+  const headerIndex = rendered.content.startsWith(inlineHeader)
+    ? 0
+    : rendered.content.indexOf(bodyHeader);
+  const splitIndex = headerIndex === 0
+    ? 0
+    : headerIndex >= 0
+      ? headerIndex + 1
+      : -1;
+
+  if (splitIndex < 0) {
+    return {
+      systemContent: rendered.content,
+      userContent: "",
+      separated: false,
+    };
+  }
+
+  const systemContent = rendered.content.slice(0, splitIndex).trimEnd();
+  const userContent = rendered.content.slice(splitIndex).trimStart();
+
+  if (!systemContent || !userContent) {
+    return {
+      systemContent: rendered.content,
+      userContent: "",
+      separated: false,
+    };
+  }
+
+  return {
+    systemContent,
+    userContent,
+    separated: true,
+  };
+}
 
 /**
  * Classify search results for relevance to a claim using LLM (Haiku, batched).
@@ -316,6 +363,9 @@ export async function extractResearchEvidence(
   };
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", promptVariables);
   if (!rendered) return [];
+  const promptParts = splitRenderedPromptAtHeader(rendered, "### Input");
+  const extractionInstruction =
+    `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`;
 
   const model = getModelForTask("extract_evidence", undefined, pipelineConfig);
   const llmCallStartedAt = Date.now();
@@ -327,12 +377,14 @@ export async function extractResearchEvidence(
       messages: [
         {
           role: "system",
-          content: rendered.content,
-          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          content: promptParts.systemContent,
+          providerOptions: promptParts.separated ? getPromptCachingOptions(model.provider) : undefined,
         },
         {
           role: "user",
-          content: `Extract evidence from these ${sources.length} sources relating to claim "${targetClaim.id}": "${targetClaim.statement}"`,
+          content: promptParts.separated
+            ? `${promptParts.userContent}\n\n${extractionInstruction}`
+            : extractionInstruction,
         },
       ],
       temperature: pipelineConfig?.extractEvidenceTemperature ?? 0.1,
@@ -355,6 +407,7 @@ export async function extractResearchEvidence(
         retries: 0,
         errorMessage: "Stage 2 evidence extraction returned no structured output",
         ...buildPromptRuntimeFields(rendered, {
+          renderedSystemContent: promptParts.systemContent,
           dynamicPayload: promptVariables,
           retryCause: "parse",
           outputBranch: "failed",
@@ -477,6 +530,7 @@ export async function extractResearchEvidence(
       schemaCompliant: true,
       retries: 0,
       ...buildPromptRuntimeFields(rendered, {
+        renderedSystemContent: promptParts.systemContent,
         dynamicPayload: promptVariables,
         outputBranch: "initial",
       }),
@@ -497,6 +551,7 @@ export async function extractResearchEvidence(
       retries: 0,
       errorMessage,
       ...buildPromptRuntimeFields(rendered, {
+        renderedSystemContent: promptParts.systemContent,
         dynamicPayload: promptVariables,
         retryCause: classifyStructuralRetryCause(err),
         outputBranch: "failed",
