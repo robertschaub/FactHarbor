@@ -160,6 +160,19 @@ Implementation checkpoint (2026-04-28, second Phase 3 slice):
 - Record prompt-runtime fields for contract validation success, parse failure, contract violation, and thrown failure paths.
 - Cover the real prompt with sentinel tests, add marker-collision and incomplete-marker tests for the binding appendix split, and add a mocked pipeline test proving user input and binding JSON do not enter the system message.
 
+Implementation checkpoint (2026-04-28, third Phase 3 slice):
+
+- Extend static/dynamic separation to the Stage 4 production LLM call factory used by `VERDICT_ADVOCATE`, `VERDICT_CHALLENGER`, `VERDICT_RECONCILIATION`, and validation/repair verdict prompts.
+- Split rendered verdict sections at `### Input`: stable verdict rules stay in the cache-controlled system message; claim/evidence/boundary/challenge payloads, output schema, and explicit user instruction move to the user message.
+- If `### Input` is missing or malformed, preserve the old full-rendered system message and disable prompt caching for that call.
+- Keep OpenAI TPM precheck based on the actual split system+user request size.
+- Record prompt-runtime telemetry on success, provider/guard failure, initial parse failure, parse retry success, and parse retry failure.
+- Add mocked call-factory tests for cache boundary and fail-closed behavior, a real-prompt sentinel test for `VERDICT_ADVOCATE`, and update parse-artifact tests to keep the metrics helper exports available.
+
+Residual Stage 4 risk:
+
+- The output schema moves into the user message with the dynamic payload. This is intentional for cache hygiene and covered by tests, but it should be watched in live jobs for schema adherence and parse retries.
+
 Current risk:
 
 - Many calls render large dynamic JSON/source/evidence payloads into the system message.

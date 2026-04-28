@@ -5858,6 +5858,86 @@ describe("Stage 4: createProductionLLMCall", () => {
     expect(userMessage?.content).toBe("Custom Stage 4 instruction");
   });
 
+  it("keeps Stage 4 verdict payload out of the cache-controlled system message", async () => {
+    const sentinelClaim = "SENTINEL_STAGE4_DYNAMIC_CLAIM";
+    const sentinelEvidence = "SENTINEL_STAGE4_DYNAMIC_EVIDENCE";
+    mockLoadSection.mockImplementation(async (_pipeline, section, vars) => ({
+      content: [
+        "STATIC VERDICT RULES",
+        "",
+        "### Input",
+        "",
+        `Atomic claims: ${vars?.atomicClaims}`,
+        `Evidence items: ${vars?.evidenceItems}`,
+        "",
+        "### Output Schema",
+        "Return JSON.",
+      ].join("\n"),
+      variables: vars,
+      promptProfile: "claimboundary",
+      promptSection: section,
+      contentHash: "composite-hash",
+      promptSectionHash: "section-hash",
+    } as any));
+    mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
+
+    const llmCall = createProductionLLMCall({ llmProvider: "anthropic" } as any);
+    await llmCall(
+      "VERDICT_ADVOCATE",
+      {
+        atomicClaims: [{ id: "AC_01", statement: sentinelClaim }],
+        evidenceItems: [{ id: "EV_01", statement: sentinelEvidence }],
+        userMessage: "Use the rendered verdict payload and return JSON.",
+      },
+      { tier: "sonnet" },
+    );
+
+    const generateArgs = mockGenerateText.mock.calls[0]?.[0] as any;
+    expect(generateArgs.messages[0]).toMatchObject({
+      role: "system",
+      providerOptions: {},
+    });
+    expect(generateArgs.messages[0].content).toContain("STATIC VERDICT RULES");
+    expect(generateArgs.messages[0].content).not.toContain(sentinelClaim);
+    expect(generateArgs.messages[0].content).not.toContain(sentinelEvidence);
+    expect(generateArgs.messages[0].content).not.toContain("### Input");
+    expect(generateArgs.messages[1].content).toContain("### Input");
+    expect(generateArgs.messages[1].content).toContain("### Output Schema");
+    expect(generateArgs.messages[1].content).toContain(sentinelClaim);
+    expect(generateArgs.messages[1].content).toContain(sentinelEvidence);
+    expect(generateArgs.messages[1].content).toContain("Use the rendered verdict payload and return JSON.");
+  });
+
+  it("disables Stage 4 prompt caching when the verdict input marker is missing", async () => {
+    const sentinelClaim = "SENTINEL_STAGE4_UNSPLITTABLE_CLAIM";
+    mockLoadSection.mockImplementation(async (_pipeline, section, vars) => ({
+      content: [
+        "STATIC VERDICT RULES",
+        `Atomic claims without marker: ${vars?.atomicClaims}`,
+      ].join("\n"),
+      variables: vars,
+      promptProfile: "claimboundary",
+      promptSection: section,
+      contentHash: "composite-hash",
+      promptSectionHash: "section-hash",
+    } as any));
+    mockGenerateText.mockResolvedValue({ text: '[{"claimId": "AC_01"}]' } as any);
+
+    const llmCall = createProductionLLMCall({ llmProvider: "anthropic" } as any);
+    await llmCall(
+      "VERDICT_ADVOCATE",
+      { atomicClaims: [{ id: "AC_01", statement: sentinelClaim }] },
+      { tier: "sonnet" },
+    );
+
+    const generateArgs = mockGenerateText.mock.calls[0]?.[0] as any;
+    expect(generateArgs.messages[0].content).toContain(sentinelClaim);
+    expect(generateArgs.messages[0].providerOptions).toBeUndefined();
+    expect(generateArgs.messages[1].content).toBe(
+      "Analyze the provided data and return output matching the required JSON schema.",
+    );
+  });
+
   it("should select haiku model when tier is haiku", async () => {
     mockLoadSection.mockResolvedValue({ content: "validation prompt", variables: {} });
     mockGenerateText.mockResolvedValue({ text: '[{"valid": true}]' } as any);

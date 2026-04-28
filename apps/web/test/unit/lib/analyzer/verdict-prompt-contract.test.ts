@@ -17,6 +17,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import path from "path";
+import { splitRenderedPromptAtHeader } from "@/lib/analyzer/prompt-message-parts";
 
 // ---------------------------------------------------------------------------
 // Read the actual prompt file (not mocked — this IS the contract anchor)
@@ -243,6 +244,40 @@ describe("Stage-4 prompt contract", () => {
       }
 
       expect(stringified.atomicClaims).toContain('"freshnessRequirement":"current_snapshot"');
+    });
+
+    it("keeps real verdict advocate payload below the static/dynamic split marker", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).not.toBeNull();
+      if (!section) return;
+
+      const sentinelClaim = "SENTINEL_REAL_VERDICT_CLAIM_WITH_###_Input";
+      const sentinelEvidence = "SENTINEL_REAL_VERDICT_EVIDENCE";
+      const { rendered } = renderWithVars(section, {
+        ...ADVOCATE_VARS,
+        atomicClaims: JSON.stringify([{ id: "AC_01", statement: sentinelClaim }]),
+        evidenceItems: JSON.stringify([{ id: "EV_01", statement: sentinelEvidence }]),
+      });
+      const parts = splitRenderedPromptAtHeader({
+        content: rendered,
+        contentHash: "composite-hash",
+        loadedAt: "2026-04-28T00:00:00.000Z",
+        warnings: [],
+        promptProfile: "claimboundary",
+        promptSection: "VERDICT_ADVOCATE",
+        promptSectionHash: "section-hash",
+        promptSectionEstimatedTokens: 1,
+      }, "### Input");
+
+      expect(parts.separated).toBe(true);
+      expect(parts.systemContent).toContain("You are an analytical verdict engine");
+      expect(parts.systemContent).not.toContain("### Input");
+      expect(parts.systemContent).not.toContain(sentinelClaim);
+      expect(parts.systemContent).not.toContain(sentinelEvidence);
+      expect(parts.userContent).toContain("### Input");
+      expect(parts.userContent).toContain("### Output Schema");
+      expect(parts.userContent).toContain(sentinelClaim);
+      expect(parts.userContent).toContain(sentinelEvidence);
     });
   });
 

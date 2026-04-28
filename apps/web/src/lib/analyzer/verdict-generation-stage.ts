@@ -44,6 +44,7 @@ import { loadAndRenderSection } from "./prompt-loader";
 import {
   runWithLlmProviderGuard,
 } from "./llm-provider-guard";
+import { joinPromptUserContent, splitRenderedPromptAtHeader } from "./prompt-message-parts";
 
 import { loadPipelineConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, CalcConfig } from "@/lib/config-schemas";
@@ -53,7 +54,12 @@ import {
   pauseSystem,
 } from "@/lib/provider-health";
 
-import { recordLLMCall } from "./metrics-integration";
+import {
+  buildPromptRuntimeFields,
+  classifyStructuralRetryCause,
+  extractLLMUsageFields,
+  recordLLMCall,
+} from "./metrics-integration";
 import type { ParseFailureArtifact } from "./metrics";
 
 // ============================================================================
@@ -413,6 +419,16 @@ export function createProductionLLMCall(
         { stage, promptKey },
       );
     }
+    const promptParts = splitRenderedPromptAtHeader(rendered, "### Input");
+    const promptSeparated = promptParts.separated;
+    const systemContent = promptSeparated ? promptParts.systemContent : rendered.content;
+    const stageUserContent = promptSeparated
+      ? joinPromptUserContent([promptParts.userContent, userContent])
+      : userContent;
+    const promptRuntimeDynamicPayload = [
+      stringifiedVars,
+      userContent,
+    ];
 
     // 2. Resolve provider — apply per-role override with credential pre-check
     let effectiveProviderOverride = options?.providerOverride;
@@ -448,7 +464,7 @@ export function createProductionLLMCall(
     const tpmGuardEnabled = pipelineConfig.openaiTpmGuardEnabled ?? true;
     const tpmGuardInputTokenThreshold = pipelineConfig.openaiTpmGuardInputTokenThreshold ?? 24000;
     const tpmGuardFallbackModel = pipelineConfig.openaiTpmGuardFallbackModel ?? "gpt-4.1-mini";
-    const estimatedInputTokens = approxTokenCount(rendered.content) + approxTokenCount(userContent);
+    const estimatedInputTokens = approxTokenCount(systemContent) + approxTokenCount(stageUserContent);
 
     const resolveOpenAiFallbackModel = () => {
       const fallbackConfig: PipelineConfig = {
@@ -525,12 +541,12 @@ export function createProductionLLMCall(
         messages: [
           {
             role: "system",
-            content: rendered.content,
-            providerOptions: getPromptCachingOptions(activeModel.provider),
+            content: systemContent,
+            providerOptions: promptSeparated ? getPromptCachingOptions(activeModel.provider) : undefined,
           },
           {
             role: "user",
-            content: userContent,
+            content: stageUserContent,
           },
         ],
         temperature: options?.temperature ?? 0.0,
@@ -566,15 +582,19 @@ export function createProductionLLMCall(
         taskType: 'verdict',
         provider: attemptModel.provider,
         modelName: attemptModel.modelName,
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
+        ...extractLLMUsageFields(undefined),
         durationMs: Date.now() - startTime,
         success: false,
         schemaCompliant: false,
         retries: 0,
         errorMessage,
         errorType,
+        ...buildPromptRuntimeFields(rendered, {
+          renderedSystemContent: systemContent,
+          dynamicPayload: promptRuntimeDynamicPayload,
+          retryCause: classifyStructuralRetryCause(error),
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
       });
@@ -599,15 +619,20 @@ export function createProductionLLMCall(
             taskType: "verdict",
             provider: attemptModel.provider,
             modelName: attemptModel.modelName,
-            promptTokens: 0,
-            completionTokens: 0,
-            totalTokens: 0,
+            ...extractLLMUsageFields(undefined),
             durationMs: Date.now() - startTime,
             success: false,
             schemaCompliant: false,
             retries: 1,
             errorMessage: retryMessage,
             errorType: retryErrorType,
+            ...buildPromptRuntimeFields(rendered, {
+              renderedSystemContent: systemContent,
+              dynamicPayload: promptRuntimeDynamicPayload,
+              retryCause: classifyStructuralRetryCause(retryError),
+              retryBranch: "tpm_guard_retry",
+              outputBranch: "failed",
+            }),
             timestamp: new Date(),
             debateRole: options?.callContext?.debateRole,
           });
@@ -772,13 +797,16 @@ export function createProductionLLMCall(
         taskType: 'verdict',
         provider: attemptModel.provider,
         modelName: attemptModel.modelName,
-        promptTokens: result.usage?.inputTokens ?? 0,
-        completionTokens: result.usage?.outputTokens ?? 0,
-        totalTokens: result.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(result.usage),
         durationMs: Date.now() - startTime,
         success: true,
         schemaCompliant: true,
         retries: 0,
+        ...buildPromptRuntimeFields(rendered, {
+          renderedSystemContent: systemContent,
+          dynamicPayload: promptRuntimeDynamicPayload,
+          outputBranch: "initial",
+        }),
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
       });
@@ -800,14 +828,18 @@ export function createProductionLLMCall(
       taskType: 'verdict',
       provider: attemptModel.provider,
       modelName: attemptModel.modelName,
-      promptTokens: result.usage?.inputTokens ?? 0,
-      completionTokens: result.usage?.outputTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
+      ...extractLLMUsageFields(result.usage),
       durationMs: Date.now() - startTime,
       success: true,
       schemaCompliant: false,
       retries: 0,
       errorMessage: `JSON parse failure: ${JSON.stringify(parseFailureMetadata)}`,
+      ...buildPromptRuntimeFields(rendered, {
+        renderedSystemContent: systemContent,
+        dynamicPayload: promptRuntimeDynamicPayload,
+        retryCause: "parse",
+        outputBranch: "failed",
+      }),
       timestamp: new Date(),
       debateRole: options?.callContext?.debateRole,
       parseFailureArtifact: buildParseFailureArtifact(
@@ -834,13 +866,18 @@ export function createProductionLLMCall(
           taskType: 'verdict',
           provider: attemptModel.provider,
           modelName: attemptModel.modelName,
-          promptTokens: retryResult.usage?.inputTokens ?? 0,
-          completionTokens: retryResult.usage?.outputTokens ?? 0,
-          totalTokens: retryResult.usage?.totalTokens ?? 0,
+          ...extractLLMUsageFields(retryResult.usage),
           durationMs: Date.now() - startTime,
           success: true,
           schemaCompliant: true,
           retries: 1,
+          ...buildPromptRuntimeFields(rendered, {
+            renderedSystemContent: systemContent,
+            dynamicPayload: promptRuntimeDynamicPayload,
+            retryCause: "parse",
+            retryBranch: "stage4_parse_retry",
+            outputBranch: "retry",
+          }),
           timestamp: new Date(),
           debateRole: options?.callContext?.debateRole,
         });
@@ -859,14 +896,19 @@ export function createProductionLLMCall(
         taskType: 'verdict',
         provider: attemptModel.provider,
         modelName: attemptModel.modelName,
-        promptTokens: retryResult.usage?.inputTokens ?? 0,
-        completionTokens: retryResult.usage?.outputTokens ?? 0,
-        totalTokens: retryResult.usage?.totalTokens ?? 0,
+        ...extractLLMUsageFields(retryResult.usage),
         durationMs: Date.now() - startTime,
         success: true,
         schemaCompliant: false,
         retries: 1,
         errorMessage: `JSON parse failure on retry: ${JSON.stringify(retryParseFailureMetadata)}`,
+        ...buildPromptRuntimeFields(rendered, {
+          renderedSystemContent: systemContent,
+          dynamicPayload: promptRuntimeDynamicPayload,
+          retryCause: "parse",
+          retryBranch: "stage4_parse_retry",
+          outputBranch: "failed",
+        }),
         timestamp: new Date(),
         debateRole: options?.callContext?.debateRole,
         parseFailureArtifact: buildParseFailureArtifact(

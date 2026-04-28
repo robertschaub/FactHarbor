@@ -53,9 +53,13 @@ vi.mock("@/lib/provider-health", () => ({
 }));
 
 const mockRecordLLMCall = vi.fn();
-vi.mock("@/lib/analyzer/metrics-integration", () => ({
-  recordLLMCall: (...args: unknown[]) => mockRecordLLMCall(...args),
-}));
+vi.mock("@/lib/analyzer/metrics-integration", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/analyzer/metrics-integration")>();
+  return {
+    ...actual,
+    recordLLMCall: (...args: unknown[]) => mockRecordLLMCall(...args),
+  };
+});
 
 import { generateText } from "ai";
 import { createProductionLLMCall } from "@/lib/analyzer/verdict-generation-stage";
