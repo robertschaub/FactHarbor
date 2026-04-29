@@ -20,9 +20,9 @@ The final Stage 2 run was correctly constrained to the five selected `AtomicClai
 4. Stage 1 preparation did spend material time before selection across all 23 candidate claims, and its preliminary evidence mapped to a claim that was later dropped.
 5. Stage 3 clustering added a separate latency problem: one Sonnet clustering call failed after about 160 seconds and fell back.
 
-Conclusion: the next correctness fix should be selected-claim acquisition coverage, not just a lower selection cap. A lower cap is useful only as a budget-admission mechanism.
+Conclusion: the next correctness fix should be selected-claim acquisition coverage with an explicit terminal/non-admitted state for claims that cannot receive provider search before the protected contradiction window. A lower cap is useful only as a budget-admission mechanism.
 
-This is not specific to automatic mode. The Stage 2 coverage invariant and the budget-admission check must hold for every selected-claim job, including automatic recommendations, manual/interactive selections, and administrator-on-behalf submissions. Automatic and manual modes differ only in who supplies the selected IDs; both converge before final job creation and must use the same coverage feasibility contract. If the selected set cannot be covered by the main-research budget, the system should block or shrink the selected set before final execution, or explicitly mark non-admitted claims rather than producing ordinary zero-evidence `UNVERIFIED` claims.
+This is not specific to automatic mode. The Stage 2 coverage invariant must hold for every selected-claim job, including automatic recommendations, manual/interactive selections, and administrator-on-behalf submissions. Automatic and manual modes differ only in who supplies the selected IDs; both converge before final job creation and must use the same coverage feasibility contract. If the selected set cannot be covered by the main-research budget, the system should block before final execution or explicitly mark non-admitted claims rather than producing ordinary zero-evidence `UNVERIFIED` claims.
 
 ---
 
@@ -123,6 +123,8 @@ Budget pressure is still material. With the default `researchTimeBudgetMs = 6000
 
 The inspected job did not end main research because the hard wall-clock time budget fired: `contradictionReachability.remainingMsWhenMainResearchEnded` was about 104 seconds, contradiction research started, and no `budget_exceeded` / `query_budget_exhausted` warning was present. The proven root cause for this job remains protected-window/no-search exhaustion. The budget arithmetic should inform Phase 2 only after Phase 1 canary data confirms whether five selected claims can reliably receive at least one provider search attempt.
 
+The implementation must not simply remove the no-search zero-yield exhaustion. If a selected claim remains below the research floor after the protected contradiction window is already reached, the outer loop can otherwise re-target the same claim repeatedly. Phase 1 therefore needs an explicit terminal state such as `protected_contradiction_window_reached_before_search`: record that the claim was not covered because the protected window/budget boundary prevented provider search, exclude it from retry for this run, and surface it as budget/protected-window non-admission rather than ordinary insufficient evidence.
+
 ---
 
 ## External Evidence Check
@@ -193,9 +195,15 @@ Implement a selected-claim acquisition starvation fix:
 
 1. Preserve the existing outer coverage-first scheduler and below-floor targeting pool.
 2. Move the protected-time check before query generation so the system does not spend LLM query calls after the run is already inside the protected contradiction window.
-3. Do not instantly exhaust a selected claim that never had a provider search attempt. It must stay eligible for the existing below-floor retry path unless a distinct budget/non-admission condition is recorded.
+3. Do not instantly exhaust a selected claim that never had a provider search attempt as generic zero-yield. It must either stay eligible for the existing below-floor retry path or transition to an explicit terminal/non-admitted state such as `protected_contradiction_window_reached_before_search`.
 4. Treat "selected claim reached verdict with zero search attempts" as a system degradation, not ordinary evidence scarcity.
-5. Defer selection budget-admission changes until after the narrower scheduler fix is canary-tested.
+5. Defer full selection budget-admission changes until after the narrower scheduler fix is canary-tested, while preserving the review dissent that admission and coverage may need to ship together if the canary proves the current cap is still infeasible.
+
+### Review reconciliation
+
+Reviews 1, 2, and 3 converge on a narrow Phase 1 first: amend the existing Stage 2 loop, add explicit no-search terminal telemetry, and canary before adding a guessed budget cap. Review 4 argues that coverage and admission should ship together to avoid shallow-only research and contradiction starvation.
+
+Decision: implement Phase 1 as the immediate correctness slice, but make it "admission-aware" at the telemetry level. Phase 1 must record when a selected claim was not covered because the protected window or budget boundary prevented provider search. Full confirmation-time budget admission remains gated on Phase 1 canary evidence. If the canary still shows selected-claim starvation, shallow-only research, or contradiction-window degradation at the current cap, Phase 2 becomes part of the same release train rather than a distant follow-up.
 
 ### Separate performance follow-ups
 
@@ -212,9 +220,10 @@ Amend the existing Stage 2 coverage-first mechanism:
 - Keep the current below-floor `targetingPool` and `researchedIterationsByClaim` contract.
 - Within the below-floor targeting path, verify that lower `researchedIterationsByClaim` counts win before evidence-count scoring. If necessary, amend targeting so zero-searched claims are preferred over already-searched claims even when seeded/preliminary evidence counts differ.
 - Move the protected-time check before main query generation in `runResearchIteration`.
-- If a selected claim has no provider search attempt, do not set its zero-yield count directly to `zeroYieldBreakThreshold`.
+- The pre-query guard should account for a minimum provider-search execution buffer, not only current wall time. If the remaining main-research window is too small to execute at least one provider-search pass, skip query generation and record the terminal reason instead of producing generated-only iterations.
+- If a selected claim has no provider search attempt, do not set its zero-yield count directly to `zeroYieldBreakThreshold` as generic zero-yield. Either retry below-floor claims while coverage is still feasible or record an explicit terminal/non-admitted reason.
 - A claim counts as researched only after an actual provider search attempt, using `ClaimAcquisitionIterationEntry.searchAttempts`.
-- If a selected claim still reaches verdict with zero provider search attempts, emit a system degradation warning.
+- If a selected claim still reaches verdict with zero provider search attempts, emit a system degradation warning and make `selectedClaimResearchCoverage.notRunReason` / sufficiency state distinguish budget/protected-window non-admission from ordinary insufficient evidence.
 
 Benefits:
 
@@ -243,7 +252,9 @@ Candidate approach:
   - `contradictionProtectedTimeMs`
   - estimated minimum seconds per selected claim
   - configured minimum recommended claims
+- Compute the effective limit in the web/UCM layer, but persist the resulting admission contract on the draft or `ClaimSelectionJson` so the final job creation boundary can enforce it structurally for every path.
 - Apply the effective limit at the web-side selected-claim confirmation boundary before calling the API confirm endpoint.
+- Enforce the persisted structural admission contract in `JobService.CreateJobFromDraftAsync`, without making C# recompute web-side UCM budget math.
 - Optionally also pass the effective limit into ACS recommendation generation so automatic recommendations are less likely to exceed the shared confirmation limit.
 - For selected sets above the effective limit, either block confirmation with an explicit budget message or allow confirmation but mark non-admitted selected claims before verdict generation. Blocking is preferable if product requirements allow it.
 
@@ -252,7 +263,7 @@ Benefits:
 - Prevents any selected-claim mode from accepting five claims when the configured budget realistically supports fewer.
 - Keeps automatic, manual, and admin-on-behalf paths aligned at the shared selected-claim boundary.
 - Keeps tuning in UCM instead of hardcoding behavior.
-- Keeps the C# API as a structural guard for IDs/uniqueness/absolute cap instead of duplicating web-side UCM budget logic across runtimes.
+- Keeps the C# API as a structural guard for IDs/uniqueness/absolute cap/admission contract instead of duplicating web-side UCM budget logic across runtimes.
 
 Risks:
 
@@ -327,20 +338,29 @@ Tasks:
    - Verify `findLeastResearchedClaim` / its caller cannot prefer an already-searched claim over a zero-searched selected claim inside the below-floor path.
 2. Move the protected-time check before main query generation in `runResearchIteration`.
    - If the window is already reached, do not generate main queries for that claim.
-   - Record a clear telemetry reason.
+   - Account for a minimum provider-search execution buffer so the system does not generate queries when there is no realistic window to execute at least one provider search.
+   - Record a clear telemetry reason, e.g. `protected_contradiction_window_reached_before_search`.
 3. Fix the no-search zero-yield exhaustion fast-path.
    - Do not set `zeroYieldCount = zeroYieldBreakThreshold` when `mainSearchAttempted === false`.
-   - Leave the selected claim eligible for the below-floor retry path unless a distinct budget/non-admission condition is recorded.
-4. Add a selected-claim zero-acquisition warning.
+   - Leave the selected claim eligible for the below-floor retry path while coverage is still feasible.
+   - If coverage is no longer feasible because of the protected window or budget boundary, record a distinct terminal/non-admitted reason and exclude that claim from further retry for this run.
+4. Extend selected-claim coverage telemetry.
+   - Add not-run reasons such as `protected_contradiction_window_reached_before_search`, `time_budget_exhausted_before_search`, and `query_budget_exhausted_before_search` as needed.
+   - Extend `SelectedClaimResearchCoverage.sufficiencyState` or add an adjacent explicit state so budget/protected-window non-admission is not reported as plain `"insufficient"`.
+   - Update `research-waste-metrics.ts` so `notRunReason` distinguishes "no targeted main iteration recorded" from "a targeted/pre-query attempt was blocked by protected-window or budget admission."
+5. Add a selected-claim zero-acquisition warning.
    - Proposed type: `selected_claim_zero_acquisition`.
    - Proposed severity: `error`, per AGENTS.md report-quality severity policy. The verdict-impact test asks whether the verdict would be materially different if the event had not occurred; for a selected claim with zero provider search attempts, the answer is yes.
    - Details should include at least `{ claimId, notRunReason }`, plus available timing/query-budget fields.
    - Register the warning through `warning-display.ts`.
-5. Add focused unit tests:
+6. Add focused unit tests:
    - A below-floor selected claim is re-targeted after a no-search iteration instead of being exhausted.
+   - A claim skipped by the pre-query protected-window guard receives a terminal not-run reason and is not retried forever.
    - Query generation is skipped when protected time is already reached.
+   - Query generation is skipped when remaining time is below the minimum provider-search execution buffer.
    - `ClaimAcquisitionIterationEntry.searchAttempts` remains the source of truth for whether targeted research happened.
    - `selectedClaimResearchCoverage.zeroTargetedMainResearch` remains accurate.
+   - `selectedClaimResearchCoverage.notRunReason` and sufficiency state distinguish budget/protected-window non-admission from ordinary insufficient evidence.
    - Warning registration works.
 
 Acceptance criteria:
@@ -368,7 +388,9 @@ Tasks:
 3. If Phase 2 is still needed, apply the effective cap to:
    - web-side selected-claim confirmation for all modes, before the API confirm endpoint is called
    - ACS recommendation prompt variables / validation envelope, if useful for automatic proposal quality
-   - API responses/metadata as observability only; avoid duplicating UCM budget computation in C# unless a later architecture decision introduces shared generated config contracts
+   - persisted draft / `ClaimSelectionJson` metadata as the authoritative admission contract
+   - final job creation in `JobService.CreateJobFromDraftAsync` as structural enforcement of the persisted contract
+   - API responses/metadata as observability; avoid duplicating UCM budget computation in C# unless a later architecture decision introduces shared generated config contracts
 4. Decide and implement the over-limit behavior:
    - preferred: block confirmation above the effective coverage limit with a clear budget message;
    - fallback: allow confirmation, but make uncovered selected claims explicit budget non-admissions and do not classify them as ordinary evidence-scarce `UNVERIFIED`.
@@ -426,11 +448,19 @@ Affected files to plan for:
 
 - `apps/web/src/lib/analyzer/research-orchestrator.ts`
 - `apps/web/src/lib/analyzer/types.ts`
+- `apps/web/src/lib/analyzer/research-waste-metrics.ts`
 - `apps/web/src/lib/analyzer/warning-display.ts`
 - `apps/web/test/unit/lib/analyzer/research-contradiction-admission.test.ts`
+- `apps/web/test/unit/lib/analyzer/research-waste-metrics.test.ts`
 - `apps/web/test/unit/lib/analyzer/warning-display.test.ts`
 - Phase 2 only: `apps/web/src/lib/claim-selection-flow.ts` and selected-claim confirmation UI/runner paths
-- Phase 2 observability only: `apps/api/Controllers/ClaimSelectionDraftsController.cs`, `apps/api/Controllers/InternalClaimSelectionDraftsController.cs`, and `apps/api/Services/JobService.cs`
+- Phase 2 structural contract: `apps/api/Controllers/ClaimSelectionDraftsController.cs`, `apps/api/Controllers/InternalClaimSelectionDraftsController.cs`, and `apps/api/Services/JobService.cs`
+
+Documentation targets after implementation:
+
+- `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki`
+- `Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md` if still active for the implementation status record
+- `Docs/AGENTS/Agent_Outputs.md` or a role handoff per the Exchange Protocol
 
 Live verification discipline:
 
@@ -445,6 +475,7 @@ Live verification discipline:
    - `claimAcquisitionLedger[*].iterations[*].searchAttempts`
    - evidence for `AC_12` / `AC_21` if selected
    - total runtime and clustering metrics
+   - contradiction reachability: whether contradiction started, remaining time when main research ended, contradiction sources found, and whether coverage-first behavior reduced contradiction quality for already searched claims
 
 Live acceptance criteria:
 
@@ -475,13 +506,14 @@ Live acceptance criteria:
 
 ## Immediate Next Step
 
-Implement Phase 1 only as one bounded correctness slice:
+Implement Phase 1 as one bounded correctness slice:
 
 1. Preserve the existing coverage-first Stage 2 scheduler.
-2. Pre-query protected-time guard.
-3. No-search zero-yield exhaustion fix.
-4. Selected-claim zero-acquisition warning.
+2. Pre-query protected-time guard with a minimum provider-search execution buffer.
+3. No-search zero-yield exhaustion fix with explicit terminal/non-admitted state.
+4. `selectedClaimResearchCoverage` / sufficiency-state differentiation for budget/protected-window non-admission.
+5. Selected-claim zero-acquisition warning.
 
 Then rerun the same SVP automatic canary.
 
-Only decide on Phase 2 budget admission after that canary.
+Only decide on full Phase 2 budget admission after that canary. If the canary still shows selected-claim starvation, shallow-only research, or contradiction-window degradation, treat Review 4's concurrent-admission concern as validated and move Phase 2 into the release-critical path.
