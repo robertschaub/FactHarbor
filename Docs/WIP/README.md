@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
 **Last Updated**: 2026-04-29
-**Status**: Consolidation #13 complete. 2 files archived. 60 active markdown docs remain.
+**Status**: Consolidation #13 complete. 2 files archived. 61 active markdown docs remain.
 
 ---
 
@@ -99,6 +99,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md](2026-03-03_Wikipedia_SemanticScholar_Integration_Concept.md) — Wikipedia shipped; deeper Semantic Scholar / Fact Check integration future scope
 
 ### Infrastructure / optimization
+- [2026-04-29_GitHub_Private_Repo_Split_Execution_Plan.md](2026-04-29_GitHub_Private_Repo_Split_Execution_Plan.md) — executable plan for moving legal/admin-sensitive material into a private GitHub companion repo without breaking the public docs site
 - [2026-04-24_Admin_Preparation_Sessions_Control_Plan.md](2026-04-24_Admin_Preparation_Sessions_Control_Plan.md) — April 27 rebased plan for admin-only preparation-session visibility/control over `ClaimSelectionDraftEntity`; recommends only immediate `PREPARING` cancel safety alignment now, then API tests, read-only admin observability, and audited mutations
 - [2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md](2026-04-23_Session_Preparation_Semantics_Preserving_Async_Proposal.md) — active recommended direction for semantics-preserving async/session UX preparation work
 - [2026-04-23_Grander_Runtime_Followup_Options.md](2026-04-23_Grander_Runtime_Followup_Options.md) — deferred Grander runtime follow-up options, with verdict citation sanitation ranked first

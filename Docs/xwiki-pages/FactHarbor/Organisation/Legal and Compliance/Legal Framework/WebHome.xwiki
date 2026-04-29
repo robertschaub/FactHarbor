@@ -24,7 +24,13 @@ The governing documents are:
 
 *   **[[Vereinsstatuten (German, binding)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md]]**
 *   **[[Verein Statutes (English reference translation)>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_EN.md]]**
-*   **[[Founding Assembly Record / Gründungsprotokoll>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.md]]**
+*   **Founding Assembly Record / Gründungsprotokoll** — maintained in the private admin/legal repository rather than the public repo tip
+
+== 3.1 Public vs. Private Legal Documents ==
+
+FactHarbor keeps the binding statutes public.
+
+Supporting administrative records such as founding-record attachments, registration packets, banking forms, and internal nonprofit-application working documents are maintained in a private companion repository for governance and privacy reasons.
 
 == 4. Intellectual Property & Privacy ==
 
