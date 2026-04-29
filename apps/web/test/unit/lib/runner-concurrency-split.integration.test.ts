@@ -323,6 +323,92 @@ describe("runner concurrency split", () => {
     expect(draftState.selectedClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
   });
 
+  it("auto-continues all candidates when they fit the budget-aware admission cap", async () => {
+    const claimIds = ["AC_01", "AC_02", "AC_03"];
+    const autoConfirmBodies: any[] = [];
+
+    vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
+      config: {
+        claimSelectionCap: 5,
+        claimSelectionIdleAutoProceedMs: 180000,
+        claimSelectionBudgetAwarenessEnabled: true,
+        claimSelectionBudgetFitMode: "allow_fewer_recommendations",
+        claimSelectionMinRecommendedClaims: 1,
+        claimSelectionEstimatedMainResearchMsPerClaim: 160000,
+        researchTimeBudgetMs: 600000,
+        contradictionProtectedTimeMs: 120000,
+      },
+    } as any);
+    vi.mocked(prepareStage1Snapshot).mockResolvedValueOnce({
+      preparedStage1: {
+        version: 1,
+        resolvedInputText: "queued session input",
+        preparedUnderstanding: {
+          impliedClaim: "Input implies three checkable claims.",
+          articleThesis: "Input thesis",
+          atomicClaims: claimIds.map((id) => ({ id, statement: `Statement ${id}` })),
+          preliminaryEvidence: [],
+        },
+      },
+      state: { stage1Observability: { candidateClaimCount: claimIds.length } },
+    } as any);
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/recoverable")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/idle-auto-proceed-due")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/v1/claim-selection-drafts/draft-budget-fit")) {
+        return new Response(JSON.stringify({
+          draftId: "draft-budget-fit",
+          status: "QUEUED",
+          activeInputType: "text",
+          activeInputValue: "queued session input",
+          selectionMode: "automatic",
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/claim-selection-drafts/draft-budget-fit/status")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "POST" && url.endsWith("/internal/v1/claim-selection-drafts/draft-budget-fit/auto-confirm")) {
+        autoConfirmBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ finalJobId: "job-budget-fit" }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 0,
+      queue: [{ draftId: "draft-budget-fit", enqueuedAt: Date.now() }],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainDraftQueue } = await import("@/lib/internal-runner-queue");
+    await drainDraftQueue();
+    await flushMicrotasks(30);
+
+    expect(generateClaimSelectionRecommendation).not.toHaveBeenCalled();
+    expect(autoConfirmBodies).toHaveLength(1);
+    expect(autoConfirmBodies[0].selectedClaimIds).toEqual(claimIds);
+    const draftState = JSON.parse(autoConfirmBodies[0].draftStateJson);
+    expect(draftState.selectionCap).toBe(5);
+    expect(draftState.selectionAdmissionCap).toBe(3);
+    expect(draftState.recommendedClaimIds).toEqual(claimIds);
+    expect(draftState.selectedClaimIds).toEqual(claimIds);
+  });
+
   it("starts a report job even when the prep lane is already busy", async () => {
     let jobDetailReads = 0;
     const analysis = createDeferred<any>();

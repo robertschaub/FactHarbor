@@ -97,7 +97,7 @@ export function shouldAutoContinueWithoutSelection(
   configuredCap?: number | null,
 ): boolean {
   if (!Number.isFinite(candidateCount)) return false;
-  return candidateCount > 0 && candidateCount < normalizeClaimSelectionCap(configuredCap);
+  return candidateCount > 0 && candidateCount <= normalizeClaimSelectionCap(configuredCap);
 }
 
 export function shouldRequireClaimSelectionUi(
@@ -105,7 +105,7 @@ export function shouldRequireClaimSelectionUi(
   configuredCap?: number | null,
 ): boolean {
   if (!Number.isFinite(candidateCount)) return false;
-  return candidateCount >= normalizeClaimSelectionCap(configuredCap);
+  return candidateCount > normalizeClaimSelectionCap(configuredCap);
 }
 
 export function getClaimSelectionCap(

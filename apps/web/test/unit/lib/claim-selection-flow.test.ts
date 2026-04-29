@@ -61,21 +61,24 @@ describe("claim-selection-flow", () => {
     expect(normalizeClaimSelectionEstimatedMainResearchMsPerClaim(900_000)).toBe(600_000);
   });
 
-  it("auto-continues only while candidate count stays below the configured threshold", () => {
+  it("auto-continues while candidate count fits within the configured threshold", () => {
     expect(shouldAutoContinueWithoutSelection(0)).toBe(false);
     expect(shouldAutoContinueWithoutSelection(1)).toBe(true);
     expect(shouldAutoContinueWithoutSelection(4)).toBe(true);
-    expect(shouldAutoContinueWithoutSelection(5)).toBe(false);
+    expect(shouldAutoContinueWithoutSelection(5)).toBe(true);
+    expect(shouldAutoContinueWithoutSelection(6)).toBe(false);
     expect(shouldAutoContinueWithoutSelection(2, 3)).toBe(true);
-    expect(shouldAutoContinueWithoutSelection(3, 3)).toBe(false);
+    expect(shouldAutoContinueWithoutSelection(3, 3)).toBe(true);
+    expect(shouldAutoContinueWithoutSelection(4, 3)).toBe(false);
   });
 
-  it("requires the selection UI once candidate count reaches the configured threshold", () => {
+  it("requires the selection UI only once candidate count exceeds the configured threshold", () => {
     expect(shouldRequireClaimSelectionUi(4)).toBe(false);
-    expect(shouldRequireClaimSelectionUi(5)).toBe(true);
+    expect(shouldRequireClaimSelectionUi(5)).toBe(false);
     expect(shouldRequireClaimSelectionUi(8)).toBe(true);
     expect(shouldRequireClaimSelectionUi(2, 3)).toBe(false);
-    expect(shouldRequireClaimSelectionUi(3, 3)).toBe(true);
+    expect(shouldRequireClaimSelectionUi(3, 3)).toBe(false);
+    expect(shouldRequireClaimSelectionUi(4, 3)).toBe(true);
   });
 
   it("caps selection at the normalized threshold while respecting smaller prepared sets", () => {
