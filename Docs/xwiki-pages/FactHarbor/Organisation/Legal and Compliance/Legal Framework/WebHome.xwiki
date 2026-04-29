@@ -6,6 +6,8 @@ FactHarbor is organized as a **Swiss Verein** (Association) with seat in **Dietl
 
 The founding assembly adopted the statutes and established the association on **23 April 2026**. This structure was selected for its simplicity, flexibility, and strong alignment with FactHarbor's mission-driven, automation-first philosophy.
 
+The Commercial Register filing was submitted in the Canton of Zürich on **27 April 2026**. The entry letter was received on **29 April 2026**, and the association now has UID / Firmennummer **CHE-448.446.098**. Public **SHAB** / **Zefix** visibility may still be propagating.
+
 == 2. Core Non-Profit Principles ==
 
 Regardless of its stage, the organization is bound by several "mission-lock" principles:
@@ -37,8 +39,9 @@ Detailed legal policies for day-to-day operations are maintained in dedicated do
 |=Step|=Status|=Notes
 |**Statutes**|✅ Complete|Adopted on 23 April 2026
 |**Founding Assembly**|✅ Complete|Founding minutes recorded on 23 April 2026
-|**Official Registration**|🔄 In progress|Commercial Register (Kt. Zürich) filing initiated, UID expected ~early May 2026
-|**NPO Verification**|⬜ Pending|Apply for Claude for Nonprofits
+|**Official Registration**|✅ Substantially complete|Commercial Register filing submitted 27 April 2026; entry letter received 29 April 2026; UID assigned: CHE-448.446.098; public SHAB / Zefix visibility may still be pending
+|**Tax Exemption / Public-Benefit Recognition**|⬜ Pending|Prepare and submit Zurich tax-exemption application
+|**NPO / Platform Verification**|⬜ Pending|Goodstack, TechSoup, Candid, NGOsource as needed; AI-provider applications can start in parallel
 
 For a detailed task list, see the **[[Operational Readiness Checklist>>FactHarbor.Organisation.Governance.Operational Readiness.WebHome]]**.
 

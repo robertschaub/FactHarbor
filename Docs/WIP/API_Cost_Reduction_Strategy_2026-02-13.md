@@ -19,7 +19,7 @@ The complete strategy with all program details, pricing tables, and stacking ana
 - Prompt caching (`getPromptCachingOptions()` in `llm.ts`)
 
 ### Active — next steps
-- **NPO credit applications** (Anthropic, OpenAI, AWS, Google) — blocked on Zefix entry (~early May 2026)
+- **NPO credit applications** (Anthropic, OpenAI, AWS, Google) — can now start with the Commercial Register entry letter and UID `CHE-448.446.098`; public Zefix visibility may still require manual verification
 - **Batch API** evaluation for non-latency-sensitive work
 
 ### Historical context only

@@ -1,6 +1,6 @@
 # Innosuisse Innovation Project — Bewerbungsleitfaden für FactHarbor
 
-**Stand:** März 2026
+**Stand:** März 2026 (Status-Update eingearbeitet: 29.04.2026)
 **Erstellt von:** Claude Opus 4.6 (2026-03-11)
 **Quellen:** innosuisse.admin.ch, bridge.ch, BFS UID-Register (alle Links am Ende)
 
@@ -14,7 +14,7 @@
 
 ### Muss der Verein schon existieren?
 
-**Ja — bei Antragstellung**, weil das Innolink-Portal eine UID-Nummer verlangt. ✅ FactHarbor Verein gegründet am 23. April 2026; HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026.
+**Ja — bei Antragstellung**, weil das Innolink-Portal eine UID-Nummer verlangt. ✅ FactHarbor Verein gegründet am 23. April 2026; Handelsregister-Anmeldung am 27. April 2026 eingereicht; Handelsregister-Eintragsbrief am 29. April 2026 erhalten; UID / Firmennummer zugeteilt: **CHE-448.446.098**.
 
 Ein Schweizer Verein erlangt Rechtspersönlichkeit sobald Statuten angenommen werden — ein Handelsregistereintrag ist nur nötig bei kaufmännischem Betrieb über CHF 100'000 Jahresumsatz.
 
@@ -31,7 +31,7 @@ Ein Schweizer Verein erlangt Rechtspersönlichkeit sobald Statuten angenommen we
 | **C: AHV/Ausgleichskasse** (als Arbeitgeber) | ~1-3 Wochen (geschätzt) | UID + Arbeitgeberstatus | Nur sinnvoll wenn der Verein tatsächlich Angestellte hat |
 | **D: MWST/ESTV** | 2-4 Wochen | UID + MWST-Nummer | Nur sinnvoll wenn MWST-pflichtig (>CHF 100K Umsatz) |
 
-**Empfehlung für FactHarbor:** Weg A (direkt BFS) oder Weg B (Handelsregister). Der HR-Eintrag gibt zusätzliche Glaubwürdigkeit gegenüber Innosuisse-Evaluatoren, kostet aber etwas mehr Zeit und Geld.
+**Empfehlung für FactHarbor:** Faktisch erledigt über **Weg B (Handelsregister)**. Das gibt zusätzliche Glaubwürdigkeit gegenüber Innosuisse-Evaluatoren und hat die UID bereits geliefert.
 
 **Kontakt BFS für Weg A:** uid@bfs.admin.ch oder Tel. +41 800 20 20 10
 
@@ -48,7 +48,7 @@ Ein Schweizer Verein erlangt Rechtspersönlichkeit sobald Statuten angenommen we
 
 ### ⚠️ Offene Fragen (bei Innosuisse klären: innoprojects@innosuisse.ch)
 
-1. ~~**Wann muss der Verein existieren?**~~ ✅ Erledigt — Verein gegründet 23.04.2026, UID in Bearbeitung.
+1. ~~**Wann muss der Verein existieren?**~~ ✅ Erledigt — Verein gegründet 23.04.2026, UID `CHE-448.446.098` zugeteilt.
 2. **Solo-Entwickler als einzige Eigenleistung** — zählt die Zeit eines einzelnen Entwicklers als In-Kind-Beitrag bei den Standardstundensätzen?
 3. **Imputierte Lohnkosten** — wenn der Verein keinen Umsatz hat und der Entwickler unbezahlt arbeitet, zählen dann kalkulatorische Lohnkosten?
 
@@ -232,7 +232,7 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 | Voraussetzung | Status | Aktion nötig? |
 |--------------|--------|--------------|
 | FactHarbor Verein gegründet | ✅ | Gegründet 23.04.2026 |
-| UID-Nummer | 🔄 | HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026 |
+| UID-Nummer | ✅ | `CHE-448.446.098` (Handelsregister-Eintragsbrief erhalten 29.04.2026) |
 | Forschungspartner (ZHAW) | ✅ | Bestätigt: Giedemann, Cieliebak, Deriu |
 | Funktionierende Plattform | ✅ | app.factharbor.ch + Demo-Umgebung |
 | Vorarbeiten (Markt, Wettbewerb) | ✅ | Knowledge-Dokumente vorhanden |
@@ -244,7 +244,7 @@ Ein Verein könnte als **assoziierter Partner** oder zukünftiger Empfänger der
 | Datum | Meilenstein |
 |-------|------------|
 | 1. Mai 2026 | Navina Gupta (ZHAW/DIZH) klärt Kompatibilität DIZH + Innosuisse |
-| ~Anfang Mai 2026 | UID erwartet (HR-Eintragung Kt. Zürich eingeleitet) |
+| 29. April 2026 | UID zugeteilt (`CHE-448.446.098`) |
 | Nach 11. Mai 2026 | Nächstes Meeting mit Patrick Giedemann |
 | ~10. Juni 2026 | ZHAW-Digital-Matching-Antrag (intern, 3 Wochen vor Deadline) |
 | **1. Juli 2026** | **DIZH Rapid Action Call Deadline** |
