@@ -231,6 +231,35 @@ function validateRecommendationAssessment(
   };
 }
 
+function alignDeferredBudgetTreatments(
+  assessments: ClaimSelectionRecommendationAssessment[],
+  deferredClaimIdSet: Set<string>,
+  budgetFitMode: ClaimSelectionValidationBudgetFitMode,
+): ClaimSelectionRecommendationAssessment[] {
+  if (budgetFitMode !== "allow_fewer_recommendations" || deferredClaimIdSet.size === 0) {
+    return assessments;
+  }
+
+  return assessments.map((assessment) => {
+    if (!deferredClaimIdSet.has(assessment.claimId)) {
+      return assessment;
+    }
+    if (assessment.budgetTreatment === "deferred_budget_limited") {
+      return assessment;
+    }
+    if (assessment.budgetTreatment && assessment.budgetTreatment !== "not_recommended") {
+      return assessment;
+    }
+
+    return {
+      ...assessment,
+      budgetTreatment: "deferred_budget_limited",
+      budgetTreatmentRationale:
+        assessment.budgetTreatmentRationale ?? assessment.recommendationRationale,
+    };
+  });
+}
+
 export function validateClaimSelectionRecommendation(
   recommendation: ClaimSelectionRecommendation,
   candidateClaimIds: string[],
@@ -324,8 +353,13 @@ export function validateClaimSelectionRecommendation(
   }
 
   const deferredClaimIdSet = new Set(deferredClaimIds ?? []);
-  const assessmentByClaimId = new Map(normalizedAssessments.map((assessment) => [assessment.claimId, assessment]));
-  for (const assessment of normalizedAssessments) {
+  const budgetAlignedAssessments = alignDeferredBudgetTreatments(
+    normalizedAssessments,
+    deferredClaimIdSet,
+    budgetFitMode,
+  );
+  const assessmentByClaimId = new Map(budgetAlignedAssessments.map((assessment) => [assessment.claimId, assessment]));
+  for (const assessment of budgetAlignedAssessments) {
     if (assessment.budgetTreatment === "selected" && !recommendedSet.has(assessment.claimId)) {
       throw new ClaimSelectionRecommendationInvariantError(
         `assessment ${assessment.claimId} is budget-selected but is missing from recommendedClaimIds`,
@@ -351,7 +385,7 @@ export function validateClaimSelectionRecommendation(
     }
   }
 
-  const hasBudgetTreatment = normalizedAssessments.some((assessment) => Boolean(assessment.budgetTreatment));
+  const hasBudgetTreatment = budgetAlignedAssessments.some((assessment) => Boolean(assessment.budgetTreatment));
   const hasBudgetMetadata =
     hasBudgetTreatment ||
     deferredClaimIdSet.size > 0 ||
@@ -373,7 +407,7 @@ export function validateClaimSelectionRecommendation(
   }
   if (
     budgetFitMode === "explain_only" &&
-    (deferredClaimIdSet.size > 0 || normalizedAssessments.some((assessment) => assessment.budgetTreatment === "deferred_budget_limited"))
+    (deferredClaimIdSet.size > 0 || budgetAlignedAssessments.some((assessment) => assessment.budgetTreatment === "deferred_budget_limited"))
   ) {
     throw new ClaimSelectionRecommendationInvariantError(
       "explain_only budget mode cannot return deferred budget claims",
@@ -430,7 +464,7 @@ export function validateClaimSelectionRecommendation(
         ),
       }
       : {}),
-    assessments: normalizedAssessments,
+    assessments: budgetAlignedAssessments,
     rationale: normalizeBoundedText(
       recommendation.rationale,
       "rationale",

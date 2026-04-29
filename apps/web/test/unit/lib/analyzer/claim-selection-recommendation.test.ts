@@ -448,6 +448,55 @@ describe("validateClaimSelectionRecommendation", () => {
     ).toThrow(/must have budgetTreatment deferred_budget_limited/i);
   });
 
+  it("aligns allow-fewer top-level deferred IDs when assessment treatment metadata is missing", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: ["AC_02"],
+      budgetFitRationale: "Budget only supports deep research for the selected claim.",
+    });
+
+    const validated = validateClaimSelectionRecommendation(
+      recommendation,
+      ["AC_01", "AC_02"],
+      2,
+      { budgetFitMode: "allow_fewer_recommendations" },
+    );
+
+    expect(validated.deferredClaimIds).toEqual(["AC_02"]);
+    expect(validated.assessments[1]).toMatchObject({
+      claimId: "AC_02",
+      budgetTreatment: "deferred_budget_limited",
+      budgetTreatmentRationale: "Secondary candidate with overlapping coverage.",
+    });
+  });
+
+  it("aligns allow-fewer top-level deferred IDs over generic not-recommended treatment", () => {
+    const recommendation = createRecommendation({
+      deferredClaimIds: ["AC_02"],
+      budgetFitRationale: "Budget only supports deep research for the selected claim.",
+      assessments: [
+        createRecommendation().assessments[0],
+        {
+          ...createRecommendation().assessments[1],
+          budgetTreatment: "not_recommended",
+          budgetTreatmentRationale: "Not selected under the current recommendation budget.",
+        },
+      ],
+    });
+
+    const validated = validateClaimSelectionRecommendation(
+      recommendation,
+      ["AC_01", "AC_02"],
+      2,
+      { budgetFitMode: "allow_fewer_recommendations" },
+    );
+
+    expect(validated.assessments[1]).toMatchObject({
+      claimId: "AC_02",
+      budgetTreatment: "deferred_budget_limited",
+      budgetTreatmentRationale: "Not selected under the current recommendation budget.",
+    });
+  });
+
   it("rejects inconsistent selected and not-recommended budget treatments", () => {
     const selectedMismatch = createRecommendation({
       assessments: [
