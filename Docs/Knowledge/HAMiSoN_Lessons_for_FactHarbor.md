@@ -4,7 +4,7 @@
 **Links:** [Project Website (UNED)](https://nlp.uned.es/hamison-project/) | [ZHAW Project Page](https://www.zhaw.ch/en/research/project/74234) | [CHIST-ERA](https://www.chistera.eu/projects/hamison) | [Zenodo Community](https://zenodo.org/communities/hamison-project/records)
 **Reviewed by:** Claude Opus 4.6 (2026-03-24)
 
-> **Related docs:** [ViClaim (EMNLP 2025)](ViClaim_EMNLP2025_Lessons_for_FactHarbor.md) for the flagship claim detection dataset produced by HAMiSoN. [CheckThat! Lab Analysis](CheckThat_Lab_Lessons_for_FactHarbor.md) for the shared task where ZHAW placed 2nd using HAMiSoN research. [Innosuisse Partnership Briefing](../WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md) for the ZHAW collaboration strategy. [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table.
+> **Related docs:** [ViClaim (EMNLP 2025)](ViClaim_EMNLP2025_Lessons_for_FactHarbor.md) for the flagship claim detection dataset produced by HAMiSoN. [CheckThat! Lab Analysis](CheckThat_Lab_Lessons_for_FactHarbor.md) for the shared task where ZHAW placed 2nd using HAMiSoN research. [Cooperation Opportunities](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>) for the current Swiss collaboration strategy. [Executive Summary](EXECUTIVE_SUMMARY.md) for the consolidated priority table.
 
 ---
 

@@ -89,6 +89,11 @@ This plan uses an explicit manifest, not a blanket move of all `Organisation/**`
 - Explicit proposal drafts:
   - [Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md>)
   - [Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx>)
+  - [Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md>)
+  - [Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md>)
+  - [Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md>)
+  - [Docs/Knowledge/LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx](</C:/DEV/FactHarbor/Docs/Knowledge/LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx>)
+  - [Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md](</C:/DEV/FactHarbor/Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md>)
 
 ### 3.3 Review in Phase 2
 
@@ -96,7 +101,6 @@ These likely belong in a private repo, but should be reviewed after the first cu
 
 - [Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Bewerbung_Leitfaden.md>)
 - [Docs/Knowledge/DIZH_Rapid_Action_Call_Leitfaden.md](</C:/DEV/FactHarbor/Docs/Knowledge/DIZH_Rapid_Action_Call_Leitfaden.md>)
-- [Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md>)
 - [Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities](</C:/DEV/FactHarbor/Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities>)
 - Selected internal [Docs/Meetings](</C:/DEV/FactHarbor/Docs/Meetings>) notes that contain partner/funder-sensitive content
 

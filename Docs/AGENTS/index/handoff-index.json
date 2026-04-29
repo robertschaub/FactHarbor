@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T21:24:52.515Z",
-  "count": 384,
+  "generatedAt": "2026-04-29T21:32:18.605Z",
+  "count": 385,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8070,6 +8070,35 @@
         "../FactHarbor-internal/Docs/Internal/Grant_Drafts/*"
       ],
       "summary": "If you continue the privacy split, start by reviewing the still-public funding/proposal cluster in `Docs/Knowledge/*Innosuisse*` and the remaining partner-strategy references in `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md` and `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/C"
+    },
+    {
+      "file": "2026-04-29_Unassigned_Third_Wave_Private_Repo_Split.md",
+      "date": "2026-04-29",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "third",
+        "wave",
+        "private",
+        "repo",
+        "split"
+      ],
+      "files_touched": [
+        "Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md",
+        "Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md",
+        "Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md",
+        "Docs/Knowledge/LiveCheck_State_of_the_Art_Research_Draft_2026-03-18.docx",
+        "Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md",
+        "Docs/Knowledge/EXECUTIVE_SUMMARY.md",
+        "Docs/STATUS/Backlog.md",
+        "Docs/Knowledge/HAMiSoN_Lessons_for_FactHarbor.md",
+        "Docs/WIP/README.md",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki",
+        "Docs/WIP/2026-04-29_GitHub_Private_Repo_Split_Execution_Plan.md",
+        "../FactHarbor-internal/Docs/Internal/Grant_Drafts/*"
+      ],
+      "summary": "If you continue this stream, shift from file movement to review: check whether any public narrative pages still overstate private draft availability, then decide whether the split PR is ready to merge. The canonical private bundle now lives under `C:\\DEV\\FactHarbor-internal\\Docs\\Internal\\Grant_Draft"
     }
   ]
 }

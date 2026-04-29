@@ -120,12 +120,12 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ## Organizational / Partnership
 
-- [2026-03-24_Innosuisse_Partnership_Research_Briefing.md](2026-03-24_Innosuisse_Partnership_Research_Briefing.md) — Innosuisse partner identification (ZHAW recommended; Innovation Cheque, SwissText 2026 pending)
+- [Innosuisse_Bewerbung_Leitfaden.md](../Knowledge/Innosuisse_Bewerbung_Leitfaden.md) — public Swiss funding guidance and current Innosuisse path
 
 ### LiveCheck / Innosuisse future track
-- [Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md)
-- [Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md](../Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md)
-- [LiveCheck_State_of_the_Art_Research_2026-03-18.md](../Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md)
+- [Innosuisse_Bewerbung_Leitfaden.md](../Knowledge/Innosuisse_Bewerbung_Leitfaden.md)
+- [DIZH_Rapid_Action_Call_Leitfaden.md](../Knowledge/DIZH_Rapid_Action_Call_Leitfaden.md)
+- [Cooperation Opportunities](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>)
 
 ---
 
