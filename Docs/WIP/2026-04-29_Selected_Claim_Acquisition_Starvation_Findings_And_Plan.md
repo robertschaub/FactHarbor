@@ -1,7 +1,7 @@
 # Selected-Claim Acquisition Starvation Findings and Plan
 
 **Date**: 2026-04-29  
-**Status**: Investigation complete; implementation plan ready  
+**Status**: Implemented and live-validated; residual adjudication/runtime follow-ups documented
 **Primary job inspected**: `1bd9723a68134a20a96f2bb745e12291`  
 **Draft inspected**: `6620dc43952f497084e5d4a9c126ea9d`  
 **Input**: `https://www.svp.ch/wp-content/uploads/260324_Argumentarium-ohne-Q-A-DE.pdf`  
@@ -10,7 +10,7 @@
 
 ## Executive Summary
 
-The long runtime and `UNVERIFIED` selected-claim outcomes in job `1bd9723a68134a20a96f2bb745e12291` are not primarily caused by final Stage 2 researching AtomicClaims that were later dropped.
+The long runtime and `UNVERIFIED` selected-claim outcomes in job `1bd9723a68134a20a96f2bb745e12291` were not primarily caused by final Stage 2 researching AtomicClaims that were later dropped.
 
 The final Stage 2 run was correctly constrained to the five selected `AtomicClaims`. The failure mode is more specific:
 
@@ -20,9 +20,32 @@ The final Stage 2 run was correctly constrained to the five selected `AtomicClai
 4. Stage 1 preparation did spend material time before selection across all 23 candidate claims, and its preliminary evidence mapped to a claim that was later dropped.
 5. Stage 3 clustering added a separate latency problem: one Sonnet clustering call failed after about 160 seconds and fell back.
 
-Conclusion: the next correctness fix should be selected-claim acquisition coverage with an explicit terminal/non-admitted state for claims that cannot receive provider search before the protected contradiction window. A lower cap is useful only as a budget-admission mechanism.
+Conclusion: the implemented correctness fix combines selected-claim acquisition coverage telemetry, an explicit protected-window not-run state, budget-aware admission, and exact-cap auto-continue semantics. The fix does not add a second selector and does not use deterministic semantic filtering.
 
 This is not specific to automatic mode. The Stage 2 coverage invariant must hold for every selected-claim job, including automatic recommendations, manual/interactive selections, and administrator-on-behalf submissions. Automatic and manual modes differ only in who supplies the selected IDs; both converge before final job creation and must use the same coverage feasibility contract. If the selected set cannot be covered by the main-research budget, the system should block before final execution or explicitly mark non-admitted claims rather than producing ordinary zero-evidence `UNVERIFIED` claims.
+
+### Implementation Update
+
+Implemented commits:
+
+| Commit | Scope |
+|---|---|
+| `08dfe69b` | Stage 2 starvation telemetry and guard: pre-query protected-window guard, no-search zero-yield fix, selected-claim zero-acquisition warning, and `selectedClaimResearchCoverage` not-run reason support. |
+| `ee1ef6ce` | Budget-aware selected-claim admission: default UCM budget awareness enabled with `allow_fewer_recommendations`, effective admission cap persisted on drafts/jobs, and C# final job creation enforcement. |
+| `952b0847` | Exact-cap correction: candidate count equal to the effective admission cap auto-continues all candidates instead of invoking ACS recommendation. |
+
+Live validation used the original 6-job budget. The optional 2-job extension was not used.
+
+| Job | Input | Code state | Result |
+|---|---|---|---|
+| `a652605b34cc430c9eb424bd9188fae7` | SVP PDF | Phase 1 only | Selected 5, `zeroTargetedSelectedClaimCount=2`; validated that budget admission was still needed. |
+| `60f8e2287a07446fb80edf4ff89e8cc8` | SVP PDF | Budget admission | Selected 3, admission cap 3, `zeroTargetedSelectedClaimCount=0`, contradiction started with ~101s remaining. |
+| `661a649d61444be1b4c7a511bc8df2a6` | SVP PDF repeat | Budget admission | Selected 3, admission cap 3, `zeroTargetedSelectedClaimCount=0`; separate verdict-integrity warnings surfaced. |
+| `1b77e64cebac44da87a075a5977a3bf3` | Bolsonaro fair-trial extended input | Before exact-cap fix | Prepared 3/admission cap 3, but recommendation selected only `AC_03`; exposed exact-cap bug. |
+| `aa686dcce9d544a3a0d93a17e5860b67` | Bolsonaro fair-trial extended input | Exact-cap fix | Prepared 3, selected all 3, `zeroTargetedSelectedClaimCount=0`, verdict `UNVERIFIED` 52.5/40. |
+| `685fbe2dc6674dfa91a3a741eaa57b9c` | Bolsonaro fair-trial extended repeat | Exact-cap fix | Prepared 3, selected all 3, `zeroTargetedSelectedClaimCount=0`, verdict `UNVERIFIED` 48.5/40. |
+
+The selected-claim coverage/admission bug is fixed for the tested paths. The Bolsonaro result remains a report-quality/adjudication follow-up: both post-fix runs had sufficient searched evidence for every selected claim but still landed `UNVERIFIED`, while exact-extended historical cross-review baselines were usually `LEANING-TRUE` / `MOSTLY-TRUE` with 3 claims. That should be investigated separately from acquisition starvation.
 
 ---
 
@@ -203,7 +226,7 @@ Implement a selected-claim acquisition starvation fix:
 
 Reviews 1, 2, and 3 converge on a narrow Phase 1 first: amend the existing Stage 2 loop, add explicit no-search terminal telemetry, and canary before adding a guessed budget cap. Review 4 argues that coverage and admission should ship together to avoid shallow-only research and contradiction starvation.
 
-Decision: implement Phase 1 as the immediate correctness slice, but make it "admission-aware" at the telemetry level. Phase 1 must record when a selected claim was not covered because the protected window or budget boundary prevented provider search. Full confirmation-time budget admission remains gated on Phase 1 canary evidence. If the canary still shows selected-claim starvation, shallow-only research, or contradiction-window degradation at the current cap, Phase 2 becomes part of the same release train rather than a distant follow-up.
+Decision implemented: Phase 1 shipped first, and the Phase 1 SVP canary showed selected-claim starvation still occurred at five selected claims. Review 4's concurrent-admission concern was therefore validated by live data. Phase 2 was pulled into the same release train and now persists/enforces an effective selected-claim admission cap for all draft-backed paths.
 
 ### Separate performance follow-ups
 
@@ -237,16 +260,16 @@ Risks:
 - Contradiction time may shrink when all selected claims are forced to get at least one real attempt.
 - If the protected window is already reached, a selected claim may remain below floor until the loop hits the overall time budget; that state must be explicit.
 
-### Option B - Budget Admission Control (defer until after Option A canary)
+### Option B - Budget Admission Control (implemented after Option A canary)
 
 Use structural budget feasibility to decide how many selected claims the final job can cover. The selected-claim confirmation/execution boundary should apply this once for all modes, after selected IDs are known and before final analysis proceeds.
 
-This is reasonable architecture, but it should not be implemented in the same slice as the scheduler fix. The inspected job does not prove that five selected claims are impossible within the configured budget once the no-search exhaustion bug is fixed. In job `1bd9723a68134a20a96f2bb745e12291`, the three selected claims that did receive research took about 161s, 238s, and 146s total selected-claim research time, but that includes variable fetch, refinement, and contradiction work. A reliable admission estimate needs fresh canary data after Option A.
+This is now implemented because the Phase 1 canary proved that five selected claims still exceeded the configured main-research budget. With `researchTimeBudgetMs=600000`, `contradictionProtectedTimeMs=120000`, and the configured estimate `claimSelectionEstimatedMainResearchMsPerClaim=160000`, the effective admission cap is 3.
 
-Candidate approach:
+Implemented approach:
 
 - Keep ACS recommendation LLM-driven.
-- Add a UCM-configurable estimate for minimum main-research seconds per selected claim.
+- Add a UCM-configurable estimate for minimum main-research milliseconds per selected claim.
 - Compute an effective selected-claim coverage limit from:
   - `researchTimeBudgetMs`
   - `contradictionProtectedTimeMs`
@@ -255,7 +278,7 @@ Candidate approach:
 - Compute the effective limit in the web/UCM layer, but persist the resulting admission contract on the draft or `ClaimSelectionJson` so the final job creation boundary can enforce it structurally for every path.
 - Apply the effective limit at the web-side selected-claim confirmation boundary before calling the API confirm endpoint.
 - Enforce the persisted structural admission contract in `JobService.CreateJobFromDraftAsync`, without making C# recompute web-side UCM budget math.
-- Optionally also pass the effective limit into ACS recommendation generation so automatic recommendations are less likely to exceed the shared confirmation limit.
+- Pass the effective limit into ACS recommendation generation and automatic draft confirmation.
 - For selected sets above the effective limit, either block confirmation with an explicit budget message or allow confirmation but mark non-admitted selected claims before verdict generation. Blocking is preferable if product requirements allow it.
 
 Benefits:
@@ -327,6 +350,8 @@ Risks:
 
 ### Phase 1 - Correctness: iteration-level starvation
 
+Status: implemented in `08dfe69b`.
+
 Goal: no selected claim reaches verdict with zero provider search attempts unless the system explicitly records that the claim was not admitted due to budget.
 
 Tasks:
@@ -369,15 +394,17 @@ Acceptance criteria:
 - If the system cannot cover a selected claim, that is explicit budget/admission telemetry, not ordinary `UNVERIFIED`.
 - No deterministic semantic claim filtering is introduced.
 
-### Phase 2 - Budget admission (deferred pending Phase 1 canary)
+### Phase 2 - Budget admission
+
+Status: implemented in `ee1ef6ce`, with exact-cap correction in `952b0847`.
 
 Goal: no final job should proceed with more selected claims than the main-research budget can give minimum coverage, unless the uncovered claims are explicitly marked as budget-non-admitted and excluded from ordinary verdict treatment.
 
-Decision gate:
+Decision gate result:
 
-- Run the Phase 1 canary first with the current selection cap.
-- If all selected claims receive at least one provider search attempt and runtime remains acceptable, keep Phase 2 deferred.
-- If selected claims still starve or runtime remains unacceptable, use the Phase 1 canary timings to set the initial UCM estimate for minimum main-research seconds per selected claim.
+- Phase 1 canary `a652605b34cc430c9eb424bd9188fae7` still selected 5 claims and left 2 selected claims with zero targeted main research.
+- Phase 2 was implemented immediately after that canary.
+- Post-Phase2 SVP canaries and two Bolsonaro canaries all had `zeroTargetedSelectedClaimCount=0`.
 
 Tasks:
 
@@ -403,7 +430,7 @@ Acceptance criteria:
 
 ### Phase 3 - Runtime observability and clustering hardening
 
-Goal: make non-research latency visible and reduce the 160s failed clustering tail.
+Goal: make non-research latency visible and reduce long-tail applicability/mapping, clustering, and verdict latency.
 
 Tasks:
 
@@ -506,14 +533,8 @@ Live acceptance criteria:
 
 ## Immediate Next Step
 
-Implement Phase 1 as one bounded correctness slice:
+Do not add more selection/admission logic in this slice. The next work should be separate:
 
-1. Preserve the existing coverage-first Stage 2 scheduler.
-2. Pre-query protected-time guard with a minimum provider-search execution buffer.
-3. No-search zero-yield exhaustion fix with explicit terminal/non-admitted state.
-4. `selectedClaimResearchCoverage` / sufficiency-state differentiation for budget/protected-window non-admission.
-5. Selected-claim zero-acquisition warning.
-
-Then rerun the same SVP automatic canary.
-
-Only decide on full Phase 2 budget admission after that canary. If the canary still shows selected-claim starvation, shallow-only research, or contradiction-window degradation, treat Review 4's concurrent-admission concern as validated and move Phase 2 into the release-critical path.
+1. Investigate Bolsonaro adjudication drift: current exact-cap runs are healthy on acquisition but stable `UNVERIFIED` (52.5/40 and 48.5/40) versus older exact-extended baselines that were usually `LEANING-TRUE` / `MOSTLY-TRUE`.
+2. Investigate long-tail runtime after acquisition: applicability/claim mapping took >160s in one run, clustering repeatedly took about 180s, and verdict reconciliation/validation remains material.
+3. Keep budget admission at cap 3 until canaries show a safe higher per-claim budget estimate.

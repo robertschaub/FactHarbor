@@ -7,6 +7,11 @@ Full protocol: `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 Archived entries: `Docs/ARCHIVE/Agent_Outputs_YYYY-MM.md` + `Docs/ARCHIVE/Handoffs/YYYY-MM/`.
 
 ---
+### 2026-04-29 | Lead Architect / Senior Developer | Codex (GPT-5) | Selected Claim Admission Coverage Fix -- [Significant] [open-items: yes]
+**For next agent:** Commits `08dfe69b`, `ee1ef6ce`, and `952b0847` fix selected-claim acquisition starvation for tested ACS draft-backed paths: Stage 2 no-search telemetry, budget-aware persisted admission cap, C# final job enforcement, and exact-cap auto-continue. Live canaries show SVP/Bolsonaro selected count capped at 3 with `zeroTargetedSelectedClaimCount=0`; remaining open work is Bolsonaro adjudication drift and post-acquisition runtime, not selected-claim acquisition.
+→ Docs/AGENTS/Handoffs/2026-04-29_Lead_Architect_Selected_Claim_Admission_Coverage_Fix.md
+
+---
 ### 2026-04-28 | Lead Architect / Code Reviewer | Codex (GPT-5) | Remaining Unification Assessment Review -- [Standard] [open-items: yes]
 **For next agent:** Review disposition is APPROVE WITH COMMENTS. The assessment correctly preserves Stage 1 validity authority vs ACS-CW recommendation authority and the contract-first plan is sound; tighten the check-worthiness type-drift claim to name the exact remaining narrow `AtomicClaim` surface and split Phase 1 so prompt/model attribution inventory does not ride with no-behavior UI/type cleanup.
 → Docs/WIP/2026-04-28_Remaining_Unification_Architecture_Assessment.md

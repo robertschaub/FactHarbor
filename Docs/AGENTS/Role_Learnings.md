@@ -78,6 +78,12 @@ After completing a task, if you discovered something that would help future agen
 **Learning:** Prepared Stage 1 snapshots should stay fail-closed for real analysis config drift, but broad hashing of the full pipeline config can invalidate in-flight ACS drafts when only already-persisted selection orchestration knobs change. Hash the Stage 1-relevant config subset, keep explicit checks for selection cap and prompt/search/calc hashes, and invalidate analyzer loader cache on UCM activation/rollback.
 **Files:** `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`, `apps/web/src/app/api/admin/config/[type]/[profile]/activate/route.ts`, `apps/web/src/app/api/admin/config/[type]/[profile]/rollback/route.ts`
 
+### 2026-04-29 — Exact-cap ACS should bypass recommendation and preserve all candidates
+**Role:** Lead Architect  **Agent/Tool:** Codex (GPT-5)
+**Category:** gotcha
+**Learning:** In ACS, candidate count equal to the effective admission cap means all candidates fit. Calling the recommendation LLM at this boundary can wrongly drop claims through redundancy/subsumption reasoning even though no selection pressure exists. Treat `candidateCount <= effectiveAdmissionCap` as auto-continue and reserve ACS recommendation for `candidateCount > effectiveAdmissionCap`.
+**Files:** `apps/web/src/lib/claim-selection-flow.ts`, `apps/web/src/lib/internal-runner-queue.ts`, `apps/api/Services/ClaimSelectionDraftService.cs`, `apps/api/Services/JobService.cs`
+
 ## Lead Developer
 
 ### 2026-02-16 — Cross-check codebase before assessing brainstorming ideas

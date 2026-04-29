@@ -2,8 +2,8 @@
 
 **Date**: 2026-04-29  
 **Role**: Senior Developer / Senior Architect execution  
-**Status**: Contract-first implementation completed through observability/provenance/prompt-governance documentation  
-**Live verification jobs used**: 0 of 8  
+**Status**: Contract-first implementation completed; selected-claim admission follow-up implemented and live-validated
+**Live verification jobs used**: 6 of 8 original follow-up budget; optional +2 not used
 
 ---
 
@@ -20,7 +20,41 @@ The implementation focused on the remaining unification value at the edges:
 5. Prompt-surface governance and exception inventory.
 6. Updated architecture documentation.
 
-The main remaining gap is behavioral, not structural: selected claims can still receive zero targeted Stage 2 main iterations under some runs. That condition is now visible in final observability and validation summaries; it is not yet prevented.
+The original main behavioral gap was selected claims receiving zero targeted Stage 2 main iterations. That gap is now guarded by follow-up commits that add explicit no-acquisition telemetry, budget-aware admission, and exact-cap auto-continue semantics. Remaining open findings are post-acquisition runtime and report-quality drift, especially current Bolsonaro fair-trial runs that remain `UNVERIFIED` despite healthy acquisition.
+
+## 2026-04-29 Follow-Up: Selected-Claim Admission and Coverage
+
+Commits:
+
+- `08dfe69b fix: record selected claim acquisition starvation`
+- `ee1ef6ce fix: enforce selected claim admission budget`
+- `952b0847 fix: auto-continue exact claim admission cap`
+
+Implemented:
+
+- Pre-query protected-window guard and explicit selected-claim no-acquisition warning path.
+- `selectedClaimResearchCoverage` not-run reason / sufficiency-state differentiation for budget/protected-window non-admission.
+- Budget-aware effective admission cap from UCM (`claimSelectionBudgetAwarenessEnabled`, `claimSelectionBudgetFitMode`, `claimSelectionEstimatedMainResearchMsPerClaim`).
+- Persisted `selectionAdmissionCap` on draft/job metadata.
+- C# final job creation enforcement of the persisted admission contract.
+- Exact-cap behavior: candidate count equal to the effective admission cap auto-continues all candidates and does not invoke ACS recommendation.
+
+Live validation:
+
+| Job | Input | Finding |
+|---|---|---|
+| `a652605b34cc430c9eb424bd9188fae7` | SVP PDF | Phase 1 only selected 5 and still left 2 selected claims with zero targeted main research. |
+| `60f8e2287a07446fb80edf4ff89e8cc8` | SVP PDF | Budget admission selected 3, zero targeted selected claims. |
+| `661a649d61444be1b4c7a511bc8df2a6` | SVP PDF repeat | Budget admission selected 3, zero targeted selected claims; separate verdict-integrity warnings surfaced. |
+| `1b77e64cebac44da87a075a5977a3bf3` | Bolsonaro extended fair-trial input | Pre exact-cap fix selected 1 of 3 despite admission cap 3; exposed exact-cap bug. |
+| `aa686dcce9d544a3a0d93a17e5860b67` | Bolsonaro extended fair-trial input | Exact-cap fix selected all 3, zero targeted selected claims, verdict `UNVERIFIED` 52.5/40. |
+| `685fbe2dc6674dfa91a3a741eaa57b9c` | Bolsonaro extended fair-trial repeat | Exact-cap fix selected all 3, zero targeted selected claims, verdict `UNVERIFIED` 48.5/40. |
+
+Decision:
+
+- Keep the selection/admission fix separate from report-quality adjudication work.
+- Treat the current Bolsonaro `UNVERIFIED` behavior as a separate investigation: acquisition is healthy, but two current exact-cap runs differ from older exact-extended baselines that were usually `LEANING-TRUE` / `MOSTLY-TRUE`.
+- Keep the effective admission cap at 3 under the current 600s/120s budget until new timing evidence supports raising it.
 
 ---
 
@@ -155,12 +189,14 @@ Implemented:
 | Risk | Current status | Mitigation / next step |
 |---|---|---|
 | Stage 1 and ACS authorities blur again | Reduced | Labels and docs now distinguish Stage 1 extraction hints from ACS recommendation fields. |
-| Selected claims still receive zero targeted Stage 2 main research | Still open | Now visible through `selectedClaimResearchCoverage` and validation zero-targeted fields. Requires Stage 2 behavior investigation. |
-| Budget metadata becomes hidden selector logic | Reduced | Validation exposes budget treatment, but runtime behavior and defaults were unchanged. |
+| Selected claims still receive zero targeted Stage 2 main research | Reduced by follow-up fix | Post-fix canaries selected 3 and had `zeroTargetedSelectedClaimCount=0`; continue monitoring for regressions. |
+| Budget metadata becomes hidden selector logic | Reduced | Budget admission is structural and persisted; it limits count, not claim meaning. Exact-cap auto-continue prevents unnecessary recommendation when all candidates fit. |
 | Direct jobs pollute validation evidence | Reduced | Jobs now carry `SubmissionPath`; supported validation can distinguish ACS automatic draft from ACS interactive draft, direct, and retry paths. |
 | Prompt governance claims remain inaccurate | Reduced | Prompt Architecture page now names UCM-backed surfaces and exceptions explicitly. |
 | C# / TypeScript contract drift | Partially reduced | `SubmissionPath` and admin exposure were added; broader generated/shared DTO work remains deferred. |
 | Running services use stale binaries/schema | Resolved locally | Services were restarted after the final commits; startup column creation handles existing SQLite DBs. |
+| Report-quality adjudication drift | Still open | Bolsonaro exact-cap runs now have healthy acquisition but stable `UNVERIFIED` results; investigate evidence mix/adjudication separately. |
+| Post-acquisition runtime | Still open | Live runs still show long applicability/claim mapping, clustering, and verdict-debate phases after selected-claim coverage is healthy. |
 
 ---
 
@@ -219,9 +255,10 @@ Reviewer comments were incorporated:
 
 ## Remaining Follow-Ups
 
-1. Investigate and fix selected-claim Stage 2 research distribution so selected claims reliably receive targeted main research or an explicit, governed reason when they do not.
-2. Decide whether zero targeted selected-claim research should become an admin-only or user-visible warning under the warning materiality policy.
-3. Decide long-term prompt governance for SR core, grounding-check legacy sections, Stage 1 inline framing, SR evidence-pack inline helpers, and inverse calibration prompts.
-4. Add focused C# fixture coverage for stable `ClaimSelectionJson`, draft-state, provenance, and admin DTO fields if these contracts continue to expand.
-5. Decide whether direct `/v1/analyze` and `/api/fh/analyze` entrypoints need policy enforcement beyond provenance labeling.
-6. Consider shared/generated DTOs only after the observability/provenance field contracts stabilize.
+1. Monitor selected-claim Stage 2 research distribution in future canaries; post-fix tested paths now receive targeted main research.
+2. Investigate current Bolsonaro exact-cap `UNVERIFIED` adjudication drift against older exact-extended baselines.
+3. Reduce long-tail post-acquisition runtime in applicability/claim mapping, clustering, and verdict debate.
+4. Decide long-term prompt governance for SR core, grounding-check legacy sections, Stage 1 inline framing, SR evidence-pack inline helpers, and inverse calibration prompts.
+5. Add focused C# fixture coverage for stable `ClaimSelectionJson`, draft-state, provenance, and admin DTO fields if these contracts continue to expand.
+6. Decide whether direct `/v1/analyze` and `/api/fh/analyze` entrypoints need policy enforcement beyond provenance labeling.
+7. Consider shared/generated DTOs only after the observability/provenance field contracts stabilize.

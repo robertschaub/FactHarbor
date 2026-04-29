@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T05:28:59.351Z",
-  "count": 420,
+  "generatedAt": "2026-04-29T15:48:43.006Z",
+  "count": 421,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8838,6 +8838,54 @@
         "Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md"
       ],
       "summary": "Start with `Docs/WIP/2026-04-29_Check_Worthiness_Phase1a_Implementation_Plan.md`. The exact live source surfaces identified were `apps/web/src/lib/analyzer/types.ts`, `apps/web/src/app/analyze/select/[draftId]/ClaimSelectionPanel.tsx`, `apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts`, and th"
+    },
+    {
+      "file": "2026-04-29_Lead_Architect_Selected_Claim_Admission_Coverage_Fix.md",
+      "date": "2026-04-29",
+      "roles": [
+        "lead_architect",
+        "senior_developer"
+      ],
+      "topics": [
+        "selected",
+        "claim",
+        "admission",
+        "coverage",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/research-orchestrator.ts",
+        "apps/web/src/lib/analyzer/research-waste-metrics.ts",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/warning-display.ts",
+        "apps/web/src/lib/claim-selection-flow.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/configs/pipeline.default.json",
+        "apps/web/src/lib/analyzer/claimboundary-pipeline.ts",
+        "apps/api/Services/ClaimSelectionDraftService.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/web/scripts/automatic-claim-selection.js",
+        "Docs/WIP/2026-04-29_Selected_Claim_Acquisition_Starvation_Findings_And_Plan.md",
+        "Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Atomic Claim Selection and Validation/WebHome.xwiki",
+        "Docs/AGENTS/Role_Learnings.md"
+      ],
+      "summary": "Start from commits `08dfe69b`, `ee1ef6ce`, and `952b0847`. Use validation summaries, not verdict labels alone: expected healthy selection telemetry is `claimSelectionCap=5`, `claimSelectionAdmissionCap=3`, selected count <= 3, and `zeroTargetedSelectedClaimCount=0`. For Bolsonaro, compare acquisitio",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete existing mechanism.",
+            "chosen_option": "amend existing selected-claim coverage/admission boundaries.",
+            "rejected_options": "lower automatic-only cap, direct-path semantic selection, prompt changes, and deterministic claim filtering.",
+            "net_complexity": "one existing Stage 2 guard amended, one existing ACS admission contract made budget-aware and persisted, one exact-cap boundary corrected.",
+            "debt_accepted": "report-quality adjudication drift and post-acquisition runtime are documented as separate follow-ups."
+          }
+        }
+      }
     },
     {
       "file": "2026-04-29_Senior_Developer_Check_Worthiness_Phase1a_Implementation.md",

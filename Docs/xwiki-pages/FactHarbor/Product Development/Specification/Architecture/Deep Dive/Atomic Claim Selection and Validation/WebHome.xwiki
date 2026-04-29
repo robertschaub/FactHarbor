@@ -3,7 +3,7 @@
 {{info}}
 **Developer Reference** - Current implementation of pre-job AtomicClaim selection, prepared Stage 1 reuse, interactive and automatic ACS modes, and the ACS-based validation tooling path.
 
-**Status as of 2026-04-29**: The ACS product path and validation tooling are implemented. The active local UCM mode remains ##interactive## after automatic canaries exposed a pipeline-quality issue where selected claims can receive zero targeted Stage 2 iterations. Automatic ACS remains supported and now surfaces selected-claim coverage, budget treatment, submission path, and run-provenance metadata; this makes the condition auditable, but it is not evidence that the underlying research-distribution issue is fixed.
+**Status as of 2026-04-29**: The ACS product path and validation tooling are implemented. Selected-claim coverage starvation is now guarded by Stage 2 telemetry plus budget-aware admission. Current file-backed budget defaults enable ##claimSelectionBudgetAwarenessEnabled## with ##claimSelectionBudgetFitMode = "allow_fewer_recommendations"## and an effective local admission cap of 3 under the default 600s/120s research budget. Automatic ACS remains supported and now surfaces selected-claim coverage, budget treatment, submission path, and run-provenance metadata.
 
 **Key Files**: ##claim-selection-flow.ts##, ##claim-selection-recommendation.ts##, ##research-waste-metrics.ts##, ##internal-runner-queue.ts##, ##claimboundary-pipeline.ts##, ##ClaimSelectionDraftService.cs##, ##ClaimSelectionDraftsController.cs##, ##JobService.cs##, ##automatic-claim-selection.js##
 {{/info}}
@@ -25,10 +25,10 @@ ACS does **not** create a new analytical meaning layer. It does not merge, split
 | Default product mode | ##interactive## in file-backed defaults and current local UCM after the 2026-04-28 canary.
 | Selection cap | ##claimSelectionCap##, normalized to 1..5. Current file-backed default is ##5##.
 | Automatic mode | Supported, but it still goes through claim-selection drafts and selected-ID validation. It is not a direct all-claim job path.
-| Budget-aware recommendation | Implemented as UCM-controlled recommendation metadata/plumbing. File-backed default is off; active runtime can enable ##claimSelectionBudgetAwarenessEnabled## plus ##claimSelectionBudgetFitMode##.
+| Budget-aware recommendation | Implemented and enabled in file-backed defaults. Active runtime can tune ##claimSelectionBudgetAwarenessEnabled##, ##claimSelectionBudgetFitMode##, and ##claimSelectionEstimatedMainResearchMsPerClaim##.
 | Validation tooling | Supported validation scripts submit through ##apps/web/scripts/automatic-claim-selection.js## and emit ##submissionPath: "acs-automatic-draft"##.
 | Entrypoint provenance | ##JobEntity.SubmissionPath## identifies direct API, retry, ACS interactive draft, and ACS automatic draft jobs. Admin job details expose creation/execution/prompt hashes for validation attribution.
-| Open quality finding | Automatic canaries can select claims that later receive zero targeted Stage 2 iterations. This is a reported pipeline-quality finding, not a validation-tooling blocker.
+| Open quality finding | Post-fix canaries no longer show zero targeted selected claims under the effective admission cap. Remaining findings are report-quality adjudication drift on Bolsonaro and long-tail applicability/clustering/verdict runtime.
 
 == 3. Product Flow ==
 
@@ -39,7 +39,7 @@ flowchart TD
     draft["Create ClaimSelectionDraftEntity"]
     prepare["Prepare Stage 1 snapshot"]
     candidates["Final Stage 1 AtomicClaim candidates"]
-    belowCap{"Candidate count below cap?"}
+    belowCap{"Candidate count within admission cap?"}
     recommend["Run batched ACS recommendation"]
     interactive{"Selection mode interactive?"}
     manual["User reviews and confirms selectedClaimIds"]
@@ -64,7 +64,7 @@ flowchart TD
     run --> result
 {{/mermaid}}
 
-The below-cap path auto-continues without showing the chooser because there is no selection pressure: all valid candidates fit within the configured cap. Once the candidate count reaches the cap, the recommendation and selection surface become relevant.
+The within-cap path auto-continues without showing the chooser because there is no selection pressure: all valid candidates fit within the configured admission cap. Once the candidate count exceeds the admission cap, the recommendation and selection surface become relevant.
 
 == 4. Draft State Machine ==
 
@@ -208,11 +208,20 @@ Historical direct references are attribution metadata only. They explain how a c
 
 == 9. Current Live Finding ==
 
-The 2026-04-28 SVP ACS job ##3a95e38c39ba4104b97e6cd0ff512b52## completed through the ACS path and selected exactly five of twenty-two prepared claims: ##AC_05##, ##AC_07##, ##AC_19##, ##AC_15##, and ##AC_17##.
+The 2026-04-29 selected-claim starvation fix was validated with six live jobs.
 
-The job ended ##UNVERIFIED##. The important implementation lesson is structural: ##AC_17## had zero targeted Stage 2 iterations while contradiction did run. That result is a pipeline-quality finding to investigate in Stage 2 research distribution and/or budget-aware selection behavior. It is not proof that the validation tooling is broken, and it is not enough by itself to classify the result as genuine evidence scarcity.
+|= Job |= Input |= Result
+| ##a652605b34cc430c9eb424bd9188fae7## | SVP PDF | Phase-1-only canary selected 5 and still produced ##zeroTargetedSelectedClaimCount = 2##. This validated the need for budget admission.
+| ##60f8e2287a07446fb80edf4ff89e8cc8## | SVP PDF | Budget-aware canary selected 3 with admission cap 3 and ##zeroTargetedSelectedClaimCount = 0##.
+| ##661a649d61444be1b4c7a511bc8df2a6## | SVP PDF repeat | Selected 3 with ##zeroTargetedSelectedClaimCount = 0##; separate verdict-integrity warnings remain a report-quality issue.
+| ##1b77e64cebac44da87a075a5977a3bf3## | Bolsonaro fair-trial extended input | Pre exact-cap correction: prepared 3/admission cap 3, but recommendation selected only one claim. This exposed the exact-cap bug.
+| ##aa686dcce9d544a3a0d93a17e5860b67## | Bolsonaro fair-trial extended input | Exact-cap path selected all 3, ##zeroTargetedSelectedClaimCount = 0##, result ##UNVERIFIED## 52.5/40.
+| ##685fbe2dc6674dfa91a3a741eaa57b9c## | Bolsonaro fair-trial extended repeat | Exact-cap path selected all 3, ##zeroTargetedSelectedClaimCount = 0##, result ##UNVERIFIED## 48.5/40.
 
-As of 2026-04-29, this condition is first-class telemetry through ##selectedClaimResearchCoverage## and the validation-summary ##zeroTargetedSelectedClaim*## fields. That implementation is observational only; it does not change Stage 2 scheduling, ACS recommendation behavior, warning severity, or verdict generation.
+The current implementation lesson is split:
+
+* Selected-claim coverage/admission is fixed for the tested paths. Under the local default budget, the effective admission cap is 3 and all selected claims in post-fix canaries received searched main research.
+* The Bolsonaro result is now an adjudication/report-quality follow-up, not an acquisition miss: both post-fix runs had sufficient searched evidence for all selected claims but remained ##UNVERIFIED##, while older exact-extended baselines were usually ##LEANING-TRUE## or ##MOSTLY-TRUE##.
 
 == 10. API and Storage Surfaces ==
 
@@ -239,12 +248,14 @@ As of 2026-04-29, this condition is first-class telemetry through ##selectedClai
 == 12. Follow-Ups ==
 
 |= Item |= Why it remains open
-| Stage 2 selected-claim research distribution | Current ACS canaries show selected claims can receive zero targeted Stage 2 iterations.
-| Budget-aware ACS promotion | Existing metadata can explain fewer-than-cap recommendations, but promotion should wait for canary evidence.
+| Stage 2 selected-claim research distribution | Fixed for tested draft-backed paths through coverage telemetry and budget-aware admission; keep monitoring canaries for regressions.
+| Budget-aware ACS promotion | Promoted locally with ##allow_fewer_recommendations## and a persisted admission cap; tune only from canary timing evidence.
 | API-level direct endpoint governance | Direct ##/v1/analyze## still exists for product/API use; blocking or policy enforcement is a separate design task.
 | Provenance interpretation | Creation-time, prepared, executed, and prompt hashes are now surfaced together. Follow-up work should classify material drift rather than assuming one hash is enough.
 | Prompt-surface migration decisions | Prompt-governance exceptions are now registered, but SR core, grounding-check legacy, Stage 1 inline framing, SR evidence-pack inline helpers, and inverse calibration prompt handling still need explicit long-term decisions.
 | Stage 1 time-to-selection | Heavy URL/PDF inputs still spend meaningful time in full Stage 1 preparation before the selector appears.
+| Post-acquisition long-tail latency | Applicability/claim mapping, clustering, and verdict debate can still dominate runtime after selected-claim acquisition is healthy.
+| Bolsonaro adjudication drift | Current exact-cap ACS runs remain ##UNVERIFIED## despite healthy acquisition; compare against historical exact-extended baselines in a separate report-quality slice.
 
 ----
 
