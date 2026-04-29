@@ -739,6 +739,16 @@
   background-color: var(--bg-surface);
 }
 
+.annotationTab {
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+  background-color: #eff6ff;
+}
+
+.annotationTab:hover:not(:disabled) {
+  background-color: #dbeafe;
+}
+
 .deleteTab {
   color: #c62828;
   border-color: #ef9a9a;
@@ -758,6 +768,31 @@
   font-size: 12px;
   color: #374151;
   line-height: 1.5;
+}
+
+.adminAnnotationHeader {
+  margin: 6px 0 0;
+  padding: 10px 14px;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.adminAnnotationLabel {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.adminAnnotationText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 /* Content containers */
@@ -3789,6 +3824,45 @@ details[open] > .devWarningSummary::before {
   margin: 16px 0 0;
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.annotationTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.annotationTextarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.annotationModalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.annotationCount {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.annotationActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .evidenceRefList {

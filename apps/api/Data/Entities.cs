@@ -104,6 +104,13 @@ public sealed class JobEntity
     /// Only admins can see and toggle hidden jobs.
     /// </summary>
     public bool IsHidden { get; set; } = false;
+
+    /// <summary>
+    /// Optional administrator-only note attached to the job.
+    /// Never returned to non-admin callers.
+    /// </summary>
+    [MaxLength(2000)]
+    public string? AdminAnnotation { get; set; }
 }
 
 public sealed class ClaimSelectionDraftEntity

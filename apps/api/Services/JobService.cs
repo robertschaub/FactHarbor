@@ -10,6 +10,7 @@ namespace FactHarbor.Api.Services;
 public sealed class JobService
 {
     private const int AbsoluteClaimSelectionCap = 5;
+    private const int MaxAdminAnnotationLength = 2000;
 
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
@@ -109,6 +110,28 @@ public sealed class JobService
         });
         await _db.SaveChangesAsync();
         return job;
+    }
+
+    public async Task<(JobEntity? job, string? error)> UpdateAdminAnnotationAsync(string jobId, string? annotation)
+    {
+        var job = await _db.Jobs.FindAsync(jobId);
+        if (job is null) return (null, null);
+
+        var normalized = string.IsNullOrWhiteSpace(annotation) ? null : annotation.Trim();
+        if (normalized is { Length: > MaxAdminAnnotationLength })
+            return (null, $"Annotation must be {MaxAdminAnnotationLength} characters or fewer");
+
+        job.AdminAnnotation = normalized;
+        job.UpdatedUtc = DateTime.UtcNow;
+        _db.JobEvents.Add(new JobEventEntity
+        {
+            JobId = jobId,
+            Level = "info",
+            Message = normalized is null ? "Admin annotation cleared" : "Admin annotation updated",
+            TsUtc = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync();
+        return (job, null);
     }
 
     public async Task AddEventAsync(string jobId, string level, string message)

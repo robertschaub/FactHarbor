@@ -25,6 +25,8 @@ public sealed class JobsController : ControllerBase
         _log = log;
     }
 
+    public sealed record JobAnnotationRequest(string? annotation);
+
     [HttpGet]
     [EnableRateLimiting("ReadPerIp")]
     public async Task<IActionResult> List(int? page = null, int? pageSize = null, string? q = null, string? gitHash = null)
@@ -73,6 +75,7 @@ public sealed class JobsController : ControllerBase
                 truthPercentage = j.TruthPercentage,
                 confidence = j.Confidence,
                 isHidden = j.IsHidden,
+                adminAnnotation = isAdmin ? j.AdminAnnotation : null,
                 analysisIssueCode = analysisIssue.code,
                 analysisIssueMessage = analysisIssue.message,
                 // Admin-only: execution-time commit hash when available, with legacy fallback.
@@ -125,6 +128,7 @@ public sealed class JobsController : ControllerBase
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
             isHidden = j.IsHidden,
+            adminAnnotation = isAdmin ? j.AdminAnnotation : null,
             analysisIssueCode = analysisIssue.code,
             analysisIssueMessage = analysisIssue.message,
             // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
@@ -149,6 +153,24 @@ public sealed class JobsController : ControllerBase
         var job = await _jobs.SetHiddenAsync(jobId, true);
         if (job is null) return NotFound();
         return Ok(new { ok = true, isHidden = job.IsHidden });
+    }
+
+    [HttpPut("{jobId}/annotation")]
+    public async Task<IActionResult> UpdateAnnotation(string jobId, [FromBody] JobAnnotationRequest? req)
+    {
+        if (!AuthHelper.IsAdminKeyValid(Request))
+            return Unauthorized(new { error = "Admin key required" });
+
+        if (!IsValidJobId(jobId))
+            return BadRequest(new { error = "Invalid job ID" });
+
+        var (job, error) = await _jobs.UpdateAdminAnnotationAsync(jobId, req?.annotation);
+        if (error is not null)
+            return BadRequest(new { error });
+        if (job is null)
+            return NotFound(new { error = "Job not found" });
+
+        return Ok(new { ok = true, adminAnnotation = job.AdminAnnotation });
     }
 
     [HttpPost("{jobId}/unhide")]

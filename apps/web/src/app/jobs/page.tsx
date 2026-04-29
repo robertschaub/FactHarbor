@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { isFalseBand, getConfidenceTierLabel, formatVerdictText } from "@/lib/analyzer/truth-scale";
@@ -28,6 +28,7 @@ type JobSummary = {
   truthPercentage?: number;
   confidence?: number;
   isHidden?: boolean;
+  adminAnnotation?: string | null;
   analysisIssueCode?: string | null;
   analysisIssueMessage?: string | null;
 };
@@ -47,6 +48,7 @@ type JobsResponse = {
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
 const RATE_LIMIT_BACKOFF_MS = 60_000;
+const MAX_ADMIN_ANNOTATION_LENGTH = 2000;
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -64,6 +66,9 @@ export default function JobsPage() {
   const [adminKey, setAdminKey] = useState<string | null>(null);
   const [togglingHide, setTogglingHide] = useState<string | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [annotatingJob, setAnnotatingJob] = useState<JobSummary | null>(null);
+  const [annotationDraft, setAnnotationDraft] = useState("");
+  const [savingAnnotation, setSavingAnnotation] = useState(false);
 
   // Close card menu on any outside click
   useEffect(() => {
@@ -261,6 +266,66 @@ export default function JobsPage() {
     }
   };
 
+  const openAnnotationEditor = (e: React.MouseEvent, job: JobSummary) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setMenuOpenId(null);
+    setAnnotatingJob(job);
+    setAnnotationDraft(job.adminAnnotation ?? "");
+  };
+
+  const closeAnnotationEditor = () => {
+    if (savingAnnotation) return;
+    setAnnotatingJob(null);
+    setAnnotationDraft("");
+  };
+
+  const saveAnnotation = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const key = sessionStorage.getItem("fh_admin_key");
+    if (!key || !annotatingJob) return;
+    if (annotationDraft.length > MAX_ADMIN_ANNOTATION_LENGTH) {
+      toast.error(`Annotation is limited to ${MAX_ADMIN_ANNOTATION_LENGTH} characters`);
+      return;
+    }
+
+    setSavingAnnotation(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${annotatingJob.jobId}/annotation`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": key,
+        },
+        body: JSON.stringify({ annotation: annotationDraft }),
+      });
+      const data = await res.json().catch(() => null) as null | {
+        error?: unknown;
+        adminAnnotation?: unknown;
+      };
+      if (!res.ok) {
+        const message = typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+        throw new Error(message);
+      }
+      const nextAnnotation =
+        typeof data?.adminAnnotation === "string"
+          ? data.adminAnnotation
+          : null;
+      setJobs((prev) => prev.map((job) => (
+        job.jobId === annotatingJob.jobId
+          ? { ...job, adminAnnotation: nextAnnotation }
+          : job
+      )));
+      setAnnotatingJob(null);
+      setAnnotationDraft("");
+      toast.success(nextAnnotation ? "Annotation saved" : "Annotation cleared");
+    } catch (err: any) {
+      toast.error(`Annotation update failed: ${err.message}`);
+    } finally {
+      setSavingAnnotation(false);
+    }
+  };
+
   const getPipelineBadge = (variant?: string): { icon: string; label: string; className: string } => {
     return { icon: "🎯", label: "ClaimBoundary", className: styles.pipelineBadgeDefault };
   };
@@ -384,6 +449,12 @@ export default function JobsPage() {
                   <div className={styles.jobPreview}>
                     {job.inputPreview || "No preview available"}
                   </div>
+                  {adminKey && job.adminAnnotation && (
+                    <div className={styles.adminAnnotationPreview}>
+                      <span className={styles.adminAnnotationLabel}>Admin annotation</span>
+                      <span className={styles.adminAnnotationText}>{job.adminAnnotation}</span>
+                    </div>
+                  )}
                   {job.verdictLabel && isCompleteStatus(job.status) && (() => {
                     const vBadge = getVerdictBadge(job.verdictLabel);
                     if (!vBadge) return null;
@@ -449,6 +520,12 @@ export default function JobsPage() {
                         <div className={styles.cardMenuDropdown}>
                           <button
                             className={styles.cardMenuItem}
+                            onClick={(e) => openAnnotationEditor(e, job)}
+                          >
+                            {job.adminAnnotation ? "✎ Edit annotation" : "✎ Add annotation"}
+                          </button>
+                          <button
+                            className={styles.cardMenuItem}
                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenId(null); toggleHide(e, job); }}
                           >
                             {job.isHidden ? "👁 Unhide report" : "🙈 Hide report"}
@@ -463,6 +540,51 @@ export default function JobsPage() {
               </div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {annotatingJob && (
+        <div className={styles.annotationModalOverlay} role="dialog" aria-modal="true" aria-labelledby="annotation-modal-title">
+          <form className={styles.annotationModalBox} onSubmit={saveAnnotation}>
+            <div className={styles.annotationModalHeader}>
+              <h2 id="annotation-modal-title" className={styles.annotationModalTitle}>Job Annotation</h2>
+              <button
+                type="button"
+                className={styles.annotationModalClose}
+                onClick={closeAnnotationEditor}
+                disabled={savingAnnotation}
+                aria-label="Close annotation editor"
+              >
+                ×
+              </button>
+            </div>
+            <textarea
+              className={styles.annotationTextarea}
+              value={annotationDraft}
+              onChange={(event) => setAnnotationDraft(event.target.value)}
+              maxLength={MAX_ADMIN_ANNOTATION_LENGTH}
+              rows={6}
+              autoFocus
+              disabled={savingAnnotation}
+              placeholder="Write an administrator-only note for this job"
+            />
+            <div className={styles.annotationModalFooter}>
+              <span className={styles.annotationCount}>
+                {annotationDraft.length}/{MAX_ADMIN_ANNOTATION_LENGTH}
+              </span>
+              <div className={styles.annotationActions}>
+                <button type="button" className={styles.annotationSecondaryButton} onClick={() => setAnnotationDraft("")} disabled={savingAnnotation || annotationDraft.length === 0}>
+                  Clear
+                </button>
+                <button type="button" className={styles.annotationSecondaryButton} onClick={closeAnnotationEditor} disabled={savingAnnotation}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.annotationPrimaryButton} disabled={savingAnnotation}>
+                  {savingAnnotation ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       )}
 

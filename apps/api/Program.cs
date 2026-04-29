@@ -151,6 +151,7 @@ using (var scope = app.Services.CreateScope())
     EnsureJobsColumn(db, "ClaimSelectionDraftId", "TEXT");
     EnsureJobsColumn(db, "PreparedStage1Json", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");
+    EnsureJobsColumn(db, "AdminAnnotation", "TEXT");
     EnsureClaimSelectionDraftsTable(db);
     EnsureClaimSelectionDraftsColumn(db, "LastEventMessage", "TEXT");
     EnsureClaimSelectionDraftsColumn(db, "IsHidden", "INTEGER NOT NULL DEFAULT 0");

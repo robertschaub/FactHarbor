@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, type FormEvent, type ReactNode } from "react";
 import { classifyEvent, formatLocalTime, PHASE_LABELS, type EventPhase } from "./lib/event-display";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -83,6 +83,7 @@ type Job = {
   reportMarkdown: string | null;
   pipelineVariant?: string;
   isHidden?: boolean;
+  adminAnnotation?: string | null;
   analysisIssueCode?: string | null;
   analysisIssueMessage?: string | null;
   /** Admin-only: execution-time git commit hash, with legacy fallback for old jobs */
@@ -171,6 +172,7 @@ const CLAIM_VERDICT_MIDPOINTS: Record<string, number> = {
 
 const DETAIL_POLL_INTERVAL_MS = 10_000;
 const DETAIL_RATE_LIMIT_BACKOFF_MS = 60_000;
+const MAX_ADMIN_ANNOTATION_LENGTH = 2000;
 
 const ARTICLE_VERDICT_MIDPOINTS: Record<string, number> = {
   // Statement verdicts
@@ -667,6 +669,9 @@ export default function JobPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isTogglingHide, setIsTogglingHide] = useState(false);
+  const [isSavingAnnotation, setIsSavingAnnotation] = useState(false);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [annotationDraft, setAnnotationDraft] = useState("");
   const [hasAdminKey, setHasAdminKey] = useState(false);
 
   // Login-modal state (shown when cancel is attempted without an admin key)
@@ -852,6 +857,61 @@ export default function JobPage() {
       toast.error(`Failed: ${err.message}`);
     } finally {
       setIsTogglingHide(false);
+    }
+  };
+
+  const openAnnotationEditor = () => {
+    if (!job) return;
+    setAnnotationDraft(job.adminAnnotation ?? "");
+    setShowAnnotationModal(true);
+  };
+
+  const closeAnnotationEditor = () => {
+    if (isSavingAnnotation) return;
+    setShowAnnotationModal(false);
+    setAnnotationDraft("");
+  };
+
+  const saveAnnotation = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const adminKey = sessionStorage.getItem("fh_admin_key");
+    if (!adminKey || !job) return;
+    if (annotationDraft.length > MAX_ADMIN_ANNOTATION_LENGTH) {
+      toast.error(`Annotation is limited to ${MAX_ADMIN_ANNOTATION_LENGTH} characters`);
+      return;
+    }
+
+    setIsSavingAnnotation(true);
+    try {
+      const res = await fetch(`/api/fh/jobs/${jobId}/annotation`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Key": adminKey,
+        },
+        body: JSON.stringify({ annotation: annotationDraft }),
+      });
+      const data = await res.json().catch(() => null) as null | {
+        error?: unknown;
+        adminAnnotation?: unknown;
+      };
+      if (!res.ok) {
+        const message = typeof data?.error === "string" ? data.error : `HTTP ${res.status}`;
+        throw new Error(message);
+      }
+
+      const nextAnnotation =
+        typeof data?.adminAnnotation === "string"
+          ? data.adminAnnotation
+          : null;
+      setJob((prev) => (prev ? { ...prev, adminAnnotation: nextAnnotation } : prev));
+      setShowAnnotationModal(false);
+      setAnnotationDraft("");
+      toast.success(nextAnnotation ? "Annotation saved" : "Annotation cleared");
+    } catch (err: any) {
+      toast.error(`Annotation update failed: ${err.message}`);
+    } finally {
+      setIsSavingAnnotation(false);
     }
   };
 
@@ -1560,6 +1620,15 @@ export default function JobPage() {
                 {hasAdminKey && (
                   <>
                   <button
+                    onClick={openAnnotationEditor}
+                    disabled={!job || isSavingAnnotation}
+                    className={`${styles.tab} ${styles.annotationTab}`}
+                    title={job?.adminAnnotation ? "Edit job annotation" : "Add job annotation"}
+                    aria-label={job?.adminAnnotation ? "Edit job annotation" : "Add job annotation"}
+                  >
+                    {isSavingAnnotation ? "⏳" : "✎"}
+                  </button>
+                  <button
                     onClick={handleToggleHide}
                     disabled={isTogglingHide}
                     className={`${styles.tab} ${styles.hideTab}`}
@@ -1607,6 +1676,13 @@ export default function JobPage() {
           </div>
         );
       })()}
+
+      {hasAdminKey && job?.adminAnnotation && (
+        <div className={styles.adminAnnotationHeader}>
+          <div className={styles.adminAnnotationLabel}>Administrator annotation</div>
+          <div className={styles.adminAnnotationText}>{job.adminAnnotation}</div>
+        </div>
+      )}
 
       {maintenance && (
         <div className={styles.maintenanceBox}>
@@ -2276,6 +2352,41 @@ export default function JobPage() {
               Key is set via the <code>FH_ADMIN_KEY</code> environment variable.
             </p>
           </div>
+        </div>
+      )}
+
+      {showAnnotationModal && (
+        <div className={styles.modalOverlay} role="dialog" aria-modal="true" aria-labelledby="job-annotation-title">
+          <form className={styles.modalBox} onSubmit={saveAnnotation}>
+            <h2 id="job-annotation-title" className={styles.modalTitle}>Job Annotation</h2>
+            <p className={styles.modalSubtitle}>Administrator-only note shown on the jobs list and report header.</p>
+            <textarea
+              className={styles.annotationTextarea}
+              value={annotationDraft}
+              onChange={(event) => setAnnotationDraft(event.target.value)}
+              maxLength={MAX_ADMIN_ANNOTATION_LENGTH}
+              rows={6}
+              autoFocus
+              disabled={isSavingAnnotation}
+              placeholder="Write an administrator-only note for this job"
+            />
+            <div className={styles.annotationModalFooter}>
+              <span className={styles.annotationCount}>
+                {annotationDraft.length}/{MAX_ADMIN_ANNOTATION_LENGTH}
+              </span>
+              <div className={styles.annotationActions}>
+                <button type="button" className={styles.modalCancelBtn} onClick={() => setAnnotationDraft("")} disabled={isSavingAnnotation || annotationDraft.length === 0}>
+                  Clear
+                </button>
+                <button type="button" className={styles.modalCancelBtn} onClick={closeAnnotationEditor} disabled={isSavingAnnotation}>
+                  Cancel
+                </button>
+                <button type="submit" className={styles.modalSubmitBtn} disabled={isSavingAnnotation}>
+                  {isSavingAnnotation ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       )}
 

@@ -163,6 +163,37 @@
   border: 1px solid var(--border);
 }
 
+.adminAnnotationPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 7px 0 6px;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-left: 3px solid #2563eb;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.adminAnnotationLabel {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.adminAnnotationText {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .cardMenuWrap {
   position: relative;
 }
@@ -224,6 +255,122 @@
 
 .cardMenuItem:hover {
   background: var(--bg-surface);
+}
+
+.annotationModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.annotationModalBox {
+  width: min(560px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+  padding: 18px;
+}
+
+.annotationModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.annotationModalTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.annotationModalClose {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.annotationTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.annotationTextarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+.annotationModalFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.annotationCount {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.annotationActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.annotationPrimaryButton,
+.annotationSecondaryButton {
+  min-height: 36px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.annotationPrimaryButton {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+}
+
+.annotationSecondaryButton {
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.annotationPrimaryButton:disabled,
+.annotationSecondaryButton:disabled,
+.annotationModalClose:disabled,
+.annotationTextarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .statusIndicator {

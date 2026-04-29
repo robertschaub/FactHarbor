@@ -42,6 +42,7 @@ public sealed class FhDbContext : DbContext
             e.Property(x => x.Status).HasMaxLength(32);
             e.Property(x => x.InputType).HasMaxLength(16);
             e.Property(x => x.SubmissionPath).HasMaxLength(64);
+            e.Property(x => x.AdminAnnotation).HasMaxLength(2000);
             e.HasIndex(x => x.ClaimSelectionDraftId).IsUnique();
         });
 
