@@ -2,6 +2,7 @@
 
 **Stand:** 18.03.2026
 **Projektstatus:** ⚠️ ÜBERHOLT — Dieser Entwurf basierte auf einer geplanten Partnerschaft mit UZH (Schimanski/Leippold), die am 23.03.2026 nicht zustande kam. Die aktive Forschungspartnerschaft läuft nun mit **ZHAW CAI/NLP** (Giedemann/Cieliebak/Deriu) über DIZH Rapid Action Call + Innosuisse Cheque. Siehe [DIZH Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) und [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md).
+**Statushinweis 29.04.2026:** FactHarbor ist inzwischen als Verein gegründet, der Handelsregister-Eintragsbrief liegt vor, und die UID / Firmennummer **CHE-448.446.098** ist zugeteilt. Zeitpläne und offene Punkte unten sind daher teilweise historisch.
 **Förderinstrument:** Innovationsprojekte mit Umsetzungspartner
 **Arbeitstitel:** **LiveCheck: Evidenzbasierte Echtzeit-Faktenprüfung für Audio- und Video-Inhalte**
 
@@ -412,7 +413,7 @@ Die finanzielle Nachhaltigkeit basiert **nicht** auf Spenden, Sponsoring oder st
 
 #### Umsetzungspartner
 
-**FactHarbor Verein** (gegründet 23. April 2026; HR-Eintragung Kt. Zürich eingeleitet, UID erwartet ~Anfang Mai 2026)
+**FactHarbor Verein** (gegründet 23. April 2026; Handelsregister-Eintragsbrief erhalten 29. April 2026; UID / Firmennummer: **CHE-448.446.098**)
 
 **Rolle:**
 - Produktvision und Systemarchitektur
@@ -885,12 +886,12 @@ FactHarbor Verein ist eine Non-Profit-Organisation ohne Einnahmen, verfügt aber
 | # | Aufgabe | Priorität | Status | Deadline |
 |---|---------|----------|--------|---------|
 | 1 | **Forschungspartner formalisieren** (UZH/Leippold LOI) | Kritisch | Meeting am 18.03.2026 | April 2026 |
-| 2 | **FactHarbor Verein gründen + UID** | Kritisch | Gründung vorbereitet | April 2026 |
+| 2 | **FactHarbor Verein gründen + UID** | Kritisch | ✅ Erledigt — gegründet 23.04.2026, UID `CHE-448.446.098` | April 2026 |
 | 3 | **2-3 Pilot-LOIs** von Newsrooms/Fact-Checking-Orgs | Hoch | Kontakte eingeleitet | Mai 2026 |
 | 4 | **Budget mit UZH abstimmen** (Postdoc-Kosten, Overhead) | Hoch | Abhängig von #1 | Mai 2026 |
 | 5 | **IPR-Vereinbarung** Entwurf (FP/UP) | Hoch | Vorab-Analyse erstellt (§3.6) | Mai 2026 |
 | 6 | **Konkrete Wettbewerbertabelle** mit aktuellen Marktdaten verfeinern | Mittel | Entwurf liegt vor (§4.6) | Mai 2026 |
-| 7 | **Innolink-Portal-Registrierung** mit UID | Kritisch | Abhängig von #2 | Mai 2026 |
+| 7 | **Innolink-Portal-Registrierung** mit UID | Kritisch | UID liegt vor; Registrierung kann bei Bedarf erfolgen | Mai 2026 |
 | 8 | **Härtefallklausel-Argumentation** mit Innosuisse vorbesprechen (innoprojects@innosuisse.ch) | Mittel | Noch nicht eingeleitet | Mai 2026 |
 
 **Ziel-Einreichung:** Bis ~22.07.2026 (ICT-Sitzung 02.09.2026) oder bis ~09.09.2026 (ICT-Sitzung 21.10.2026).

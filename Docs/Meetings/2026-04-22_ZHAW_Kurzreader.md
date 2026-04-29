@@ -2,6 +2,8 @@
 
 Kompakte Vorbereitung für das Meeting am 22. April 2026. Lesezeit: ~15 Minuten.
 
+> **Statushinweis 29.04.2026:** Dieses Dokument ist ein historischer Meeting-Kurzreader aus der Phase vor der formellen Eintragung. FactHarbor ist inzwischen als Verein gegründet; der Handelsregister-Eintragsbrief liegt vor; UID / Firmennummer: `CHE-448.446.098`.
+
 ---
 
 ## 1/4: Meeting-Prep — das Wichtigste auf einen Blick
@@ -21,7 +23,7 @@ Kompakte Vorbereitung für das Meeting am 22. April 2026. Lesezeit: ~15 Minuten.
 1. **Einstieg** (5 Min.) — Danke, kurze Vorstellung, Erwartung setzen
 2. **Ihre Perspektive** (15–20 Min.) — DER WICHTIGSTE BLOCK. Fragen, zuhören, Demo-Fokus anpassen
 3. **Demo** (10 Min.) — Nur 4 Punkte: Verdikt → Atomic Claims/Gate 1 → Evidenz → Debatte
-4. **Ehrliche Grenzen** (5 Min.) — 15 Min./Analyse, $0.20-0.55, Solo, Alpha, kein Video, Verein nächste Woche
+4. **Ehrliche Grenzen** (5 Min.) — 15 Min./Analyse, $0.20-0.55, Solo, Alpha, kein Video, Vereins-/UID-Status damals noch im Aufbau
 5. **Projektthesen** (15 Min.) — Thesis C als Favorit führen, A und B als Alternativen
 6. **Nächste Schritte** (5–10 Min.) — Cheque-Zeitplan, SwissText, SpinningBytes-Synergien
 

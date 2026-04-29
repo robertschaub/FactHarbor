@@ -38,6 +38,12 @@ We serve the public interest with full transparency — no hidden algorithms, an
 FactHarbor is organized as a **[[Swiss Verein>>https://github.com/robertschaub/FactHarbor/blob/main/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md]]** with seat in Dietlikon, Canton of Zürich. The founding assembly adopted the statutes on 23 April 2026.
 )))
 
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Current formal status (29 April 2026):**
+Commercial Register filing submitted in the Canton of Zürich on 27 April 2026. Entry letter received on 29 April 2026. UID / Firmennummer assigned: **CHE-448.446.098**. Public SHAB / Zefix visibility may still be propagating.
+)))
+
 == The FactHarbor Application ==
 
 (% class="box infomessage" %)
@@ -226,6 +232,7 @@ FactHarbor's governance ensures that funding never compromises editorial indepen
 
 |=Aspect|=Detail
 |**Legal form**|Swiss Verein (Association) under Art. 60 ff. ZGB
+|**Registration status**|Founded 23 April 2026; Commercial Register entry letter received 29 April 2026; UID `CHE-448.446.098`
 |**Purpose**|Promote informed opinion-forming through evidence-based tools — non-profit, public-benefit
 |**Neutrality**|Politically and religiously neutral, no substantial political activities
 |**Prohibited funding**|Advertising revenue, user data sales, outcome-conditional payments

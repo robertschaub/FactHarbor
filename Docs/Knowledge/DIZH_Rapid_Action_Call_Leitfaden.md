@@ -1,6 +1,6 @@
 # DIZH 5. Rapid Action Call — Leitfaden für FactHarbor
 
-**Stand:** April 2026
+**Stand:** April 2026 (Status-Update eingearbeitet: 29.04.2026)
 **Quellen:** dizh.uzh.ch, Call-Text PDF, ZHAW-interne Klärung via Mark Cieliebak (April 2026)
 
 > **Verwandte Dokumente:** [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md) | [ZHAW Meeting Prep](../Meetings/2026-04-22_ZHAW_Meeting_Prep.md)
@@ -143,7 +143,7 @@ Kriterien 1 und 5 sind beim Rapid Action Call **priorisiert**:
 | Frage | Klärung durch | Status |
 |-------|--------------|--------|
 | DIZH und Innosuisse Cheque gleichzeitig möglich? | Navina Gupta (ab 1. Mai) | 🔄 Offen (laut Call-Text: Parallel-Funding grundsätzlich erlaubt) |
-| Braucht FactHarbor eine UID für den DIZH-Antrag? | Patrick / DIZH Geschäftsstelle | 🔄 Offen |
+| Braucht FactHarbor eine UID für den DIZH-Antrag? | Patrick / DIZH Geschäftsstelle | 🔄 Formal offen, aber praktisch kein Blocker mehr, da UID `CHE-448.446.098` bereits zugeteilt ist |
 | Welche Thesis/Forschungsfrage für den Antrag? | Nächstes Meeting (nach 11. Mai) | 🔄 Offen |
 | Zweite Unterschrift auf LoI? | Robert (wer ist "zweite Instanz" beim Verein?) | 🔄 Offen |
 
@@ -155,7 +155,7 @@ Kriterien 1 und 5 sind beim Rapid Action Call **priorisiert**:
 |-------|------------|
 | 1. Mai 2026 | Navina Gupta zurück — Klärung DIZH/Innosuisse-Kompatibilität |
 | **11. Mai 2026, 12:00-13:00** | **ZHAW Q&A Session (Teams)** — Robert sollte teilnehmen falls möglich |
-| **~Anfang Mai 2026** | **UID erwartet** (HR-Eintragung Kt. Zürich eingeleitet, ~2 Wochen) |
+| **29. April 2026** | **UID zugeteilt:** `CHE-448.446.098` (Handelsregister-Eintragsbrief erhalten) |
 | KW 20-21 (nach 11. Mai) | Nächstes Meeting Robert + Patrick |
 | ~10. Juni 2026 | ZHAW-Digital-Matching-Antrag (3 Wochen vor Deadline) |
 | **1. Juli 2026, 12:00** | **DIZH Einreichungsdeadline** |
