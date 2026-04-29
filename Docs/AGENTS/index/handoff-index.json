@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T19:07:24.513Z",
-  "count": 381,
+  "generatedAt": "2026-04-29T21:21:11.094Z",
+  "count": 384,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -7990,6 +8007,65 @@
       ],
       "files_touched": [],
       "summary": "2026-04-26 - Senior Developer / LLM Expert - 235000 Comparison Profile Follow-up"
+    },
+    {
+      "file": "2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "analyze",
+        "report",
+        "processing",
+        "sessions"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/ActiveClaimSelectionSessions.tsx",
+        "apps/web/test/unit/app/analyze/active-claim-selection-sessions.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If similar completed entries reappear, check any new writer to `ACTIVE_CLAIM_SELECTION_SESSIONS_STORAGE_KEY`. The intended contract is that `lastKnownFinalJobId` is now a cleanup signal, not a display/recovery signal.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "Amend the existing analyze-page registry cleanup mechanism.",
+            "net_mechanism_count": "unchanged; no polling, fallback, feature flag, or new lifecycle path was added.",
+            "verification": "`npm -w apps/web test -- active-claim-selection-sessions.test.ts` passed twice after the final cleanup.",
+            "residual_debt": "none for the requested behavior; stale unrelated local-storage data is still bounded by normal storage normalization/eviction."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-29_Unassigned_Second_Wave_Private_Repo_Split.md",
+      "date": "2026-04-29",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "second",
+        "wave",
+        "private",
+        "repo",
+        "split"
+      ],
+      "files_touched": [
+        "Docs/Meetings/Call_Prep_Catherine_Gilbert.md",
+        "Docs/Meetings/2026-04-22_ZHAW_Meeting_Prep.md",
+        "Docs/Meetings/2026-04-22_ZHAW_Kurzreader.md",
+        "Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md",
+        "Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18_DE.md",
+        "Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md",
+        "Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx",
+        "Docs/WIP/2026-04-29_GitHub_Private_Repo_Split_Execution_Plan.md",
+        "../FactHarbor-internal/Docs/Internal/Meeting_Prep/*",
+        "../FactHarbor-internal/Docs/Internal/Grant_Drafts/*"
+      ],
+      "summary": "If you continue the privacy split, start by reviewing the still-public funding/proposal cluster in `Docs/Knowledge/*Innosuisse*` and the remaining partner-strategy references in `Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md` and `Docs/xwiki-pages/FactHarbor/Organisation/Strategy/C"
     }
   ]
 }

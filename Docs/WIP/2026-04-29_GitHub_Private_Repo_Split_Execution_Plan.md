@@ -80,6 +80,15 @@ This plan uses an explicit manifest, not a blanket move of all `Organisation/**`
 - [Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Finance and Compliance](</C:/DEV/FactHarbor/Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Finance and Compliance>)
 - [Docs/xwiki-pages/FactHarbor/Organisation/Governance/Transition Model](</C:/DEV/FactHarbor/Docs/xwiki-pages/FactHarbor/Organisation/Governance/Transition Model>)
 - [Docs/xwiki-pages/FactHarbor/Organisation/Governance/Operational Readiness](</C:/DEV/FactHarbor/Docs/xwiki-pages/FactHarbor/Organisation/Governance/Operational Readiness>)
+- Partner-specific meeting-prep bundle:
+  - [Docs/Meetings/Call_Prep_Catherine_Gilbert.md](</C:/DEV/FactHarbor/Docs/Meetings/Call_Prep_Catherine_Gilbert.md>)
+  - [Docs/Meetings/2026-04-22_ZHAW_Meeting_Prep.md](</C:/DEV/FactHarbor/Docs/Meetings/2026-04-22_ZHAW_Meeting_Prep.md>)
+  - [Docs/Meetings/2026-04-22_ZHAW_Kurzreader.md](</C:/DEV/FactHarbor/Docs/Meetings/2026-04-22_ZHAW_Kurzreader.md>)
+  - [Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md>)
+  - [Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18_DE.md](</C:/DEV/FactHarbor/Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18_DE.md>)
+- Explicit proposal drafts:
+  - [Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md>)
+  - [Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx](</C:/DEV/FactHarbor/Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Draft_2026-03-18.docx>)
 
 ### 3.3 Review in Phase 2
 
