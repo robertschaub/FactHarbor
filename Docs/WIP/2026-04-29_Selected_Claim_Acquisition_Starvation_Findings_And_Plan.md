@@ -22,7 +22,7 @@ The final Stage 2 run was correctly constrained to the five selected `AtomicClai
 
 Conclusion: the next correctness fix should be selected-claim acquisition coverage, not just a lower selection cap. A lower cap is useful only as a budget-admission mechanism.
 
-This is not specific to automatic mode. The Stage 2 coverage invariant must hold for every selected-claim job, including manual/interactive selections and administrator-on-behalf submissions. Automatic mode has an additional preventive control: it can admit fewer recommendations before final job creation when budget fit is impossible. Manual mode may still allow a user/admin to select up to the configured cap, but Stage 2 must then either cover those selected claims or explicitly report budget non-admission rather than producing ordinary zero-evidence `UNVERIFIED` claims.
+This is not specific to automatic mode. The Stage 2 coverage invariant and the budget-admission check must hold for every selected-claim job, including automatic recommendations, manual/interactive selections, and administrator-on-behalf submissions. Automatic and manual modes differ only in who supplies the selected IDs; both converge before final job creation and must use the same coverage feasibility contract. If the selected set cannot be covered by the main-research budget, the system should block or shrink the selected set before final execution, or explicitly mark non-admitted claims rather than producing ordinary zero-evidence `UNVERIFIED` claims.
 
 ---
 
@@ -164,7 +164,7 @@ Interpretation:
 
 **"Simply cap automatic ACS to 3 selected claims."**
 
-This helps automatic runs, but it is not sufficient and it does not cover manual selections. A lower cap reduces pressure but does not by itself guarantee every selected claim receives a real search/fetch opportunity.
+This helps only one input path. It is not sufficient and it does not cover manual/admin selections. A lower cap reduces pressure but does not by itself guarantee every selected claim receives a real search/fetch opportunity.
 
 ### Adopted direction
 
@@ -172,7 +172,7 @@ Implement a selected-claim acquisition coverage guard:
 
 1. Every selected `AtomicClaim` must receive at least one real main search/fetch opportunity before any claim receives expansion or refinement work.
 2. If the remaining main-research budget cannot cover that minimum coverage for all selected claims, the final job must record budget non-admission explicitly.
-3. In automatic mode, the system should prevent that state earlier by admitting fewer recommended claims before auto-confirm.
+3. The selected-claim confirmation/execution path should enforce the same budget feasibility limit regardless of whether selected IDs came from ACS recommendation, user interaction, or administrator action.
 4. Move the protected-time check before query generation so the system does not spend LLM query calls after the run is already inside the protected contradiction window.
 5. Treat "selected claim reached verdict with zero search attempts" as a system degradation, not ordinary evidence scarcity.
 
@@ -205,7 +205,7 @@ Risks:
 
 ### Option B - Budget Admission Control (recommended with Option A)
 
-Use structural budget feasibility to decide how many selected claims the final job can cover. Automatic mode can apply this before auto-confirm; manual mode must surface the same feasibility constraint at or before final execution.
+Use structural budget feasibility to decide how many selected claims the final job can cover. The selected-claim confirmation/execution boundary should apply this once for all modes, after selected IDs are known and before final analysis proceeds.
 
 Candidate approach:
 
@@ -216,20 +216,21 @@ Candidate approach:
   - `contradictionProtectedTimeMs`
   - estimated minimum seconds per selected claim
   - configured minimum recommended claims
-- Apply the effective limit to automatic recommendation validation and auto-confirm.
-- For manual/admin selections above the effective limit, either block confirmation with an explicit budget message or allow confirmation but mark non-admitted selected claims before verdict generation. Blocking is preferable if product requirements allow it.
+- Apply the effective limit at selected-claim confirmation / job creation for all modes.
+- Optionally also pass the effective limit into ACS recommendation generation so automatic recommendations are less likely to exceed the shared confirmation limit.
+- For selected sets above the effective limit, either block confirmation with an explicit budget message or allow confirmation but mark non-admitted selected claims before verdict generation. Blocking is preferable if product requirements allow it.
 
 Benefits:
 
-- Prevents automatic mode from accepting five claims when the configured budget realistically supports three.
-- Makes the same budget feasibility visible for manual/admin selections.
+- Prevents any selected-claim mode from accepting five claims when the configured budget realistically supports three.
+- Keeps automatic, manual, and admin-on-behalf paths aligned at the shared selected-claim boundary.
 - Keeps tuning in UCM instead of hardcoding behavior.
 
 Risks:
 
 - Too conservative a budget estimate narrows report breadth.
 - Too optimistic an estimate preserves the current failure.
-- Blocking manual selections can surprise users/admins unless the UI explains the budget limit clearly.
+- Blocking selections can surprise users/admins unless the UI explains the budget limit clearly.
 
 ### Option C - Pre-Query Protected-Time Guard (recommended)
 
@@ -323,17 +324,17 @@ Tasks:
    - `claimSelectionBudgetAwarenessEnabled === true`
    - `claimSelectionBudgetFitMode === "allow_fewer_recommendations"`
 3. Apply the effective cap to:
-   - ACS recommendation prompt variables / validation envelope
-   - automatic auto-confirm selection
-4. Decide and implement the manual/admin behavior:
+   - selected-claim confirmation / job creation for all modes
+   - ACS recommendation prompt variables / validation envelope, if useful for automatic proposal quality
+4. Decide and implement the over-limit behavior:
    - preferred: block confirmation above the effective coverage limit with a clear budget message;
    - fallback: allow confirmation, but make uncovered selected claims explicit budget non-admissions and do not classify them as ordinary evidence-scarce `UNVERIFIED`.
 
 Acceptance criteria:
 
-- For a 600s research budget with 120s protected contradiction time, automatic mode no longer assumes five selected claims are feasible unless the configured per-claim estimate says so.
+- For a 600s research budget with 120s protected contradiction time, the shared selected-claim boundary no longer assumes five selected claims are feasible unless the configured per-claim estimate says so.
 - The chosen cap is visible in recommendation/admission metadata.
-- Manual/admin mode cannot silently send selected claims to ordinary verdict generation with zero acquisition.
+- No mode can silently send selected claims to ordinary verdict generation with zero acquisition.
 
 ### Phase 3 - Runtime observability and clustering hardening
 
@@ -403,14 +404,14 @@ Live acceptance criteria:
 
 ### Risks
 
-- A conservative automatic cap can reduce breadth.
+- A conservative selected-claim cap can reduce breadth.
 - A coverage-first scheduler may reduce time left for contradiction retrieval.
 - Stage 3 timeout hardening could overuse fallback boundaries.
 - Stage 1 prep reduction could weaken extracted claim quality if done too aggressively.
 
 ### Opportunities
 
-- Automatic mode becomes predictable: every selected claim gets real acquisition coverage.
+- Selected-claim jobs become predictable: every selected claim gets real acquisition coverage or explicit budget non-admission.
 - `UNVERIFIED` becomes more trustworthy because zero-acquisition system misses are separated from genuine evidence scarcity.
 - Runtime attribution becomes clearer and less misleading.
 - Future ACS canaries become interpretable because selection count, budget admission, and coverage telemetry align.
