@@ -790,9 +790,9 @@ Atomic claims:
 
 Budget context:
 - Active budget mode: `${budgetAwarenessMode}`
-- Research time budget ms: `${budgetResearchTimeBudgetMs}`
-- Protected contradiction budget ms: `${budgetContradictionProtectedTimeMs}`
-- Main research budget before protected contradiction budget ms: `${budgetMainResearchTimeBudgetMs}`
+- Research time budget: `${budgetResearchTimeBudgetSeconds}` seconds
+- Protected contradiction budget: `${budgetContradictionProtectedTimeSeconds}` seconds
+- Main research budget before protected contradiction budget: `${budgetMainResearchTimeBudgetSeconds}` seconds
 - Minimum recommended claims in allow-fewer mode: `${budgetMinRecommendedClaims}`
 
 ### Output

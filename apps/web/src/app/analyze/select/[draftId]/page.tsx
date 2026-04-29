@@ -11,6 +11,7 @@ import type {
   ClaimSelectionRecommendationAssessment,
 } from "@/lib/analyzer/types";
 import { CopyButton } from "@/components/CopyButton";
+import { formatBudgetFitRationaleDisplay } from "@/lib/claim-selection-budget-display";
 import {
   buildStoredClaimSelectionSessionLabel,
   buildDraftAccessHeaders,
@@ -1096,7 +1097,7 @@ export default function ClaimSelectionDraftPage() {
             )}
             {draftState?.budgetFitRationale ? (
               <p className={styles.budgetFitRationale}>
-                Budget fit: {draftState.budgetFitRationale}
+                Budget fit: {formatBudgetFitRationaleDisplay(draftState.budgetFitRationale)}
               </p>
             ) : null}
             {preparationTimingSummary ? (

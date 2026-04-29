@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-26T23:25:00Z"
+lastModified: "2026-04-29T07:22:13Z"
 variables:
   - currentDate
   - analysisInput
@@ -20,6 +20,11 @@ variables:
   - articleThesis
   - atomicClaimsJson
   - maxRecommendedClaims
+  - budgetAwarenessMode
+  - budgetResearchTimeBudgetSeconds
+  - budgetContradictionProtectedTimeSeconds
+  - budgetMainResearchTimeBudgetSeconds
+  - budgetMinRecommendedClaims
   - anchorText
   - salienceBindingContextJson
 requiredSections:

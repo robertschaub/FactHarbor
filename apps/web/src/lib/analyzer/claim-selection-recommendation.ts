@@ -140,9 +140,9 @@ function resolveBudgetFitMode(pipelineConfig: PipelineConfig | undefined): Claim
 
 function resolveBudgetPromptValues(pipelineConfig: PipelineConfig | undefined): {
   budgetAwarenessMode: ClaimSelectionBudgetFitMode;
-  budgetResearchTimeBudgetMs: string;
-  budgetContradictionProtectedTimeMs: string;
-  budgetMainResearchTimeBudgetMs: string;
+  budgetResearchTimeBudgetSeconds: string;
+  budgetContradictionProtectedTimeSeconds: string;
+  budgetMainResearchTimeBudgetSeconds: string;
   budgetMinRecommendedClaims: string;
 } {
   const budgetAwarenessMode = resolveBudgetFitMode(pipelineConfig);
@@ -155,15 +155,15 @@ function resolveBudgetPromptValues(pipelineConfig: PipelineConfig | undefined): 
 
   return {
     budgetAwarenessMode,
-    budgetResearchTimeBudgetMs: budgetAwarenessMode === "off" || researchTimeBudgetMs === undefined
+    budgetResearchTimeBudgetSeconds: budgetAwarenessMode === "off" || researchTimeBudgetMs === undefined
       ? ""
-      : String(researchTimeBudgetMs),
-    budgetContradictionProtectedTimeMs: budgetAwarenessMode === "off" || contradictionProtectedTimeMs === undefined
+      : String(Math.round(researchTimeBudgetMs / 1000)),
+    budgetContradictionProtectedTimeSeconds: budgetAwarenessMode === "off" || contradictionProtectedTimeMs === undefined
       ? ""
-      : String(contradictionProtectedTimeMs),
-    budgetMainResearchTimeBudgetMs: budgetAwarenessMode === "off" || mainResearchTimeBudgetMs === undefined
+      : String(Math.round(contradictionProtectedTimeMs / 1000)),
+    budgetMainResearchTimeBudgetSeconds: budgetAwarenessMode === "off" || mainResearchTimeBudgetMs === undefined
       ? ""
-      : String(mainResearchTimeBudgetMs),
+      : String(Math.round(mainResearchTimeBudgetMs / 1000)),
     budgetMinRecommendedClaims: String(
       normalizeClaimSelectionMinRecommendedClaims(pipelineConfig?.claimSelectionMinRecommendedClaims),
     ),

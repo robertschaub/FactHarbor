@@ -150,9 +150,9 @@ describe("CLAIM_SELECTION_RECOMMENDATION prompt contract", () => {
     ),
     maxRecommendedClaims: "2",
     budgetAwarenessMode: "off",
-    budgetResearchTimeBudgetMs: "",
-    budgetContradictionProtectedTimeMs: "",
-    budgetMainResearchTimeBudgetMs: "",
+    budgetResearchTimeBudgetSeconds: "",
+    budgetContradictionProtectedTimeSeconds: "",
+    budgetMainResearchTimeBudgetSeconds: "",
     budgetMinRecommendedClaims: "1",
   };
 
@@ -174,6 +174,12 @@ describe("CLAIM_SELECTION_RECOMMENDATION prompt contract", () => {
     expect(section).toContain("Rank the entire candidate set.");
     expect(section).toContain("Budget mode discipline.");
     expect(section).toContain("Active budget mode is `${budgetAwarenessMode}`.");
+    expect(section).toContain("Research time budget: `${budgetResearchTimeBudgetSeconds}` seconds");
+    expect(section).toContain("Protected contradiction budget: `${budgetContradictionProtectedTimeSeconds}` seconds");
+    expect(section).toContain("Main research budget before protected contradiction budget: `${budgetMainResearchTimeBudgetSeconds}` seconds");
+    expect(section).not.toContain("Research time budget ms");
+    expect(section).not.toContain("Protected contradiction budget ms");
+    expect(section).not.toContain("Main research budget before protected contradiction budget ms");
     expect(section).toContain("Recommend from `fact_check_worthy` first.");
     expect(section).toContain("Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.");
     expect(section).toContain("unique ordered permutation of all input claim IDs");
@@ -723,7 +729,7 @@ describe("generateClaimSelectionRecommendation", () => {
       expect.objectContaining({
         maxRecommendedClaims: "1",
         budgetAwarenessMode: "off",
-        budgetResearchTimeBudgetMs: "",
+        budgetResearchTimeBudgetSeconds: "",
       }),
     );
   });
@@ -762,9 +768,9 @@ describe("generateClaimSelectionRecommendation", () => {
       "CLAIM_SELECTION_RECOMMENDATION",
       expect.objectContaining({
         budgetAwarenessMode: "explain_only",
-        budgetResearchTimeBudgetMs: "600000",
-        budgetContradictionProtectedTimeMs: "120000",
-        budgetMainResearchTimeBudgetMs: "480000",
+        budgetResearchTimeBudgetSeconds: "600",
+        budgetContradictionProtectedTimeSeconds: "120",
+        budgetMainResearchTimeBudgetSeconds: "480",
         budgetMinRecommendedClaims: "1",
       }),
     );

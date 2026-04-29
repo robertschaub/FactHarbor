@@ -2,7 +2,7 @@
 version: "1.0.9"
 pipeline: "claimboundary"
 description: "ClaimBoundary pipeline prompts — all stages (extraction, clustering, verdict, narrative, grouping)"
-lastModified: "2026-04-26T23:25:00Z"
+lastModified: "2026-04-29T07:22:13Z"
 variables:
   - currentDate
   - analysisInput
@@ -20,6 +20,11 @@ variables:
   - articleThesis
   - atomicClaimsJson
   - maxRecommendedClaims
+  - budgetAwarenessMode
+  - budgetResearchTimeBudgetSeconds
+  - budgetContradictionProtectedTimeSeconds
+  - budgetMainResearchTimeBudgetSeconds
+  - budgetMinRecommendedClaims
   - anchorText
   - salienceBindingContextJson
 requiredSections:
@@ -847,9 +852,9 @@ Atomic claims:
 
 Budget context:
 - Active budget mode: `${budgetAwarenessMode}`
-- Research time budget ms: `${budgetResearchTimeBudgetMs}`
-- Protected contradiction budget ms: `${budgetContradictionProtectedTimeMs}`
-- Main research budget before protected contradiction budget ms: `${budgetMainResearchTimeBudgetMs}`
+- Research time budget: `${budgetResearchTimeBudgetSeconds}` seconds
+- Protected contradiction budget: `${budgetContradictionProtectedTimeSeconds}` seconds
+- Main research budget before protected contradiction budget: `${budgetMainResearchTimeBudgetSeconds}` seconds
 - Minimum recommended claims in allow-fewer mode: `${budgetMinRecommendedClaims}`
 
 ### Output
