@@ -2639,3 +2639,9 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 **For next agent:** Contract-first unification is implemented through selected-claim coverage telemetry, ACS budget validation observability, `SubmissionPath`, `analysisRunProvenance`, prompt-surface registry, xWiki updates, and implementation status docs. Key commits: `59e1c806`, `ba234200`, `78013460`, `423a49fd`, `5e5272ab`, `fc8052e3`.
 **Warnings:** This did not fix Stage 2 selected-claim research distribution; it makes zero targeted selected-claim research visible via `selectedClaimResearchCoverage` and validation zero-targeted fields. Prompt wording/defaults/selector behavior were intentionally unchanged. Services were restarted and API/Web health returned `200`. Live-job budget used: 0 of 8.
 -> Docs/AGENTS/Handoffs/2026-04-29_Senior_Developer_Remaining_Unification_Implementation.md
+
+---
+### 2026-04-29 | Senior Developer | Codex (GPT-5) | Unification Review Follow-Up -- [Standard] [open-items: yes]
+**For next agent:** Four reviews were consolidated and low-risk comments addressed in commit `1ed5744f`: explicit direct `submissionPath`, admitted-vs-final evidence count comments, restored Prompt Architecture section map, and mixed git/prompt hash headers in `compare-batches.js`.
+**Warnings:** No behavior/prompt/UCM/selector/stage scheduling changes. C# `SubmissionPath` contract tests remain deferred because `apps/api` has no current test project; add that before making provenance release-gating.
+-> Docs/AGENTS/Handoffs/2026-04-29_Senior_Developer_Unification_Review_Followup.md

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T05:11:26.293Z",
-  "count": 419,
+  "generatedAt": "2026-04-29T05:28:50.107Z",
+  "count": 421,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8916,6 +8933,47 @@
             "complexity_decision": "amended existing contracts and summaries rather than adding a parallel selector or metrics subsystem.",
             "final_diff_shape": "additive telemetry/provenance/registry fields, focused tests, docs, and one API column/migration.",
             "verification": "focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, service restart plus health checks, and final reviewer re-review APPROVE."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-04-29_Senior_Developer_Unification_Review_Followup.md",
+      "date": "2026-04-29",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "unification",
+        "review",
+        "followup"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/AnalyzeController.cs",
+        "apps/web/src/lib/analyzer/types.ts",
+        "apps/web/src/lib/analyzer/research-waste-metrics.ts",
+        "scripts/validation/compare-batches.js",
+        "apps/web/test/unit/scripts/validation-historical-references.test.ts",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Prompt Architecture/WebHome.xwiki",
+        "Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md"
+      ],
+      "summary": "Review follow-up commit is `1ed5744f`. If continuing provenance hardening, start with an API test harness or shared `SubmissionPath` constants; do not add another string contract in a separate layer.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "incomplete-existing-mechanism / documentation drift from review findings.",
+            "chosen_option": "amend existing mechanisms.",
+            "rejected_path_and_why": "adding a new API test project was deferred because the API has no current test harness and the review classified it as non-blocking residual debt.",
+            "what_was_removed_simplified": "none.",
+            "what_was_added": "named direct submission argument, count comments, mixed-hash header summarization, one focused comparator test, and a condensed prompt section map.",
+            "net_mechanism_count": "unchanged.",
+            "budget_reconciliation": "actual files matched the planned small follow-up scope; no new runtime branch, flag, selector, fallback, or analysis mechanism was added.",
+            "verification": "`npm -w apps/web test -- --run test/unit/scripts/validation-historical-references.test.ts`; `dotnet build -p:UseAppHost=false -o ..\\..\\test-output\\api-build`; `npx next build`; `npm -w apps/web run build`; `git diff --check`.",
+            "debt_accepted_and_removal_trigger": "C# `SubmissionPath` test coverage remains deferred until an API test harness exists or provenance becomes release-gating.",
+            "residual_debt": "selected-claim Stage 2 distribution remains observable but unfixed from the prior slice."
           }
         }
       }
