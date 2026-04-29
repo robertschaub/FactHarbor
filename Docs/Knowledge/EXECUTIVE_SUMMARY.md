@@ -19,7 +19,7 @@ This knowledge base maps the global fact-checking landscape, academic research, 
 | Faithful LLM specialists, source attribution, data quality | [**Faithful LLM Specialists (ACL 2024)**](Schimanski_Faithful_LLM_Specialists_ACL2024.md) | Source quality + attributability metrics. Data quality > quantity. 669 filtered samples beat thousands unfiltered. NLI-based grounding. Strongest Schimanski/Ash connection point. [Code repo available.](https://github.com/EdisonNi-hku/Robust_Evidence_Based_QA) |
 | Document relevance scoring, RAG calibration, distillation | [**DIRAS (NAACL 2025)**](Schimanski_DIRAS_NAACL2025.md) | 8B model matches GPT-4 on relevance scoring. Explicit relevance definitions per query. Selection bias correction. CoT hurts annotation. Adaptive thresholds > fixed top-k. [Code repo available.](https://github.com/EdisonNi-hku/DIRAS) |
 | **LiveCheck & Innosuisse** | [**LiveCheck & Innosuisse Track**](Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md) | Funding and research proposal line for live audio/video fact-checking (Innosuisse / Innolink / BRIDGE). |
-| **Meeting prep for Tobias Schimanski (2026-03-18)** | [**Meeting Prep: Schimanski**](Meeting_Prep_Schimanski_2026-03-18.md) | Agenda, 5 topics, questions to ask, signals to watch, funding structure. |
+| **Current Swiss academic and funding route** | [**Cooperation Opportunities**](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>) | ZHAW CAI / NLP confirmed as the lead Swiss research lane; DIZH and Innosuisse tracks are active; `dpa` and `EBU Spotlight` remain sequenced follow-on routes. |
 | Meeting prep for Elliott Ash (historical) | [Meeting Prep: Ash](Stammbach_Ash_LLM_Political_Alignment_EMNLP2024.md) | EMNLP 2024 paper, Ash portfolio, FactHarbor SWOA, calibration status, meeting questions. |
 | Why evidence-following appears politically biased | [Epistemic Asymmetry](Truth_Seeking.md) | The information environment is not politically symmetric. This is a property of reality, not a pipeline bug. |
 | **Multi-source evidence retrieval spec** | [**Multi-Source Evidence Retrieval**](../Specification/Multi_Source_Evidence_Retrieval.md) | Wikipedia + Semantic Scholar + Google Fact Check Tools API. All free, ~8 hours implementation. Addresses #1 gap (C13 evidence asymmetry). |
@@ -145,7 +145,7 @@ Items marked * are validated in Climinator code; items marked † are paper-only
 | **5** | **GlobalFact 2026** | Poynter / IFCN ecosystem | Networking route: `2026-06-17` to `2026-06-19` | Meetings, ecosystem entry, narrower cooperation asks |
 | — | **Ash / Schimanski / Stammbach / Leippold** | ETH / UZH / Princeton | Research-context contacts, not the immediate outreach sequence | Research framing, faithfulness metrics, evidence and relevance methods |
 
-Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). The current execution order now lives primarily in `../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki` and `../WIP/2026-04-02_Call_Prep_Catherine_Gilbert.md`.
+Academic contacts remain detailed in [Research Ecosystem §7-8](Stammbach_Research_Ecosystem_and_FactHarbor_Opportunities.md). The current execution order now lives primarily in [Cooperation Opportunities](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>) and [Academic Cooperation](<../xwiki-pages/FactHarbor/Product Development/Presentations/Academic Cooperation/WebHome.xwiki>).
 
 ---
 

@@ -4,7 +4,7 @@
 **Erstellt von:** Claude Opus 4.6 (2026-03-11)
 **Quellen:** innosuisse.admin.ch, bridge.ch, BFS UID-Register (alle Links am Ende)
 
-> **Verwandte Dokumente:** [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) | [ZHAW Meeting Prep](../Meetings/2026-04-22_ZHAW_Meeting_Prep.md) | [Executive Summary](EXECUTIVE_SUMMARY.md)
+> **Verwandte Dokumente:** [DIZH Rapid Action Call Leitfaden](DIZH_Rapid_Action_Call_Leitfaden.md) | [Cooperation Opportunities](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>) | [Executive Summary](EXECUTIVE_SUMMARY.md)
 
 ---
 

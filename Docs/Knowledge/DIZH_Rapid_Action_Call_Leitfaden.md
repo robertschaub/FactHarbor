@@ -3,7 +3,7 @@
 **Stand:** April 2026 (Status-Update eingearbeitet: 29.04.2026)
 **Quellen:** dizh.uzh.ch, Call-Text PDF, ZHAW-interne Klärung via Mark Cieliebak (April 2026)
 
-> **Verwandte Dokumente:** [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md) | [ZHAW Meeting Prep](../Meetings/2026-04-22_ZHAW_Meeting_Prep.md)
+> **Verwandte Dokumente:** [Innosuisse Leitfaden](Innosuisse_Bewerbung_Leitfaden.md) | [Cooperation Opportunities](<../xwiki-pages/FactHarbor/Organisation/Strategy/Cooperation Opportunities/WebHome.xwiki>)
 
 ---
 
