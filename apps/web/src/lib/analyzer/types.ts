@@ -359,6 +359,8 @@ export interface ClaimAcquisitionIterationEntry {
   languageLane: "primary" | "supplementary_en";
   freshnessRequirement?: ClaimFreshnessRequirement;
   generatedQueries: string[];
+  /** Number of generated queries that reached the search provider call. */
+  searchAttempts?: number;
   searchResults: number;
   relevanceAccepted: number;
   sourcesFetched: number;
@@ -786,6 +788,8 @@ export interface SelectedClaimResearchCoverage {
   totalIterations: number;
   iterationTypeCounts: Record<ClaimAcquisitionIterationEntry["iterationType"], number>;
   queryCount: number;
+  /** Search-provider attempts across all recorded iterations for this claim. */
+  searchAttemptCount: number;
   fetchAttemptCount: number;
   /** Sum of admitted evidence across iterations before later dedupe/filter/cap steps. */
   admittedEvidenceItemCount: number;

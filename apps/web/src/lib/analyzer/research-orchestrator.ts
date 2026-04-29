@@ -228,6 +228,7 @@ function createClaimIterationTelemetryEntry(
     languageLane: "primary",
     freshnessRequirement,
     generatedQueries,
+    searchAttempts: 0,
     searchResults: 0,
     relevanceAccepted: 0,
     sourcesFetched: 0,
@@ -794,20 +795,31 @@ export async function researchEvidence(
     );
 
     state.mainIterationsUsed++;
-    // Track per-claim researched iterations for the sufficiency per-claim floor.
-    state.researchedIterationsByClaim[targetClaim.id] = (state.researchedIterationsByClaim[targetClaim.id] ?? 0) + 1;
+    const mainSearchAttempted = (state.claimAcquisitionLedger[targetClaim.id]?.iterations ?? [])
+      .some((entry) =>
+        entry.iteration === iteration
+        && entry.iterationType === "main"
+        && entry.languageLane === "primary"
+        && (entry.searchAttempts ?? 0) > 0,
+      );
+    if (mainSearchAttempted) {
+      // Track per-claim searched iterations for the sufficiency per-claim floor.
+      state.researchedIterationsByClaim[targetClaim.id] = (state.researchedIterationsByClaim[targetClaim.id] ?? 0) + 1;
+    }
 
     // Diminishing returns detection
     const newItems = state.evidenceItems.length - beforeCount;
     if (newItems === 0) {
-      const zeroYieldCount = (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1;
+      const zeroYieldCount = mainSearchAttempted
+        ? (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1
+        : zeroYieldBreakThreshold;
       consecutiveZeroYieldByClaim[targetClaim.id] = zeroYieldCount;
       if (zeroYieldCount >= zeroYieldBreakThreshold) {
         zeroYieldExhaustedClaimIds.add(targetClaim.id);
-        state.onEvent?.(
-          `No new evidence found for ${targetClaim.id} in ${zeroYieldCount} consecutive iteration(s), trying other claims...`,
-          -1,
-        );
+        const message = mainSearchAttempted
+          ? `No new evidence found for ${targetClaim.id} in ${zeroYieldCount} consecutive iteration(s), trying other claims...`
+          : `No main search attempt completed for ${targetClaim.id} before the protected contradiction window, trying other claims...`;
+        state.onEvent?.(message, -1);
       }
     } else {
       consecutiveZeroYieldByClaim[targetClaim.id] = 0;
@@ -1500,6 +1512,7 @@ export async function runResearchIteration(
         // Query generation prompt handles language; search stays unfiltered.
         // detectedLanguage is threaded for language-aware supplementary providers (Wikipedia).
         state.onEvent?.(`Searching ${focus} source candidates for ${targetClaim.id}...`, -1);
+        telemetry.searchAttempts = (telemetry.searchAttempts ?? 0) + 1;
         const response = await searchWebWithProvider({
           query: queryObj.query,
           maxResults: maxSourcesPerIteration,
@@ -1935,6 +1948,7 @@ export async function maybeRunSupplementaryEnglishLane(
     languageLane: "supplementary_en",
     freshnessRequirement: targetClaim.freshnessRequirement,
     generatedQueries: enQueries.map((query) => query.query),
+    searchAttempts: 0,
     searchResults: 0,
     relevanceAccepted: 0,
     sourcesFetched: 0,
@@ -1955,6 +1969,7 @@ export async function maybeRunSupplementaryEnglishLane(
   const enQuery = enQueries[0];
   try {
     state.onEvent?.(`Searching English supplementary source candidates for ${targetClaim.id}...`, -1);
+    enTelemetry.searchAttempts = (enTelemetry.searchAttempts ?? 0) + 1;
     const response = await searchWebWithProvider({
       query: enQuery.query,
       maxResults: searchConfig.maxSourcesPerIteration ?? 5,

@@ -94,6 +94,7 @@ export function cloneResearchWasteMetrics(
           totalIterations: finiteCount(entry.totalIterations),
           iterationTypeCounts: cloneIterationTypeCounts(entry.iterationTypeCounts),
           queryCount: finiteCount(entry.queryCount),
+          searchAttemptCount: finiteCount(entry.searchAttemptCount),
           fetchAttemptCount: finiteCount(entry.fetchAttemptCount),
           admittedEvidenceItemCount: finiteCount(entry.admittedEvidenceItemCount),
           finalEvidenceItemCount: finiteCount(entry.finalEvidenceItemCount),
@@ -492,8 +493,16 @@ function buildSelectedClaimResearchCoverage(
   const entry = state.claimAcquisitionLedger?.[claimId];
   const iterations = entry?.iterations ?? [];
   const iterationTypeCounts = cloneIterationTypeCounts();
+  let targetedMainIterations = 0;
   for (const iteration of iterations) {
     iterationTypeCounts[iteration.iterationType]++;
+    if (
+      iteration.iterationType === "main"
+      && iteration.languageLane === "primary"
+      && getIterationSearchAttemptCount(iteration) > 0
+    ) {
+      targetedMainIterations++;
+    }
   }
 
   // Final count is post-pipeline result evidence; admitted count below is
@@ -501,7 +510,7 @@ function buildSelectedClaimResearchCoverage(
   const finalEvidenceItemCount = state.evidenceItems.filter(
     (item) => item.relevantClaimIds?.includes(claimId),
   ).length;
-  const zeroTargetedMainResearch = iterationTypeCounts.main === 0;
+  const zeroTargetedMainResearch = targetedMainIterations === 0;
   const notRunReason = !zeroTargetedMainResearch
     ? undefined
     : entry
@@ -510,10 +519,14 @@ function buildSelectedClaimResearchCoverage(
 
   return {
     claimId,
-    targetedMainIterations: iterationTypeCounts.main,
+    targetedMainIterations,
     totalIterations: iterations.length,
     iterationTypeCounts,
     queryCount: iterations.reduce((sum, iteration) => sum + iteration.generatedQueries.length, 0),
+    searchAttemptCount: iterations.reduce(
+      (sum, iteration) => sum + getIterationSearchAttemptCount(iteration),
+      0,
+    ),
     fetchAttemptCount: iterations.reduce(
       (sum, iteration) => sum + iteration.sourcesFetched + iteration.losses.fetchRejected,
       0,
@@ -536,6 +549,26 @@ function finiteCount(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) && value > 0
     ? Math.round(value)
     : 0;
+}
+
+function getIterationSearchAttemptCount(
+  iteration: {
+    searchAttempts?: number;
+    searchResults?: number;
+    relevanceAccepted?: number;
+    sourcesFetched?: number;
+    losses?: { fetchRejected?: number };
+  },
+): number {
+  const explicitAttempts = finiteCount(iteration.searchAttempts);
+  if (explicitAttempts > 0) return explicitAttempts;
+
+  const hasLegacySearchEvidence =
+    finiteCount(iteration.searchResults) > 0
+    || finiteCount(iteration.relevanceAccepted) > 0
+    || finiteCount(iteration.sourcesFetched) > 0
+    || finiteCount(iteration.losses?.fetchRejected) > 0;
+  return hasLegacySearchEvidence ? 1 : 0;
 }
 
 function normalizeOptionalUrl(url: unknown): string | null {

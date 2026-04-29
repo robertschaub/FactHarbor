@@ -189,7 +189,7 @@ describe("researchEvidence contradiction admission", () => {
     vi.restoreAllMocks();
   });
 
-  it("transitions to contradiction after the selected claim receives targeted main research", async () => {
+  it("does not count a generated-only main iteration as searched targeted research", async () => {
     mockConfigs({});
     const state = makeState();
 
@@ -200,7 +200,12 @@ describe("researchEvidence contradiction admission", () => {
     expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("contradiction");
     expect(state.mainIterationsUsed).toBe(1);
     expect(state.contradictionIterationsUsed).toBe(1);
-    expect(state.researchedIterationsByClaim).toMatchObject({ AC_01: 1 });
+    expect(state.researchedIterationsByClaim.AC_01).toBeUndefined();
+    const iterations = state.claimAcquisitionLedger.AC_01?.iterations ?? [];
+    expect(iterations).toEqual([
+      expect.objectContaining({ iterationType: "main", searchAttempts: 0 }),
+      expect.objectContaining({ iterationType: "contradiction", searchAttempts: 1 }),
+    ]);
     expect(state.researchWasteMetrics?.contradictionReachability).toMatchObject({
       started: true,
       remainingMsWhenMainResearchEnded: 1000,
@@ -210,10 +215,22 @@ describe("researchEvidence contradiction admission", () => {
   });
 
   it("does not let protected contradiction time skip selected claims below the targeted research floor", async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
     mockConfigs({
+      contradictionProtectedTimeMs: 200,
       maxTotalIterations: 6,
+      researchTimeBudgetMs: 1000,
       researchZeroYieldBreakThreshold: 2,
       perClaimQueryBudget: 4,
+    });
+    mockSearchWebWithProvider.mockImplementation(async () => {
+      now += 300;
+      return {
+        results: [],
+        providersUsed: ["mock-search"],
+        errors: [],
+      };
     });
     const state = makeState({
       understanding: {
@@ -239,6 +256,13 @@ describe("researchEvidence contradiction admission", () => {
       AC_02: 1,
       AC_03: 1,
     });
+    for (const claimId of ["AC_01", "AC_02", "AC_03"]) {
+      const mainIterations = (state.claimAcquisitionLedger[claimId]?.iterations ?? [])
+        .filter((entry) => entry.iterationType === "main");
+      expect(mainIterations).toEqual([
+        expect.objectContaining({ iterationType: "main", searchAttempts: 1 }),
+      ]);
+    }
     expect(state.contradictionIterationsUsed).toBe(1);
     expect(state.warnings.some((warning) => warning.type === "unverified_research_incomplete")).toBe(false);
   });
@@ -404,5 +428,63 @@ describe("researchEvidence contradiction admission", () => {
       .filter((call) => call[1] === "main")
       .map((call) => call[0].id);
     expect(mainClaimIds.slice(0, 3)).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
+  it("records supplementary search attempts separately from the primary main floor", async () => {
+    mockConfigs({
+      contradictionAdmissionEnabled: false,
+      maxTotalIterations: 2,
+      researchZeroYieldBreakThreshold: 2,
+      perClaimQueryBudget: 4,
+    });
+    mockLoadSearchConfig.mockResolvedValue({
+      config: {
+        maxSourcesPerIteration: 5,
+        supplementaryEnglishLane: {
+          enabled: true,
+          applyInIterationTypes: ["main"],
+          minPrimaryEvidenceItems: 2,
+          maxAdditionalQueriesPerClaim: 1,
+        },
+      },
+      contentHash: "__TEST__",
+      fromDefault: false,
+      fromCache: false,
+      overrides: [],
+    });
+    mockGenerateResearchQueries.mockImplementation(async (_claim, iterationType, _evidence, _config, _date, _events, _maxQueries, options) => [
+      {
+        query: options?.language === "en" ? "english supplementary query" : `${iterationType} generated query`,
+        rationale: "test",
+      },
+    ]);
+    mockSearchWebWithProvider.mockResolvedValue({
+      results: [],
+      providersUsed: ["mock-search"],
+      errors: [],
+    });
+    const state = makeState({
+      understanding: {
+        atomicClaims: [
+          { id: "AC_01", statement: "Entity A made measurable claim one.", freshnessRequirement: "none" },
+          { id: "AC_02", statement: "Entity A made measurable claim two.", freshnessRequirement: "none" },
+        ],
+        preliminaryEvidence: [],
+        distinctEvents: [],
+        detectedLanguage: "de",
+      } as any,
+    });
+
+    await researchEvidence(state);
+
+    const ac1Iterations = (state.claimAcquisitionLedger.AC_01?.iterations ?? [])
+      .filter((entry) => entry.iterationType === "main");
+    expect(ac1Iterations).toEqual([
+      expect.objectContaining({ iterationType: "main", languageLane: "primary", searchAttempts: 1 }),
+      expect.objectContaining({ iterationType: "main", languageLane: "supplementary_en", searchAttempts: 1 }),
+    ]);
+    expect(state.researchedIterationsByClaim).toMatchObject({
+      AC_01: 1,
+    });
   });
 });
