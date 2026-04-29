@@ -570,6 +570,30 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     ]);
   }, 10_000);
 
+  it("fails closed before Stage 2 when direct analysis produces more claims than the selection cap", async () => {
+    mockExtractClaims.mockResolvedValue({
+      detectedLanguage: "en",
+      detectedInputType: "text",
+      atomicClaims: Array.from({ length: 6 }, (_, index) => ({
+        id: `AC_${String(index + 1).padStart(2, "0")}`,
+        statement: `Claim ${index + 1}`,
+      })),
+      preliminaryEvidence: [],
+    });
+
+    await expect(
+      runClaimBoundaryAnalysis({
+        inputType: "text",
+        inputValue: "resolved text",
+      }),
+    ).rejects.toThrow(
+      "Direct analysis produced 6 candidate AtomicClaims, exceeding the claim selection cap of 5",
+    );
+
+    expect(mockExtractClaims).toHaveBeenCalledTimes(1);
+    expect(mockResearchEvidence).not.toHaveBeenCalled();
+  }, 10_000);
+
   it("rejects prepared snapshots without provenance before research starts", async () => {
     await expect(
       runClaimBoundaryAnalysis({

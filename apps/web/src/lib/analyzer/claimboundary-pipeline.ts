@@ -1112,6 +1112,14 @@ export async function runClaimBoundaryAnalysis(
       onEvent("Extracting claims from input...", 10);
       startPhase("understand");
       const prepared = await prepareStage1Snapshot(input, initialPipelineConfig);
+      const directCandidateClaimCount =
+        prepared.preparedStage1.preparedUnderstanding.atomicClaims.length;
+      const directSelectionCap = normalizeClaimSelectionCap(initialPipelineConfig.claimSelectionCap);
+      if (directCandidateClaimCount > directSelectionCap) {
+        throw new Error(
+          `Direct analysis produced ${directCandidateClaimCount} candidate AtomicClaims, exceeding the claim selection cap of ${directSelectionCap}. Use the claim-selection draft endpoint so automatic or manual claim selection can run before Stage 2.`,
+        );
+      }
       state = prepared.state;
       detectedUrl = prepared.detectedUrl;
       understanding = prepared.preparedStage1.preparedUnderstanding;
