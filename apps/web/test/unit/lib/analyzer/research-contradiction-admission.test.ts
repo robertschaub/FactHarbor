@@ -189,21 +189,57 @@ describe("researchEvidence contradiction admission", () => {
     vi.restoreAllMocks();
   });
 
-  it("transitions to contradiction instead of admitting another main iteration when protected time would be consumed", async () => {
+  it("transitions to contradiction after the selected claim receives targeted main research", async () => {
     mockConfigs({});
     const state = makeState();
 
     await researchEvidence(state);
 
-    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
-    expect(mockGenerateResearchQueries.mock.calls[0][1]).toBe("contradiction");
-    expect(state.mainIterationsUsed).toBe(0);
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[0][1]).toBe("main");
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("contradiction");
+    expect(state.mainIterationsUsed).toBe(1);
     expect(state.contradictionIterationsUsed).toBe(1);
+    expect(state.researchedIterationsByClaim).toMatchObject({ AC_01: 1 });
     expect(state.researchWasteMetrics?.contradictionReachability).toMatchObject({
       started: true,
       remainingMsWhenMainResearchEnded: 1000,
       iterationsUsed: 1,
     });
+    expect(state.warnings.some((warning) => warning.type === "unverified_research_incomplete")).toBe(false);
+  });
+
+  it("does not let protected contradiction time skip selected claims below the targeted research floor", async () => {
+    mockConfigs({
+      maxTotalIterations: 6,
+      researchZeroYieldBreakThreshold: 2,
+      perClaimQueryBudget: 4,
+    });
+    const state = makeState({
+      understanding: {
+        atomicClaims: [
+          { id: "AC_01", statement: "Entity A made measurable claim one.", freshnessRequirement: "none" },
+          { id: "AC_02", statement: "Entity A made measurable claim two.", freshnessRequirement: "none" },
+          { id: "AC_03", statement: "Entity A made measurable claim three.", freshnessRequirement: "none" },
+        ],
+        preliminaryEvidence: [],
+        distinctEvents: [],
+        detectedLanguage: "en",
+      } as any,
+    });
+
+    await researchEvidence(state);
+
+    const mainClaimIds = mockGenerateResearchQueries.mock.calls
+      .filter((call) => call[1] === "main")
+      .map((call) => call[0].id);
+    expect(mainClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
+    expect(state.researchedIterationsByClaim).toMatchObject({
+      AC_01: 1,
+      AC_02: 1,
+      AC_03: 1,
+    });
+    expect(state.contradictionIterationsUsed).toBe(1);
     expect(state.warnings.some((warning) => warning.type === "unverified_research_incomplete")).toBe(false);
   });
 

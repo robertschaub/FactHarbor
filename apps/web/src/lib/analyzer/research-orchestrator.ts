@@ -680,10 +680,19 @@ export async function researchEvidence(
       break;
     }
 
+    const selectedClaimsBelowResearchFloor = sufficiencyMinResearchedIterationsPerClaim > 0
+      && claims.some(
+        (claim) =>
+          (state.researchedIterationsByClaim?.[claim.id] ?? 0)
+            < sufficiencyMinResearchedIterationsPerClaim
+          && getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > contradictionReservedQueries
+          && !zeroYieldExhaustedClaimIds.has(claim.id),
+      );
     if (
       contradictionAdmissionEnabled
       && reservedContradiction > 0
       && contradictionProtectedTimeMs > 0
+      && !selectedClaimsBelowResearchFloor
       && elapsedMs + contradictionProtectedTimeMs > timeBudgetMs
     ) {
       const remainingMs = Math.max(0, timeBudgetMs - elapsedMs);
