@@ -661,6 +661,7 @@ export async function assessEvidenceApplicability(
     let neutralClaimDirectionClones = 0;
     let neutralCompanionClones = 0;
     let directionalCompanionClones = 0;
+    let existingClaimDirectionCorrections = 0;
 
     const assessed = evidenceItems.flatMap((item, index) => {
       const applicability = classificationMap.get(index) ?? "direct";
@@ -672,11 +673,34 @@ export async function assessEvidenceApplicability(
       const existingClaimIds = item.relevantClaimIds ?? [];
       const assessedClaimIds = claimMappingAdditions.get(index) ?? [];
       const claimDirections = claimDirectionAdditions.get(index) ?? new Map<string, ClaimDirection>();
-      const assessedItem = cloneEvidenceItem(
+      let assessedItem = cloneEvidenceItem(
         item,
         shouldApplyApplicability ? { applicability } : {},
       );
-      const itemDirection = item.claimDirection ?? "neutral";
+      let itemDirection = item.claimDirection ?? "neutral";
+      const companionClaimIds = assessedClaimIds.filter((claimId) =>
+        !existingClaimIds.includes(claimId),
+      );
+      const knownExistingClaimIds = existingClaimIds.filter((claimId) => knownClaimIds.has(claimId));
+      const existingDirectionOverrides = knownExistingClaimIds
+        .map((claimId) => claimDirections.get(claimId))
+        .filter((direction): direction is ClaimDirection => direction !== undefined);
+      const uniqueExistingDirectionOverrides = new Set(existingDirectionOverrides);
+      if (
+        itemDirection !== "neutral"
+        && uniqueExistingDirectionOverrides.size === 1
+        && existingDirectionOverrides.length === knownExistingClaimIds.length
+        && knownExistingClaimIds.length > 0
+      ) {
+        const correctedDirection = Array.from(uniqueExistingDirectionOverrides)[0];
+        if (correctedDirection !== itemDirection) {
+          existingClaimDirectionCorrections++;
+        }
+        assessedItem = cloneEvidenceItem(assessedItem, {
+          claimDirection: correctedDirection,
+        });
+        itemDirection = correctedDirection;
+      }
       if (itemDirection === "neutral") {
         const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
         const directionalClaimIds = relevantClaimIds.filter((claimId) => {
@@ -712,9 +736,6 @@ export async function assessEvidenceApplicability(
         ];
       }
 
-      const companionClaimIds = assessedClaimIds.filter((claimId) =>
-        !existingClaimIds.includes(claimId),
-      );
       if (companionClaimIds.length === 0) {
         return [assessedItem];
       }
@@ -748,6 +769,7 @@ export async function assessEvidenceApplicability(
       `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
+      `Existing claim direction corrections: ${existingClaimDirectionCorrections}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(

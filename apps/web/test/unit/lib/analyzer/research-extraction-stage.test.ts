@@ -1421,6 +1421,91 @@ describe("Research Extraction Stage", () => {
       );
     });
 
+    it("should apply LLM claim-local direction corrections to already-scoped directional evidence", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A process complied with procedural requirements" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "A party criticized Entity A's process without providing an independent finding.",
+          claimDirection: "contradicts",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_01", claimDirection: "neutral" },
+            ],
+            reasoning: "documented disagreement is not evidence-backed contestation",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "neutral",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Existing claim direction corrections: 1."),
+      );
+    });
+
+    it("should preserve companion mapping after correcting the original claim direction", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Entity A process complied with procedural requirements" }),
+        createClaim({ id: "AC_02", statement: "Entity A process met public-hearing requirements" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "A party criticized Entity A's process without providing an independent finding.",
+          claimDirection: "contradicts",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_01", claimDirection: "neutral" },
+              { claimId: "AC_02", claimDirection: "neutral" },
+            ],
+            reasoning: "documented disagreement is context for both claims",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "neutral",
+        relevantClaimIds: ["AC_01", "AC_02"],
+        applicability: "direct",
+      });
+    });
+
     it("should still run claim mapping when inferredGeography is null without applying applicability", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Generic side claim" }),

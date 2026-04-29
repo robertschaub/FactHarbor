@@ -947,6 +947,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
+    it("does not treat documented disagreement as directional evidence by itself", () => {
+      const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
+      expect(section).toContain("interested party, advocate, litigant, campaign actor, official, or commentator");
+      expect(section).toContain("is not by itself directional evidence");
+      expect(section).toContain("allegations, litigation positions, dissents, and criticism");
+      expect(section).toContain("The existence of disagreement alone is not evidence-backed contestation");
+    });
+
     it("comparator guidance uses abstract examples without domain-specific terms", () => {
       const section = extractSection(promptContent, "EXTRACT_EVIDENCE");
       // Must NOT contain test-case-specific terms
@@ -1036,6 +1044,13 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy");
       expect(section).toContain("directly documents the target path");
       expect(section).toContain("Overlap in actors or institutions alone is insufficient");
+    });
+
+    it("maps allegation-only opposition to neutral claim-local direction", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("interested party's allegation");
+      expect(section).toContain("return `\"neutral\"` in `claimDirectionByClaimId`");
+      expect(section).toContain("Evidence-backed contestation requires more than documented disagreement");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
