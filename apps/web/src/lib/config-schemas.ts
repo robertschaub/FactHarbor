@@ -451,6 +451,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Max sources fetched per search iteration after relevance classification (default: 5)"),
   applicabilityFilterEnabled: z.boolean().optional()
     .describe("Enable post-extraction applicability assessment to filter foreign-jurisdiction evidence (default: true)"),
+  applicabilityAssessmentEvidenceStatementMaxChars: z.number().int().min(200).max(2000).optional()
+    .describe("Max characters per evidence statement sent to APPLICABILITY_ASSESSMENT (default: 600). Larger values preserve attribution and qualifiers at higher token cost."),
   evidenceWeightingEnabled: z.boolean().optional()
     .describe("Enable legacy SR-based evidence weighting that adjusts truth% and confidence based on source track-record scores (default: false — replaced by Stage 4.5 SR calibration)"),
   sourceReliabilityCalibrationEnabled: z.boolean().optional()
@@ -1170,6 +1172,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   foreignJurisdictionRelevanceCap: 0.35,
   relevanceTopNFetch: 5,
   applicabilityFilterEnabled: true,
+  applicabilityAssessmentEvidenceStatementMaxChars: 600,
   evidenceWeightingEnabled: false,
   sourceReliabilityCalibrationEnabled: false,
   sourceReliabilityCalibrationMode: "off",

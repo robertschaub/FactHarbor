@@ -340,6 +340,8 @@ For endpoint, standing-stock, or current-snapshot comparisons, evidence that rep
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
 - A report that an interested party, advocate, litigant, campaign actor, official, or commentator asserted, criticized, alleged, denied, requested, or characterized something is not by itself directional evidence that the underlying assertion is true or false. Extract it as `contextual` only when the fact that the position exists materially informs confidence or process history; otherwise omit it.
 - Treat allegations, litigation positions, dissents, and criticism as `supports` or `contradicts` only when the source also provides the independent factual finding, formal decision artifact, procedural record, disclosed evidence, methodology, or legal analysis that makes the target claim more true or false. The existence of disagreement alone is not evidence-backed contestation.
+- For rule-governed compliance claims, distinguish an established violation or compliance finding from a risk, concern, controversy, question, appearance issue, dissent, or criticism. Concern-only evidence is `contextual` unless the source applies the relevant rule or standard to the directly evaluated target and states a violation, noncompliance, compliance, safeguard, remedy, or other standards-linked conclusion.
+- If one source statement reports both a concern and a qualifier that the concern is unproven, unresolved, remedied, or only potential, preserve that qualification in the extracted statement and do not extract the concern as a pure directional contradiction.
 - `claimDirection`:
   - "supports": Evidence affirms the claim
   - "contradicts": Evidence refutes the claim

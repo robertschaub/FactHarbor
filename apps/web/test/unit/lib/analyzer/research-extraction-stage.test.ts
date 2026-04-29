@@ -1126,6 +1126,44 @@ describe("Research Extraction Stage", () => {
       expect(mockGetModelForTask).toHaveBeenCalledWith("extract_evidence", undefined, mockConfig);
     });
 
+    it("uses the configurable statement cap for applicability evidence summaries", async () => {
+      const claims = [createClaim({ statement: "Entity A complied with procedural standards" })];
+      const qualifier = "QUALIFIER: the concern remains unproven after review.";
+      const evidence = [
+        createEvidence({
+          statement: `${"Opening procedural concern. ".repeat(12)}${qualifier}`,
+          claimDirection: "contradicts",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [{ claimId: "AC_01", claimDirection: "neutral" }],
+            reasoning: "qualifier shows the concern is not established",
+          },
+        ],
+      });
+
+      await assessEvidenceApplicability(
+        claims,
+        evidence,
+        "BR",
+        { applicabilityAssessmentEvidenceStatementMaxChars: 450 } as any,
+      );
+
+      const renderedVariables = mockLoadSection.mock.calls[0]?.[2] as Record<string, string>;
+      const summaries = JSON.parse(renderedVariables.evidenceItems);
+      expect(summaries[0].statement).toContain(qualifier);
+      expect(summaries[0].statement.length).toBeLessThanOrEqual(450);
+    });
+
     it("should preserve existing claim mappings and add LLM-assessed comparison claim mappings", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Entity A has current metric M" }),

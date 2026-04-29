@@ -360,6 +360,17 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("${evidenceItems}");
     });
 
+    it("verdict prompts do not turn unresolved compliance concerns into established violations", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(advocate).toContain("rule-governed compliance claims");
+      expect(advocate).toContain("A concern that is not tied by the cited source to a standards-linked violation");
+      expect(advocate).toContain("should not by itself drive truth below the midpoint");
+      expect(reconciliation).toContain("concern-only, controversy-only, question-only");
+      expect(reconciliation).toContain("below-midpoint verdict needs cited evidence");
+      expect(reconciliation).toContain("standards-linked finding");
+    });
+
     it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
       const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
       expect(section).toContain("Reasoning SHOULD avoid raw machine IDs");
@@ -985,6 +996,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("is not by itself directional evidence");
       expect(section).toContain("allegations, litigation positions, dissents, and criticism");
       expect(section).toContain("The existence of disagreement alone is not evidence-backed contestation");
+      expect(section).toContain("distinguish an established violation or compliance finding");
+      expect(section).toContain("Concern-only evidence is `contextual`");
+      expect(section).toContain("preserve that qualification");
     });
 
     it("comparator guidance uses abstract examples without domain-specific terms", () => {
@@ -1083,6 +1097,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("interested party's allegation");
       expect(section).toContain("return `\"neutral\"` in `claimDirectionByClaimId`");
       expect(section).toContain("Evidence-backed contestation requires more than documented disagreement");
+      expect(section).toContain("return `\"neutral\"` for evidence that only states a risk");
+      expect(section).toContain("applies the relevant rule or standard to the directly evaluated target");
+      expect(section).toContain("unproven, unresolved, remedied, or only potential");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {

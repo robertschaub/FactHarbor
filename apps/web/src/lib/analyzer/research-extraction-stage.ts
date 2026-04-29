@@ -557,10 +557,18 @@ export async function assessEvidenceApplicability(
     return evidenceItems;
   }
 
+  const statementMaxChars = Math.max(
+    200,
+    Math.min(
+      2000,
+      Math.floor(pipelineConfig.applicabilityAssessmentEvidenceStatementMaxChars ?? 600),
+    ),
+  );
+
   // Prepare compact evidence summaries for LLM (minimize tokens)
   const evidenceSummaries = evidenceItems.map((item, index) => ({
     index,
-    statement: item.statement.slice(0, 200),
+    statement: item.statement.slice(0, statementMaxChars),
     sourceUrl: item.sourceUrl ?? "unknown",
     sourceTitle: item.sourceTitle ?? "unknown",
     category: item.category,

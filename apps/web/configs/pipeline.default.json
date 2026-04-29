@@ -86,6 +86,7 @@
   "foreignJurisdictionRelevanceCap": 0.35,
   "relevanceTopNFetch": 5,
   "applicabilityFilterEnabled": true,
+  "applicabilityAssessmentEvidenceStatementMaxChars": 600,
   "evidenceWeightingEnabled": false,
   "sourceReliabilityCalibrationEnabled": false,
   "sourceReliabilityCalibrationMode": "off",
