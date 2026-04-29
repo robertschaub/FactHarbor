@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T15:48:43.006Z",
-  "count": 421,
+  "generatedAt": "2026-04-29T18:12:19.944Z",
+  "count": 422,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8922,6 +8922,33 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-04-29_Senior_Developer_Job_Admin_Annotations.md",
+      "date": "2026-04-29",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "job",
+        "admin",
+        "annotations"
+      ],
+      "files_touched": [
+        "apps/api/Controllers/JobsController.cs",
+        "apps/api/Data/Entities.cs",
+        "apps/api/Data/FhDbContext.cs",
+        "apps/api/Program.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/migrations/008_add_job_admin_annotation.sql",
+        "apps/web/src/app/api/fh/jobs/[id]/annotation/route.ts",
+        "apps/web/src/app/jobs/page.tsx",
+        "apps/web/src/app/jobs/page.module.css",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/app/jobs/[id]/page.module.css",
+        "apps/web/test/unit/app/api/fh/jobs-routes.test.ts"
+      ],
+      "summary": "Use `PUT /api/fh/jobs/{jobId}/annotation` from the web app or `PUT /v1/jobs/{jobId}/annotation` on the API with `X-Admin-Key`. Non-admin list/detail responses receive `adminAnnotation: null`, matching the existing admin-only field pattern. Verification passed: `dotnet build apps/api/FactHarbor.Api.c"
     },
     {
       "file": "2026-04-29_Senior_Developer_Remaining_Unification_Implementation.md",
