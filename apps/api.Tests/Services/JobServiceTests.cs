@@ -58,12 +58,43 @@ public sealed class JobServiceTests
             message => message.Contains("Ignored result store after terminal status CANCELLED"));
     }
 
+    [Fact]
+    public async Task CreateRetryJobAsync_PreservesDraftClaimSelectionMetadata()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var job = SeedJob(
+            db,
+            status: "FAILED",
+            progress: 100,
+            claimSelectionDraftId: "draft-1",
+            preparedStage1Json: """{"preparedUnderstanding":{"atomicClaims":[{"id":"AC_01"},{"id":"AC_02"},{"id":"AC_03"},{"id":"AC_04"},{"id":"AC_05"},{"id":"AC_06"}]}}""",
+            claimSelectionJson: """{"selectedClaimIds":["AC_01","AC_03","AC_05"]}""");
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var retryJob = await service.CreateRetryJobAsync(job.JobId, retryReason: "preserve selected claims");
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.Jobs.SingleAsync(j => j.JobId == retryJob.JobId);
+        Assert.Equal("retry", reloaded.SubmissionPath);
+        Assert.Null(reloaded.ClaimSelectionDraftId);
+        Assert.Equal(job.PreparedStage1Json, reloaded.PreparedStage1Json);
+        Assert.Equal(job.ClaimSelectionJson, reloaded.ClaimSelectionJson);
+    }
+
     private static JobService CreateJobService(FhDbContext db)
     {
         return new JobService(db, NullLogger<JobService>.Instance, new AppBuildInfo());
     }
 
-    private static JobEntity SeedJob(FhDbContext db, string status, int progress)
+    private static JobEntity SeedJob(
+        FhDbContext db,
+        string status,
+        int progress,
+        string? claimSelectionDraftId = null,
+        string? preparedStage1Json = null,
+        string? claimSelectionJson = null)
     {
         var job = new JobEntity
         {
@@ -73,6 +104,9 @@ public sealed class JobServiceTests
             InputType = "text",
             InputValue = "A verifiable claim",
             PipelineVariant = "claimboundary",
+            ClaimSelectionDraftId = claimSelectionDraftId,
+            PreparedStage1Json = preparedStage1Json,
+            ClaimSelectionJson = claimSelectionJson,
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow,
         };

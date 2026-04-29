@@ -622,6 +622,8 @@ public sealed class JobService
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
+            PreparedStage1Json = originalJob.PreparedStage1Json,
+            ClaimSelectionJson = originalJob.ClaimSelectionJson,
             SubmissionPath = "retry",
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),  // Current build hash at retry creation time
             CreatedUtc = DateTime.UtcNow,
