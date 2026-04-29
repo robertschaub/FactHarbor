@@ -366,9 +366,13 @@ describe("Stage-4 prompt contract", () => {
       expect(advocate).toContain("rule-governed compliance claims");
       expect(advocate).toContain("A concern that is not tied by the cited source to a standards-linked violation");
       expect(advocate).toContain("should not by itself drive truth below the midpoint");
+      expect(advocate).toContain("non-controlling procedural positions");
+      expect(advocate).toContain("legally effective ruling");
       expect(reconciliation).toContain("concern-only, controversy-only, question-only");
       expect(reconciliation).toContain("below-midpoint verdict needs cited evidence");
       expect(reconciliation).toContain("standards-linked finding");
+      expect(reconciliation).toContain("do not aggregate multiple reports of the same non-controlling dissent");
+      expect(reconciliation).toContain("operative rule outcome on that position");
     });
 
     it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
@@ -998,6 +1002,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("The existence of disagreement alone is not evidence-backed contestation");
       expect(section).toContain("distinguish an established violation or compliance finding");
       expect(section).toContain("Concern-only evidence is `contextual`");
+      expect(section).toContain("non-controlling procedural positions");
+      expect(section).toContain("legally effective ruling");
       expect(section).toContain("preserve that qualification");
     });
 
@@ -1099,6 +1105,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Evidence-backed contestation requires more than documented disagreement");
       expect(section).toContain("return `\"neutral\"` for evidence that only states a risk");
       expect(section).toContain("applies the relevant rule or standard to the directly evaluated target");
+      expect(section).toContain("return `\"neutral\"` for non-controlling procedural positions");
+      expect(section).toContain("operative rule outcome on that position");
       expect(section).toContain("unproven, unresolved, remedied, or only potential");
     });
 
