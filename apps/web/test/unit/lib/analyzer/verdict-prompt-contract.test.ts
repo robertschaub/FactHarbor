@@ -15,18 +15,50 @@
  * and retry layer; this test prevents the root cause from recurring.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { splitRenderedPromptAtHeader } from "@/lib/analyzer/prompt-message-parts";
 
 // ---------------------------------------------------------------------------
-// Read the actual prompt file (not mocked — this IS the contract anchor)
+// Read the actual prompt source (not mocked — this IS the contract anchor)
 // ---------------------------------------------------------------------------
 const promptPath = path.resolve(
   __dirname,
   "../../../../prompts/claimboundary.prompt.md",
 );
-const promptContent = readFileSync(promptPath, "utf-8");
+const promptManifestPath = path.resolve(
+  __dirname,
+  "../../../../prompts/claimboundary/manifest.json",
+);
+
+function normalizePromptContent(content: string): string {
+  return content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+function readRuntimePromptContent(): string {
+  if (!existsSync(promptManifestPath)) {
+    return readFileSync(promptPath, "utf-8");
+  }
+
+  const manifest = JSON.parse(readFileSync(promptManifestPath, "utf-8")) as {
+    frontmatterPath: string;
+    files: Array<{ path: string }>;
+    joiner?: string;
+  };
+  const manifestDir = path.dirname(promptManifestPath);
+  const joiner = manifest.joiner ?? "\n\n";
+  const paths = [
+    manifest.frontmatterPath,
+    ...manifest.files.map((entry) => entry.path),
+  ];
+  const parts = paths.map((relativePath) =>
+    normalizePromptContent(readFileSync(path.join(manifestDir, relativePath), "utf-8")).trimEnd(),
+  );
+
+  return `${parts.join(joiner)}\n`;
+}
+
+const promptContent = readRuntimePromptContent();
 
 // ---------------------------------------------------------------------------
 // Minimal section extractor (mirrors prompt-loader.ts extractSections)
@@ -1140,7 +1172,7 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       const forbiddenTerms = [
         "Bolsonaro", "Lula", "Moro", "Car Wash", "Lava Jato",
-        "STF", "Petrobras",
+        "Brazil", "STF", "Petrobras",
       ];
       for (const term of forbiddenTerms) {
         expect(section, `APPLICABILITY_ASSESSMENT must not contain "${term}"`).not.toContain(term);
@@ -1166,7 +1198,7 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "RELEVANCE_CLASSIFICATION");
       const forbiddenTerms = [
         "Bolsonaro", "Lula", "Moro", "Car Wash", "Lava Jato",
-        "STF", "Petrobras",
+        "Brazil", "STF", "Petrobras",
       ];
       for (const term of forbiddenTerms) {
         expect(section, `RELEVANCE_CLASSIFICATION must not contain "${term}"`).not.toContain(term);

@@ -338,6 +338,8 @@ For endpoint, standing-stock, or current-snapshot comparisons, evidence that rep
 - **Source attribution**: When multiple sources are provided, set `sourceUrl` to the exact URL shown in the header of the source you extracted this evidence from (e.g., `[Source 2: Title]\nURL: https://...`). Copy the URL verbatim.
 - **Derivative detection**: If the source cites or references another source's study/data/findings, set `isDerivative: true` and include `derivedFromSourceUrl` if the URL is mentioned.
 - Extract only factual evidence — exclude opinions, predictions, and meta-commentary.
+- A report that an interested party, advocate, litigant, campaign actor, official, or commentator asserted, criticized, alleged, denied, requested, or characterized something is not by itself directional evidence that the underlying assertion is true or false. Extract it as `contextual` only when the fact that the position exists materially informs confidence or process history; otherwise omit it.
+- Treat allegations, litigation positions, dissents, and criticism as `supports` or `contradicts` only when the source also provides the independent factual finding, formal decision artifact, procedural record, disclosed evidence, methodology, or legal analysis that makes the target claim more true or false. The existence of disagreement alone is not evidence-backed contestation.
 - `claimDirection`:
   - "supports": Evidence affirms the claim
   - "contradicts": Evidence refutes the claim
