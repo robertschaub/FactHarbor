@@ -160,7 +160,7 @@ Implemented:
 | Direct jobs pollute validation evidence | Reduced | Jobs now carry `SubmissionPath`; supported validation can distinguish ACS automatic draft from ACS interactive draft, direct, and retry paths. |
 | Prompt governance claims remain inaccurate | Reduced | Prompt Architecture page now names UCM-backed surfaces and exceptions explicitly. |
 | C# / TypeScript contract drift | Partially reduced | `SubmissionPath` and admin exposure were added; broader generated/shared DTO work remains deferred. |
-| Running services use stale binaries/schema | Operational | Restart services after final commit; startup column creation handles existing SQLite DBs. |
+| Running services use stale binaries/schema | Resolved locally | Services were restarted after the final commits; startup column creation handles existing SQLite DBs. |
 
 ---
 
@@ -187,10 +187,12 @@ Passed:
 - `npm -w apps/web run build`
 - `dotnet build -p:UseAppHost=false -o ..\..\test-output\api-build`
 - `git diff --check`
+- `.\scripts\restart-clean.ps1`
+- API and Web health checks returned `200`
 
 Noted:
 
-- Plain `dotnet build` against the normal API output path was blocked by a running local API process holding `FactHarbor.Api.exe` / `.dll`. The alternate output build passed, so the code change is compile-clean; service restart is still required for the running process.
+- Plain `dotnet build` against the normal API output path was blocked by a running local API process holding `FactHarbor.Api.exe` / `.dll`. The alternate output build passed, and the later service restart replaced the running process.
 - No live analysis jobs were submitted.
 
 ---

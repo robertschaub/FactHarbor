@@ -8,7 +8,7 @@
 
 **Open items:** Selected claims can still receive zero targeted Stage 2 main research; this is now visible but not fixed. Prompt-governance exceptions remain for SR core, grounding-check legacy sections, Stage 1 inline framing, SR evidence-pack inline helpers, and inverse calibration. Direct endpoint policy enforcement remains deferred. Shared/generated DTO work remains deferred until the observability/provenance contracts stabilize.
 
-**Warnings:** Service restart is required for running local API/web processes to use the new `SubmissionPath` code/schema. Plain `dotnet build` against the normal API output path was previously blocked by the running service lock; `dotnet build -p:UseAppHost=false -o ..\..\test-output\api-build` passed. Live verification jobs used: 0 of 8.
+**Warnings:** Local services were restarted after the final commits, and API/Web health checks returned `200`. Plain `dotnet build` against the normal API output path was previously blocked by the running service lock; `dotnet build -p:UseAppHost=false -o ..\..\test-output\api-build` passed. Live verification jobs used: 0 of 8.
 
 **For next agent:** Start from commits `59e1c806`, `ba234200`, `78013460`, `423a49fd`, `5e5272ab`, and `fc8052e3`. The detailed status is in `Docs/WIP/2026-04-29_Remaining_Unification_Implementation_Status.md`. For Stage 2 behavior follow-up, use `analysisObservability.acsResearchWaste.selectedClaimResearchCoverage` and validation fields `zeroTargetedSelectedClaimCount` / `zeroTargetedSelectedClaimIds`; do not infer a selector bug from those fields alone.
 
@@ -21,5 +21,5 @@ Starting budget: contract-first edge cleanup; no new analysis authority, selecto
 Failed/contested attempts: initial test invocations used workspace-relative paths under the web package; classified as verifier-command issue and kept. Normal API output build was blocked by the running service lock; classified as environment/output lock and verified with alternate output build. Final reviewer REQUEST_CHANGES was kept as valid and fixed narrowly.
 Complexity decision: amended existing contracts and summaries rather than adding a parallel selector or metrics subsystem.
 Final diff shape: additive telemetry/provenance/registry fields, focused tests, docs, and one API column/migration.
-Verification: focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, and final reviewer re-review APPROVE.
+Verification: focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, service restart plus health checks, and final reviewer re-review APPROVE.
 ```

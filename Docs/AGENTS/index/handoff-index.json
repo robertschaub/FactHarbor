@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-28T23:19:25.733Z",
-  "count": 419,
+  "generatedAt": "2026-04-29T05:11:08.822Z",
+  "count": 420,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8915,7 +8932,7 @@
             "failed_contested_attempts": "initial test invocations used workspace-relative paths under the web package; classified as verifier-command issue and kept. Normal API output build was blocked by the running service lock; classified as environment/output lock and verified with alternate output build. Final reviewer REQUEST_CHANGES was kept as valid and fixed narrowly.",
             "complexity_decision": "amended existing contracts and summaries rather than adding a parallel selector or metrics subsystem.",
             "final_diff_shape": "additive telemetry/provenance/registry fields, focused tests, docs, and one API column/migration.",
-            "verification": "focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, and final reviewer re-review APPROVE."
+            "verification": "focused Vitest suite, `npm -w apps/web run build`, API alternate-output build, `git diff --check`, service restart plus health checks, and final reviewer re-review APPROVE."
           }
         }
       }
