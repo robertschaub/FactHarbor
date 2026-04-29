@@ -9,6 +9,8 @@ namespace FactHarbor.Api.Services;
 
 public sealed class JobService
 {
+    private const int AbsoluteClaimSelectionCap = 5;
+
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
     private readonly AppBuildInfo _buildInfo;
@@ -656,6 +658,7 @@ public sealed class JobService
         var recommendedClaimIds = Array.Empty<string>();
         var deferredClaimIds = Array.Empty<string>();
         int? selectionCap = null;
+        int? selectionAdmissionCap = null;
         string? recommendationRationale = null;
         string? budgetFitRationale = null;
         var assessments = Array.Empty<object>();
@@ -680,6 +683,12 @@ public sealed class JobService
                 {
                     selectionCap = parsedSelectionCap;
                 }
+                if (root.TryGetProperty("selectionAdmissionCap", out var sap) &&
+                    sap.ValueKind == JsonValueKind.Number &&
+                    sap.TryGetInt32(out var parsedSelectionAdmissionCap))
+                {
+                    selectionAdmissionCap = parsedSelectionAdmissionCap;
+                }
                 if (root.TryGetProperty("recommendationRationale", out var rrp) && rrp.ValueKind == JsonValueKind.String)
                     recommendationRationale = rrp.GetString();
                 if (root.TryGetProperty("budgetFitRationale", out var bfrp) && bfrp.ValueKind == JsonValueKind.String)
@@ -692,6 +701,29 @@ public sealed class JobService
 
         if (string.IsNullOrWhiteSpace(preparedStage1Json))
             return (null, "Draft is missing preparedStage1 snapshot");
+
+        var structuralSelectionCap = Math.Clamp(selectionCap ?? AbsoluteClaimSelectionCap, 1, AbsoluteClaimSelectionCap);
+        var structuralAdmissionCap = Math.Clamp(selectionAdmissionCap ?? structuralSelectionCap, 1, structuralSelectionCap);
+        var effectiveSelectionCap = rankedClaimIds.Length > 0
+            ? Math.Min(rankedClaimIds.Length, structuralAdmissionCap)
+            : structuralAdmissionCap;
+        effectiveSelectionCap = Math.Max(1, effectiveSelectionCap);
+
+        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > effectiveSelectionCap)
+            return (null, effectiveSelectionCap == 1
+                ? "Must select exactly 1 claim"
+                : $"Must select between 1 and {effectiveSelectionCap} claims");
+
+        if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
+            return (null, "Duplicate claim IDs");
+
+        if (rankedClaimIds.Length > 0)
+        {
+            var rankedClaimIdSet = rankedClaimIds.ToHashSet(StringComparer.Ordinal);
+            var invalid = selectedClaimIds.Where(id => !rankedClaimIdSet.Contains(id)).ToArray();
+            if (invalid.Length > 0)
+                return (null, $"Selected claim IDs not in candidate set: {string.Join(", ", invalid)}");
+        }
 
         // Build assessments as raw JSON array elements for proper serialization
         var assessmentJsonElements = new List<object>();
@@ -710,6 +742,7 @@ public sealed class JobService
             restartedViaOther = draft.RestartedViaOther,
             restartCount = draft.RestartCount,
             selectionCap,
+            selectionAdmissionCap,
             rankedClaimIds,
             recommendedClaimIds,
             deferredClaimIds,

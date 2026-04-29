@@ -157,6 +157,8 @@ describe("Captain-approved validation historical references", () => {
           },
         }),
         claimSelectionJson: JSON.stringify({
+          selectionCap: 5,
+          selectionAdmissionCap: 3,
           rankedClaimIds: ["AC_01", "AC_02"],
           recommendedClaimIds: ["AC_01"],
           selectedClaimIds: ["AC_01"],
@@ -243,6 +245,8 @@ describe("Captain-approved validation historical references", () => {
     expect(summary.selectedClaimResearch).toHaveLength(1);
     expect(summary.zeroTargetedSelectedClaimCount).toBe(1);
     expect(summary.zeroTargetedSelectedClaimIds).toEqual(["AC_01"]);
+    expect(summary.claimSelectionCap).toBe(5);
+    expect(summary.claimSelectionAdmissionCap).toBe(3);
     expect(summary.submissionPath).toBe("acs-automatic-draft");
     expect(summary.gitCommitHash).toBe("executed-commit");
     expect(summary.createdGitCommitHash).toBe("created-commit");

@@ -666,6 +666,7 @@ const PREPARED_STAGE1_PIPELINE_CONFIG_HASH_IGNORED_KEYS = new Set([
   "claimSelectionCap",
   "claimSelectionBudgetAwarenessEnabled",
   "claimSelectionBudgetFitMode",
+  "claimSelectionEstimatedMainResearchMsPerClaim",
   "claimSelectionMinRecommendedClaims",
 ]);
 

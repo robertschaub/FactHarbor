@@ -913,6 +913,8 @@ export interface ClaimSelectionDraftState {
   preparedStage1?: PreparedStage1Snapshot;
   // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
   selectionCap?: number;
+  // Persisted budget-aware admission cap enforced at confirmation/job creation.
+  selectionAdmissionCap?: number;
   // Persisted inactivity timeout for manual claim-selection sessions (0 disables auto-proceed).
   selectionIdleAutoProceedMs?: number;
   rankedClaimIds: string[];
@@ -958,6 +960,8 @@ export interface ClaimSelectionMetadata {
   restartCount: number;
   // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
   selectionCap?: number;
+  // Persisted budget-aware admission cap enforced at confirmation/job creation.
+  selectionAdmissionCap?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
   deferredClaimIds?: string[];

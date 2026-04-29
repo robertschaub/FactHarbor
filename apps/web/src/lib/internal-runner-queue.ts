@@ -16,6 +16,7 @@ import { fireWebhook } from "@/lib/provider-webhook";
 import { getEnv } from "@/lib/auth";
 import { getWebGitCommitHash } from "@/lib/build-info";
 import {
+  getBudgetAwareClaimSelectionCap,
   getClaimSelectionCap,
   normalizeClaimSelectionCap,
   normalizeClaimSelectionIdleAutoProceedMs,
@@ -1140,6 +1141,7 @@ async function runDraftPreparationBackground(draftId: string) {
     let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
     const heartbeatIntervalMs = getRunnerHeartbeatIntervalMs();
     let configuredSelectionCap = normalizeClaimSelectionCap(undefined);
+    let effectiveSelectionAdmissionCap = configuredSelectionCap;
     let configuredIdleAutoProceedMs = normalizeClaimSelectionIdleAutoProceedMs(undefined);
 
     const sendDraftHeartbeat = async () => {
@@ -1240,6 +1242,7 @@ async function runDraftPreparationBackground(draftId: string) {
       version: 1,
       ...(preparedStage1 ? { preparedStage1 } : {}),
       selectionCap: configuredSelectionCap,
+      selectionAdmissionCap: effectiveSelectionAdmissionCap,
       selectionIdleAutoProceedMs: configuredIdleAutoProceedMs,
       rankedClaimIds: params.rankedClaimIds,
       recommendedClaimIds: params.recommendedClaimIds,
@@ -1325,6 +1328,17 @@ async function runDraftPreparationBackground(draftId: string) {
     }
 
     const candidateIds = preparedStage1.preparedUnderstanding.atomicClaims.map((claim) => claim.id);
+    effectiveSelectionAdmissionCap = getBudgetAwareClaimSelectionCap({
+      candidateCount: candidateIds.length,
+      configuredCap: pipelineConfig.claimSelectionCap,
+      budgetAwarenessEnabled: pipelineConfig.claimSelectionBudgetAwarenessEnabled,
+      budgetFitMode: pipelineConfig.claimSelectionBudgetFitMode,
+      researchTimeBudgetMs: pipelineConfig.researchTimeBudgetMs,
+      contradictionProtectedTimeMs: pipelineConfig.contradictionProtectedTimeMs,
+      estimatedMainResearchMsPerClaim: pipelineConfig.claimSelectionEstimatedMainResearchMsPerClaim,
+      minRecommendedClaims: pipelineConfig.claimSelectionMinRecommendedClaims,
+    });
+
     if (candidateIds.length === 0) {
       const errorMessage = "Stage 1 produced no selectable atomic claims for this draft.";
       failureCode = "no_candidate_claims";
@@ -1349,10 +1363,10 @@ async function runDraftPreparationBackground(draftId: string) {
       return;
     }
 
-    if (shouldAutoContinueWithoutSelection(candidateIds.length, configuredSelectionCap)) {
+    if (shouldAutoContinueWithoutSelection(candidateIds.length, effectiveSelectionAdmissionCap)) {
       const autoContinueClaimIds = candidateIds.slice(
         0,
-        getClaimSelectionCap(candidateIds.length, configuredSelectionCap),
+        getClaimSelectionCap(candidateIds.length, effectiveSelectionAdmissionCap),
       );
       lastPreparationEventMessage =
         `Stage 1 produced ${candidateIds.length} candidate claim(s); draft will auto-continue without manual selection.`;
@@ -1411,7 +1425,7 @@ async function runDraftPreparationBackground(draftId: string) {
         impliedClaim: preparedStage1.preparedUnderstanding.impliedClaim,
         articleThesis: preparedStage1.preparedUnderstanding.articleThesis,
         atomicClaims: preparedStage1.preparedUnderstanding.atomicClaims,
-        selectionCap: configuredSelectionCap,
+        selectionCap: effectiveSelectionAdmissionCap,
         pipelineConfig,
       });
     } finally {
@@ -1421,7 +1435,7 @@ async function runDraftPreparationBackground(draftId: string) {
     const automaticRecommendedClaimIds = getAutomaticRecommendationSelection(
       selectionMode,
       recommendation.recommendedClaimIds,
-      configuredSelectionCap,
+      effectiveSelectionAdmissionCap,
     );
 
     if (automaticRecommendedClaimIds && automaticRecommendedClaimIds.length > 0) {

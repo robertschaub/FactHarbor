@@ -17,9 +17,13 @@ import {
   CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
   CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES,
   CLAIM_SELECTION_DEFAULT_CAP,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN,
   CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
   CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
   normalizeClaimSelectionBudgetFitMode,
+  normalizeClaimSelectionEstimatedMainResearchMsPerClaim,
   normalizeClaimSelectionMode,
   normalizeClaimSelectionMinRecommendedClaims,
 } from "./claim-selection-flow";
@@ -507,11 +511,16 @@ export const PipelineConfigSchema = z.object({
   claimSelectionIdleAutoProceedMs: z.number().int().min(0).max(3600000).optional()
     .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 900000, 0 disables)."),
   claimSelectionBudgetAwarenessEnabled: z.boolean().optional()
-    .describe("Enable budget-awareness metadata/plumbing for ACS. Default: false; active budget-limited recommendation behavior remains gated by claimSelectionBudgetFitMode."),
+    .describe("Enable budget-aware ACS admission metadata/plumbing. Default: true; budget-limited recommendation behavior remains gated by claimSelectionBudgetFitMode."),
   claimSelectionBudgetFitMode: z.enum(CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES).optional()
-    .describe("Budget-fit behavior for ACS: off, explain_only, or allow_fewer_recommendations. Default: off."),
+    .describe("Budget-fit behavior for ACS: off, explain_only, or allow_fewer_recommendations. Default: allow_fewer_recommendations."),
   claimSelectionMinRecommendedClaims: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
     .describe("Minimum ACS recommendations when budget-aware recommendation behavior is enabled (default: 1)."),
+  claimSelectionEstimatedMainResearchMsPerClaim: z.number().int()
+    .min(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN)
+    .max(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX)
+    .optional()
+    .describe("Estimated main-research wall-clock budget needed per selected claim for ACS admission (default: 160000)."),
   maxAtomicClaims: z.number().int().min(2).max(30).optional()
     .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
   maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()
@@ -893,6 +902,15 @@ export const PipelineConfigSchema = z.object({
       data.claimSelectionMinRecommendedClaims,
     );
   }
+  if (data.claimSelectionEstimatedMainResearchMsPerClaim === undefined) {
+    data.claimSelectionEstimatedMainResearchMsPerClaim =
+      CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT;
+  } else {
+    data.claimSelectionEstimatedMainResearchMsPerClaim =
+      normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+        data.claimSelectionEstimatedMainResearchMsPerClaim,
+      );
+  }
   if (data.maxAtomicClaims === undefined) {
     data.maxAtomicClaims = 5;
   }
@@ -1203,6 +1221,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   claimSelectionBudgetAwarenessEnabled: CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED,
   claimSelectionBudgetFitMode: CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
   claimSelectionMinRecommendedClaims: CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
+  claimSelectionEstimatedMainResearchMsPerClaim:
+    CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT,
   maxAtomicClaims: 5,
   maxAtomicClaimsBase: 3,
   atomicClaimsInputCharsPerClaim: 500,

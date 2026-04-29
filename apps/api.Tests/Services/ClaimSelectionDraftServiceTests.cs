@@ -212,6 +212,57 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task UpdateSelectionStateAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var latestInteraction = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                lastSelectionInteractionUtc: latestInteraction,
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.UpdateSelectionStateAsync(
+            draft.DraftId,
+            ["AC_01", "AC_02", "AC_03", "AC_04"],
+            latestInteraction.AddSeconds(1));
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+    }
+
+    [Fact]
+    public async Task ConfirmDraftAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.ConfirmDraftAsync(
+            draft.DraftId,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+    }
+
+    [Fact]
     public async Task PrepareAutoContinueAsync_AwaitingSelectionRejectsChangedInteractionTimestamp()
     {
         await using var database = await TestDatabase.CreateAsync();
@@ -242,6 +293,33 @@ public sealed class ClaimSelectionDraftServiceTests
         Assert.Equal(409, statusCode);
         Assert.Equal("Draft selection state changed before automatic continuation could run", error);
         Assert.Equal(originalState, (await db.ClaimSelectionDrafts.FindAsync(draft.DraftId))?.DraftStateJson);
+    }
+
+    [Fact]
+    public async Task PrepareAutoContinueAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draftStateJson = PreparedState(
+            ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+            selectedClaimIds: ["AC_01", "AC_02", "AC_03", "AC_04"],
+            selectionCap: 5,
+            selectionAdmissionCap: 3);
+        var draft = SeedDraft(
+            db,
+            status: "PREPARING",
+            draftStateJson: draftStateJson);
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.PrepareAutoContinueAsync(
+            draft.DraftId,
+            draftStateJson,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Must select between 1 and 3 claims", error);
     }
 
     [Fact]
@@ -455,6 +533,28 @@ public sealed class ClaimSelectionDraftServiceTests
         await using var verifyDb = database.CreateContext();
         Assert.Equal(205, await verifyDb.ClaimSelectionDrafts.CountAsync(d => d.Status == "EXPIRED"));
         Assert.Equal(205, await verifyDb.ClaimSelectionDraftEvents.CountAsync(e => e.Action == "expire"));
+    }
+
+    [Fact]
+    public async Task ListIdleAutoProceedDueDraftsAsync_SkipsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                lastSelectionInteractionUtc: DateTime.UtcNow.AddMinutes(-5),
+                selectedClaimIds: ["AC_01", "AC_02", "AC_03", "AC_04"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var result = await service.ListIdleAutoProceedDueDraftsAsync();
+
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -759,7 +859,8 @@ public sealed class ClaimSelectionDraftServiceTests
         string[] claimIds,
         DateTime? lastSelectionInteractionUtc = null,
         string[]? selectedClaimIds = null,
-        int selectionCap = 5)
+        int selectionCap = 5,
+        int? selectionAdmissionCap = null)
     {
         var state = new JsonObject
         {
@@ -773,6 +874,11 @@ public sealed class ClaimSelectionDraftServiceTests
                 },
             },
         };
+
+        if (selectionAdmissionCap.HasValue)
+        {
+            state["selectionAdmissionCap"] = selectionAdmissionCap.Value;
+        }
 
         if (lastSelectionInteractionUtc.HasValue)
         {

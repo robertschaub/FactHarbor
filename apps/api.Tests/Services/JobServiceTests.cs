@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
@@ -83,6 +85,56 @@ public sealed class JobServiceTests
         Assert.Equal(job.ClaimSelectionJson, reloaded.ClaimSelectionJson);
     }
 
+    [Fact]
+    public async Task CreateJobFromDraftAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var (job, error) = await service.CreateJobFromDraftAsync(
+            draft,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(job);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+        Assert.Empty(await db.Jobs.ToListAsync());
+    }
+
+    [Fact]
+    public async Task CreateJobFromDraftAsync_PersistsSelectionAdmissionCapMetadata()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var (job, error) = await service.CreateJobFromDraftAsync(
+            draft,
+            ["AC_01", "AC_02", "AC_03"]);
+
+        Assert.Null(error);
+        Assert.NotNull(job);
+
+        using var doc = JsonDocument.Parse(job!.ClaimSelectionJson!);
+        Assert.Equal(5, doc.RootElement.GetProperty("selectionCap").GetInt32());
+        Assert.Equal(3, doc.RootElement.GetProperty("selectionAdmissionCap").GetInt32());
+        Assert.Equal(3, doc.RootElement.GetProperty("selectedClaimIds").GetArrayLength());
+    }
+
     private static JobService CreateJobService(FhDbContext db)
     {
         return new JobService(db, NullLogger<JobService>.Instance, new AppBuildInfo());
@@ -112,6 +164,64 @@ public sealed class JobServiceTests
         };
         db.Jobs.Add(job);
         return job;
+    }
+
+    private static ClaimSelectionDraftEntity SeedDraft(
+        FhDbContext db,
+        string draftStateJson,
+        string selectionMode = "automatic")
+    {
+        var draft = new ClaimSelectionDraftEntity
+        {
+            DraftId = Guid.NewGuid().ToString("N"),
+            Status = "AWAITING_CLAIM_SELECTION",
+            Progress = 100,
+            OriginalInputType = "text",
+            ActiveInputType = "text",
+            OriginalInputValue = "A verifiable claim",
+            ActiveInputValue = "A verifiable claim",
+            PipelineVariant = "claimboundary",
+            SelectionMode = selectionMode,
+            DraftStateJson = draftStateJson,
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+            ExpiresUtc = DateTime.UtcNow.AddHours(1),
+        };
+        db.ClaimSelectionDrafts.Add(draft);
+        return draft;
+    }
+
+    private static string PreparedState(
+        string[] claimIds,
+        int selectionCap = 5,
+        int? selectionAdmissionCap = null)
+    {
+        var state = new JsonObject
+        {
+            ["selectionCap"] = selectionCap,
+            ["rankedClaimIds"] = JsonStringArray(claimIds),
+            ["recommendedClaimIds"] = JsonStringArray(claimIds),
+            ["preparedStage1"] = new JsonObject
+            {
+                ["preparedUnderstanding"] = new JsonObject
+                {
+                    ["atomicClaims"] = new JsonArray(
+                        claimIds.Select(id => (JsonNode?)new JsonObject { ["id"] = id }).ToArray()),
+                },
+            },
+        };
+
+        if (selectionAdmissionCap.HasValue)
+        {
+            state["selectionAdmissionCap"] = selectionAdmissionCap.Value;
+        }
+
+        return state.ToJsonString();
+    }
+
+    private static JsonArray JsonStringArray(IEnumerable<string> values)
+    {
+        return new JsonArray(values.Select(value => (JsonNode?)JsonValue.Create(value)).ToArray());
     }
 
     private sealed class TestDatabase : IAsyncDisposable

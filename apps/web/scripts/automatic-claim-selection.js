@@ -382,6 +382,10 @@ function extractValidationSummary({
     budgetTreatmentByClaimId: budgetTreatmentSummary.byClaimId,
     claimSelectionCap:
       typeof claimSelection?.selectionCap === "number" ? claimSelection.selectionCap : null,
+    claimSelectionAdmissionCap:
+      typeof claimSelection?.selectionAdmissionCap === "number"
+        ? claimSelection.selectionAdmissionCap
+        : null,
     truthPercentage: typeof result?.truthPercentage === "number" ? result.truthPercentage : null,
     verdict: result?.verdict || null,
     confidence: typeof result?.confidence === "number" ? result.confidence : null,

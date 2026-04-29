@@ -12,9 +12,12 @@ export const CLAIM_SELECTION_ABSOLUTE_MAX = 5;
 export const CLAIM_SELECTION_DEFAULT_CAP = 5;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS = 3600000;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_MAX_MS = 3600000;
-export const CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED = false;
-export const CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE: ClaimSelectionBudgetFitMode = "off";
+export const CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED = true;
+export const CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE: ClaimSelectionBudgetFitMode = "allow_fewer_recommendations";
 export const CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT = 1;
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT = 160000;
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN = 30000;
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX = 600000;
 
 export function normalizeClaimSelectionMode(
   configuredMode: string | null | undefined,
@@ -41,6 +44,23 @@ export function normalizeClaimSelectionMinRecommendedClaims(
   return Math.max(
     1,
     Math.min(CLAIM_SELECTION_ABSOLUTE_MAX, Math.trunc(normalizedMin)),
+  );
+}
+
+export function normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+  configuredMs: number | null | undefined,
+): number {
+  if (!Number.isFinite(configuredMs)) {
+    return CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT;
+  }
+
+  const normalizedMs = configuredMs as number;
+  return Math.max(
+    CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN,
+    Math.min(
+      CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX,
+      Math.trunc(normalizedMs),
+    ),
   );
 }
 
@@ -97,6 +117,51 @@ export function getClaimSelectionCap(
     return 1;
   }
   return Math.min(normalizedCap, Math.trunc(candidateCount));
+}
+
+export function getBudgetAwareClaimSelectionCap(options: {
+  candidateCount: number;
+  configuredCap?: number | null;
+  budgetAwarenessEnabled?: boolean | null;
+  budgetFitMode?: string | null;
+  researchTimeBudgetMs?: number | null;
+  contradictionProtectedTimeMs?: number | null;
+  estimatedMainResearchMsPerClaim?: number | null;
+  minRecommendedClaims?: number | null;
+}): number {
+  const structuralCap = getClaimSelectionCap(
+    options.candidateCount,
+    options.configuredCap,
+  );
+  if (
+    options.budgetAwarenessEnabled !== true ||
+    normalizeClaimSelectionBudgetFitMode(options.budgetFitMode) !== "allow_fewer_recommendations"
+  ) {
+    return structuralCap;
+  }
+
+  const researchBudgetMs = Number.isFinite(options.researchTimeBudgetMs)
+    ? Math.max(0, Math.trunc(options.researchTimeBudgetMs as number))
+    : 0;
+  const protectedTimeMs = Number.isFinite(options.contradictionProtectedTimeMs)
+    ? Math.max(0, Math.trunc(options.contradictionProtectedTimeMs as number))
+    : 0;
+  const availableMainResearchMs = Math.max(0, researchBudgetMs - protectedTimeMs);
+  const estimatedPerClaimMs = normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+    options.estimatedMainResearchMsPerClaim,
+  );
+  const budgetCap = Math.floor(availableMainResearchMs / estimatedPerClaimMs);
+  const minRecommendedClaims = normalizeClaimSelectionMinRecommendedClaims(
+    options.minRecommendedClaims,
+  );
+
+  return Math.max(
+    1,
+    Math.min(
+      structuralCap,
+      Math.max(minRecommendedClaims, budgetCap),
+    ),
+  );
 }
 
 export function isValidClaimSelection(
