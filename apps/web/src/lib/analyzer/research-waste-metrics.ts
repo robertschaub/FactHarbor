@@ -496,6 +496,8 @@ function buildSelectedClaimResearchCoverage(
     iterationTypeCounts[iteration.iterationType]++;
   }
 
+  // Final count is post-pipeline result evidence; admitted count below is
+  // summed from iterations before later dedupe/filter/cap steps.
   const finalEvidenceItemCount = state.evidenceItems.filter(
     (item) => item.relevantClaimIds?.includes(claimId),
   ).length;

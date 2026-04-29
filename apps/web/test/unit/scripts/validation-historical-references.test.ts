@@ -314,4 +314,58 @@ describe("Captain-approved validation historical references", () => {
 
     expect(output).toContain("**Prompt:** old-prom → new-prom (CHANGED)");
   });
+
+  it("batch comparator surfaces mixed git and prompt hashes in the header", () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fh-compare-batches-mixed-"));
+    const oldDir = path.join(tmpRoot, "old");
+    const newDir = path.join(tmpRoot, "new");
+    fs.mkdirSync(oldDir);
+    fs.mkdirSync(newDir);
+
+    const makeSummary = (
+      familyName: string,
+      gitCommitHash: string,
+      promptContentHash: string,
+    ) => ({
+      family: { familyName },
+      verdict: "MIXED",
+      truthPercentage: 50,
+      confidence: 70,
+      claimVerdictCount: 1,
+      warnings: { total: 0, bySeverity: {} },
+      selectedClaimCount: 1,
+      preparedClaimCount: 1,
+      deferredClaimCount: 0,
+      zeroTargetedSelectedClaimCount: 0,
+      gitCommitHash,
+      promptContentHash,
+    });
+
+    for (const familyName of ["fixture_a", "fixture_b"]) {
+      fs.writeFileSync(
+        path.join(oldDir, `${familyName}.json`),
+        JSON.stringify(makeSummary(familyName, "1111111abcdef", "old-prompt-content-hash")),
+      );
+    }
+    fs.writeFileSync(
+      path.join(newDir, "fixture_a.json"),
+      JSON.stringify(makeSummary("fixture_a", "2222222abcdef", "alpha-prompt-content-hash")),
+    );
+    fs.writeFileSync(
+      path.join(newDir, "fixture_b.json"),
+      JSON.stringify(makeSummary("fixture_b", "3333333abcdef", "beta-prompt-content-hash")),
+    );
+
+    const output = execFileSync(
+      "node",
+      [path.join(repoRoot, "scripts", "validation", "compare-batches.js"), oldDir, newDir],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      },
+    );
+
+    expect(output).toContain("**Git:** 1111111 → mixed:2 [2222222, 3333333]");
+    expect(output).toContain("**Prompt:** old-prom → mixed:2 [alpha-pr, beta-pro] (CHANGED)");
+  });
 });

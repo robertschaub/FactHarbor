@@ -85,7 +85,7 @@ Commit: `ba234200 feat: label analysis submission provenance`
 Implemented:
 
 - Added `JobEntity.SubmissionPath`.
-- Set direct jobs to `direct-api`, retries to `retry`, and ACS automatic draft jobs to `acs-automatic-draft`.
+- Set direct jobs to `direct-api`, retries to `retry`, ACS interactive draft jobs to `acs-interactive-draft`, and ACS automatic draft jobs to `acs-automatic-draft`.
 - Added startup column creation and migration SQL.
 - Exposed admin-only job detail fields for creation/execution/prompt hashes.
 - Added validation summary `analysisRunProvenance` with submission path, draft/job IDs, selected Stage 1 preparation provenance, and git/prompt hashes.

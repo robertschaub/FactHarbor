@@ -73,7 +73,12 @@ public sealed class AnalyzeController : ControllerBase
         }
 
         // 2. Create Job
-        var job = await _jobs.CreateJobAsync(req.inputType, req.inputValue, req.pipelineVariant ?? "claimboundary", req.inviteCode);
+        var job = await _jobs.CreateJobAsync(
+            req.inputType,
+            req.inputValue,
+            req.pipelineVariant ?? "claimboundary",
+            req.inviteCode,
+            submissionPath: "direct-api");
 
         // If we have scope factory + logger, do best-effort async trigger (POC-friendly).
         if (_scopeFactory is not null && _log is not null)

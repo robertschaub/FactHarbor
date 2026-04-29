@@ -102,6 +102,23 @@ The ClaimBoundary prompt is the primary production pipeline prompt. Its split so
 
 The assembled profile is loaded under the ##claimboundary## UCM profile. Runtime telemetry records prompt hash/section metadata through the existing analysis metrics paths.
 
+=== 5.1 ClaimBoundary Section-to-Stage Map ===
+
+This table is a developer navigation aid. The authoritative section list remains ##apps/web/prompts/claimboundary/manifest.json##, and exact model IDs remain UCM/config-driven via ##getModelForTask()##.
+
+|= Sections |= Runtime stage / purpose |= Current model task / tier
+| ##CLAIM_EXTRACTION_PASS1##, ##CLAIM_SALIENCE_COMMITMENT## | Stage 1 understanding and salience inventory | ##understand## / budget
+| ##CLAIM_EXTRACTION_PASS2##, ##CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX## | Stage 1 claim consolidation and Pass 2 binding appendix | ##extract_evidence## / budget; some contract-retry paths may escalate to ##context_refinement##
+| ##CLAIM_CONTRACT_VALIDATION##, ##CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION##, ##CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX##, ##CLAIM_CONTRACT_REPAIR## | Stage 1 contract validation and repair | ##context_refinement## / standard
+| ##CLAIM_SELECTION_RECOMMENDATION## | ACS-CW post-Gate-1 recommendation over already-valid candidates | ##context_refinement## / standard
+| ##CLAIM_VALIDATION## | Gate 1 claim validation | ##understand## / budget
+| ##GENERATE_QUERIES##, ##RELEVANCE_CLASSIFICATION##, ##SCOPE_NORMALIZATION##, ##REMAP_SEEDED_EVIDENCE## | Stage 2 query/relevance/scope/remap helpers | ##understand## / budget
+| ##EXTRACT_EVIDENCE##, ##APPLICABILITY_ASSESSMENT## | Stage 2 evidence extraction and applicability | ##extract_evidence## / budget
+| ##BOUNDARY_CLUSTERING## | Stage 3 ClaimAssessmentBoundary clustering | ##verdict## / premium
+| ##VERDICT_ADVOCATE##, ##VERDICT_CHALLENGER##, ##VERDICT_RECONCILIATION##, ##VERDICT_GROUNDING_VALIDATION##, ##VERDICT_DIRECTION_VALIDATION##, ##VERDICT_DIRECTION_REPAIR##, ##VERDICT_CITATION_DIRECTION_ADJUDICATION## | Stage 4 verdict debate, validation, repair, and citation-direction adjudication | Stage-4 tier option resolves to ##verdict## for standard/premium paths or ##understand## for explicitly budgeted paths
+| ##VERDICT_NARRATIVE##, ##ARTICLE_ADJUDICATION##, ##CLAIM_GROUPING##, ##EXPLANATION_QUALITY_RUBRIC##, ##TIGER_SCORE_EVAL## | Stage 5 aggregation/report and evaluation helpers | ##verdict## / premium
+| ##SR_CALIBRATION## | Stage 4.5 source-reliability calibration | UCM-selected calibration mode; typically ##context_refinement## or ##verdict## depending on configured strength
+
 == 6. Other Runtime Surfaces ==
 
 === 6.1 Source Reliability ===

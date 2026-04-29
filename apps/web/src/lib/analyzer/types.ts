@@ -787,7 +787,9 @@ export interface SelectedClaimResearchCoverage {
   iterationTypeCounts: Record<ClaimAcquisitionIterationEntry["iterationType"], number>;
   queryCount: number;
   fetchAttemptCount: number;
+  /** Sum of admitted evidence across iterations before later dedupe/filter/cap steps. */
   admittedEvidenceItemCount: number;
+  /** Final result evidence count for this claim after downstream filtering and capping. */
   finalEvidenceItemCount: number;
   elapsedMs: number;
   sufficiencyState: "sufficient" | "insufficient" | "unknown";

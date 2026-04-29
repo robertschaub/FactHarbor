@@ -159,11 +159,12 @@ function sign(n) {
 
 function readGitHash(summary) {
   return (
+    summary.run?.executedWebGitCommitHash ||
+    summary.executedWebGitCommitHash ||
     summary.run?.gitCommit ||
     summary.run?.gitCommitHash ||
     summary.gitCommitHash ||
     summary.createdGitCommitHash ||
-    summary.executedWebGitCommitHash ||
     "?"
   );
 }
@@ -177,6 +178,18 @@ function readPromptHash(summary) {
     summary.analysisRunProvenance?.promptContentHash ||
     "?"
   );
+}
+
+function summarizeBatchHash(batch, families, reader, shortLength) {
+  const values = families.map((family) => reader(batch[family]));
+  const unique = [...new Set(values)];
+  if (unique.length === 0) return "?";
+  if (unique.length === 1) return unique[0].slice(0, shortLength);
+
+  const labels = unique
+    .slice(0, 3)
+    .map((value) => value.slice(0, shortLength));
+  return `mixed:${unique.length} [${labels.join(", ")}${unique.length > 3 ? ", ..." : ""}]`;
 }
 
 // ---------------------------------------------------------------------------
@@ -205,16 +218,16 @@ for (const family of [...allFamilies].sort()) {
 const oldLabel = oldManifest?.batchLabel || path.basename(oldDir);
 const newLabel = newManifest?.batchLabel || path.basename(newDir);
 const oldGit = matched.length > 0
-  ? readGitHash(oldBatch[matched[0]]).slice(0, 7)
+  ? summarizeBatchHash(oldBatch, matched, readGitHash, 7)
   : "?";
 const newGit = matched.length > 0
-  ? readGitHash(newBatch[matched[0]]).slice(0, 7)
+  ? summarizeBatchHash(newBatch, matched, readGitHash, 7)
   : "?";
 const oldPrompt = matched.length > 0
-  ? readPromptHash(oldBatch[matched[0]]).slice(0, 8)
+  ? summarizeBatchHash(oldBatch, matched, readPromptHash, 8)
   : "?";
 const newPrompt = matched.length > 0
-  ? readPromptHash(newBatch[matched[0]]).slice(0, 8)
+  ? summarizeBatchHash(newBatch, matched, readPromptHash, 8)
   : "?";
 const promptChanged = oldPrompt !== newPrompt;
 
