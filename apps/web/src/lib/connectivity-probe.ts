@@ -49,12 +49,26 @@ export async function probeLLMConnectivity(
   const startedAt = Date.now();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutHandle = timeout as { unref?: () => void };
+  if (typeof timeoutHandle.unref === "function") {
+    timeoutHandle.unref();
+  }
 
   try {
-    const response = await fetchImpl(url, {
-      method: "HEAD",
-      signal: controller.signal,
-    });
+    const response = await Promise.race([
+      fetchImpl(url, {
+        method: "HEAD",
+        signal: controller.signal,
+      }),
+      new Promise<Response>((_, reject) => {
+        const timeoutError = new Error(`Connectivity probe timed out after ${timeoutMs}ms`);
+        controller.signal.addEventListener(
+          "abort",
+          () => reject(timeoutError),
+          { once: true },
+        );
+      }),
+    ]);
     return {
       reachable: true,
       statusCode: response.status,

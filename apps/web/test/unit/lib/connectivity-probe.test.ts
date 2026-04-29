@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getLlmConnectivityProbeUrl,
   probeLLMConnectivity,
 } from "@/lib/connectivity-probe";
 
 describe("probeLLMConnectivity", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns reachable on any HTTP response", async () => {
     const fetchImpl = vi.fn(async () => new Response("", { status: 503 }));
 
@@ -76,5 +80,21 @@ describe("probeLLMConnectivity", () => {
       "https://example.test/probe",
       expect.objectContaining({ method: "HEAD" }),
     );
+  });
+
+  it("times out even when fetch ignores AbortSignal", async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn(() => new Promise<Response>(() => {}));
+
+    const probePromise = probeLLMConnectivity({
+      fetchImpl,
+      timeoutMs: 25,
+    });
+
+    await vi.advanceTimersByTimeAsync(25);
+    const result = await probePromise;
+
+    expect(result.reachable).toBe(false);
+    expect(result.error).toContain("timed out");
   });
 });
