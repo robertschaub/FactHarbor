@@ -51,6 +51,16 @@
   line-height: 1.6;
 }
 
+.adminAccessNotice {
+  border: 1px solid #99f6e4;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #f0fdfa;
+  color: #115e59;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .jsonHeader {
   display: flex;
   align-items: center;

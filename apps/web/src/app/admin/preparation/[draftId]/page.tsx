@@ -6,6 +6,10 @@ import { useParams } from "next/navigation";
 
 import commonStyles from "../../../../styles/common.module.css";
 import { useAdminAuth } from "../../admin-auth-context";
+import {
+  canAdminActOnClaimSelectionDraft,
+  getAdminClaimSelectionHref,
+} from "../page-helpers";
 import styles from "../preparation.module.css";
 
 type DraftResponse = {
@@ -168,6 +172,7 @@ export default function AdminPreparationDetailPage() {
     draft.finalJobId === null &&
     !["COMPLETED", "CANCELLED", "EXPIRED"].includes(draft.status);
   const canRetry = draft?.status === "FAILED";
+  const canOpenSelection = canAdminActOnClaimSelectionDraft(draft?.status, draft?.finalJobId);
 
   const runDraftAction = useCallback(async (action: "cancel" | "retry" | "hide" | "unhide") => {
     if (!draftId) return;
@@ -232,6 +237,14 @@ export default function AdminPreparationDetailPage() {
           <section className={styles.detailSection}>
             <h2>Actions</h2>
             <div className={styles.actionsRow}>
+              {canOpenSelection ? (
+                <Link
+                  href={getAdminClaimSelectionHref(draft.draftId)}
+                  className={styles.primaryActionLink}
+                >
+                  Open selection
+                </Link>
+              ) : null}
               <button
                 type="button"
                 className={commonStyles.btnSecondary}
@@ -267,6 +280,11 @@ export default function AdminPreparationDetailPage() {
             </div>
             {draft.status === "PREPARING" ? (
               <p className={styles.actionHint}>Preparation is running. Cancelling prevents this session from creating a job.</p>
+            ) : null}
+            {canOpenSelection ? (
+              <p className={styles.actionHint}>
+                Opens the live claim-selection flow with admin authorization. Confirming there creates the final report job for this session.
+              </p>
             ) : null}
             {actionError ? <div className={commonStyles.errorBox}>{actionError}</div> : null}
             {actionMessage ? <p className={styles.actionHint}>{actionMessage}</p> : null}

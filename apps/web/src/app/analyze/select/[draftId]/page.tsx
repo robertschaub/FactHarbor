@@ -980,6 +980,12 @@ export default function ClaimSelectionDraftPage() {
 
       {error && <div className={commonStyles.errorBox}>{error}</div>}
 
+      {draft && adminKey ? (
+        <div className={styles.adminAccessNotice}>
+          Admin access active. Confirming this session creates the report job for the original user flow.
+        </div>
+      ) : null}
+
       {isLoading && !draft ? (
         <div className={styles.infoCard}>
           <h2 className={styles.infoTitle}>Loading session</h2>

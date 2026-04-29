@@ -5,6 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import commonStyles from "../../../styles/common.module.css";
 import { useAdminAuth } from "../admin-auth-context";
+import {
+  ADMIN_ACTABLE_DRAFT_STATUS,
+  ADMIN_WAITING_FOR_INPUT_LINKED_FILTER,
+  canAdminActOnClaimSelectionDraft,
+  getAdminClaimSelectionHref,
+  isAdminWaitingForInputFilter,
+} from "./page-helpers";
 import styles from "./preparation.module.css";
 
 type AdminDraftSummary = {
@@ -72,9 +79,9 @@ export default function AdminPreparationPage() {
   const { getHeaders } = useAdminAuth();
   const [scope, setScope] = useState("active");
   const [hidden, setHidden] = useState("include");
-  const [linked, setLinked] = useState("any");
+  const [linked, setLinked] = useState(ADMIN_WAITING_FOR_INPUT_LINKED_FILTER);
   const [selectionMode, setSelectionMode] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(ADMIN_ACTABLE_DRAFT_STATUS);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [data, setData] = useState<AdminDraftListResponse | null>(null);
@@ -133,17 +140,56 @@ export default function AdminPreparationPage() {
   }, [data?.items, loadDrafts]);
 
   const totalPages = data?.pagination.totalPages ?? 0;
+  const waitingForInputView = isAdminWaitingForInputFilter(status, linked);
+
+  const showWaitingForInput = () => {
+    setPage(1);
+    setScope("active");
+    setLinked(ADMIN_WAITING_FOR_INPUT_LINKED_FILTER);
+    setStatus(ADMIN_ACTABLE_DRAFT_STATUS);
+  };
+
+  const showAllActiveSessions = () => {
+    setPage(1);
+    setScope("active");
+    setLinked("any");
+    setStatus("");
+  };
 
   return (
     <div className={commonStyles.container}>
       <div className={styles.headerRow}>
         <div>
-          <h1 className={commonStyles.title}>Preparation Sessions</h1>
-          <p className={commonStyles.subtitle}>Claim-selection drafts before report jobs exist.</p>
+          <h1 className={commonStyles.title}>
+            {waitingForInputView ? "Jobs Waiting For Input" : "Preparation Sessions"}
+          </h1>
+          <p className={commonStyles.subtitle}>
+            {waitingForInputView
+              ? "Claim-selection sessions that are waiting for user or administrator action."
+              : "Claim-selection drafts before report jobs exist."}
+          </p>
         </div>
-        <button type="button" className={commonStyles.btnSecondary} onClick={() => void loadDrafts()} disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={waitingForInputView ? styles.viewButtonActive : styles.viewButton}
+            onClick={showWaitingForInput}
+            disabled={loading && waitingForInputView}
+          >
+            Waiting for input
+          </button>
+          <button
+            type="button"
+            className={!waitingForInputView ? styles.viewButtonActive : styles.viewButton}
+            onClick={showAllActiveSessions}
+            disabled={loading && !waitingForInputView}
+          >
+            All active sessions
+          </button>
+          <button type="button" className={commonStyles.btnSecondary} onClick={() => void loadDrafts()} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
       <div className={styles.metricsRow}>
@@ -230,12 +276,13 @@ export default function AdminPreparationPage() {
               <th>Updated</th>
               <th>Expires</th>
               <th>Final Job</th>
+              <th>Actions</th>
               <th>Diagnostics</th>
             </tr>
           </thead>
           <tbody>
             {loading && !data ? (
-              <tr><td colSpan={9} className={styles.emptyCell}>Loading preparation sessions...</td></tr>
+              <tr><td colSpan={10} className={styles.emptyCell}>Loading preparation sessions...</td></tr>
             ) : data?.items.length ? (
               data.items.map((draft) => (
                 <tr key={draft.draftId}>
@@ -264,12 +311,24 @@ export default function AdminPreparationPage() {
                     ) : "None"}
                   </td>
                   <td>
+                    <div className={styles.rowActions}>
+                      <Link href={`/admin/preparation/${encodeURIComponent(draft.draftId)}`} className={styles.tableActionLink}>
+                        Detail
+                      </Link>
+                      {canAdminActOnClaimSelectionDraft(draft.status, draft.finalJobId) ? (
+                        <Link href={getAdminClaimSelectionHref(draft.draftId)} className={styles.tableActionLink}>
+                          Open selection
+                        </Link>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td>
                     {draft.lastErrorCode ? <code>{draft.lastErrorCode}</code> : draft.eventSummary ?? "None"}
                   </td>
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={9} className={styles.emptyCell}>No preparation sessions match the current filters.</td></tr>
+              <tr><td colSpan={10} className={styles.emptyCell}>No preparation sessions match the current filters.</td></tr>
             )}
           </tbody>
         </table>

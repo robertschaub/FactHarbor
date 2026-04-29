@@ -403,8 +403,11 @@ export default function AdminPage() {
         </h2>
         <div style={{ display: "grid", gap: "12px" }}>
           <Link href="/admin/preparation" className={styles.btnPrimary} style={{ background: "#0f766e" }}>
-            Preparation Sessions
+            Jobs Waiting For Input
           </Link>
+          <p style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "-8px" }}>
+            Open claim-selection sessions and act on behalf of the user when input is required.
+          </p>
           <form
             onSubmit={(e) => {
               e.preventDefault();
