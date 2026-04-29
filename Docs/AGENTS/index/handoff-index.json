@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-29T21:33:41.027Z",
-  "count": 384,
+  "generatedAt": "2026-04-29T21:50:05.154Z",
+  "count": 386,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8022,6 +8039,45 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-04-29_Unassigned_Internal_Ops_Reorg_Link_Repair.md",
+      "date": "2026-04-29",
+      "roles": [
+        "unassigned"
+      ],
+      "topics": [
+        "internal",
+        "ops",
+        "reorg",
+        "link",
+        "repair"
+      ],
+      "files_touched": [
+        "Docs/Knowledge/Innosuisse_Antrag_LiveCheck_Innolink_Struktur_2026-03-18.md",
+        "Docs/Knowledge/Innosuisse_Antrag_LiveCheck_ReviewReady_2026-03-18.md",
+        "Docs/Knowledge/LiveCheck_State_of_the_Art_Research_2026-03-18.md",
+        "Docs/WIP/2026-03-24_Innosuisse_Partnership_Research_Briefing.md",
+        "Docs/Knowledge/Innosuisse_Projektentwurf_Live_Audio_Video_FactChecking_2026-03-18.md",
+        "Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18.md",
+        "Docs/Knowledge/Meeting_Prep_Schimanski_2026-03-18_DE.md",
+        "Docs/Meetings/Call_Prep_Catherine_Gilbert.md",
+        "Docs/Meetings/2026-04-22_ZHAW_Meeting_Prep.md",
+        "Docs/Meetings/2026-04-22_ZHAW_Kurzreader.md",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Presentations/Academic Cooperation/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Funding/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Partner & User Relations/Presentations/Fact-Checker Cooperation/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Transparency-Policy.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Organisation/Legal and Compliance/Legal Framework/WebHome.xwiki",
+        "Docs/WIP/2026-04-29_GitHub_Private_Repo_Split_Execution_Plan.md",
+        "../FactHarbor-internal/Operations/Transition_Model.md",
+        "../FactHarbor-internal/Operations/Operational_Readiness.md",
+        "../FactHarbor-internal/Operations/Finance/Finance_and_Compliance.md",
+        "../FactHarbor-internal/Operations/Finance/AI_And_Search_Provider_Nonprofit_Programs.md",
+        "../FactHarbor-internal/Operations/Finance/Search_API_Nonprofit_Outreach_2026-04-29.md",
+        "../FactHarbor-internal/Operations/Legal/NPO_Formation_Checklist.md"
+      ],
+      "summary": "If you continue, the next useful slice is repository normalization: convert the internal reorg into intentional git renames / adds, decide whether the public `Docs/Legal` PDFs should be re-committed or ignored, and then review PR `#80` against the new steady-state structure."
     },
     {
       "file": "2026-04-29_Unassigned_Second_Wave_Private_Repo_Split.md",

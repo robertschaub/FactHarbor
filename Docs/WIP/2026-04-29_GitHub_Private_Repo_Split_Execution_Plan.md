@@ -331,8 +331,6 @@ If this threshold is **not** met:
 
 These are the main items that need an explicit decision rather than automatic removal:
 
-- [Vereinsstatuten_FactHarbor_DE.md](</C:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.md>)
-- [Vereinsstatuten_FactHarbor_EN.md](</C:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_EN.md>)
 - [Vereinsstatuten_FactHarbor_DE.pdf](</C:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_DE.pdf>)
 - [Vereinsstatuten_FactHarbor_EN.pdf](</C:/DEV/FactHarbor/Docs/Legal/Vereinsstatuten_FactHarbor_EN.pdf>)
 
