@@ -119,6 +119,10 @@ The observed starvation is caused by the inner iteration path defeating that mec
 
 This means the fix is narrower than adding a new coverage-first round. The existing outer coverage-first scheduler should be preserved; the defect is the interaction between the per-iteration time guard and the no-search zero-yield fast-path.
 
+Budget pressure is still material. With the default `researchTimeBudgetMs = 600000` and `contradictionProtectedTimeMs = 120000`, the effective main-research window is about 480 seconds. At five selected claims, that is only 96 seconds per claim before protected contradiction time. In the inspected job, the three selected claims that received real research consumed about 161s, 238s, and 146s of selected-claim research time. Those durations include variable fetch/refinement/contradiction work and should not be treated as a stable estimate, but they explain why the no-search fast-path becomes visible late in the selected set.
+
+The inspected job did not end main research because the hard wall-clock time budget fired: `contradictionReachability.remainingMsWhenMainResearchEnded` was about 104 seconds, contradiction research started, and no `budget_exceeded` / `query_budget_exhausted` warning was present. The proven root cause for this job remains protected-window/no-search exhaustion. The budget arithmetic should inform Phase 2 only after Phase 1 canary data confirms whether five selected claims can reliably receive at least one provider search attempt.
+
 ---
 
 ## External Evidence Check
@@ -206,6 +210,7 @@ Stage 3 clustering timeout/fallback and Stage 1 preliminary acquisition waste ar
 Amend the existing Stage 2 coverage-first mechanism:
 
 - Keep the current below-floor `targetingPool` and `researchedIterationsByClaim` contract.
+- Within the below-floor targeting path, verify that lower `researchedIterationsByClaim` counts win before evidence-count scoring. If necessary, amend targeting so zero-searched claims are preferred over already-searched claims even when seeded/preliminary evidence counts differ.
 - Move the protected-time check before main query generation in `runResearchIteration`.
 - If a selected claim has no provider search attempt, do not set its zero-yield count directly to `zeroYieldBreakThreshold`.
 - A claim counts as researched only after an actual provider search attempt, using `ClaimAcquisitionIterationEntry.searchAttempts`.
@@ -238,21 +243,23 @@ Candidate approach:
   - `contradictionProtectedTimeMs`
   - estimated minimum seconds per selected claim
   - configured minimum recommended claims
-- Apply the effective limit at selected-claim confirmation / job creation for all modes.
+- Apply the effective limit at the web-side selected-claim confirmation boundary before calling the API confirm endpoint.
 - Optionally also pass the effective limit into ACS recommendation generation so automatic recommendations are less likely to exceed the shared confirmation limit.
 - For selected sets above the effective limit, either block confirmation with an explicit budget message or allow confirmation but mark non-admitted selected claims before verdict generation. Blocking is preferable if product requirements allow it.
 
 Benefits:
 
-- Prevents any selected-claim mode from accepting five claims when the configured budget realistically supports three.
+- Prevents any selected-claim mode from accepting five claims when the configured budget realistically supports fewer.
 - Keeps automatic, manual, and admin-on-behalf paths aligned at the shared selected-claim boundary.
 - Keeps tuning in UCM instead of hardcoding behavior.
+- Keeps the C# API as a structural guard for IDs/uniqueness/absolute cap instead of duplicating web-side UCM budget logic across runtimes.
 
 Risks:
 
 - Too conservative a budget estimate narrows report breadth.
 - Too optimistic an estimate preserves the current failure.
 - Blocking selections can surprise users/admins unless the UI explains the budget limit clearly.
+- A static seconds-per-claim estimate can drift with provider latency, model routing, and search/fetch configuration. Treat it as an approximate UCM guardrail, validated by canary data.
 
 ### Option C - Standalone Pre-Query Protected-Time Guard (insufficient alone)
 
@@ -317,6 +324,7 @@ Tasks:
    - The existing below-floor `targetingPool` is the coverage-first mechanism.
    - Do not add a second scheduler or selector.
    - Keep `researchedIterationsByClaim` tied to `searchAttempts > 0`.
+   - Verify `findLeastResearchedClaim` / its caller cannot prefer an already-searched claim over a zero-searched selected claim inside the below-floor path.
 2. Move the protected-time check before main query generation in `runResearchIteration`.
    - If the window is already reached, do not generate main queries for that claim.
    - Record a clear telemetry reason.
@@ -325,7 +333,7 @@ Tasks:
    - Leave the selected claim eligible for the below-floor retry path unless a distinct budget/non-admission condition is recorded.
 4. Add a selected-claim zero-acquisition warning.
    - Proposed type: `selected_claim_zero_acquisition`.
-   - Proposed severity: `error`, because a selected claim reaching verdict with no provider search attempt can materially alter the verdict.
+   - Proposed severity: `error`, per AGENTS.md report-quality severity policy. The verdict-impact test asks whether the verdict would be materially different if the event had not occurred; for a selected claim with zero provider search attempts, the answer is yes.
    - Details should include at least `{ claimId, notRunReason }`, plus available timing/query-budget fields.
    - Register the warning through `warning-display.ts`.
 5. Add focused unit tests:
@@ -358,8 +366,9 @@ Tasks:
    - `claimSelectionBudgetAwarenessEnabled === true`
    - `claimSelectionBudgetFitMode === "allow_fewer_recommendations"`
 3. If Phase 2 is still needed, apply the effective cap to:
-   - selected-claim confirmation / job creation for all modes
+   - web-side selected-claim confirmation for all modes, before the API confirm endpoint is called
    - ACS recommendation prompt variables / validation envelope, if useful for automatic proposal quality
+   - API responses/metadata as observability only; avoid duplicating UCM budget computation in C# unless a later architecture decision introduces shared generated config contracts
 4. Decide and implement the over-limit behavior:
    - preferred: block confirmation above the effective coverage limit with a clear budget message;
    - fallback: allow confirmation, but make uncovered selected claims explicit budget non-admissions and do not classify them as ordinary evidence-scarce `UNVERIFIED`.
@@ -412,6 +421,16 @@ Local verification:
 4. Add and run any warning display tests touched by the new warning.
 5. Verify the active/default config keeps `sufficiencyMinResearchedIterationsPerClaim = 1` unless intentionally overridden.
 6. `npm -w apps/web run build`
+
+Affected files to plan for:
+
+- `apps/web/src/lib/analyzer/research-orchestrator.ts`
+- `apps/web/src/lib/analyzer/types.ts`
+- `apps/web/src/lib/analyzer/warning-display.ts`
+- `apps/web/test/unit/lib/analyzer/research-contradiction-admission.test.ts`
+- `apps/web/test/unit/lib/analyzer/warning-display.test.ts`
+- Phase 2 only: `apps/web/src/lib/claim-selection-flow.ts` and selected-claim confirmation UI/runner paths
+- Phase 2 observability only: `apps/api/Controllers/ClaimSelectionDraftsController.cs`, `apps/api/Controllers/InternalClaimSelectionDraftsController.cs`, and `apps/api/Services/JobService.cs`
 
 Live verification discipline:
 
