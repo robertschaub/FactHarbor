@@ -1,45 +1,31 @@
 = Transition Model =
 
-(% class="box warningmessage" %)
-(((
-**Current Status: Phase 1 (Alpha / Founder Mode)**
-FactHarbor is currently in an early setup phase. Processes described here are being established.
-)))
+{{info}}
+The detailed internal transition-planning page moved to the internal repository on **29 April 2026**.
+This public page now retains only a minimal status summary.
+{{/info}}
 
-== 1. Purpose ==
+== 1. Public Summary ==
 
-The Transition Model explains how FactHarbor evolves from an early experimental phase to a more stable organisation and, eventually, to a federated ecosystem.
+FactHarbor is transitioning from a founder-led setup into a more formal Swiss-association structure.
 
-== 2. Phases (Illustrative) ==
+Current public status:
 
-* **Phase 1: Alpha (Founder Mode)** – Current phase. Very small core team; focus on validating the basic approach and achieving multi-agent debate reliability. The Founder inhabits multiple operational domains.
-* **Phase 2: Beta (Verein Mode)** – Legal incorporation complete. More users and community members; governance and processes become clearer and more formal. Separation of Legal (Board) and Operational (Domains) roles begins.
-  * **Current Status:** Verein founded on 23 April 2026. Commercial Register filing submitted on 27 April 2026; entry letter received on 29 April 2026; UID assigned: `CHE-448.446.098`. Public SHAB / Zefix visibility may still be pending. See [[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]].
+* Verein founded on **23 April 2026**
+* Commercial Register filing submitted on **27 April 2026**
+* Entry letter received on **29 April 2026**
+* UID / Firmennummer assigned: **CHE-448.446.098**
 
-* **Phase 3: Release 1.x (Scale Mode)** – Stable operation, documented contributor processes, and full separation of roles with dedicated domain leads.
-* **Phase 4: Federated Phase** – Multiple instances or partners adopt the model; shared governance principles across a network.
+See [[Legal Framework>>FactHarbor.Organisation.Legal and Compliance.Legal Framework.WebHome]] for the current public legal-status summary.
 
-== 3. Founder Mode Role Mapping (Phase 1) ==
+== 2. Why The Detailed Plan Moved ==
 
-To maintain progress during the startup phase, roles are mapped as follows:
+The detailed transition page was moved out of the public repo tip because it contains:
 
-|=Governance Layer|=Role / Domain|=Phase 1 (Current)|=Phase 2 (Target)
-|**Legal (Verein)**|**President**|Robert Schaub|Elected Member
-|**Legal (Verein)**|**Treasurer**|Stefanie Schaub-Hehr|Elected Member
-|**Operations**|**R&D Domain**|Robert Schaub|R&D Lead
-|**Operations**|**Operations Domain**|Robert Schaub|Operations Lead
-|**Operations**|**Partner & User Relations Domain**|Robert Schaub|Relations Lead
-|**Operations**|**Finance Domain**|Robert Schaub|Finance Lead
+* internal role-mapping details
+* early-stage organisational transition assumptions
+* founder-to-governance transition planning better kept in the private governance/admin track
 
-**Transition Status:** The Swiss Verein was founded on 23 April 2026 with President (Robert Schaub) and Treasurer (Stefanie Schaub-Hehr). Commercial Register filing was submitted on 27 April 2026; the entry letter was received on 29 April 2026; UID `CHE-448.446.098` is assigned. Phase 2 transition is underway, while public SHAB / Zefix visibility may still be propagating.
+Private canonical location:
 
-== 4. Transition Principles ==
-
-* Preserve mission and neutrality during growth.
-* Document which responsibilities move from individuals to shared bodies.
-* Make role changes and new structures transparent to community members and users.
-* Keep early experimental material accessible as historical context.
-
-== 5. Practical Use ==
-
-This page is intentionally lightweight. More detailed transition plans and roadmaps will be held in project management tools or dedicated XWiki pages when needed.
+* `robertschaub/FactHarbor-internal`
