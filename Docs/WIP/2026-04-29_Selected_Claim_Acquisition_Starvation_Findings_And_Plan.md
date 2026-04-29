@@ -100,7 +100,24 @@ So there is real pre-selection preparation waste, but it is not final Stage 2 wo
 | `AC_12` | 0 | 0 | 0 | 0 | `UNVERIFIED`, confidence 0 |
 | `AC_21` | 0 | 0 | 0 | 0 | `UNVERIFIED`, confidence 0 |
 
-`AC_12` and `AC_21` each generated four main research queries, but the protected contradiction window was reached before provider search. This is now visible through telemetry, but the system does not yet prevent it.
+`AC_12` and `AC_21` each generated four main research queries, but the protected contradiction window was reached before provider search. This is now visible through `ClaimAcquisitionIterationEntry.searchAttempts` and `selectedClaimResearchCoverage`, but the system does not yet prevent it.
+
+### Source-Level Root Cause
+
+The outer Stage 2 coverage-first mechanism already exists. In `apps/web/src/lib/analyzer/research-orchestrator.ts`, the main loop:
+
+- checks whether selected claims are below `sufficiencyMinResearchedIterationsPerClaim` before entering the protected contradiction window;
+- builds a `targetingPool` of claims below that floor;
+- counts a claim as researched only when the relevant ledger entry has `searchAttempts > 0`.
+
+The observed starvation is caused by the inner iteration path defeating that mechanism:
+
+1. `runResearchIteration` generates main research queries before checking the protected contradiction window for the per-query execution path.
+2. When the protected window is reached after query generation, no provider search happens, so `searchAttempts` remains `0`.
+3. The outer loop then treats the no-search/no-evidence iteration as immediate zero-yield exhaustion by setting `zeroYieldCount` to `zeroYieldBreakThreshold`.
+4. The claim enters `zeroYieldExhaustedClaimIds`, which removes it from the below-floor retry path and from the protected-window floor bypass.
+
+This means the fix is narrower than adding a new coverage-first round. The existing outer coverage-first scheduler should be preserved; the defect is the interaction between the per-iteration time guard and the no-search zero-yield fast-path.
 
 ---
 
@@ -168,13 +185,13 @@ This helps only one input path. It is not sufficient and it does not cover manua
 
 ### Adopted direction
 
-Implement a selected-claim acquisition coverage guard:
+Implement a selected-claim acquisition starvation fix:
 
-1. Every selected `AtomicClaim` must receive at least one real main search/fetch opportunity before any claim receives expansion or refinement work.
-2. If the remaining main-research budget cannot cover that minimum coverage for all selected claims, the final job must record budget non-admission explicitly.
-3. The selected-claim confirmation/execution path should enforce the same budget feasibility limit regardless of whether selected IDs came from ACS recommendation, user interaction, or administrator action.
-4. Move the protected-time check before query generation so the system does not spend LLM query calls after the run is already inside the protected contradiction window.
-5. Treat "selected claim reached verdict with zero search attempts" as a system degradation, not ordinary evidence scarcity.
+1. Preserve the existing outer coverage-first scheduler and below-floor targeting pool.
+2. Move the protected-time check before query generation so the system does not spend LLM query calls after the run is already inside the protected contradiction window.
+3. Do not instantly exhaust a selected claim that never had a provider search attempt. It must stay eligible for the existing below-floor retry path unless a distinct budget/non-admission condition is recorded.
+4. Treat "selected claim reached verdict with zero search attempts" as a system degradation, not ordinary evidence scarcity.
+5. Defer selection budget-admission changes until after the narrower scheduler fix is canary-tested.
 
 ### Separate performance follow-ups
 
@@ -184,28 +201,33 @@ Stage 3 clustering timeout/fallback and Stage 1 preliminary acquisition waste ar
 
 ## Options
 
-### Option A - Selected-Claim Acquisition Coverage Guard (recommended)
+### Option A - Fix Iteration-Level Starvation (recommended)
 
-Add a scheduler invariant in Stage 2:
+Amend the existing Stage 2 coverage-first mechanism:
 
-- Before expansion/refinement/contradiction work, each selected claim gets one primary main acquisition opportunity.
-- A claim counts as covered only after an actual provider search attempt, not merely query generation.
-- If the protected contradiction window would prevent even the first provider search, the claim should not be silently sent to verdict as ordinary `UNVERIFIED`.
+- Keep the current below-floor `targetingPool` and `researchedIterationsByClaim` contract.
+- Move the protected-time check before main query generation in `runResearchIteration`.
+- If a selected claim has no provider search attempt, do not set its zero-yield count directly to `zeroYieldBreakThreshold`.
+- A claim counts as researched only after an actual provider search attempt, using `ClaimAcquisitionIterationEntry.searchAttempts`.
+- If a selected claim still reaches verdict with zero provider search attempts, emit a system degradation warning.
 
 Benefits:
 
 - Directly fixes the observed failure.
-- Preserves the ACS authority boundary: ACS still selects; Stage 2 only enforces budget feasibility.
+- Preserves the existing Stage 2 coverage-first mechanism instead of adding a parallel scheduler.
 - Avoids deterministic semantic filtering.
 
 Risks:
 
 - Some selected claims may receive only a minimal first pass.
-- Contradiction time may shrink unless admission control reduces selected count.
+- Contradiction time may shrink when all selected claims are forced to get at least one real attempt.
+- If the protected window is already reached, a selected claim may remain below floor until the loop hits the overall time budget; that state must be explicit.
 
-### Option B - Budget Admission Control (recommended with Option A)
+### Option B - Budget Admission Control (defer until after Option A canary)
 
 Use structural budget feasibility to decide how many selected claims the final job can cover. The selected-claim confirmation/execution boundary should apply this once for all modes, after selected IDs are known and before final analysis proceeds.
+
+This is reasonable architecture, but it should not be implemented in the same slice as the scheduler fix. The inspected job does not prove that five selected claims are impossible within the configured budget once the no-search exhaustion bug is fixed. In job `1bd9723a68134a20a96f2bb745e12291`, the three selected claims that did receive research took about 161s, 238s, and 146s total selected-claim research time, but that includes variable fetch, refinement, and contradiction work. A reliable admission estimate needs fresh canary data after Option A.
 
 Candidate approach:
 
@@ -232,7 +254,7 @@ Risks:
 - Too optimistic an estimate preserves the current failure.
 - Blocking selections can surprise users/admins unless the UI explains the budget limit clearly.
 
-### Option C - Pre-Query Protected-Time Guard (recommended)
+### Option C - Standalone Pre-Query Protected-Time Guard (insufficient alone)
 
 Move the protected contradiction time check before research-query generation in `runResearchIteration`.
 
@@ -244,7 +266,7 @@ Benefits:
 Risks:
 
 - The system may skip cheap query generation that could have led to a fast source in edge cases.
-- This should be paired with acquisition coverage/admission control, not used alone.
+- This must be paired with the zero-yield exhaustion fix. If no-search iterations are still exhausted immediately, the below-floor retry path remains broken.
 
 ### Option D - Stage 3 Clustering Timeout/Fallback Hardening
 
@@ -285,25 +307,31 @@ Risks:
 
 ## Implementation Plan
 
-### Phase 1 - Correctness: selected-claim coverage
+### Phase 1 - Correctness: iteration-level starvation
 
 Goal: no selected claim reaches verdict with zero provider search attempts unless the system explicitly records that the claim was not admitted due to budget.
 
 Tasks:
 
-1. Add a Stage 2 coverage-first round for selected claims.
-   - Prioritize claims with `researchedIterationsByClaim[claimId] < 1`.
-   - Do this before refinement/expansion work can consume budget for already-covered claims.
-   - Continue using existing LLM query generation and provider search paths.
-2. Move the protected-time check before query generation in `runResearchIteration`.
+1. Preserve and verify the existing Stage 2 coverage-first targeting.
+   - The existing below-floor `targetingPool` is the coverage-first mechanism.
+   - Do not add a second scheduler or selector.
+   - Keep `researchedIterationsByClaim` tied to `searchAttempts > 0`.
+2. Move the protected-time check before main query generation in `runResearchIteration`.
    - If the window is already reached, do not generate main queries for that claim.
    - Record a clear telemetry reason.
-3. Add a selected-claim zero-acquisition warning.
+3. Fix the no-search zero-yield exhaustion fast-path.
+   - Do not set `zeroYieldCount = zeroYieldBreakThreshold` when `mainSearchAttempted === false`.
+   - Leave the selected claim eligible for the below-floor retry path unless a distinct budget/non-admission condition is recorded.
+4. Add a selected-claim zero-acquisition warning.
+   - Proposed type: `selected_claim_zero_acquisition`.
+   - Proposed severity: `error`, because a selected claim reaching verdict with no provider search attempt can materially alter the verdict.
+   - Details should include at least `{ claimId, notRunReason }`, plus available timing/query-budget fields.
    - Register the warning through `warning-display.ts`.
-   - Severity should reflect verdict impact. A selected claim with zero acquisition can materially change the verdict, so it should not be hidden as ordinary evidence scarcity.
-4. Add focused unit tests:
-   - Coverage-first scheduling hits every selected claim once before second-pass work.
+5. Add focused unit tests:
+   - A below-floor selected claim is re-targeted after a no-search iteration instead of being exhausted.
    - Query generation is skipped when protected time is already reached.
+   - `ClaimAcquisitionIterationEntry.searchAttempts` remains the source of truth for whether targeted research happened.
    - `selectedClaimResearchCoverage.zeroTargetedMainResearch` remains accurate.
    - Warning registration works.
 
@@ -313,9 +341,15 @@ Acceptance criteria:
 - If the system cannot cover a selected claim, that is explicit budget/admission telemetry, not ordinary `UNVERIFIED`.
 - No deterministic semantic claim filtering is introduced.
 
-### Phase 2 - Budget admission
+### Phase 2 - Budget admission (deferred pending Phase 1 canary)
 
 Goal: no final job should proceed with more selected claims than the main-research budget can give minimum coverage, unless the uncovered claims are explicitly marked as budget-non-admitted and excluded from ordinary verdict treatment.
+
+Decision gate:
+
+- Run the Phase 1 canary first with the current selection cap.
+- If all selected claims receive at least one provider search attempt and runtime remains acceptable, keep Phase 2 deferred.
+- If selected claims still starve or runtime remains unacceptable, use the Phase 1 canary timings to set the initial UCM estimate for minimum main-research seconds per selected claim.
 
 Tasks:
 
@@ -323,7 +357,7 @@ Tasks:
 2. Compute an effective recommendation/admission cap when:
    - `claimSelectionBudgetAwarenessEnabled === true`
    - `claimSelectionBudgetFitMode === "allow_fewer_recommendations"`
-3. Apply the effective cap to:
+3. If Phase 2 is still needed, apply the effective cap to:
    - selected-claim confirmation / job creation for all modes
    - ACS recommendation prompt variables / validation envelope, if useful for automatic proposal quality
 4. Decide and implement the over-limit behavior:
@@ -376,7 +410,8 @@ Local verification:
 2. `npm -w apps/web exec vitest run test/unit/lib/analyzer/research-waste-metrics.test.ts`
 3. Add and run new focused Stage 2 coverage tests.
 4. Add and run any warning display tests touched by the new warning.
-5. `npm -w apps/web run build`
+5. Verify the active/default config keeps `sufficiencyMinResearchedIterationsPerClaim = 1` unless intentionally overridden.
+6. `npm -w apps/web run build`
 
 Live verification discipline:
 
@@ -388,6 +423,7 @@ Live verification discipline:
    - `selectedClaimResearchCoverage`
    - `zeroTargetedSelectedClaimCount`
    - search/fetch counts for each selected claim
+   - `claimAcquisitionLedger[*].iterations[*].searchAttempts`
    - evidence for `AC_12` / `AC_21` if selected
    - total runtime and clustering metrics
 
@@ -420,11 +456,13 @@ Live acceptance criteria:
 
 ## Immediate Next Step
 
-Implement Phase 1 and Phase 2 together as one bounded correctness slice:
+Implement Phase 1 only as one bounded correctness slice:
 
-1. Coverage-first Stage 2 scheduling for selected claims.
+1. Preserve the existing coverage-first Stage 2 scheduler.
 2. Pre-query protected-time guard.
-3. UCM-backed selected-claim budget admission cap.
+3. No-search zero-yield exhaustion fix.
 4. Selected-claim zero-acquisition warning.
 
 Then rerun the same SVP automatic canary.
+
+Only decide on Phase 2 budget admission after that canary.
