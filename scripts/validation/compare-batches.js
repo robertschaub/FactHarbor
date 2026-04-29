@@ -77,6 +77,11 @@ function readZeroTargetedSelectedClaimCount(summary) {
   if (Array.isArray(summary.zeroTargetedSelectedClaimIds)) {
     return summary.zeroTargetedSelectedClaimIds.length;
   }
+  const nestedCoverage = summary.analysisObservability?.acsResearchWaste?.selectedClaimResearchCoverage
+    || summary.acsResearchWaste?.selectedClaimResearchCoverage;
+  if (Array.isArray(nestedCoverage)) {
+    return nestedCoverage.filter((entry) => entry?.zeroTargetedMainResearch === true).length;
+  }
   return 0;
 }
 

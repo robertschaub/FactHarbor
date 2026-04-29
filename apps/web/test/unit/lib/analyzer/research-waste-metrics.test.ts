@@ -454,4 +454,49 @@ describe("research waste metrics", () => {
       }),
     ]);
   });
+
+  it("distinguishes protected-window non-admission from ordinary insufficient evidence", () => {
+    const state = {
+      understanding: {
+        atomicClaims: [
+          { id: "AC_BLOCKED", statement: "Claim blocked before provider search" },
+        ],
+        preliminaryEvidence: [],
+      },
+      evidenceItems: [],
+      sources: [],
+      searchQueries: [],
+      claimAcquisitionLedger: {},
+      selectedClaimResearchNotRunReasons: {
+        AC_BLOCKED: "protected_contradiction_window_reached_before_search",
+      },
+      contradictionIterationsUsed: 0,
+      contradictionSourcesFound: 0,
+      researchWasteMetrics: createResearchWasteMetrics(),
+    } as unknown as CBResearchState;
+
+    const metrics = finalizeResearchWasteMetrics(state, {
+      claimSufficiencyThreshold: 1,
+      researchStartMs: 0,
+    });
+
+    expect(metrics.selectedClaimResearchCoverage).toEqual([
+      expect.objectContaining({
+        claimId: "AC_BLOCKED",
+        targetedMainIterations: 0,
+        totalIterations: 0,
+        searchAttemptCount: 0,
+        finalEvidenceItemCount: 0,
+        sufficiencyState: "budget_exhausted",
+        zeroTargetedMainResearch: true,
+        notRunReason: "protected_contradiction_window_reached_before_search",
+      }),
+    ]);
+    expect(metrics.selectedClaimResearch).toEqual([
+      expect.objectContaining({
+        claimId: "AC_BLOCKED",
+        sufficiencyState: "budget_exhausted",
+      }),
+    ]);
+  });
 });

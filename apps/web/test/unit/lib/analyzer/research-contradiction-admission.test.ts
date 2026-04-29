@@ -132,7 +132,10 @@ function makeState(overrides: Partial<CBResearchState> = {}): CBResearchState {
   } as CBResearchState;
 }
 
-function mockConfigs(configOverrides: Record<string, unknown>) {
+function mockConfigs(
+  configOverrides: Record<string, unknown>,
+  searchOverrides: Record<string, unknown> = {},
+) {
   mockLoadPipelineConfig.mockResolvedValue({
     config: {
       maxTotalIterations: 5,
@@ -155,7 +158,7 @@ function mockConfigs(configOverrides: Record<string, unknown>) {
     overrides: [],
   });
   mockLoadSearchConfig.mockResolvedValue({
-    config: { maxSourcesPerIteration: 5 },
+    config: { maxSourcesPerIteration: 5, ...searchOverrides },
     contentHash: "__TEST__",
     fromDefault: false,
     fromCache: false,
@@ -189,21 +192,22 @@ describe("researchEvidence contradiction admission", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not count a generated-only main iteration as searched targeted research", async () => {
+  it("skips main query generation when the protected window is already reached before search", async () => {
     mockConfigs({});
     const state = makeState();
 
     await researchEvidence(state);
 
-    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
-    expect(mockGenerateResearchQueries.mock.calls[0][1]).toBe("main");
-    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("contradiction");
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
+    expect(mockGenerateResearchQueries.mock.calls[0][1]).toBe("contradiction");
     expect(state.mainIterationsUsed).toBe(1);
     expect(state.contradictionIterationsUsed).toBe(1);
     expect(state.researchedIterationsByClaim.AC_01).toBeUndefined();
+    expect(state.selectedClaimResearchNotRunReasons).toMatchObject({
+      AC_01: "protected_contradiction_window_reached_before_search",
+    });
     const iterations = state.claimAcquisitionLedger.AC_01?.iterations ?? [];
     expect(iterations).toEqual([
-      expect.objectContaining({ iterationType: "main", searchAttempts: 0 }),
       expect.objectContaining({ iterationType: "contradiction", searchAttempts: 1 }),
     ]);
     expect(state.researchWasteMetrics?.contradictionReachability).toMatchObject({
@@ -303,6 +307,18 @@ describe("researchEvidence contradiction admission", () => {
       notRunReason: "query_budget_exhausted",
       contradictionIterationsUsed: 0,
     });
+    const zeroAcquisition = state.warnings.find(
+      (entry) => entry.type === "selected_claim_zero_acquisition",
+    );
+    expect(zeroAcquisition).toBeDefined();
+    expect(zeroAcquisition?.severity).toBe("error");
+    expect(zeroAcquisition?.details).toMatchObject({
+      claimId: "AC_01",
+      notRunReason: "query_budget_exhausted_before_search",
+    });
+    expect(state.selectedClaimResearchNotRunReasons).toMatchObject({
+      AC_01: "query_budget_exhausted_before_search",
+    });
     expect(state.researchWasteMetrics?.contradictionReachability).toMatchObject({
       started: false,
       notRunReason: "query_budget_exhausted",
@@ -371,6 +387,76 @@ describe("researchEvidence contradiction admission", () => {
     expect(mockGenerateResearchQueries.mock.calls.some((call) => call[1] === "contradiction")).toBe(true);
     expect(state.contradictionIterationsUsed).toBe(1);
     expect(events.some((message) => message.includes("Protected contradiction research window reached"))).toBe(true);
+  });
+
+  it("uses the search timeout as a pre-query provider-search buffer", async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    mockConfigs(
+      {
+        contradictionProtectedTimeMs: 200,
+        researchTimeBudgetMs: 1000,
+        perClaimQueryBudget: 4,
+      },
+      { timeoutMs: 900 },
+    );
+    const events: string[] = [];
+    const state = makeState({
+      onEvent: (message) => {
+        events.push(message);
+      },
+    });
+
+    await researchEvidence(state);
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
+    expect(mockGenerateResearchQueries.mock.calls[0][1]).toBe("contradiction");
+    expect(state.selectedClaimResearchNotRunReasons).toMatchObject({
+      AC_01: "protected_contradiction_window_reached_before_search",
+    });
+    expect(state.researchedIterationsByClaim.AC_01).toBeUndefined();
+    expect(events.some((message) => message.includes("Protected contradiction research window reached"))).toBe(true);
+  });
+
+  it("records a terminal reason when query generation consumes the remaining main window before search", async () => {
+    let now = 1_000_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    mockConfigs({
+      contradictionProtectedTimeMs: 200,
+      researchTimeBudgetMs: 1000,
+      perClaimQueryBudget: 4,
+      researchMaxQueriesPerIteration: 1,
+    });
+    mockGenerateResearchQueries.mockImplementation(async (_claim, iterationType) => {
+      if (iterationType === "main") {
+        now = 1_000_850;
+      }
+      return [{ query: `${iterationType} generated query`, rationale: "test" }];
+    });
+    const state = makeState();
+
+    await researchEvidence(state);
+
+    expect(mockGenerateResearchQueries.mock.calls.map((call) => call[1])).toEqual([
+      "main",
+      "contradiction",
+    ]);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(mockSearchWebWithProvider.mock.calls[0][0].query).toBe("contradiction generated query");
+    expect(state.selectedClaimResearchNotRunReasons).toMatchObject({
+      AC_01: "protected_contradiction_window_reached_before_search",
+    });
+    expect(state.claimAcquisitionLedger.AC_01?.iterations).toEqual([
+      expect.objectContaining({
+        iterationType: "main",
+        generatedQueries: ["main generated query"],
+        searchAttempts: 0,
+      }),
+      expect.objectContaining({
+        iterationType: "contradiction",
+        searchAttempts: 1,
+      }),
+    ]);
   });
 
   it("continues to other claims after one claim reaches the zero-yield threshold", async () => {

@@ -5,6 +5,7 @@ import {
   ClaimAcquisitionDirectionCounts,
   ClaimAcquisitionIterationEntry,
   ClaimAcquisitionLedgerEntry,
+  SelectedClaimResearchNotRunReason,
   EvidenceItem,
   FetchedSource,
   EvidenceScope,
@@ -119,6 +120,7 @@ type ResearchIterationTimingGuard = {
   researchStartMs: number;
   timeBudgetMs: number;
   protectedTimeMs: number;
+  providerSearchBufferMs: number;
 };
 
 export type RelevanceSearchResult = {
@@ -485,6 +487,27 @@ export function recordClaimIterationTelemetry(
   });
 }
 
+function recordSelectedClaimNotRunReason(
+  state: CBResearchState,
+  claimId: string,
+  reason: SelectedClaimResearchNotRunReason,
+): void {
+  state.selectedClaimResearchNotRunReasons ??= {};
+  state.selectedClaimResearchNotRunReasons[claimId] ??= reason;
+}
+
+function getIterationSearchAttempts(entry: ClaimAcquisitionIterationEntry): number {
+  return Math.max(0, entry.searchAttempts ?? 0);
+}
+
+function getClaimProviderSearchAttempts(
+  state: CBResearchState,
+  claimId: string,
+): number {
+  return (state.claimAcquisitionLedger?.[claimId]?.iterations ?? [])
+    .reduce((sum, entry) => sum + getIterationSearchAttempts(entry), 0);
+}
+
 export function recordApplicabilityRemovalTelemetry(
   state: CBResearchState,
   removedItems: EvidenceItem[],
@@ -642,6 +665,7 @@ export async function researchEvidence(
     0,
     pipelineConfig.contradictionProtectedTimeMs ?? 2 * 60 * 1000,
   );
+  const providerSearchBufferMs = Math.max(0, searchConfig.timeoutMs ?? 0);
   // MT-3: distinct event count for coverage guard
   const distinctEventCount = state.understanding?.distinctEvents?.length ?? 0;
 
@@ -660,8 +684,22 @@ export async function researchEvidence(
   const researchStartMs = Date.now();
   const consecutiveZeroYieldByClaim: Record<string, number> = {};
   const zeroYieldExhaustedClaimIds = new Set<string>();
+  const coverageBlockedClaimIds = new Set<string>();
   let budgetExhaustionWarned = false;
   let timeBudgetWarned = false;
+
+  const selectedClaimIsBelowFloor = (claim: AtomicClaim): boolean =>
+    (state.researchedIterationsByClaim?.[claim.id] ?? 0) < sufficiencyMinResearchedIterationsPerClaim;
+
+  const markBelowFloorClaimsNotRun = (reason: SelectedClaimResearchNotRunReason): void => {
+    if (sufficiencyMinResearchedIterationsPerClaim <= 0) return;
+    for (const claim of claims) {
+      if (!selectedClaimIsBelowFloor(claim)) continue;
+      if (getClaimProviderSearchAttempts(state, claim.id) > 0) continue;
+      recordSelectedClaimNotRunReason(state, claim.id, reason);
+      coverageBlockedClaimIds.add(claim.id);
+    }
+  };
 
   for (let iteration = 0; iteration < maxMainIterations; iteration++) {
     // Abort signal check
@@ -672,6 +710,7 @@ export async function researchEvidence(
     if (elapsedMs > timeBudgetMs) {
       state.onEvent?.(`Research time budget reached (${Math.round(elapsedMs / 60000)} min), proceeding to analysis...`, 55);
       timeBudgetWarned = true;
+      markBelowFloorClaimsNotRun("time_budget_exhausted_before_search");
       state.warnings.push({
         type: "budget_exceeded",
         severity: "warning",
@@ -684,9 +723,9 @@ export async function researchEvidence(
     const selectedClaimsBelowResearchFloor = sufficiencyMinResearchedIterationsPerClaim > 0
       && claims.some(
         (claim) =>
-          (state.researchedIterationsByClaim?.[claim.id] ?? 0)
-            < sufficiencyMinResearchedIterationsPerClaim
+          selectedClaimIsBelowFloor(claim)
           && getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) > contradictionReservedQueries
+          && !coverageBlockedClaimIds.has(claim.id)
           && !zeroYieldExhaustedClaimIds.has(claim.id),
       );
     if (
@@ -727,6 +766,7 @@ export async function researchEvidence(
     );
     if (queryBudgetEligibleClaims.length === 0) {
       console.info("[Stage2] Shared per-claim query budgets exhausted for all claims; ending main research loop.");
+      markBelowFloorClaimsNotRun("query_budget_exhausted_before_search");
       if (!budgetExhaustionWarned) {
         budgetExhaustionWarned = true;
         const perClaimBudget = getPerClaimQueryBudget(pipelineConfig);
@@ -746,7 +786,7 @@ export async function researchEvidence(
       break;
     }
     const budgetEligibleClaims = queryBudgetEligibleClaims.filter(
-      (claim) => !zeroYieldExhaustedClaimIds.has(claim.id),
+      (claim) => !zeroYieldExhaustedClaimIds.has(claim.id) && !coverageBlockedClaimIds.has(claim.id),
     );
     if (budgetEligibleClaims.length === 0) {
       state.onEvent?.(
@@ -758,8 +798,7 @@ export async function researchEvidence(
     const targetingPool = sufficiencyMinResearchedIterationsPerClaim > 0
       ? budgetEligibleClaims.filter(
           (claim) =>
-            (state.researchedIterationsByClaim?.[claim.id] ?? 0)
-            < sufficiencyMinResearchedIterationsPerClaim,
+            selectedClaimIsBelowFloor(claim),
         )
       : [];
     const targetClaim = findLeastResearchedClaim(
@@ -791,6 +830,7 @@ export async function researchEvidence(
         researchStartMs,
         timeBudgetMs,
         protectedTimeMs: contradictionProtectedTimeMs,
+        providerSearchBufferMs,
       },
     );
 
@@ -810,16 +850,37 @@ export async function researchEvidence(
     // Diminishing returns detection
     const newItems = state.evidenceItems.length - beforeCount;
     if (newItems === 0) {
-      const zeroYieldCount = mainSearchAttempted
-        ? (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1
-        : zeroYieldBreakThreshold;
+      if (!mainSearchAttempted) {
+        const notRunReason = state.selectedClaimResearchNotRunReasons?.[targetClaim.id];
+        if (notRunReason) {
+          coverageBlockedClaimIds.add(targetClaim.id);
+          state.onEvent?.(
+            `No main search attempt completed for ${targetClaim.id} (${notRunReason}); excluding it from retry for this run.`,
+            -1,
+          );
+        } else {
+          const zeroYieldCount = (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1;
+          consecutiveZeroYieldByClaim[targetClaim.id] = zeroYieldCount;
+          if (zeroYieldCount >= zeroYieldBreakThreshold) {
+            zeroYieldExhaustedClaimIds.add(targetClaim.id);
+          }
+          state.onEvent?.(
+            zeroYieldCount >= zeroYieldBreakThreshold
+              ? `No main search attempt completed for ${targetClaim.id} after ${zeroYieldCount} iteration(s), trying other claims...`
+              : `No main search attempt completed for ${targetClaim.id}; keeping it eligible for below-floor retry.`,
+            -1,
+          );
+        }
+        continue;
+      }
+      const zeroYieldCount = (consecutiveZeroYieldByClaim[targetClaim.id] ?? 0) + 1;
       consecutiveZeroYieldByClaim[targetClaim.id] = zeroYieldCount;
       if (zeroYieldCount >= zeroYieldBreakThreshold) {
         zeroYieldExhaustedClaimIds.add(targetClaim.id);
-        const message = mainSearchAttempted
-          ? `No new evidence found for ${targetClaim.id} in ${zeroYieldCount} consecutive iteration(s), trying other claims...`
-          : `No main search attempt completed for ${targetClaim.id} before the protected contradiction window, trying other claims...`;
-        state.onEvent?.(message, -1);
+        state.onEvent?.(
+          `No new evidence found for ${targetClaim.id} in ${zeroYieldCount} consecutive iteration(s), trying other claims...`,
+          -1,
+        );
       }
     } else {
       consecutiveZeroYieldByClaim[targetClaim.id] = 0;
@@ -948,6 +1009,38 @@ export async function researchEvidence(
         },
       });
     }
+  }
+
+  for (const claim of claims) {
+    if (getClaimProviderSearchAttempts(state, claim.id) > 0) continue;
+    if (
+      !state.selectedClaimResearchNotRunReasons?.[claim.id]
+      && getClaimQueryBudgetRemaining(state, claim.id, pipelineConfig) <= contradictionReservedQueries
+    ) {
+      recordSelectedClaimNotRunReason(state, claim.id, "query_budget_exhausted_before_search");
+    }
+    const alreadyWarned = state.warnings.some(
+      (warning) =>
+        warning.type === "selected_claim_zero_acquisition"
+        && warning.details?.claimId === claim.id,
+    );
+    if (alreadyWarned) continue;
+    const notRunReason = state.selectedClaimResearchNotRunReasons?.[claim.id]
+      ?? (state.claimAcquisitionLedger?.[claim.id]
+        ? "no_targeted_main_iteration_recorded"
+        : "no_claim_acquisition_ledger_entry");
+    state.warnings.push({
+      type: "selected_claim_zero_acquisition",
+      severity: "error",
+      message: `Selected AtomicClaim ${claim.id} reached the verdict path with zero provider search attempts.`,
+      details: {
+        claimId: claim.id,
+        notRunReason,
+        mainIterationsUsed: state.mainIterationsUsed,
+        contradictionIterationsUsed: state.contradictionIterationsUsed,
+        contradictionSourcesFound: state.contradictionSourcesFound,
+      },
+    });
   }
 
   // ------------------------------------------------------------------
@@ -1400,6 +1493,9 @@ export async function runResearchIteration(
   const remainingBudget = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
   if (remainingBudget <= 0) {
     console.info(`[Stage2] Query budget exhausted for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`);
+    if (iterationType === "main") {
+      recordSelectedClaimNotRunReason(state, targetClaim.id, "query_budget_exhausted_before_search");
+    }
     return;
   }
   const contradictionReservedQueries = pipelineConfig.contradictionReservedQueries ?? 2;
@@ -1410,6 +1506,9 @@ export async function runResearchIteration(
     console.info(
       `[Stage2] Query budget reserved for claim "${targetClaim.id}"; skipping ${iterationType} iteration.`,
     );
+    if (iterationType === "main") {
+      recordSelectedClaimNotRunReason(state, targetClaim.id, "query_budget_exhausted_before_search");
+    }
     return;
   }
   const maxQueriesThisIteration = Math.min(
@@ -1428,6 +1527,37 @@ export async function runResearchIteration(
   );
 
   checkResearchAbort();
+
+  const getProtectedTimeStopReason = (): SelectedClaimResearchNotRunReason | null => {
+    if (iterationType !== "main") return null;
+    if (!timingGuard?.enabled || timingGuard.protectedTimeMs <= 0) return null;
+    const elapsedMs = Date.now() - timingGuard.researchStartMs;
+    if (elapsedMs >= timingGuard.timeBudgetMs) {
+      return "time_budget_exhausted_before_search";
+    }
+    return elapsedMs + timingGuard.protectedTimeMs + timingGuard.providerSearchBufferMs > timingGuard.timeBudgetMs
+      ? "protected_contradiction_window_reached_before_search"
+      : null;
+  };
+
+  const emitProtectedTimeEvent = (
+    focus: "main" | "contradiction" | "contrarian" | "refinement" | "supplementary",
+  ): void => {
+    const elapsedMs = Date.now() - timingGuard!.researchStartMs;
+    const remainingMs = Math.max(0, timingGuard!.timeBudgetMs - elapsedMs);
+    state.onEvent?.(
+      `Protected contradiction research window reached during ${focus} research for ${targetClaim.id} (${Math.round(remainingMs / 1000)}s remaining), stopping main query spending...`,
+      -1,
+    );
+  };
+
+  const preQueryStopReason = getProtectedTimeStopReason();
+  if (preQueryStopReason) {
+    recordSelectedClaimNotRunReason(state, targetClaim.id, preQueryStopReason);
+    emitProtectedTimeEvent("main");
+    return;
+  }
+
   state.onEvent?.(`Generating ${iterationType} research queries for ${targetClaim.id}...`, -1);
 
   // 1. Generate search queries via LLM (Haiku)
@@ -1461,23 +1591,17 @@ export async function runResearchIteration(
   );
 
   let protectedTimeEventEmitted = false;
-  const isProtectedContradictionWindowReached = (): boolean => {
-    if (iterationType !== "main") return false;
-    if (!timingGuard?.enabled || timingGuard.protectedTimeMs <= 0) return false;
-    const elapsedMs = Date.now() - timingGuard.researchStartMs;
-    return elapsedMs + timingGuard.protectedTimeMs > timingGuard.timeBudgetMs;
-  };
   const shouldStopForProtectedTime = (
     focus: "main" | "contradiction" | "contrarian" | "refinement" | "supplementary",
+    telemetry?: ClaimAcquisitionIterationEntry,
   ): boolean => {
-    if (!isProtectedContradictionWindowReached()) return false;
+    const stopReason = getProtectedTimeStopReason();
+    if (!stopReason) return false;
+    if (telemetry && (telemetry.searchAttempts ?? 0) === 0) {
+      recordSelectedClaimNotRunReason(state, targetClaim.id, stopReason);
+    }
     if (!protectedTimeEventEmitted) {
-      const elapsedMs = Date.now() - timingGuard!.researchStartMs;
-      const remainingMs = Math.max(0, timingGuard!.timeBudgetMs - elapsedMs);
-      state.onEvent?.(
-        `Protected contradiction research window reached during ${focus} research for ${targetClaim.id} (${Math.round(remainingMs / 1000)}s remaining), stopping main query spending...`,
-        -1,
-      );
+      emitProtectedTimeEvent(focus);
       protectedTimeEventEmitted = true;
     }
     return true;
@@ -1491,7 +1615,7 @@ export async function runResearchIteration(
     for (const queryObj of generatedQueries) {
       checkResearchAbort();
 
-      if (shouldStopForProtectedTime(focus)) {
+      if (shouldStopForProtectedTime(focus, telemetry)) {
         break;
       }
 
@@ -1516,6 +1640,7 @@ export async function runResearchIteration(
         const response = await searchWebWithProvider({
           query: queryObj.query,
           maxResults: maxSourcesPerIteration,
+          timeoutMs: searchConfig.timeoutMs,
           config: searchConfig,
           detectedLanguage: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
           claimFreshnessRequirement: targetClaim.freshnessRequirement,
@@ -1973,6 +2098,7 @@ export async function maybeRunSupplementaryEnglishLane(
     const response = await searchWebWithProvider({
       query: enQuery.query,
       maxResults: searchConfig.maxSourcesPerIteration ?? 5,
+      timeoutMs: searchConfig.timeoutMs,
       config: searchConfig,
       detectedLanguage: "en", // EN lane forces English for language-aware supplementary providers
       claimFreshnessRequirement: targetClaim.freshnessRequirement,

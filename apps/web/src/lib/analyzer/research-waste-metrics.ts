@@ -3,6 +3,8 @@ import type {
   CBResearchState,
   FetchedSource,
   SelectedClaimResearchCoverage,
+  SelectedClaimResearchNotRunReason,
+  SelectedClaimResearchSufficiencyState,
   ResearchWasteByOutcome,
   ResearchWasteCounterSet,
   ResearchWasteMetrics,
@@ -99,7 +101,7 @@ export function cloneResearchWasteMetrics(
           admittedEvidenceItemCount: finiteCount(entry.admittedEvidenceItemCount),
           finalEvidenceItemCount: finiteCount(entry.finalEvidenceItemCount),
           elapsedMs: finiteCount(entry.elapsedMs),
-          sufficiencyState: entry.sufficiencyState ?? "unknown",
+          sufficiencyState: normalizeSelectedClaimSufficiencyState(entry.sufficiencyState),
           zeroTargetedMainResearch: entry.zeroTargetedMainResearch === true,
           ...(entry.notRunReason ? { notRunReason: entry.notRunReason } : {}),
         }))
@@ -112,7 +114,7 @@ export function cloneResearchWasteMetrics(
           fetchAttemptCount: finiteCount(entry.fetchAttemptCount),
           evidenceItemCount: finiteCount(entry.evidenceItemCount),
           elapsedMs: finiteCount(entry.elapsedMs),
-          sufficiencyState: entry.sufficiencyState ?? "unknown",
+          sufficiencyState: normalizeSelectedClaimSufficiencyState(entry.sufficiencyState),
         }))
       : [],
     contradictionReachability: {
@@ -474,6 +476,25 @@ function cloneCounterSet(input?: ResearchWasteCounterSet): ResearchWasteCounterS
   };
 }
 
+function normalizeSelectedClaimSufficiencyState(
+  value: unknown,
+): SelectedClaimResearchSufficiencyState {
+  return value === "sufficient"
+    || value === "insufficient"
+    || value === "budget_exhausted"
+    || value === "unknown"
+    ? value
+    : "unknown";
+}
+
+function isBudgetNotRunReason(
+  reason: SelectedClaimResearchNotRunReason | undefined,
+): boolean {
+  return reason === "protected_contradiction_window_reached_before_search"
+    || reason === "time_budget_exhausted_before_search"
+    || reason === "query_budget_exhausted_before_search";
+}
+
 function cloneIterationTypeCounts(
   input?: Partial<SelectedClaimResearchCoverage["iterationTypeCounts"]>,
 ): SelectedClaimResearchCoverage["iterationTypeCounts"] {
@@ -513,9 +534,15 @@ function buildSelectedClaimResearchCoverage(
   const zeroTargetedMainResearch = targetedMainIterations === 0;
   const notRunReason = !zeroTargetedMainResearch
     ? undefined
-    : entry
-      ? "no_targeted_main_iteration_recorded" as const
-      : "no_claim_acquisition_ledger_entry" as const;
+    : state.selectedClaimResearchNotRunReasons?.[claimId]
+      ?? (entry
+        ? "no_targeted_main_iteration_recorded" as const
+        : "no_claim_acquisition_ledger_entry" as const);
+  const sufficiencyState: SelectedClaimResearchSufficiencyState = isBudgetNotRunReason(notRunReason)
+    ? "budget_exhausted"
+    : finalEvidenceItemCount >= claimSufficiencyThreshold
+      ? "sufficient"
+      : "insufficient";
 
   return {
     claimId,
@@ -537,9 +564,7 @@ function buildSelectedClaimResearchCoverage(
     ),
     finalEvidenceItemCount,
     elapsedMs: iterations.reduce((sum, iteration) => sum + (iteration.durationMs ?? 0), 0),
-    sufficiencyState: finalEvidenceItemCount >= claimSufficiencyThreshold
-      ? "sufficient"
-      : "insufficient",
+    sufficiencyState,
     zeroTargetedMainResearch,
     ...(notRunReason ? { notRunReason } : {}),
   };

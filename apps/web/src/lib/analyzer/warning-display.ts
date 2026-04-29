@@ -50,6 +50,7 @@ const WARNING_CLASSIFICATION = {
   explanation_quality_rubric_failed: { bucket: "provider", impact: "informational" },
   insufficient_evidence: { bucket: "analysis", impact: "degrading" },
   unverified_research_incomplete: { bucket: "analysis", impact: "degrading" },
+  selected_claim_zero_acquisition: { bucket: "analysis", impact: "degrading" },
   tiger_score_failed: { bucket: "analysis", impact: "informational" },
   structural_consistency: { bucket: "analysis", impact: "degrading" },
   inverse_consistency_error: { bucket: "analysis", impact: "degrading" },

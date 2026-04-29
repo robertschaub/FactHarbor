@@ -57,6 +57,10 @@ describe("warning-display classification", () => {
       type: "unverified_research_incomplete",
       severity: "info",
     }));
+    const selectedZeroAcquisition = classifyWarningForDisplay(warning({
+      type: "selected_claim_zero_acquisition",
+      severity: "error",
+    }));
 
     expect(warningLevel.isReportDegrading).toBe(true);
     expect(warningLevel.displaySeverity).toBe("warning");
@@ -64,6 +68,9 @@ describe("warning-display classification", () => {
     expect(incompleteUnverified.isProviderIssue).toBe(false);
     expect(incompleteUnverified.isReportDegrading).toBe(true);
     expect(incompleteUnverified.displaySeverity).toBe("warning");
+    expect(selectedZeroAcquisition.isProviderIssue).toBe(false);
+    expect(selectedZeroAcquisition.isReportDegrading).toBe(true);
+    expect(selectedZeroAcquisition.displaySeverity).toBe("error");
   });
 
   it("forces non-degrading provider warnings to info", () => {

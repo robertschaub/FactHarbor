@@ -779,8 +779,21 @@ export interface SelectedClaimResearchMetrics {
   fetchAttemptCount: number;
   evidenceItemCount: number;
   elapsedMs: number;
-  sufficiencyState: "sufficient" | "insufficient" | "unknown";
+  sufficiencyState: SelectedClaimResearchSufficiencyState;
 }
+
+export type SelectedClaimResearchSufficiencyState =
+  | "sufficient"
+  | "insufficient"
+  | "budget_exhausted"
+  | "unknown";
+
+export type SelectedClaimResearchNotRunReason =
+  | "no_claim_acquisition_ledger_entry"
+  | "no_targeted_main_iteration_recorded"
+  | "protected_contradiction_window_reached_before_search"
+  | "time_budget_exhausted_before_search"
+  | "query_budget_exhausted_before_search";
 
 export interface SelectedClaimResearchCoverage {
   claimId: string;
@@ -796,11 +809,9 @@ export interface SelectedClaimResearchCoverage {
   /** Final result evidence count for this claim after downstream filtering and capping. */
   finalEvidenceItemCount: number;
   elapsedMs: number;
-  sufficiencyState: "sufficient" | "insufficient" | "unknown";
+  sufficiencyState: SelectedClaimResearchSufficiencyState;
   zeroTargetedMainResearch: boolean;
-  notRunReason?:
-    | "no_claim_acquisition_ledger_entry"
-    | "no_targeted_main_iteration_recorded";
+  notRunReason?: SelectedClaimResearchNotRunReason;
 }
 
 export interface ContradictionReachabilityMetrics {
@@ -1004,6 +1015,7 @@ export type AnalysisWarningType =
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
   | "unverified_research_incomplete"   // Article-level UNVERIFIED was produced before required research exhaustion
+  | "selected_claim_zero_acquisition"  // Selected AtomicClaim reached verdict path with zero provider search attempts
   | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
   | "structural_consistency"           // Verdict structural consistency check found issues
   | "inverse_consistency_error"        // Strict inverse pair complementarity check failed
@@ -1548,6 +1560,8 @@ export interface CBResearchState {
   stage1Observability?: ClaimSelectionStage1Observability;
   // Cross-stage ACS research-waste observability. Diagnostic only.
   researchWasteMetrics?: ResearchWasteMetrics;
+  // Selected-claim coverage reasons when Stage 2 cannot execute provider search.
+  selectedClaimResearchNotRunReasons?: Record<string, SelectedClaimResearchNotRunReason>;
   // Quality warnings accumulated during pipeline execution
   warnings: AnalysisWarning[];
 }

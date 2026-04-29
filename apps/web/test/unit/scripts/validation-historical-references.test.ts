@@ -315,6 +315,48 @@ describe("Captain-approved validation historical references", () => {
     expect(output).toContain("**Prompt:** old-prom → new-prom (CHANGED)");
   });
 
+  it("batch comparator reads zero-targeted coverage from nested raw observability", () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fh-compare-batches-nested-zero-"));
+    const oldDir = path.join(tmpRoot, "old");
+    const newDir = path.join(tmpRoot, "new");
+    fs.mkdirSync(oldDir);
+    fs.mkdirSync(newDir);
+
+    const makeSummary = (zeroTargetedMainResearch: boolean) => ({
+      family: { familyName: "fixture_family" },
+      verdict: "MIXED",
+      truthPercentage: 50,
+      confidence: 70,
+      claimVerdictCount: 1,
+      warnings: { total: 0, bySeverity: {} },
+      selectedClaimCount: 1,
+      preparedClaimCount: 1,
+      deferredClaimCount: 0,
+      analysisObservability: {
+        acsResearchWaste: {
+          selectedClaimResearchCoverage: [
+            { claimId: "AC_01", zeroTargetedMainResearch },
+          ],
+        },
+      },
+    });
+
+    fs.writeFileSync(path.join(oldDir, "fixture_family.json"), JSON.stringify(makeSummary(true)));
+    fs.writeFileSync(path.join(newDir, "fixture_family.json"), JSON.stringify(makeSummary(true)));
+
+    const output = execFileSync(
+      "node",
+      [path.join(repoRoot, "scripts", "validation", "compare-batches.js"), oldDir, newDir],
+      {
+        cwd: repoRoot,
+        encoding: "utf-8",
+      },
+    );
+
+    expect(output).toContain("| fixture_family | missing | MIXED (50) | MIXED (50) | 0 | 0 | 1 | 0 | sel 1/1, def 0, zero 1 | STABLE |");
+    expect(output).not.toContain("zero_targeted_selected_claims");
+  });
+
   it("batch comparator surfaces mixed git and prompt hashes in the header", () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "fh-compare-batches-mixed-"));
     const oldDir = path.join(tmpRoot, "old");
