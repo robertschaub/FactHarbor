@@ -1,6 +1,12 @@
 = Finance & Compliance =
 == 1. Purpose ==
 The Finance & Compliance framework ensures that FactHarbor is funded in a transparent, neutral, and sustainable way, and that financial decisions can be audited and explained.
+
+(% class="box infomessage" style="background-color:#eef3f8;border-color:#9db4cb;" %)
+(((
+**Current legal-financial baseline (29 April 2026):**
+FactHarbor is now formally organized as a Swiss Verein. The Commercial Register filing was submitted on 27 April 2026, the entry letter was received on 29 April 2026, and UID / Firmennummer **CHE-448.446.098** is assigned. Public SHAB / Zefix visibility may still be propagating. The **ZKB** account-opening application has been sent; supporting register and bank PDFs are retained in the private legal archive rather than in this clean public branch. Bank-account confirmation and Zurich tax-exemption filing remain the next finance/compliance milestones.
+)))
 == 2. Funding Principles ==
 * Full transparency about all significant funding sources and major expenses.
 * No political or lobbying money.
@@ -53,6 +59,10 @@ Finance & Compliance covers:
 == 11. Startup Phase & Founder Financing ==
 In the earliest phase, FactHarbor may operate as a **founder-driven, small organisation** with very limited formal structure.
 This section collects design principles for that phase, before a formal non-profit entity is created.
+
+{{warning}}
+**Status note (29 April 2026):** This section is now partly historical. FactHarbor has already been formed as a Swiss Verein. The guidance below remains relevant only for interpreting early founder-financed expenses and for documenting any pre-formation asset or cost transfers into the formal association.
+{{/warning}}
 * **Founder self-funding**
  The Founder (or a small initial circle) can cover early expenses – for example hosting, domain names, or basic tooling – without creating an expectation of profit.
 * **No fixed salaries at the very start**

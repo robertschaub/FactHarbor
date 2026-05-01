@@ -1,6 +1,8 @@
 # FactHarbor NPO Formation Checklist
 
-**Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) ASAP**
+**Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) and OpenAI for Nonprofits ASAP**
+
+> **Status update 2026-04-29**: Verein gegründet am 23. April 2026. Handelsregister-Anmeldung persönlich eingereicht am 27. April 2026. Handelsregister-Eintragsbrief am 29. April 2026 erhalten; der Beleg bleibt in der privaten Legal-Ablage und wird nicht in diesem cleanen Public-Branch versioniert. UID / Firmennummer: `CHE-448.446.098`. ZKB-Antrag für das Vereinskonto versendet; der Bank-Beleg bleibt ebenfalls in der privaten Legal-Ablage. Öffentliche `SHAB` / `Zefix`-Sichtbarkeit kann noch nachziehen.
 
 ## What "Internationally Recognized NPO" Means In Practice
 
@@ -13,30 +15,26 @@ For FactHarbor, the practical recognition stack is:
 3. **International platform / donor verification**: Goodstack, TechSoup, Candid
 4. **U.S. grantmaker recognition when needed**: NGOsource equivalency determination (`ED`)
 
-## Exact Registration Order From Current State (23 April 2026)
+## Exact Registration Order From Current State (29 April 2026)
 
-1. **Complete the founding package**
-   - Fill in the missing `Beginn` / `Ende` times in `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.md`
-   - Sign the binding German statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`
-   - For printing/signing, use: `Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf`
-   - Sign the founding minutes / protocol
-2. **File the association in the Zurich Commercial Register**
-   - Prepare the registration application in **German**
-   - Attach the statutes and the protocol of the founding assembly
-   - Arrange **signature certification** for the new signatories if required for the filing path used
-   - Submit to the Zurich Commercial Register (`Handelsregisteramt`)
-3. **After the Commercial Register entry**
-   - Download the commercial register excerpt / confirm the Zefix entry
-   - Use the excerpt plus the founding documents to finalize the Verein bank account
-4. **File for Zurich tax exemption**
+1. **Verify the public commercial-register visibility**
+   - Check `SHAB` / `Zefix`
+   - Download the commercial-register excerpt as soon as the public entry is visible
+2. **Open the Verein bank account**
+   - Current status: ZKB application sent on `2026-04-29`
+   - Use the entry letter, UID, statutes, founding protocol, and later the public excerpt if requested
+3. **File for Zurich tax exemption**
    - Submit the tax-exemption form for public-benefit purposes
    - Attach: statutes, founding protocol, activity concept, and budget
    - Aim for inclusion in the Zurich list of tax-exempt institutions after approval
-5. **Start the international recognition track**
+4. **Start the international recognition track**
    - **Goodstack** after commercial-register visibility and with an organization email
    - **TechSoup** after the Swiss legal setup is stable
    - **Candid** once mission, leadership, programs, and basic financial information are present
    - **NGOsource ED** only if you actively target U.S. foundations or U.S.-based institutional funders
+5. **Start the provider / discount track**
+   - See `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md`
+   - Use `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md` for Serper / SerpApi manual outreach
 
 ## Critical Path (Blocking Claude for Nonprofits Application)
 
@@ -47,7 +45,7 @@ For FactHarbor, the practical recognition stack is:
 - [ ] **Have statutes reviewed by Swiss lawyer** (~CHF 500–1,500)
   - Statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md` and `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`
   - Lawyer must confirm: purpose clause, dissolution clause, non-profit constraint
-- [X] **Hold founding assembly** (can be via video conference)
+- [X] **Hold founding assembly** (23 April 2026, video conference)
   - Adopt statutes
   - Elect Governing Team (minimum: President + Treasurer)
   - Set membership fee
@@ -57,18 +55,20 @@ For FactHarbor, the practical recognition stack is:
 
 ### Phase 2: Official Registration (Target: Weeks 1–3)
 
-- [ ] **Register in Handelsregister** (Commercial Register)
+- [X] **Register in Handelsregister** (Commercial Register) — entry letter received 2026-04-29
   - Official Zurich filing page: https://www.zh.ch/de/wirtschaft-arbeit/handelsregister/verein/neu-eintragen.html
   - Official Zurich factsheet: https://www.zh.ch/content/dam/zhweb/bilder-dokumente/themen/wirtschaft-arbeit/handelsregister/verein/verein_merkblatt_neueintragung.pdf
   - Submit: German registration application, statutes, founding minutes / protocol, and signature-certification documents for new signatories as required
   - Filing path: paper or qualified electronic submission (`PDF/A`)
   - Processing: usually about 1 working week for review, then a few additional working days until visible in Zefix
-  - Result: UID number + entry visible on [zefix.ch](https://www.zefix.ch)
+  - Result so far: UID / Firmennummer assigned as `CHE-448.446.098`; public [zefix.ch](https://www.zefix.ch) visibility may still be pending
   - **This is practically required for Goodstack verification**
 - [ ] **Open bank account** for the Verein
-  - Swiss bank (PostFinance, Raiffeisen, cantonal bank)
-  - Bring: statutes, founding minutes / protocol, ID of signatories, and ideally the commercial-register excerpt once available
-  - Get: bank statement or official bank document in PDF form (needed later for some Goodstack checks)
+  - Current status: **ZKB account-opening application sent** on `2026-04-29`
+  - Supporting bank PDF retained in the private legal archive
+  - Swiss bank path currently used: **ZKB**
+  - Bring / provide: statutes, founding minutes / protocol, ID of signatories, and ideally the commercial-register excerpt once available
+  - Next success artifact: bank statement or official bank document in PDF form (needed later for some Goodstack checks)
 
 #### Exact Handelsregister Filing Pack For FactHarbor
 
@@ -116,10 +116,11 @@ For FactHarbor, the practical recognition stack is:
 
 **Prerequisites before applying:**
 
-- [ ] Verein registered on zefix.ch (Handelsregister entry visible)
+- [ ] Verein registered on zefix.ch (Handelsregister entry visible) — entry letter received 2026-04-29; verify public Zefix visibility if needed
 - [X] Org email `info@factharbor.ch` set up (for Goodstack agent verification)
 - [ ] Statutes PDF ready (signed, dated 30+ days before application)
 - [ ] Bank statement PDF ready (original electronic, dated 30+ days before application)
+- [X] UID assigned: `CHE-448.446.098`
 
 **Application steps:**
 
@@ -130,6 +131,38 @@ For FactHarbor, the practical recognition stack is:
 - [ ] Receive eligibility confirmation email from Anthropic
 - [ ] Sign up using verified email — select "With my team" (minimum 5 seats)
 - [ ] Complete Team plan setup ($8/user/month with 75% discount)
+
+### Phase 4b: OpenAI for Nonprofits Application (Target: parallel to Phase 4)
+
+**Prerequisites before applying:**
+
+- [ ] Verein registered on zefix.ch (same as Phase 4; entry letter received 2026-04-29)
+- [X] Org email `info@factharbor.ch` set up
+- [X] UID assigned: `CHE-448.446.098`
+
+**OpenAI ChatGPT Business (NPO pricing):**
+
+- [ ] Go to [OpenAI for Nonprofits](https://openai.com/index/introducing-openai-for-nonprofits/)
+- [ ] Complete Goodstack validation (same verification as Anthropic — one validation covers both)
+- [ ] Receive eligibility confirmation from OpenAI
+- [ ] Sign up for ChatGPT Business — NPO discount applies automatically at checkout
+- [ ] Pricing: **$8/month/seat** (annual) or **$10/month/seat** (monthly), down from ~$25-30
+
+**OpenAI ChatGPT Enterprise (up to 75% off):**
+
+- [ ] Contact OpenAI sales team for Enterprise NPO pricing (up to **75% discount**)
+- [ ] Only relevant if FactHarbor needs large-scale ChatGPT deployment
+
+**OpenAI API Credits:**
+
+- [ ] Apply for **Researcher Access Program** — up to **$1,000 API credits** for approved projects
+  - Requires active affiliation with university, research org, or qualifying nonprofit
+- [ ] Monitor **OpenAI Nonprofit Fund** for next open application cycle
+  - Previous cycle: $40.5M distributed to 208 US-based NPOs (closed Oct 2025)
+  - Current phase: board-directed grants (early 2026)
+  - Note: Previous cycle was US-only — check eligibility for Swiss Verein in future cycles
+
+**Important**: OpenAI API discounts are **not stackable** — the single largest discount applies, not a sum. This is different from Anthropic/Cloud where stacking is possible.
 
 ### Phase 5: International Verification And Funder Visibility (Target: after Swiss base is stable)
 
@@ -142,6 +175,10 @@ For FactHarbor, the practical recognition stack is:
   - Add mission, leadership, programs, website, and later financials / impact data
 - [ ] **Prepare NGOsource ED package if U.S. foundation fundraising becomes a priority**
   - Relevant mainly for U.S. institutional philanthropy, not for Swiss legal formation itself
+- [ ] **Use the search/API outreach templates if special pricing is worth pursuing**
+  - See: `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md`
+- [ ] **Use the AI/search provider program reference for priority applications**
+  - See: `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md`
 
 ---
 
@@ -153,7 +190,12 @@ For FactHarbor, the practical recognition stack is:
 | Statutes (EN)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`      |
 | Statutes (DE)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`      |
 | Founding Assembly Minutes   | **READY**   | `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf` |
-| Handelsregister Application | Not started | —                                                  |
+| Handelsregister Application | **COMPLETED** | Submitted 2026-04-27                               |
+| Handelsregister Entry Letter | **READY**  | Retained in private legal archive |
+| UID / Firmennummer | **READY** | `CHE-448.446.098` |
+| ZKB Account Opening Application | **READY** | Retained in private legal archive |
+| AI/Search Provider Programs | **READY** | `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md` |
+| Search/API Outreach Templates | **READY** | `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md` |
 | Tax-Exemption Application   | Not started | —                                                  |
 | Budget Projection           | Not started | —                                                  |
 | Activity Description        | Not started | —                                                  |
@@ -186,11 +228,16 @@ For FactHarbor, the practical recognition stack is:
 ## Timeline Summary
 
 ```
-Week 1:  [Find co-founder] [Lawyer review] [Founding assembly] [Domain+email]
-Week 2:  [Handelsregister filing] [Bank account opening] [Tax-exempt prep]
-Week 3:  [Handelsregister processing...] [Tax-exempt application filed]
-Week 4:  [Handelsregister confirmed → visible on zefix.ch]
-Week 5+: [30-day doc age met] → [Apply via Goodstack] → [Verified in 1-72 hours]
+2026-04-23:  ✅ Founding assembly held
+2026-04-27:  ✅ Handelsregister filing submitted (in person)
+2026-04-29:  ✅ Handelsregister entry letter received
+2026-04-29:  ✅ UID assigned: CHE-448.446.098
+2026-04-29:  ✅ ZKB bank-account application sent; PDF retained in private legal archive
+~2026-04-30: Verify Zefix visibility / download excerpt if already public
+~2026-05-05: Bank account opening confirmation / first bank document (expected next artifact)
+~2026-05-23: 30-day doc age met → Apply Goodstack (covers both Anthropic + OpenAI)
+~2026-05-24: Goodstack verified (1-72 hours) → Claude for Nonprofits + OpenAI for Nonprofits
+Parallel:    Tax-exempt application, TechSoup, AWS/Google credits
 ```
 
 ## Key Official Sources
@@ -213,3 +260,9 @@ Week 5+: [30-day doc age met] → [Apply via Goodstack] → [Verified in 1-72 ho
   https://candid.org/claim-nonprofit-profile/how-to-earn-a-candid-seal-of-transparency/
 - NGOsource background / ED ecosystem:
   https://tenyears.ngosource.org/
+- OpenAI for Nonprofits:
+  https://openai.com/index/introducing-openai-for-nonprofits/
+- OpenAI for Nonprofits — Help Center:
+  https://help.openai.com/en/articles/9359041-openai-for-nonprofits
+- Goodstack — OpenAI discount details:
+  https://goodstack.org/software-discounts/openai

@@ -15,7 +15,7 @@ This is the internal strategy document for FactHarbor's next cooperation and fun
 == Top Priorities (Next 90 Days) ==
 
 |=Priority lane|=Why now|=Gate|=Next action
-|**1. Swiss academic lead + Innosuisse path**|Most realistic near-term funding route; strongest bridge from Alpha to funded research and credibility.|✅ Verein founded (23 April 2026). UID pending (~early May). ZHAW partnership confirmed.|**ZHAW CAI / NLP partnership confirmed** (Giedemann, Cieliebak, Deriu). Two funding tracks active: DIZH Rapid Action Call (deadline 1 July 2026) and Innosuisse Innovation Cheque.
+|**1. Swiss academic lead + Innosuisse path**|Most realistic near-term funding route; strongest bridge from Alpha to funded research and credibility.|✅ Verein founded (23 April 2026). UID assigned: `CHE-448.446.098`. Entry letter received 29 April 2026. ZHAW partnership confirmed. Public SHAB / Zefix visibility may still be pending.|**ZHAW CAI / NLP partnership confirmed** (Giedemann, Cieliebak, Deriu). Two funding tracks active: DIZH Rapid Action Call (deadline 1 July 2026) and Innosuisse Innovation Cheque.
 |**2. One Innosuisse-ready project thesis**|Partner and funding conversations need one problem statement that clearly matches current product gaps.|Choose one lead theme: **multi-source retrieval**, **multilingual stability**, or **low-resource verification**.|Write a 1-page brief and reuse it across academic and grant outreach.
 |**3. DACH pilot outreach: Catherine Gilbert (dpa)**|First concrete fact-checking contact. Catherine Gilbert (ex-Keystone-SDA Verification Officer, now dpa OSINT Freelance) confirmed interest. **Video call scheduled April 8, 2026, 16:00.**|Demo-ready claim, known limitations prepared, clear questions.|Run the call. Ask about workflow pain points, Swiss network contacts, and willingness to give ongoing feedback.
 |**4. Swiss broadcaster lane: EBU Spotlight (not SRF)**|SRG SSR corporate declined interest (March 27, 2026). SRF/Melanie Koemle friendly but not engaged. **Do not re-approach SRG/SRF until a concrete external milestone exists** (Beta, benchmark, or pilot with another newsroom). EBU Headquarters (Geneva) remains a separate channel.|Pilot evidence from dpa call or other DACH contact.|Approach **EBU Spotlight** independently of SRF, only after the dpa conversation produces signal.
@@ -65,6 +65,18 @@ Platforms for individual donations and recurring support. Low effort to set up, 
 **Priority:** GitHub Sponsors and Liberapay now (zero cost, passive). Open Collective is now possible (Verein founded). wemakeit only with a defined campaign goal and enough community to reach 30% in the first week.
 )))
 
+== AI / Search / Infrastructure Support Programs ==
+
+FactHarbor can now actively pursue selected nonprofit or public-interest support programs with its current Swiss legal status, even if some providers still require manual document upload while public registry visibility catches up.
+
+|=Route|=Why it matters|=Current action
+|**Anthropic / Claude for Nonprofits**|Useful for team/workspace cost reduction and broader nonprofit verification footprint.|Apply now with UID `CHE-448.446.098` and the Commercial Register entry letter if manual verification is requested.
+|**OpenAI for Nonprofits**|Useful for ChatGPT seats and organizational tooling.|Apply now in parallel with Anthropic.
+|**OpenAI Researcher Access Program**|Potential direct API-credit path if the research framing is accepted.|Prepare as soon as the current research thesis / partner framing is tight enough.
+|**Google for Nonprofits**|Workspace, ecosystem credibility, and adjacent benefits.|Apply now.
+|**GitHub for Nonprofits**|Direct value for organization tooling; useful even before larger grant rounds.|Apply now.
+|**Serper / SerpApi manual outreach**|May reduce search costs even though no public nonprofit tariff is currently documented.|Use the ready-made outreach templates in ##Docs/Legal##.
+
 == Secondary Targets / Watchlist ==
 
 
@@ -75,18 +87,19 @@ Platforms for individual donations and recurring support. Low effort to set up, 
 
 == Risks That Change Priorities ==
 
-* ~~If the Swiss legal setup or UID path slips, Swiss grant routes slow down immediately.~~ ✅ Verein founded 23 April 2026; HR filing initiated, UID expected ~early May.
+* ~~If the Swiss legal setup or UID path slips, Swiss grant routes slow down immediately.~~ ✅ Verein founded 23 April 2026; UID `CHE-448.446.098` assigned on 29 April 2026.
 * If outreach stays broad instead of choosing one lead academic lane, partner discussions will remain exploratory and not fundable.
 * If there is no short proof pack (demo, Alpha status, one project thesis, one ask), EBU / Full Fact outreach will be premature. (dpa call April 8 is confirmed regardless.)
 * If ClaimReview and external benchmarking remain undefined for too long, media credibility will lag behind technical progress.
 
 == Recommended Sequence ==
 
-1. ~~Finalize the Swiss applicant-readiness path.~~ ✅ Verein founded, HR filing initiated.
+1. ~~Finalize the Swiss applicant-readiness path.~~ ✅ Verein founded; entry letter received; UID assigned.
 1. Pick **one** lead academic lane and **one** research thesis.
 1. Build one concise partner pack: demo, Alpha status, current technical gap, and the specific cooperation ask.
 1. Use that pack for **ZHAW first**, then **Catherine Gilbert / dpa** (call April 8), then **EBU Spotlight** (not SRF directly — declined March 27).
 1. Prepare the **Innovation Cheque** path immediately and decide by mid-May whether the current **NLNet** call is strong enough to pursue.
+1. Run the parallel **AI/search provider support** track where the legal status is already sufficient.
 1. Keep ClaimReview and benchmark planning as credibility work, not as substitutes for partner development.
 1. Approach **Full Fact** only after the pack exists and the ask is narrow.
 1. Treat **GlobalFact 2026** as the most realistic short-term networking route into the broader fact-checking field.
