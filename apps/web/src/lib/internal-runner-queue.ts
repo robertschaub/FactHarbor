@@ -1220,6 +1220,7 @@ async function runDraftPreparationBackground(draftId: string) {
       rankedClaimIds: recommendation.rankedClaimIds,
       recommendedClaimIds: recommendation.recommendedClaimIds,
       selectedClaimIds: recommendation.recommendedClaimIds,
+      lastSelectionInteractionUtc: new Date().toISOString(),
       recommendationRationale: recommendation.rationale,
       assessments: recommendation.assessments,
       observability: buildObservability({

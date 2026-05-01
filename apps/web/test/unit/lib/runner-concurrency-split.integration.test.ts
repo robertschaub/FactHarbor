@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import { prepareStage1Snapshot, runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
+import { generateClaimSelectionRecommendation } from "@/lib/analyzer/claim-selection-recommendation";
+import { loadPipelineConfig } from "@/lib/config-loader";
 
 vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
   runClaimBoundaryAnalysis: vi.fn(() => new Promise(() => {})),
@@ -142,6 +144,90 @@ describe("runner concurrency split", () => {
     expect(qs.runningCount).toBe(1);
     expect(ds.runningCount).toBe(1);
     expect(ds.runningDraftIds.has("draft-1")).toBe(true);
+  });
+
+  it("arms idle auto-proceed when an interactive draft awaits claim selection", async () => {
+    const claimIds = ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05", "AC_06"];
+    const preparedBodies: any[] = [];
+    vi.setSystemTime(new Date("2026-05-01T09:02:00.000Z"));
+
+    vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
+      config: {
+        claimSelectionCap: 5,
+        claimSelectionIdleAutoProceedMs: 180000,
+      },
+    } as any);
+    vi.mocked(prepareStage1Snapshot).mockResolvedValueOnce({
+      preparedStage1: {
+        version: 1,
+        resolvedInputText: "queued session input",
+        preparedUnderstanding: {
+          impliedClaim: "Input implies several checkable claims.",
+          articleThesis: "Input thesis",
+          atomicClaims: claimIds.map((id) => ({ id, statement: `Statement ${id}` })),
+          preliminaryEvidence: [],
+        },
+      },
+      state: { stage1Observability: { candidateClaimCount: claimIds.length } },
+    } as any);
+    vi.mocked(generateClaimSelectionRecommendation).mockResolvedValueOnce({
+      rankedClaimIds: [...claimIds],
+      recommendedClaimIds: ["AC_01", "AC_02", "AC_03"],
+      assessments: [],
+      rationale: "Recommended in ranked order.",
+    } as any);
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/recoverable")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/idle-auto-proceed-due")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/v1/claim-selection-drafts/draft-interactive")) {
+        return new Response(JSON.stringify({
+          draftId: "draft-interactive",
+          status: "QUEUED",
+          activeInputType: "text",
+          activeInputValue: "queued session input",
+          selectionMode: "interactive",
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/claim-selection-drafts/draft-interactive/status")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.endsWith("/internal/v1/claim-selection-drafts/draft-interactive/prepared")) {
+        preparedBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 0,
+      queue: [{ draftId: "draft-interactive", enqueuedAt: Date.now() }],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainDraftQueue } = await import("@/lib/internal-runner-queue");
+    await drainDraftQueue();
+    await flushMicrotasks(30);
+
+    expect(preparedBodies).toHaveLength(1);
+    const draftState = JSON.parse(preparedBodies[0].draftStateJson);
+    expect(draftState.selectionIdleAutoProceedMs).toBe(180000);
+    expect(draftState.lastSelectionInteractionUtc).toBe("2026-05-01T09:02:00.000Z");
+    expect(draftState.selectedClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
   });
 
   it("starts a report job even when the prep lane is already busy", async () => {
