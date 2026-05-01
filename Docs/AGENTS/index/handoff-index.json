@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-26T19:07:24.513Z",
-  "count": 381,
+  "generatedAt": "2026-05-01T19:01:46.767Z",
+  "count": 383,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5727,13 +5727,15 @@
         "senior_developer"
       ],
       "topics": [
-        "build",
-        "index",
+        "build_index",
+        "handoff_index",
         "parser",
-        "regression",
-        "tests"
+        "regression_tests"
       ],
-      "files_touched": [],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts"
+      ],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -7990,6 +7992,59 @@
       ],
       "files_touched": [],
       "summary": "2026-04-26 - Senior Developer / LLM Expert - 235000 Comparison Profile Follow-up"
+    },
+    {
+      "file": "2026-04-27_Lead_Developer_Analyze_Report_Processing_Sessions.md",
+      "date": "2026-04-27",
+      "roles": [
+        "lead_developer"
+      ],
+      "topics": [
+        "analyze",
+        "report",
+        "processing",
+        "sessions"
+      ],
+      "files_touched": [
+        "apps/web/src/app/analyze/ActiveClaimSelectionSessions.tsx",
+        "apps/web/test/unit/app/analyze/active-claim-selection-sessions.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If similar completed entries reappear, check any new writer to `ACTIVE_CLAIM_SELECTION_SESSIONS_STORAGE_KEY`. The intended contract is that `lastKnownFinalJobId` is now a cleanup signal, not a display/recovery signal.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "Amend the existing analyze-page registry cleanup mechanism.",
+            "net_mechanism_count": "unchanged; no polling, fallback, feature flag, or new lifecycle path was added.",
+            "verification": "`npm -w apps/web test -- active-claim-selection-sessions.test.ts` passed twice after the final cleanup.",
+            "residual_debt": "none for the requested behavior; stale unrelated local-storage data is still bounded by normal storage normalization/eviction."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
+      "date": "2026-05-01",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "acs",
+        "claim_selection",
+        "idle_auto_proceed",
+        "rollout",
+        "internal_runner_queue"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/test/unit/lib/runner-concurrency-split.integration.test.ts",
+        "Docs/AGENTS/Handoffs/2026-05-01_Senior_Developer_Idle_Auto_Proceed_Clean_Rollout.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Implement only the approved immediate rollout path on a clean branch from canonical base `2a713bcc`, manually reimplementing the idle auto-proceed timestamp seeding from `0482c962` without taking the "
     }
   ]
 }
