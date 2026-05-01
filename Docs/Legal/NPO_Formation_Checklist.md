@@ -2,7 +2,7 @@
 
 **Goal: Apply for Claude for Nonprofits (Anthropic/Goodstack) and OpenAI for Nonprofits ASAP**
 
-> **Status update 2026-04-29**: Verein gegründet am 23. April 2026. Handelsregister-Anmeldung persönlich eingereicht am 27. April 2026. Handelsregister-Eintragsbrief am 29. April 2026 erhalten; der Beleg bleibt in der privaten Legal-Ablage und wird nicht in diesem cleanen Public-Branch versioniert. UID / Firmennummer: `CHE-448.446.098`. ZKB-Antrag für das Vereinskonto versendet; der Bank-Beleg bleibt ebenfalls in der privaten Legal-Ablage. Öffentliche `SHAB` / `Zefix`-Sichtbarkeit kann noch nachziehen.
+> **Status update 2026-04-29**: Verein gegründet am 23. April 2026. Handelsregister-Anmeldung persönlich eingereicht am 27. April 2026. Handelsregister-Eintragsbrief am 29. April 2026 erhalten und unter `Operations/Legal/Handelsregister_Eintrag_FactHarbor_2026-04-29.pdf` abgelegt. UID / Firmennummer: `CHE-448.446.098`. ZKB-Antrag für das Vereinskonto versendet; PDF abgelegt unter `Operations/Finance/Buchhaltung/Eröffnung ZKB FactHarbor.pdf`. Öffentliche `SHAB` / `Zefix`-Sichtbarkeit kann noch nachziehen.
 
 ## What "Internationally Recognized NPO" Means In Practice
 
@@ -33,8 +33,8 @@ For FactHarbor, the practical recognition stack is:
    - **Candid** once mission, leadership, programs, and basic financial information are present
    - **NGOsource ED** only if you actively target U.S. foundations or U.S.-based institutional funders
 5. **Start the provider / discount track**
-   - See `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md`
-   - Use `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md` for Serper / SerpApi manual outreach
+   - See `Operations/Finance/AI_And_Search_Provider_Nonprofit_Programs.md`
+   - Use `Operations/Finance/Search_API_Nonprofit_Outreach_2026-04-29.md` for Serper / SerpApi manual outreach
 
 ## Critical Path (Blocking Claude for Nonprofits Application)
 
@@ -43,7 +43,7 @@ For FactHarbor, the practical recognition stack is:
 - [X] **Secure Swiss address** for Verein Sitz (personal, co-working, or registered office)
 - [X] **Find one co-founder** (any nationality, age 18+, supports mission)
 - [ ] **Have statutes reviewed by Swiss lawyer** (~CHF 500–1,500)
-  - Statutes: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md` and `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`
+  - Statutes: `Operations/Legal/Vereinsstatuten_FactHarbor_DE.md` and `Operations/Legal/Vereinsstatuten_FactHarbor_EN.md`
   - Lawyer must confirm: purpose clause, dissolution clause, non-profit constraint
 - [X] **Hold founding assembly** (23 April 2026, video conference)
   - Adopt statutes
@@ -65,7 +65,7 @@ For FactHarbor, the practical recognition stack is:
   - **This is practically required for Goodstack verification**
 - [ ] **Open bank account** for the Verein
   - Current status: **ZKB account-opening application sent** on `2026-04-29`
-  - Supporting bank PDF retained in the private legal archive
+  - Supporting PDF filed at `Operations/Finance/Buchhaltung/Eröffnung ZKB FactHarbor.pdf`
   - Swiss bank path currently used: **ZKB**
   - Bring / provide: statutes, founding minutes / protocol, ID of signatories, and ideally the commercial-register excerpt once available
   - Next success artifact: bank statement or official bank document in PDF form (needed later for some Goodstack checks)
@@ -74,10 +74,10 @@ For FactHarbor, the practical recognition stack is:
 
 - `Create`: **Anmeldung Verein, Neueintragung** (official Zurich form, in German)
 - `Use`: **final signed German statutes PDF**
-  - Current source: `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`
-  - Current print/sign base: `Docs/Legal/Vereinsstatuten_FactHarbor_DE_unterschriftsfassung.pdf`
+  - Current source: `Operations/Legal/Vereinsstatuten_FactHarbor_DE.md`
+  - Current print/sign base: `Operations/Legal/Vereinsstatuten_FactHarbor_DE.pdf`
 - `Use`: **final signed founding protocol PDF**
-  - Base file: `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf`
+  - Base file: `Operations/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf`
   - Before filing, make sure the final version includes the actual `Beginn` / `Ende` times and signatures
 - `Create`: **Wahlannahmeerklärung Vorstand**
   - Can be omitted only if the board members' acceptance of election is already clearly documented in the founding protocol in a way accepted by the Handelsregisteramt
@@ -176,9 +176,9 @@ For FactHarbor, the practical recognition stack is:
 - [ ] **Prepare NGOsource ED package if U.S. foundation fundraising becomes a priority**
   - Relevant mainly for U.S. institutional philanthropy, not for Swiss legal formation itself
 - [ ] **Use the search/API outreach templates if special pricing is worth pursuing**
-  - See: `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md`
+  - See: `Operations/Finance/Search_API_Nonprofit_Outreach_2026-04-29.md`
 - [ ] **Use the AI/search provider program reference for priority applications**
-  - See: `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md`
+  - See: `Operations/Finance/AI_And_Search_Provider_Nonprofit_Programs.md`
 
 ---
 
@@ -187,15 +187,15 @@ For FactHarbor, the practical recognition stack is:
 
 | Document                    | Status      | Location                                            |
 | ----------------------------- | ------------- | ----------------------------------------------------- |
-| Statutes (EN)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_EN.md`      |
-| Statutes (DE)               | **READY**   | `Docs/Legal/Vereinsstatuten_FactHarbor_DE.md`      |
-| Founding Assembly Minutes   | **READY**   | `Docs/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf` |
+| Statutes (EN)               | **READY**   | `Operations/Legal/Vereinsstatuten_FactHarbor_EN.md`      |
+| Statutes (DE)               | **READY**   | `Operations/Legal/Vereinsstatuten_FactHarbor_DE.md`      |
+| Founding Assembly Minutes   | **READY**   | `Operations/Legal/Gruendungsprotokoll_FactHarbor_2026-04-23.pdf` |
 | Handelsregister Application | **COMPLETED** | Submitted 2026-04-27                               |
-| Handelsregister Entry Letter | **READY**  | Retained in private legal archive |
+| Handelsregister Entry Letter | **READY**  | `Operations/Legal/Handelsregister_Eintrag_FactHarbor_2026-04-29.pdf` |
 | UID / Firmennummer | **READY** | `CHE-448.446.098` |
-| ZKB Account Opening Application | **READY** | Retained in private legal archive |
-| AI/Search Provider Programs | **READY** | `Docs/Legal/AI_And_Search_Provider_Nonprofit_Programs_2026-04-29.md` |
-| Search/API Outreach Templates | **READY** | `Docs/Legal/Search_API_Nonprofit_Outreach_2026-04-29.md` |
+| ZKB Account Opening Application | **READY** | `Operations/Finance/Buchhaltung/Eröffnung ZKB FactHarbor.pdf` |
+| AI/Search Provider Programs | **READY** | `Operations/Finance/AI_And_Search_Provider_Nonprofit_Programs.md` |
+| Search/API Outreach Templates | **READY** | `Operations/Finance/Search_API_Nonprofit_Outreach_2026-04-29.md` |
 | Tax-Exemption Application   | Not started | —                                                  |
 | Budget Projection           | Not started | —                                                  |
 | Activity Description        | Not started | —                                                  |
@@ -232,7 +232,7 @@ For FactHarbor, the practical recognition stack is:
 2026-04-27:  ✅ Handelsregister filing submitted (in person)
 2026-04-29:  ✅ Handelsregister entry letter received
 2026-04-29:  ✅ UID assigned: CHE-448.446.098
-2026-04-29:  ✅ ZKB bank-account application sent; PDF retained in private legal archive
+2026-04-29:  ✅ ZKB bank-account application sent; PDF filed
 ~2026-04-30: Verify Zefix visibility / download excerpt if already public
 ~2026-05-05: Bank account opening confirmation / first bank document (expected next artifact)
 ~2026-05-23: 30-day doc age met → Apply Goodstack (covers both Anthropic + OpenAI)
