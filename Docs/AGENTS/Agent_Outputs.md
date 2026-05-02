@@ -2248,3 +2248,7 @@ Debate follow-up: Reconciler accepted the current design with a narrow suppressi
 → Docs/WIP/2026-05-01_Main_Regression_Snapshot_Integration_Plan.md
 
 Amendment: Post-review hardening made the plan commit-explicit. Appendix A now lists all 142 commits in `2a713bcc..codex/main-regression-snapshot-2026-05-01` exactly once with lane, decision, dependencies, verification, and notes. Lane 1 is split into read-only admin access versus runner/runtime recovery, Lane 3 now names ACS draft config provenance and automatic-submission prerequisites, and Stage 4 hold decisions point to the exhaustive appendix rather than vague prompt-commit grouping.
+
+---
+### 2026-05-02 | Senior Developer | Codex (GPT-5) | Daily Bug Scan -- [Standard] [open-items: no]
+**For next agent:** Reviewed commits since `2026-05-01T06:01:23Z`. The only code change in range was `2ea964b4 fix(acs): seed idle selection timestamp`; the rest were docs-only. Inspected [`internal-runner-queue.ts`](/c:/DEV/FactHarbor/apps/web/src/lib/internal-runner-queue.ts) and [`ClaimSelectionDraftService.cs`](/c:/DEV/FactHarbor/apps/api/Services/ClaimSelectionDraftService.cs) against the rollout handoff, then ran `npm -w apps/web test -- runner-concurrency-split.integration.test.ts`, which passed. No additional concrete regression was found, so no fix was applied.
