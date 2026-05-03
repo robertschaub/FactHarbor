@@ -86,7 +86,7 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
             if (job is null)
             {
                 await tx.RollbackAsync();
-                return StatusCode(500, new { error = jobError ?? "Failed to create job from draft" });
+                return StatusCode(GetJobCreationErrorStatusCode(jobError), new { error = jobError ?? "Failed to create job from draft" });
             }
 
             draft.FinalJobId = job.JobId;
@@ -168,5 +168,20 @@ public sealed class InternalClaimSelectionDraftsController : ControllerBase
                 // Best-effort only.
             }
         }
+    }
+
+    private static int GetJobCreationErrorStatusCode(string? error)
+    {
+        if (string.IsNullOrWhiteSpace(error)) return 500;
+        if (
+            error.StartsWith("Must select", StringComparison.OrdinalIgnoreCase) ||
+            error.StartsWith("Duplicate claim IDs", StringComparison.OrdinalIgnoreCase) ||
+            error.StartsWith("Selected claim IDs", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("prepared candidate claims", StringComparison.OrdinalIgnoreCase))
+        {
+            return 400;
+        }
+
+        return 500;
     }
 }

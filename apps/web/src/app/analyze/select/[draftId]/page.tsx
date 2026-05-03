@@ -353,8 +353,12 @@ export default function ClaimSelectionDraftPage() {
   }, [draftState]);
 
   const selectionThreshold = normalizeClaimSelectionCap(draftState?.selectionCap);
-  const selectionCap = getClaimSelectionCap(candidateClaims.length, selectionThreshold);
-  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold);
+  const admissionThreshold =
+    typeof draftState?.selectionAdmissionCap === "number"
+      ? Math.min(selectionThreshold, normalizeClaimSelectionCap(draftState.selectionAdmissionCap))
+      : selectionThreshold;
+  const selectionCap = getClaimSelectionCap(candidateClaims.length, admissionThreshold);
+  const requiresSelectionUi = shouldRequireClaimSelectionUi(candidateClaims.length, admissionThreshold);
   const idleAutoProceedMs =
     typeof draftState?.selectionIdleAutoProceedMs === "number"
       ? normalizeClaimSelectionIdleAutoProceedMs(draftState.selectionIdleAutoProceedMs)
@@ -371,10 +375,10 @@ export default function ClaimSelectionDraftPage() {
     draft?.status === "AWAITING_CLAIM_SELECTION" && requiresSelectionUi && idleAutoProceedMs > 0;
   const autoContinueClaimIds = useMemo(
     () =>
-      shouldAutoContinueWithoutSelection(candidateClaims.length, selectionThreshold)
+      shouldAutoContinueWithoutSelection(candidateClaims.length, admissionThreshold)
         ? candidateClaims.map((claim) => claim.id).slice(0, selectionCap)
         : [],
-    [candidateClaims, selectionCap, selectionThreshold],
+    [admissionThreshold, candidateClaims, selectionCap],
   );
   const idleAutoProceedClaimIds = useMemo(
     () => resolveIdleAutoProceedSelection(selectedClaimIds, lastValidSelectedClaimIds, selectionCap),
@@ -412,8 +416,8 @@ export default function ClaimSelectionDraftPage() {
       candidateClaimIds: candidateClaims.map((claim) => claim.id),
       persistedSelectedClaimIds,
       recommendedClaimIds,
-      configuredCap: selectionThreshold,
-      requiresSelectionUi: shouldRequireClaimSelectionUi(candidateClaims.length, selectionThreshold),
+      configuredCap: admissionThreshold,
+      requiresSelectionUi: shouldRequireClaimSelectionUi(candidateClaims.length, admissionThreshold),
       hasUserSelectionInteraction: persistedLastSelectionInteractionAtMs !== null,
     });
 
@@ -437,6 +441,7 @@ export default function ClaimSelectionDraftPage() {
     recommendedClaimIds,
     selectionCap,
     selectionSeed,
+    admissionThreshold,
     selectionThreshold,
   ]);
 

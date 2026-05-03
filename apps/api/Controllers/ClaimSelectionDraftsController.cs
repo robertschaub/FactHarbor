@@ -135,7 +135,7 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
             if (job is null)
             {
                 await tx.RollbackAsync();
-                return StatusCode(500, new { error = jobError ?? "Failed to create job from draft" });
+                return StatusCode(GetJobCreationErrorStatusCode(jobError), new { error = jobError ?? "Failed to create job from draft" });
             }
 
             var persistedSelectedClaimIds = TryExtractSelectedClaimIds(job.ClaimSelectionJson);
@@ -324,6 +324,21 @@ public sealed class ClaimSelectionDraftsController : ControllerBase
         {
             return Array.Empty<string>();
         }
+    }
+
+    private static int GetJobCreationErrorStatusCode(string? error)
+    {
+        if (string.IsNullOrWhiteSpace(error)) return 500;
+        if (
+            error.StartsWith("Must select", StringComparison.OrdinalIgnoreCase) ||
+            error.StartsWith("Duplicate claim IDs", StringComparison.OrdinalIgnoreCase) ||
+            error.StartsWith("Selected claim IDs", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("prepared candidate claims", StringComparison.OrdinalIgnoreCase))
+        {
+            return 400;
+        }
+
+        return 500;
     }
 
     private static void OverwriteDraftSelectedClaimIds(ClaimSelectionDraftEntity draft, string[] selectedClaimIds)

@@ -49,6 +49,7 @@ const WARNING_CLASSIFICATION = {
   baseless_challenge_blocked: { bucket: "analysis", impact: "informational" },
   explanation_quality_rubric_failed: { bucket: "provider", impact: "informational" },
   insufficient_evidence: { bucket: "analysis", impact: "degrading" },
+  selected_claim_zero_acquisition: { bucket: "analysis", impact: "degrading" },
   tiger_score_failed: { bucket: "analysis", impact: "informational" },
   structural_consistency: { bucket: "analysis", impact: "degrading" },
   inverse_consistency_error: { bucket: "analysis", impact: "degrading" },

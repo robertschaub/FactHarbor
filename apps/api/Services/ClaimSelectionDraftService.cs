@@ -780,7 +780,31 @@ public sealed class ClaimSelectionDraftService
     private static int GetEffectiveSelectionCap(string? draftStateJson, int candidateClaimCount)
     {
         var thresholdCap = ExtractSelectionCap(draftStateJson);
-        return Math.Max(1, Math.Min(candidateClaimCount, thresholdCap));
+        var admissionCap = ExtractSelectionAdmissionCap(draftStateJson) ?? thresholdCap;
+        return Math.Max(1, Math.Min(candidateClaimCount, Math.Min(thresholdCap, admissionCap)));
+    }
+
+    private static int? ExtractSelectionAdmissionCap(string? draftStateJson)
+    {
+        if (string.IsNullOrWhiteSpace(draftStateJson))
+            return null;
+
+        try
+        {
+            using var doc = JsonDocument.Parse(draftStateJson);
+            if (!doc.RootElement.TryGetProperty("selectionAdmissionCap", out var selectionAdmissionCapProp) ||
+                selectionAdmissionCapProp.ValueKind != JsonValueKind.Number ||
+                !selectionAdmissionCapProp.TryGetInt32(out var selectionAdmissionCap))
+            {
+                return null;
+            }
+
+            return Math.Clamp(selectionAdmissionCap, 1, AbsoluteClaimSelectionCap);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private static string BuildSelectionCapError(int selectionCap)

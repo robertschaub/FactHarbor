@@ -226,6 +226,58 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task ConfirmDraftAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                selectedClaimIds: ["AC_01", "AC_02", "AC_03"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.ConfirmDraftAsync(
+            draft.DraftId,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+    }
+
+    [Fact]
+    public async Task PrepareAutoContinueAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draftStateJson = PreparedState(
+            ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+            selectedClaimIds: ["AC_01", "AC_02", "AC_03", "AC_04"],
+            selectionCap: 5,
+            selectionAdmissionCap: 3);
+        var draft = SeedDraft(
+            db,
+            status: "PREPARING",
+            draftStateJson: draftStateJson);
+        await db.SaveChangesAsync();
+
+        var service = CreateDraftService(db);
+        var (result, error, statusCode) = await service.PrepareAutoContinueAsync(
+            draft.DraftId,
+            draftStateJson,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(result);
+        Assert.Equal(400, statusCode);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+    }
+
+    [Fact]
     public async Task StorePreparedResultAsync_MergesPriorLastErrorIntoDeduplicatedFailureHistory()
     {
         await using var database = await TestDatabase.CreateAsync();
@@ -353,6 +405,72 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task CreateJobFromDraftAsync_RejectsSelectionAboveAdmissionCap()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var draft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            draftStateJson: PreparedState(
+                ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05"],
+                selectedClaimIds: ["AC_01", "AC_02", "AC_03"],
+                selectionCap: 5,
+                selectionAdmissionCap: 3));
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var (job, error) = await service.CreateJobFromDraftAsync(
+            draft,
+            ["AC_01", "AC_02", "AC_03", "AC_04"]);
+
+        Assert.Null(job);
+        Assert.Equal("Must select between 1 and 3 claims", error);
+    }
+
+    [Fact]
+    public async Task CreateRetryJobAsync_PreservesDraftClaimSelectionMetadata()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var preparedStage1Json = JsonSerializer.Serialize(new
+        {
+            version = 1,
+            preparedUnderstanding = new
+            {
+                atomicClaims = new[] { new { id = "AC_01" } },
+            },
+        });
+        var claimSelectionJson = JsonSerializer.Serialize(new
+        {
+            version = 1,
+            selectionMode = "interactive",
+            selectedClaimIds = new[] { "AC_01" },
+        });
+        var originalJob = new JobEntity
+        {
+            JobId = Guid.NewGuid().ToString("N"),
+            Status = "FAILED",
+            InputType = "text",
+            InputValue = "A verifiable claim",
+            PipelineVariant = "claimboundary",
+            PreparedStage1Json = preparedStage1Json,
+            ClaimSelectionJson = claimSelectionJson,
+            CreatedUtc = DateTime.UtcNow,
+            UpdatedUtc = DateTime.UtcNow,
+        };
+        db.Jobs.Add(originalJob);
+        await db.SaveChangesAsync();
+
+        var service = CreateJobService(db);
+        var retryJob = await service.CreateRetryJobAsync(originalJob.JobId);
+
+        Assert.Equal("retry", retryJob.SubmissionPath);
+        Assert.Equal(preparedStage1Json, retryJob.PreparedStage1Json);
+        Assert.Equal(claimSelectionJson, retryJob.ClaimSelectionJson);
+    }
+
+    [Fact]
     public async Task CreateJobFromDraftAsync_ParallelCallsReturnOneDraftJob()
     {
         await using var database = await TestDatabase.CreateFileBackedAsync();
@@ -441,7 +559,8 @@ public sealed class ClaimSelectionDraftServiceTests
         string[] claimIds,
         DateTime? lastSelectionInteractionUtc = null,
         string[]? selectedClaimIds = null,
-        int selectionCap = 5)
+        int selectionCap = 5,
+        int? selectionAdmissionCap = null)
     {
         var state = new JsonObject
         {
@@ -455,6 +574,11 @@ public sealed class ClaimSelectionDraftServiceTests
                 },
             },
         };
+
+        if (selectionAdmissionCap.HasValue)
+        {
+            state["selectionAdmissionCap"] = selectionAdmissionCap.Value;
+        }
 
         if (lastSelectionInteractionUtc.HasValue)
         {

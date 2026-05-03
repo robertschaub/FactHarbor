@@ -13,9 +13,19 @@ import crypto from "crypto";
 import type { LLMProviderType } from "./analyzer/types";
 import {
   CLAIM_SELECTION_ABSOLUTE_MAX,
+  CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED,
+  CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
+  CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES,
   CLAIM_SELECTION_DEFAULT_CAP,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN,
   CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
+  CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
+  normalizeClaimSelectionBudgetFitMode,
+  normalizeClaimSelectionEstimatedMainResearchMsPerClaim,
   normalizeClaimSelectionMode,
+  normalizeClaimSelectionMinRecommendedClaims,
 } from "./claim-selection-flow";
 
 // ============================================================================
@@ -499,7 +509,19 @@ export const PipelineConfigSchema = z.object({
   claimSelectionCap: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
     .describe("Maximum claims ACS may recommend or continue, and the threshold where manual selection begins (default: 5)."),
   claimSelectionIdleAutoProceedMs: z.number().int().min(0).max(3600000).optional()
-    .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 900000, 0 disables)."),
+    .describe("Idle timeout before the manual ACS screen auto-continues with the last valid selection (default: 3600000, 0 disables)."),
+  claimSelectionBudgetAwarenessEnabled: z.boolean().optional()
+    .describe("Enable structural ACS admission cap calculation from Stage 2 research budgets (default: true)."),
+  claimSelectionBudgetFitMode: z.enum(CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES).optional()
+    .describe("Budget-fit behavior for ACS: off, explain_only, or allow_fewer_recommendations (default: allow_fewer_recommendations)."),
+  claimSelectionEstimatedMainResearchMsPerClaim: z.number()
+    .int()
+    .min(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN)
+    .max(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX)
+    .optional()
+    .describe("Estimated main-research wall-clock budget needed per admitted selected claim for ACS admission (default: 160000)."),
+  claimSelectionMinRecommendedClaims: z.number().int().min(1).max(CLAIM_SELECTION_ABSOLUTE_MAX).optional()
+    .describe("Minimum ACS recommendations when budget-aware admission is enabled (default: 1)."),
   maxAtomicClaims: z.number().int().min(2).max(30).optional()
     .describe("Absolute maximum claims after centrality filter (default: 5). Effective max is f(input length) capped by this value."),
   maxAtomicClaimsBase: z.number().int().min(1).max(10).optional()
@@ -592,6 +614,8 @@ export const PipelineConfigSchema = z.object({
     .describe("Iterations reserved for contradiction search in ClaimBoundary pipeline (default: 2)"),
   contradictionReservedQueries: z.number().int().min(0).max(10).optional()
     .describe("Query budget reserved per claim for contradiction search (default: 2). Main loop stops when remaining budget equals this value, ensuring contradiction has queries to spend."),
+  contradictionProtectedTimeMs: z.number().int().min(0).max(1800000).optional()
+    .describe("Wall-clock research budget reserved for contradiction/debate-quality work when ACS computes admission capacity (default: 120000)."),
   researchTimeBudgetMs: z.number().int().min(60000).max(3600000).optional()
     .describe("Wall-clock time budget for Stage 2 research loop in ms (default: 600000 = 10 min)"),
   researchZeroYieldBreakThreshold: z.number().int().min(1).max(5).optional()
@@ -864,6 +888,26 @@ export const PipelineConfigSchema = z.object({
   if (data.claimSelectionIdleAutoProceedMs === undefined) {
     data.claimSelectionIdleAutoProceedMs = CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS;
   }
+  if (data.claimSelectionBudgetAwarenessEnabled === undefined) {
+    data.claimSelectionBudgetAwarenessEnabled = CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED;
+  }
+  data.claimSelectionBudgetFitMode = normalizeClaimSelectionBudgetFitMode(
+    data.claimSelectionBudgetFitMode,
+  );
+  if (data.claimSelectionEstimatedMainResearchMsPerClaim === undefined) {
+    data.claimSelectionEstimatedMainResearchMsPerClaim = CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT;
+  } else {
+    data.claimSelectionEstimatedMainResearchMsPerClaim = normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+      data.claimSelectionEstimatedMainResearchMsPerClaim,
+    );
+  }
+  if (data.claimSelectionMinRecommendedClaims === undefined) {
+    data.claimSelectionMinRecommendedClaims = CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT;
+  } else {
+    data.claimSelectionMinRecommendedClaims = normalizeClaimSelectionMinRecommendedClaims(
+      data.claimSelectionMinRecommendedClaims,
+    );
+  }
   if (data.maxAtomicClaims === undefined) {
     data.maxAtomicClaims = 5;
   }
@@ -901,6 +945,9 @@ export const PipelineConfigSchema = z.object({
   }
   if (data.contradictionReservedQueries === undefined) {
     data.contradictionReservedQueries = 2;
+  }
+  if (data.contradictionProtectedTimeMs === undefined) {
+    data.contradictionProtectedTimeMs = 2 * 60 * 1000;
   }
   if (data.researchTimeBudgetMs === undefined) {
     data.researchTimeBudgetMs = 10 * 60 * 1000; // 10 minutes
@@ -1165,6 +1212,10 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   claimSelectionDefaultMode: normalizeClaimSelectionMode(undefined),
   claimSelectionCap: CLAIM_SELECTION_DEFAULT_CAP,
   claimSelectionIdleAutoProceedMs: CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
+  claimSelectionBudgetAwarenessEnabled: CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED,
+  claimSelectionBudgetFitMode: CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
+  claimSelectionEstimatedMainResearchMsPerClaim: CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT,
+  claimSelectionMinRecommendedClaims: CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
   maxAtomicClaims: 5,
   maxAtomicClaimsBase: 3,
   atomicClaimsInputCharsPerClaim: 500,
@@ -1208,6 +1259,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   sufficiencyMinResearchedIterationsPerClaim: 1,
   contradictionReservedIterations: 1,
   contradictionReservedQueries: 2,
+  contradictionProtectedTimeMs: 2 * 60 * 1000,
   researchTimeBudgetMs: 10 * 60 * 1000,
   researchZeroYieldBreakThreshold: 2,
   diversityAwareSufficiency: true,

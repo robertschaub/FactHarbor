@@ -862,6 +862,7 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
         targetedMainIterations: 1,
         totalIterations: 1,
         queryCount: 2,
+        searchAttemptCount: 1,
         fetchAttemptCount: 3,
         admittedEvidenceItemCount: 1,
         finalEvidenceItemCount: 1,
@@ -872,6 +873,7 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
       expect(coverage[1]).toMatchObject({
         claimId: "AC_02",
         targetedMainIterations: 0,
+        searchAttemptCount: 0,
         finalEvidenceItemCount: 0,
         sufficiencyState: "insufficient",
         zeroTargetedMainResearch: true,
@@ -3267,6 +3269,27 @@ describe("findLeastResearchedClaim", () => {
 
     const result = findLeastResearchedClaim(claims, evidence);
     expect(result?.id).toBe("AC_02"); // 0 evidence items
+  });
+
+  it("should prioritize lower searched-iteration count when provided", () => {
+    const claims = [
+      createAtomicClaim({ id: "AC_01" }),
+      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
+    ];
+    const evidence = [
+      { relevantClaimIds: ["AC_02"] },
+      { relevantClaimIds: ["AC_02"] },
+    ] as any[];
+
+    const result = findLeastResearchedClaim(
+      claims,
+      evidence,
+      undefined,
+      undefined,
+      { AC_01: 1, AC_02: 0 },
+    );
+
+    expect(result?.id).toBe("AC_02");
   });
 
   it("should return null for empty claims", () => {

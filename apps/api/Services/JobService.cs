@@ -9,6 +9,8 @@ namespace FactHarbor.Api.Services;
 
 public sealed class JobService
 {
+    private const int AbsoluteClaimSelectionCap = 5;
+
     private readonly FhDbContext _db;
     private readonly ILogger<JobService> _log;
     private readonly AppBuildInfo _buildInfo;
@@ -623,6 +625,8 @@ public sealed class JobService
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
             SubmissionPath = "retry",
+            PreparedStage1Json = originalJob.PreparedStage1Json,
+            ClaimSelectionJson = originalJob.ClaimSelectionJson,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),  // Current build hash at retry creation time
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
@@ -653,6 +657,7 @@ public sealed class JobService
         var rankedClaimIds = Array.Empty<string>();
         var recommendedClaimIds = Array.Empty<string>();
         int? selectionCap = null;
+        int? selectionAdmissionCap = null;
         string? recommendationRationale = null;
         var assessments = Array.Empty<object>();
 
@@ -674,6 +679,12 @@ public sealed class JobService
                 {
                     selectionCap = parsedSelectionCap;
                 }
+                if (root.TryGetProperty("selectionAdmissionCap", out var sap) &&
+                    sap.ValueKind == JsonValueKind.Number &&
+                    sap.TryGetInt32(out var parsedSelectionAdmissionCap))
+                {
+                    selectionAdmissionCap = parsedSelectionAdmissionCap;
+                }
                 if (root.TryGetProperty("recommendationRationale", out var rrp) && rrp.ValueKind == JsonValueKind.String)
                     recommendationRationale = rrp.GetString();
                 if (root.TryGetProperty("assessments", out var ap) && ap.ValueKind == JsonValueKind.Array)
@@ -684,6 +695,29 @@ public sealed class JobService
 
         if (string.IsNullOrWhiteSpace(preparedStage1Json))
             return (null, "Draft is missing preparedStage1 snapshot");
+
+        var candidateClaimIds = ExtractPreparedCandidateClaimIds(preparedStage1Json);
+        if (candidateClaimIds.Length == 0)
+            return (null, "Draft is missing prepared candidate claims");
+
+        var structuralSelectionCap = Math.Clamp(selectionCap ?? AbsoluteClaimSelectionCap, 1, AbsoluteClaimSelectionCap);
+        var structuralAdmissionCap = Math.Clamp(selectionAdmissionCap ?? structuralSelectionCap, 1, structuralSelectionCap);
+        var effectiveSelectionCap = Math.Max(
+            1,
+            Math.Min(candidateClaimIds.Length, Math.Min(structuralSelectionCap, structuralAdmissionCap)));
+
+        if (selectedClaimIds.Length < 1 || selectedClaimIds.Length > effectiveSelectionCap)
+            return (null, effectiveSelectionCap == 1
+                ? "Must select exactly 1 claim"
+                : $"Must select between 1 and {effectiveSelectionCap} claims");
+
+        if (selectedClaimIds.Length != selectedClaimIds.Distinct().Count())
+            return (null, "Duplicate claim IDs");
+
+        var candidateClaimIdSet = candidateClaimIds.ToHashSet(StringComparer.Ordinal);
+        var invalidSelectedClaimIds = selectedClaimIds.Where(id => !candidateClaimIdSet.Contains(id)).ToArray();
+        if (invalidSelectedClaimIds.Length > 0)
+            return (null, $"Selected claim IDs not in candidate set: {string.Join(", ", invalidSelectedClaimIds)}");
 
         // Build assessments as raw JSON array elements for proper serialization
         var assessmentJsonElements = new List<object>();
@@ -702,6 +736,7 @@ public sealed class JobService
             restartedViaOther = draft.RestartedViaOther,
             restartCount = draft.RestartCount,
             selectionCap,
+            selectionAdmissionCap,
             rankedClaimIds,
             recommendedClaimIds,
             selectedClaimIds,
@@ -760,6 +795,36 @@ public sealed class JobService
         return ex.InnerException is SqliteException sqliteEx &&
                sqliteEx.SqliteErrorCode == 19 &&
                sqliteEx.Message.Contains("Jobs.ClaimSelectionDraftId", StringComparison.Ordinal);
+    }
+
+    private static string[] ExtractPreparedCandidateClaimIds(string preparedStage1Json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(preparedStage1Json);
+            if (!doc.RootElement.TryGetProperty("preparedUnderstanding", out var preparedUnderstanding) ||
+                preparedUnderstanding.ValueKind != JsonValueKind.Object ||
+                !preparedUnderstanding.TryGetProperty("atomicClaims", out var atomicClaims) ||
+                atomicClaims.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<string>();
+            }
+
+            return atomicClaims
+                .EnumerateArray()
+                .Select(claim =>
+                    claim.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                        ? idProp.GetString()
+                        : null)
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Cast<string>()
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
+        catch (JsonException)
+        {
+            return Array.Empty<string>();
+        }
     }
 
     private static string MakePreview(string inputType, string inputValue)

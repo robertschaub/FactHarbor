@@ -1,15 +1,64 @@
 export const CLAIM_SELECTION_MODE_VALUES = ["interactive", "automatic"] as const;
 export type ClaimSelectionMode = (typeof CLAIM_SELECTION_MODE_VALUES)[number];
 
+export const CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES = [
+  "off",
+  "explain_only",
+  "allow_fewer_recommendations",
+] as const;
+export type ClaimSelectionBudgetFitMode = (typeof CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES)[number];
+
 export const CLAIM_SELECTION_ABSOLUTE_MAX = 5;
 export const CLAIM_SELECTION_DEFAULT_CAP = 5;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS = 3600000;
 export const CLAIM_SELECTION_IDLE_AUTO_PROCEED_MAX_MS = 3600000;
+export const CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED = true;
+export const CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE: ClaimSelectionBudgetFitMode = "allow_fewer_recommendations";
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT = 160000;
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN = 30000;
+export const CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX = 600000;
+export const CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT = 1;
 
 export function normalizeClaimSelectionMode(
   configuredMode: string | null | undefined,
 ): ClaimSelectionMode {
   return configuredMode === "automatic" ? "automatic" : "interactive";
+}
+
+export function normalizeClaimSelectionBudgetFitMode(
+  configuredMode: string | null | undefined,
+): ClaimSelectionBudgetFitMode {
+  return CLAIM_SELECTION_BUDGET_FIT_MODE_VALUES.includes(configuredMode as ClaimSelectionBudgetFitMode)
+    ? (configuredMode as ClaimSelectionBudgetFitMode)
+    : CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE;
+}
+
+export function normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+  configuredMs: number | null | undefined,
+): number {
+  if (!Number.isFinite(configuredMs)) {
+    return CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT;
+  }
+
+  const normalizedMs = configuredMs as number;
+  return Math.max(
+    CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MIN,
+    Math.min(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_MAX, Math.trunc(normalizedMs)),
+  );
+}
+
+export function normalizeClaimSelectionMinRecommendedClaims(
+  configuredMin: number | null | undefined,
+): number {
+  if (!Number.isFinite(configuredMin)) {
+    return CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT;
+  }
+
+  const normalizedMin = configuredMin as number;
+  return Math.max(
+    1,
+    Math.min(CLAIM_SELECTION_ABSOLUTE_MAX, Math.trunc(normalizedMin)),
+  );
 }
 
 export function normalizeClaimSelectionCap(
@@ -65,6 +114,41 @@ export function getClaimSelectionCap(
     return 1;
   }
   return Math.min(normalizedCap, Math.trunc(candidateCount));
+}
+
+export function getBudgetAwareClaimSelectionCap(options: {
+  candidateCount: number;
+  configuredCap?: number | null;
+  budgetAwarenessEnabled?: boolean | null;
+  budgetFitMode?: string | null;
+  researchTimeBudgetMs?: number | null;
+  contradictionProtectedTimeMs?: number | null;
+  estimatedMainResearchMsPerClaim?: number | null;
+  minRecommendedClaims?: number | null;
+}): number {
+  const structuralCap = getClaimSelectionCap(options.candidateCount, options.configuredCap);
+  const budgetFitMode = normalizeClaimSelectionBudgetFitMode(options.budgetFitMode);
+  if (options.budgetAwarenessEnabled !== true || budgetFitMode !== "allow_fewer_recommendations") {
+    return structuralCap;
+  }
+
+  const researchTimeBudgetMs = Number.isFinite(options.researchTimeBudgetMs)
+    ? Math.max(0, Math.trunc(options.researchTimeBudgetMs as number))
+    : 0;
+  const contradictionProtectedTimeMs = Number.isFinite(options.contradictionProtectedTimeMs)
+    ? Math.max(0, Math.trunc(options.contradictionProtectedTimeMs as number))
+    : 0;
+  const mainResearchBudgetMs = Math.max(0, researchTimeBudgetMs - contradictionProtectedTimeMs);
+  const estimatedMainResearchMsPerClaim = normalizeClaimSelectionEstimatedMainResearchMsPerClaim(
+    options.estimatedMainResearchMsPerClaim,
+  );
+  const minRecommendedClaims = Math.min(
+    structuralCap,
+    normalizeClaimSelectionMinRecommendedClaims(options.minRecommendedClaims),
+  );
+
+  const budgetLimitedCap = Math.floor(mainResearchBudgetMs / estimatedMainResearchMsPerClaim);
+  return Math.max(1, Math.min(structuralCap, Math.max(minRecommendedClaims, budgetLimitedCap)));
 }
 
 export function isValidClaimSelection(

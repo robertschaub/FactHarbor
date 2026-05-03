@@ -361,6 +361,8 @@ export interface ClaimAcquisitionIterationEntry {
   /** Wall-clock time spent inside this recorded acquisition iteration. */
   durationMs?: number;
   generatedQueries: string[];
+  /** Number of generated queries that reached a search provider call. */
+  searchAttempts?: number;
   searchResults: number;
   relevanceAccepted: number;
   sourcesFetched: number;
@@ -739,6 +741,7 @@ export interface PreparedStage1Provenance {
   searchConfigHash: string;
   calcConfigHash: string;
   selectionCap: number;
+  selectionAdmissionCap?: number;
 }
 
 export interface ClaimSelectionRecommendationAssessment {
@@ -806,6 +809,8 @@ export interface ClaimSelectionDraftState {
   preparedStage1?: PreparedStage1Snapshot;
   // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
   selectionCap?: number;
+  // Persisted budget-aware admission cap; final selected count must fit within min(selectionCap, selectionAdmissionCap).
+  selectionAdmissionCap?: number;
   // Persisted inactivity timeout for manual claim-selection sessions (0 disables auto-proceed).
   selectionIdleAutoProceedMs?: number;
   rankedClaimIds: string[];
@@ -849,6 +854,8 @@ export interface ClaimSelectionMetadata {
   restartCount: number;
   // Persisted manual-review threshold; the effective current limit is min(candidate count, selectionCap).
   selectionCap?: number;
+  // Persisted budget-aware admission cap; final selected count must fit within min(selectionCap, selectionAdmissionCap).
+  selectionAdmissionCap?: number;
   rankedClaimIds: string[];
   recommendedClaimIds: string[];
   selectedClaimIds: string[];
@@ -858,7 +865,14 @@ export interface ClaimSelectionMetadata {
 
 export type SelectedClaimResearchNotRunReason =
   | "no_claim_acquisition_ledger_entry"
-  | "no_targeted_main_iteration_recorded";
+  | "no_targeted_main_iteration_recorded"
+  | "query_budget_exhausted_before_search"
+  | "time_budget_exhausted_before_search";
+
+export type SelectedClaimResearchSufficiencyState =
+  | "sufficient"
+  | "insufficient"
+  | "budget_exhausted";
 
 export interface SelectedClaimResearchCoverage {
   claimId: string;
@@ -868,6 +882,8 @@ export interface SelectedClaimResearchCoverage {
   totalIterations: number;
   iterationTypeCounts: Record<ClaimAcquisitionIterationEntry["iterationType"], number>;
   queryCount: number;
+  /** Search-provider attempts across all recorded acquisition iterations for this claim. */
+  searchAttemptCount: number;
   fetchAttemptCount: number;
   /**
    * Sum of admitted evidence across recorded acquisition iterations before
@@ -877,7 +893,7 @@ export interface SelectedClaimResearchCoverage {
   /** Final result evidence count attached to this claim after the pipeline finishes. */
   finalEvidenceItemCount: number;
   elapsedMs: number;
-  sufficiencyState: "sufficient" | "insufficient";
+  sufficiencyState: SelectedClaimResearchSufficiencyState;
   zeroTargetedMainResearch: boolean;
   notRunReason?: SelectedClaimResearchNotRunReason;
 }
@@ -886,7 +902,7 @@ export interface LegacySelectedClaimResearchSummary {
   claimId: string;
   iterations: number;
   evidenceItemCount: number;
-  sufficiencyState: "sufficient" | "insufficient";
+  sufficiencyState: SelectedClaimResearchSufficiencyState;
 }
 
 export interface AcsResearchWasteObservability {
@@ -951,6 +967,7 @@ export type AnalysisWarningType =
   | "baseless_challenge_blocked"    // Challenge adjustment based entirely on baseless evidence IDs — reverted (enforcement)
   | "explanation_quality_rubric_failed" // B-8 rubric LLM evaluation failed — degraded to structural-only
   | "insufficient_evidence"            // D5 Control 1: Claim has too few evidence items or source types for reliable verdict
+  | "selected_claim_zero_acquisition"  // Selected AtomicClaim reached verdict path with zero provider search attempts
   | "tiger_score_failed"               // Stage 6: Holistic TIGERScore evaluation failed
   | "structural_consistency"           // Verdict structural consistency check found issues
   | "inverse_consistency_error"        // Strict inverse pair complementarity check failed
@@ -1482,6 +1499,8 @@ export interface CBResearchState {
   // Used by sufficiency guard to ensure seeded-heavy claims still get at least
   // one targeted research iteration before being declared sufficient.
   researchedIterationsByClaim: Record<string, number>;
+  // Selected-claim coverage reasons when Stage 2 cannot execute provider search.
+  selectedClaimResearchNotRunReasons?: Record<string, SelectedClaimResearchNotRunReason>;
   // Iteration tracking (replaces boolean contradictionSearchPerformed)
   mainIterationsUsed: number;
   contradictionIterationsReserved: number;

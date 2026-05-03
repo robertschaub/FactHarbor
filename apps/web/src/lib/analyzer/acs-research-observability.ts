@@ -3,6 +3,7 @@ import type {
   CBResearchState,
   ClaimAcquisitionIterationEntry,
   SelectedClaimResearchCoverage,
+  SelectedClaimResearchNotRunReason,
 } from "./types";
 
 function createIterationTypeCounts(): Record<ClaimAcquisitionIterationEntry["iterationType"], number> {
@@ -18,8 +19,23 @@ function sumIterationDurations(iterations: ClaimAcquisitionIterationEntry[]): nu
   return iterations.reduce((sum, iteration) => sum + Math.max(0, iteration.durationMs ?? 0), 0);
 }
 
+function getIterationSearchAttemptCount(iteration: ClaimAcquisitionIterationEntry): number {
+  const explicitAttempts = Math.max(0, iteration.searchAttempts ?? 0);
+  if (explicitAttempts > 0) return explicitAttempts;
+
+  const hasLegacySearchEvidence =
+    iteration.searchResults > 0 ||
+    iteration.relevanceAccepted > 0 ||
+    iteration.sourcesFetched > 0 ||
+    (iteration.losses?.fetchRejected ?? 0) > 0;
+  return hasLegacySearchEvidence ? 1 : 0;
+}
+
 export function buildAcsResearchWasteObservability(
-  state: Pick<CBResearchState, "understanding" | "claimAcquisitionLedger" | "evidenceItems" | "searchQueries">,
+  state: Pick<
+    CBResearchState,
+    "understanding" | "claimAcquisitionLedger" | "evidenceItems" | "searchQueries" | "selectedClaimResearchNotRunReasons"
+  >,
   claimSufficiencyThreshold: number,
 ): AcsResearchWasteObservability | undefined {
   const selectedClaims = state.understanding?.atomicClaims ?? [];
@@ -45,13 +61,34 @@ export function buildAcsResearchWasteObservability(
     const ledgerEntry = ledger[claim.id];
     const iterations = ledgerEntry?.iterations ?? [];
     const iterationTypeCounts = createIterationTypeCounts();
+    let targetedMainIterations = 0;
+    let searchAttemptCount = 0;
     for (const iteration of iterations) {
       iterationTypeCounts[iteration.iterationType]++;
+      const iterationSearchAttempts = getIterationSearchAttemptCount(iteration);
+      searchAttemptCount += iterationSearchAttempts;
+      if (
+        iteration.iterationType === "main" &&
+        iteration.languageLane === "primary" &&
+        iterationSearchAttempts > 0
+      ) {
+        targetedMainIterations++;
+      }
     }
 
     const finalEvidenceItemCount = finalEvidenceByClaim.get(claim.id) ?? 0;
-    const targetedMainIterations = iterationTypeCounts.main;
     const zeroTargetedMainResearch = targetedMainIterations === 0;
+    const notRunReason: SelectedClaimResearchNotRunReason | undefined = zeroTargetedMainResearch
+      ? state.selectedClaimResearchNotRunReasons?.[claim.id]
+        ?? (ledgerEntry
+          ? "no_targeted_main_iteration_recorded"
+          : "no_claim_acquisition_ledger_entry")
+      : undefined;
+    const sufficiencyState = notRunReason?.endsWith("_before_search")
+      ? "budget_exhausted"
+      : finalEvidenceItemCount >= claimSufficiencyThreshold
+        ? "sufficient"
+        : "insufficient";
 
     return {
       claimId: claim.id,
@@ -61,6 +98,7 @@ export function buildAcsResearchWasteObservability(
       totalIterations: iterations.length,
       iterationTypeCounts,
       queryCount: iterations.reduce((sum, iteration) => sum + iteration.generatedQueries.length, 0),
+      searchAttemptCount,
       fetchAttemptCount: iterations.reduce(
         (sum, iteration) => sum + iteration.sourcesFetched + iteration.losses.fetchRejected,
         0,
@@ -71,15 +109,9 @@ export function buildAcsResearchWasteObservability(
       ),
       finalEvidenceItemCount,
       elapsedMs: sumIterationDurations(iterations),
-      sufficiencyState: finalEvidenceItemCount >= claimSufficiencyThreshold ? "sufficient" : "insufficient",
+      sufficiencyState,
       zeroTargetedMainResearch,
-      ...(zeroTargetedMainResearch
-        ? {
-            notRunReason: ledgerEntry
-              ? "no_targeted_main_iteration_recorded"
-              : "no_claim_acquisition_ledger_entry",
-          }
-        : {}),
+      ...(notRunReason ? { notRunReason } : {}),
     };
   });
 

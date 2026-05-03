@@ -2,14 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   CLAIM_SELECTION_ABSOLUTE_MAX,
+  CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED,
+  CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE,
   CLAIM_SELECTION_DEFAULT_CAP,
+  CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT,
   CLAIM_SELECTION_IDLE_AUTO_PROCEED_DEFAULT_MS,
+  CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT,
+  getBudgetAwareClaimSelectionCap,
   getClaimSelectionIdleRemainingMs,
   getClaimSelectionCap,
   isValidClaimSelection,
+  normalizeClaimSelectionBudgetFitMode,
   normalizeClaimSelectionCap,
+  normalizeClaimSelectionEstimatedMainResearchMsPerClaim,
   normalizeClaimSelectionIdleAutoProceedMs,
   normalizeClaimSelectionMode,
+  normalizeClaimSelectionMinRecommendedClaims,
   resolveIdleAutoProceedSelection,
   resolveInitialClaimSelection,
   shouldAutoContinueWithoutSelection,
@@ -32,6 +40,25 @@ describe("claim-selection-flow", () => {
     expect(normalizeClaimSelectionMode("interactive")).toBe("interactive");
     expect(normalizeClaimSelectionMode("automatic")).toBe("automatic");
     expect(normalizeClaimSelectionMode("AUTO")).toBe("interactive");
+  });
+
+  it("normalizes budget-aware ACS admission controls", () => {
+    expect(CLAIM_SELECTION_BUDGET_AWARENESS_DEFAULT_ENABLED).toBe(true);
+    expect(CLAIM_SELECTION_BUDGET_FIT_DEFAULT_MODE).toBe("allow_fewer_recommendations");
+    expect(CLAIM_SELECTION_ESTIMATED_MAIN_RESEARCH_MS_PER_CLAIM_DEFAULT).toBe(160000);
+    expect(CLAIM_SELECTION_MIN_RECOMMENDED_DEFAULT).toBe(1);
+    expect(normalizeClaimSelectionBudgetFitMode(undefined)).toBe("allow_fewer_recommendations");
+    expect(normalizeClaimSelectionBudgetFitMode("explain_only")).toBe("explain_only");
+    expect(normalizeClaimSelectionBudgetFitMode("allow_fewer_recommendations")).toBe("allow_fewer_recommendations");
+    expect(normalizeClaimSelectionBudgetFitMode("enabled")).toBe("allow_fewer_recommendations");
+    expect(normalizeClaimSelectionEstimatedMainResearchMsPerClaim(undefined)).toBe(160000);
+    expect(normalizeClaimSelectionEstimatedMainResearchMsPerClaim(10_000)).toBe(30_000);
+    expect(normalizeClaimSelectionEstimatedMainResearchMsPerClaim(123_456.7)).toBe(123_456);
+    expect(normalizeClaimSelectionEstimatedMainResearchMsPerClaim(900_000)).toBe(600_000);
+    expect(normalizeClaimSelectionMinRecommendedClaims(undefined)).toBe(1);
+    expect(normalizeClaimSelectionMinRecommendedClaims(0)).toBe(1);
+    expect(normalizeClaimSelectionMinRecommendedClaims(3.8)).toBe(3);
+    expect(normalizeClaimSelectionMinRecommendedClaims(10)).toBe(5);
   });
 
   it("auto-continues only while candidate count stays below the configured threshold", () => {
@@ -57,6 +84,52 @@ describe("claim-selection-flow", () => {
     expect(getClaimSelectionCap(5)).toBe(5);
     expect(getClaimSelectionCap(9)).toBe(5);
     expect(getClaimSelectionCap(4, 3)).toBe(3);
+  });
+
+  it("derives a budget-aware admission cap from structural time budgets", () => {
+    expect(getBudgetAwareClaimSelectionCap({
+      candidateCount: 24,
+      configuredCap: 5,
+      budgetAwarenessEnabled: true,
+      budgetFitMode: "allow_fewer_recommendations",
+      researchTimeBudgetMs: 600000,
+      contradictionProtectedTimeMs: 120000,
+      estimatedMainResearchMsPerClaim: 160000,
+      minRecommendedClaims: 1,
+    })).toBe(3);
+
+    expect(getBudgetAwareClaimSelectionCap({
+      candidateCount: 24,
+      configuredCap: 5,
+      budgetAwarenessEnabled: false,
+      budgetFitMode: "allow_fewer_recommendations",
+      researchTimeBudgetMs: 600000,
+      contradictionProtectedTimeMs: 120000,
+      estimatedMainResearchMsPerClaim: 160000,
+      minRecommendedClaims: 1,
+    })).toBe(5);
+
+    expect(getBudgetAwareClaimSelectionCap({
+      candidateCount: 2,
+      configuredCap: 5,
+      budgetAwarenessEnabled: true,
+      budgetFitMode: "allow_fewer_recommendations",
+      researchTimeBudgetMs: 600000,
+      contradictionProtectedTimeMs: 120000,
+      estimatedMainResearchMsPerClaim: 160000,
+      minRecommendedClaims: 1,
+    })).toBe(2);
+
+    expect(getBudgetAwareClaimSelectionCap({
+      candidateCount: 24,
+      configuredCap: 5,
+      budgetAwarenessEnabled: true,
+      budgetFitMode: "allow_fewer_recommendations",
+      researchTimeBudgetMs: 120000,
+      contradictionProtectedTimeMs: 120000,
+      estimatedMainResearchMsPerClaim: 160000,
+      minRecommendedClaims: 2,
+    })).toBe(2);
   });
 
   it("normalizes the idle auto-proceed timeout with disable support", () => {

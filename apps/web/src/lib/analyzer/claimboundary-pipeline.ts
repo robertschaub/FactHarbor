@@ -125,6 +125,7 @@ import {
   consumeClaimQueryBudget,
   findLeastContradictedClaim,
   findLeastResearchedClaim,
+  getClaimProviderSearchAttemptCount,
   getClaimQueryBudgetRemaining,
   getClaimQueryBudgetUsed,
   getPerClaimQueryBudget,
@@ -1204,6 +1205,7 @@ export async function runClaimBoundaryAnalysis(
     );
     const insufficientClaimIds = new Set<string>();
     for (const claim of understanding.atomicClaims) {
+      const providerSearchAttempts = getClaimProviderSearchAttemptCount(state, claim.id);
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
@@ -1229,17 +1231,37 @@ export async function runClaimBoundaryAnalysis(
         directionalEvidence.every((e) => e.probativeValue !== "low") &&
         new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
 
-      if (!hasSufficientItems || (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)) {
+      if (
+        providerSearchAttempts <= 0 ||
+        !hasSufficientItems ||
+        (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)
+      ) {
         insufficientClaimIds.add(claim.id);
-        state.warnings.push({
-          type: "insufficient_evidence",
-          severity: "warning",
-          message: `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
-            `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
-            `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}), ` +
-            `${distinctDomains.size} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
-            `Verdict set to UNVERIFIED.`,
-        });
+        const alreadyWarnedZeroAcquisition = providerSearchAttempts <= 0 && state.warnings.some(
+          (warning) =>
+            warning.type === "selected_claim_zero_acquisition" &&
+            warning.details?.claimId === claim.id,
+        );
+        if (!alreadyWarnedZeroAcquisition) {
+          state.warnings.push({
+            type: providerSearchAttempts <= 0 ? "selected_claim_zero_acquisition" : "insufficient_evidence",
+            severity: providerSearchAttempts <= 0 ? "error" : "warning",
+            message: providerSearchAttempts <= 0
+              ? `Claim ${claim.id} had zero provider search attempts in Stage 2. Verdict set to UNVERIFIED.`
+              : `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
+                `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
+                `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}), ` +
+                `${distinctDomains.size} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
+                `Verdict set to UNVERIFIED.`,
+            details: providerSearchAttempts <= 0
+              ? {
+                  claimId: claim.id,
+                  providerSearchAttempts,
+                  notRunReason: state.selectedClaimResearchNotRunReasons?.[claim.id],
+                }
+              : undefined,
+          });
+        }
       }
     }
     const sufficientClaims = understanding.atomicClaims.filter(c => !insufficientClaimIds.has(c.id));

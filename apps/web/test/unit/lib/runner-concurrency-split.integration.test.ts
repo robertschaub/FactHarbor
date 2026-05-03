@@ -225,8 +225,103 @@ describe("runner concurrency split", () => {
 
     expect(preparedBodies).toHaveLength(1);
     const draftState = JSON.parse(preparedBodies[0].draftStateJson);
+    expect(draftState.selectionCap).toBe(5);
+    expect(draftState.selectionAdmissionCap).toBe(5);
     expect(draftState.selectionIdleAutoProceedMs).toBe(180000);
     expect(draftState.lastSelectionInteractionUtc).toBe("2026-05-01T09:02:00.000Z");
+    expect(draftState.selectedClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
+  });
+
+  it("uses the budget-aware admission cap for recommendations and persisted draft state", async () => {
+    const claimIds = ["AC_01", "AC_02", "AC_03", "AC_04", "AC_05", "AC_06"];
+    const preparedBodies: any[] = [];
+    const recommendationCaps: number[] = [];
+
+    vi.mocked(loadPipelineConfig).mockResolvedValueOnce({
+      config: {
+        claimSelectionCap: 5,
+        claimSelectionIdleAutoProceedMs: 180000,
+        claimSelectionBudgetAwarenessEnabled: true,
+        claimSelectionBudgetFitMode: "allow_fewer_recommendations",
+        claimSelectionEstimatedMainResearchMsPerClaim: 160000,
+        claimSelectionMinRecommendedClaims: 1,
+        researchTimeBudgetMs: 600000,
+        contradictionProtectedTimeMs: 120000,
+      },
+    } as any);
+    vi.mocked(prepareStage1Snapshot).mockResolvedValueOnce({
+      preparedStage1: {
+        version: 1,
+        resolvedInputText: "queued session input",
+        preparedUnderstanding: {
+          impliedClaim: "Input implies several checkable claims.",
+          articleThesis: "Input thesis",
+          atomicClaims: claimIds.map((id) => ({ id, statement: `Statement ${id}` })),
+          preliminaryEvidence: [],
+        },
+      },
+      state: { stage1Observability: { candidateClaimCount: claimIds.length } },
+    } as any);
+    vi.mocked(generateClaimSelectionRecommendation).mockImplementationOnce(async (params: any) => {
+      recommendationCaps.push(params.selectionCap);
+      return {
+        rankedClaimIds: [...claimIds],
+        recommendedClaimIds: ["AC_01", "AC_02", "AC_03"],
+        assessments: [],
+        rationale: "Recommended in ranked order.",
+      } as any;
+    });
+
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/recoverable")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/internal/v1/claim-selection-drafts/idle-auto-proceed-due")) {
+        return new Response(JSON.stringify({ drafts: [] }), { status: 200 });
+      }
+
+      if (method === "GET" && url.endsWith("/v1/claim-selection-drafts/draft-budget")) {
+        return new Response(JSON.stringify({
+          draftId: "draft-budget",
+          status: "QUEUED",
+          activeInputType: "text",
+          activeInputValue: "queued session input",
+          selectionMode: "interactive",
+        }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.includes("/internal/v1/claim-selection-drafts/draft-budget/status")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (method === "PUT" && url.endsWith("/internal/v1/claim-selection-drafts/draft-budget/prepared")) {
+        preparedBodies.push(JSON.parse(String(init?.body ?? "{}")));
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+
+    (globalThis as any).__fhDraftQueueState = {
+      runningCount: 0,
+      queue: [{ draftId: "draft-budget", enqueuedAt: Date.now() }],
+      runningDraftIds: new Set<string>(),
+      isDraining: false,
+      drainRequested: false,
+    };
+
+    const { drainDraftQueue } = await import("@/lib/internal-runner-queue");
+    await drainDraftQueue();
+    await flushMicrotasks(30);
+
+    expect(recommendationCaps).toEqual([3]);
+    const draftState = JSON.parse(preparedBodies[0].draftStateJson);
+    expect(draftState.selectionCap).toBe(5);
+    expect(draftState.selectionAdmissionCap).toBe(3);
     expect(draftState.selectedClaimIds).toEqual(["AC_01", "AC_02", "AC_03"]);
   });
 
