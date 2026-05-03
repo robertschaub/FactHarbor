@@ -358,6 +358,8 @@ export interface ClaimAcquisitionIterationEntry {
   iterationType: "main" | "contradiction" | "contrarian" | "refinement";
   languageLane: "primary" | "supplementary_en";
   freshnessRequirement?: ClaimFreshnessRequirement;
+  /** Wall-clock time spent inside this recorded acquisition iteration. */
+  durationMs?: number;
   generatedQueries: string[];
   searchResults: number;
   relevanceAccepted: number;
@@ -854,6 +856,54 @@ export interface ClaimSelectionMetadata {
   assessments: ClaimSelectionRecommendationAssessment[];
 }
 
+export type SelectedClaimResearchNotRunReason =
+  | "no_claim_acquisition_ledger_entry"
+  | "no_targeted_main_iteration_recorded";
+
+export interface SelectedClaimResearchCoverage {
+  claimId: string;
+  claimStatement: string;
+  isSelected: true;
+  targetedMainIterations: number;
+  totalIterations: number;
+  iterationTypeCounts: Record<ClaimAcquisitionIterationEntry["iterationType"], number>;
+  queryCount: number;
+  fetchAttemptCount: number;
+  /**
+   * Sum of admitted evidence across recorded acquisition iterations before
+   * later deduplication, post-research filtering, or final result shaping.
+   */
+  admittedEvidenceItemCount: number;
+  /** Final result evidence count attached to this claim after the pipeline finishes. */
+  finalEvidenceItemCount: number;
+  elapsedMs: number;
+  sufficiencyState: "sufficient" | "insufficient";
+  zeroTargetedMainResearch: boolean;
+  notRunReason?: SelectedClaimResearchNotRunReason;
+}
+
+export interface LegacySelectedClaimResearchSummary {
+  claimId: string;
+  iterations: number;
+  evidenceItemCount: number;
+  sufficiencyState: "sufficient" | "insufficient";
+}
+
+export interface AcsResearchWasteObservability {
+  selectedClaimResearchCoverage: SelectedClaimResearchCoverage[];
+  /**
+   * Backward-compatible compact summary for older validation consumers.
+   * New consumers should use selectedClaimResearchCoverage.
+   */
+  selectedClaimResearch: LegacySelectedClaimResearchSummary[];
+  zeroTargetedSelectedClaimCount: number;
+  zeroTargetedSelectedClaimIds: string[];
+}
+
+export interface AnalysisObservability {
+  acsResearchWaste?: AcsResearchWasteObservability;
+}
+
 // ============================================================================
 // ANALYSIS WARNINGS TYPES (v3.1)
 // ============================================================================
@@ -992,7 +1042,8 @@ export interface AtomicClaim {
    *  Comparative claims may require evidence from multiple jurisdictions even when the
    *  overall input has a single dominant geography. */
   relevantGeographies?: string[];
-  checkWorthiness: "high" | "medium";
+  /** Stage 1 extraction-time advisory hint. Not ACS recommendation authority. */
+  checkWorthiness: "high" | "medium" | "low";
   specificityScore: number;      // 0-1, LLM-assessed. ≥0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
   /** True when this claim is one dimension of an ambiguous_single_claim decomposition.

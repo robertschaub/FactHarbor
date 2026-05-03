@@ -33,6 +33,7 @@ vi.mock("@/lib/analyzer/prompt-loader", () => ({
 import { generateText } from "ai";
 import { extractStructuredOutput } from "@/lib/analyzer/llm";
 import { loadAndRenderSection } from "@/lib/analyzer/prompt-loader";
+import { recordLLMCall } from "@/lib/analyzer/metrics-integration";
 import {
   generateClaimSelectionRecommendation,
   validateClaimSelectionRecommendation,
@@ -305,6 +306,7 @@ describe("generateClaimSelectionRecommendation", () => {
   const mockGenerateText = vi.mocked(generateText);
   const mockExtractStructuredOutput = vi.mocked(extractStructuredOutput);
   const mockLoadAndRenderSection = vi.mocked(loadAndRenderSection);
+  const mockRecordLLMCall = vi.mocked(recordLLMCall);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -342,6 +344,33 @@ describe("generateClaimSelectionRecommendation", () => {
 
     expect(result.rankedClaimIds).toEqual(["AC_01", "AC_02"]);
     expect(mockGenerateText).toHaveBeenCalledTimes(2);
+  });
+
+  it("attributes recommendation LLM metrics to the claim_selection task", async () => {
+    mockGenerateText.mockResolvedValue({
+      structured: createRecommendation(),
+      usage: { inputTokens: 10, outputTokens: 12, totalTokens: 22 },
+    } as any);
+
+    await generateClaimSelectionRecommendation({
+      originalInput: "Entity A made claim X under condition Y",
+      impliedClaim: "Entity A asserts claim X.",
+      articleThesis: "The input presents claim X for verification.",
+      atomicClaims: [
+        createAtomicClaim(),
+        createAtomicClaim({
+          id: "AC_02",
+          statement: "Entity A also claimed related condition Z",
+          thesisRelevance: "indirect",
+          checkWorthiness: "medium",
+        }),
+      ],
+    });
+
+    expect(mockRecordLLMCall).toHaveBeenCalledWith(expect.objectContaining({
+      taskType: "claim_selection",
+      success: true,
+    }));
   });
 
   it("does not retry on explicit refusal metadata", async () => {

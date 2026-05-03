@@ -81,12 +81,16 @@ function classifyChange(oldS, newS) {
   const newErrors = newS.warnings?.bySeverity?.error || 0;
   if (newErrors > oldErrors) flags.push("new_errors");
 
+  const oldZeroTargeted = getZeroTargetedSelectedClaimCount(oldS);
+  const newZeroTargeted = getZeroTargetedSelectedClaimCount(newS);
+  if (newZeroTargeted > oldZeroTargeted) flags.push("zero_targeted_selected_claims");
+
   // Claim count change (decomposition instability)
   const oldClaims = oldS.claims?.length || 0;
   const newClaims = newS.claims?.length || 0;
   if (oldClaims !== newClaims) flags.push("claim_count_change");
 
-  if (flags.some((f) => ["conf_drop", "became_unverified", "direction_flip", "new_errors"].includes(f))) {
+  if (flags.some((f) => ["conf_drop", "became_unverified", "direction_flip", "new_errors", "zero_targeted_selected_claims"].includes(f))) {
     return { status: "REGRESSION", flags, tpDelta, confDelta };
   }
   if (tpDelta > 5 || confDelta > 5) {
@@ -98,6 +102,39 @@ function classifyChange(oldS, newS) {
 function sign(n) {
   if (n > 0) return `+${n}`;
   return `${n}`;
+}
+
+function compactHash(value, length = 7) {
+  if (!value) return "?";
+  return String(value).slice(0, length);
+}
+
+function readGitHash(summary) {
+  return summary?.run?.executedWebGitCommitHash ||
+    summary?.run?.gitCommit ||
+    summary?.run?.createdGitCommitHash ||
+    "?";
+}
+
+function readPromptHash(summary) {
+  return summary?.run?.promptContentHash ||
+    summary?.run?.promptHash ||
+    "?";
+}
+
+function summarizeBatchHash(batch, families, reader, length) {
+  const hashes = [...new Set(families.map((family) => reader(batch[family])).filter(Boolean))];
+  if (hashes.length === 0) return "?";
+  if (hashes.length === 1) return compactHash(hashes[0], length);
+  return `mixed:${hashes.map((hash) => compactHash(hash, length)).join(",")}`;
+}
+
+function getZeroTargetedSelectedClaimCount(summary) {
+  const explicit = summary?.acsResearchWaste?.zeroTargetedSelectedClaimCount;
+  if (typeof explicit === "number") return explicit;
+  const coverage = summary?.acsResearchWaste?.selectedClaimResearchCoverage;
+  if (!Array.isArray(coverage)) return 0;
+  return coverage.filter((entry) => entry?.zeroTargetedMainResearch).length;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,10 +162,10 @@ for (const family of [...allFamilies].sort()) {
 // Header
 const oldLabel = oldManifest?.batchLabel || path.basename(oldDir);
 const newLabel = newManifest?.batchLabel || path.basename(newDir);
-const oldGit = matched.length > 0 ? (oldBatch[matched[0]]?.run?.gitCommit || "?").slice(0, 7) : "?";
-const newGit = matched.length > 0 ? (newBatch[matched[0]]?.run?.gitCommit || "?").slice(0, 7) : "?";
-const oldPrompt = matched.length > 0 ? (oldBatch[matched[0]]?.run?.promptHash || "?").slice(0, 8) : "?";
-const newPrompt = matched.length > 0 ? (newBatch[matched[0]]?.run?.promptHash || "?").slice(0, 8) : "?";
+const oldGit = matched.length > 0 ? summarizeBatchHash(oldBatch, matched, readGitHash, 7) : "?";
+const newGit = matched.length > 0 ? summarizeBatchHash(newBatch, matched, readGitHash, 7) : "?";
+const oldPrompt = matched.length > 0 ? summarizeBatchHash(oldBatch, matched, readPromptHash, 8) : "?";
+const newPrompt = matched.length > 0 ? summarizeBatchHash(newBatch, matched, readPromptHash, 8) : "?";
 const promptChanged = oldPrompt !== newPrompt;
 
 console.log(`## Validation Batch Comparison`);
@@ -137,8 +174,8 @@ console.log(`**Git:** ${oldGit} → ${newGit}  |  **Prompt:** ${oldPrompt} → $
 console.log();
 
 // Table
-console.log(`| Family | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | Status |`);
-console.log(`|--------|------------|------------|------|--------|--------|----------|--------|`);
+console.log(`| Family | Old Verdict | New Verdict | TP Δ | Conf Δ | Claims | Warnings | ACS Coverage | Status |`);
+console.log(`|--------|------------|------------|------|--------|--------|----------|--------------|--------|`);
 
 let regressions = 0;
 let improvements = 0;
@@ -166,11 +203,16 @@ for (const family of matched) {
   const oldWarn = oldS.warnings?.total || 0;
   const newWarn = newS.warnings?.total || 0;
   const warnStr = oldWarn === newWarn ? `${newWarn}` : `${oldWarn}→${newWarn}`;
+  const oldZeroTargeted = getZeroTargetedSelectedClaimCount(oldS);
+  const newZeroTargeted = getZeroTargetedSelectedClaimCount(newS);
+  const acsCoverageStr = oldZeroTargeted === newZeroTargeted
+    ? `zero=${newZeroTargeted}`
+    : `zero=${oldZeroTargeted}→${newZeroTargeted}`;
   const flags = change.flags.length > 0 ? ` (${change.flags.join(", ")})` : "";
   const statusStr = `${change.status}${flags}`;
 
   console.log(
-    `| ${family} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${statusStr} |`
+    `| ${family} | ${oldV} | ${newV} | ${sign(change.tpDelta)} | ${sign(change.confDelta)} | ${claimsStr} | ${warnStr} | ${acsCoverageStr} | ${statusStr} |`
   );
 }
 

@@ -74,6 +74,7 @@ public sealed class JobsController : ControllerBase
                 isHidden = j.IsHidden,
                 analysisIssueCode = analysisIssue.code,
                 analysisIssueMessage = analysisIssue.message,
+                submissionPath = isAdmin ? j.SubmissionPath : null,
                 // Admin-only: execution-time commit hash when available, with legacy fallback.
                 gitCommitHash = isAdmin ? visibleGitCommitHash : null
                 };
@@ -125,8 +126,12 @@ public sealed class JobsController : ControllerBase
             isHidden = j.IsHidden,
             analysisIssueCode = analysisIssue.code,
             analysisIssueMessage = analysisIssue.message,
+            submissionPath = isAdmin ? j.SubmissionPath : null,
             // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
             gitCommitHash = isAdmin ? visibleGitCommitHash : null,
+            createdGitCommitHash = isAdmin ? j.GitCommitHash : null,
+            executedWebGitCommitHash = isAdmin ? j.ExecutedWebGitCommitHash : null,
+            promptContentHash = isAdmin ? j.PromptContentHash : null,
             claimSelectionDraftId = isAdmin ? j.ClaimSelectionDraftId : null,
             preparedStage1Json = isAdmin ? j.PreparedStage1Json : null,
             claimSelectionJson = isAdmin ? j.ClaimSelectionJson : null,

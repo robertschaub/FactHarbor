@@ -326,6 +326,33 @@ public sealed class ClaimSelectionDraftServiceTests
     }
 
     [Fact]
+    public async Task CreateJobFromDraftAsync_StampsSubmissionPathFromSelectionMode()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var interactiveDraft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            selectionMode: "interactive",
+            draftStateJson: PreparedState(["AC_01"], selectedClaimIds: ["AC_01"]));
+        var automaticDraft = SeedDraft(
+            db,
+            status: "AWAITING_CLAIM_SELECTION",
+            selectionMode: "automatic",
+            draftStateJson: PreparedState(["AC_02"], selectedClaimIds: ["AC_02"]));
+        await db.SaveChangesAsync();
+        var service = CreateJobService(db);
+
+        var (interactiveJob, interactiveError) = await service.CreateJobFromDraftAsync(interactiveDraft, ["AC_01"]);
+        var (automaticJob, automaticError) = await service.CreateJobFromDraftAsync(automaticDraft, ["AC_02"]);
+
+        Assert.Null(interactiveError);
+        Assert.Null(automaticError);
+        Assert.Equal("acs-interactive-draft", interactiveJob?.SubmissionPath);
+        Assert.Equal("acs-automatic-draft", automaticJob?.SubmissionPath);
+    }
+
+    [Fact]
     public async Task CreateJobFromDraftAsync_ParallelCallsReturnOneDraftJob()
     {
         await using var database = await TestDatabase.CreateFileBackedAsync();
@@ -384,6 +411,7 @@ public sealed class ClaimSelectionDraftServiceTests
         string status = "QUEUED",
         string? draftStateJson = null,
         string? inviteCode = null,
+        string selectionMode = "interactive",
         DateTime? createdUtc = null,
         DateTime? expiresUtc = null)
     {
@@ -399,7 +427,7 @@ public sealed class ClaimSelectionDraftServiceTests
             ActiveInputValue = "A verifiable claim",
             PipelineVariant = "claimboundary",
             InviteCode = inviteCode,
-            SelectionMode = "interactive",
+            SelectionMode = selectionMode,
             DraftStateJson = draftStateJson,
             CreatedUtc = created,
             UpdatedUtc = created,

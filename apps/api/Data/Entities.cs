@@ -70,6 +70,12 @@ public sealed class JobEntity
 
     // Claim selection (ACS-1)
     public string? ClaimSelectionDraftId { get; set; }
+    /// <summary>
+    /// Structural path that created the job (for example: direct-api, retry,
+    /// acs-interactive-draft, acs-automatic-draft).
+    /// </summary>
+    [MaxLength(64)]
+    public string? SubmissionPath { get; set; }
     public string? PreparedStage1Json { get; set; }
     public string? ClaimSelectionJson { get; set; }
 

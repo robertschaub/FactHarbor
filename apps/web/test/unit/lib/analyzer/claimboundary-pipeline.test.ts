@@ -82,6 +82,7 @@ import type {
   ExplanationStructuralFindings,
   EvidenceItem,
   EvidenceScope,
+  ClaimAcquisitionIterationEntry,
 } from "@/lib/analyzer/types";
 import { createUnverifiedFallbackVerdict } from "@/lib/analyzer/pipeline-utils";
 import { Pass2AtomicClaimSchema } from "@/lib/analyzer/claim-extraction-stage";
@@ -757,6 +758,127 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
         "S_keep_by_id",
         "S_keep_by_url",
       ]);
+    });
+
+    it("serializes selected-claim research coverage diagnostics", () => {
+      const claims = [
+        createAtomicClaim({ id: "AC_01", statement: "Entity A achieved metric X." }),
+        createAtomicClaim({ id: "AC_02", statement: "Entity A achieved metric Y." }),
+      ];
+      const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+      const evidenceItems = [
+        createEvidenceItem({
+          id: "EV_01",
+          relevantClaimIds: ["AC_01"],
+          claimBoundaryId: "CB_01",
+        }),
+      ];
+      const mainIteration: ClaimAcquisitionIterationEntry = {
+        iteration: 1,
+        iterationType: "main",
+        languageLane: "primary",
+        durationMs: 1200,
+        generatedQueries: ["query one", "query two"],
+        searchResults: 6,
+        relevanceAccepted: 3,
+        sourcesFetched: 2,
+        rawEvidenceItems: 2,
+        admittedEvidenceItems: 1,
+        directionCounts: { supports: 1, contradicts: 0, neutral: 0 },
+        losses: {
+          relevanceRejected: 3,
+          fetchRejected: 1,
+          sourcesWithoutEvidence: 1,
+          probativeFilteredOut: 0,
+          perSourceCapDroppedNew: 0,
+          perSourceCapEvictedExisting: 0,
+        },
+      };
+      const assessment: OverallAssessment = {
+        truthPercentage: 65,
+        verdict: "LEANING-TRUE",
+        confidence: 58,
+        verdictNarrative: createVerdictNarrative(),
+        hasMultipleBoundaries: false,
+        claimBoundaries: boundaries,
+        claimVerdicts: [
+          createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 65, confidence: 58 }),
+          createCBClaimVerdict({ claimId: "AC_02", truthPercentage: 50, confidence: 20 }),
+        ],
+        coverageMatrix: buildCoverageMatrix(claims, boundaries, evidenceItems),
+        qualityGates: {
+          passed: true,
+          gate1Stats: { total: 2, passed: 2, filtered: 0, centralKept: 2 },
+          gate4Stats: { total: 2, publishable: 2, highConfidence: 0, mediumConfidence: 1, lowConfidence: 1, insufficient: 0, centralKept: 0 },
+          summary: { totalEvidenceItems: 1, totalSources: 1, searchesPerformed: 1, contradictionSearchPerformed: false },
+        },
+      };
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input: { inputType: "text", inputValue: "Entity A achieved metric X and metric Y." },
+        state: {
+          languageIntent: null,
+          understanding: { atomicClaims: claims } as any,
+          evidenceItems,
+          sources: [],
+          searchQueries: [],
+          claimAcquisitionLedger: {
+            AC_01: {
+              seededEvidenceItems: 0,
+              iterations: [mainIteration],
+              postResearchApplicabilityRemoved: 0,
+              finalEvidenceItems: 1,
+              finalDirectionCounts: { supports: 1, contradicts: 0, neutral: 0 },
+              finalBoundaryCount: 1,
+              maxBoundaryShare: 1,
+              boundaryDistribution: [{ claimBoundaryId: "CB_01", evidenceCount: 1 }],
+            },
+          },
+          warnings: [],
+          llmCalls: 1,
+          mainIterationsUsed: 1,
+          contradictionIterationsUsed: 0,
+          contradictionSourcesFound: 0,
+        },
+        llmProvider: "anthropic",
+        verdictModelName: "mock-verdict",
+        understandModelName: "mock-understand",
+        extractModelName: "mock-extract",
+        runtimeModelsUsed: new Set(["mock-understand", "mock-verdict"]),
+        runtimeRoleModels: {},
+        searchProvider: "mock-search",
+        searchProviders: "mock-search",
+        evidenceBalance: { supporting: 1, contradicting: 0, neutral: 0, total: 1, balanceRatio: 1, isSkewed: false },
+        promptContentHash: "__PROMPT__",
+        boundaryCount: boundaries.length,
+        claimSufficiencyThreshold: 1,
+      });
+
+      const coverage = (resultJson as any).analysisObservability.acsResearchWaste
+        .selectedClaimResearchCoverage;
+      expect(coverage[0]).toMatchObject({
+        claimId: "AC_01",
+        targetedMainIterations: 1,
+        totalIterations: 1,
+        queryCount: 2,
+        fetchAttemptCount: 3,
+        admittedEvidenceItemCount: 1,
+        finalEvidenceItemCount: 1,
+        elapsedMs: 1200,
+        sufficiencyState: "sufficient",
+        zeroTargetedMainResearch: false,
+      });
+      expect(coverage[1]).toMatchObject({
+        claimId: "AC_02",
+        targetedMainIterations: 0,
+        finalEvidenceItemCount: 0,
+        sufficiencyState: "insufficient",
+        zeroTargetedMainResearch: true,
+        notRunReason: "no_claim_acquisition_ledger_entry",
+      });
+      expect((resultJson as any).analysisObservability.acsResearchWaste.zeroTargetedSelectedClaimIds)
+        .toEqual(["AC_02"]);
     });
   });
 

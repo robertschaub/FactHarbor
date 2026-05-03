@@ -109,7 +109,7 @@ export interface AtomicClaim {
   isCentral: true;               // Always true (filtered by Gate 1)
   claimDirection: "supports_thesis" | "contradicts_thesis" | "contextual";
   keyEntities: string[];
-  checkWorthiness: "high" | "medium";
+  checkWorthiness: "high" | "medium" | "low"; // Stage 1 extraction hint, not ACS recommendation authority.
   specificityScore: number;      // 0-1, LLM-assessed. >= 0.6 required by Gate 1.
   groundingQuality: "strong" | "moderate" | "weak" | "none";
   expectedEvidenceProfile: {

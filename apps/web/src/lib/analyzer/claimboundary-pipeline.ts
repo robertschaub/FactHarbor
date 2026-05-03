@@ -93,6 +93,7 @@ import {
   evaluateExplanationRubric,
   evaluateTigerScore,
 } from "./aggregation-stage";
+import { buildAcsResearchWasteObservability } from "./acs-research-observability";
 import {
   generateVerdicts,
   buildVerdictStageConfig,
@@ -330,6 +331,7 @@ export function buildClaimBoundaryResultJson(params: {
   evidenceBalance: EvidenceBalanceMetrics;
   promptContentHash?: string | null;
   boundaryCount: number;
+  claimSufficiencyThreshold?: number;
 }) {
   const {
     assessment,
@@ -347,7 +349,12 @@ export function buildClaimBoundaryResultJson(params: {
     evidenceBalance,
     promptContentHash,
     boundaryCount,
+    claimSufficiencyThreshold,
   } = params;
+  const acsResearchWaste = buildAcsResearchWasteObservability(
+    state,
+    claimSufficiencyThreshold ?? 3,
+  );
 
   return {
     _schemaVersion: "3.2.0-cb",
@@ -403,6 +410,7 @@ export function buildClaimBoundaryResultJson(params: {
     citedSources: selectEvidenceReferencedSources(state.sources, state.evidenceItems).map(serializeFetchedSource),
     searchQueries: state.searchQueries,
     claimAcquisitionLedger: state.claimAcquisitionLedger,
+    ...(acsResearchWaste ? { analysisObservability: { acsResearchWaste } } : {}),
     qualityGates: assessment.qualityGates,
     analysisWarnings: state.warnings,
   };
@@ -1519,6 +1527,7 @@ export async function runClaimBoundaryAnalysis(
       evidenceBalance,
       promptContentHash,
       boundaryCount: boundaries.length,
+      claimSufficiencyThreshold: initialPipelineConfig.claimSufficiencyThreshold,
     });
 
     // Record output quality metrics

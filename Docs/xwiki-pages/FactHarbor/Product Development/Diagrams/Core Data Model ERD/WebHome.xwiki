@@ -43,7 +43,7 @@ erDiagram
         boolean isCentral "Always true (filtered)"
         string claimDirection "supports_thesis contradicts_thesis contextual"
         string verifiability "high medium low none (optional)"
-        string checkWorthiness "high medium"
+        string checkWorthiness "high medium low"
         float specificityScore "0-1 Gate1 min 0.6"
         string groundingQuality "strong moderate weak none"
         json keyEntities "Named entities referenced"

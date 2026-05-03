@@ -99,7 +99,7 @@ export function ClaimSelectionPanel({
                 {claim.thesisRelevance && (
                   <span className={styles.signalPill}>Thesis: {claim.thesisRelevance}</span>
                 )}
-                <span className={styles.signalPill}>Check-worthiness: {claim.checkWorthiness}</span>
+                <span className={styles.signalPill}>Stage 1 extraction hint: {claim.checkWorthiness}</span>
                 {assessment && (
                   <>
                     <span className={styles.signalPill}>

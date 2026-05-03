@@ -148,6 +148,7 @@ using (var scope = app.Services.CreateScope())
     EnsureJobsColumn(db, "GitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ExecutedWebGitCommitHash", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionDraftId", "TEXT");
+    EnsureJobsColumn(db, "SubmissionPath", "TEXT");
     EnsureJobsColumn(db, "PreparedStage1Json", "TEXT");
     EnsureJobsColumn(db, "ClaimSelectionJson", "TEXT");
     EnsureClaimSelectionDraftsTable(db);

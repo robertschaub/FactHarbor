@@ -290,7 +290,7 @@ export async function generateClaimSelectionRecommendation({
       );
 
       recordLLMCall({
-        taskType: "other",
+        taskType: "claim_selection",
         provider: model.provider,
         modelName: model.modelName,
         promptTokens: attemptResult.usage?.inputTokens ?? 0,
@@ -308,7 +308,7 @@ export async function generateClaimSelectionRecommendation({
       lastError = error instanceof Error ? error : new Error(String(error));
 
       recordLLMCall({
-        taskType: "other",
+        taskType: "claim_selection",
         provider: model.provider,
         modelName: model.modelName,
         promptTokens: attemptResult?.usage?.inputTokens ?? 0,

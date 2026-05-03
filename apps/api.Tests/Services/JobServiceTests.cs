@@ -11,6 +11,34 @@ namespace FactHarbor.Api.Tests.Services;
 public sealed class JobServiceTests
 {
     [Fact]
+    public async Task CreateJobAsync_DefaultsSubmissionPathToDirectApi()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var service = CreateJobService(db);
+
+        var job = await service.CreateJobAsync("text", "A verifiable claim");
+
+        Assert.Equal("direct-api", job.SubmissionPath);
+        Assert.Equal("direct-api", (await db.Jobs.SingleAsync(j => j.JobId == job.JobId)).SubmissionPath);
+    }
+
+    [Fact]
+    public async Task CreateRetryJobAsync_StampsRetrySubmissionPath()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var original = SeedJob(db, status: "FAILED", progress: 100);
+        await db.SaveChangesAsync();
+        var service = CreateJobService(db);
+
+        var retry = await service.CreateRetryJobAsync(original.JobId);
+
+        Assert.Equal("retry", retry.SubmissionPath);
+        Assert.Equal("retry", (await db.Jobs.SingleAsync(j => j.JobId == retry.JobId)).SubmissionPath);
+    }
+
+    [Fact]
     public async Task UpdateStatusAsync_DoesNotReviveCancelledJob()
     {
         await using var database = await TestDatabase.CreateAsync();

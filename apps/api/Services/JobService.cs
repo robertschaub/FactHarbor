@@ -32,7 +32,17 @@ public sealed class JobService
         };
     }
 
-    public async Task<JobEntity> CreateJobAsync(string inputType, string inputValue, string pipelineVariant = "claimboundary", string? inviteCode = null)
+    private static string GetDraftSubmissionPath(string? selectionMode)
+        => string.Equals(selectionMode, "automatic", StringComparison.OrdinalIgnoreCase)
+            ? "acs-automatic-draft"
+            : "acs-interactive-draft";
+
+    public async Task<JobEntity> CreateJobAsync(
+        string inputType,
+        string inputValue,
+        string pipelineVariant = "claimboundary",
+        string? inviteCode = null,
+        string submissionPath = "direct-api")
     {
         var job = new JobEntity
         {
@@ -44,6 +54,7 @@ public sealed class JobService
             InputPreview = MakePreview(inputType, inputValue),
             PipelineVariant = pipelineVariant,
             InviteCode = inviteCode,
+            SubmissionPath = submissionPath,
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
@@ -611,6 +622,7 @@ public sealed class JobService
             RetriedFromUtc = DateTime.UtcNow,
             RetryReason = retryReason,
             InviteCode = originalJob.InviteCode,  // Preserve for audit trail
+            SubmissionPath = "retry",
             GitCommitHash = _buildInfo.GetGitCommitHash(useCache: false),  // Current build hash at retry creation time
             CreatedUtc = DateTime.UtcNow,
             UpdatedUtc = DateTime.UtcNow
@@ -708,6 +720,7 @@ public sealed class JobService
             PipelineVariant = draft.PipelineVariant,
             InviteCode = draft.InviteCode,
             ClaimSelectionDraftId = draft.DraftId,
+            SubmissionPath = GetDraftSubmissionPath(draft.SelectionMode),
             PreparedStage1Json = preparedStage1Json,
             ClaimSelectionJson = selectionJson,
             IsHidden = draft.IsHidden,

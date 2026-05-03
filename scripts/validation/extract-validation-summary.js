@@ -67,7 +67,8 @@ async function submitJob(family) {
 async function waitForJob(jobId) {
   const start = Date.now();
   while (Date.now() - start < JOB_TIMEOUT_MS) {
-    const res = await fetch(`${API_URL}/v1/jobs/${jobId}`);
+    const headers = process.env.FH_ADMIN_KEY ? { "X-Admin-Key": process.env.FH_ADMIN_KEY } : undefined;
+    const res = await fetch(`${API_URL}/v1/jobs/${jobId}`, { headers });
     if (!res.ok) throw new Error(`Poll failed (${res.status})`);
     const job = await res.json();
     if (job.status === "SUCCEEDED" || job.status === "FAILED") return job;
@@ -76,11 +77,23 @@ async function waitForJob(jobId) {
   throw new Error(`Job ${jobId} timed out after ${JOB_TIMEOUT_MS / 1000}s`);
 }
 
+function normalizeArray(value) {
+  return Array.isArray(value) ? value : [];
+}
+
 function extractSummary(family, job) {
   const result = typeof job.resultJson === "string" ? JSON.parse(job.resultJson) : job.resultJson;
   if (!result) return null;
 
   const meta = result.meta || {};
+  const acsResearchWaste = result.analysisObservability?.acsResearchWaste || {};
+  const selectedClaimResearchCoverage = normalizeArray(acsResearchWaste.selectedClaimResearchCoverage);
+  const zeroTargetedSelectedClaimIds = normalizeArray(acsResearchWaste.zeroTargetedSelectedClaimIds).length > 0
+    ? normalizeArray(acsResearchWaste.zeroTargetedSelectedClaimIds)
+    : selectedClaimResearchCoverage
+        .filter((entry) => entry?.zeroTargetedMainResearch)
+        .map((entry) => entry.claimId)
+        .filter(Boolean);
   const claims = (result.claimVerdicts || []).map((cv) => {
     // Find matching atomic claim for the statement text
     const ac = (result.understanding?.atomicClaims || []).find((a) => a.id === cv.claimId);
@@ -111,8 +124,12 @@ function extractSummary(family, job) {
     run: {
       timestamp: new Date().toISOString(),
       jobId: job.jobId || job.id,
-      gitCommit: meta.executedWebGitCommitHash || null,
+      submissionPath: job.submissionPath || meta.submissionPath || null,
+      gitCommit: job.executedWebGitCommitHash || meta.executedWebGitCommitHash || job.gitCommitHash || meta.gitCommitHash || null,
+      createdGitCommitHash: job.createdGitCommitHash || meta.createdGitCommitHash || meta.gitCommitHash || null,
+      executedWebGitCommitHash: job.executedWebGitCommitHash || meta.executedWebGitCommitHash || null,
       promptHash: meta.promptContentHash || null,
+      promptContentHash: job.promptContentHash || meta.promptContentHash || null,
       inputText: family.inputValue,
       inputType: family.inputType,
       familyName: family.familyName,
@@ -143,6 +160,13 @@ function extractSummary(family, job) {
             searchesPerformed: summary.searchesPerformed,
           }
         : null,
+    },
+    acsResearchWaste: {
+      selectedClaimResearchCoverage,
+      selectedClaimResearch: normalizeArray(acsResearchWaste.selectedClaimResearch),
+      zeroTargetedSelectedClaimCount:
+        acsResearchWaste.zeroTargetedSelectedClaimCount ?? zeroTargetedSelectedClaimIds.length,
+      zeroTargetedSelectedClaimIds,
     },
     warnings: { total: warnings.length, byType, bySeverity },
     meta: {

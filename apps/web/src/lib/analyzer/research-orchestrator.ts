@@ -1273,6 +1273,7 @@ export async function runResearchIteration(
   }
   state.researchedIterationsByClaim ??= {};
   const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
+  const iterationStartedAt = Date.now();
   const evidenceCountBeforeIteration = state.evidenceItems.length;
   const searchQueryCountBeforeIteration = state.searchQueries.length;
   const iterationIndex = state.mainIterationsUsed + state.contradictionIterationsUsed;
@@ -1574,6 +1575,7 @@ export async function runResearchIteration(
   };
 
   await executeGeneratedQueries(queries, iterationType, iterationTelemetry);
+  iterationTelemetry.durationMs = Date.now() - iterationStartedAt;
   recordClaimIterationTelemetry(state, targetClaim.id, iterationTelemetry);
 
   const remainingBudgetAfterMainQueries = getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig);
@@ -1591,6 +1593,7 @@ export async function runResearchIteration(
     && refinementBudget > 0
     && refinementNeeded
   ) {
+    const refinementStartedAt = Date.now();
     if (!hasMainQueryMetadata) {
       console.warn(
         `[Stage2] Main queries for claim "${targetClaim.id}" lacked retrieval metadata; ` +
@@ -1643,6 +1646,7 @@ export async function runResearchIteration(
       refinementTelemetry.laneReason = recoveredPrimaryCoverage
         ? "primary_source_refinement:recovered_non_seeded_primary_coverage"
         : "primary_source_refinement:no_new_primary_coverage";
+      refinementTelemetry.durationMs = Date.now() - refinementStartedAt;
       recordClaimIterationTelemetry(state, targetClaim.id, refinementTelemetry);
       debugLog(
         `[Stage2] Primary-source refinement ${recoveredPrimaryCoverage ? "recovered" : "did not recover"} ` +
@@ -1725,6 +1729,7 @@ export async function maybeRunSupplementaryEnglishLane(
   // Budget check
   if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) return;
 
+  const enIterationStartedAt = Date.now();
   console.info(
     `[Stage2] EN supplementary lane: claim ${targetClaim.id} (primary: ${primaryNewEvidenceCount} evidence < min ${minEvidence}). Generating 1 English query.`,
   );
@@ -1875,6 +1880,7 @@ export async function maybeRunSupplementaryEnglishLane(
       0,
     );
     if (fetchedSources.length === 0) {
+      enTelemetry.durationMs = Date.now() - enIterationStartedAt;
       recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
       return;
     }
@@ -1923,10 +1929,12 @@ export async function maybeRunSupplementaryEnglishLane(
       incrementDirectionCounts(enTelemetry.directionCounts, item.claimDirection);
     }
     state.onEvent?.(`Admitted ${claimLocalCappedItems.length} English supplementary evidence item(s) for ${targetClaim.id}.`, -1);
+    enTelemetry.durationMs = Date.now() - enIterationStartedAt;
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   } catch (err) {
     console.warn(`[Stage2] EN supplementary query failed for "${enQuery.query}":`, err);
     enTelemetry.incomplete = true;
+    enTelemetry.durationMs = Date.now() - enIterationStartedAt;
     recordClaimIterationTelemetry(state, targetClaim.id, enTelemetry);
   }
 }

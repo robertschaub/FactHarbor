@@ -1,20 +1,20 @@
 = Prompt Architecture =
 
 {{info}}
-**Developer Reference** — UCM-managed prompt system: all runtime LLM prompts load from ##.prompt.md## files via ##loadAndRenderSection()##. TypeScript prompt modules under ##prompts/## are retained for testing only.
+**Developer Reference** — UCM-managed prompt system plus registered exceptions. Primary runtime prompt profiles load from ##.prompt.md## files via ##loadAndRenderSection()##. Known non-UCM or partially inline prompt surfaces are tracked in ##apps/web/src/lib/prompt-surface-registry.ts##.
 
-**Key Files**: ##apps/web/prompts/*.prompt.md## (runtime), ##apps/web/src/lib/analyzer/prompt-loader.ts## (loader), ##apps/web/src/lib/analyzer/prompts/## (testing harness only)
+**Key Files**: ##apps/web/prompts/*.prompt.md## (runtime UCM profiles), ##apps/web/src/lib/analyzer/prompt-loader.ts## (loader), ##apps/web/src/lib/prompt-surface-registry.ts## (prompt-surface inventory), ##apps/web/src/lib/analyzer/prompts/## (testing harness only)
 {{/info}}
 
 ----
 
 == 1. Overview ==
 
-FactHarbor uses **UCM-managed prompt files** (##.prompt.md##) as the single source of truth for all LLM prompts at runtime (**v2.8.2**). Per AGENTS.md String Usage Boundary, all text that goes into LLM prompts must be UCM-managed, not hardcoded in TypeScript.
+FactHarbor uses **UCM-managed prompt files** (##.prompt.md##) as the preferred source of truth for runtime LLM prompts (**v2.8.2+**). The current source still has a small set of intentional exceptions. Those exceptions are inventoried in ##prompt-surface-registry.ts## so future prompt-governance work can migrate or explicitly retain them.
 
 === 1.1 Runtime Architecture (Production) ===
 
-Both pipelines load prompts via ##loadAndRenderSection()## from UCM-managed ##.prompt.md## files:
+Primary runtime profiles load prompts via ##loadAndRenderSection()## from UCM-managed ##.prompt.md## files:
 
 1. **Section-based prompts** — Each ##.prompt.md## file contains named sections (##~#~# SECTION_NAME##) with variable substitution (##$~{variableName}##)
 1. **Provider-specific structured output** — Separate sections per provider (e.g., ##STRUCTURED_OUTPUT_ANTHROPIC##)
@@ -33,11 +33,10 @@ A separate TypeScript prompt composition system (##buildPrompt()## in ##prompt-b
 {{code language="none"}}
 apps/web/prompts/
 +-- claimboundary.prompt.md         # ClaimAssessmentBoundary pipeline prompts (13 sections)
-+-- monolithic-dynamic.prompt.md    # Monolithic Dynamic pipeline prompts (7 sections)
++-- input-policy-gate.prompt.md     # Pre-pipeline policy gate prompt
 +-- source-reliability.prompt.md    # Source reliability evaluation prompts
 +-- text-analysis/                  # LLM text analysis pipeline prompts
-    +-- *.prompt.md
-    +-- README.md
+    +-- inverse-claim-verification.prompt.md
 {{/code}}
 
 Each ##.prompt.md## file has YAML frontmatter (version, pipeline, variables, requiredSections) followed by ##~#~# SECTION_NAME## headers with prompt content. The ##loadAndRenderSection(pipeline, sectionName, variables)## function extracts and renders sections with variable substitution.
@@ -113,18 +112,19 @@ The Advocate → Challenger → Reconciliation pattern in Stage 4 is the CB pipe
 **Note**: ##orchestrated.prompt.md## (40+ sections) was removed in v2.11.0 alongside the Orchestrated pipeline. Archive available at ##Docs/xwiki-pages-ARCHIVE/...##.
 {{/info}}
 
-=== 4.2 Monolithic Dynamic Pipeline ===
+=== 4.2 Registered Runtime Prompt Surfaces ===
 
-**File**: ##apps/web/prompts/monolithic-dynamic.prompt.md##
+The source-level registry classifies prompt surfaces as runtime contracts or intentional exceptions:
 
-|= Section |= Purpose |= Variables
-| ##DYNAMIC_PLAN## | System prompt for planning/research phase | ##$~{currentDate}##
-| ##DYNAMIC_ANALYSIS## | System prompt for analysis/verdict phase | ##$~{currentDate}##
-| ##DYNAMIC_ANALYSIS_USER## | User message template with input + sources | ##$~{TEXT_TO_ANALYZE}##, ##$~{SOURCE_SUMMARY}##
-| ##STRUCTURED_OUTPUT_ANTHROPIC## | JSON output guidance for Claude | (none)
-| ##STRUCTURED_OUTPUT_OPENAI## | JSON output guidance for GPT | (none)
-| ##STRUCTURED_OUTPUT_GOOGLE## | JSON output guidance for Gemini | (none)
-| ##STRUCTURED_OUTPUT_MISTRAL## | JSON output guidance for Mistral | (none)
+|= Surface |= Management |= Stability |= Notes
+| ##claimboundary## | UCM ##claimboundary.prompt.md## | Runtime contract | Main ClaimAssessmentBoundary prompt profile
+| ##source-reliability-enrichment## | UCM ##source-reliability.prompt.md## | Runtime contract | Source-reliability enrichment sections
+| ##input-policy-gate## | UCM ##input-policy-gate.prompt.md## | Runtime contract | Pre-pipeline semantic policy gate
+| ##source-reliability-core## | TypeScript builders | Intentional exception | Core source-reliability evaluation/refinement prompts
+| ##grounding-check-legacy## | DB-only legacy profile | Intentional exception | Legacy grounding sections; no removed prompt file should be reintroduced
+| ##claimboundary-pass2-inline-framing## | Inline TypeScript text | Intentional exception | Stage 1 Pass 2 framing around UCM sections
+| ##source-reliability-evidence-pack-inline## | Inline TypeScript text | Intentional exception | Source-reliability evidence-pack language helpers
+| ##inverse-claim-verification## | Disk-only calibration prompt | Intentional exception | Calibration helper, not production report runtime
 
 ----
 
@@ -138,7 +138,7 @@ Provider-specific structured output guidance is embedded as named sections in ea
 | **Google (Gemini)** | ##STRUCTURED_OUTPUT_GOOGLE## | Length enforcement, no explanatory text outside JSON
 | **Mistral** | ##STRUCTURED_OUTPUT_MISTRAL## | Validation checklist format, field type verification
 
-The ##claimboundary.prompt.md## and ##monolithic-dynamic.prompt.md## files each contain ##STRUCTURED_OUTPUT_<PROVIDER>## sections for provider-specific output guidance.
+The ##claimboundary.prompt.md## file contains ##STRUCTURED_OUTPUT_<PROVIDER>## sections for provider-specific output guidance.
 
 ----
 
@@ -181,7 +181,7 @@ The ##isBudgetModel()## function identifies fast-tier models (Haiku, Mini, Flash
 
 == 8. Adding a New Provider ==
 
-1. Add a ##STRUCTURED_OUTPUT_NEWPROVIDER## section to ##claimboundary.prompt.md## and ##monolithic-dynamic.prompt.md##
+1. Add a ##STRUCTURED_OUTPUT_NEWPROVIDER## section to ##claimboundary.prompt.md##
 1. Update ##detectProvider()## in ##prompt-builder.ts## to recognize new model IDs
 1. Update ##isBudgetModel()## if the provider has fast-tier models
 1. Test with ##prompt-optimization.test.ts## and ##monolithic-dynamic-prompt.test.ts##
@@ -216,6 +216,10 @@ The ##isBudgetModel()## function identifies fast-tier models (Haiku, Mini, Flash
 * CB pipeline uses 5-stage structure: extractClaims → researchEvidence → clusterBoundaries → generateVerdicts → aggregateAssessment
 * Verdict generation uses Advocate/Challenger/Reconciliation debate pattern (3 Sonnet calls)
 * Advisory validation sections (##VERDICT_GROUNDING_VALIDATION##, ##VERDICT_DIRECTION_VALIDATION##) added — non-blocking, Haiku tier
+
+=== v2.12.0: Prompt Surface Registry (May 3, 2026) ===
+
+##apps/web/src/lib/prompt-surface-registry.ts## inventories the current runtime prompt surfaces and explicitly names known exceptions to full UCM/file-backed management. This is an observability/governance registry only; it does not change prompt wording or runtime routing.
 
 === v2.8.2: Prompt Externalization to UCM (Feb 13, 2026) ===
 
