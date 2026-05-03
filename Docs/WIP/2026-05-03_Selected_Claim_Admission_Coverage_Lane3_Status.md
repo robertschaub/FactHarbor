@@ -76,6 +76,24 @@ Passed:
 
 The first broad `npm test` run exposed one isolated mock drift in `claimboundary-prepared-stage1.test.ts`. The production code was kept; the mock was amended to expose `getClaimProviderSearchAttemptCount`, then the isolated file and full safe web suite passed.
 
+## Live Canary Results
+
+After committing `f896c8890c005f46e4be7b144b589334a91d0abb`, services were restarted and configs/prompts were reseeded. Three Captain-defined inputs were submitted through the draft endpoint with explicit `selectionMode = automatic`.
+
+| Input | Draft | Final job | Prepared claims | Selected claims | Admission cap | Result | Lane 3 readout |
+|---|---|---|---:|---:|---:|---|---|
+| Bolsonaro fair-trial EN | `d9a71ef68b9a4e259f655106394002d2` | `c9507a15502341a79c309a2acb7e00c4` | 3 | 3 | 3 | `UNVERIFIED`, truth 52, confidence 40 | Atomicity improved to 3 claims and all selected claims had provider search attempts; verdict quality remains open outside Lane 3. |
+| Swiss asylum 235000 DE | `b440cce95cea4b439ff7529c4caf8dfb` | `f475b0ab72ef4f46b450aec3670d3d4b` | 1 | 1 | 1 | `MOSTLY-TRUE`, truth 80, confidence 78 | Recovered relative to the bad live result. |
+| SVP PDF | `5d00ec73b7414c12a624f4eaf997213b` | `f365f294899246d1ab1256b71330bfad` | 26 | 3 | 3 | `LEANING-TRUE`, truth 62, confidence 40 | The over-admission failure is fixed: only 3 of 26 candidates were admitted. One selected claim (`AC_20`) still ended with zero final evidence despite 6 search attempts, so this is acquisition quality/evidence availability rather than zero-search starvation. |
+
+Observed selected-claim coverage:
+
+- Bolsonaro: `AC_01`, `AC_02`, and `AC_03` all reached `sufficient` coverage with 5/5/8 provider search attempts and 51/30/24 final evidence items respectively.
+- Asylum: `AC_01` reached `sufficient` coverage with 8 provider search attempts and 29 final evidence items.
+- SVP: `AC_23` and `AC_07` reached `sufficient` coverage; `AC_20` had 6 search attempts but 0 final evidence items and was set to `UNVERIFIED`.
+
+Live-job budget used in this pass: 3.
+
 ## Expected Live-Job Effects
 
 - SVP-like inputs with many AtomicClaims should no longer analyze all selected candidates beyond the effective admission cap.
@@ -89,3 +107,4 @@ The first broad `npm test` run exposed one isolated mock drift in `claimboundary
 - Direct API cold jobs can still create `direct-api` submissions without a prepared ACS draft. This lane enforces draft-backed selection contracts and final selected-claim coverage; direct API routing into ACS remains a separate route-governance question if direct public submissions must never bypass preparation.
 - Historical reports lack `searchAttemptCount`, `selectionAdmissionCap`, and the new zero-acquisition reason fields.
 - Bolsonaro atomicity and verdict-confidence regressions remain out of scope for this lane.
+- SVP selected-claim evidence acquisition quality remains open when provider searches run but yield no admitted evidence.
