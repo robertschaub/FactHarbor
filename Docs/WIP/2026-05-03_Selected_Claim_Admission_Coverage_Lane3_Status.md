@@ -53,7 +53,7 @@ The required invariant is now:
 - No Stage 4 verdict, citation, direction, or confidence repair.
 - No prepared-routing/applicability lane.
 - No idle auto-proceed default change to 15 minutes.
-- No live validation jobs have been submitted yet from this lane.
+- No broad validation batch was submitted from this lane; the three targeted live canaries are recorded below.
 
 ## Review Result
 
@@ -75,6 +75,12 @@ Passed:
 - `dotnet build apps/api/FactHarbor.Api.csproj -c Release --no-restore`
 
 The first broad `npm test` run exposed one isolated mock drift in `claimboundary-prepared-stage1.test.ts`. The production code was kept; the mock was amended to expose `getClaimProviderSearchAttemptCount`, then the isolated file and full safe web suite passed.
+
+Config activation check:
+
+- Local `apps/web/config.db` active `pipeline/default` hash after restart/reseed: `3e7e05e3f20b6829cac11b6ccca0b7c345f0ea09487cf9d5964b01acae3b8075`.
+- Active budget-awareness keys: `claimSelectionBudgetAwarenessEnabled = true`, `claimSelectionBudgetFitMode = allow_fewer_recommendations`, `claimSelectionEstimatedMainResearchMsPerClaim = 160000`, `claimSelectionMinRecommendedClaims = 1`, `contradictionProtectedTimeMs = 120000`.
+- Production or other persistent environments still require restart/reseed or explicit UCM activation for the new file-backed defaults to become active.
 
 ## Live Canary Results
 
