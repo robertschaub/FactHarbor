@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-01T19:01:46.767Z",
-  "count": 383,
+  "generatedAt": "2026-05-04T20:56:27.711Z",
+  "count": 384,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5727,15 +5727,13 @@
         "senior_developer"
       ],
       "topics": [
-        "build_index",
-        "handoff_index",
+        "build",
+        "index",
         "parser",
-        "regression_tests"
+        "regression",
+        "tests"
       ],
-      "files_touched": [
-        "scripts/build-index.mjs",
-        "apps/web/test/unit/lib/build-index.test.ts"
-      ],
+      "files_touched": [],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -8045,6 +8043,31 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Implement only the approved immediate rollout path on a clean branch from canonical base `2a713bcc`, manually reimplementing the idle auto-proceed timestamp seeding from `0482c962` without taking the "
+    },
+    {
+      "file": "2026-05-04_DevOps_Expert_Lane2_Lane3_Promotion.md",
+      "date": "2026-05-04",
+      "roles": [
+        "devops_expert"
+      ],
+      "topics": [
+        "lane2",
+        "lane3",
+        "promotion"
+      ],
+      "files_touched": [
+        "main",
+        "dc402b86",
+        "78596f5d",
+        "7c59c8dd",
+        "4e1bfff2",
+        "f896c889",
+        "7417bdfa",
+        "78596f5d",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Continue from local `main@78596f5d` plus the completion-doc commit if present. Treat the release payload as Lane 2 observability/provenance plus Lane 3 selected-claim admission/coverage only; do not infer Stage 4 repairs, prompt edits, prepared-routing/applicability, 15-minute idle default, or priva"
     }
   ]
 }

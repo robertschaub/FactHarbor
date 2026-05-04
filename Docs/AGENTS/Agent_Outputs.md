@@ -2264,3 +2264,8 @@ Amendment: Post-review hardening made the plan commit-explicit. Appendix A now l
 → Docs/WIP/2026-05-03_Selected_Claim_Admission_Coverage_Lane3_Status.md
 
 Live canary amendment: after commit `f896c889`, services were restarted/reseeded and three automatic draft canaries were submitted. Bolsonaro EN created 3 prepared/selected claims and all selected claims had provider search attempts, but verdict quality remained `UNVERIFIED` 52/40. Asylum 235000 DE recovered to `MOSTLY-TRUE` 80/78. SVP PDF prepared 26 claims but admitted only 3 under `selectionAdmissionCap = 3`, fixing the over-admission class; one admitted claim still ended `UNVERIFIED` from zero final evidence despite provider searches. Remaining issues are held Stage 4 verdict quality and acquisition-yield quality, not Lane 3 zero-search starvation.
+
+---
+### 2026-05-04 | DevOps Expert | Codex (GPT-5) | Lane 2/3 Promotion To Main -- [Standard] [open-items: yes]
+**For next agent:** Local `main` was fast-forwarded from `dc402b86` to `78596f5d`, promoting `7c59c8dd`, `4e1bfff2`, `f896c889`, `7417bdfa`, plus the approved Lane 3 status-doc correction. Post-merge verification passed after one classified transient `drain-runner-pause.integration.test.ts` timeout: isolated file pass, full `npm test` pass, `npm -w apps/web run build`, full API tests, API build, restart/reseed, and active `pipeline/default` UCM hash/key verification. Residual follow-ups remain direct `/v1/analyze` ACS bypass, default-on budget-aware cap monitoring, Bolsonaro Stage 4, and SVP acquisition yield.
+-> Docs/AGENTS/Handoffs/2026-05-04_DevOps_Expert_Lane2_Lane3_Promotion.md
