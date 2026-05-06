@@ -3,10 +3,11 @@
 ## Current branch state
 
 - Branch: `main`
-- Latest local commit under test: `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`
+- Latest local commit: `62f7dc16 Revert "fix(stage2): balance rule-governed evidence routes"`
+- Effective analysis changes under test: through `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`
 - Local `main` is ahead of `origin/main`.
 - No push performed in this slice.
-- Jobs budget consumed in this slice: 10 of 12. Remaining budget: 2.
+- Jobs budget consumed in this slice: 11 of 12. Remaining budget: 1.
 
 ## Implemented commits
 
@@ -16,12 +17,15 @@
 | `33d347ca` | Tightens multi-claim atomicity audit so input-authored process/result bundles can trigger high-confidence repair. | Keep. It changed Bolsonaro EN preparation from 2 claims to 3 claims, matching the expected claim split. |
 | `f683a605` | Prevents the atomicity audit from treating extractor-generated submetrics, broad standards, or requirement classes as input-authored split bases. | Keep. It fixed Stage 1 preparation failures for Bolsonaro PT and Plastic. |
 | `9c5e43b0` | Tightens Stage 2 direction-basis taxonomy: records of allegations, objections, criticism, or non-controlling positions should not be `direct_record`. | Keep for now, but needs further validation. It improved Plastic from `LEANING-TRUE` to `MIXED`, but Bolsonaro EN still failed. |
+| `e905b9cc` | Attempted to balance rule-governed target-path support and standards-challenge routes in Stage 1 profiles, Stage 2 queries, and Stage 2 directness justification. | Reverted by `62f7dc16`. The focused tests/build passed, but the Bolsonaro EN live canary regressed from `LEANING-FALSE` 38 / 43 to `UNVERIFIED` 48 / 36 and emitted `query_budget_exhausted`. |
 
 ## Verification commands
 
 - `npm test` after `a62e60b6`: passed.
 - `npm -w apps/web run build` after each committed change: passed.
 - Focused prompt/stage tests after `33d347ca`, `f683a605`, `9c5e43b0`: passed.
+- Focused prompt contract tests, full `npm test`, build, and `git diff --check` passed for the attempted `e905b9cc` patch before live validation.
+- After failed live validation, `e905b9cc` was classified as `revert` under debt-guard and reverted in `62f7dc16`; focused prompt contract tests and `npm -w apps/web run build` passed after the revert.
 - `git diff --check`: passed before commits.
 - Services restarted and health checked before live canaries after committed prompt/config changes.
 
@@ -39,6 +43,7 @@
 | Plastic rerun | `28f2df18...` | `7e688876...` | `f683a605` | `LEANING-TRUE` 60 / 72 | 3 / 3 | Bad negative control. The system still leans toward "plastic recycling is pointless." |
 | Bolsonaro EN after direction taxonomy fix | `cc6d2b2d...` | `7050df80...` | `9c5e43b0` | `LEANING-FALSE` 38 / 43 | 3 / 3 | Bad. Direction-basis taxonomy neutralized more collateral material, but the remaining evidence pool lacked enough operative support and still produced a false-side low-confidence result. |
 | Plastic after direction taxonomy fix | `4d87b0f0...` | `7b0d4c56...` | `9c5e43b0` | `MIXED` 48 / 70 | 3 / 3 | Improved from `LEANING-TRUE`, but still not the expected false-side verdict. |
+| Bolsonaro EN after route-balancing attempt | `d319911c...` | `45b31c81...` | `e905b9cc` | `UNVERIFIED` 48 / 36 | 3 / 3 | Failed validation. The patch increased broad official/case-docket route pressure but did not recover enough target-specific support. It worsened the verdict and exhausted query budget, so it was reverted. |
 
 ## Evidence from completed reports
 
@@ -56,10 +61,12 @@ Observed:
 - `9c5e43b0` also produced the correct 3-claim split, but final result worsened to `LEANING-FALSE` 38 / 43.
 - `zeroTargetedSelectedClaimCount` remained `0`, so selected-claim acquisition starvation is not the issue.
 - The direction-basis distribution improved structurally: many allegations/positions moved to neutral. However, AC_02 and AC_03 still lacked enough target-specific operative support, and AC_02 retained 4 `contradicts / operative_finding` items.
+- The reverted `e905b9cc` route-balancing attempt kept the correct 3-claim split but worsened the final result to `UNVERIFIED` 48 / 36 with `query_budget_exhausted`. AC_02 still had too little useful support, AC_03 had zero admitted evidence despite final evidence, and AC_01 accumulated additional operative contradictions.
 
 Current root-cause assessment:
 - Stage 1 atomicity is now fixed for this input.
 - Stage 2 direction-basis normalization is useful but insufficient.
+- A broad prompt-route nudge is not the right next fix. The live failure suggests the next work should first explain why earlier good jobs retrieved or preserved target-specific support sources that current jobs miss, before adding another prompt rule.
 - The next likely root cause is acquisition/directness quality: after collateral material is neutralized, the pipeline does not retrieve or preserve enough target-specific legal/fair-trial support evidence for AC_02 and AC_03.
 - Stage 4 should remain held until Stage 2 produces a healthier support/contradiction pool.
 
@@ -92,12 +99,12 @@ Current root-cause assessment:
 
 ## Recommendations
 
-1. Keep the four local commits for now. The first three clearly fix observed Stage 1 / structural contract issues. The fourth improves Plastic and moves the taxonomy in the correct architectural direction, but it needs more work.
-2. Do not run more jobs until the next hypothesis is implemented. Two jobs remain in the current budget.
-3. Next implementation lane should target Stage 2 acquisition/directness for rule-governed compliance claims:
-   - Require operative support searches/sources for target-path standards, not just neutralizing collateral concerns.
-   - Add observability for directness basis by claim and source family so canaries can show whether support evidence was absent or discarded.
-   - Keep the code generic and LLM-led; no topic-specific rules.
-4. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
-5. Treat Plastic and Asylum as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
-
+1. Keep the four effective local commits through `9c5e43b0` for now. The first three clearly fix observed Stage 1 / structural contract issues. The fourth improves Plastic and moves the taxonomy in the correct architectural direction, but it needs more work.
+2. Keep the revert `62f7dc16`. Do not reapply `e905b9cc` or stack another broad prompt-route rule on top of it without new source-level evidence.
+3. Do not spend the final job until a narrower verifier-backed hypothesis is ready. One job remains in the current budget.
+4. Next investigation lane should compare source acquisition and applicability between current bad Bolsonaro EN jobs and the best comparator job:
+   - Identify which support sources existed in the earlier good job but are absent, discarded, capped, or neutralized now.
+   - Trace whether loss happens at query generation, provider result ranking, fetch/extraction, applicability, evidence filtering, or final capping.
+   - Prefer structural observability or replay tooling before another prompt rewrite.
+5. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
+6. Treat Plastic and Asylum as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
