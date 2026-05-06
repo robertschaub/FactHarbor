@@ -3288,6 +3288,11 @@ const MultiClaimAtomicitySplitRecommendationSchema = z.object({
 const MultiClaimAtomicityFindingSchema = z.object({
   originalClaimId: z.string().catch(""),
   splitConfidence: z.enum(["high", "medium", "low"]).catch("low"),
+  inputAuthoredSplitBasis: z.enum([
+    "explicit_subpropositions",
+    "derived_submetrics",
+    "unclear",
+  ]).catch("unclear"),
   issueType: z.enum([
     "bundled_subpropositions",
     "fused_distinct_events",
@@ -3548,6 +3553,7 @@ export function getHighConfidenceMultiClaimAtomicityRepairs(
   return (auditResult.bundledClaimFindings ?? [])
     .filter((finding) =>
       finding.splitConfidence === "high" &&
+      finding.inputAuthoredSplitBasis === "explicit_subpropositions" &&
       finding.directionalVerdictRisk === "different_possible" &&
       claimIds.has(finding.originalClaimId) &&
       finding.splitRecommendation?.originalClaimId === finding.originalClaimId,
@@ -3915,6 +3921,7 @@ function buildAtomicClaimsAuditJson(claims: AtomicClaim[]): string {
       thesisRelevance: claim.thesisRelevance ?? "direct",
       claimDirection: claim.claimDirection ?? "supports_thesis",
       freshnessRequirement: claim.freshnessRequirement ?? "none",
+      isDimensionDecomposition: claim.isDimensionDecomposition === true,
       expectedEvidenceProfile: claim.expectedEvidenceProfile ?? {},
     })),
     null,

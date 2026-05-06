@@ -796,9 +796,11 @@ Use the detected distinct-events inventory as advisory structural context only. 
 3. **Relation-claim exception.** A relation, comparison, temporal order, dependency, or whole-process assertion can remain atomic when the relation itself is the truth condition. Do not split a claim merely because it mentions multiple objects that are only meaningful as a relation.
 4. **Conjunction is not relation.** A claim is not relation-atomic merely because two independent assessments are joined by a shared entity, broad topic, or grammatical conjunction. If it asserts separate compliance/outcome/process/status dimensions that can resolve differently, recommend a split.
 5. **Seed, do not decide.** Proposed subclaims are candidate seeds for Pass 2 re-extraction. They are not final accepted claims and must not drop input-authored proposition units.
-6. **Confidence discipline.** Use `splitConfidence: "high"` only when the split is required by the directional-verdict test and the proposed seeds preserve the original input's thesis-central proposition units. Use `"medium"` for plausible but uncertain split pressure, and `"low"` for weak observations.
-7. **Preserved relation tracking.** When you considered a possible split but preserved the claim because it is a relation, comparison, temporal, or whole-process claim, record it in `preservedRelationClaims`.
-8. **No topic-specific assumptions.** Apply the same criteria in any language and any subject area. Preserve the input language in proposed subclaim seeds where possible.
+6. **Dimension-decomposition caution.** If the accepted set contains dimension-qualified variants of a single comparison, process, or standard, audit each claim internally. Do not split one dimension-qualified claim merely because that dimension can be measured through aggregate, component, sub-process, or mechanism-specific evidence. Those are evidence routes, not input-authored proposition units, unless the original input explicitly asserts them as separate verdictable claims.
+7. **Input-authored split basis.** Set `inputAuthoredSplitBasis: "explicit_subpropositions"` only when the original input itself asserts the proposed sub-propositions as separate truth conditions. Use `"derived_submetrics"` when the proposed split comes from measurement methods, component metrics, background mechanisms, or evidence routes inferred during analysis. High-confidence repair requires `"explicit_subpropositions"`.
+8. **Confidence discipline.** Use `splitConfidence: "high"` only when the split is required by the directional-verdict test, has `inputAuthoredSplitBasis: "explicit_subpropositions"`, and the proposed seeds preserve the original input's thesis-central proposition units. Use `"medium"` for plausible but uncertain split pressure, and `"low"` for weak observations.
+9. **Preserved relation tracking.** When you considered a possible split but preserved the claim because it is a relation, comparison, temporal, dimension-qualified, or whole-process claim, record it in `preservedRelationClaims`.
+10. **No topic-specific assumptions.** Apply the same criteria in any language and any subject area. Preserve the input language in proposed subclaim seeds where possible.
 
 ### Input
 
@@ -837,6 +839,7 @@ Return a JSON object:
     {
       "originalClaimId": "AC_02",
       "splitConfidence": "high",
+      "inputAuthoredSplitBasis": "explicit_subpropositions",
       "issueType": "bundled_subpropositions",
       "directionalVerdictRisk": "different_possible",
       "propositionUnits": [
@@ -871,9 +874,10 @@ Return a JSON object:
 Field constraints:
 - `auditDecision`: `"repair_recommended"` only when at least one finding has `splitConfidence: "high"` and a complete `splitRecommendation`. Use `"observe_only"` for medium/low findings without automatic repair. Use `"pass"` when no finding remains.
 - `originalClaimId` and `claimId` must match IDs in the accepted AtomicClaims list.
+- `inputAuthoredSplitBasis`: use `"explicit_subpropositions"` only for sub-propositions asserted by the original input. Use `"derived_submetrics"` for component, measurement, mechanism, or evidence-route splits inferred during analysis; these do not trigger automatic repair.
 - `directionalVerdictRisk`: use `"different_possible"` only when the listed proposition units could receive different verdict directions; otherwise use `"same_truth_condition"` or `"unclear"`.
 - `splitRecommendation.proposedSubclaims`: candidate seeds only. Preserve the input language and do not introduce evidence-derived details.
-- Do not include `splitRecommendation` for low-confidence observations or preserved relation claims.
+- Do not include `splitRecommendation` for low-confidence observations, derived-submetric observations, or preserved relation claims.
 
 ---
 
@@ -900,6 +904,7 @@ Repair requirements:
 - Treat proposed subclaims as seeds only. Pass 2 must still perform extraction and preserve the original input contract.
 - Split a prior claim only when the seed units can receive different directional verdicts from different evidence.
 - Preserve relation, comparison, temporal, and whole-process claims when the relation itself is the truth condition.
+- Preserve dimension-qualified claims when the proposed split is based on aggregate/component/sub-process measurement routes rather than separate truth conditions explicitly asserted by the original input.
 - Do not drop other thesis-central proposition units from the previous accepted claim set.
 - Do not keep a bundled whole-claim version alongside its corrected subclaims.
 - Do not add evidence-derived details, external facts, source titles, dates, or scope narrowing not asserted by the input.

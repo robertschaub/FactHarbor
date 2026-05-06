@@ -300,6 +300,7 @@ describe("MultiClaimAtomicityAuditOutputSchema", () => {
         {
           originalClaimId: "AC_02",
           splitConfidence: "high",
+          inputAuthoredSplitBasis: "explicit_subpropositions",
           issueType: "bundled_subpropositions",
           directionalVerdictRisk: "different_possible",
           propositionUnits: [
@@ -363,6 +364,41 @@ describe("MultiClaimAtomicityAuditOutputSchema", () => {
     expect(getHighConfidenceMultiClaimAtomicityRepairs(result, claims)).toEqual([]);
   });
 
+  it("does not trigger repair for derived submetric split observations", () => {
+    const result = MultiClaimAtomicityAuditOutputSchema.parse({
+      auditDecision: "repair_recommended",
+      structuralSignals: {
+        acceptedClaimCount: 2,
+        distinctEventCount: 0,
+        distinctEventsExceededClaims: false,
+      },
+      bundledClaimFindings: [
+        {
+          originalClaimId: "AC_02",
+          splitConfidence: "high",
+          inputAuthoredSplitBasis: "derived_submetrics",
+          issueType: "overbroad_target_path",
+          directionalVerdictRisk: "different_possible",
+          propositionUnits: [],
+          splitRecommendation: {
+            originalClaimId: "AC_02",
+            proposedSubclaims: ["Aggregate seed", "Component seed"],
+            splitReason: "Derived measurement routes, not input-authored units",
+          },
+        },
+      ],
+      preservedRelationClaims: [
+        {
+          claimId: "AC_01",
+          relationType: "comparison",
+          preservationReason: "the comparison relation is the truth condition",
+        },
+      ],
+    });
+
+    expect(getHighConfidenceMultiClaimAtomicityRepairs(result, claims)).toEqual([]);
+  });
+
   it("requires valid claim IDs and at least two seed subclaims", () => {
     const result = MultiClaimAtomicityAuditOutputSchema.parse({
       auditDecision: "repair_recommended",
@@ -375,6 +411,7 @@ describe("MultiClaimAtomicityAuditOutputSchema", () => {
         {
           originalClaimId: "AC_99",
           splitConfidence: "high",
+          inputAuthoredSplitBasis: "explicit_subpropositions",
           issueType: "bundled_subpropositions",
           directionalVerdictRisk: "different_possible",
           propositionUnits: [],
@@ -387,6 +424,7 @@ describe("MultiClaimAtomicityAuditOutputSchema", () => {
         {
           originalClaimId: "AC_01",
           splitConfidence: "high",
+          inputAuthoredSplitBasis: "explicit_subpropositions",
           issueType: "bundled_subpropositions",
           directionalVerdictRisk: "different_possible",
           propositionUnits: [],

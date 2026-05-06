@@ -414,12 +414,16 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Scope preservation");
       expect(section).toContain("Relation-claim exception");
       expect(section).toContain("Conjunction is not relation");
+      expect(section).toContain("Dimension-decomposition caution");
+      expect(section).toContain("inputAuthoredSplitBasis");
+      expect(section).toContain("derived_submetrics");
+      expect(section).toContain("evidence routes, not input-authored proposition units");
       expect(section).toContain("candidate seeds for Pass 2 re-extraction");
       expect(section).toContain('"splitConfidence": "high"');
       expect(section).toContain("preservedRelationClaims");
       expect(section).toContain("directionalVerdictRisk");
       expect(section).toContain("splitRecommendation");
-      expect(section).toContain("Do not include `splitRecommendation` for low-confidence observations");
+      expect(section).toContain("Do not include `splitRecommendation` for low-confidence observations, derived-submetric observations");
     });
   });
 
@@ -457,6 +461,7 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("candidate seeds, not final accepted claims");
       expect(section).toContain("Pass 2 must still perform extraction");
       expect(section).toContain("Preserve relation, comparison, temporal, and whole-process claims");
+      expect(section).toContain("Preserve dimension-qualified claims");
       expect(section).toContain("Do not keep a bundled whole-claim version alongside its corrected subclaims");
       expect(section).toContain("Do not add evidence-derived details");
     });
