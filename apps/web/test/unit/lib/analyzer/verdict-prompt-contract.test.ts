@@ -981,6 +981,21 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("different target object inside the same institution");
     });
 
+    it("query generation balances rule-governed standard routes", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("target process or decision satisfied legality, procedure, fairness");
+      expect(section).toContain("source-native record of the directly evaluated target itself");
+      expect(section).toContain("supporting-evidence query should target target-path safeguards");
+      expect(section).toContain("procedural protections");
+      expect(section).toContain("remedies");
+      expect(section).toContain("review paths");
+      expect(section).toContain("evidence access");
+      expect(section).toContain("reasoned decision artifacts");
+      expect(section).toContain("refuting-evidence query should target target-path violations");
+      expect(section).toContain("standards-based objections");
+      expect(section).toContain("no query seeks the target path's own safeguard/record route");
+    });
+
     it("classifies by what the evidence evaluates, not what topic it shares", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("what the evidence evaluates");
@@ -1008,6 +1023,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("collateral_context");
       expect(section).toContain("procedural_fact");
       expect(section).toContain("ambiguous");
+      expect(section).toContain("must name the evaluated target path from the claim");
+      expect(section).toContain("not just the same institution, judge, actor, inquiry family, or legal system");
+      expect(section).toContain("explicitly bridges the criticized/supportive mechanism to that target");
+      expect(section).toContain("earlier inquiries, parallel investigations, broader institutional practices, or unresolved allegations");
       expect(section).toContain("Self-consistency");
       expect(section).toContain("Do not use a non-directional basis with a directional `claimDirection`");
     });
