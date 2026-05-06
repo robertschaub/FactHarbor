@@ -279,6 +279,25 @@ export type SourceType =
   | "organization_report"    // NGO, think tank, or organization publication
   | "other";                 // Other sources not fitting above categories
 
+/**
+ * Coarse basis for a claim-local evidence direction assignment.
+ * Directional bases (`operative_finding`, `direct_record`) may carry
+ * `supports` or `contradicts`. Non-directional bases must pair with
+ * `neutral` — runtime enforces this as LLM-output self-consistency.
+ */
+export type DirectionBasis =
+  | "operative_finding"    // target-specific compliance/violation/safeguard/remedy outcome
+  | "direct_record"        // target-specific measurement, metric, or documented fact
+  | "concern_or_position"  // allegation, concern, non-controlling dissent, opinion
+  | "collateral_context"   // broader institution, parallel inquiry, sanction, overlapping actor
+  | "procedural_fact"      // procedural or administrative fact without directional force
+  | "ambiguous";           // insufficient basis or unclear — safe fallback
+
+export const DIRECTIONAL_BASES: ReadonlySet<DirectionBasis> = new Set([
+  "operative_finding",
+  "direct_record",
+]);
+
 export interface KeyFactor {
   factor: string;
   supports: "yes" | "no" | "neutral";
@@ -502,8 +521,8 @@ export interface EvidenceItem {
   // "contradicts" = evidence contradicts the user's claim (supports the OPPOSITE)
   // "neutral" = background, doesn't directly support or contradict
   claimDirection?: "supports" | "contradicts" | "neutral";
-  // True if this evidence item was found from searching for the OPPOSITE claim
-  // (e.g., if user claimed "X > Y", this evidence item came from searching "Y > X")
+  directionBasis?: DirectionBasis;
+  directnessJustification?: string;
   fromOppositeClaimSearch?: boolean;
   // EvidenceScope: Captures the methodology/boundaries of the source document
   // (e.g., WTW vs TTW, EU vs US standards, different time periods)

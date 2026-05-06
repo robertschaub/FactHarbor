@@ -2605,6 +2605,23 @@ This task has two separate outputs:
 
 Never use `"supports"` as a synonym for "relevant", "direct", "source-native", or "supplies a needed comparison side." Highly direct side evidence can still be `"contradicts"` when the reported value refutes the asserted relationship.
 
+### Direction Basis Contract
+
+For every `claimDirectionByClaimId` entry, you must also return `directionBasis` and `directnessJustification`.
+
+`directionBasis` classifies WHY you assigned the direction. Use exactly one of these values:
+
+- `"operative_finding"` — the evidence states a target-specific compliance outcome, violation, safeguard, remedy, or operative standards result that directly affects the claim's truth condition.
+- `"direct_record"` — the evidence reports a target-specific measurement, metric value, documented fact, or recorded event that directly bears on the claim.
+- `"concern_or_position"` — the evidence expresses an allegation, concern, non-controlling dissent, opinion, or advocacy position. It does not establish an operative outcome for the target.
+- `"collateral_context"` — the evidence concerns a broader institution, parallel inquiry, overlapping actor, sanction episode, or adjacent controversy. It provides context but does not directly evaluate the claim's target.
+- `"procedural_fact"` — the evidence reports a procedural, administrative, or jurisdictional fact without directional force on the claim's truth condition.
+- `"ambiguous"` — the basis is unclear or insufficient to classify.
+
+**Self-consistency rule:** `"supports"` or `"contradicts"` are only valid when `directionBasis` is `"operative_finding"` or `"direct_record"`. If you assign any other basis, set `claimDirection` to `"neutral"`. Do not use a non-directional basis with a directional `claimDirection`.
+
+`directnessJustification` is a short phrase explaining what specific target-path element or operative outcome the evidence establishes (for directional bases) or why it lacks one (for non-directional bases).
+
 For numeric comparison claims, decide each `claimDirectionByClaimId` entry by the claim/profile's comparison relation, not by the item's topical fit. A one-sided source-native value can be directional when the claim/profile supplies the other side. For approximate parity or closeness claims, same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `"supports"`; if the reported side is materially above or below the other side under the same metric route, the relation is false and the claim-local direction is `"contradicts"`.
 
 Keep metric routes separate. If an item reports a period/window total, cumulative total, sub-count, category component, report existence, archive existence, or methodology/source-portfolio fact while the claim/profile route requires an endpoint stock, standing population, threshold, or other substantive value, use `"neutral"` for that claim unless the claim/profile explicitly accepts the item's route for the asserted relation. Route acceptance must come from the decisive metric route, comparison relation, or an explicitly accepted metric class; a source family, archive/report route, category inventory, or `componentMetrics` list does not by itself accept an alternate route. Treat totals for units admitted, hosted, served, processed, ever counted, or present for varying durations across a whole period as period/window or cumulative routes, not endpoint/standing-stock support. Do not turn source-existence or route-availability evidence into `"supports"` for a substantive numeric comparison merely because the named source is authoritative or likely contains relevant data.
@@ -2682,7 +2699,12 @@ Return a JSON object:
       "applicability": "direct | contextual | foreign_reaction",
       "relevantClaimIds": ["AC_01"],
       "claimDirectionByClaimId": [
-        { "claimId": "AC_01", "claimDirection": "supports | contradicts | neutral" }
+        {
+          "claimId": "AC_01",
+          "claimDirection": "supports | contradicts | neutral",
+          "directionBasis": "operative_finding | direct_record | concern_or_position | collateral_context | procedural_fact | ambiguous",
+          "directnessJustification": "string — what target-path element or operative outcome the evidence establishes, or why it lacks one"
+        }
       ],
       "reasoning": "string — brief justification"
     }
@@ -2693,7 +2715,8 @@ Return a JSON object:
 - Include one assessment for every evidence item index.
 - Use only the three applicability labels above.
 - `relevantClaimIds` must contain only IDs from the provided claims list. It may contain zero, one, or multiple claim IDs. Return an empty array when the item is not materially relevant to any claim after applicability assessment.
-- `claimDirectionByClaimId` must contain only IDs from the provided claims list and should include one entry for every ID in `relevantClaimIds`. Use only `supports`, `contradicts`, or `neutral` for `claimDirection`.
+- `claimDirectionByClaimId` must contain only IDs from the provided claims list and should include one entry for every ID in `relevantClaimIds`. Use only `supports`, `contradicts`, or `neutral` for `claimDirection`. Include `directionBasis` and `directnessJustification` for every entry.
+- Self-consistency: if `directionBasis` is not `operative_finding` or `direct_record`, `claimDirection` must be `neutral`.
 - Reasoning should be one sentence.
 
 ---

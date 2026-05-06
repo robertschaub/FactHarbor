@@ -995,6 +995,21 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Overlap in actors or institutions alone is insufficient");
     });
 
+    it("requires direction basis and directness justification for claim-local direction", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Direction Basis Contract");
+      expect(section).toContain("directionBasis");
+      expect(section).toContain("directnessJustification");
+      expect(section).toContain("operative_finding");
+      expect(section).toContain("direct_record");
+      expect(section).toContain("concern_or_position");
+      expect(section).toContain("collateral_context");
+      expect(section).toContain("procedural_fact");
+      expect(section).toContain("ambiguous");
+      expect(section).toContain("Self-consistency");
+      expect(section).toContain("Do not use a non-directional basis with a directional `claimDirection`");
+    });
+
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("neutral or standards-based analysis");

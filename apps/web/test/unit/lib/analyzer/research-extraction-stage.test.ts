@@ -849,7 +849,12 @@ describe("Research Extraction Stage", () => {
           },
         ],
       }).assessments[0].claimDirectionByClaimId).toEqual([
-        { claimId: "AC_01", claimDirection: "supports" },
+        {
+          claimId: "AC_01",
+          claimDirection: "supports",
+          directionBasis: "ambiguous",
+          directnessJustification: "",
+        },
       ]);
     });
 
@@ -1029,8 +1034,8 @@ describe("Research Extraction Stage", () => {
             applicability: "direct",
             relevantClaimIds: ["AC_01", "AC_02"],
             claimDirectionByClaimId: [
-              { claimId: "AC_01", claimDirection: "supports" },
-              { claimId: "AC_02", claimDirection: "supports" },
+              { claimId: "AC_01", claimDirection: "supports", directionBasis: "direct_record" },
+              { claimId: "AC_02", claimDirection: "supports", directionBasis: "direct_record" },
             ],
             reasoning: "current-side component directly supports the comparison claim",
           },
@@ -1055,6 +1060,158 @@ describe("Research Extraction Stage", () => {
       expect(result[1].statement).toBe(result[0].statement);
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         expect.stringContaining("Directional companion clones: 1."),
+      );
+    });
+
+    it("normalizes non-directional basis to neutral before existing directional evidence is stored", async () => {
+      const claims = [
+        createClaim({
+          id: "AC_01",
+          statement: "Target process complied with the relevant standard",
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source reports concern about an adjacent process.",
+          claimDirection: "contradicts",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              {
+                claimId: "AC_01",
+                claimDirection: "contradicts",
+                directionBasis: "collateral_context",
+                directnessJustification: "overlapping actor but different target path",
+              },
+            ],
+            reasoning: "collateral concern lacks a target-specific standards outcome",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "neutral",
+        directionBasis: "collateral_context",
+        directnessJustification: "overlapping actor but different target path",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("contradicts+collateral_context"),
+      );
+    });
+
+    it("preserves directional basis for already-scoped directional evidence", async () => {
+      const claims = [
+        createClaim({
+          id: "AC_01",
+          statement: "Target process complied with the relevant standard",
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source reports a target-specific operative outcome.",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              {
+                claimId: "AC_01",
+                claimDirection: "supports",
+                directionBasis: "operative_finding",
+                directnessJustification: "target-specific operative standards outcome",
+              },
+            ],
+            reasoning: "the item directly applies the standard to the target",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        directionBasis: "operative_finding",
+        directnessJustification: "target-specific operative standards outcome",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+    });
+
+    it("does not create directional clones for non-directional basis mappings", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source reports a concern about a related institution.",
+          claimDirection: "neutral",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              {
+                claimId: "AC_01",
+                claimDirection: "supports",
+                directionBasis: "concern_or_position",
+                directnessJustification: "concern without operative target outcome",
+              },
+            ],
+            reasoning: "concern-only material is non-directional",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "neutral",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(result[0].id).not.toContain("__supports_");
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("supports+concern_or_position"),
       );
     });
 
@@ -1086,7 +1243,7 @@ describe("Research Extraction Stage", () => {
             applicability: "direct",
             relevantClaimIds: ["AC_01"],
             claimDirectionByClaimId: [
-              { claimId: "AC_01", claimDirection: "contradicts" },
+              { claimId: "AC_01", claimDirection: "contradicts", directionBasis: "direct_record" },
             ],
             reasoning: "reference-side value refutes the comparison relation",
           },
