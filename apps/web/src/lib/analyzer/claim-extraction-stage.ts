@@ -21,6 +21,9 @@
 
 import type {
   AnalysisWarning,
+  AcquisitionEvidenceTraceEntry,
+  AcquisitionSourceFetchStatus,
+  AcquisitionSourceTraceEntry,
   AtomicClaim,
   CBClaimUnderstanding,
   CBResearchState,
@@ -48,6 +51,7 @@ import { recordLLMCall, recordGate1Stats } from "./metrics-integration";
 
 import { searchWebWithProvider, type SearchProviderErrorInfo } from "@/lib/web-search";
 import { extractTextFromUrl } from "@/lib/retrieval";
+import { recordEvidenceTrace, recordSourceTrace } from "./acquisition-trace";
 
 // --- Zod schemas for Stage 1 LLM output parsing ---
 
@@ -2081,6 +2085,8 @@ export async function runPreliminarySearch(
     sources: typeof state.sources;
     warnings: typeof state.warnings;
     providerErrors: ProviderErrorInfo[];
+    sourceTrace: AcquisitionSourceTraceEntry[];
+    evidenceTrace: AcquisitionEvidenceTraceEntry[];
     llmCalls: number;
   };
 
@@ -2092,6 +2098,8 @@ export async function runPreliminarySearch(
         sources: [],
         warnings: [],
         providerErrors: [],
+        sourceTrace: [],
+        evidenceTrace: [],
         llmCalls: 0,
       };
 
@@ -2160,12 +2168,16 @@ export async function runPreliminarySearch(
             const relevantByUrl = new Map(
               relevantResults.map((result) => [result.url, result.originalRank]),
             );
+            const relevanceScoreByUrl = new Map(
+              relevantResults.map((result) => [result.url, result.relevanceScore]),
+            );
 
             // Fetch sources in parallel (was serial per-source)
             const sourcesToFetch = response.results
               .filter((searchResult) => relevantByUrl.has(searchResult.url))
               .sort((a, b) => (relevantByUrl.get(a.url) ?? 0) - (relevantByUrl.get(b.url) ?? 0))
               .slice(0, 3);
+            const selectedForFetchUrls = new Set(sourcesToFetch.map((source) => source.url));
             const fetchErrorByType: Record<string, number> = {};
             const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];
             let fetchFailed = 0;
@@ -2175,8 +2187,10 @@ export async function runPreliminarySearch(
             );
 
             const fetchedSources: Array<{ url: string; title: string; text: string }> = [];
+            const fetchStatusByUrl = new Map<string, AcquisitionSourceFetchStatus>();
             for (const result of fetchResults) {
               if (!result.ok) {
+                fetchStatusByUrl.set(result.url, "fetch_failed");
                 if (result.error) {
                   fetchFailed++;
                   fetchErrorByType[result.error.type] = (fetchErrorByType[result.error.type] ?? 0) + 1;
@@ -2191,6 +2205,7 @@ export async function runPreliminarySearch(
                 }
                 continue;
               }
+              fetchStatusByUrl.set(result.url, "fetch_success");
               // Skip if already fetched by another query for this claim
               if (claimFetchedUrls.has(result.url)) continue;
               claimFetchedUrls.add(result.url);
@@ -2232,7 +2247,22 @@ export async function runPreliminarySearch(
               });
             }
 
-            if (fetchedSources.length === 0) return;
+            if (fetchedSources.length === 0) {
+              local.sourceTrace.push(...response.results.map((result, index) => ({
+                stage: "preliminary_search" as const,
+                claimStatement: claim.statement,
+                query,
+                url: result.url,
+                title: result.title,
+                originalRank: index,
+                relevanceScore: relevanceScoreByUrl.get(result.url),
+                relevanceAccepted: relevantByUrl.has(result.url),
+                selectedForFetch: selectedForFetchUrls.has(result.url),
+                fetchStatus: fetchStatusByUrl.get(result.url) ?? "not_selected",
+                extractedEvidenceCount: 0,
+              })));
+              return;
+            }
 
             state.onEvent?.(`LLM call: preliminary evidence — ${getModelForTask("extract_evidence", undefined, pipelineConfig).modelName}`, -1);
             const evidence = await extractPreliminaryEvidence(
@@ -2242,6 +2272,34 @@ export async function runPreliminarySearch(
               currentDate,
             );
             local.llmCalls++;
+            const evidenceCountByUrl = new Map<string, number>();
+            for (const item of evidence) {
+              evidenceCountByUrl.set(item.sourceUrl, (evidenceCountByUrl.get(item.sourceUrl) ?? 0) + 1);
+              local.evidenceTrace.push({
+                stage: "preliminary_search",
+                transition: "preliminary_extracted",
+                query,
+                sourceUrl: item.sourceUrl,
+                sourceTitle: item.sourceTitle,
+                claimDirection: item.claimDirection === "contextual" ? "neutral" : item.claimDirection,
+                probativeValue: item.probativeValue,
+                relevantClaimIds: item.relevantClaimIds,
+                isSeeded: true,
+              });
+            }
+            local.sourceTrace.push(...response.results.map((result, index) => ({
+              stage: "preliminary_search" as const,
+              claimStatement: claim.statement,
+              query,
+              url: result.url,
+              title: result.title,
+              originalRank: index,
+              relevanceScore: relevanceScoreByUrl.get(result.url),
+              relevanceAccepted: relevantByUrl.has(result.url),
+              selectedForFetch: selectedForFetchUrls.has(result.url),
+              fetchStatus: fetchStatusByUrl.get(result.url) ?? "not_selected",
+              extractedEvidenceCount: evidenceCountByUrl.get(result.url) ?? 0,
+            })));
             local.evidence.push(...evidence);
           } catch (err: any) {
             console.warn(`[Stage1] Preliminary search failed for query "${query}":`, err);
@@ -2267,6 +2325,8 @@ export async function runPreliminarySearch(
     state.searchQueries.push(...local.searchQueries);
     state.warnings.push(...local.warnings);
     state.llmCalls += local.llmCalls;
+    recordSourceTrace(state, local.sourceTrace);
+    recordEvidenceTrace(state, local.evidenceTrace);
     allEvidence.push(...local.evidence);
 
     // Reconcile provider errors collected during parallel execution.

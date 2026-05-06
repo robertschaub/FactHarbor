@@ -1625,10 +1625,11 @@ describe("Research Extraction Stage", () => {
       const items = Array.from({ length: 8 }, (_, i) =>
         createEvidence({ id: `EV_${i}`, sourceUrl: "https://verbose.org/article", probativeValue: "high" }),
       );
-      const { kept, capped, evictedIds } = applyPerSourceCap(items, [], 5);
+      const { kept, capped, evictedIds, droppedNewIds } = applyPerSourceCap(items, [], 5);
       expect(kept).toHaveLength(5);
       expect(capped).toBe(3);
       expect(evictedIds).toHaveLength(0);
+      expect(droppedNewIds).toEqual(["EV_5", "EV_6", "EV_7"]);
     });
 
     it("should keep highest probativeValue items when capping", () => {
@@ -1659,12 +1660,13 @@ describe("Research Extraction Stage", () => {
         createEvidence({ id: "EV_NEW_3", sourceUrl: "https://a.com/1", probativeValue: "low" }),
       ];
       // Cap=3: best-N should keep 2 high (new) + 1 medium (existing), evicting 2 existing low
-      const { kept, capped, evictedIds } = applyPerSourceCap(newItems, existing, 3);
+      const { kept, capped, evictedIds, droppedNewIds } = applyPerSourceCap(newItems, existing, 3);
       expect(kept).toHaveLength(2); // 2 new high items retained
       expect(capped).toBe(1); // 1 new low item dropped
       expect(evictedIds).toHaveLength(2); // 2 existing low items evicted
       expect(evictedIds).toContain("EV_EXIST_1");
       expect(evictedIds).toContain("EV_EXIST_2");
+      expect(droppedNewIds).toEqual(["EV_NEW_3"]);
     });
 
     it("should prefer existing items over new items at same probativeValue tier", () => {

@@ -1,5 +1,6 @@
 import {
   AtomicClaim,
+  AcquisitionEvidenceTraceEntry,
   CBResearchState,
   ClaimFreshnessRequirement,
   ClaimAcquisitionDirectionCounts,
@@ -53,6 +54,7 @@ import { getClaimRelevantGeographies } from "./jurisdiction-context";
 // Import sibling stage modules
 import { generateResearchQueries, type GeneratedResearchQuery } from "./research-query-stage";
 import { fetchSources, reconcileEvidenceSourceIds } from "./research-acquisition-stage";
+import { recordEvidenceTrace, recordSourceTrace } from "./acquisition-trace";
 import {
   classifyRelevance,
   extractResearchEvidence,
@@ -92,6 +94,24 @@ function incrementDirectionCounts(
   } else {
     counts.neutral++;
   }
+}
+
+function toEvidenceTraceBase(
+  item: EvidenceItem,
+): Pick<
+  AcquisitionEvidenceTraceEntry,
+  "evidenceId" | "sourceUrl" | "sourceTitle" | "claimDirection" | "directionBasis" | "probativeValue" | "relevantClaimIds" | "isSeeded"
+> {
+  return {
+    evidenceId: item.id,
+    sourceUrl: item.sourceUrl,
+    sourceTitle: item.sourceTitle,
+    claimDirection: item.claimDirection,
+    directionBasis: item.directionBasis,
+    probativeValue: item.probativeValue,
+    relevantClaimIds: item.relevantClaimIds,
+    isSeeded: item.isSeeded,
+  };
 }
 
 const QUERY_LANE_PRIORITY: Record<NonNullable<GeneratedResearchQuery["retrievalLane"]>, number> = {
@@ -1522,13 +1542,34 @@ export async function runResearchIteration(
           response.results.length - relevantSources.length,
           0,
         );
+        const relevanceScoreByUrl = new Map(
+          relevantSources.map((source) => [source.url, source.relevanceScore]),
+        );
 
-        if (relevantSources.length === 0) continue;
+        if (relevantSources.length === 0) {
+          recordSourceTrace(state, response.results.map((result, index) => ({
+            stage: "research_search",
+            claimId: targetClaim.id,
+            claimStatement: targetClaim.statement,
+            iteration: iterationIndex,
+            iterationType: focus,
+            query: queryObj.query,
+            url: result.url,
+            title: result.title,
+            originalRank: index,
+            relevanceAccepted: false,
+            selectedForFetch: false,
+            fetchStatus: "not_selected",
+            extractedEvidenceCount: 0,
+          })));
+          continue;
+        }
 
         // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
         const { selectTopSources } = await import("./pipeline-utils");
         const topN = pipelineConfig.relevanceTopNFetch ?? 5;
         const selectedForFetch = selectTopSources(relevantSources, topN);
+        const selectedForFetchUrls = new Set(selectedForFetch.map((source) => source.url));
         state.onEvent?.(`Fetching ${selectedForFetch.length} relevant source(s) for ${targetClaim.id}...`, -1);
         debugLog(`[Stage2] Fetching top ${selectedForFetch.length} of ${relevantSources.length} relevant sources (topN=${topN})`, selectedForFetch.map((s) => ({
           url: s.url.slice(0, 100),
@@ -1564,8 +1605,27 @@ export async function runResearchIteration(
           relevantSources.length - fetchedSources.length,
           0,
         );
+        const fetchedUrls = new Set(fetchedSources.map((source) => source.url));
 
-        if (fetchedSources.length === 0) continue;
+        if (fetchedSources.length === 0) {
+          recordSourceTrace(state, response.results.map((result, index) => ({
+            stage: "research_search",
+            claimId: targetClaim.id,
+            claimStatement: targetClaim.statement,
+            iteration: iterationIndex,
+            iterationType: focus,
+            query: queryObj.query,
+            url: result.url,
+            title: result.title,
+            originalRank: index,
+            relevanceScore: relevanceScoreByUrl.get(result.url),
+            relevanceAccepted: relevanceScoreByUrl.has(result.url),
+            selectedForFetch: selectedForFetchUrls.has(result.url),
+            fetchStatus: selectedForFetchUrls.has(result.url) ? "fetch_failed" : "not_selected",
+            extractedEvidenceCount: 0,
+          })));
+          continue;
+        }
 
         // 5. Reliability prefetch — DEFERRED to batch after research loop (perf fix)
         // SR data is only needed in Stage 4 (verdict) and Stage 5 (aggregation),
@@ -1587,6 +1647,39 @@ export async function runResearchIteration(
             .map((item) => item.sourceUrl)
             .filter((url): url is string => Boolean(url)),
         );
+        const extractedCountByUrl = new Map<string, number>();
+        for (const item of rawEvidence) {
+          if (item.sourceUrl) {
+            extractedCountByUrl.set(item.sourceUrl, (extractedCountByUrl.get(item.sourceUrl) ?? 0) + 1);
+          }
+        }
+        recordSourceTrace(state, response.results.map((result, index) => ({
+          stage: "research_search",
+          claimId: targetClaim.id,
+          claimStatement: targetClaim.statement,
+          iteration: iterationIndex,
+          iterationType: focus,
+          query: queryObj.query,
+          url: result.url,
+          title: result.title,
+          originalRank: index,
+          relevanceScore: relevanceScoreByUrl.get(result.url),
+          relevanceAccepted: relevanceScoreByUrl.has(result.url),
+          selectedForFetch: selectedForFetchUrls.has(result.url),
+          fetchStatus: selectedForFetchUrls.has(result.url)
+            ? (fetchedUrls.has(result.url) ? "fetch_success" : "fetch_failed")
+            : "not_selected",
+          extractedEvidenceCount: extractedCountByUrl.get(result.url) ?? 0,
+        })));
+        recordEvidenceTrace(state, rawEvidence.map((item) => ({
+          stage: "research_search",
+          transition: "raw_extracted",
+          claimId: targetClaim.id,
+          iteration: iterationIndex,
+          iterationType: focus,
+          query: queryObj.query,
+          ...toEvidenceTraceBase(item),
+        })));
         telemetry.losses.sourcesWithoutEvidence += fetchedSources.filter(
           (source) => !extractedSourceUrls.has(source.url),
         ).length;
@@ -1608,6 +1701,18 @@ export async function runResearchIteration(
 
         // 9. Evidence filter (deterministic safety net)
         const { kept } = filterByProbativeValue(rawEvidence);
+        const keptIds = new Set(kept.map((item) => item.id));
+        recordEvidenceTrace(state, rawEvidence
+          .filter((item) => !keptIds.has(item.id))
+          .map((item) => ({
+            stage: "research_search",
+            transition: "probative_filtered",
+            claimId: targetClaim.id,
+            iteration: iterationIndex,
+            iterationType: focus,
+            query: queryObj.query,
+            ...toEvidenceTraceBase(item),
+          })));
         telemetry.losses.probativeFilteredOut += Math.max(
           rawEvidence.length - kept.length,
           0,
@@ -1628,7 +1733,7 @@ export async function runResearchIteration(
         // Reselects best-N across existing+new by probativeValue, evicting weaker
         // existing items when a stronger new item arrives from the same source.
         const maxPerSource = pipelineConfig.maxEvidenceItemsPerSource ?? 5;
-        const { kept: cappedItems, capped: cappedCount, evictedIds } = applyPerSourceCap(
+        const { kept: cappedItems, capped: cappedCount, evictedIds, droppedNewIds } = applyPerSourceCap(
           kept, state.evidenceItems, maxPerSource,
         );
         if (cappedCount > 0 || evictedIds.length > 0) {
@@ -1646,6 +1751,43 @@ export async function runResearchIteration(
         }
         telemetry.losses.perSourceCapDroppedNew += cappedCount;
         telemetry.losses.perSourceCapEvictedExisting += evictedIds.length;
+        const evictedExistingById = new Map(state.evidenceItems.map((item) => [item.id, item]));
+        const cappedItemIds = new Set(cappedItems.map((item) => item.id));
+        const droppedNewIdSet = new Set(droppedNewIds);
+        recordEvidenceTrace(state, [
+          ...cappedItems.map((item) => ({
+            stage: "research_search" as const,
+            transition: "cap_kept" as const,
+            claimId: targetClaim.id,
+            iteration: iterationIndex,
+            iterationType: focus,
+            query: queryObj.query,
+            ...toEvidenceTraceBase(item),
+          })),
+          ...kept
+            .filter((item) => droppedNewIdSet.has(item.id) || !cappedItemIds.has(item.id))
+            .map((item) => ({
+              stage: "research_search" as const,
+              transition: "cap_dropped_new" as const,
+              claimId: targetClaim.id,
+              iteration: iterationIndex,
+              iterationType: focus,
+              query: queryObj.query,
+              ...toEvidenceTraceBase(item),
+            })),
+          ...evictedIds
+            .map((id) => evictedExistingById.get(id))
+            .filter((item): item is EvidenceItem => Boolean(item))
+            .map((item) => ({
+              stage: "research_search" as const,
+              transition: "cap_evicted_existing" as const,
+              claimId: targetClaim.id,
+              iteration: iterationIndex,
+              iterationType: focus,
+              query: queryObj.query,
+              ...toEvidenceTraceBase(item),
+            })),
+        ]);
         if (evictedIds.length > 0) {
           const evictedSet = new Set(evictedIds);
           state.evidenceItems = state.evidenceItems.filter((e) => !evictedSet.has(e.id));
@@ -1654,6 +1796,15 @@ export async function runResearchIteration(
         const claimLocalCappedItems = cappedItems.filter(
           (item) => item.relevantClaimIds?.includes(targetClaim.id),
         );
+        recordEvidenceTrace(state, claimLocalCappedItems.map((item) => ({
+          stage: "research_search",
+          transition: "admitted",
+          claimId: targetClaim.id,
+          iteration: iterationIndex,
+          iterationType: focus,
+          query: queryObj.query,
+          ...toEvidenceTraceBase(item),
+        })));
         telemetry.admittedEvidenceItems += claimLocalCappedItems.length;
         for (const item of claimLocalCappedItems) {
           incrementDirectionCounts(telemetry.directionCounts, item.claimDirection);

@@ -934,15 +934,16 @@ const PROBATIVE_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
  * @param newItems - Newly extracted items to be added this iteration
  * @param existingEvidence - Items already in the evidence pool
  * @param maxPerSource - Cap per source URL (UCM: maxEvidenceItemsPerSource)
- * @returns `kept` new items to add, `capped` count, `evictedIds` to remove from pool
+ * @returns `kept` new items to add, `capped` count, `evictedIds` to remove from pool,
+ * and `droppedNewIds` for observability.
  */
 export function applyPerSourceCap(
   newItems: EvidenceItem[],
   existingEvidence: EvidenceItem[],
   maxPerSource: number,
-): { kept: EvidenceItem[]; capped: number; evictedIds: string[] } {
+): { kept: EvidenceItem[]; capped: number; evictedIds: string[]; droppedNewIds: string[] } {
   if (maxPerSource <= 0 || newItems.length === 0) {
-    return { kept: newItems, capped: 0, evictedIds: [] };
+    return { kept: newItems, capped: 0, evictedIds: [], droppedNewIds: [] };
   }
 
   // Index existing items by source URL
@@ -963,6 +964,7 @@ export function applyPerSourceCap(
 
   const kept: EvidenceItem[] = [];
   const evictedIds: string[] = [];
+  const droppedNewIds: string[] = [];
   let capped = 0;
 
   for (const [url, newSourceItems] of newBySource) {
@@ -1004,9 +1006,12 @@ export function applyPerSourceCap(
     // Collect existing items that were evicted
     for (const tagged of dropped) {
       if (!tagged.isNew) evictedIds.push(tagged.item.id);
-      else capped++;
+      else {
+        capped++;
+        droppedNewIds.push(tagged.item.id);
+      }
     }
   }
 
-  return { kept, capped, evictedIds };
+  return { kept, capped, evictedIds, droppedNewIds };
 }

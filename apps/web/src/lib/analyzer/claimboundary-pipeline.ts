@@ -71,6 +71,7 @@ import {
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
 import { getWebGitCommitHash } from "@/lib/build-info";
 import { normalizeClaimSelectionCap } from "@/lib/claim-selection-flow";
+import { cloneAcquisitionTrace } from "./acquisition-trace";
 import {
   checkAbortSignal,
   classifySourceFetchFailure,
@@ -319,6 +320,7 @@ export function buildClaimBoundaryResultJson(params: {
     | "mainIterationsUsed"
     | "contradictionIterationsUsed"
     | "contradictionSourcesFound"
+    | "acquisitionTrace"
   >;
   detectedUrl?: string;
   llmProvider?: string;
@@ -356,6 +358,11 @@ export function buildClaimBoundaryResultJson(params: {
     state,
     claimSufficiencyThreshold ?? 3,
   );
+  const acquisitionTrace = cloneAcquisitionTrace(state.acquisitionTrace);
+  const analysisObservability = {
+    ...(acsResearchWaste ? { acsResearchWaste } : {}),
+    ...(acquisitionTrace ? { acquisitionTrace } : {}),
+  };
 
   return {
     _schemaVersion: "3.2.0-cb",
@@ -411,7 +418,7 @@ export function buildClaimBoundaryResultJson(params: {
     citedSources: selectEvidenceReferencedSources(state.sources, state.evidenceItems).map(serializeFetchedSource),
     searchQueries: state.searchQueries,
     claimAcquisitionLedger: state.claimAcquisitionLedger,
-    ...(acsResearchWaste ? { analysisObservability: { acsResearchWaste } } : {}),
+    ...(Object.keys(analysisObservability).length > 0 ? { analysisObservability } : {}),
     qualityGates: assessment.qualityGates,
     analysisWarnings: state.warnings,
   };

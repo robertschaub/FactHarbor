@@ -410,6 +410,66 @@ export interface ClaimAcquisitionLedgerEntry {
   boundaryDistribution: ClaimBoundaryConcentrationEntry[];
 }
 
+export type AcquisitionTraceStage = "preliminary_search" | "research_search";
+
+export type AcquisitionSourceFetchStatus =
+  | "not_selected"
+  | "fetch_success"
+  | "fetch_failed";
+
+export interface AcquisitionSourceTraceEntry {
+  stage: AcquisitionTraceStage;
+  claimId?: string;
+  claimStatement?: string;
+  iteration?: number;
+  iterationType?: ClaimAcquisitionIterationEntry["iterationType"];
+  query: string;
+  url: string;
+  title?: string;
+  originalRank?: number;
+  relevanceScore?: number;
+  relevanceAccepted: boolean;
+  selectedForFetch: boolean;
+  fetchStatus: AcquisitionSourceFetchStatus;
+  extractedEvidenceCount?: number;
+}
+
+export type AcquisitionEvidenceTransition =
+  | "preliminary_extracted"
+  | "raw_extracted"
+  | "probative_filtered"
+  | "cap_kept"
+  | "cap_dropped_new"
+  | "cap_evicted_existing"
+  | "admitted";
+
+export interface AcquisitionEvidenceTraceEntry {
+  stage: AcquisitionTraceStage;
+  transition: AcquisitionEvidenceTransition;
+  claimId?: string;
+  iteration?: number;
+  iterationType?: ClaimAcquisitionIterationEntry["iterationType"];
+  query?: string;
+  evidenceId?: string;
+  sourceUrl?: string;
+  sourceTitle?: string;
+  claimDirection?: EvidenceItem["claimDirection"];
+  directionBasis?: DirectionBasis;
+  probativeValue?: EvidenceItem["probativeValue"];
+  relevantClaimIds?: string[];
+  isSeeded?: boolean;
+}
+
+export interface AcquisitionTraceObservability {
+  sourceTrace: AcquisitionSourceTraceEntry[];
+  evidenceTrace: AcquisitionEvidenceTraceEntry[];
+  truncated: boolean;
+  limits: {
+    sourceTrace: number;
+    evidenceTrace: number;
+  };
+}
+
 export interface ResearchState {
   originalInput: string;
   originalText: string;
@@ -937,6 +997,7 @@ export interface AcsResearchWasteObservability {
 
 export interface AnalysisObservability {
   acsResearchWaste?: AcsResearchWasteObservability;
+  acquisitionTrace?: AcquisitionTraceObservability;
 }
 
 // ============================================================================
@@ -1529,6 +1590,8 @@ export interface CBResearchState {
     string,
     Array<{ url: string; relevanceScore: number; originalRank: number }>
   >;
+  /** Bounded source/evidence transition trace for quality debugging. */
+  acquisitionTrace?: AcquisitionTraceObservability;
   claimAcquisitionLedger: Record<string, ClaimAcquisitionLedgerEntry>;
   // Shared Stage 2 query budget usage: claimId -> queries consumed
   queryBudgetUsageByClaim: Record<string, number>;
