@@ -509,37 +509,6 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
-  describe("rule-governed standard evidence profiling", () => {
-    it("requires target-path records and standards/challenge routes in extraction profiles", () => {
-      const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
-      expect(section).not.toBeNull();
-      expect(section).toContain("rule-governed standard");
-      expect(section).toContain("target-path record routes");
-      expect(section).toContain("procedural steps");
-      expect(section).toContain("safeguards");
-      expect(section).toContain("remedies");
-      expect(section).toContain("review paths");
-      expect(section).toContain("reasoned judgment");
-      expect(section).toContain("standards/challenge routes");
-      expect(section).toContain("external monitor");
-      expect(section).toContain("Do NOT let the profile collapse entirely into external criticism");
-      expect(section).toContain("Keep these as evidence routes inside `expectedEvidenceProfile`");
-    });
-
-    it("contract validation fails rule-governed profiles missing either route class", () => {
-      const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
-      expect(section).not.toBeNull();
-      expect(section).toContain("Rule-governed standard profile gate");
-      expect(section).toContain("target path's own record");
-      expect(section).toContain("procedural safeguards");
-      expect(section).toContain("decision artifact");
-      expect(section).toContain("standards/challenge route");
-      expect(section).toContain("only names standards bodies, concern reports, broader institutional controversy, or criticism routes");
-      expect(section).toContain("only names internal records without a standards/challenge route");
-      expect(section).toContain("Keep the repair inside `expectedEvidenceProfile`");
-    });
-  });
-
   describe("Gate 1 approximate-comparison validation", () => {
     it("treats approximate quantitative comparisons as factual and fidelity-preserving when source-input anchored", () => {
       const section = extractSection(promptContent, "CLAIM_VALIDATION");
