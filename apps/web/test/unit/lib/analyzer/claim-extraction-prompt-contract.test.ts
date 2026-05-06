@@ -418,6 +418,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("both a target process/procedure and its result");
       expect(section).toContain("shared criteria can still require high-confidence repair");
       expect(section).toContain("Dimension-decomposition caution");
+      expect(section).toContain("Generated wording is not input authorship");
+      expect(section).toContain("A sub-proposition is input-authored only when the original input itself names that target path");
+      expect(section).toContain("broad standards, requirement classes, safeguards, or evidence routes");
       expect(section).toContain("inputAuthoredSplitBasis");
       expect(section).toContain("derived_submetrics");
       expect(section).toContain("evidence routes, not input-authored proposition units");
