@@ -719,6 +719,7 @@ function buildPreparedResearchState(params: {
 
   state.understanding = understanding;
   state.languageIntent = deriveLanguageIntent(understanding);
+  state.acquisitionTrace = cloneAcquisitionTrace(preparedStage1.acquisitionTrace);
 
   const detectedUrl =
     input.inputType === "url"
@@ -839,6 +840,7 @@ export async function prepareStage1Snapshot(
       version: 1,
       resolvedInputText: analysisText,
       preparedUnderstanding: understanding,
+      acquisitionTrace: cloneAcquisitionTrace(state.acquisitionTrace),
       preparationProvenance: {
         pipelineVariant: "claimboundary",
         sourceInputType: input.inputType,

@@ -806,6 +806,7 @@ export interface PreparedStage1Snapshot {
   version: 1;
   resolvedInputText: string;
   preparedUnderstanding: CBClaimUnderstanding;
+  acquisitionTrace?: AcquisitionTraceObservability;
   preparationProvenance?: PreparedStage1Provenance;
 }
 
