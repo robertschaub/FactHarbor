@@ -208,6 +208,98 @@ Live canaries after commit/restart/reseed:
 5. Should Stage 4 repair be held until after the direction-basis canary, or shipped together?
 6. What is the smallest test matrix that gives enough confidence without spending unnecessary live-job budget?
 
+## Three-Review Consolidation
+
+Disposition: approve implementation of a narrow Stage 2 applicability / direction-basis slice, with amendments.
+
+All three reviewers agree on the core diagnosis:
+
+- Stage 1 is no longer the primary defect for the current canary because the expected three AtomicClaims are present.
+- Lane 2 / Lane 3 ACS admission and selected-claim coverage are not the cause.
+- Stage 2 applicability / claim-local direction is the first faulty layer for the current canary.
+- Stage 4 is a secondary amplifier and must remain held until after Stage 2 emits a cleaner evidence pool.
+- Do not cherry-pick `b5421841` or the held verdict-repair stack. Read held commits for design intent only.
+
+### Required Amendments Before Implementation
+
+1. Add `directnessJustification`.
+   - The current `APPLICABILITY_ASSESSMENT` prompt already says collateral inquiry / broader institutional controversy material is contextual unless it directly documents the target path or states that the criticized/supportive procedure governed that same target.
+   - The failure shows that this rule is under-enforced by the schema.
+   - Add a required `directnessJustification` field to the applicability output. For every item classified `direct`, the LLM must state what target-specific path, safeguard, proceeding, decision, or outcome the evidence evaluates. If it cannot state one, the item should be contextual.
+
+2. Use a closed, coarse `directionBasis` enum.
+   - Avoid free-text basis values.
+   - Start coarser than the held branch's full taxonomy to reduce multilingual reliability risk.
+   - First-slice enum:
+     - `target_safeguard_record` — directional-capable
+     - `operative_standards_outcome` — directional-capable
+     - `target_process_documentation` — directional-capable only when paired with a directional LLM claimDirection and a direct target path
+     - `concern_or_position` — non-directional
+     - `collateral_context` — non-directional
+     - `contextual_background` — non-directional
+     - `ambiguous_or_insufficient` — non-directional default
+   - Use `.catch("ambiguous_or_insufficient")` for parse safety.
+
+3. Frame normalization as LLM-output self-consistency enforcement.
+   - Code must never inspect evidence text, source URL, title, publisher, or natural-language content to decide direction.
+   - The LLM remains the sole semantic authority.
+   - Code may enforce internal consistency of the LLM's structured output: if the LLM says the basis is non-directional, that same item cannot be stored as direct support or direct contradiction.
+   - Log every normalization override for observability and future false-positive review.
+   - Prompt text must instruct the model that non-directional bases must pair with neutral `claimDirection`; code normalization is a safety net, not the primary classifier.
+
+4. Normalize before companion cloning.
+   - `assessEvidenceApplicability()` currently clones neutral evidence into directional claim-local companions when `claimDirectionByClaimId` includes a directional entry.
+   - Basis normalization must run before this clone path so collateral/concern material cannot be amplified into synthetic directional evidence IDs.
+
+5. Scope prompt edits narrowly.
+   - Keep the existing collateral-target rule.
+   - Extend only the output contract and the minimal instruction needed for `directnessJustification`, `directionBasis`, and self-consistency.
+   - Do not broadly rewrite the applicability prompt before the first canary.
+
+### Implementation Plan
+
+1. Update applicability schema in `apps/web/src/lib/analyzer/research-extraction-stage.ts`.
+   - Add `directnessJustification: z.string()`.
+   - Add `directionBasis` on each `claimDirectionByClaimId` entry with the closed enum and safe catch.
+   - Add `directionBasis` to `EvidenceItem` only as claim-local observability / primary mapping convenience; the authoritative direction basis is claim-local.
+
+2. Update `APPLICABILITY_ASSESSMENT` in `apps/web/prompts/claimboundary.prompt.md`.
+   - Add output contract instructions for directness justification and direction basis.
+   - Add self-consistency instruction: non-directional bases require neutral direction.
+   - Keep wording generic and multilingual; no Bolsonaro, Brazil, STF, IACHR, or named benchmark terms.
+
+3. Add structural normalization in `assessEvidenceApplicability()`.
+   - Normalize non-directional bases to neutral before existing claim-local companion clone logic.
+   - Preserve directional bases when directness and direction are internally consistent.
+   - Log normalization override counts and enough structured metadata for admin/debug review without adding semantic code decisions.
+
+4. Tests.
+   - Schema parses valid `directnessJustification` and `directionBasis`.
+   - Invalid/missing direction basis falls back to `ambiguous_or_insufficient`.
+   - `{ claimDirection: "contradicts", directionBasis: "collateral_context" }` normalizes to neutral before cloning.
+   - Directional basis preserves support/contradiction.
+   - Companion clone path carries the normalized basis per claim.
+   - Prompt contract contains the generic output fields and self-consistency rule without benchmark/domain terms.
+   - Run targeted tests, `npm test`, and `npm -w apps/web run build`.
+
+5. Commit, reseed, restart, then canaries.
+   - Follow live-job discipline: commit first, reseed prompts/config if needed, restart affected services.
+   - Mandatory live canaries:
+     1. Bolsonaro EN exact.
+     2. Bolsonaro PT exact.
+     3. Hydrogen EN.
+     4. Plastic EN.
+     5. Asylum 235000 DE.
+   - Optional if budget remains and the first five are interpretable: SVP PDF.
+
+### Expected Fixed Behavior
+
+- Bolsonaro EN should keep the expected three AtomicClaims.
+- `AC_02` and `AC_03` should no longer be dominated by collateral concern / controversy material as direct contradictions.
+- Legitimate direct contradiction must still survive on controls such as plastic.
+- The target is not necessarily zero contradictions; a balanced evidence pool with grounded target-specific contradictions is acceptable.
+- Stage 4 should be evaluated only after Stage 2 evidence buckets are cleaner.
+
 ## Detailed Prompt For Second Claude Reviewer
 
 Use this prompt with Claude Opus or Sonnet:
@@ -285,4 +377,3 @@ Constraints:
 - Preserve multilingual robustness.
 - Do not propose wholesale merge/cherry-pick of the snapshot branch.
 ```
-
