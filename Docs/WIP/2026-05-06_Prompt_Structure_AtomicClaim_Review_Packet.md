@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-06
 **Author:** Codex, Senior Developer
-**Status:** Ready for external architecture review by Claude and Gemini
+**Status:** Reviewed by Gemini / Claude-style reviewers; approved with blocking amendments captured below
 **Related investigation:** `Docs/WIP/2026-05-05_Report_Expectations_vs_Post_Deployed_22_4_Comparison.md`
 
 ## Purpose
@@ -14,6 +14,192 @@ This packet documents the consolidated agent assessment of three improvement ide
 3. Defining and enforcing `AtomicClaim` more strongly.
 
 The target reviewers should assess whether the proposed direction is architecturally sound, whether the sequencing is correct, and whether any proposal risks violating FactHarbor's core rules: no domain-specific hardcoding, no deterministic semantic filters, multilingual robustness, UCM-managed analysis behavior, and prompt edits only with explicit Captain approval.
+
+## Review Consolidation: 2026-05-06
+
+Three independent reviews approved the direction with targeted amendments:
+
+| Reviewer | Disposition | Blocking / required amendments |
+|---|---|---|
+| Gemini, Independent Senior Architect | Approve with conditions | Define exact audit JSON schema before implementation; strongly weight relation-claim exception to avoid over-splitting. |
+| Lead Developer + LLM Expert | Approve with targeted amendments | Add scope-preservation clause; add `splitConfidence`; add `preservedRelationClaims`; specify audit placement after contract validation; add measurable over-splitting gate. |
+| Senior Architect / LLM Expert | Approve with amendments | Operationalize atomicity via "different directional verdicts"; replace free-text `repairGuidance` with structured `splitRecommendation`; include Gate 1 re-entry; use `distinctEvents` as a structural pre-signal; add evidence schema-drift alignment before Stage 2 repair. |
+
+Consolidated decision:
+
+- Phase 1 may proceed only after the exact audit schema, placement, retry loop, and validation matrix below are accepted.
+- Physical prompt splitting remains deferred.
+- Prompt compaction remains deferred except for surgical schema-alignment edits.
+- Stage 2 target-identity work may be designed in parallel, but should ship after Stage 1 so validation runs exercise improved claim shape.
+
+## Accepted AtomicClaim Definition Amendment
+
+The original definition was directionally correct but too abstract. Reviewers warned that "one primary truth condition" and "independently verifiable" can cause either under-splitting or over-splitting unless made operational.
+
+Accepted definition for implementation planning:
+
+> An `AtomicClaim` asserts one proposition about one target path: entity plus process/outcome plus standard or criterion. If two sub-propositions inside a claim can receive different directional verdicts from different evidence, they must be separate `AtomicClaim`s, even if they share the same entity, process, institution, or standard.
+
+Scope-preservation clause:
+
+> When the user's input explicitly treats a multi-phase process, multi-component system, or multi-actor institution as a single unit, the claim remains atomic at that granularity unless the components have materially different truth conditions. Different evidence sources, evaluation difficulty, or process phases alone do not force a split.
+
+Relation-claim exception:
+
+> A relation claim can remain atomic when the relation itself is the truth condition. The audit must distinguish a relation/comparison/temporal assertion from a conjunction of independent assessments. "A happened before B" or "A is more efficient than B" can be one atomic relation claim; "A was lawful and B was fair" is not one relation claim merely because both clauses share an entity or proceeding.
+
+Operational test:
+
+- Split when sub-propositions can be directionally evaluated differently.
+- Preserve when the claim's truth depends on one relation or one whole-unit process assertion.
+- Do not split solely because evidence sources differ.
+- Do not drop low-yield or normative input-authored branches; extract them if thesis-central and let ACS decide recommendation.
+
+## Accepted Audit Placement And Retry Loop
+
+The multi-claim atomicity audit must be a **separate LLM call after contract validation passes**, not merged into `CLAIM_CONTRACT_VALIDATION`.
+
+Reason:
+
+- Contract validation asks whether the accepted claim set preserves the user's input contract.
+- Atomicity audit asks whether each accepted claim is internally atomic.
+- Combining both in one LLM call would add competing objectives to an already dense validation prompt.
+
+Accepted flow:
+
+1. Pass 1 / Pass 2 extraction produces candidate claims.
+2. Gate 1 filters validity.
+3. Contract validation confirms input-contract preservation.
+4. Multi-claim atomicity audit runs on the accepted claim set, using accepted claims plus Pass 1 `distinctEvents` as structural context.
+5. If any finding has `splitConfidence = "high"` and a valid `splitRecommendation`, feed the proposed subclaims as **seeds** into the existing Pass 2 retry/repair path.
+6. Re-run Gate 1.
+7. Re-run contract validation on the repaired set.
+8. Re-run the atomicity audit once, with a bounded retry count. Do not loop indefinitely.
+
+Medium- or low-confidence findings must not trigger automatic repair:
+
+- `high`: triggers Pass 2 repair retry.
+- `medium`: observability only; no automatic repair.
+- `low`: log/ignore unless later evidence shows a repeated issue.
+
+## Accepted Audit Output Contract
+
+The audit output must be structured enough to avoid free-text repair becoming a hidden selector. `repairGuidance` is rejected as the primary contract.
+
+Proposed JSON schema shape for implementation review:
+
+```ts
+type AtomicityAuditOutput = {
+  auditDecision: "pass" | "repair_recommended" | "observe_only";
+  structuralSignals: {
+    acceptedClaimCount: number;
+    distinctEventCount: number;
+    distinctEventsExceededClaims: boolean;
+  };
+  bundledClaimFindings: Array<{
+    originalClaimId: string;
+    splitConfidence: "high" | "medium" | "low";
+    issueType:
+      | "bundled_subpropositions"
+      | "fused_distinct_events"
+      | "overbroad_target_path"
+      | "relation_exception_considered";
+    directionalVerdictRisk: "different_possible" | "same_truth_condition" | "unclear";
+    propositionUnits: Array<{
+      text: string;
+      targetPath: string;
+      standardOrCriterion?: string;
+      processOrOutcomeDimension?: string;
+      canReceiveDifferentDirectionalVerdict: boolean;
+    }>;
+    splitRecommendation?: {
+      originalClaimId: string;
+      proposedSubclaims: string[]; // candidate seed text, not final accepted claims
+      splitReason: string;
+    };
+  }>;
+  preservedRelationClaims: Array<{
+    claimId: string;
+    relationType: "comparison" | "temporal" | "whole_process" | "other";
+    preservationReason: string;
+  }>;
+};
+```
+
+Implementation rules:
+
+- `splitRecommendation.proposedSubclaims` are candidate seeds only.
+- Pass 2 still performs extraction; the audit does not directly create final claims.
+- `missingPropositionUnits` should remain primarily a contract-validation concern, not an atomicity-audit trigger, unless the missing unit is caused by fusing/bundling inside an accepted claim.
+- `preservedRelationClaims` is required for false-positive tracking and relation-exception validation.
+
+## Additional Required Amendments
+
+### Evidence Schema Drift Step
+
+Before or alongside Stage 2 directness/applicability repair, align `EXTRACT_EVIDENCE` prompt category labels with the runtime `EvidenceItem.category` enum values.
+
+Rationale:
+
+- The prompt audit found category labels such as `statistical_data` / `expert_testimony` while runtime code normalizes toward labels such as `statistic`, `expert_quote`, and `evidence`.
+- This is a low-risk surgical prompt/schema alignment and should reduce hidden normalization noise before Stage 2 directness work.
+
+This is not the first Stage 1 atomicity slice unless the implementer touches Stage 2 prompts. It is a prerequisite for credible Stage 2 applicability repair.
+
+### Budget / Over-Splitting Guard
+
+Over-splitting must be measured, not merely warned about.
+
+Validation gate:
+
+- On stable control inputs (`hydrogen-en`, `plastic-en`, `asylum-235000-de`), prepared claim count should not increase by more than 50% relative to the pre-audit baseline.
+- These controls should normally preserve the same claim count.
+- Any >50% increase is a regression signal requiring review before live expansion.
+
+Configuration note:
+
+- Budget enforcement should remain ACS's job.
+- If the audit increases claim counts in legitimate broad inputs, the cap belongs in UCM/ACS configuration, not in a conservative semantic audit that hides real claim structure.
+- If a new tunable is needed, use UCM rather than a hardcoded semantic cap.
+
+### DistinctEvents Pre-Signal
+
+The audit should consume Stage 1 `distinctEvents` as context.
+
+Reason:
+
+- `distinctEvents > acceptedClaims` is a strong structural hint of possible fusion.
+- This is not a deterministic semantic decision; it is a structural pre-signal that helps the LLM focus its audit.
+- The final split/no-split decision remains LLM-powered.
+
+### Heartbeat Headroom
+
+The runner heartbeat / stale-job fix must be designed with headroom for higher legitimate claim counts after atomicity repair. The Portuguese job showed that 103 normalized scopes plus long Stage 3/4 calls can trip stale detection while analysis continues.
+
+## Consolidated Validation Matrix
+
+The first implementation slice needs both focused unit/fixture tests and a small live canary. Captain-defined live inputs remain mandatory for live analysis jobs.
+
+| Case | Input source | Purpose | Live job allowed? |
+|---|---|---|---|
+| `bolsonaro-en` | Captain-defined | Failing anchor; should split proceedings and verdicts. | Yes |
+| `bolsonaro-pt` | Captain-defined | Multilingual control; already splits correctly and must not degrade. | Yes |
+| `bundesrat-rechtskraftig` | Captain-defined | Relation/temporal claim preservation; should not shatter a before/after assertion into useless fragments. | Yes |
+| `bundesrat-simple` | Captain-defined | German relation/temporal variant without `rechtskräftig` anchor. | Yes |
+| `hydrogen-en` | Captain-defined | Stable control; claim count should not inflate. | Yes |
+| `plastic-en` | Captain-defined | Stable broad evaluative control; detects over-splitting/Stage 4 collateral effects. | Yes |
+| German compound-claim fixture | Unit/fixture only unless Captain defines a live input | Tests German coordinated-clause behavior beyond Bundesrat relation cases. | No, unless Captain approves exact live wording |
+| Synthetic relation fixture | Unit/fixture only unless Captain defines a live input | Tests relation-claim exception with comparison/temporal relation. | No, unless Captain approves exact live wording |
+
+Minimal live canary after implementation:
+
+1. `bolsonaro-en`
+2. `bolsonaro-pt`
+3. `bundesrat-rechtskraftig`
+4. `hydrogen-en` or `plastic-en`
+
+Run more only if the first four classify cleanly.
+
 
 ## Current Context
 
@@ -113,7 +299,7 @@ Current failure pattern:
 
 Proposed stronger definition:
 
-> An `AtomicClaim` is one independently verifiable assertion with one primary truth condition. It must have a single main target object or target path, one principal standard or measurable criterion, and one event/process/outcome dimension. If two parts can be supported, contradicted, researched, or assessed differently, they must be separate AtomicClaims unless the user's assertion is explicitly about the relation between those parts.
+> See the accepted reviewed definition in "Accepted AtomicClaim Definition Amendment" above. The authoritative operational test is whether sub-propositions inside a claim can receive different directional verdicts from different evidence, with explicit scope-preservation and relation-claim exceptions.
 
 Operational implications:
 
@@ -125,15 +311,15 @@ Operational implications:
 Recommended implementation direction:
 
 - Add a generic LLM-powered multi-claim atomicity / coverage audit in Stage 1.
-- Run it in or adjacent to contract validation, not only after Gate 1.
+- Run it as a separate LLM call after contract validation passes.
 - It should inspect the whole accepted claim set and each individual accepted claim.
 - It should return structured findings such as:
   - `bundledClaimIds`
-  - `missingPropositionUnits`
   - `fusedPropositionUnits`
-  - `independentlyVerifiableSubclaims`
-  - `repairGuidance`
-- Failed findings should feed the existing Pass 2 retry/repair path with topic-neutral guidance.
+  - `splitConfidence`
+  - `splitRecommendation`
+  - `preservedRelationClaims`
+- High-confidence failed findings should feed candidate split seeds into the existing Pass 2 retry/repair path, then re-enter Gate 1 and contract validation.
 
 **Do not implement this as deterministic text logic.** The audit is semantic and must be LLM-powered.
 
@@ -150,10 +336,13 @@ Recommended implementation direction:
    - Highest expected quality impact.
    - Directly addresses the stable English Bolsonaro structural defect.
    - Must be generic and LLM-powered.
+   - Must use the reviewed schema and retry loop above.
 
 2. **Stage 2 directness / applicability repair second.**
    - Needed because some runs show direct contradiction over-admission even when selected claims are searched.
    - Should use an LLM target-identity bridge audit for high-impact directional evidence.
+   - Design may run in parallel with Stage 1, but shipping should wait until Stage 1 claim-shape validation is available.
+   - Evidence extraction category-label drift should be aligned before or alongside this work.
 
 3. **Runner heartbeat / long-call hardening third.**
    - Needed because the Portuguese final job failed from stale detection while analyzer continued.
@@ -233,10 +422,15 @@ Return blockers, non-blocking findings, architecture assessment, risk/opportunit
 
 ## Current Disposition
 
-Implementation should not start from this packet until at least one independent review confirms or amends:
+The three independent reviews have confirmed the direction and amended the plan. Implementation may proceed from this packet only if the implementer uses the consolidated reviewed plan above, not the original pre-review sketch.
 
-- the exact `AtomicClaim` definition,
-- the audit placement,
-- the structured output contract,
-- the first validation set,
-- and whether any prompt text should change in the first slice.
+Implementation gates:
+
+- Use the reviewed `AtomicClaim` definition with directional-verdict test, scope-preservation clause, and relation-claim exception.
+- Implement the audit as a separate post-contract-validation LLM call.
+- Use structured `splitRecommendation` seeds, not free-text repair guidance.
+- Re-enter Pass 2, Gate 1, contract validation, and one bounded re-audit after high-confidence findings.
+- Include `splitConfidence` and `preservedRelationClaims`.
+- Feed `distinctEvents` into the audit as structural context.
+- Validate against the consolidated matrix before live expansion.
+- Do not physically split prompts in this slice.
