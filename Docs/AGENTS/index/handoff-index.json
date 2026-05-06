@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T08:59:43.781Z",
+  "generatedAt": "2026-05-06T10:19:50.099Z",
   "count": 387,
   "entries": [
     {
@@ -8119,7 +8119,7 @@
       "files_touched": [
         "apps/web/src/lib/analyzer/claim-extraction-stage.ts"
       ],
-      "summary": "Review `validateMultiClaimAtomicity`, `getHighConfidenceMultiClaimAtomicityRepairs`, and the new `CLAIM_MULTI_CLAIM_ATOMICITY_*` sections. Live validation should start only after commit/restart/reseed and should compare prepared claim counts and claim-level verdicts against the expectation doc.",
+      "summary": "Review `validateMultiClaimAtomicity`, `getHighConfidenceMultiClaimAtomicityRepairs`, and the new `CLAIM_MULTI_CLAIM_ATOMICITY_*` sections. The critical guard is that high-confidence repair now requires `inputAuthoredSplitBasis === \"explicit_subpropositions\"`. Remaining work should not add more Stage",
       "governance": {
         "debt_guard": {
           "present": true,
@@ -8131,7 +8131,9 @@
             "options_considered": "revert/quarantine prior changes (rejected; no prior change caused this), extend deterministic structural logic (rejected; semantic text decision), add one bounded LLM audit mechanism reusing existing Stage 1 retry path (chosen).",
             "complexity_budget": "one new Stage 1 audit call, one new repair-guidance section, one bounded retry/re-audit path, focused tests only.",
             "validation": "targeted schema/prompt/pipeline tests passed, full safe `npm test` passed, `npm -w apps/web run build` passed.",
-            "residual_risk": "live report quality unvalidated; added LLM call may affect cost/latency and over-splitting must be checked in canaries."
+            "failed_attempt_recovery": "live Hydrogen control failed under `5a744b1e`; classified as keep + amend, not revert. `ba266a69` adds LLM-output structural guard `inputAuthoredSplitBasis` and prompt guidance against derived-submetric repairs.",
+            "validation_after_amendment": "targeted schema/prompt/pipeline tests passed, full safe `npm test` passed, `npm -w apps/web run build` passed, Hydrogen rerun passed preparation and final report.",
+            "residual_risk": "Bolsonaro EN verdict remains wrong despite fixed claim separation; investigate Stage 2 applicability/directness and Stage 4 verdict aggregation next."
           }
         }
       }

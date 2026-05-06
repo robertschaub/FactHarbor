@@ -473,3 +473,26 @@ Next review focus:
 - Check that high-confidence repair gating is strict enough to avoid speculative over-splitting.
 - Check that relation, temporal, comparison, and whole-process exceptions are prominent enough in the audit prompt.
 - After commit/restart/reseed, live validation should start with the Captain-defined Bolsonaro EN/PT, a German relation/control input, and a simple control input before broad PDF expansion.
+
+### Live Canary Update: 2026-05-06
+
+Commits:
+
+- `5a744b1e` implemented the reviewed Stage 1 multi-claim atomicity audit.
+- `ba266a69` amended the audit after a Hydrogen control failure, adding `inputAuthoredSplitBasis` and a derived-submetric guard so component/measurement/evidence-route splits do not trigger automatic repair.
+
+Jobs used: 5. Remaining budget from the prior 10-job allowance: 5.
+
+| Input | Draft / job | Commit / prompt hash | Prepared / selected | Audit result | Final result | Slice assessment |
+|---|---|---|---:|---|---|---|
+| Bolsonaro EN | `cf1b26f...` / `febfd467...` | `5a744b1e` / `36898dc4...` | 3 / 3 | `observe_only`, high 0, medium 2, retry false | `LEANING-FALSE` 39/44 | Stage 1 atomicity target fixed: proceedings and verdicts separated into 3 claims. Verdict remains bad; this is now Stage 2/Stage 4 quality, not Stage 1 claim-shape. |
+| Bolsonaro PT | `21061bb...` / `ef775c57...` | `5a744b1e` / `36898dc4...` | 3 / 2 | `observe_only`, high 0, medium 3, retry false | `LEANING-TRUE` 67/66 | Multilingual control passed; PT retained the expected 3 prepared claims and no preparation failure. |
+| Bundesrat rechtskraeftig | `ea446985...` / `a8db0a8c...` | `ba266a69` / `0b31c2df...` | 2 / 2 | `pass`, high 0, medium 0, retry false | `MIXED` 52/77 | German temporal/relation control did not over-split; prepared claims separately preserved parliament and people decision gates. |
+| Hydrogen initial control | `016865c...` / no final job | `5a744b1e` / `36898dc4...` | 2 / 0 | `repair_recommended`, high 1, retry true, retry accepted false | Draft `FAILED` | Exposed over-splitting defect: audit treated derived component/submetric measurement routes as high-confidence repair basis. |
+| Hydrogen rerun | `9458631...` / `2c4e29cb...` | `ba266a69` / `0b31c2df...` | 2 / 2 | `pass`, high 0, medium 0, retry false | `FALSE` 11/68 | Fixed the preparation regression; comparison/dimension control now passes audit and produces a valid final report. |
+
+Conclusion:
+
+- The Stage 1 atomicity slice should be considered locally verified for claim-shape correction and over-splitting guard behavior.
+- The remaining Bolsonaro EN final-result regression is not solved by this slice. It should move to the next lane: Stage 2 evidence applicability/directness and Stage 4 verdict aggregation/confidence.
+- Keep the derived-submetric guard in any reviewer packet; it was live-discovered and is necessary before promoting the audit broadly.
