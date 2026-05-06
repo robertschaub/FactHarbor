@@ -1002,6 +1002,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("directnessJustification");
       expect(section).toContain("operative_finding");
       expect(section).toContain("direct_record");
+      expect(section).toContain("A record that someone made an allegation, objection, criticism");
+      expect(section).toContain("non-controlling dissent, minority view, party objection");
       expect(section).toContain("concern_or_position");
       expect(section).toContain("collateral_context");
       expect(section).toContain("procedural_fact");

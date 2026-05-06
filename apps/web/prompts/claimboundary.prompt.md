@@ -2613,9 +2613,9 @@ For every `claimDirectionByClaimId` entry, you must also return `directionBasis`
 
 `directionBasis` classifies WHY you assigned the direction. Use exactly one of these values:
 
-- `"operative_finding"` — the evidence states a target-specific compliance outcome, violation, safeguard, remedy, or operative standards result that directly affects the claim's truth condition.
-- `"direct_record"` — the evidence reports a target-specific measurement, metric value, documented fact, or recorded event that directly bears on the claim.
-- `"concern_or_position"` — the evidence expresses an allegation, concern, non-controlling dissent, opinion, or advocacy position. It does not establish an operative outcome for the target.
+- `"operative_finding"` — the evidence states a target-specific compliance outcome, violation, safeguard, remedy, or operative standards result that directly affects the claim's truth condition. A non-controlling dissent, minority view, party objection, external criticism, or unresolved allegation is not an operative finding merely because it is formally recorded.
+- `"direct_record"` — the evidence reports a target-specific measurement, metric value, documented fact, or recorded event that directly bears on the claim. A record that someone made an allegation, objection, criticism, advocacy statement, dissent, or concern is not a `direct_record` for the underlying allegation; classify the basis as `concern_or_position` unless the evidence itself establishes the target-path fact or an operative body accepted the allegation.
+- `"concern_or_position"` — the evidence expresses or records an allegation, concern, non-controlling dissent, opinion, party position, advocacy position, or unresolved objection. It does not establish an operative outcome for the target.
 - `"collateral_context"` — the evidence concerns a broader institution, parallel inquiry, overlapping actor, sanction episode, or adjacent controversy. It provides context but does not directly evaluate the claim's target.
 - `"procedural_fact"` — the evidence reports a procedural, administrative, or jurisdictional fact without directional force on the claim's truth condition.
 - `"ambiguous"` — the basis is unclear or insufficient to classify.
