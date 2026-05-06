@@ -70,6 +70,20 @@ Current root-cause assessment:
 - The next likely root cause is acquisition/directness quality: after collateral material is neutralized, the pipeline does not retrieve or preserve enough target-specific legal/fair-trial support evidence for AC_02 and AC_03.
 - Stage 4 should remain held until Stage 2 produces a healthier support/contradiction pool.
 
+Offline comparator check after `62f7dc16`:
+- Comparator `91bf6083` (`b5421841`, `LEANING-TRUE` 63 / 52) had a much healthier support pool, not merely a different final aggregation:
+  - AC_01: 17 supports / 0 contradictions.
+  - AC_02: 11 supports / 0 contradictions.
+  - AC_03: 9 supports / 0 contradictions.
+- The comparator acquired or preserved support-heavy source families that current runs mostly miss or underuse: Time.com, Human Rights Watch, Al Jazeera, PBS, Poder360, Lawfare, and OAS safeguards material.
+- Current `7050df80` (`9c5e43b0`, `LEANING-FALSE` 38 / 43) had no Time.com, no Al Jazeera, no Poder360, and only one neutral HRW evidence item. It relied more heavily on Wikipedia, IACHR freedom-expression material, BBC, and preprint/collateral controversy material.
+- Failed route-balancing job `45b31c81` (`e905b9cc`) made this worse: Time.com, HRW, Al Jazeera, PBS, Poder360, and OAS were absent from final evidence; Wikipedia, preprint, and one Brasil de Fato article dominated.
+- Query-level difference:
+  - Comparator queries included broader source-discovery routes such as `IACHR Brazil STF Bolsonaro trial proceedings 2025 fair trial assessment`, `International Commission of Jurists Brazil STF Bolsonaro trial independence judiciary`, and `STF Bolsonaro trial defence rights evidence access closing arguments September 2025`.
+  - Current queries skewed toward official case, procedural irregularity, Moraes/impartiality, IACHR/UN monitoring, dissent, and appellate-review routes.
+  - The reverted route-balancing attempt pushed even more toward official docket/acordao and challenge routes, exhausting query budget without recovering the support sources.
+- Revised hypothesis: the remaining Bolsonaro EN failure is probably a Stage 2 source-route / acquisition / evidence-preservation problem plus residual directness calibration, not a missing generic prompt sentence. Next work should trace where these comparator support sources disappear: query generation, provider ranking, fetch, extraction, applicability, evidence filtering, or final capping.
+
 ### Plastic
 
 Expected:
