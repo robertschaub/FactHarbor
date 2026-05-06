@@ -414,6 +414,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Scope preservation");
       expect(section).toContain("Relation-claim exception");
       expect(section).toContain("Conjunction is not relation");
+      expect(section).toContain("Process-result bundles");
+      expect(section).toContain("both a target process/procedure and its result");
+      expect(section).toContain("shared criteria can still require high-confidence repair");
       expect(section).toContain("Dimension-decomposition caution");
       expect(section).toContain("inputAuthoredSplitBasis");
       expect(section).toContain("derived_submetrics");
