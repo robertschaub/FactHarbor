@@ -1376,7 +1376,7 @@ export async function extractClaims(
     }
   }
 
-  const finalAcceptedClaims = gate1Result.filteredClaims as AtomicClaim[];
+  let finalAcceptedClaims = gate1Result.filteredClaims as AtomicClaim[];
   if (contractValidationEnabled && !areClaimSetsEquivalent(lastContractValidatedClaims, finalAcceptedClaims)) {
     if (finalAcceptedClaims.length === 0) {
       contractValidationSummary = {
@@ -1473,6 +1473,219 @@ export async function extractClaims(
           stageAttribution,
         };
         console.warn("[Stage1] Final accepted claims could not be re-validated; marked as degraded (no silent fail-open).");
+      }
+    }
+  }
+
+  if (
+    contractValidationEnabled &&
+    contractValidationSummary?.preservesContract === true &&
+    contractValidationSummary.rePromptRequired === false &&
+    finalAcceptedClaims.length > 1
+  ) {
+    state.onEvent?.("Auditing accepted multi-claim atomicity...", 31);
+    state.onEvent?.(`LLM call: multi-claim atomicity audit — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+    const auditResult = await validateMultiClaimAtomicity(
+      finalAcceptedClaims,
+      state.originalInput,
+      bestPass2.impliedClaim ?? "",
+      bestPass2.articleThesis ?? "",
+      bestPass2.inputClassification ?? "single_atomic_claim",
+      pipelineConfig,
+      bestPass2.distinctEvents ?? [],
+    );
+    state.llmCalls++;
+
+    const atomicityRepairSeeds = getHighConfidenceMultiClaimAtomicityRepairs(
+      auditResult,
+      finalAcceptedClaims,
+    );
+    const initialAuditSummary = summarizeMultiClaimAtomicityAudit(
+      auditResult,
+      atomicityRepairSeeds,
+      atomicityRepairSeeds.length > 0,
+    );
+    if (initialAuditSummary) {
+      contractValidationSummary.multiClaimAtomicityAudit = initialAuditSummary;
+    }
+
+    if (auditResult && atomicityRepairSeeds.length > 0) {
+      console.info(
+        `[Stage1] Multi-claim atomicity audit found high-confidence bundling in ` +
+        `[${atomicityRepairSeeds.map((seed) => seed.originalClaimId).join(",")}]. Retrying Pass 2 with split seeds.`,
+      );
+
+      try {
+        const atomicityRepairGuidance = await renderMultiClaimAtomicityRepairGuidance(
+          auditResult,
+          atomicityRepairSeeds,
+          finalAcceptedClaims,
+        );
+
+        if (!atomicityRepairGuidance) {
+          throw new Error("CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE prompt section could not be loaded");
+        }
+
+        const atomicityRetryPass2 = await runPass2(
+          state.originalInput,
+          [],
+          pipelineConfig,
+          currentDate,
+          state,
+          atomicityRepairGuidance,
+          pass1.inferredGeography,
+          pass1.detectedLanguage,
+          "context_refinement",
+          salienceCommitment,
+        );
+        state.llmCalls++;
+
+        const atomicityRetryGate1Input = selectClaimsForGate1(
+          atomicityRetryPass2.atomicClaims as unknown as AtomicClaim[],
+          centralityThreshold,
+          effectiveMax,
+          undefined,
+          atomicityRetryPass2.inputClassification,
+          structuralInputType,
+          state.inputType,
+          [],
+        );
+        const atomicityRetryGate1 = await runGate1Validation(
+          atomicityRetryGate1Input,
+          pipelineConfig,
+          currentDate,
+          state.originalInput,
+        );
+        state.llmCalls++;
+
+        state.onEvent?.("Validating atomicity-repair claim contract fidelity...", 32);
+        state.onEvent?.(`LLM call: claim contract validation — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+        const {
+          result: atomicityRetryContractResult,
+          attempts: atomicityRetryContractValidationAttempts,
+        } = await runClaimContractValidationWithRetry(() =>
+          validateClaimContract(
+            atomicityRetryGate1.filteredClaims as AtomicClaim[],
+            state.originalInput,
+            atomicityRetryPass2.impliedClaim ?? "",
+            atomicityRetryPass2.articleThesis ?? "",
+            atomicityRetryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            salienceCommitment,
+            atomicityRetryPass2.distinctEvents ?? [],
+          )
+        );
+        state.llmCalls += atomicityRetryContractValidationAttempts;
+
+        const evaluatedAtomicityRetryContract = atomicityRetryContractResult
+          ? await applyApprovedSingleClaimChallenges(
+            atomicityRetryGate1.filteredClaims as AtomicClaim[],
+            evaluateClaimContractValidation(
+              atomicityRetryContractResult,
+              atomicityRetryGate1.filteredClaims as AtomicClaim[],
+            ),
+            state.originalInput,
+            atomicityRetryPass2.impliedClaim ?? "",
+            atomicityRetryPass2.articleThesis ?? "",
+            atomicityRetryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            state,
+            32,
+            salienceCommitment,
+            atomicityRetryPass2.distinctEvents ?? [],
+          )
+          : undefined;
+
+        let retryAuditResult: MultiClaimAtomicityAuditResult | undefined;
+        let retryRepairSeeds: MultiClaimAtomicitySplitRecommendation[] = [];
+        if (
+          evaluatedAtomicityRetryContract &&
+          !evaluatedAtomicityRetryContract.effectiveRePromptRequired &&
+          atomicityRetryGate1.filteredClaims.length > 1
+        ) {
+          state.onEvent?.("Re-auditing repaired multi-claim atomicity...", 32);
+          state.onEvent?.(`LLM call: multi-claim atomicity re-audit — ${getModelForTask("context_refinement", undefined, pipelineConfig).modelName}`, -1);
+          retryAuditResult = await validateMultiClaimAtomicity(
+            atomicityRetryGate1.filteredClaims as AtomicClaim[],
+            state.originalInput,
+            atomicityRetryPass2.impliedClaim ?? "",
+            atomicityRetryPass2.articleThesis ?? "",
+            atomicityRetryPass2.inputClassification ?? "single_atomic_claim",
+            pipelineConfig,
+            atomicityRetryPass2.distinctEvents ?? [],
+          );
+          state.llmCalls++;
+          retryRepairSeeds = getHighConfidenceMultiClaimAtomicityRepairs(
+            retryAuditResult,
+            atomicityRetryGate1.filteredClaims as AtomicClaim[],
+          );
+        }
+
+        const retryAccepted =
+          !!evaluatedAtomicityRetryContract &&
+          !evaluatedAtomicityRetryContract.effectiveRePromptRequired &&
+          atomicityRetryGate1.filteredClaims.length > 1 &&
+          !!retryAuditResult &&
+          retryRepairSeeds.length === 0;
+
+        if (retryAccepted) {
+          gate1Result = atomicityRetryGate1;
+          bestPass2 = atomicityRetryPass2;
+          finalAcceptedClaims = atomicityRetryGate1.filteredClaims as AtomicClaim[];
+          stageAttribution = "retry";
+          contractValidationSummary = evaluatedAtomicityRetryContract.summary;
+          contractValidationSummary.stageAttribution = stageAttribution;
+          contractValidationSummary.multiClaimAtomicityAudit = summarizeMultiClaimAtomicityAudit(
+            retryAuditResult ?? auditResult,
+            retryRepairSeeds,
+            true,
+            true,
+          );
+          console.info(
+            `[Stage1] Multi-claim atomicity repair validated cleanly with ${finalAcceptedClaims.length} accepted claim(s).`,
+          );
+        } else {
+          const failedAuditSummary = summarizeMultiClaimAtomicityAudit(
+            retryAuditResult ?? auditResult,
+            retryRepairSeeds.length > 0 ? retryRepairSeeds : atomicityRepairSeeds,
+            true,
+            false,
+          );
+          contractValidationSummary = {
+            ...(evaluatedAtomicityRetryContract?.summary ?? contractValidationSummary),
+            preservesContract: false,
+            rePromptRequired: true,
+            failureMode: "contract_violated",
+            stageAttribution: "retry",
+            multiClaimAtomicityRetryReason: "multi_claim_atomicity_repair_failed",
+            ...(failedAuditSummary ? { multiClaimAtomicityAudit: failedAuditSummary } : {}),
+            summary: [
+              "Multi-claim atomicity audit found high-confidence bundled propositions. The corrective retry did not pass the bounded contract + re-audit loop, so the claim contract is not safe to ship.",
+              evaluatedAtomicityRetryContract?.summary.summary,
+            ].filter(Boolean).join(" "),
+          };
+          console.info("[Stage1] Multi-claim atomicity repair did not validate cleanly; marking contract state as failed.");
+        }
+      } catch (auditRepairErr) {
+        const failedAuditSummary = summarizeMultiClaimAtomicityAudit(
+          auditResult,
+          atomicityRepairSeeds,
+          true,
+          false,
+        );
+        contractValidationSummary = {
+          ...contractValidationSummary,
+          preservesContract: false,
+          rePromptRequired: true,
+          failureMode: "contract_violated",
+          multiClaimAtomicityRetryReason: "multi_claim_atomicity_repair_failed",
+          ...(failedAuditSummary ? { multiClaimAtomicityAudit: failedAuditSummary } : {}),
+          summary: [
+            "Multi-claim atomicity audit found high-confidence bundled propositions, but the corrective retry failed.",
+            auditRepairErr instanceof Error ? auditRepairErr.message : String(auditRepairErr),
+          ].filter(Boolean).join(" "),
+        };
+        console.warn("[Stage1] Multi-claim atomicity repair failed:", auditRepairErr);
       }
     }
   }
@@ -3058,6 +3271,59 @@ const SingleClaimAtomicityOutputSchema = z.object({
   coordinatedBranchFinding: SingleClaimCoordinatedBranchFindingSchema,
 });
 
+const MultiClaimAtomicityPropositionUnitSchema = z.object({
+  text: z.string().catch(""),
+  targetPath: z.string().catch(""),
+  standardOrCriterion: z.string().optional().catch(undefined),
+  processOrOutcomeDimension: z.string().optional().catch(undefined),
+  canReceiveDifferentDirectionalVerdict: z.boolean().catch(false),
+});
+
+const MultiClaimAtomicitySplitRecommendationSchema = z.object({
+  originalClaimId: z.string().catch(""),
+  proposedSubclaims: z.array(z.string()).catch([]),
+  splitReason: z.string().catch(""),
+});
+
+const MultiClaimAtomicityFindingSchema = z.object({
+  originalClaimId: z.string().catch(""),
+  splitConfidence: z.enum(["high", "medium", "low"]).catch("low"),
+  issueType: z.enum([
+    "bundled_subpropositions",
+    "fused_distinct_events",
+    "overbroad_target_path",
+    "relation_exception_considered",
+  ]).catch("bundled_subpropositions"),
+  directionalVerdictRisk: z.enum([
+    "different_possible",
+    "same_truth_condition",
+    "unclear",
+  ]).catch("unclear"),
+  propositionUnits: z.array(MultiClaimAtomicityPropositionUnitSchema).catch([]),
+  splitRecommendation: MultiClaimAtomicitySplitRecommendationSchema.optional().catch(undefined),
+});
+
+const MultiClaimAtomicityPreservedRelationSchema = z.object({
+  claimId: z.string().catch(""),
+  relationType: z.enum(["comparison", "temporal", "whole_process", "other"]).catch("other"),
+  preservationReason: z.string().catch(""),
+});
+
+export const MultiClaimAtomicityAuditOutputSchema = z.object({
+  auditDecision: z.enum(["pass", "repair_recommended", "observe_only"]).catch("pass"),
+  structuralSignals: z.object({
+    acceptedClaimCount: z.number().int().min(0).catch(0),
+    distinctEventCount: z.number().int().min(0).catch(0),
+    distinctEventsExceededClaims: z.boolean().catch(false),
+  }).catch({
+    acceptedClaimCount: 0,
+    distinctEventCount: 0,
+    distinctEventsExceededClaims: false,
+  }),
+  bundledClaimFindings: z.array(MultiClaimAtomicityFindingSchema).catch([]),
+  preservedRelationClaims: z.array(MultiClaimAtomicityPreservedRelationSchema).catch([]),
+});
+
 export interface ClaimContractValidationResult {
   inputAssessment: z.infer<typeof ClaimContractInputAssessmentSchema>;
   claims: Array<z.infer<typeof ClaimContractClaimSchema>>;
@@ -3074,6 +3340,9 @@ export interface SingleClaimAtomicityValidationResult {
   singleClaimAssessment: z.infer<typeof SingleClaimAtomicityAssessmentSchema>;
   coordinatedBranchFinding: z.infer<typeof SingleClaimCoordinatedBranchFindingSchema>;
 }
+
+export type MultiClaimAtomicityAuditResult = z.infer<typeof MultiClaimAtomicityAuditOutputSchema>;
+export type MultiClaimAtomicitySplitRecommendation = z.infer<typeof MultiClaimAtomicitySplitRecommendationSchema>;
 
 export async function runClaimContractValidationWithRetry(
   runValidation: () => Promise<ClaimContractValidationResult | undefined>,
@@ -3265,6 +3534,69 @@ export function buildMultiEventRepromptGuidance(params: {
   }
 
   return guidanceParts.join(" ");
+}
+
+export function getHighConfidenceMultiClaimAtomicityRepairs(
+  auditResult: MultiClaimAtomicityAuditResult | undefined,
+  claims: Array<Pick<AtomicClaim, "id">>,
+): MultiClaimAtomicitySplitRecommendation[] {
+  if (!auditResult || auditResult.auditDecision !== "repair_recommended") {
+    return [];
+  }
+
+  const claimIds = new Set(claims.map((claim) => claim.id));
+  return (auditResult.bundledClaimFindings ?? [])
+    .filter((finding) =>
+      finding.splitConfidence === "high" &&
+      finding.directionalVerdictRisk === "different_possible" &&
+      claimIds.has(finding.originalClaimId) &&
+      finding.splitRecommendation?.originalClaimId === finding.originalClaimId,
+    )
+    .map((finding) => finding.splitRecommendation!)
+    .map((recommendation) => ({
+      ...recommendation,
+      proposedSubclaims: recommendation.proposedSubclaims
+        .map((subclaim) => subclaim.trim())
+        .filter((subclaim) => subclaim.length > 0),
+    }))
+    .filter((recommendation) => recommendation.proposedSubclaims.length >= 2);
+}
+
+export function summarizeMultiClaimAtomicityAudit(
+  auditResult: MultiClaimAtomicityAuditResult | undefined,
+  repairSeeds: MultiClaimAtomicitySplitRecommendation[],
+  retryTriggered: boolean,
+  retryAccepted?: boolean,
+): NonNullable<ContractValidationSummary["multiClaimAtomicityAudit"]> | undefined {
+  if (!auditResult) {
+    return undefined;
+  }
+
+  const countByConfidence = (confidence: "high" | "medium" | "low"): number =>
+    (auditResult.bundledClaimFindings ?? [])
+      .filter((finding) => finding.splitConfidence === confidence)
+      .length;
+
+  const repairedClaimIds = repairSeeds.map((seed) => seed.originalClaimId);
+  const preservedRelationClaimIds = (auditResult.preservedRelationClaims ?? [])
+    .map((claim) => claim.claimId)
+    .filter((claimId) => claimId.trim().length > 0);
+
+  return {
+    ran: true,
+    auditDecision: auditResult.auditDecision,
+    highConfidenceFindingCount: countByConfidence("high"),
+    mediumConfidenceFindingCount: countByConfidence("medium"),
+    lowConfidenceFindingCount: countByConfidence("low"),
+    repairedClaimIds,
+    preservedRelationClaimIds,
+    retryTriggered,
+    ...(retryAccepted !== undefined ? { retryAccepted } : {}),
+    summary: repairSeeds.length > 0
+      ? `multi_claim_atomicity_repair_recommended: ${repairedClaimIds.join(",")}`
+      : `multi_claim_atomicity_${auditResult.auditDecision}`,
+    structuralSignals: auditResult.structuralSignals,
+  };
 }
 
 export function shouldRunMultiEventReprompt(
@@ -3569,6 +3901,22 @@ function buildDistinctEventsContextJson(
       count: distinctEvents?.length ?? 0,
       events: distinctEvents ?? [],
     },
+    null,
+    2,
+  );
+}
+
+function buildAtomicClaimsAuditJson(claims: AtomicClaim[]): string {
+  return JSON.stringify(
+    claims.map((claim) => ({
+      claimId: claim.id,
+      statement: claim.statement,
+      category: claim.category,
+      thesisRelevance: claim.thesisRelevance ?? "direct",
+      claimDirection: claim.claimDirection ?? "supports_thesis",
+      freshnessRequirement: claim.freshnessRequirement ?? "none",
+      expectedEvidenceProfile: claim.expectedEvidenceProfile ?? {},
+    })),
     null,
     2,
   );
@@ -4128,6 +4476,142 @@ async function validateSingleClaimAtomicity(
     });
     return undefined;
   }
+}
+
+async function validateMultiClaimAtomicity(
+  claims: AtomicClaim[],
+  originalInput: string,
+  impliedClaim: string,
+  articleThesis: string,
+  inputClassification: string,
+  pipelineConfig: PipelineConfig,
+  distinctEvents?: CBClaimUnderstanding["distinctEvents"],
+): Promise<MultiClaimAtomicityAuditResult | undefined> {
+  if (claims.length <= 1) return undefined;
+
+  const model = getModelForTask("context_refinement", undefined, pipelineConfig);
+  const llmCallStartedAt = Date.now();
+
+  try {
+    const rendered = await loadAndRenderSection("claimboundary", "CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT", {
+      analysisInput: originalInput,
+      inputClassification,
+      impliedClaim,
+      articleThesis,
+      distinctEventsContextJson: buildDistinctEventsContextJson(distinctEvents),
+      atomicClaimsJson: buildAtomicClaimsAuditJson(claims),
+    });
+
+    if (!rendered) {
+      recordLLMCall({
+        taskType: "other",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Multi-claim atomicity audit prompt section could not be loaded",
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    const result = await generateText({
+      model: model.model,
+      messages: [
+        {
+          role: "system",
+          content: rendered.content,
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+        },
+        {
+          role: "user" as const,
+          content: "Audit the accepted multi-claim set for internal AtomicClaim bundling.",
+        },
+      ],
+      temperature: pipelineConfig?.claimContractValidationTemperature ?? 0.1,
+      output: Output.object({ schema: MultiClaimAtomicityAuditOutputSchema }),
+      providerOptions: getStructuredOutputProviderOptions(
+        pipelineConfig.llmProvider ?? "anthropic",
+      ),
+    });
+
+    const parsed = extractStructuredOutput(result);
+    if (!parsed) {
+      recordLLMCall({
+        taskType: "other",
+        provider: model.provider,
+        modelName: model.modelName,
+        promptTokens: result.usage?.inputTokens ?? 0,
+        completionTokens: result.usage?.outputTokens ?? 0,
+        totalTokens: result.usage?.totalTokens ?? 0,
+        durationMs: Date.now() - llmCallStartedAt,
+        success: false,
+        schemaCompliant: false,
+        retries: 0,
+        errorMessage: "Multi-claim atomicity audit returned no structured output",
+        timestamp: new Date(),
+      });
+      return undefined;
+    }
+
+    const validated = MultiClaimAtomicityAuditOutputSchema.parse(parsed);
+    validated.structuralSignals = {
+      acceptedClaimCount: claims.length,
+      distinctEventCount: distinctEvents?.length ?? 0,
+      distinctEventsExceededClaims: (distinctEvents?.length ?? 0) > claims.length,
+    };
+
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: result.usage?.inputTokens ?? 0,
+      completionTokens: result.usage?.outputTokens ?? 0,
+      totalTokens: result.usage?.totalTokens ?? 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: true,
+      schemaCompliant: true,
+      retries: 0,
+      timestamp: new Date(),
+    });
+
+    return validated;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    recordLLMCall({
+      taskType: "other",
+      provider: model.provider,
+      modelName: model.modelName,
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      durationMs: Date.now() - llmCallStartedAt,
+      success: false,
+      schemaCompliant: false,
+      retries: 0,
+      errorMessage: `Multi-claim atomicity audit failed: ${errorMessage}`,
+      timestamp: new Date(),
+    });
+    return undefined;
+  }
+}
+
+async function renderMultiClaimAtomicityRepairGuidance(
+  auditResult: MultiClaimAtomicityAuditResult,
+  repairSeeds: MultiClaimAtomicitySplitRecommendation[],
+  claims: AtomicClaim[],
+): Promise<string | undefined> {
+  const rendered = await loadAndRenderSection("claimboundary", "CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE", {
+    atomicityAuditJson: JSON.stringify(auditResult, null, 2),
+    splitRecommendationsJson: JSON.stringify(repairSeeds, null, 2),
+    atomicClaimsJson: buildAtomicClaimsAuditJson(claims),
+  });
+  return rendered?.content;
 }
 
 /**

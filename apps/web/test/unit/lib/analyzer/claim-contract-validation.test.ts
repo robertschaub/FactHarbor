@@ -19,9 +19,12 @@ import {
   buildContractRetrySaliencePlan,
   evaluateSingleClaimAtomicityValidation,
   getPrioritySalienceAnchorsForAtomicityValidation,
+  getHighConfidenceMultiClaimAtomicityRepairs,
+  MultiClaimAtomicityAuditOutputSchema,
   runClaimContractValidationWithRetry,
   selectPreferredSingleClaimContractChallenge,
   selectPreferredSingleClaimAtomicityValidation,
+  summarizeMultiClaimAtomicityAudit,
   shouldRunSingleClaimAtomicityValidation,
   type ClaimContractValidationResult,
   type EvaluatedClaimContractValidation,
@@ -276,6 +279,154 @@ describe("runClaimContractValidationWithRetry", () => {
     expect(calls).toBe(2);
     expect(result.attempts).toBe(2);
     expect(result.result).toBeUndefined();
+  });
+});
+
+describe("MultiClaimAtomicityAuditOutputSchema", () => {
+  const claims = [
+    { id: "AC_01" },
+    { id: "AC_02" },
+  ] as AtomicClaim[];
+
+  it("parses high-confidence split recommendations", () => {
+    const result = MultiClaimAtomicityAuditOutputSchema.parse({
+      auditDecision: "repair_recommended",
+      structuralSignals: {
+        acceptedClaimCount: 2,
+        distinctEventCount: 3,
+        distinctEventsExceededClaims: true,
+      },
+      bundledClaimFindings: [
+        {
+          originalClaimId: "AC_02",
+          splitConfidence: "high",
+          issueType: "bundled_subpropositions",
+          directionalVerdictRisk: "different_possible",
+          propositionUnits: [
+            {
+              text: "Unit A",
+              targetPath: "Entity / process / criterion A",
+              canReceiveDifferentDirectionalVerdict: true,
+            },
+            {
+              text: "Unit B",
+              targetPath: "Entity / outcome / criterion B",
+              canReceiveDifferentDirectionalVerdict: true,
+            },
+          ],
+          splitRecommendation: {
+            originalClaimId: "AC_02",
+            proposedSubclaims: ["Seed A", "Seed B"],
+            splitReason: "Different directional verdict risk",
+          },
+        },
+      ],
+      preservedRelationClaims: [],
+    });
+
+    const repairs = getHighConfidenceMultiClaimAtomicityRepairs(result, claims);
+
+    expect(repairs).toEqual([
+      {
+        originalClaimId: "AC_02",
+        proposedSubclaims: ["Seed A", "Seed B"],
+        splitReason: "Different directional verdict risk",
+      },
+    ]);
+  });
+
+  it("does not trigger repair for medium-confidence observations", () => {
+    const result = MultiClaimAtomicityAuditOutputSchema.parse({
+      auditDecision: "observe_only",
+      structuralSignals: {
+        acceptedClaimCount: 2,
+        distinctEventCount: 2,
+        distinctEventsExceededClaims: false,
+      },
+      bundledClaimFindings: [
+        {
+          originalClaimId: "AC_02",
+          splitConfidence: "medium",
+          issueType: "overbroad_target_path",
+          directionalVerdictRisk: "unclear",
+          propositionUnits: [],
+          splitRecommendation: {
+            originalClaimId: "AC_02",
+            proposedSubclaims: ["Seed A", "Seed B"],
+            splitReason: "Possible split",
+          },
+        },
+      ],
+      preservedRelationClaims: [],
+    });
+
+    expect(getHighConfidenceMultiClaimAtomicityRepairs(result, claims)).toEqual([]);
+  });
+
+  it("requires valid claim IDs and at least two seed subclaims", () => {
+    const result = MultiClaimAtomicityAuditOutputSchema.parse({
+      auditDecision: "repair_recommended",
+      structuralSignals: {
+        acceptedClaimCount: 2,
+        distinctEventCount: 2,
+        distinctEventsExceededClaims: false,
+      },
+      bundledClaimFindings: [
+        {
+          originalClaimId: "AC_99",
+          splitConfidence: "high",
+          issueType: "bundled_subpropositions",
+          directionalVerdictRisk: "different_possible",
+          propositionUnits: [],
+          splitRecommendation: {
+            originalClaimId: "AC_99",
+            proposedSubclaims: ["Seed A", "Seed B"],
+            splitReason: "Invalid ID",
+          },
+        },
+        {
+          originalClaimId: "AC_01",
+          splitConfidence: "high",
+          issueType: "bundled_subpropositions",
+          directionalVerdictRisk: "different_possible",
+          propositionUnits: [],
+          splitRecommendation: {
+            originalClaimId: "AC_01",
+            proposedSubclaims: ["Seed A"],
+            splitReason: "Only one seed",
+          },
+        },
+      ],
+      preservedRelationClaims: [],
+    });
+
+    expect(getHighConfidenceMultiClaimAtomicityRepairs(result, claims)).toEqual([]);
+  });
+
+  it("summarizes preserved relation claims and retry state", () => {
+    const result = MultiClaimAtomicityAuditOutputSchema.parse({
+      auditDecision: "pass",
+      structuralSignals: {
+        acceptedClaimCount: 2,
+        distinctEventCount: 2,
+        distinctEventsExceededClaims: false,
+      },
+      bundledClaimFindings: [],
+      preservedRelationClaims: [
+        {
+          claimId: "AC_01",
+          relationType: "comparison",
+          preservationReason: "relation is the truth condition",
+        },
+      ],
+    });
+
+    const summary = summarizeMultiClaimAtomicityAudit(result, [], false);
+
+    expect(summary?.ran).toBe(true);
+    expect(summary?.auditDecision).toBe("pass");
+    expect(summary?.preservedRelationClaimIds).toEqual(["AC_01"]);
+    expect(summary?.retryTriggered).toBe(false);
   });
 });
 

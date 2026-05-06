@@ -9423,6 +9423,17 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               reasoning: "",
             },
           };
+        case 8:
+          return {
+            auditDecision: "pass",
+            structuralSignals: {
+              acceptedClaimCount: 3,
+              distinctEventCount: 0,
+              distinctEventsExceededClaims: false,
+            },
+            bundledClaimFindings: [],
+            preservedRelationClaims: [],
+          };
         default:
           throw new Error(`Unexpected LLM call #${llmCallIndex}`);
       }
@@ -9449,7 +9460,7 @@ describe("Stage 1: extractClaims reprompt loop", () => {
     const result = await extractClaims(state);
     expect(result.atomicClaims.map((claim) => claim.id)).toEqual(["AC_01", "AC_02", "AC_04"]);
     expect(result.atomicClaims.find((claim) => claim.id === "AC_04")?.statement).toContain("rechtskräftig");
-    expect(llmCallIndex).toBe(7);
+    expect(llmCallIndex).toBe(8);
     expect(result.contractValidationSummary).toMatchObject({
       ran: true,
       preservesContract: true,
@@ -9461,6 +9472,11 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         anchorText: "rechtskräftig",
         preservedInClaimIds: ["AC_04"],
         validPreservedIds: ["AC_04"],
+      },
+      multiClaimAtomicityAudit: {
+        ran: true,
+        auditDecision: "pass",
+        retryTriggered: false,
       },
     });
   });
@@ -10455,6 +10471,17 @@ describe("Stage 1: extractClaims reprompt loop", () => {
               { claimId: "AC_03", passedOpinion: false, passedSpecificity: false, passedFidelity: true, reasoning: "evaluative but thesis-direct" },
             ],
           };
+        case 5:
+          return {
+            auditDecision: "pass",
+            structuralSignals: {
+              acceptedClaimCount: 3,
+              distinctEventCount: 0,
+              distinctEventsExceededClaims: false,
+            },
+            bundledClaimFindings: [],
+            preservedRelationClaims: [],
+          };
         default:
           throw new Error(`Unexpected LLM call #${llmCallIndex}`);
       }
@@ -10491,8 +10518,13 @@ describe("Stage 1: extractClaims reprompt loop", () => {
         presentInInput: true,
         validPreservedIds: ["AC_01", "AC_02", "AC_03"],
       },
+      multiClaimAtomicityAudit: {
+        ran: true,
+        auditDecision: "pass",
+        retryTriggered: false,
+      },
     });
-    expect(llmCallIndex).toBe(4);
+    expect(llmCallIndex).toBe(5);
   });
 
   it("should persist full salience status including mode when salience commitment succeeds", async () => {

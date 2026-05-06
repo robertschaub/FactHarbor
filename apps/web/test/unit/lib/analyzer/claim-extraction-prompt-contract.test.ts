@@ -358,6 +358,110 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT", () => {
+    const auditVars: Record<string, string> = {
+      analysisInput: "Entity A completed Process P and Outcome Q met Criterion R.",
+      inputClassification: "multi_assertion_input",
+      impliedClaim: "The input asserts a process and an outcome assessment.",
+      articleThesis: "The thesis depends on whether both asserted units are preserved.",
+      distinctEventsContextJson: JSON.stringify(
+        {
+          count: 2,
+          events: [
+            { name: "Process P", date: "", description: "Input-authored process unit" },
+            { name: "Outcome Q", date: "", description: "Input-authored outcome unit" },
+          ],
+        },
+        null,
+        2,
+      ),
+      atomicClaimsJson: JSON.stringify(
+        [
+          {
+            claimId: "AC_01",
+            statement: "Entity A completed Process P.",
+            thesisRelevance: "direct",
+            claimDirection: "supports_thesis",
+          },
+          {
+            claimId: "AC_02",
+            statement: "Outcome Q met Criterion R.",
+            thesisRelevance: "direct",
+            claimDirection: "supports_thesis",
+          },
+        ],
+        null,
+        2,
+      ),
+    };
+
+    it("section exists and resolves its variables", () => {
+      const section = extractSection(promptContent, "CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT");
+      expect(section, "Section ## CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT not found").not.toBeNull();
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, auditVars);
+      expect(
+        unresolved,
+        `Unresolved variables in CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT: ${unresolved.join(", ")}`,
+      ).toEqual([]);
+    });
+
+    it("locks in the directional-verdict test and relation-preservation contract", () => {
+      const section = extractSection(promptContent, "CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT");
+      expect(section).not.toBeNull();
+      expect(section).toContain("different directional verdicts");
+      expect(section).toContain("different evidence");
+      expect(section).toContain("Scope preservation");
+      expect(section).toContain("Relation-claim exception");
+      expect(section).toContain("Conjunction is not relation");
+      expect(section).toContain("candidate seeds for Pass 2 re-extraction");
+      expect(section).toContain('"splitConfidence": "high"');
+      expect(section).toContain("preservedRelationClaims");
+      expect(section).toContain("directionalVerdictRisk");
+      expect(section).toContain("splitRecommendation");
+      expect(section).toContain("Do not include `splitRecommendation` for low-confidence observations");
+    });
+  });
+
+  describe("CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE", () => {
+    const repairVars: Record<string, string> = {
+      splitRecommendationsJson: JSON.stringify(
+        [
+          {
+            originalClaimId: "AC_02",
+            proposedSubclaims: ["Seed A", "Seed B"],
+            splitReason: "Different directional verdict risk",
+          },
+        ],
+        null,
+        2,
+      ),
+      atomicityAuditJson: JSON.stringify({ auditDecision: "repair_recommended" }, null, 2),
+      atomicClaimsJson: JSON.stringify([{ claimId: "AC_02", statement: "Bundled seed candidate" }], null, 2),
+    };
+
+    it("section exists and resolves its variables", () => {
+      const section = extractSection(promptContent, "CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE");
+      expect(section, "Section ## CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE not found").not.toBeNull();
+      if (!section) return;
+      const { unresolved } = renderWithVars(section, repairVars);
+      expect(
+        unresolved,
+        `Unresolved variables in CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE: ${unresolved.join(", ")}`,
+      ).toEqual([]);
+    });
+
+    it("keeps split recommendations as seeds rather than final accepted claims", () => {
+      const section = extractSection(promptContent, "CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE");
+      expect(section).not.toBeNull();
+      expect(section).toContain("candidate seeds, not final accepted claims");
+      expect(section).toContain("Pass 2 must still perform extraction");
+      expect(section).toContain("Preserve relation, comparison, temporal, and whole-process claims");
+      expect(section).toContain("Do not keep a bundled whole-claim version alongside its corrected subclaims");
+      expect(section).toContain("Do not add evidence-derived details");
+    });
+  });
+
   describe("broad public-language total handling", () => {
     it("claim extraction keeps comparison profiles bilateral and anchored to umbrella quantities", () => {
       const section = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");

@@ -434,3 +434,42 @@ Implementation gates:
 - Feed `distinctEvents` into the audit as structural context.
 - Validate against the consolidated matrix before live expansion.
 - Do not physically split prompts in this slice.
+
+## Implementation Status: 2026-05-06
+
+Status: implemented in source and prompt contracts; not yet live-canary validated.
+
+Implemented:
+
+- Added a separate Stage 1 multi-claim atomicity audit after contract validation succeeds and the accepted claim set has more than one claim.
+- Added structured audit output with `splitConfidence`, `directionalVerdictRisk`, `splitRecommendation`, and `preservedRelationClaims`.
+- Added high-confidence repair routing through Pass 2 candidate seeds, Gate 1, contract validation, and one bounded re-audit.
+- Added contract summary observability for audit decision, finding counts, repaired claim IDs, preserved relation claim IDs, retry trigger, retry acceptance, and structural signals.
+- Added prompt sections `CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT` and `CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE` to `claimboundary.prompt.md`.
+- Added focused schema/helper tests, prompt contract tests, frontmatter drift coverage, and updated Stage 1 pipeline tests for the new audit call.
+
+Deliberately not changed:
+
+- No physical prompt split.
+- No broad prompt compaction.
+- No Stage 2 directness/applicability repair.
+- No evidence category schema-drift alignment yet.
+- No Stage 3/runner heartbeat hardening.
+- No Stage 4 verdict repair.
+- No deterministic semantic text rules.
+- No live analysis jobs from this slice yet.
+
+Verification run:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/claim-contract-validation.test.ts`
+- `npm -w apps/web test -- test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts test/unit/lib/analyzer/prompt-frontmatter-drift.test.ts`
+- `npm -w apps/web test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`
+- `npm test`
+- `npm -w apps/web run build`
+
+Next review focus:
+
+- Confirm the new audit remains a Stage 1 validity/atomicity authority and does not become a selector.
+- Check that high-confidence repair gating is strict enough to avoid speculative over-splitting.
+- Check that relation, temporal, comparison, and whole-process exceptions are prominent enough in the audit prompt.
+- After commit/restart/reseed, live validation should start with the Captain-defined Bolsonaro EN/PT, a German relation/control input, and a simple control input before broad PDF expansion.

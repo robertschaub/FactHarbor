@@ -1455,6 +1455,24 @@ export interface CBClaimUnderstanding {
     failureMode?: "contract_violated" | "validator_unavailable";
     anchorRetryReason?: string;
     atomicityRetryReason?: string;
+    multiClaimAtomicityRetryReason?: string;
+    multiClaimAtomicityAudit?: {
+      ran: boolean;
+      auditDecision: "pass" | "repair_recommended" | "observe_only";
+      highConfidenceFindingCount: number;
+      mediumConfidenceFindingCount: number;
+      lowConfidenceFindingCount: number;
+      repairedClaimIds: string[];
+      preservedRelationClaimIds: string[];
+      retryTriggered: boolean;
+      retryAccepted?: boolean;
+      summary: string;
+      structuralSignals?: {
+        acceptedClaimCount: number;
+        distinctEventCount: number;
+        distinctEventsExceededClaims: boolean;
+      };
+    };
     truthConditionAnchor?: {
       presentInInput: boolean;
       anchorText: string;

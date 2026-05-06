@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-05T20:28:52.536Z",
-  "count": 385,
+  "generatedAt": "2026-05-06T08:59:43.781Z",
+  "count": 387,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8085,6 +8102,39 @@
       ],
       "files_touched": [],
       "summary": "Start from 2026-05-05T08:01:38.0358927+02:00 or the next recorded automation timestamp. Recent evidence set is doc-only, so there is no bug candidate to carry forward from this pass."
+    },
+    {
+      "file": "2026-05-06_Senior_Developer_Stage1_Multi_Claim_Atomicity_Audit.md",
+      "date": "2026-05-06",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "stage1",
+        "multi",
+        "claim",
+        "atomicity",
+        "audit"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/claim-extraction-stage.ts"
+      ],
+      "summary": "Review `validateMultiClaimAtomicity`, `getHighConfidenceMultiClaimAtomicityRepairs`, and the new `CLAIM_MULTI_CLAIM_ATOMICITY_*` sections. Live validation should start only after commit/restart/reseed and should compare prepared claim counts and claim-level verdicts against the expectation doc.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "task_classification": "bugfix/regression quality fix, Full Path applied.",
+            "root_cause": "existing Stage 1 contract validation and single-claim atomicity machinery did not audit internal bundling inside multi-claim accepted sets; the single-claim validator intentionally exits for `claims.length !== 1`.",
+            "options_considered": "revert/quarantine prior changes (rejected; no prior change caused this), extend deterministic structural logic (rejected; semantic text decision), add one bounded LLM audit mechanism reusing existing Stage 1 retry path (chosen).",
+            "complexity_budget": "one new Stage 1 audit call, one new repair-guidance section, one bounded retry/re-audit path, focused tests only.",
+            "validation": "targeted schema/prompt/pipeline tests passed, full safe `npm test` passed, `npm -w apps/web run build` passed.",
+            "residual_risk": "live report quality unvalidated; added LLM call may affect cost/latency and over-splitting must be checked in canaries."
+          }
+        }
+      }
     }
   ]
 }

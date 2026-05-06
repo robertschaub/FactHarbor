@@ -22,6 +22,9 @@ variables:
   - maxRecommendedClaims
   - anchorText
   - salienceBindingContextJson
+  - distinctEventsContextJson
+  - atomicityAuditJson
+  - splitRecommendationsJson
 requiredSections:
   - "CLAIM_EXTRACTION_PASS1"
   - "CLAIM_SALIENCE_COMMITMENT"
@@ -29,6 +32,8 @@ requiredSections:
   - "CLAIM_EXTRACTION_PASS2_BINDING_APPENDIX"
   - "CLAIM_CONTRACT_VALIDATION"
   - "CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION"
+  - "CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT"
+  - "CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE"
   - "CLAIM_CONTRACT_VALIDATION_BINDING_APPENDIX"
   - "CLAIM_SELECTION_RECOMMENDATION"
   - "CLAIM_CONTRACT_REPAIR"
@@ -769,6 +774,136 @@ Field constraints:
 - `coordinatedBranchFinding.presentInInput`: whether the input actually contains bundled sub-propositions relevant to this audit.
 - `coordinatedBranchFinding.bundledInSingleClaim`: whether those bundled sub-propositions were left fused inside the single extracted claim.
 - `coordinatedBranchFinding.branchLabels`: zero or more short labels naming the independently verifiable branches or comparison sides identified for this audit. Use an empty array only when no such bundled sub-propositions are present.
+
+---
+
+## CLAIM_MULTI_CLAIM_ATOMICITY_AUDIT
+
+You are a multi-claim AtomicClaim auditor. Your task is to inspect an already contract-approved claim set and decide whether any individual accepted `AtomicClaim` still bundles multiple independently assessable proposition units.
+
+### Task
+
+Audit only internal atomicity. Do not judge truth, source quality, selection priority, check-worthiness, or downstream budget.
+
+An `AtomicClaim` asserts one proposition about one target path: entity plus process/outcome plus standard or criterion. If two sub-propositions inside one accepted claim can receive different directional verdicts from different evidence, they must be separate `AtomicClaim`s even when they share the same entity, process, institution, topic, or standard.
+
+Use the detected distinct-events inventory as advisory structural context only. It can help focus the audit, but it is not ground truth and it does not authorize adding claims that are not asserted by the original input.
+
+### Rules
+
+1. **Directional-verdict test.** Split only when sub-propositions inside one claim could be directionally evaluated differently. If one unit could be supported while another could be contradicted or remain unverified, the combined claim is not atomic.
+2. **Scope preservation.** When the input explicitly treats a multi-phase process, multi-component system, or multi-actor institution as one unit, preserve that granularity unless the components have materially different truth conditions. Different evidence sources, evaluation difficulty, or process phases alone do not force a split.
+3. **Relation-claim exception.** A relation, comparison, temporal order, dependency, or whole-process assertion can remain atomic when the relation itself is the truth condition. Do not split a claim merely because it mentions multiple objects that are only meaningful as a relation.
+4. **Conjunction is not relation.** A claim is not relation-atomic merely because two independent assessments are joined by a shared entity, broad topic, or grammatical conjunction. If it asserts separate compliance/outcome/process/status dimensions that can resolve differently, recommend a split.
+5. **Seed, do not decide.** Proposed subclaims are candidate seeds for Pass 2 re-extraction. They are not final accepted claims and must not drop input-authored proposition units.
+6. **Confidence discipline.** Use `splitConfidence: "high"` only when the split is required by the directional-verdict test and the proposed seeds preserve the original input's thesis-central proposition units. Use `"medium"` for plausible but uncertain split pressure, and `"low"` for weak observations.
+7. **Preserved relation tracking.** When you considered a possible split but preserved the claim because it is a relation, comparison, temporal, or whole-process claim, record it in `preservedRelationClaims`.
+8. **No topic-specific assumptions.** Apply the same criteria in any language and any subject area. Preserve the input language in proposed subclaim seeds where possible.
+
+### Input
+
+Original input:
+`${analysisInput}`
+
+Detected distinct events / branch candidates from extraction (advisory, input-derived):
+```json
+${distinctEventsContextJson}
+```
+
+Input classification:
+`${inputClassification}`
+
+Implied claim:
+`${impliedClaim}`
+
+Article thesis:
+`${articleThesis}`
+
+Accepted AtomicClaims:
+${atomicClaimsJson}
+
+### Output
+
+Return a JSON object:
+```json
+{
+  "auditDecision": "pass",
+  "structuralSignals": {
+    "acceptedClaimCount": 2,
+    "distinctEventCount": 0,
+    "distinctEventsExceededClaims": false
+  },
+  "bundledClaimFindings": [
+    {
+      "originalClaimId": "AC_02",
+      "splitConfidence": "high",
+      "issueType": "bundled_subpropositions",
+      "directionalVerdictRisk": "different_possible",
+      "propositionUnits": [
+        {
+          "text": "candidate proposition unit text",
+          "targetPath": "entity/process/outcome/criterion path",
+          "standardOrCriterion": "optional criterion",
+          "processOrOutcomeDimension": "optional dimension",
+          "canReceiveDifferentDirectionalVerdict": true
+        }
+      ],
+      "splitRecommendation": {
+        "originalClaimId": "AC_02",
+        "proposedSubclaims": [
+          "candidate seed claim 1",
+          "candidate seed claim 2"
+        ],
+        "splitReason": "short explanation of the different directional verdict risk"
+      }
+    }
+  ],
+  "preservedRelationClaims": [
+    {
+      "claimId": "AC_01",
+      "relationType": "temporal",
+      "preservationReason": "the relation itself is the truth condition"
+    }
+  ]
+}
+```
+
+Field constraints:
+- `auditDecision`: `"repair_recommended"` only when at least one finding has `splitConfidence: "high"` and a complete `splitRecommendation`. Use `"observe_only"` for medium/low findings without automatic repair. Use `"pass"` when no finding remains.
+- `originalClaimId` and `claimId` must match IDs in the accepted AtomicClaims list.
+- `directionalVerdictRisk`: use `"different_possible"` only when the listed proposition units could receive different verdict directions; otherwise use `"same_truth_condition"` or `"unclear"`.
+- `splitRecommendation.proposedSubclaims`: candidate seeds only. Preserve the input language and do not introduce evidence-derived details.
+- Do not include `splitRecommendation` for low-confidence observations or preserved relation claims.
+
+---
+
+## CLAIM_MULTI_CLAIM_ATOMICITY_REPAIR_GUIDANCE
+
+MULTI-CLAIM ATOMICITY REPAIR:
+
+The previous accepted claim set passed contract validation, but a separate AtomicClaim audit found high-confidence internal bundling in one or more accepted claims. Re-extract from the original input using the split recommendations below as candidate seeds.
+
+Split recommendations (candidate seeds, not final accepted claims):
+```json
+${splitRecommendationsJson}
+```
+
+Atomicity audit result:
+```json
+${atomicityAuditJson}
+```
+
+Previous accepted AtomicClaims:
+${atomicClaimsJson}
+
+Repair requirements:
+- Treat proposed subclaims as seeds only. Pass 2 must still perform extraction and preserve the original input contract.
+- Split a prior claim only when the seed units can receive different directional verdicts from different evidence.
+- Preserve relation, comparison, temporal, and whole-process claims when the relation itself is the truth condition.
+- Do not drop other thesis-central proposition units from the previous accepted claim set.
+- Do not keep a bundled whole-claim version alongside its corrected subclaims.
+- Do not add evidence-derived details, external facts, source titles, dates, or scope narrowing not asserted by the input.
+- Preserve the original input language in claim statements wherever possible.
 
 ---
 
