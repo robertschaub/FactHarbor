@@ -652,8 +652,53 @@ export async function assessEvidenceApplicability(
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
     let neutralClaimDirectionClones = 0;
+    let neutralClaimLocalBasisClones = 0;
     let neutralCompanionClones = 0;
     let directionalCompanionClones = 0;
+
+    const buildNeutralClaimLocalItems = (
+      item: EvidenceItem,
+      claimIds: string[],
+      claimDirections: Map<string, DirectionWithBasis>,
+    ): EvidenceItem[] => {
+      const uniqueClaimIds = Array.from(new Set(claimIds));
+      if (uniqueClaimIds.length === 0) return [];
+
+      const entries = uniqueClaimIds.map((claimId) => ({
+        claimId,
+        entry: claimDirections.get(claimId) ?? {
+          claimDirection: "neutral" as ClaimDirection,
+          directionBasis: item.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
+          directnessJustification: item.directnessJustification,
+        },
+      }));
+
+      const first = entries[0].entry;
+      const canShareNeutralItem = entries.every(({ entry }) =>
+        entry.directionBasis === first.directionBasis &&
+        (entry.directnessJustification ?? "") === (first.directnessJustification ?? ""),
+      );
+
+      if (canShareNeutralItem) {
+        return [{
+          ...item,
+          claimDirection: "neutral",
+          directionBasis: first.directionBasis,
+          directnessJustification: first.directnessJustification,
+          relevantClaimIds: uniqueClaimIds,
+        }];
+      }
+
+      neutralClaimLocalBasisClones += entries.length;
+      return entries.map(({ claimId, entry }) => ({
+        ...item,
+        id: `${item.id}__neutral_${claimId}`,
+        claimDirection: "neutral",
+        directionBasis: entry.directionBasis,
+        directnessJustification: entry.directnessJustification,
+        relevantClaimIds: [claimId],
+      }));
+    };
 
     const assessed = evidenceItems.flatMap((item, index) => {
       const applicability = classificationMap.get(index) ?? "direct";
@@ -728,9 +773,7 @@ export async function assessEvidenceApplicability(
         });
         if (directionalClaimIds.length > 0) {
           const neutralClaimIds = relevantClaimIds.filter((claimId) => !directionalClaimIds.includes(claimId));
-          const neutralItem = neutralClaimIds.length > 0
-            ? [{ ...assessedItem, relevantClaimIds: neutralClaimIds }]
-            : [];
+          const neutralItem = buildNeutralClaimLocalItems(assessedItem, neutralClaimIds, claimDirections);
           const directionalItems = directionalClaimIds.map((claimId) => {
             const entry = claimDirections.get(claimId)!;
             neutralClaimDirectionClones++;
@@ -751,11 +794,13 @@ export async function assessEvidenceApplicability(
         if (relevantClaimIds.length > existingClaimIds.length) {
           claimMappingExtensions += relevantClaimIds.length - existingClaimIds.length;
         }
-        return [
-          relevantClaimIds.length > 0
-            ? { ...assessedItem, relevantClaimIds }
-            : assessedItem,
-        ];
+        return relevantClaimIds.length > 0
+          ? buildNeutralClaimLocalItems(assessedItem, relevantClaimIds, claimDirections)
+          : [{
+              ...assessedItem,
+              claimDirection: "neutral" as ClaimDirection,
+              directionBasis: assessedItem.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
+            }];
       }
 
       const companionClaimIds = assessedClaimIds.filter((claimId) =>
@@ -796,6 +841,7 @@ export async function assessEvidenceApplicability(
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
+      `Neutral claim-local basis clones: ${neutralClaimLocalBasisClones}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
       `Direction-basis normalizations: ${directionBasisNormalizations}. ` +

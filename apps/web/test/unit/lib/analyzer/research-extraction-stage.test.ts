@@ -1256,12 +1256,79 @@ describe("Research Extraction Stage", () => {
       expect(result[0]).toMatchObject({
         id: "EV_01",
         claimDirection: "neutral",
+        directionBasis: "concern_only",
+        directnessJustification: "concern without operative target outcome",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
       expect(result[0].id).not.toContain("__supports_");
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
         expect.stringContaining("supports+concern_only"),
+      );
+    });
+
+    it("preserves distinct neutral basis metadata for each claim-local mapping", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Target process complied with a domestic standard" }),
+        createClaim({ id: "AC_02", statement: "Target process met an international standard" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source contains separate procedural context for two claim routes.",
+          claimDirection: "neutral",
+          relevantClaimIds: ["AC_01", "AC_02"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01", "AC_02"],
+            claimDirectionByClaimId: [
+              {
+                claimId: "AC_01",
+                claimDirection: "neutral",
+                directionBasis: "procedural_fact_only",
+                directnessJustification: "procedural fact without domestic standards outcome",
+              },
+              {
+                claimId: "AC_02",
+                claimDirection: "neutral",
+                directionBasis: "concern_only",
+                directnessJustification: "concern without international standards outcome",
+              },
+            ],
+            reasoning: "the item is neutral for both claims but for different claim-local reasons",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(2);
+      expect(result).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          id: "EV_01__neutral_AC_01",
+          claimDirection: "neutral",
+          directionBasis: "procedural_fact_only",
+          directnessJustification: "procedural fact without domestic standards outcome",
+          relevantClaimIds: ["AC_01"],
+        }),
+        expect.objectContaining({
+          id: "EV_01__neutral_AC_02",
+          claimDirection: "neutral",
+          directionBasis: "concern_only",
+          directnessJustification: "concern without international standards outcome",
+          relevantClaimIds: ["AC_02"],
+        }),
+      ]));
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral claim-local basis clones: 2."),
       );
     });
 
