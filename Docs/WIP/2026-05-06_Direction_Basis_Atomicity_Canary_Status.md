@@ -3,11 +3,13 @@
 ## Current branch state
 
 - Branch: `main`
-- Latest local commit: `62f7dc16 Revert "fix(stage2): balance rule-governed evidence routes"`
-- Effective analysis changes under test: through `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`
+- Latest local commit: `04dbc99f fix(analyzer): preserve prepared acquisition trace`
+- Effective analysis changes under test: through `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`, plus acquisition-trace observability in `f9406499` and `04dbc99f`.
 - Local `main` is ahead of `origin/main`.
 - No push performed in this slice.
-- Jobs budget consumed in this slice: 11 of 12. Remaining budget: 1.
+- Jobs budget consumed in the first slice: 11 of 12.
+- Additional Captain budget allocated after trace plan review: 10 jobs.
+- Additional jobs consumed so far: 2 (`e3eca1d3...`, `56671233...`). Remaining additional budget: 8.
 
 ## Implemented commits
 
@@ -18,6 +20,8 @@
 | `f683a605` | Prevents the atomicity audit from treating extractor-generated submetrics, broad standards, or requirement classes as input-authored split bases. | Keep. It fixed Stage 1 preparation failures for Bolsonaro PT and Plastic. |
 | `9c5e43b0` | Tightens Stage 2 direction-basis taxonomy: records of allegations, objections, criticism, or non-controlling positions should not be `direct_record`. | Keep for now, but needs further validation. It improved Plastic from `LEANING-TRUE` to `MIXED`, but Bolsonaro EN still failed. |
 | `e905b9cc` | Attempted to balance rule-governed target-path support and standards-challenge routes in Stage 1 profiles, Stage 2 queries, and Stage 2 directness justification. | Reverted by `62f7dc16`. The focused tests/build passed, but the Bolsonaro EN live canary regressed from `LEANING-FALSE` 38 / 43 to `UNVERIFIED` 48 / 36 and emitted `query_budget_exhausted`. |
+| `f9406499` | Adds bounded acquisition source/evidence transition telemetry to result JSON (`analysisObservability.acquisitionTrace`) for preliminary search, Stage 2 search, fetch, raw extraction, probative filtering, per-source cap, and admission transitions. | Keep. Non-behavioral diagnostic change. Targeted analyzer test and build passed; full `npm test` had one runner-concurrency timeout that passed in isolation. |
+| `04dbc99f` | Preserves prepared Stage 1 acquisition trace through draft-backed runs so automatic/interactive reports include preliminary-search trace. | Keep. Non-behavioral diagnostic change. Build and targeted tests passed. |
 
 ## Verification commands
 
@@ -44,6 +48,8 @@
 | Bolsonaro EN after direction taxonomy fix | `cc6d2b2d...` | `7050df80...` | `9c5e43b0` | `LEANING-FALSE` 38 / 43 | 3 / 3 | Bad. Direction-basis taxonomy neutralized more collateral material, but the remaining evidence pool lacked enough operative support and still produced a false-side low-confidence result. |
 | Plastic after direction taxonomy fix | `4d87b0f0...` | `7b0d4c56...` | `9c5e43b0` | `MIXED` 48 / 70 | 3 / 3 | Improved from `LEANING-TRUE`, but still not the expected false-side verdict. |
 | Bolsonaro EN after route-balancing attempt | `d319911c...` | `45b31c81...` | `e905b9cc` | `UNVERIFIED` 48 / 36 | 3 / 3 | Failed validation. The patch increased broad official/case-docket route pressure but did not recover enough target-specific support. It worsened the verdict and exhausted query budget, so it was reverted. |
+| Bolsonaro EN trace without prepared Stage 1 trace | `c676f787...` | `e3eca1d3...` | `f9406499` | `LEANING-FALSE` 40 / 40 | 3 / 3 | Diagnostic only. Confirmed Stage 2 trace works but exposed that prepared Stage 1 trace was not persisted in draft-backed jobs. |
+| Bolsonaro EN full acquisition trace | `a42c4d84...` | `56671233...` | `04dbc99f` | `LEANING-FALSE` 34 / 24 | 3 / 3 | Diagnostic result. Confirms support-source loss happens primarily before final evidence: Time.com, Al Jazeera, and Poder360 never entered sourceTrace; HRW appeared only as relevance-rejected Stage 2 results; OAS contradiction material was fetched/extracted/admitted. |
 
 ## Evidence from completed reports
 
@@ -84,6 +90,28 @@ Offline comparator check after `62f7dc16`:
   - The reverted route-balancing attempt pushed even more toward official docket/acordao and challenge routes, exhausting query budget without recovering the support sources.
 - Revised hypothesis: the remaining Bolsonaro EN failure is probably a Stage 2 source-route / acquisition / evidence-preservation problem plus residual directness calibration, not a missing generic prompt sentence. Next work should trace where these comparator support sources disappear: query generation, provider ranking, fetch, extraction, applicability, evidence filtering, or final capping.
 
+Trace findings from `56671233...` (`04dbc99f`):
+- `analysisObservability.acquisitionTrace` was complete (`sourceTrace=163`, `evidenceTrace=198`, `truncated=false`).
+- Missing comparator support families:
+  - `time.com`: absent from sourceTrace entirely.
+  - `aljazeera.com`: absent from sourceTrace entirely.
+  - `poder360.com.br`: absent from sourceTrace entirely.
+  - `hrw.org`: appeared in Stage 2 results 3 times but had `relevanceAccepted=false`, so it was never fetched.
+- Preserved/used families:
+  - `pbs.org`: appeared in preliminary search, fetched, extracted 7 evidence items, final pool had 10 seeded PBS items (4 support / 6 neutral).
+  - `lawfaremedia.org`: appeared in preliminary search, fetched, extracted 5 neutral items, final pool had 5 neutral items.
+  - `oas.org`: appeared in Stage 2, 9 results / 4 relevant / 4 fetched / 13 extracted; final pool had 5 OAS contradictions with `directionBasis=operative_finding`.
+- Current Stage 2 query shape remained skewed toward official/procedural/violation routes:
+  - `STF Bolsonaro trial procedural compliance Brazilian constitutional law`
+  - `Justice Moraes investigative judicial role impartiality violation international law`
+  - `Bolsonaro 27-year sentence proportionality international norms coup conviction criticism`
+- Comparator `91bf6083` used broader support-discovery routes:
+  - `STF Bolsonaro trial ICCPR Article 14 fair trial standards compliance`
+  - `STF Bolsonaro trial defence rights evidence access closing arguments September 2025`
+  - `IACHR Brazil STF Bolsonaro trial proceedings 2025 fair trial assessment`
+  - `International Commission of Jurists Brazil STF Bolsonaro trial independence judiciary`
+- Lowest-confidence area in current evidence: the system does retrieve some PBS/Lawfare support/context from preliminary search, but the missing Time/Al Jazeera/Poder360/HRW families are primarily absent at query/provider/relevance stages, not final Stage 4 citation selection.
+
 ### Plastic
 
 Expected:
@@ -115,10 +143,13 @@ Current root-cause assessment:
 
 1. Keep the four effective local commits through `9c5e43b0` for now. The first three clearly fix observed Stage 1 / structural contract issues. The fourth improves Plastic and moves the taxonomy in the correct architectural direction, but it needs more work.
 2. Keep the revert `62f7dc16`. Do not reapply `e905b9cc` or stack another broad prompt-route rule on top of it without new source-level evidence.
-3. Do not spend the final job until a narrower verifier-backed hypothesis is ready. One job remains in the current budget.
-4. Next investigation lane should compare source acquisition and applicability between current bad Bolsonaro EN jobs and the best comparator job:
-   - Identify which support sources existed in the earlier good job but are absent, discarded, capped, or neutralized now.
-   - Trace whether loss happens at query generation, provider result ranking, fetch/extraction, applicability, evidence filtering, or final capping.
-   - Prefer structural observability or replay tooling before another prompt rewrite.
-5. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
-6. Treat Plastic and Asylum as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
+3. Keep acquisition-trace observability (`f9406499`, `04dbc99f`) as diagnostic substrate unless reviewers find a simpler trace path. It is additive and does not change analysis decisions.
+4. Do not run another batch yet. The next live job should be gated on a narrow, reviewed hypothesis because two additional Bolsonaro EN jobs confirmed the failure and produced usable trace.
+5. Candidate next fix surface is query/source-route generation, not Stage 4. However, prompt edits require Captain approval and should be narrow. A broad route-balancing attempt already failed and was reverted.
+6. Before editing query-generation behavior, get reviewer agreement on whether to:
+   - adjust the `GENERATE_QUERIES` prompt for rule-governed standards to preserve at least one broad support/discovery route and one target-record route;
+   - adjust Stage 1 preliminary routing beyond Pass 1 search hints and claim-statement truncation;
+   - adjust relevance classification for HRW-like results that are currently rejected; or
+   - leave behavior unchanged and collect one more non-Bolsonaro control trace.
+7. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
+8. Treat Plastic and Asylum as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
