@@ -23,6 +23,7 @@
 
 import {
   CONFIDENCE_TIER_MIN,
+  DIRECTIONAL_BASES,
   INSUFFICIENT_CONFIDENCE_MAX,
   type AnalysisWarning,
   type AtomicClaim,
@@ -83,6 +84,8 @@ type VerdictPromptEvidenceItem = Pick<
   | "statement"
   | "category"
   | "claimDirection"
+  | "directionBasis"
+  | "directnessJustification"
   | "applicability"
   | "sourceId"
   | "sourceUrl"
@@ -113,6 +116,8 @@ function toVerdictPromptEvidenceItems(
     statement: item.statement,
     category: item.category,
     claimDirection: item.claimDirection,
+    directionBasis: item.directionBasis,
+    directnessJustification: item.directnessJustification,
     applicability: item.applicability,
     sourceId: item.sourceId,
     sourceUrl: item.sourceUrl,
@@ -135,6 +140,8 @@ type DirectionValidationEvidencePoolItem = {
   id: string;
   statement: string;
   claimDirection?: EvidenceItem["claimDirection"];
+  directionBasis?: EvidenceItem["directionBasis"];
+  directnessJustification?: EvidenceItem["directnessJustification"];
   applicability?: EvidenceItem["applicability"];
 };
 
@@ -145,6 +152,8 @@ function toDirectionValidationEvidencePool(
     id: item.id,
     statement: item.statement,
     claimDirection: item.claimDirection,
+    directionBasis: item.directionBasis,
+    directnessJustification: item.directnessJustification,
     applicability: item.applicability,
   }));
 }
@@ -2513,6 +2522,8 @@ type NeutralCitationAdjudicationCase = {
     sourceType?: SourceType;
     probativeValue?: EvidenceItem["probativeValue"];
     applicability?: EvidenceItem["applicability"];
+    directionBasis?: EvidenceItem["directionBasis"];
+    directnessJustification?: EvidenceItem["directnessJustification"];
     evidenceScope?: EvidenceItem["evidenceScope"];
     sourceUrl?: string;
     storedClaimDirection?: EvidenceItem["claimDirection"];
@@ -2559,6 +2570,10 @@ function isSingleClaimScopedEvidence(item: EvidenceItem, claimId: string): boole
     && item.relevantClaimIds[0] === claimId;
 }
 
+function hasDirectionalAdjudicationBasis(item: EvidenceItem): boolean {
+  return item.directionBasis === undefined || DIRECTIONAL_BASES.has(item.directionBasis);
+}
+
 function buildNeutralCitationAdjudicationCases(
   verdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
@@ -2591,6 +2606,7 @@ function buildNeutralCitationAdjudicationCases(
           || item.claimDirection !== "neutral"
           || item.applicability !== "direct"
           || !isSingleClaimScopedEvidence(item, collapse.claimId)
+          || !hasDirectionalAdjudicationBasis(item)
         ) {
           return null;
         }
@@ -2602,6 +2618,8 @@ function buildNeutralCitationAdjudicationCases(
           sourceType: item.sourceType,
           probativeValue: item.probativeValue,
           applicability: item.applicability,
+          directionBasis: item.directionBasis,
+          directnessJustification: item.directnessJustification,
           evidenceScope: item.evidenceScope,
           sourceUrl: item.sourceUrl,
         };
@@ -2636,6 +2654,7 @@ function buildNeutralCitationAdjudicationCases(
         item.claimDirection === "neutral"
         && item.applicability === "direct"
         && isSingleClaimScopedEvidence(item, verdict.claimId)
+        && hasDirectionalAdjudicationBasis(item)
         && !existingCandidateIds.has(item.id),
       )
       .map((item): NeutralCitationCandidate => ({
@@ -2645,6 +2664,8 @@ function buildNeutralCitationAdjudicationCases(
         sourceType: item.sourceType,
         probativeValue: item.probativeValue,
         applicability: item.applicability,
+        directionBasis: item.directionBasis,
+        directnessJustification: item.directnessJustification,
         evidenceScope: item.evidenceScope,
         sourceUrl: item.sourceUrl,
       }));
@@ -2696,6 +2717,8 @@ function buildNeutralCitationAdjudicationCases(
           sourceType: item.sourceType,
           probativeValue: item.probativeValue,
           applicability: item.applicability,
+          directionBasis: item.directionBasis,
+          directnessJustification: item.directnessJustification,
           evidenceScope: item.evidenceScope,
           sourceUrl: item.sourceUrl,
         };
@@ -2724,7 +2747,8 @@ function buildNeutralCitationAdjudicationCases(
       .filter((item) =>
         item.claimDirection === "neutral"
         && item.applicability === "direct"
-        && isSingleClaimScopedEvidence(item, verdict.claimId),
+        && isSingleClaimScopedEvidence(item, verdict.claimId)
+        && hasDirectionalAdjudicationBasis(item),
       )
       .map((item): NeutralCitationCandidate => ({
         evidenceId: item.id,
@@ -2732,6 +2756,8 @@ function buildNeutralCitationAdjudicationCases(
         sourceType: item.sourceType,
         probativeValue: item.probativeValue,
         applicability: item.applicability,
+        directionBasis: item.directionBasis,
+        directnessJustification: item.directnessJustification,
         evidenceScope: item.evidenceScope,
         sourceUrl: item.sourceUrl,
       }));

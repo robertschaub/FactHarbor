@@ -535,6 +535,34 @@ describe("reportLanguage propagation (Proposal 2)", () => {
     expect(capturedPayload.atomicClaims?.[0]?.freshnessRequirement).toBe("current_snapshot");
   });
 
+  it("passes direction basis metadata to VERDICT_ADVOCATE evidence items", async () => {
+    const claims = [createAtomicClaim()];
+    const evidence = [createEvidenceItem({
+      id: "EV_01",
+      directionBasis: "concern_or_position",
+      directnessJustification: "LLM classified this as a concern without target-specific bridge.",
+    })];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let capturedPayload: any = null;
+    const mockLLM = vi.fn(async (key: string, payload: any) => {
+      if (key === "VERDICT_ADVOCATE") {
+        capturedPayload = payload;
+        return [advocateResponse()];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    expect(capturedPayload?.evidenceItems?.[0]).toMatchObject({
+      id: "EV_01",
+      directionBasis: "concern_or_position",
+      directnessJustification: "LLM classified this as a concern without target-specific bridge.",
+    });
+  });
+
   it("should NOT include reportLanguage in payload when not set on config", async () => {
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem({ id: "EV_01" })];
@@ -1231,6 +1259,42 @@ describe("validateVerdicts (Step 5)", () => {
     expect(result).toEqual(verdicts);
   });
 
+  it("passes direction basis metadata to VERDICT_DIRECTION_VALIDATION evidence pools", async () => {
+    const verdicts = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 75,
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: [],
+    })];
+    const evidence = [createEvidenceItem({
+      id: "EV_01",
+      relevantClaimIds: ["AC_01"],
+      directionBasis: "direct_record",
+      directnessJustification: "Directly records the target proceeding safeguard.",
+    })];
+
+    let capturedPool: any[] | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        const payloadVerdicts = input.verdicts as Array<{ evidencePool?: any[] }>;
+        capturedPool = payloadVerdicts[0]?.evidencePool;
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM);
+
+    expect(capturedPool?.[0]).toMatchObject({
+      id: "EV_01",
+      directionBasis: "direct_record",
+      directnessJustification: "Directly records the target proceeding safeguard.",
+    });
+  });
+
   it("adjudicates direct neutral citations before final citation-integrity downgrade", async () => {
     const verdicts = [
       createCBVerdict({
@@ -1245,13 +1309,16 @@ describe("validateVerdicts (Step 5)", () => {
       createEvidenceItem({
         id: "EV_NEUTRAL",
         claimDirection: "neutral",
+        directionBasis: "direct_record",
+        directnessJustification: "Directly records the target decision outcome.",
         applicability: "direct",
         relevantClaimIds: ["AC_01"],
       }),
     ];
     const warnings: AnalysisWarning[] = [];
+    let adjudicationPayload: any;
 
-    const mockLLM = vi.fn(async (key: string) => {
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
         return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
       }
@@ -1259,6 +1326,7 @@ describe("validateVerdicts (Step 5)", () => {
         return [{ claimId: "AC_01", directionValid: true, issues: [] }];
       }
       if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        adjudicationPayload = input;
         return {
           adjudications: [{
             claimId: "AC_01",
@@ -1305,10 +1373,91 @@ describe("validateVerdicts (Step 5)", () => {
       expect.objectContaining({ adjudicationCases: expect.any(Array) }),
       expect.objectContaining({ tier: "budget" }),
     );
+    expect(adjudicationPayload.adjudicationCases[0].candidates[0]).toMatchObject({
+      evidenceId: "EV_NEUTRAL",
+      directionBasis: "direct_record",
+      directnessJustification: "Directly records the target decision outcome.",
+    });
     expect(evidence[0].claimDirection).toBe("contradicts");
     expect(result[0].contradictingEvidenceIds).toEqual(["EV_NEUTRAL"]);
     expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
+  });
+
+  it("does not adjudicate neutral concern evidence into a directional citation", async () => {
+    const verdicts = [
+      createCBVerdict({
+        claimId: "AC_01",
+        truthPercentage: 25,
+        verdict: "MOSTLY-FALSE",
+        supportingEvidenceIds: [],
+        contradictingEvidenceIds: [],
+      }),
+    ];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_CONCERN",
+        claimDirection: "neutral",
+        directionBasis: "concern_or_position",
+        directnessJustification: "Concern about adjacent institutional conduct without target-path bridge.",
+        applicability: "direct",
+        relevantClaimIds: ["AC_01"],
+      }),
+    ];
+    const warnings: AnalysisWarning[] = [];
+
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
+        throw new Error("Non-directional basis should not be adjudicated");
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const boundary = createClaimBoundary();
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      DEFAULT_VERDICT_STAGE_CONFIG,
+      warnings,
+      {
+        claims: [claim],
+        boundaries: [boundary],
+        coverageMatrix: buildCoverageMatrix([claim], [boundary], evidence),
+        deferredCitationIntegrityCollapses: [{
+          claimId: "AC_01",
+          collapsedSide: "contradicting",
+          truthPercentage: 25,
+          droppedCitations: [{
+            id: "EV_CONCERN",
+            bucket: "contradicting",
+            reason: "neutral_claim_direction",
+            claimDirection: "neutral",
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+          }],
+          movedCitations: [],
+          remainingSupportingCount: 0,
+          remainingContradictingCount: 0,
+        }] as any,
+      },
+    );
+
+    expect(mockLLM).not.toHaveBeenCalledWith(
+      "VERDICT_CITATION_DIRECTION_ADJUDICATION",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(evidence[0].claimDirection).toBe("neutral");
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
   });
 
   it("adjudicates direct citation bucket mismatches before integrity normalization", async () => {

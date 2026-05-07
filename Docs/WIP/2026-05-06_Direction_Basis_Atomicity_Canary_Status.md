@@ -177,3 +177,43 @@ Current root-cause assessment:
 8. If Captain approves the prompt slice: commit first, restart/reseed, run two EN canaries and one PT control only. Stop immediately if EN still admits collateral direct contradictions for AC_02/AC_03.
 9. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
 10. Treat Plastic, Asylum, and PT AC_03 selection as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
+
+## 2026-05-07 post-`a9e3804` EN canary
+
+Implemented prompt commit:
+- `a9e3804b` — `fix(stage2): require target bridge for standards direction`.
+- Prompt hash after restart/reseed: `92d1e56b04b19dfb5925c309fedac7628133f4284606b3781c9531154163b8d3`.
+- Verification before live run: targeted verdict prompt-contract test, `git diff --check`, `npm -w apps/web run build`, and full `npm test` passed.
+
+Live canary:
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+- Job: `70c73fad84784a40b07945ae5c40f208`.
+- Result: `UNVERIFIED` 50 / 24.
+- Claim split remained correct: 3 selected claims for Brazilian law compliance, proceeding fair-trial standards, and verdict fair-trial standards.
+- Final claim-local direction pools improved relative to bad replicate `b2d065f4...`:
+  - `AC_01`: 5 supports / 1 contradicts / 41 neutral.
+  - `AC_02`: 3 supports / 0 contradicts / 28 neutral.
+  - `AC_03`: 3 supports / 0 contradicts / 18 neutral.
+
+Reviewer convergence:
+- Keep `a9e3804`; do not revert. It reduced the Stage 2 contradiction-promotion failure and reverting would likely reopen the `b2d065f4...` failure mode.
+- Do not spend more live jobs before the next fix. Remaining budget after `70c73fad...`: 4 jobs.
+- Current primary residual failure is downstream Stage 4 use of neutral/contextual evidence as directional contradiction:
+  - Final claim citations are support-only or empty, but reasoning and some `boundaryFindings` still argue against the claims.
+  - `verdict_direction_issue`, `verdict_grounding_issue`, and `verdict_integrity_failure` warnings are mostly symptoms of the integrity guard stripping invalid directional citations after Stage 4 already reasoned with them.
+  - Stage 3 boundary clustering is not the primary location; the contradictory `boundaryFindings` are Stage 4 verdict outputs.
+- Source acquisition remains a secondary weakness, but `70c73fad...` had enough evidence volume and targeted research that the immediate defect is not zero-acquisition or selected-claim starvation.
+
+Code-only substrate after review:
+- Added Stage 2 direction metadata to Stage 4 evidence payloads:
+  - `directionBasis`
+  - `directnessJustification`
+- Added the same metadata to direction-validation and neutral-citation adjudication payloads.
+- Filtered neutral-citation adjudication candidates so evidence with explicitly non-directional bases (`concern_or_position`, `collateral_context`, `procedural_fact`, `ambiguous`) cannot be re-promoted to directional support or contradiction by the post-hoc citation adjudicator.
+- Affected file: `apps/web/src/lib/analyzer/verdict-stage.ts`.
+- Focused tests added in `apps/web/test/unit/lib/analyzer/verdict-stage.test.ts`.
+- Targeted verifier passed: `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-stage.test.ts`.
+
+Pending Captain approval:
+- A prompt amendment is still required before live validation: Stage 4 must be told that Stage 2 `claimDirection`, `directionBasis`, and `directnessJustification` are binding for directional citation arrays and `boundaryFindings`; neutral concern/context can limit confidence or explain caveats, but must not become contradiction.
+- Do not run EN/PT canaries until that prompt amendment is approved, committed, restarted/reseeded, and tested.
