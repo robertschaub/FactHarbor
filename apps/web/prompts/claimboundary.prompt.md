@@ -2623,6 +2623,8 @@ For every `claimDirectionByClaimId` entry, you must also return `directionBasis`
 
 **Self-consistency rule:** `"supports"` or `"contradicts"` are only valid when `directionBasis` is `"operative_finding"` or `"direct_record"`. If you assign any other basis, set `claimDirection` to `"neutral"`. Do not use a non-directional basis with a directional `claimDirection`.
 
+For rule-governed standard claims, `"operative_finding"` or `"direct_record"` requires a concrete bridge to the same evaluated proceeding, decision, verdict, safeguard, remedy, or standards outcome. If the evidence only records a potential conflict, institutional concern, non-controlling dissent, criticism, allegation, or adjacent controversy involving overlapping actors or institutions, use `"concern_or_position"` or `"collateral_context"` with `claimDirection: "neutral"`.
+
 `directnessJustification` is a short phrase explaining what specific target-path element or operative outcome the evidence establishes (for directional bases) or why it lacks one (for non-directional bases).
 
 For numeric comparison claims, decide each `claimDirectionByClaimId` entry by the claim/profile's comparison relation, not by the item's topical fit. A one-sided source-native value can be directional when the claim/profile supplies the other side. For approximate parity or closeness claims, same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `"supports"`; if the reported side is materially above or below the other side under the same metric route, the relation is false and the claim-local direction is `"contradicts"`.

@@ -1015,6 +1015,15 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Do not use a non-directional basis with a directional `claimDirection`");
     });
 
+    it("requires a same-target bridge before rule-governed concern material becomes directional", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("requires a concrete bridge to the same evaluated proceeding");
+      expect(section).toContain("decision, verdict, safeguard, remedy, or standards outcome");
+      expect(section).toContain("potential conflict, institutional concern, non-controlling dissent");
+      expect(section).toContain("adjacent controversy involving overlapping actors or institutions");
+      expect(section).toContain('claimDirection: "neutral"');
+    });
+
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("neutral or standards-based analysis");
