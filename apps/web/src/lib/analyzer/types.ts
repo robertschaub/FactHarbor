@@ -280,22 +280,35 @@ export type SourceType =
   | "other";                 // Other sources not fitting above categories
 
 /**
- * Coarse basis for a claim-local evidence direction assignment.
- * Directional bases (`operative_finding`, `direct_record`) may carry
- * `supports` or `contradicts`. Non-directional bases must pair with
- * `neutral` — runtime enforces this as LLM-output self-consistency.
+ * Basis for a claim-local evidence direction assignment.
+ * Directional bases may carry `supports` or `contradicts`. Non-directional
+ * bases must pair with `neutral` — runtime enforces this as LLM-output
+ * self-consistency.
  */
-export type DirectionBasis =
-  | "operative_finding"    // target-specific compliance/violation/safeguard/remedy outcome
-  | "direct_record"        // target-specific measurement, metric, or documented fact
-  | "concern_or_position"  // allegation, concern, non-controlling dissent, opinion
-  | "collateral_context"   // broader institution, parallel inquiry, sanction, overlapping actor
-  | "procedural_fact"      // procedural or administrative fact without directional force
-  | "ambiguous";           // insufficient basis or unclear — safe fallback
+export const DIRECTION_BASIS_VALUES = [
+  "direct_substantive_finding",
+  "direct_metric_value",
+  "direct_source_native_comparison_side",
+  "direct_safeguard_record",
+  "operative_standards_outcome",
+  "question_only",
+  "allegation_only",
+  "concern_only",
+  "procedural_fact_only",
+  "non_controlling_position_only",
+  "collateral_context",
+  "source_existence_only",
+  "ambiguous_or_insufficient",
+] as const;
+
+export type DirectionBasis = typeof DIRECTION_BASIS_VALUES[number];
 
 export const DIRECTIONAL_BASES: ReadonlySet<DirectionBasis> = new Set([
-  "operative_finding",
-  "direct_record",
+  "direct_substantive_finding",
+  "direct_metric_value",
+  "direct_source_native_comparison_side",
+  "direct_safeguard_record",
+  "operative_standards_outcome",
 ]);
 
 export interface KeyFactor {

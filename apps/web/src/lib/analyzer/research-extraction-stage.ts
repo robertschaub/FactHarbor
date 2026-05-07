@@ -21,6 +21,7 @@ import {
 } from "./pipeline-utils";
 import {
   AtomicClaim,
+  DIRECTION_BASIS_VALUES,
   DirectionBasis,
   DIRECTIONAL_BASES,
   EvidenceItem,
@@ -66,14 +67,7 @@ export const Stage2ExtractEvidenceOutputSchema = z.object({
   evidenceItems: z.array(Stage2EvidenceItemSchema),
 });
 
-const DirectionBasisSchema = z.enum([
-  "operative_finding",
-  "direct_record",
-  "concern_or_position",
-  "collateral_context",
-  "procedural_fact",
-  "ambiguous",
-]).catch("ambiguous");
+const DirectionBasisSchema = z.enum(DIRECTION_BASIS_VALUES).catch("ambiguous_or_insufficient");
 
 export const ApplicabilityAssessmentOutputSchema = z.object({
   assessments: z.array(z.object({
@@ -615,7 +609,7 @@ export async function assessEvidenceApplicability(
       const directionByClaim = new Map<string, DirectionWithBasis>();
       for (const directionEntry of assessment.claimDirectionByClaimId ?? []) {
         if (!knownClaimIds.has(directionEntry.claimId)) continue;
-        const basis: DirectionBasis = directionEntry.directionBasis ?? "ambiguous";
+        const basis: DirectionBasis = directionEntry.directionBasis ?? "ambiguous_or_insufficient";
         let direction: ClaimDirection = directionEntry.claimDirection;
 
         if (direction !== "neutral" && !DIRECTIONAL_BASES.has(basis)) {
@@ -697,7 +691,7 @@ export async function assessEvidenceApplicability(
           return relevantClaimIds.map((claimId) => {
             const entry = claimDirections.get(claimId) ?? {
               claimDirection: "neutral" as ClaimDirection,
-              directionBasis: "ambiguous" as DirectionBasis,
+              directionBasis: "ambiguous_or_insufficient" as DirectionBasis,
               directnessJustification: undefined,
             };
             return {
@@ -783,7 +777,7 @@ export async function assessEvidenceApplicability(
           ...assessedItem,
           id: `${item.id}__${companionDirection}_${claimId}`,
           claimDirection: companionDirection,
-          directionBasis: entry?.directionBasis ?? ("ambiguous" as DirectionBasis),
+          directionBasis: entry?.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
           directnessJustification: entry?.directnessJustification,
           relevantClaimIds: [claimId],
         };

@@ -852,7 +852,7 @@ describe("Research Extraction Stage", () => {
         {
           claimId: "AC_01",
           claimDirection: "supports",
-          directionBasis: "ambiguous",
+          directionBasis: "ambiguous_or_insufficient",
           directnessJustification: "",
         },
       ]);
@@ -1034,8 +1034,8 @@ describe("Research Extraction Stage", () => {
             applicability: "direct",
             relevantClaimIds: ["AC_01", "AC_02"],
             claimDirectionByClaimId: [
-              { claimId: "AC_01", claimDirection: "supports", directionBasis: "direct_record" },
-              { claimId: "AC_02", claimDirection: "supports", directionBasis: "direct_record" },
+              { claimId: "AC_01", claimDirection: "supports", directionBasis: "direct_metric_value" },
+              { claimId: "AC_02", claimDirection: "supports", directionBasis: "direct_source_native_comparison_side" },
             ],
             reasoning: "current-side component directly supports the comparison claim",
           },
@@ -1116,7 +1116,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("preserves directional basis for already-scoped directional evidence", async () => {
+    it("preserves operative standards outcome basis for already-scoped directional evidence", async () => {
       const claims = [
         createClaim({
           id: "AC_01",
@@ -1144,7 +1144,7 @@ describe("Research Extraction Stage", () => {
               {
                 claimId: "AC_01",
                 claimDirection: "supports",
-                directionBasis: "operative_finding",
+                directionBasis: "operative_standards_outcome",
                 directnessJustification: "target-specific operative standards outcome",
               },
             ],
@@ -1159,8 +1159,58 @@ describe("Research Extraction Stage", () => {
       expect(result[0]).toMatchObject({
         id: "EV_01",
         claimDirection: "supports",
-        directionBasis: "operative_finding",
+        directionBasis: "operative_standards_outcome",
         directnessJustification: "target-specific operative standards outcome",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+    });
+
+    it("preserves direct safeguard record basis for target-specific safeguards", async () => {
+      const claims = [
+        createClaim({
+          id: "AC_01",
+          statement: "Target process provided the required safeguard",
+        }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source records that the target process provided the safeguard.",
+          claimDirection: "supports",
+          relevantClaimIds: ["AC_01"],
+        }),
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              {
+                claimId: "AC_01",
+                claimDirection: "supports",
+                directionBasis: "direct_safeguard_record",
+                directnessJustification: "target-specific safeguard record",
+              },
+            ],
+            reasoning: "the item records the target safeguard",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        directionBasis: "direct_safeguard_record",
+        directnessJustification: "target-specific safeguard record",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
@@ -1191,7 +1241,7 @@ describe("Research Extraction Stage", () => {
               {
                 claimId: "AC_01",
                 claimDirection: "supports",
-                directionBasis: "concern_or_position",
+                directionBasis: "concern_only",
                 directnessJustification: "concern without operative target outcome",
               },
             ],
@@ -1211,7 +1261,7 @@ describe("Research Extraction Stage", () => {
       });
       expect(result[0].id).not.toContain("__supports_");
       expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
-        expect.stringContaining("supports+concern_or_position"),
+        expect.stringContaining("supports+concern_only"),
       );
     });
 
@@ -1243,7 +1293,7 @@ describe("Research Extraction Stage", () => {
             applicability: "direct",
             relevantClaimIds: ["AC_01"],
             claimDirectionByClaimId: [
-              { claimId: "AC_01", claimDirection: "contradicts", directionBasis: "direct_record" },
+              { claimId: "AC_01", claimDirection: "contradicts", directionBasis: "direct_metric_value" },
             ],
             reasoning: "reference-side value refutes the comparison relation",
           },

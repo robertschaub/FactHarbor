@@ -371,8 +371,10 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Treat Stage 2 direction metadata as authoritative");
       expect(section).toContain('claimDirection = "neutral"');
       expect(section).toContain("do not use its substance as directional support or contradiction");
-      expect(section).toContain("concern_or_position");
+      expect(section).toContain("concern_only");
+      expect(section).toContain("allegation_only");
       expect(section).toContain("collateral_context");
+      expect(section).toContain("ambiguous_or_insufficient");
       expect(section).toContain("may only affect confidence, caveats, limitations, or background explanation");
     });
 
@@ -1022,14 +1024,18 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Direction Basis Contract");
       expect(section).toContain("directionBasis");
       expect(section).toContain("directnessJustification");
-      expect(section).toContain("operative_finding");
-      expect(section).toContain("direct_record");
-      expect(section).toContain("A record that someone made an allegation, objection, criticism");
-      expect(section).toContain("non-controlling dissent, minority view, party objection");
-      expect(section).toContain("concern_or_position");
+      expect(section).toContain("direct_substantive_finding");
+      expect(section).toContain("direct_metric_value");
+      expect(section).toContain("direct_source_native_comparison_side");
+      expect(section).toContain("direct_safeguard_record");
+      expect(section).toContain("operative_standards_outcome");
+      expect(section).toContain("allegation_only");
+      expect(section).toContain("concern_only");
       expect(section).toContain("collateral_context");
-      expect(section).toContain("procedural_fact");
-      expect(section).toContain("ambiguous");
+      expect(section).toContain("procedural_fact_only");
+      expect(section).toContain("non_controlling_position_only");
+      expect(section).toContain("source_existence_only");
+      expect(section).toContain("ambiguous_or_insufficient");
       expect(section).toContain("Self-consistency");
       expect(section).toContain("Do not use a non-directional basis with a directional `claimDirection`");
     });
@@ -1038,9 +1044,9 @@ describe("Stage-2 prompt contract", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("requires a concrete bridge to the same evaluated proceeding");
       expect(section).toContain("decision, verdict, safeguard, remedy, or standards outcome");
-      expect(section).toContain("potential conflict, institutional concern, non-controlling dissent");
-      expect(section).toContain("adjacent controversy involving overlapping actors or institutions");
-      expect(section).toContain('claimDirection: "neutral"');
+      expect(section).toContain("Procedural roles, public-access limits, alleged coordination");
+      expect(section).toContain("dual-role facts, criticism, concern");
+      expect(section).toContain("safeguard denial/provision, compliance/noncompliance outcome");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {

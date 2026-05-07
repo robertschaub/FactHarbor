@@ -1727,7 +1727,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - Use `supportingEvidenceIds` and `contradictingEvidenceIds` as the authoritative evidence-citation channel.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning`. Keep reasoning natural-language only.
 - Treat `applicability` as binding for directional citation arrays. Only evidence items marked `direct` may appear in `supportingEvidenceIds` or `contradictingEvidenceIds`. Items marked `contextual` or `foreign_reaction` may inform confidence, limitations, or background reasoning, but they are not directional support or contradiction.
-- Treat Stage 2 direction metadata as authoritative. If an evidence item has `claimDirection = "neutral"`, do not use its substance as directional support or contradiction in reasoning, `supportingEvidenceIds`, `contradictingEvidenceIds`, or `boundaryFindings`, even if the text appears critical or favorable. Neutral items, including `directionBasis` values such as `concern_or_position`, `collateral_context`, `procedural_fact`, or `ambiguous`, may only affect confidence, caveats, limitations, or background explanation.
+- Treat Stage 2 direction metadata as authoritative. If an evidence item has `claimDirection = "neutral"`, do not use its substance as directional support or contradiction in reasoning, `supportingEvidenceIds`, `contradictingEvidenceIds`, or `boundaryFindings`, even if the text appears critical or favorable. Neutral items, including non-directional `directionBasis` values such as `question_only`, `allegation_only`, `concern_only`, `procedural_fact_only`, `non_controlling_position_only`, `collateral_context`, `source_existence_only`, or `ambiguous_or_insufficient`, may only affect confidence, caveats, limitations, or background explanation.
 - For `boundaryFindings.evidenceDirection`, use `"supports"` or `"contradicts"` only when that boundary contains direct evidence already labeled with the matching claim-local `claimDirection`. If a boundary contains only neutral/contextual evidence for the claim, its `evidenceDirection` must be `"neutral"` or, where mixed direct support and neutral caveats exist, no stronger than `"mixed"`.
 - Do not use source-existence, report-coverage, archive-coverage, dataset-availability, or methodology-only evidence as a directional citation for a substantive claim unless the AtomicClaim itself is about that source, archive, dataset, methodology, or availability. If such evidence only says that a source collection covers the topic, mentions that figures exist elsewhere, or documents how records were compiled without publishing the decisive value or finding, use it only as contextual reasoning and leave it out of `supportingEvidenceIds`/`contradictingEvidenceIds`.
 - Per-boundary findings provide quantitative signals — assess each boundary's evidence independently before synthesizing.
@@ -2616,16 +2616,23 @@ For every `claimDirectionByClaimId` entry, you must also return `directionBasis`
 
 `directionBasis` classifies WHY you assigned the direction. Use exactly one of these values:
 
-- `"operative_finding"` — the evidence states a target-specific compliance outcome, violation, safeguard, remedy, or operative standards result that directly affects the claim's truth condition. A non-controlling dissent, minority view, party objection, external criticism, or unresolved allegation is not an operative finding merely because it is formally recorded.
-- `"direct_record"` — the evidence reports a target-specific measurement, metric value, documented fact, or recorded event that directly bears on the claim. A record that someone made an allegation, objection, criticism, advocacy statement, dissent, or concern is not a `direct_record` for the underlying allegation; classify the basis as `concern_or_position` unless the evidence itself establishes the target-path fact or an operative body accepted the allegation.
-- `"concern_or_position"` — the evidence expresses or records an allegation, concern, non-controlling dissent, opinion, party position, advocacy position, or unresolved objection. It does not establish an operative outcome for the target.
-- `"collateral_context"` — the evidence concerns a broader institution, parallel inquiry, overlapping actor, sanction episode, or adjacent controversy. It provides context but does not directly evaluate the claim's target.
-- `"procedural_fact"` — the evidence reports a procedural, administrative, or jurisdictional fact without directional force on the claim's truth condition.
-- `"ambiguous"` — the basis is unclear or insufficient to classify.
+- `"direct_substantive_finding"` — the evidence states a target-specific substantive factual finding, result, or outcome that directly bears on the claim.
+- `"direct_metric_value"` — the evidence reports a target-specific measured value, count, rate, threshold, date, or comparable quantitative result.
+- `"direct_source_native_comparison_side"` — the evidence reports one source-native side/component of a comparison route that the claim or expected evidence profile already defines.
+- `"direct_safeguard_record"` — the evidence directly records that a target-specific safeguard, remedy, review path, defense right, notice, hearing, appeal, access right, or equivalent protection was provided, exercised, denied, upheld, or rejected.
+- `"operative_standards_outcome"` — the evidence states a target-specific compliance, noncompliance, violation, remedy, annulment, disqualification, legally effective consequence, or applied standards conclusion.
+- `"question_only"` — the evidence asks, frames, or raises a question without resolving the target claim.
+- `"allegation_only"` — the evidence reports an alleged defect, alleged event, alleged strategy, disclosed allegation, or possible irregularity without an adopted finding or legally effective target outcome.
+- `"concern_only"` — the evidence expresses or records concern, criticism, objection, advocacy, party position, appearance risk, or unresolved doubt without establishing an operative target outcome.
+- `"procedural_fact_only"` — the evidence reports a procedural, administrative, jurisdictional, timeline, membership, role, or docket fact without directional force on the claim's truth condition.
+- `"non_controlling_position_only"` — the evidence reports a dissent, minority view, non-binding statement, external criticism, or other non-controlling position without an adopted standards outcome.
+- `"collateral_context"` — the evidence concerns a broader institution, parallel inquiry, upstream investigation, overlapping actor, sanction episode, separate restrictive measure, or adjacent controversy.
+- `"source_existence_only"` — the evidence only shows that a source, report, archive, filing, data collection, or methodology exists or was published.
+- `"ambiguous_or_insufficient"` — the basis is unclear or insufficient to classify.
 
-**Self-consistency rule:** `"supports"` or `"contradicts"` are only valid when `directionBasis` is `"operative_finding"` or `"direct_record"`. If you assign any other basis, set `claimDirection` to `"neutral"`. Do not use a non-directional basis with a directional `claimDirection`.
+**Self-consistency rule:** `"supports"` or `"contradicts"` are only valid when `directionBasis` is `"direct_substantive_finding"`, `"direct_metric_value"`, `"direct_source_native_comparison_side"`, `"direct_safeguard_record"`, or `"operative_standards_outcome"`. If you assign any other basis, set `claimDirection` to `"neutral"`. Do not use a non-directional basis with a directional `claimDirection`.
 
-For rule-governed standard claims, `"operative_finding"` or `"direct_record"` requires a concrete bridge to the same evaluated proceeding, decision, verdict, safeguard, remedy, or standards outcome. If the evidence only records a potential conflict, institutional concern, non-controlling dissent, criticism, allegation, or adjacent controversy involving overlapping actors or institutions, use `"concern_or_position"` or `"collateral_context"` with `claimDirection: "neutral"`.
+For rule-governed standard claims, a directional basis requires a concrete bridge to the same evaluated proceeding, decision, verdict, safeguard, remedy, or standards outcome. Procedural roles, public-access limits, alleged coordination, dual-role facts, criticism, concern, appearance-risk material, or adjacent controversies are not directional unless the source states a target-specific safeguard denial/provision, compliance/noncompliance outcome, remedy, annulment, disqualification, or legally effective standards result.
 
 `directnessJustification` is a short phrase explaining what specific target-path element or operative outcome the evidence establishes (for directional bases) or why it lacks one (for non-directional bases).
 
@@ -2709,7 +2716,7 @@ Return a JSON object:
         {
           "claimId": "AC_01",
           "claimDirection": "supports | contradicts | neutral",
-          "directionBasis": "operative_finding | direct_record | concern_or_position | collateral_context | procedural_fact | ambiguous",
+          "directionBasis": "direct_substantive_finding | direct_metric_value | direct_source_native_comparison_side | direct_safeguard_record | operative_standards_outcome | question_only | allegation_only | concern_only | procedural_fact_only | non_controlling_position_only | collateral_context | source_existence_only | ambiguous_or_insufficient",
           "directnessJustification": "string — what target-path element or operative outcome the evidence establishes, or why it lacks one"
         }
       ],
@@ -2723,7 +2730,7 @@ Return a JSON object:
 - Use only the three applicability labels above.
 - `relevantClaimIds` must contain only IDs from the provided claims list. It may contain zero, one, or multiple claim IDs. Return an empty array when the item is not materially relevant to any claim after applicability assessment.
 - `claimDirectionByClaimId` must contain only IDs from the provided claims list and should include one entry for every ID in `relevantClaimIds`. Use only `supports`, `contradicts`, or `neutral` for `claimDirection`. Include `directionBasis` and `directnessJustification` for every entry.
-- Self-consistency: if `directionBasis` is not `operative_finding` or `direct_record`, `claimDirection` must be `neutral`.
+- Self-consistency: if `directionBasis` is not one of the five directional bases (`direct_substantive_finding`, `direct_metric_value`, `direct_source_native_comparison_side`, `direct_safeguard_record`, `operative_standards_outcome`), `claimDirection` must be `neutral`.
 - Reasoning should be one sentence.
 
 ---

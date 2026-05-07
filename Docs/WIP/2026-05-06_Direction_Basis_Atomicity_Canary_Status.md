@@ -217,3 +217,69 @@ Code-only substrate after review:
 Pending Captain approval:
 - A prompt amendment is still required before live validation: Stage 4 must be told that Stage 2 `claimDirection`, `directionBasis`, and `directnessJustification` are binding for directional citation arrays and `boundaryFindings`; neutral concern/context can limit confidence or explain caveats, but must not become contradiction.
 - Do not run EN/PT canaries until that prompt amendment is approved, committed, restarted/reseeded, and tested.
+
+## 2026-05-07 post-`536d8a77` EN canary and taxonomy review
+
+Live canary after Stage 4 direction-metadata binding:
+- Commit under test: `536d8a77` — `fix(stage4): bind neutral direction metadata in advocate prompt`.
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+- Job: `b7af2ade5e374293a7784d1f2314ad67`.
+- Result: `UNVERIFIED` 44 / 35.
+- Claim split remained correct: 3 selected claims.
+- Stage 4 invalid-citation class was fixed for this job: `verdict_direction_issue` / `verdict_integrity_failure` were no longer the primary defect.
+- Residual claim-local Stage 2 pools still contained explicit contradictions:
+  - `AC_01`: 3 supports / 3 contradicts / 35 neutral.
+  - `AC_02`: 2 supports / 4 contradicts / 16 neutral.
+  - `AC_03`: 3 supports / 0 contradicts / 12 neutral.
+
+Reviewer conclusion:
+- The remaining defect is Stage 2 direction-basis calibration, not Stage 4.
+- The current coarse bases (`operative_finding`, `direct_record`) still let the LLM promote allegation/concern material to directional contradiction.
+- Comparator `91bf6083...` used a richer basis taxonomy and classified similar OAS/IACHR material as allegation/concern/context rather than directional contradiction.
+- The approved fix is to expand the basis taxonomy while keeping the existing structural normalization rule: non-directional basis plus `supports` / `contradicts` is coerced to `neutral`.
+- This remains AGENTS-compliant because code only enforces self-consistency among LLM-emitted structured fields. It does not inspect evidence text, source titles, URLs, or source content.
+
+Implemented but not yet live-validated at this checkpoint:
+- `types.ts`
+  - Replaced the 6-value coarse `DirectionBasis` union with `DIRECTION_BASIS_VALUES`.
+  - Directional bases:
+    - `direct_substantive_finding`
+    - `direct_metric_value`
+    - `direct_source_native_comparison_side`
+    - `direct_safeguard_record`
+    - `operative_standards_outcome`
+  - Non-directional bases:
+    - `question_only`
+    - `allegation_only`
+    - `concern_only`
+    - `procedural_fact_only`
+    - `non_controlling_position_only`
+    - `collateral_context`
+    - `source_existence_only`
+    - `ambiguous_or_insufficient`
+- `research-extraction-stage.ts`
+  - Zod schema now uses `DIRECTION_BASIS_VALUES`.
+  - Unknown / missing values fall back to `ambiguous_or_insufficient`.
+  - Existing normalization remains before companion cloning.
+- `claimboundary.prompt.md`
+  - `APPLICABILITY_ASSESSMENT` now names the expanded taxonomy.
+  - Rule-governed standard claims require a concrete bridge to the same evaluated proceeding, decision, verdict, safeguard, remedy, or standards outcome before a directional basis is allowed.
+  - `VERDICT_ADVOCATE` neutral-metadata binding now references the expanded non-directional basis list.
+- Focused tests updated for the new taxonomy and prompt contracts.
+
+Verification before commit:
+- `npm -w apps/web run test -- test/unit/lib/analyzer/research-extraction-stage.test.ts` passed.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts` passed.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-stage.test.ts` passed after updating one stale fixture to the new directional basis.
+- `git diff --check` passed.
+- `npm -w apps/web run build` passed.
+- Full `npm test` hit two runner-integration timeouts:
+  - `test/unit/lib/drain-runner-pause.integration.test.ts`
+  - `test/unit/lib/runner-concurrency-split.integration.test.ts`
+- Both timeout files passed when rerun in isolation, so the full-suite result is classified as transient runner-test flakiness rather than a patch failure.
+
+Next gate:
+- Commit first, then restart/reseed before live validation.
+- Run one Bolsonaro EN canary first. Remaining live-job budget before that canary: 3.
+- If EN still admits collateral direct contradictions for `AC_02` / `AC_03`, stop and spend no more jobs on this lane.
+- If EN materially improves without collateral contradictions, use remaining budget only on a PT control and one direct-contradiction control.

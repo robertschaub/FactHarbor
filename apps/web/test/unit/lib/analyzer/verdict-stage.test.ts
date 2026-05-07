@@ -539,7 +539,7 @@ describe("reportLanguage propagation (Proposal 2)", () => {
     const claims = [createAtomicClaim()];
     const evidence = [createEvidenceItem({
       id: "EV_01",
-      directionBasis: "concern_or_position",
+      directionBasis: "concern_only",
       directnessJustification: "LLM classified this as a concern without target-specific bridge.",
     })];
     const boundaries = [createClaimBoundary()];
@@ -558,7 +558,7 @@ describe("reportLanguage propagation (Proposal 2)", () => {
 
     expect(capturedPayload?.evidenceItems?.[0]).toMatchObject({
       id: "EV_01",
-      directionBasis: "concern_or_position",
+      directionBasis: "concern_only",
       directnessJustification: "LLM classified this as a concern without target-specific bridge.",
     });
   });
@@ -1269,7 +1269,7 @@ describe("validateVerdicts (Step 5)", () => {
     const evidence = [createEvidenceItem({
       id: "EV_01",
       relevantClaimIds: ["AC_01"],
-      directionBasis: "direct_record",
+      directionBasis: "direct_safeguard_record",
       directnessJustification: "Directly records the target proceeding safeguard.",
     })];
 
@@ -1290,7 +1290,7 @@ describe("validateVerdicts (Step 5)", () => {
 
     expect(capturedPool?.[0]).toMatchObject({
       id: "EV_01",
-      directionBasis: "direct_record",
+      directionBasis: "direct_safeguard_record",
       directnessJustification: "Directly records the target proceeding safeguard.",
     });
   });
@@ -1309,7 +1309,7 @@ describe("validateVerdicts (Step 5)", () => {
       createEvidenceItem({
         id: "EV_NEUTRAL",
         claimDirection: "neutral",
-        directionBasis: "direct_record",
+        directionBasis: "direct_substantive_finding",
         directnessJustification: "Directly records the target decision outcome.",
         applicability: "direct",
         relevantClaimIds: ["AC_01"],
@@ -1375,7 +1375,7 @@ describe("validateVerdicts (Step 5)", () => {
     );
     expect(adjudicationPayload.adjudicationCases[0].candidates[0]).toMatchObject({
       evidenceId: "EV_NEUTRAL",
-      directionBasis: "direct_record",
+      directionBasis: "direct_substantive_finding",
       directnessJustification: "Directly records the target decision outcome.",
     });
     expect(evidence[0].claimDirection).toBe("contradicts");
@@ -1398,7 +1398,7 @@ describe("validateVerdicts (Step 5)", () => {
       createEvidenceItem({
         id: "EV_CONCERN",
         claimDirection: "neutral",
-        directionBasis: "concern_or_position",
+        directionBasis: "concern_only",
         directnessJustification: "Concern about adjacent institutional conduct without target-path bridge.",
         applicability: "direct",
         relevantClaimIds: ["AC_01"],
