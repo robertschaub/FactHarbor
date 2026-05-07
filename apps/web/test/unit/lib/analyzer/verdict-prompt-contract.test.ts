@@ -697,6 +697,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
       expect(section).toContain("source-native record of the directly evaluated target itself");
       expect(section).toContain("broader commentary involving overlapping actors or institutions");
+      expect(section).toContain("broad target-specific standards/compliance discovery");
+      expect(section).toContain("neutral safeguard, record, compliance, assessment, or standards wording");
+      expect(section).toContain("alleged-defect, violation, criticism, dissent, official-docket, or artifact-only route");
     });
 
     it("preserves source-native route labels in generated queries", () => {
