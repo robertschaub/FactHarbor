@@ -366,6 +366,25 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("without publishing the decisive value or finding");
     });
 
+    it("advocate treats Stage 2 direction metadata as authoritative", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("Treat Stage 2 direction metadata as authoritative");
+      expect(section).toContain('claimDirection = "neutral"');
+      expect(section).toContain("do not use its substance as directional support or contradiction");
+      expect(section).toContain("concern_or_position");
+      expect(section).toContain("collateral_context");
+      expect(section).toContain("may only affect confidence, caveats, limitations, or background explanation");
+    });
+
+    it("advocate constrains boundary findings to direct claim-local directions", () => {
+      const section = extractSection(promptContent, "VERDICT_ADVOCATE");
+      expect(section).toContain("For `boundaryFindings.evidenceDirection`");
+      expect(section).toContain("direct evidence already labeled with the matching claim-local `claimDirection`");
+      expect(section).toContain("only neutral/contextual evidence for the claim");
+      expect(section).toContain('evidenceDirection` must be `"neutral"`');
+      expect(section).toContain('no stronger than `"mixed"`');
+    });
+
     it("verdict prompts preserve balanced citations for broad umbrella ambiguity", () => {
       const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
       const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
