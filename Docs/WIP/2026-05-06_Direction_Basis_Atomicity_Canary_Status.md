@@ -3,13 +3,13 @@
 ## Current branch state
 
 - Branch: `main`
-- Latest local commit: `04dbc99f fix(analyzer): preserve prepared acquisition trace`
-- Effective analysis changes under test: through `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`, plus acquisition-trace observability in `f9406499` and `04dbc99f`.
+- Latest local commit: `506e3178 fix(stage2): require neutral standards discovery query`
+- Effective analysis changes under test: through `9c5e43b0 fix(stage2): distinguish recorded positions from direct records`, acquisition-trace observability in `f9406499` and `04dbc99f`, plus the narrow query-generation prompt contract in `506e3178`.
 - Local `main` is ahead of `origin/main`.
 - No push performed in this slice.
 - Jobs budget consumed in the first slice: 11 of 12.
 - Additional Captain budget allocated after trace plan review: 10 jobs.
-- Additional jobs consumed so far: 2 (`e3eca1d3...`, `56671233...`). Remaining additional budget: 8.
+- Additional jobs consumed so far: 5 (`e3eca1d3...`, `56671233...`, `265eaa34...`, `fb41d4b6...`, `b2d065f4...`). Remaining additional budget: 5.
 
 ## Implemented commits
 
@@ -22,6 +22,7 @@
 | `e905b9cc` | Attempted to balance rule-governed target-path support and standards-challenge routes in Stage 1 profiles, Stage 2 queries, and Stage 2 directness justification. | Reverted by `62f7dc16`. The focused tests/build passed, but the Bolsonaro EN live canary regressed from `LEANING-FALSE` 38 / 43 to `UNVERIFIED` 48 / 36 and emitted `query_budget_exhausted`. |
 | `f9406499` | Adds bounded acquisition source/evidence transition telemetry to result JSON (`analysisObservability.acquisitionTrace`) for preliminary search, Stage 2 search, fetch, raw extraction, probative filtering, per-source cap, and admission transitions. | Keep. Non-behavioral diagnostic change. Targeted analyzer test and build passed; full `npm test` had one runner-concurrency timeout that passed in isolation. |
 | `04dbc99f` | Preserves prepared Stage 1 acquisition trace through draft-backed runs so automatic/interactive reports include preliminary-search trace. | Keep. Non-behavioral diagnostic change. Build and targeted tests passed. |
+| `506e3178` | Adds one approved `GENERATE_QUERIES` bullet requiring at least one broad target-specific standards/compliance discovery query for rule-governed standard claims, while forbidding all queries from becoming defect/criticism/dissent/docket/artifact-only routes. | Keep for now. It is a narrow prompt-only edit, explicitly approved by Captain. Prompt contract tests, `npm test`, build, restart/reseed, and three live canaries completed. It improved PT and one EN evidence profile but does not solve EN by itself. |
 
 ## Verification commands
 
@@ -32,6 +33,7 @@
 - After failed live validation, `e905b9cc` was classified as `revert` under debt-guard and reverted in `62f7dc16`; focused prompt contract tests and `npm -w apps/web run build` passed after the revert.
 - `git diff --check`: passed before commits.
 - Services restarted and health checked before live canaries after committed prompt/config changes.
+- For `506e3178`: `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `git diff --check`, `npm -w apps/web run build`, and `npm test` passed. Build reseeded prompt hash `d86e319922c18ee849ed4578d2dc55a6661d370733f3fcb60fb811e052f865b1`.
 
 ## Live canaries
 
@@ -50,6 +52,9 @@
 | Bolsonaro EN after route-balancing attempt | `d319911c...` | `45b31c81...` | `e905b9cc` | `UNVERIFIED` 48 / 36 | 3 / 3 | Failed validation. The patch increased broad official/case-docket route pressure but did not recover enough target-specific support. It worsened the verdict and exhausted query budget, so it was reverted. |
 | Bolsonaro EN trace without prepared Stage 1 trace | `c676f787...` | `e3eca1d3...` | `f9406499` | `LEANING-FALSE` 40 / 40 | 3 / 3 | Diagnostic only. Confirmed Stage 2 trace works but exposed that prepared Stage 1 trace was not persisted in draft-backed jobs. |
 | Bolsonaro EN full acquisition trace | `a42c4d84...` | `56671233...` | `04dbc99f` | `LEANING-FALSE` 34 / 24 | 3 / 3 | Diagnostic result. Confirms support-source loss happens primarily before final evidence: Time.com, Al Jazeera, and Poder360 never entered sourceTrace; HRW appeared only as relevance-rejected Stage 2 results; OAS contradiction material was fetched/extracted/admitted. |
+| Bolsonaro EN after neutral standards discovery query | `1acf8bcc...` | `265eaa34...` | `506e3178` | `UNVERIFIED` 55 / 40 | 3 / 3 | Improved one run from false-side to support-only claim verdicts. Queries now included standards/compliance routes (`ICCPR Article 14`, tribunal independence/impartiality, UN HRC). AC_01/02/03 had 7/5/7 supports and 0 cited contradictions, but confidence stayed low due source concentration and lack of independent direct international assessment. |
+| Bolsonaro PT control after neutral standards discovery query | `a673586b...` | `fb41d4b6...` | `506e3178` | `MOSTLY-TRUE` 73 / 63 | 3 prepared / 2 selected | Good multilingual control. The prompt edit did not regress PT. Residual: ACS still omits AC_03 (`As sentencas... foram justas`) as `opinion_or_subjective`, which is a separate selection/evaluative-claim lane. |
+| Bolsonaro EN replicate after neutral standards discovery query | `6f0d7ac5...` | `b2d065f4...` | `506e3178` | `LEANING-FALSE` 38 / 51 | 3 / 3 | Bad replicate. Queries included the new route class but acquisition/applicability again admitted contradiction-heavy evidence for AC_02/AC_03. Time.com and Al Jazeera remained absent; HRW stayed relevance-rejected; PBS/Poder360 appeared but did not stabilize support. Confirms the narrow query edit is insufficient. |
 
 ## Evidence from completed reports
 
@@ -112,6 +117,20 @@ Trace findings from `56671233...` (`04dbc99f`):
   - `International Commission of Jurists Brazil STF Bolsonaro trial independence judiciary`
 - Lowest-confidence area in current evidence: the system does retrieve some PBS/Lawfare support/context from preliminary search, but the missing Time/Al Jazeera/Poder360/HRW families are primarily absent at query/provider/relevance stages, not final Stage 4 citation selection.
 
+Post-`506e3178` canary findings:
+- The approved query bullet is active in EN canaries. Both EN runs generated at least one broad standards/compliance route, e.g. `Bolsonaro trial ICCPR Article 14 fair trial standards compliance`, `Bolsonaro STF proceedings tribunal independence impartiality assessment`, `UN Human Rights Committee Brazil Bolsonaro trial fair trial standards assessment`, and `Amnesty International Human Rights Watch Brazil Bolsonaro trial fair trial assessment`.
+- EN run `265eaa34...` shows the best post-edit evidence balance so far: every selected claim received search attempts, final claim verdicts cited support and zero contradiction, and final evidence came from PBS, STF, NPR, OAS, SCIRP, and other sources. The final verdict still remained `UNVERIFIED` because AC_02 lacked independent direct international assessment of the specific proceedings and because support was concentrated in court/self-record and secondary reports.
+- EN replicate `b2d065f4...` shows the fix is not stable: final verdict returned to `LEANING-FALSE`, with AC_02 at `LEANING-FALSE` 35 / 52 and AC_03 at `LEANING-FALSE` 32 / 50. Time.com and Al Jazeera were still absent from sourceTrace, HRW appeared only as relevance-rejected results, and some PBS evidence became contradiction-bearing.
+- PT control `fb41d4b6...` passed: `MOSTLY-TRUE` 73 / 63, AC_01/AC_02 had 40/43 supports and zero contradictions, and source acquisition recovered large support pools from STF, BBC, Migalhas, Agencia Brasil, Poder360, MPF, and other Portuguese-language sources.
+- Revised conclusion: `506e3178` is a low-risk, useful query-route floor but not a complete fix. The remaining EN failure is not due to zero selected-claim acquisition, not Stage 1 atomicity, and not simply absent standards-query routes. It is a combined English source acquisition / relevance / applicability preservation problem, with possible residual over-admission of collateral contradiction-bearing sources.
+
+Reviewer convergence after `506e3178`:
+- Two independent reviewers recommended **keeping** `506e3178`: it is narrow, active in the canaries, does not regress PT, and helps one EN run, but it is insufficient.
+- Both reviewers rejected the next broad-query route, broad relevance-threshold, domain whitelist, source-provider redesign, and Stage 4 verdict-repair paths for the immediate slice.
+- Both reviewers identified the smallest next fix surface as `APPLICABILITY_ASSESSMENT` / claim-local direction-basis calibration: unresolved concerns, overlapping-actor controversies, dissent, and adjacent institutional investigations can still become `direct_record` or `operative_finding` contradictions when they lack a concrete target-path bridge to the evaluated proceeding or verdict.
+- Reviewer nuance: do not treat HRW/Amnesty/ICJ rejection as proven wrong from these canaries. Several rejected hits were genuinely off-target older or broad pages. The proven defect is the promotion of adjacent/collateral concern material into directional contradiction and the instability of target-specific support preservation in EN.
+- Prompt edits remain Captain-approved only. The next proposed change should be a small, generic strengthening of directness/direction-basis self-consistency, not another route-balancing edit.
+
 ### Plastic
 
 Expected:
@@ -144,12 +163,17 @@ Current root-cause assessment:
 1. Keep the four effective local commits through `9c5e43b0` for now. The first three clearly fix observed Stage 1 / structural contract issues. The fourth improves Plastic and moves the taxonomy in the correct architectural direction, but it needs more work.
 2. Keep the revert `62f7dc16`. Do not reapply `e905b9cc` or stack another broad prompt-route rule on top of it without new source-level evidence.
 3. Keep acquisition-trace observability (`f9406499`, `04dbc99f`) as diagnostic substrate unless reviewers find a simpler trace path. It is additive and does not change analysis decisions.
-4. Do not run another batch yet. The next live job should be gated on a narrow, reviewed hypothesis because two additional Bolsonaro EN jobs confirmed the failure and produced usable trace.
-5. Candidate next fix surface is query/source-route generation, not Stage 4. However, prompt edits require Captain approval and should be narrow. A broad route-balancing attempt already failed and was reverted.
-6. Before editing query-generation behavior, get reviewer agreement on whether to:
-   - adjust the `GENERATE_QUERIES` prompt for rule-governed standards to preserve at least one broad support/discovery route and one target-record route;
-   - adjust Stage 1 preliminary routing beyond Pass 1 search hints and claim-statement truncation;
-   - adjust relevance classification for HRW-like results that are currently rejected; or
-   - leave behavior unchanged and collect one more non-Bolsonaro control trace.
-7. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
-8. Treat Plastic and Asylum as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
+4. Stop live jobs for this lane until reviewers inspect the post-`506e3178` traces. The live evidence now has two EN failures plus one PT pass under the same prompt hash, which is enough to choose the next hypothesis without spending more budget.
+5. Candidate next fix surface is not Stage 4 and not another broad query prompt rewrite. The next likely surfaces are:
+   - source acquisition/provider diversity for English rule-governed proceedings claims;
+   - relevance acceptance for HRW/Amnesty/ICJ-like international legal/human-rights sources when they are target-specific enough;
+   - applicability/directness handling for records that are relevant as safeguards/context but are currently converted into contradiction-bearing items;
+   - source preservation/capping when preliminary support sources are present but not retained as useful direct support.
+6. Before editing again, get reviewer agreement on whether `506e3178` should remain as the narrow route floor and what the next smallest evidence-backed change should be.
+7. Proposed next prompt-only slice, pending Captain approval:
+   - Amend `APPLICABILITY_ASSESSMENT` so for rule-governed standard claims, `operative_finding` or `direct_record` requires a concrete bridge to the same evaluated proceeding, decision, verdict, safeguard, remedy, or standards outcome.
+   - If the evidence only records a potential conflict, institutional concern, non-controlling dissent, criticism, allegation, or adjacent controversy involving overlapping actors/institutions, the prompt should require `concern_or_position` or `collateral_context` and `claimDirection: "neutral"`.
+   - Add focused prompt-contract coverage with generic placeholders only.
+8. If Captain approves the prompt slice: commit first, restart/reseed, run two EN canaries and one PT control only. Stop immediately if EN still admits collateral direct contradictions for AC_02/AC_03.
+9. Keep Stage 4 repair held. Current failures can still be explained by poor evidence pools and broad-predicate framing.
+10. Treat Plastic, Asylum, and PT AC_03 selection as separate quality lanes. They should not block the Bolsonaro direction-basis work, but they prove the current branch is not broadly release-ready.
