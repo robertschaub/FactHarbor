@@ -341,3 +341,51 @@ Decision after this canary:
 - Stop spending jobs for now. Remaining live-job budget: 2.
 - Do not run PT / Plastic controls yet because the primary EN canary still misses the expected result, and the next fix surface needs review before more live validation.
 - Recommended next review packet: compare `a275...` against `91bf6083...` at source-route, applicability, and verdict-standard levels; decide whether the next smallest fix should target query/source acquisition, Stage 2 directness/applicability for safeguard records, or Stage 4 standards-evidence weighting.
+
+## 2026-05-07 post-`e6fff03c` canary and first-pass scheduler fix
+
+Implemented code commit before this scheduler slice:
+- `e6fff03c` — `fix(stage2): preserve neutral direction basis metadata`.
+- Purpose: preserve claim-local `directionBasis` / `directnessJustification` on neutral applicability mappings and emit `ambiguous_or_insufficient` rather than leaving newly assessed neutral items with missing basis metadata.
+- Focused tests and build passed before live validation.
+
+Live canary after `e6fff03c`:
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+- Draft: `c59e568f7bad431788f03b48d20225d8`.
+- Job: `ec2f36d02ac24ba4b51546ccd9b31318`.
+- Result: `LEANING-FALSE` 42 / 38.
+- Exported result: `test-output/bolsonaro-en-ec2f-result.json`.
+- Claim split remained 3 selected claims, but the run was not a clean verdict-quality signal because Stage 2 acquisition starved `AC_03`:
+  - `AC_01`: one targeted main iteration, 4 provider searches, 10 fetch attempts, 13 admitted items, elapsed `419740ms`.
+  - `AC_02`: one targeted main iteration, 4 provider searches, 17 fetch attempts, 26 admitted items, elapsed `279144ms`.
+  - `AC_03`: zero targeted main iterations, zero provider searches, `notRunReason=time_budget_exhausted_before_search`.
+  - Warnings included `budget_exceeded` and `selected_claim_zero_acquisition`.
+
+Reviewer convergence:
+- Keep `e6fff03c`; do not revert. It does not touch query generation, scheduling, fetch, relevance, or extraction, so it cannot directly explain the `AC_03` zero-search failure.
+- Do not spend more jobs until the scheduler/budget failure is fixed.
+- The smallest safe fix surface is the existing Stage 2 first-pass coverage mechanism in `research-orchestrator.ts`: below-floor selected claims must get a bounded first provider-search pass before earlier claims can consume several queries and large fetch/extraction batches.
+
+Implemented scheduler fix:
+- Commit: `fd5ed92b` — `fix(stage2): bound selected claim first-pass research`.
+- Adds UCM-backed first-pass caps:
+  - `researchFirstPassMaxQueriesPerClaim` default `1`.
+  - `researchFirstPassRelevanceTopNFetch` default `2`.
+- Behavior: while a claim is below `sufficiencyMinResearchedIterationsPerClaim`, the first main research pass is limited to the configured query and fetch breadth. Once the claim reaches the researched-iteration floor, normal query budget and `relevanceTopNFetch` behavior resume.
+- This amends the existing coverage-first mechanism; it does not add a second selector, semantic rule, prompt change, or Stage 4 workaround.
+
+Verification for `fd5ed92b`:
+- `npm -w apps/web run test -- test/unit/lib/analyzer/research-orchestrator-progress.test.ts`: passed.
+- `npm -w apps/web run test -- test/unit/lib/config-drift.test.ts`: passed.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts -t "preserves contradiction-reserved query budget"`: passed after updating the test to exercise the post-floor path.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts -t "should run full iteration pipeline"`: passed.
+- `npm -w apps/web run build`: passed.
+- `npm test`: passed.
+- `git diff --check`: passed.
+
+Next gate:
+- Restart/reseed before live validation.
+- Run exactly one Bolsonaro EN canary first. Captain increased the live-job budget to 7 before this canary gate.
+- Success criterion for this slice is not final positive verdict yet; it is that all three selected claims receive provider-search attempts and `selected_claim_zero_acquisition` does not fire.
+- If coverage succeeds, evaluate the verdict/evidence pool to choose the next quality lane.
+- If coverage still fails, stop and do not spend additional jobs until the scheduler hypothesis is re-reviewed.
