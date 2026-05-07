@@ -283,3 +283,61 @@ Next gate:
 - Run one Bolsonaro EN canary first. Remaining live-job budget before that canary: 3.
 - If EN still admits collateral direct contradictions for `AC_02` / `AC_03`, stop and spend no more jobs on this lane.
 - If EN materially improves without collateral contradictions, use remaining budget only on a PT control and one direct-contradiction control.
+
+## 2026-05-07 post-`e1ea613e` EN canary
+
+Implemented prompt/code commit:
+- `e1ea613e` — `fix(stage2): expand direction basis taxonomy`.
+- Branch: local `main`.
+- Runtime: restarted/reseeded before submission.
+- Live-job budget before canary: 3.
+
+Live canary:
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+- Draft: `20d61d6edf024b7396147e40114defed`.
+- Job: `a275ca6e329b4444bdd812b2cd075dab`.
+- Result: `UNVERIFIED` 55 / 40.
+- Exported result: `test-output/bolsonaro-en-a275-result.json`.
+- Claim split remained correct:
+  - `AC_01`: The legal proceedings against Jair Bolsonaro complied with Brazilian law.
+  - `AC_02`: The proceedings against Jair Bolsonaro met international standards for a fair trial.
+  - `AC_03`: The verdicts against Jair Bolsonaro met international standards for a fair trial.
+
+Stage 2 direction-basis outcome:
+- The targeted collateral-contradiction class is fixed in this canary.
+- Final claim-local pools:
+  - `AC_01`: 11 supports / 0 contradicts / 38 neutral.
+  - `AC_02`: 1 support / 0 contradicts / 30 neutral.
+  - `AC_03`: 4 supports / 0 contradicts / 14 neutral.
+- Previously problematic OAS/IACHR-style material now appears as `allegation_only`, `concern_only`, `question_only`, `procedural_fact_only`, `non_controlling_position_only`, or `collateral_context` with neutral direction, rather than as explicit contradiction.
+- Example residual note: `EV_1778149500609` still has `supports + direct_safeguard_record`, but its `applicability` is `contextual`; the citation integrity guard correctly drops it from directional citation arrays.
+
+Final verdict outcome:
+- The report is still not at the expected positive-side result.
+- `AC_01` is now `LEANING-TRUE` 68 / 50.
+- `AC_02` remains `UNVERIFIED` 48 / 38, with no directional citation arrays.
+- `AC_03` remains `UNVERIFIED` 48 / 35, despite four supporting citations.
+- Overall report remains `UNVERIFIED` 55 / 40.
+
+Comparator delta against `91bf6083...`:
+- Comparator `91bf6083...` was `LEANING-TRUE` 63 / 52 with all three claims positive-side:
+  - `AC_01`: 70 / 62, 17 cited supports / 0 contradictions.
+  - `AC_02`: 58 / 52, 11 supports / 0 contradictions.
+  - `AC_03`: 58 / 52, 9 supports / 0 contradictions.
+- Current `a275...` has the same correct 3-claim structure and zero contradictions, but it lacks enough direct support for `AC_02` and has weaker support for `AC_03`.
+- Missing / weaker successful comparator source routes include sources such as Time.com, Al Jazeera, PBS, NPR, and stronger target-specific use of HRW / Lawfare / public-trial records.
+
+Current root-cause assessment:
+- `e1ea613e` should be kept. It fixes the reviewed Stage 2 collateral-contradiction failure without introducing deterministic text logic.
+- The remaining Bolsonaro EN failure is no longer primarily Stage 2 contradiction misclassification.
+- The next likely root causes are:
+  - source acquisition / query routing still undersamples positive target-specific fair-trial source routes for `AC_02` and `AC_03`;
+  - Stage 2 directness/applicability is conservative for target-safeguard material that can support fair-trial-standard claims;
+  - Stage 4 may be over-requiring a direct assessment by an international body instead of allowing a reasoned verdict from target-specific safeguard records mapped to ACHR / ICCPR standards.
+- `verdict_direction_issue` warnings are now limited to citation-integrity cleanup of invalid contextual directional citations; this is no longer the main negative-skew failure.
+- A remaining `verdict_grounding_issue` on `AC_02` shows Stage 4 reasoning still discusses neutral challenge-context items even when directional citation arrays are empty. This should be treated as a separate Stage 4/challenge-context discipline issue, not a reason to revert `e1ea613e`.
+
+Decision after this canary:
+- Stop spending jobs for now. Remaining live-job budget: 2.
+- Do not run PT / Plastic controls yet because the primary EN canary still misses the expected result, and the next fix surface needs review before more live validation.
+- Recommended next review packet: compare `a275...` against `91bf6083...` at source-route, applicability, and verdict-standard levels; decide whether the next smallest fix should target query/source acquisition, Stage 2 directness/applicability for safeguard records, or Stage 4 standards-evidence weighting.
