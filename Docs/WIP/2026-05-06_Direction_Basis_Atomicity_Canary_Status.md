@@ -389,3 +389,43 @@ Next gate:
 - Success criterion for this slice is not final positive verdict yet; it is that all three selected claims receive provider-search attempts and `selected_claim_zero_acquisition` does not fire.
 - If coverage succeeds, evaluate the verdict/evidence pool to choose the next quality lane.
 - If coverage still fails, stop and do not spend additional jobs until the scheduler hypothesis is re-reviewed.
+
+## 2026-05-07 post-`fd5ed92b` EN scheduler canary
+
+Live canary:
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`
+- Draft: `127a991f89f04ffda90e9ed90e288e47`.
+- Job: `6b14459d44204905973365856dd6376c`.
+- Commit under test: `f72fc08c` (docs commit on top of scheduler code `fd5ed92b`).
+- Result: `UNVERIFIED` 53.6 / 40.
+- Exported result: `test-output/bolsonaro-en-6b144-result.json`.
+- Live-job budget after this canary: 6.
+
+Scheduler gate:
+- Passed. All three selected claims received provider-search attempts and `selected_claim_zero_acquisition` did not fire.
+- Coverage:
+  - `AC_01`: 1 targeted main iteration, 2 searches, 5 fetch attempts, elapsed `57048ms`.
+  - `AC_02`: 2 targeted main iterations, 8 searches, 10 fetch attempts, elapsed `178520ms`.
+  - `AC_03`: 2 targeted main iterations, 6 searches, 7 fetch attempts, elapsed `137523ms`.
+- Decision: keep `fd5ed92b`. It amended existing Stage 2 below-floor coverage with structural UCM caps and solved the zero-search selected-claim failure observed in `ec2f...`.
+
+Remaining report-quality problem:
+- The final verdict is still not the expected positive-side result.
+- Claim-local pools now show a Stage 2 direction-basis calibration issue rather than scheduler starvation:
+  - `AC_01`: 2 supports / 4 contradicts / 23 neutral.
+  - `AC_02`: 2 supports / 5 contradicts / 6 neutral.
+  - `AC_03`: 6 supports / 5 contradicts / 10 neutral.
+- Remaining contradictions are mostly `direct_substantive_finding + direct` even when the source text is concern, party/legal-team objection, non-controlling dissent, appearance-risk material, appeal-limit caveat, or unusual-but-allowed procedure.
+
+Reviewer convergence:
+- Keep `fd5ed92b` / `f72fc08c`; do not revert.
+- Do not broaden deterministic code normalization. The remaining bad items are structurally self-consistent but semantically wrong, so code would need to inspect text meaning to override them, which would violate AGENTS.md.
+- Do not fix Stage 4 first. Stage 4 is mostly consuming Stage 2 directional labels in this canary; Stage 4 repair would mask the evidence-pool defect.
+- Source acquisition remains imperfect, but the immediate blocker is contradiction reintroduction from Stage 2 direction-basis calibration.
+
+Recommended next fix, pending explicit Captain approval because it edits `apps/web/prompts/`:
+- Amend only the `APPLICABILITY_ASSESSMENT` prompt section.
+- No enum change, no code self-consistency expansion, no domain terms.
+- Generic rule to add: for rule-governed standard claims, `direct_substantive_finding` requires an adopted/operative target-specific finding, standards outcome, legally effective consequence, remedy, annulment, disqualification, or target-specific safeguard provided/denied/upheld/rejected/exercised. Role facts, party/legal-team objections, appearance-risk material, criticism, non-controlling dissents, unusual-but-allowed procedure, and unresolved appeal caveats stay neutral with `concern_only`, `procedural_fact_only`, or `non_controlling_position_only` unless they establish that operative target-path outcome.
+- Add focused prompt-contract tests with abstract examples only.
+- After approval and local verification, commit, restart/reseed, and run one Bolsonaro EN canary only. Stop if collateral/concern items still become `direct_substantive_finding` contradictions.
