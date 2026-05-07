@@ -4484,6 +4484,7 @@ describe("Stage 2: runResearchIteration", () => {
       llmCalls: 0,
       sources: [],
       evidenceItems: [],
+      researchedIterationsByClaim: { AC_01: 1 },
       contradictionSourcesFound: 0,
       mainIterationsUsed: 0,
       contradictionIterationsUsed: 0,

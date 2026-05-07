@@ -191,4 +191,154 @@ describe("runResearchIteration progress events", () => {
     ]));
     expect(state.evidenceItems).toHaveLength(1);
   });
+
+  it("bounds first-pass research breadth while a claim is below the researched-iteration floor", async () => {
+    const onEvent = vi.fn();
+    const state = createResearchState(onEvent);
+    const claim = state.understanding!.atomicClaims[0] as AtomicClaim;
+    const searchResults = Array.from({ length: 5 }, (_, index) => ({
+      url: `https://example.test/source-${index}`,
+      title: `Source ${index}`,
+      snippet: "Metric B",
+    }));
+
+    mockGenerateResearchQueries.mockResolvedValue([
+      { query: "first query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+      { query: "second query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+      { query: "third query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+    ]);
+    mockSearchWebWithProvider.mockResolvedValue({
+      results: searchResults,
+      providersUsed: ["TestProvider"],
+      errors: [],
+    });
+    mockClassifyRelevance.mockResolvedValue(searchResults.map((result, index) => ({
+      ...result,
+      relevanceScore: 0.9 - index * 0.01,
+      originalRank: index,
+    })));
+    mockFetchSources.mockImplementation(async (sources: Array<{ url: string; title: string }>) =>
+      sources.map((source, index) => ({
+        id: `SRC_${index}`,
+        url: source.url,
+        title: source.title,
+        trackRecordScore: null,
+        fullText: "Metric B is reported.",
+        fetchedAt: "2026-04-27T00:00:00.000Z",
+        category: "official",
+        fetchSuccess: true,
+        searchQuery: "first query",
+        relevanceScore: 0.9,
+      })),
+    );
+
+    await runResearchIteration(
+      claim,
+      "main",
+      {} as any,
+      {
+        contradictionReservedQueries: 0,
+        maxEvidenceItemsPerSource: 5,
+        perClaimQueryBudget: 4,
+        primarySourceRefinementEnabled: false,
+        relevanceFloor: 0.4,
+        relevanceTopNFetch: 5,
+        researchFirstPassMaxQueriesPerClaim: 1,
+        researchFirstPassRelevanceTopNFetch: 2,
+        sufficiencyMinResearchedIterationsPerClaim: 1,
+      } as any,
+      8,
+      "2026-04-27",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledWith(
+      claim,
+      "main",
+      state.evidenceItems,
+      expect.any(Object),
+      "2026-04-27",
+      [],
+      1,
+      expect.any(Object),
+    );
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(mockFetchSources.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it("uses normal research breadth after a claim has reached the researched-iteration floor", async () => {
+    const onEvent = vi.fn();
+    const state = createResearchState(onEvent);
+    state.researchedIterationsByClaim = { AC_01: 1 };
+    const claim = state.understanding!.atomicClaims[0] as AtomicClaim;
+    const searchResults = Array.from({ length: 5 }, (_, index) => ({
+      url: `https://example.test/full-${index}`,
+      title: `Full Source ${index}`,
+      snippet: "Metric B",
+    }));
+
+    mockGenerateResearchQueries.mockResolvedValue([
+      { query: "first query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+      { query: "second query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+      { query: "third query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+      { query: "fourth query", freshnessWindow: "none", retrievalLane: "primary_direct" },
+    ]);
+    mockSearchWebWithProvider.mockResolvedValue({
+      results: searchResults,
+      providersUsed: ["TestProvider"],
+      errors: [],
+    });
+    mockClassifyRelevance.mockResolvedValue(searchResults.map((result, index) => ({
+      ...result,
+      relevanceScore: 0.9 - index * 0.01,
+      originalRank: index,
+    })));
+    mockFetchSources.mockImplementation(async (sources: Array<{ url: string; title: string }>) =>
+      sources.map((source, index) => ({
+        id: `SRC_FULL_${index}`,
+        url: source.url,
+        title: source.title,
+        trackRecordScore: null,
+        fullText: "Metric B is reported.",
+        fetchedAt: "2026-04-27T00:00:00.000Z",
+        category: "official",
+        fetchSuccess: true,
+        searchQuery: "first query",
+        relevanceScore: 0.9,
+      })),
+    );
+
+    await runResearchIteration(
+      claim,
+      "main",
+      {} as any,
+      {
+        contradictionReservedQueries: 0,
+        maxEvidenceItemsPerSource: 5,
+        perClaimQueryBudget: 4,
+        primarySourceRefinementEnabled: false,
+        relevanceFloor: 0.4,
+        relevanceTopNFetch: 5,
+        researchFirstPassMaxQueriesPerClaim: 1,
+        researchFirstPassRelevanceTopNFetch: 2,
+        sufficiencyMinResearchedIterationsPerClaim: 1,
+      } as any,
+      8,
+      "2026-04-27",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledWith(
+      claim,
+      "main",
+      state.evidenceItems,
+      expect.any(Object),
+      "2026-04-27",
+      [],
+      4,
+      expect.any(Object),
+    );
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(4);
+    expect(mockFetchSources.mock.calls[0][0]).toHaveLength(5);
+  });
 });

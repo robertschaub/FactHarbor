@@ -1410,6 +1410,13 @@ export async function runResearchIteration(
   }
   state.researchedIterationsByClaim ??= {};
   const priorMainIterationsForClaim = state.researchedIterationsByClaim[targetClaim.id] ?? 0;
+  const minResearchedIterationsPerClaim = pipelineConfig.sufficiencyMinResearchedIterationsPerClaim ?? 1;
+  const isBelowResearchFloor = iterationType === "main"
+    && minResearchedIterationsPerClaim > 0
+    && priorMainIterationsForClaim < minResearchedIterationsPerClaim;
+  const effectiveAvailableQueryBudget = isBelowResearchFloor
+    ? Math.min(availableQueryBudget, pipelineConfig.researchFirstPassMaxQueriesPerClaim ?? 1)
+    : availableQueryBudget;
   const iterationStartedAt = Date.now();
   const evidenceCountBeforeIteration = state.evidenceItems.length;
   const searchQueryCountBeforeIteration = state.searchQueries.length;
@@ -1429,13 +1436,13 @@ export async function runResearchIteration(
     pipelineConfig,
     currentDate,
     state.understanding?.distinctEvents ?? [],
-    availableQueryBudget,
+    effectiveAvailableQueryBudget,
     {
       language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
       geographies: claimRelevantGeographies,
     },
-  ));
+  )).slice(0, effectiveAvailableQueryBudget);
   state.llmCalls++;
   const generatedQueryCount = queries.length;
   if (generatedQueryCount === 0) {
@@ -1567,7 +1574,10 @@ export async function runResearchIteration(
 
         // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
         const { selectTopSources } = await import("./pipeline-utils");
-        const topN = pipelineConfig.relevanceTopNFetch ?? 5;
+        const configuredTopN = pipelineConfig.relevanceTopNFetch ?? 5;
+        const topN = isBelowResearchFloor
+          ? Math.min(configuredTopN, pipelineConfig.researchFirstPassRelevanceTopNFetch ?? 2)
+          : configuredTopN;
         const selectedForFetch = selectTopSources(relevantSources, topN);
         const selectedForFetchUrls = new Set(selectedForFetch.map((source) => source.url));
         state.onEvent?.(`Fetching ${selectedForFetch.length} relevant source(s) for ${targetClaim.id}...`, -1);

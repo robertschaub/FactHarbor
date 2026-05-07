@@ -600,6 +600,10 @@ export const PipelineConfigSchema = z.object({
     .describe("After this many consecutive 401/403 failures from the same domain within a fetchSources() call, best-effort skip later same-domain URLs. 0 disables. Default: 2."),
   researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
     .describe("Maximum number of search queries generated per research iteration (default: 4)"),
+  researchFirstPassMaxQueriesPerClaim: z.number().int().min(1).max(5).optional()
+    .describe("Maximum generated search queries for a claim while it is still below the per-claim researched-iteration floor (default: 1)."),
+  researchFirstPassRelevanceTopNFetch: z.number().int().min(1).max(20).optional()
+    .describe("Maximum relevant sources fetched per first-pass query while a claim is still below the per-claim researched-iteration floor (default: 2)."),
   sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
     .describe("Maximum characters extracted from an individual source for evidence processing (default: 15000)"),
   maxEvidenceItemsPerSource: z.number().int().min(1).max(50).optional()
@@ -955,6 +959,12 @@ export const PipelineConfigSchema = z.object({
   if (data.researchZeroYieldBreakThreshold === undefined) {
     data.researchZeroYieldBreakThreshold = 2;
   }
+  if (data.researchFirstPassMaxQueriesPerClaim === undefined) {
+    data.researchFirstPassMaxQueriesPerClaim = 1;
+  }
+  if (data.researchFirstPassRelevanceTopNFetch === undefined) {
+    data.researchFirstPassRelevanceTopNFetch = 2;
+  }
   if (data.claimAnnotationMode === undefined) {
     data.claimAnnotationMode = "verifiability_and_misleadingness";
   }
@@ -1252,6 +1262,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   fetchSameDomainDelayMs: 500,
   fetchDomainSkipThreshold: 2,
   researchMaxQueriesPerIteration: 4,
+  researchFirstPassMaxQueriesPerClaim: 1,
+  researchFirstPassRelevanceTopNFetch: 2,
   sourceExtractionMaxLength: 15000,
   maxEvidenceItemsPerSource: 5,
   iterationRetryDelayMs: 2000,
