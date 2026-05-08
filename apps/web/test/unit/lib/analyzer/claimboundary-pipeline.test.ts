@@ -4556,6 +4556,61 @@ describe("Stage 2: runResearchIteration", () => {
     expect(mockSearch).toHaveBeenCalledTimes(1);
   });
 
+  it("does not spend claim query budget on exact duplicate queries for the same claim", async () => {
+    const claim = createAtomicClaim({ id: "AC_01" });
+    const state = {
+      searchQueries: [{
+        query: "repeated query",
+        claimId: "AC_01",
+        iteration: 0,
+        focus: "main",
+        resultsCount: 0,
+        timestamp: "2026-02-17T00:00:00.000Z",
+      }],
+      queryBudgetUsageByClaim: { AC_01: 1 },
+      llmCalls: 0,
+      sources: [],
+      evidenceItems: [],
+      researchedIterationsByClaim: { AC_01: 1 },
+      contradictionSourcesFound: 0,
+      mainIterationsUsed: 1,
+      contradictionIterationsUsed: 0,
+    } as any;
+
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "  Repeated   query  ", rationale: "duplicate" },
+        { query: "new query", rationale: "fresh" },
+      ],
+    });
+    mockSearch.mockResolvedValue({ results: [], providersUsed: ["google"] } as any);
+
+    await runResearchIteration(
+      claim,
+      "main",
+      mockSearchConfig,
+      {
+        perClaimQueryBudget: 3,
+        contradictionReservedQueries: 0,
+        researchMaxQueriesPerIteration: 2,
+        queryStrategyMode: "legacy",
+      } as any,
+      8,
+      "2026-02-17",
+      state,
+    );
+
+    expect(state.searchQueries.map((query: any) => query.query)).toEqual([
+      "repeated query",
+      "new query",
+    ]);
+    expect(state.queryBudgetUsageByClaim["AC_01"]).toBe(2);
+    expect(mockSearch).toHaveBeenCalledTimes(1);
+    expect(mockSearch).toHaveBeenCalledWith(expect.objectContaining({ query: "new query" }));
+  });
+
   it("preserves contradiction-reserved query budget during main iterations", async () => {
     const claim = createAtomicClaim({ id: "AC_01" });
     const state = {

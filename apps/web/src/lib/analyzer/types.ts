@@ -358,6 +358,7 @@ export interface LanguageIntent {
 
 export interface SearchQuery {
   query: string;
+  claimId?: string;
   iteration: number;
   focus: string;
   resultsCount: number;

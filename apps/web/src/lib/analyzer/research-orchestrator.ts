@@ -222,6 +222,44 @@ function hasExplicitRetrievalMetadata(query: GeneratedResearchQuery): boolean {
   return query.retrievalLane !== undefined || query.freshnessWindow !== undefined;
 }
 
+function normalizeExecutedQueryKey(query: string): string {
+  return query
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function hasExecutedClaimQuery(
+  state: Pick<CBResearchState, "searchQueries">,
+  claimId: string,
+  query: string,
+): boolean {
+  const queryKey = normalizeExecutedQueryKey(query);
+  if (!queryKey) return false;
+  return state.searchQueries.some((entry) =>
+    entry.claimId === claimId &&
+    normalizeExecutedQueryKey(entry.query) === queryKey,
+  );
+}
+
+function filterUnsearchedClaimQueries(
+  state: Pick<CBResearchState, "searchQueries">,
+  claimId: string,
+  queries: GeneratedResearchQuery[],
+): GeneratedResearchQuery[] {
+  const seenKeys = new Set<string>();
+  return queries.filter((query) => {
+    const queryKey = normalizeExecutedQueryKey(query.query);
+    if (!queryKey) return false;
+    if (seenKeys.has(queryKey) || hasExecutedClaimQuery(state, claimId, query.query)) {
+      return false;
+    }
+    seenKeys.add(queryKey);
+    return true;
+  });
+}
+
 function createClaimIterationTelemetryEntry(
   iteration: number,
   iterationType: ClaimAcquisitionIterationEntry["iterationType"],
@@ -1429,7 +1467,7 @@ export async function runResearchIteration(
   state.onEvent?.(`Generating ${iterationType} research queries for ${targetClaim.id}...`, -1);
 
   // 1. Generate search queries via LLM (Haiku)
-  const queries = sortGeneratedResearchQueries(await generateResearchQueries(
+  const generatedQueries = sortGeneratedResearchQueries(await generateResearchQueries(
     targetClaim,
     iterationType,
     state.evidenceItems,
@@ -1442,7 +1480,12 @@ export async function runResearchIteration(
       geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
       geographies: claimRelevantGeographies,
     },
-  )).slice(0, effectiveAvailableQueryBudget);
+  ));
+  const queries = filterUnsearchedClaimQueries(
+    state,
+    targetClaim.id,
+    generatedQueries,
+  ).slice(0, effectiveAvailableQueryBudget);
   state.llmCalls++;
   const generatedQueryCount = queries.length;
   if (generatedQueryCount === 0) {
@@ -1493,6 +1536,7 @@ export async function runResearchIteration(
 
         state.searchQueries.push({
           query: queryObj.query,
+          claimId: targetClaim.id,
           iteration: iterationIndex,
           focus,
           resultsCount: response.results.length,
@@ -1880,7 +1924,7 @@ export async function runResearchIteration(
       );
     }
     state.onEvent?.(`Generating direct-source refinement queries for ${targetClaim.id}...`, -1);
-    const refinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
+    const generatedRefinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
       targetClaim,
       "refinement",
       state.evidenceItems,
@@ -1894,6 +1938,11 @@ export async function runResearchIteration(
         geographies: claimRelevantGeographies,
       },
     ));
+    const refinementPlan = filterUnsearchedClaimQueries(
+      state,
+      targetClaim.id,
+      generatedRefinementPlan,
+    );
     state.llmCalls++;
 
     if (!refinementPlan.some(hasExplicitRetrievalMetadata)) {
@@ -2004,9 +2053,7 @@ export async function maybeRunSupplementaryEnglishLane(
 
   const maxQueries = enLane.maxAdditionalQueriesPerClaim ?? 1;
   if (maxQueries <= 0) return;
-
-  // Budget check
-  if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) return;
+  if (getClaimQueryBudgetRemaining(state, targetClaim.id, pipelineConfig) <= 0) return;
 
   const enIterationStartedAt = Date.now();
   console.info(
@@ -2054,6 +2101,11 @@ export async function maybeRunSupplementaryEnglishLane(
   };
 
   const enQuery = enQueries[0];
+  if (hasExecutedClaimQuery(state, targetClaim.id, enQuery.query)) {
+    return;
+  }
+  // Budget check after query generation so empty or duplicate EN-lane queries do not consume budget.
+  if (!consumeClaimQueryBudget(state, targetClaim.id, pipelineConfig, 1)) return;
   try {
     state.onEvent?.(`Searching English supplementary source candidates for ${targetClaim.id}...`, -1);
     enTelemetry.searchAttempts = (enTelemetry.searchAttempts ?? 0) + 1;
@@ -2067,6 +2119,7 @@ export async function maybeRunSupplementaryEnglishLane(
 
     state.searchQueries.push({
       query: enQuery.query,
+      claimId: targetClaim.id,
       iteration: iterationIndex,
       focus: iterationType,
       resultsCount: response.results.length,
