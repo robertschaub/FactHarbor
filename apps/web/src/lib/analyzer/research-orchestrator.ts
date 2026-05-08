@@ -558,6 +558,15 @@ export function getClaimProviderSearchAttemptCount(
     .reduce((sum, entry) => sum + getIterationSearchAttemptCount(entry), 0);
 }
 
+export function getClaimTargetedMainAdmittedEvidenceCount(
+  state: Pick<CBResearchState, "claimAcquisitionLedger">,
+  claimId: string,
+): number {
+  return (state.claimAcquisitionLedger?.[claimId]?.iterations ?? [])
+    .filter((entry) => entry.iterationType === "main")
+    .reduce((sum, entry) => sum + Math.max(0, entry.admittedEvidenceItems ?? 0), 0);
+}
+
 export function recordApplicabilityRemovalTelemetry(
   state: CBResearchState,
   removedItems: EvidenceItem[],
@@ -772,6 +781,7 @@ export async function researchEvidence(
       diversityConfig,
       researchedIterationsByClaim: state.researchedIterationsByClaim,
       minResearchedIterationsPerClaim: sufficiencyMinResearchedIterationsPerClaim,
+      claimAcquisitionLedger: state.claimAcquisitionLedger,
     })) break;
 
     // Find claim with fewest evidence items that still has budget remaining.
@@ -809,11 +819,14 @@ export async function researchEvidence(
       break;
     }
     const belowFloorClaims = sufficiencyMinResearchedIterationsPerClaim > 0
-      ? budgetEligibleClaims.filter(
-          (claim) =>
-            (state.researchedIterationsByClaim?.[claim.id] ?? 0)
-              < sufficiencyMinResearchedIterationsPerClaim,
-        )
+      ? budgetEligibleClaims.filter((claim) => {
+          const researchedIterations =
+            state.researchedIterationsByClaim?.[claim.id] ?? 0;
+          const targetedAdmittedEvidence =
+            getClaimTargetedMainAdmittedEvidenceCount(state, claim.id);
+          return researchedIterations < sufficiencyMinResearchedIterationsPerClaim
+            || targetedAdmittedEvidence < sufficiencyMinResearchedIterationsPerClaim;
+        })
       : [];
     const targetingPool = belowFloorClaims.length > 0 ? belowFloorClaims : budgetEligibleClaims;
     const targetClaim = findLeastResearchedClaim(
@@ -2411,6 +2424,7 @@ export interface SufficiencyOptions {
   diversityConfig?: DiversitySufficiencyConfig;
   researchedIterationsByClaim?: Record<string, number>;
   minResearchedIterationsPerClaim?: number;
+  claimAcquisitionLedger?: Record<string, ClaimAcquisitionLedgerEntry>;
 }
 
 export function allClaimsSufficient(
@@ -2423,6 +2437,7 @@ export function allClaimsSufficient(
   diversityConfig?: DiversitySufficiencyConfig,
   researchedIterationsByClaim?: Record<string, number>,
   minResearchedIterationsPerClaim: number = 1,
+  claimAcquisitionLedger?: Record<string, ClaimAcquisitionLedgerEntry>,
 ): boolean {
   // Support both positional (backward compat) and options-object calling conventions.
   // Options-object form: allClaimsSufficient(claims, evidence, threshold, { ... })
@@ -2436,6 +2451,7 @@ export function allClaimsSufficient(
       opts.diversityConfig,
       opts.researchedIterationsByClaim,
       opts.minResearchedIterationsPerClaim ?? 1,
+      opts.claimAcquisitionLedger,
     );
   }
   const mainIterationsCompleted = mainIterationsCompletedOrOpts;
@@ -2467,6 +2483,11 @@ export function allClaimsSufficient(
     if (includeSeeded && minResearchedIterationsPerClaim > 0 && researchedIterationsByClaim) {
       const claimResearchedIterations = researchedIterationsByClaim[claim.id] ?? 0;
       if (claimResearchedIterations < minResearchedIterationsPerClaim) return false;
+    }
+    if (minResearchedIterationsPerClaim > 0 && claimAcquisitionLedger) {
+      const targetedAdmittedEvidence =
+        getClaimTargetedMainAdmittedEvidenceCount({ claimAcquisitionLedger }, claim.id);
+      if (targetedAdmittedEvidence < minResearchedIterationsPerClaim) return false;
     }
 
     const claimEvidence = evidenceItems.filter((e) => {
