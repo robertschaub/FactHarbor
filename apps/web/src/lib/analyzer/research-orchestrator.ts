@@ -1414,8 +1414,11 @@ export async function runResearchIteration(
   const isBelowResearchFloor = iterationType === "main"
     && minResearchedIterationsPerClaim > 0
     && priorMainIterationsForClaim < minResearchedIterationsPerClaim;
+  const firstPassQueryLimit = pipelineConfig.researchFirstPassMaxQueriesPerClaim
+    ?? pipelineConfig.researchMaxQueriesPerIteration
+    ?? 4;
   const effectiveAvailableQueryBudget = isBelowResearchFloor
-    ? Math.min(availableQueryBudget, pipelineConfig.researchFirstPassMaxQueriesPerClaim ?? 1)
+    ? Math.min(availableQueryBudget, firstPassQueryLimit)
     : availableQueryBudget;
   const iterationStartedAt = Date.now();
   const evidenceCountBeforeIteration = state.evidenceItems.length;

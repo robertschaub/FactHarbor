@@ -601,7 +601,7 @@ export const PipelineConfigSchema = z.object({
   researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
     .describe("Maximum number of search queries generated per research iteration (default: 4)"),
   researchFirstPassMaxQueriesPerClaim: z.number().int().min(1).max(5).optional()
-    .describe("Maximum generated search queries for a claim while it is still below the per-claim researched-iteration floor (default: 1)."),
+    .describe("Maximum generated search queries for a claim while it is still below the per-claim researched-iteration floor (default: researchMaxQueriesPerIteration)."),
   researchFirstPassRelevanceTopNFetch: z.number().int().min(1).max(20).optional()
     .describe("Maximum relevant sources fetched per first-pass query while a claim is still below the per-claim researched-iteration floor (default: 2)."),
   sourceExtractionMaxLength: z.number().int().min(1000).max(50000).optional()
@@ -960,7 +960,7 @@ export const PipelineConfigSchema = z.object({
     data.researchZeroYieldBreakThreshold = 2;
   }
   if (data.researchFirstPassMaxQueriesPerClaim === undefined) {
-    data.researchFirstPassMaxQueriesPerClaim = 1;
+    data.researchFirstPassMaxQueriesPerClaim = data.researchMaxQueriesPerIteration ?? 4;
   }
   if (data.researchFirstPassRelevanceTopNFetch === undefined) {
     data.researchFirstPassRelevanceTopNFetch = 2;
@@ -1262,7 +1262,7 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   fetchSameDomainDelayMs: 500,
   fetchDomainSkipThreshold: 2,
   researchMaxQueriesPerIteration: 4,
-  researchFirstPassMaxQueriesPerClaim: 1,
+  researchFirstPassMaxQueriesPerClaim: 4,
   researchFirstPassRelevanceTopNFetch: 2,
   sourceExtractionMaxLength: 15000,
   maxEvidenceItemsPerSource: 5,

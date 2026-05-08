@@ -161,7 +161,7 @@
   "fetchSameDomainDelayMs": 500,
   "fetchDomainSkipThreshold": 2,
   "researchMaxQueriesPerIteration": 4,
-  "researchFirstPassMaxQueriesPerClaim": 1,
+  "researchFirstPassMaxQueriesPerClaim": 4,
   "researchFirstPassRelevanceTopNFetch": 2,
   "sourceExtractionMaxLength": 15000,
   "maxEvidenceItemsPerSource": 5,
