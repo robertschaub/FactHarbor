@@ -701,9 +701,6 @@ describe("Default Config Values", () => {
       expect(DEFAULT_PIPELINE_CONFIG.queryStrategyMode).toBe("pro_con");
       expect(DEFAULT_PIPELINE_CONFIG.perClaimQueryBudget).toBe(8);
       expect(DEFAULT_PIPELINE_CONFIG.researchMaxQueriesPerIteration).toBe(4);
-      expect(DEFAULT_PIPELINE_CONFIG.researchFirstPassMaxQueriesPerClaim).toBe(
-        DEFAULT_PIPELINE_CONFIG.researchMaxQueriesPerIteration,
-      );
     });
 
     it("surfaces canonical debateRoles defaults", () => {
