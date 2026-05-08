@@ -36,6 +36,7 @@ import {
   type ClaimVerdict7Point,
   type ConsistencyResult,
   type CoverageMatrix,
+  DIRECTIONAL_BASES,
   type EvidenceItem,
   type FetchedSource,
   type LLMProviderType,
@@ -2601,6 +2602,7 @@ function buildNeutralCitationAdjudicationCases(
           || item.claimDirection !== "neutral"
           || item.applicability !== "direct"
           || !isSingleClaimScopedEvidence(item, collapse.claimId)
+          || hasExplicitNonDirectionalBasis(item)
         ) {
           return null;
         }
@@ -2648,6 +2650,7 @@ function buildNeutralCitationAdjudicationCases(
         item.claimDirection === "neutral"
         && item.applicability === "direct"
         && isSingleClaimScopedEvidence(item, verdict.claimId)
+        && !hasExplicitNonDirectionalBasis(item)
         && !existingCandidateIds.has(item.id),
       )
       .map((item): NeutralCitationCandidate => ({
@@ -2741,6 +2744,7 @@ function buildNeutralCitationAdjudicationCases(
         item.claimDirection === "neutral"
         && item.applicability === "direct"
         && isSingleClaimScopedEvidence(item, verdict.claimId)
+        && !hasExplicitNonDirectionalBasis(item)
       )
       .map((item): NeutralCitationCandidate => ({
         evidenceId: item.id,
@@ -2766,6 +2770,10 @@ function buildNeutralCitationAdjudicationCases(
   }
 
   return cases;
+}
+
+function hasExplicitNonDirectionalBasis(item: EvidenceItem): boolean {
+  return item.directionBasis !== undefined && !DIRECTIONAL_BASES.has(item.directionBasis);
 }
 
 type AcceptedCitationDirectionAdjudication = CitationDirectionAdjudication & {
@@ -2848,6 +2856,7 @@ async function adjudicateNeutralCitationDirections(
     const previousClaimDirection = item.claimDirection;
     if (caseMode === "bucket_mismatch") {
       if (previousClaimDirection !== "supports" && previousClaimDirection !== "contradicts") continue;
+      if (hasExplicitNonDirectionalBasis(item)) continue;
       item.claimDirection = adjudication.claimDirection;
       const entries = acceptedByClaim.get(adjudication.claimId) ?? [];
       entries.push({ ...adjudication, caseMode, previousClaimDirection });
@@ -2857,6 +2866,7 @@ async function adjudicateNeutralCitationDirections(
 
     if (adjudication.claimDirection === "neutral") continue;
     if (item.claimDirection !== "neutral") continue;
+    if (hasExplicitNonDirectionalBasis(item)) continue;
     item.claimDirection = adjudication.claimDirection;
     const entries = acceptedByClaim.get(adjudication.claimId) ?? [];
     entries.push({ ...adjudication, caseMode: caseMode ?? "decisive_missing", previousClaimDirection });

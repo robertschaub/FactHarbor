@@ -1384,7 +1384,7 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
   });
 
-  it("allows neutral concern evidence into adjudication without forcing a directional citation", async () => {
+  it("does not adjudicate explicit non-directional neutral evidence into a directional citation", async () => {
     const verdicts = [
       createCBVerdict({
         claimId: "AC_01",
@@ -1406,7 +1406,6 @@ describe("validateVerdicts (Step 5)", () => {
     ];
     const warnings: AnalysisWarning[] = [];
 
-    let adjudicationPayload: any;
     const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
       if (key === "VERDICT_GROUNDING_VALIDATION") {
         return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
@@ -1415,15 +1414,7 @@ describe("validateVerdicts (Step 5)", () => {
         return [{ claimId: "AC_01", directionValid: true, issues: [] }];
       }
       if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
-        adjudicationPayload = input;
-        return {
-          adjudications: [{
-            claimId: "AC_01",
-            evidenceId: "EV_CONCERN",
-            claimDirection: "neutral",
-            reasoning: "The item remains concern-only context for this claim.",
-          }],
-        };
+        throw new Error("non-directional evidence should not enter direction adjudication");
       }
       return [];
     }) as unknown as LLMCallFn;
@@ -1459,15 +1450,11 @@ describe("validateVerdicts (Step 5)", () => {
       },
     );
 
-    expect(mockLLM).toHaveBeenCalledWith(
+    expect(mockLLM).not.toHaveBeenCalledWith(
       "VERDICT_CITATION_DIRECTION_ADJUDICATION",
-      expect.objectContaining({ adjudicationCases: expect.any(Array) }),
-      expect.objectContaining({ tier: "budget" }),
+      expect.anything(),
+      expect.anything(),
     );
-    expect(adjudicationPayload.adjudicationCases[0].candidates[0]).toMatchObject({
-      evidenceId: "EV_CONCERN",
-      directionBasis: "concern_only",
-    });
     expect(evidence[0].claimDirection).toBe("neutral");
     expect(result[0].contradictingEvidenceIds).toEqual([]);
     expect(result[0].verdictReason).toBe("verdict_integrity_failure");
