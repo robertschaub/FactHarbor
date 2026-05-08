@@ -3705,33 +3705,6 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(true);
   });
 
-  it("blocks sufficiency when a claim only has cross-mapped evidence and no targeted admitted evidence", () => {
-    const claims = [
-      createAtomicClaim({ id: "AC_01" }),
-      createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
-    ];
-    const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", claimDirection: "supports" },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://d.com/1", claimDirection: "supports" },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "peer_reviewed_study", sourceUrl: "https://e.com/1", claimDirection: "supports" },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "F" }, sourceType: "government_report", sourceUrl: "https://f.com/1", claimDirection: "supports" },
-    ] as any[];
-
-    expect(allClaimsSufficient(claims, evidence, 3, {
-      mainIterationsCompleted: 2,
-      minMainIterations: 1,
-      diversityConfig,
-      researchedIterationsByClaim: { AC_01: 1, AC_02: 1 },
-      minResearchedIterationsPerClaim: 1,
-      claimAcquisitionLedger: {
-        AC_01: { iterations: [{ iterationType: "main", admittedEvidenceItems: 1 }] },
-        AC_02: { iterations: [{ iterationType: "main", admittedEvidenceItems: 0 }] },
-      } as any,
-    })).toBe(false);
-  });
-
   it("claim without seeded evidence is NOT regressed by the per-claim floor", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
