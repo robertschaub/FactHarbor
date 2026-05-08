@@ -11,7 +11,7 @@
 - **Commercial Register filing submitted:** 2026-04-27
 - **Commercial Register entry letter received:** 2026-04-29
 - **UID / Firmennummer:** `CHE-448.446.098`
-- **Registry visibility note:** public `SHAB` / `Zefix` visibility may still be propagating
+- **Registry visibility:** public Zefix entry confirmed live 2026-05-07: https://www.zefix.ch/de/search/entity/list/firm/1747231
 - **Primary support document:** Commercial Register entry letter, retained in the private legal archive rather than in this clean public branch
 - **Organisation email:** `info@factharbor.ch`
 

@@ -17,9 +17,8 @@ For FactHarbor, the practical recognition stack is:
 
 ## Exact Registration Order From Current State (29 April 2026)
 
-1. **Verify the public commercial-register visibility**
-   - Check `SHAB` / `Zefix`
-   - Download the commercial-register excerpt as soon as the public entry is visible
+1. ~~**Verify the public commercial-register visibility**~~ ✅ Zefix live 2026-05-07
+   - Download the commercial-register excerpt as soon as convenient
 2. **Open the Verein bank account**
    - Current status: ZKB application sent on `2026-04-29`
    - Use the entry letter, UID, statutes, founding protocol, and later the public excerpt if requested
@@ -105,10 +104,10 @@ For FactHarbor, the practical recognition stack is:
 
 ### Phase 3: Tax-Exempt Status (Target: Weeks 2–12, parallel)
 
-- [ ] **Prepare tax-exemption application** (Gesuch um Steuerbefreiung)
-  - Submit to cantonal Steueramt of your Sitz canton
+- [X] **Prepare tax-exemption application** (Gesuch um Steuerbefreiung) — submitted 2026-05-06
+  - Submitted to Kanton Zürich Steueramt: Gemeinnützige Zwecke
   - Documents: completed form, statutes, founding minutes, activity description / concept, budget projection
-  - Processing: 4–12 weeks
+  - Processing: 4–12 weeks (expect decision ~July–August 2026)
   - Result: stronger legal nonprofit status and possible inclusion in the public Zurich list of tax-exempt institutions
   - **Not a blocker for Goodstack** but strongly recommended for long-term donor and foundation credibility
 
@@ -116,7 +115,7 @@ For FactHarbor, the practical recognition stack is:
 
 **Prerequisites before applying:**
 
-- [ ] Verein registered on zefix.ch (Handelsregister entry visible) — entry letter received 2026-04-29; verify public Zefix visibility if needed
+- [X] Verein registered on zefix.ch (Handelsregister entry visible) — confirmed live 2026-05-07: https://www.zefix.ch/de/search/entity/list/firm/1747231
 - [X] Org email `info@factharbor.ch` set up (for Goodstack agent verification)
 - [ ] Statutes PDF ready (signed, dated 30+ days before application)
 - [ ] Bank statement PDF ready (original electronic, dated 30+ days before application)
@@ -136,7 +135,7 @@ For FactHarbor, the practical recognition stack is:
 
 **Prerequisites before applying:**
 
-- [ ] Verein registered on zefix.ch (same as Phase 4; entry letter received 2026-04-29)
+- [X] Verein registered on zefix.ch — confirmed live 2026-05-07
 - [X] Org email `info@factharbor.ch` set up
 - [X] UID assigned: `CHE-448.446.098`
 
@@ -196,9 +195,9 @@ For FactHarbor, the practical recognition stack is:
 | ZKB Account Opening Application | **READY** | `Operations/Finance/Buchhaltung/Eröffnung ZKB FactHarbor.pdf` |
 | AI/Search Provider Programs | **READY** | `Operations/Finance/AI_And_Search_Provider_Nonprofit_Programs.md` |
 | Search/API Outreach Templates | **READY** | `Operations/Finance/Search_API_Nonprofit_Outreach_2026-04-29.md` |
-| Tax-Exemption Application   | Not started | —                                                  |
-| Budget Projection           | Not started | —                                                  |
-| Activity Description        | Not started | —                                                  |
+| Tax-Exemption Application   | **SUBMITTED** 2026-05-06 | Gemeinnützige Zwecke, Kanton Zürich; 4–12 weeks processing |
+| Budget Projection           | **SUBMITTED** (part of tax-exemption package) | —                      |
+| Activity Description        | **SUBMITTED** (part of tax-exemption package) | —                      |
 | Bank Statement (PDF)        | Not started | —                                                  |
 
 ## Key Contacts to Arrange
@@ -233,8 +232,9 @@ For FactHarbor, the practical recognition stack is:
 2026-04-29:  ✅ Handelsregister entry letter received
 2026-04-29:  ✅ UID assigned: CHE-448.446.098
 2026-04-29:  ✅ ZKB bank-account application sent; PDF filed
-~2026-04-30: Verify Zefix visibility / download excerpt if already public
-~2026-05-05: Bank account opening confirmation / first bank document (expected next artifact)
+2026-05-06:  ✅ Tax-exemption application submitted (Gemeinnützige Zwecke, Kanton Zürich)
+2026-05-07:  ✅ Zefix entry live: https://www.zefix.ch/de/search/entity/list/firm/1747231
+~2026-05-xx: Bank account opening confirmation / first bank document (expected next artifact)
 ~2026-05-23: 30-day doc age met → Apply Goodstack (covers both Anthropic + OpenAI)
 ~2026-05-24: Goodstack verified (1-72 hours) → Claude for Nonprofits + OpenAI for Nonprofits
 Parallel:    Tax-exempt application, TechSoup, AWS/Google credits
