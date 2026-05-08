@@ -1039,8 +1039,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("non_controlling_position_only");
       expect(section).toContain("source_existence_only");
       expect(section).toContain("ambiguous_or_insufficient");
-      expect(section).toContain("Self-consistency");
-      expect(section).toContain("Do not use a non-directional basis with a directional `claimDirection`");
+      expect(section).toContain("Use `directionBasis` as diagnostic metadata");
+      expect(section).toContain("not as a second veto over `claimDirection`");
+      expect(section).toContain("keep the truth-direction label");
     });
 
     it("requires a same-target bridge before rule-governed concern material becomes directional", () => {

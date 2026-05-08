@@ -281,9 +281,8 @@ export type SourceType =
 
 /**
  * Basis for a claim-local evidence direction assignment.
- * Directional bases may carry `supports` or `contradicts`. Non-directional
- * bases must pair with `neutral` — runtime enforces this as LLM-output
- * self-consistency.
+ * This is diagnostic metadata explaining why the LLM assigned the
+ * claim-local direction; it is not a second source of behavioral authority.
  */
 export const DIRECTION_BASIS_VALUES = [
   "direct_substantive_finding",
@@ -302,14 +301,6 @@ export const DIRECTION_BASIS_VALUES = [
 ] as const;
 
 export type DirectionBasis = typeof DIRECTION_BASIS_VALUES[number];
-
-export const DIRECTIONAL_BASES: ReadonlySet<DirectionBasis> = new Set([
-  "direct_substantive_finding",
-  "direct_metric_value",
-  "direct_source_native_comparison_side",
-  "direct_safeguard_record",
-  "operative_standards_outcome",
-]);
 
 export interface KeyFactor {
   factor: string;

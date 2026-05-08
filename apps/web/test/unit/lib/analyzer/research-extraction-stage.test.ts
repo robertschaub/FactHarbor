@@ -1063,7 +1063,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("lets explicit non-directional basis neutralization override existing directional evidence", async () => {
+    it("keeps direction basis diagnostic when an existing directional item remains directional", async () => {
       const claims = [
         createClaim({
           id: "AC_01",
@@ -1105,14 +1105,11 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         id: "EV_01",
-        claimDirection: "neutral",
+        claimDirection: "contradicts",
         directionBasis: "collateral_context",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
-      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
-        expect.stringContaining("contradicts+collateral_context"),
-      );
     });
 
     it("preserves operative standards outcome basis for already-scoped directional evidence", async () => {
@@ -1215,7 +1212,7 @@ describe("Research Extraction Stage", () => {
       });
     });
 
-    it("does not create directional clones for non-directional basis mappings", async () => {
+    it("preserves LLM claim-local direction when direction basis is diagnostic metadata", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
       ];
@@ -1253,17 +1250,13 @@ describe("Research Extraction Stage", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
-        id: "EV_01",
-        claimDirection: "neutral",
+        id: "EV_01__supports_AC_01",
+        claimDirection: "supports",
         directionBasis: "concern_only",
         directnessJustification: "concern without operative target outcome",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
-      expect(result[0].id).not.toContain("__supports_");
-      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
-        expect.stringContaining("supports+concern_only"),
-      );
     });
 
     it("does not split neutral evidence by claim-local basis variance", async () => {
@@ -1363,7 +1356,7 @@ describe("Research Extraction Stage", () => {
       expect(result[0].directionBasis).toBeUndefined();
     });
 
-    it("lets explicit non-directional basis neutralize existing directional evidence", async () => {
+    it("does not let neutral reassessment basis erase existing directional evidence", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
       ];
@@ -1402,11 +1395,11 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         id: "EV_01",
-        claimDirection: "neutral",
-        directionBasis: "concern_only",
+        claimDirection: "contradicts",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
+      expect(result[0].directionBasis).toBeUndefined();
     });
 
     it("should apply LLM claim-local direction to already-scoped neutral evidence", async () => {

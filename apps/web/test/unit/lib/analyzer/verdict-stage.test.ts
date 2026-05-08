@@ -1384,7 +1384,7 @@ describe("validateVerdicts (Step 5)", () => {
     expect(warnings.some((warning) => warning.type === "verdict_integrity_failure")).toBe(false);
   });
 
-  it("does not adjudicate explicit non-directional neutral evidence into a directional citation", async () => {
+  it("lets adjudication review neutral evidence even when direction basis is diagnostic", async () => {
     const verdicts = [
       createCBVerdict({
         claimId: "AC_01",
@@ -1414,7 +1414,14 @@ describe("validateVerdicts (Step 5)", () => {
         return [{ claimId: "AC_01", directionValid: true, issues: [] }];
       }
       if (key === "VERDICT_CITATION_DIRECTION_ADJUDICATION") {
-        throw new Error("non-directional evidence should not enter direction adjudication");
+        return {
+          adjudications: [{
+            claimId: "AC_01",
+            evidenceId: "EV_CONCERN",
+            claimDirection: "contradicts",
+            reasoning: "The direct evidence contradicts the claim after review.",
+          }],
+        };
       }
       return [];
     }) as unknown as LLMCallFn;
@@ -1450,14 +1457,25 @@ describe("validateVerdicts (Step 5)", () => {
       },
     );
 
-    expect(mockLLM).not.toHaveBeenCalledWith(
+    expect(mockLLM).toHaveBeenCalledWith(
       "VERDICT_CITATION_DIRECTION_ADJUDICATION",
-      expect.anything(),
-      expect.anything(),
+      expect.objectContaining({
+        adjudicationCases: [
+          expect.objectContaining({
+            candidates: [
+              expect.objectContaining({
+                evidenceId: "EV_CONCERN",
+                directionBasis: "concern_only",
+              }),
+            ],
+          }),
+        ],
+      }),
+      expect.objectContaining({ tier: "budget" }),
     );
-    expect(evidence[0].claimDirection).toBe("neutral");
-    expect(result[0].contradictingEvidenceIds).toEqual([]);
-    expect(result[0].verdictReason).toBe("verdict_integrity_failure");
+    expect(evidence[0].claimDirection).toBe("contradicts");
+    expect(result[0].contradictingEvidenceIds).toEqual(["EV_CONCERN"]);
+    expect(result[0].verdictReason).not.toBe("verdict_integrity_failure");
   });
 
   it("adjudicates direct citation bucket mismatches before integrity normalization", async () => {

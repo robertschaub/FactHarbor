@@ -23,7 +23,6 @@ import {
   AtomicClaim,
   DIRECTION_BASIS_VALUES,
   DirectionBasis,
-  DIRECTIONAL_BASES,
   EvidenceItem,
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
@@ -585,9 +584,9 @@ export async function assessEvidenceApplicability(
       timestamp: new Date(),
     });
 
-    // Apply classifications, direction-basis normalization, and LLM claim-mapping
-    // additions to evidence items. Existing mappings are preserved; this pass only
-    // fills missing multi-claim links found by the same LLM call.
+    // Apply classifications and LLM claim-mapping additions to evidence items.
+    // Existing mappings are preserved; this pass only fills missing multi-claim
+    // links found by the same LLM call.
     const knownClaimIds = new Set(claims.map((claim) => claim.id));
     type ClaimDirection = NonNullable<EvidenceItem["claimDirection"]>;
     interface DirectionWithBasis {
@@ -599,27 +598,13 @@ export async function assessEvidenceApplicability(
     const claimMappingAdditions = new Map<number, string[]>();
     const claimDirectionAdditions = new Map<number, Map<string, DirectionWithBasis>>();
 
-    // Direction-basis self-consistency normalization: if the LLM emits a
-    // non-directional basis with supports/contradicts, normalize to neutral.
-    // This inspects only the LLM's own structured output fields — never evidence text.
-    let directionBasisNormalizations = 0;
-
     for (const assessment of validated.assessments) {
       classificationMap.set(assessment.evidenceIndex, assessment.applicability);
       const directionByClaim = new Map<string, DirectionWithBasis>();
       for (const directionEntry of assessment.claimDirectionByClaimId ?? []) {
         if (!knownClaimIds.has(directionEntry.claimId)) continue;
         const basis = directionEntry.directionBasis;
-        let direction: ClaimDirection = directionEntry.claimDirection;
-
-        if (direction !== "neutral" && basis !== undefined && !DIRECTIONAL_BASES.has(basis)) {
-          debugLogFileOnly(
-            `[DirectionBasis] Normalized ${directionEntry.claimId} evidence[${assessment.evidenceIndex}]: ` +
-            `${direction}+${basis} → neutral (LLM-output self-consistency)`
-          );
-          direction = "neutral";
-          directionBasisNormalizations++;
-        }
+        const direction: ClaimDirection = directionEntry.claimDirection;
 
         directionByClaim.set(directionEntry.claimId, {
           claimDirection: direction,
@@ -638,13 +623,6 @@ export async function assessEvidenceApplicability(
       if (directionByClaim.size > 0) {
         claimDirectionAdditions.set(assessment.evidenceIndex, directionByClaim);
       }
-    }
-
-    if (directionBasisNormalizations > 0) {
-      debugLogFileOnly(
-        `[DirectionBasis] Total normalizations: ${directionBasisNormalizations} ` +
-        `(non-directional basis with supports/contradicts → neutral)`
-      );
     }
 
     // Debug: count by category
@@ -732,20 +710,7 @@ export async function assessEvidenceApplicability(
 
         const existingEntry = existingDirectionEntries[0].entry;
         if (existingEntry.claimDirection !== itemDirection) {
-          if (existingEntry.claimDirection === "neutral") {
-            // Missing/defaulted weak neutral reassessments must not erase an
-            // already-directional extracted item. Explicit non-directional
-            // bases are authoritative self-consistency signals.
-            if (existingEntry.directionBasis !== undefined && !DIRECTIONAL_BASES.has(existingEntry.directionBasis)) {
-              assessedItem = {
-                ...assessedItem,
-                claimDirection: existingEntry.claimDirection,
-                directionBasis: existingEntry.directionBasis,
-                directnessJustification: existingEntry.directnessJustification,
-              };
-              itemDirection = existingEntry.claimDirection;
-            }
-          } else {
+          if (existingEntry.claimDirection !== "neutral") {
             assessedItem = {
               ...assessedItem,
               claimDirection: existingEntry.claimDirection,
@@ -843,7 +808,6 @@ export async function assessEvidenceApplicability(
       `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
-      `Direction-basis normalizations: ${directionBasisNormalizations}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`
     );
     debugLogFileOnly(
