@@ -2438,6 +2438,17 @@ export function allClaimsSufficient(
       return false;
     }
 
+    if (
+      includeSeeded &&
+      minResearchedIterationsPerClaim > 0 &&
+      researchedIterationsByClaim &&
+      !claimEvidence.some((e) => !e.isSeeded && (e.claimDirection === "supports" || e.claimDirection === "contradicts"))
+    ) {
+      // A searched pass that only contributes neutral/table-navigation evidence
+      // should not let seeded evidence terminate main research.
+      return false;
+    }
+
     // Diversity check (mirrors D5 Control 1 disjunctive OR gate)
     if (diversityConfig) {
       const distinctSourceTypes = new Set(

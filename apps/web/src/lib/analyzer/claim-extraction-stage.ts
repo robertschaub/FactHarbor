@@ -42,7 +42,7 @@ import {
 } from "./llm";
 import { loadAndRenderSection } from "./prompt-loader";
 import { classifyRelevance } from "./research-extraction-stage";
-import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure } from "./pipeline-utils";
+import { normalizeExtractedSourceType, detectInputType, classifySourceFetchFailure, selectTopSources } from "./pipeline-utils";
 
 import { loadPipelineConfig, loadSearchConfig, loadCalcConfig } from "@/lib/config-loader";
 import type { PipelineConfig, SearchConfig, CalcConfig } from "@/lib/config-schemas";
@@ -2172,11 +2172,17 @@ export async function runPreliminarySearch(
               relevantResults.map((result) => [result.url, result.relevanceScore]),
             );
 
-            // Fetch sources in parallel (was serial per-source)
-            const sourcesToFetch = response.results
-              .filter((searchResult) => relevantByUrl.has(searchResult.url))
-              .sort((a, b) => (relevantByUrl.get(a.url) ?? 0) - (relevantByUrl.get(b.url) ?? 0))
-              .slice(0, 3);
+            // Fetch the highest-scored relevant sources; provider rank only breaks ties.
+            const sourcesToFetch = selectTopSources(
+              response.results
+                .filter((searchResult) => relevantByUrl.has(searchResult.url))
+                .map((searchResult) => ({
+                  ...searchResult,
+                  relevanceScore: relevanceScoreByUrl.get(searchResult.url) ?? 0,
+                  originalRank: relevantByUrl.get(searchResult.url) ?? 0,
+                })),
+              3,
+            );
             const selectedForFetchUrls = new Set(sourcesToFetch.map((source) => source.url));
             const fetchErrorByType: Record<string, number> = {};
             const fetchErrorSamples: Array<{ url: string; type: string; message: string; status?: number }> = [];

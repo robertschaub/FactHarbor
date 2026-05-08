@@ -2457,6 +2457,51 @@ describe("Stage 1: runPreliminarySearch", () => {
     );
   });
 
+  it("fetches preliminary sources by LLM relevance score, not provider rank", async () => {
+    const roughClaims = [{ statement: "Test claim", searchHint: "test hint" }];
+    const state = { searchQueries: [], llmCalls: 0, sources: [], warnings: [] } as any;
+
+    mockSearch.mockResolvedValue({
+      results: [
+        { url: "https://example.com/rank-0-low", title: "Rank 0 low", snippet: "text" },
+        { url: "https://example.com/rank-1-medium", title: "Rank 1 medium", snippet: "text" },
+        { url: "https://example.com/rank-2-lowest", title: "Rank 2 lowest", snippet: "text" },
+        { url: "https://example.com/rank-3-high", title: "Rank 3 high", snippet: "text" },
+      ],
+      providersUsed: ["google"],
+    } as any);
+
+    mockFetchUrl.mockResolvedValue({
+      text: "A".repeat(200),
+      title: "Source Title",
+      contentType: "text/html",
+    });
+    mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput
+      .mockReturnValueOnce({
+        relevantSources: [
+          { url: "https://example.com/rank-0-low", relevanceScore: 0.6, jurisdictionMatch: "direct", reasoning: "relevant" },
+          { url: "https://example.com/rank-1-medium", relevanceScore: 0.7, jurisdictionMatch: "direct", reasoning: "relevant" },
+          { url: "https://example.com/rank-2-lowest", relevanceScore: 0.5, jurisdictionMatch: "direct", reasoning: "relevant" },
+          { url: "https://example.com/rank-3-high", relevanceScore: 0.95, jurisdictionMatch: "direct", reasoning: "relevant" },
+        ],
+      })
+      .mockReturnValueOnce({ evidenceItems: [] });
+
+    await runPreliminarySearch(
+      roughClaims, mockSearchConfig, mockPipelineConfig, "2026-02-17", state
+    );
+
+    const fetchedUrls = mockFetchUrl.mock.calls.map((call) => call[0]);
+    expect(fetchedUrls).toEqual([
+      "https://example.com/rank-3-high",
+      "https://example.com/rank-1-medium",
+      "https://example.com/rank-0-low",
+    ]);
+    expect(fetchedUrls).not.toContain("https://example.com/rank-2-lowest");
+  });
+
   it("should limit to top 3 rough claims", async () => {
     const roughClaims = [
       { statement: "Claim 1", searchHint: "hint1" },
@@ -3547,7 +3592,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
       // AC_01: diverse
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
       // AC_02: not diverse
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://a.com/4" },
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "news_primary", sourceUrl: "https://a.com/5" },
@@ -3625,12 +3670,24 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
   });
 
-  it("claim with seeded evidence, 1 researched iteration, and non-seeded evidence IS sufficient", () => {
+  it("claim with seeded evidence, 1 researched iteration, and neutral non-seeded evidence is NOT sufficient", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "neutral" },
+    ] as any[];
+
+    const researchedByClaim: Record<string, number> = { AC_01: 1 };
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
+  });
+
+  it("claim with seeded evidence, 1 researched iteration, and directional non-seeded evidence IS sufficient", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
     ] as any[];
 
     const researchedByClaim: Record<string, number> = { AC_01: 1 };
@@ -3673,11 +3730,11 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
       // AC_01: heavily seeded, 0 research iterations
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
       // AC_02: researched, has iterations
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://d.com/1" },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "peer_reviewed_study", sourceUrl: "https://e.com/1" },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "F" }, sourceType: "government_report", sourceUrl: "https://f.com/1" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://d.com/1", claimDirection: "supports" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "peer_reviewed_study", sourceUrl: "https://e.com/1", claimDirection: "supports" },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "F" }, sourceType: "government_report", sourceUrl: "https://f.com/1", claimDirection: "supports" },
     ] as any[];
 
     // AC_02 has researched iterations, AC_01 does not
