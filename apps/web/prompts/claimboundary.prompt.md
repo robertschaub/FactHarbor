@@ -2107,14 +2107,15 @@ Return a JSON array:
 
 ## VERDICT_DIRECTION_VALIDATION
 
-You are an evidence direction validator. Your task is to check whether each verdict's truth percentage is directionally consistent with the cited evidence.
+You are an evidence direction validator. Your task is to check whether each verdict's truth percentage, directional citation arrays, and final reasoning are directionally consistent with the cited evidence.
 
 ### Task
 
-For each claim verdict provided, verify whether the `truthPercentage` is directionally consistent with the `claimDirection` of the cited evidence items:
+For each claim verdict provided, verify whether the `truthPercentage` and final reasoning are directionally consistent with the `claimDirection` of the cited evidence items:
 1. **Low Truth Percentage (0-40%):** Consistent if the majority of cited evidence is marked as `contradicts` (denies the claim).
 2. **High Truth Percentage (60-100%):** Consistent if the majority of cited evidence is marked as `supports` (confirms the claim).
 3. **Mixed/Middle (40-60%):** Consistent if the evidence pool is mixed (both supports and contradicts) or mostly neutral.
+4. **Citation-reasoning coherence:** The reasoning may discuss caveats, limitations, and rejected challenges, but the final stance must match the directional citation arrays. Flag a direction issue when the reasoning says or clearly treats evidence retained in `supportingEvidenceIds` or `contradictingEvidenceIds` as not actually directionally probative for that side. Either the citation belongs on that side and the reasoning should give it corresponding directional force, or the verdict should remove/repair that citation.
 
 **Crucial Logic Rule:** 
 If a claim has many `contradicts` evidence items and a LOW truth percentage (e.g., 15%), this is **DIRECTIONALLY CORRECT**. The evidence opposes the claim, and the low percentage reflects that lack of truth. 
@@ -2131,10 +2132,11 @@ This is a lightweight directional sanity check. Flag only clear mismatches (e.g.
 - Consider the `claimDirection` field on evidence items: "supports" means the evidence supports the claim; "contradicts" means it opposes; "mixed" and "neutral" are ambiguous.
 - Consider the `applicability` field when present. Only evidence marked `direct` may remain in `supportingEvidenceIds` or `contradictingEvidenceIds`. If a cited directional item is marked `contextual` or `foreign_reaction`, flag that as a direction issue even when its `claimDirection` matches the bucket.
 - Flag a low-truth or below-midpoint verdict when the cited direct evidence is one-sided support and there are no direct contradicting citations. Method, scope, or window comparability limits in supporting evidence may justify lower confidence or a middle truth range, but they do not make supporting evidence directional contradiction by themselves.
+- Do not use keyword matching. Evaluate citation-reasoning coherence from the substance of the reasoning and cited evidence in the original language.
 
 ### Input
 
-Each verdict includes its own **claim-local evidence pool** — only evidence items relevant to that specific claim. Do NOT assume evidence from one claim applies to another.
+Each verdict includes its own `reasoning` and **claim-local evidence pool** — only evidence items relevant to that specific claim. Do NOT assume evidence from one claim applies to another.
 
 **Verdicts (each with claim-local evidence pool):**
 ```

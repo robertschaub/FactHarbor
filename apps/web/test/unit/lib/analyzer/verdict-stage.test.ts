@@ -1295,6 +1295,45 @@ describe("validateVerdicts (Step 5)", () => {
     });
   });
 
+  it("passes verdict reasoning to VERDICT_DIRECTION_VALIDATION for citation-reasoning coherence checks", async () => {
+    const verdicts = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 95,
+      reasoning: "Final reasoning discounts the listed counter-evidence as non-decisive.",
+      supportingEvidenceIds: ["EV_01"],
+      contradictingEvidenceIds: ["EV_02"],
+    })];
+    const evidence = [
+      createEvidenceItem({
+        id: "EV_01",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "supports",
+      }),
+      createEvidenceItem({
+        id: "EV_02",
+        relevantClaimIds: ["AC_01"],
+        claimDirection: "contradicts",
+      }),
+    ];
+
+    let capturedVerdict: { reasoning?: string } | undefined;
+    const mockLLM = vi.fn(async (key: string, input: Record<string, unknown>) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        const payloadVerdicts = input.verdicts as Array<{ reasoning?: string }>;
+        capturedVerdict = payloadVerdicts[0];
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    await validateVerdicts(verdicts, evidence, mockLLM);
+
+    expect(capturedVerdict?.reasoning).toBe("Final reasoning discounts the listed counter-evidence as non-decisive.");
+  });
+
   it("adjudicates direct neutral citations before final citation-integrity downgrade", async () => {
     const verdicts = [
       createCBVerdict({

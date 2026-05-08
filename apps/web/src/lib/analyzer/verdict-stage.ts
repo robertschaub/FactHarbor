@@ -1347,6 +1347,7 @@ export async function validateVerdicts(
           return {
             claimId: v.claimId,
             truthPercentage: v.truthPercentage,
+            reasoning: v.reasoning,
             supportingEvidenceIds: v.supportingEvidenceIds,
             contradictingEvidenceIds: v.contradictingEvidenceIds,
             evidencePool: toDirectionValidationEvidencePool(localEvidence),
