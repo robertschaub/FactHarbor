@@ -67,7 +67,7 @@ export const Stage2ExtractEvidenceOutputSchema = z.object({
   evidenceItems: z.array(Stage2EvidenceItemSchema),
 });
 
-const DirectionBasisSchema = z.enum(DIRECTION_BASIS_VALUES).catch("ambiguous_or_insufficient");
+const DirectionBasisSchema = z.enum(DIRECTION_BASIS_VALUES).optional().catch(undefined);
 
 export const ApplicabilityAssessmentOutputSchema = z.object({
   assessments: z.array(z.object({
@@ -592,7 +592,7 @@ export async function assessEvidenceApplicability(
     type ClaimDirection = NonNullable<EvidenceItem["claimDirection"]>;
     interface DirectionWithBasis {
       claimDirection: ClaimDirection;
-      directionBasis: DirectionBasis;
+      directionBasis?: DirectionBasis;
       directnessJustification?: string;
     }
     const classificationMap = new Map<number, "direct" | "contextual" | "foreign_reaction">();
@@ -609,10 +609,10 @@ export async function assessEvidenceApplicability(
       const directionByClaim = new Map<string, DirectionWithBasis>();
       for (const directionEntry of assessment.claimDirectionByClaimId ?? []) {
         if (!knownClaimIds.has(directionEntry.claimId)) continue;
-        const basis: DirectionBasis = directionEntry.directionBasis ?? "ambiguous_or_insufficient";
+        const basis = directionEntry.directionBasis;
         let direction: ClaimDirection = directionEntry.claimDirection;
 
-        if (direction !== "neutral" && !DIRECTIONAL_BASES.has(basis)) {
+        if (direction !== "neutral" && basis !== undefined && !DIRECTIONAL_BASES.has(basis)) {
           debugLogFileOnly(
             `[DirectionBasis] Normalized ${directionEntry.claimId} evidence[${assessment.evidenceIndex}]: ` +
             `${direction}+${basis} → neutral (LLM-output self-consistency)`
@@ -652,7 +652,6 @@ export async function assessEvidenceApplicability(
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
     let neutralClaimDirectionClones = 0;
-    let neutralClaimLocalBasisClones = 0;
     let neutralCompanionClones = 0;
     let directionalCompanionClones = 0;
 
@@ -668,36 +667,19 @@ export async function assessEvidenceApplicability(
         claimId,
         entry: claimDirections.get(claimId) ?? {
           claimDirection: "neutral" as ClaimDirection,
-          directionBasis: item.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
+          directionBasis: item.directionBasis,
           directnessJustification: item.directnessJustification,
         },
       }));
 
       const first = entries[0].entry;
-      const canShareNeutralItem = entries.every(({ entry }) =>
-        entry.directionBasis === first.directionBasis &&
-        (entry.directnessJustification ?? "") === (first.directnessJustification ?? ""),
-      );
-
-      if (canShareNeutralItem) {
-        return [{
-          ...item,
-          claimDirection: "neutral",
-          directionBasis: first.directionBasis,
-          directnessJustification: first.directnessJustification,
-          relevantClaimIds: uniqueClaimIds,
-        }];
-      }
-
-      neutralClaimLocalBasisClones += entries.length;
-      return entries.map(({ claimId, entry }) => ({
+      return [{
         ...item,
-        id: `${item.id}__neutral_${claimId}`,
         claimDirection: "neutral",
-        directionBasis: entry.directionBasis,
-        directnessJustification: entry.directnessJustification,
-        relevantClaimIds: [claimId],
-      }));
+        directionBasis: item.directionBasis ?? first.directionBasis,
+        directnessJustification: item.directnessJustification ?? first.directnessJustification,
+        relevantClaimIds: uniqueClaimIds,
+      }];
     };
 
     const assessed = evidenceItems.flatMap((item, index) => {
@@ -725,10 +707,9 @@ export async function assessEvidenceApplicability(
         existingDirectionEntries.length === knownExistingClaimIds.length
       ) {
         const uniqueDirections = new Set(existingDirectionEntries.map(({ entry }) => entry.claimDirection));
-        const uniqueBases = new Set(existingDirectionEntries.map(({ entry }) => entry.directionBasis));
         const shouldSplitExistingClaimDirections =
           knownExistingClaimIds.length > 1 &&
-          (uniqueDirections.size > 1 || uniqueBases.size > 1);
+          uniqueDirections.size > 1;
 
         if (shouldSplitExistingClaimDirections) {
           const relevantClaimIds = Array.from(new Set([...existingClaimIds, ...assessedClaimIds]));
@@ -736,7 +717,6 @@ export async function assessEvidenceApplicability(
           return relevantClaimIds.map((claimId) => {
             const entry = claimDirections.get(claimId) ?? {
               claimDirection: "neutral" as ClaimDirection,
-              directionBasis: "ambiguous_or_insufficient" as DirectionBasis,
               directnessJustification: undefined,
             };
             return {
@@ -751,17 +731,28 @@ export async function assessEvidenceApplicability(
         }
 
         const existingEntry = existingDirectionEntries[0].entry;
-        if (
-          existingEntry.claimDirection !== itemDirection ||
-          existingEntry.directionBasis !== assessedItem.directionBasis
+        if (existingEntry.claimDirection !== itemDirection) {
+          if (existingEntry.claimDirection === "neutral") {
+            // Missing/defaulted basis and weak neutral reassessments must not
+            // erase an already-directional extracted item.
+          } else {
+            assessedItem = {
+              ...assessedItem,
+              claimDirection: existingEntry.claimDirection,
+              directionBasis: existingEntry.directionBasis,
+              directnessJustification: existingEntry.directnessJustification,
+            };
+            itemDirection = existingEntry.claimDirection;
+          }
+        } else if (
+          existingEntry.directionBasis !== undefined ||
+          existingEntry.directnessJustification !== undefined
         ) {
           assessedItem = {
             ...assessedItem,
-            claimDirection: existingEntry.claimDirection,
-            directionBasis: existingEntry.directionBasis,
-            directnessJustification: existingEntry.directnessJustification,
+            directionBasis: existingEntry.directionBasis ?? assessedItem.directionBasis,
+            directnessJustification: existingEntry.directnessJustification ?? assessedItem.directnessJustification,
           };
-          itemDirection = existingEntry.claimDirection;
         }
       }
 
@@ -799,7 +790,6 @@ export async function assessEvidenceApplicability(
           : [{
               ...assessedItem,
               claimDirection: "neutral" as ClaimDirection,
-              directionBasis: assessedItem.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
             }];
       }
 
@@ -822,7 +812,7 @@ export async function assessEvidenceApplicability(
           ...assessedItem,
           id: `${item.id}__${companionDirection}_${claimId}`,
           claimDirection: companionDirection,
-          directionBasis: entry?.directionBasis ?? ("ambiguous_or_insufficient" as DirectionBasis),
+          directionBasis: entry?.directionBasis ?? assessedItem.directionBasis,
           directnessJustification: entry?.directnessJustification,
           relevantClaimIds: [claimId],
         };
@@ -841,7 +831,6 @@ export async function assessEvidenceApplicability(
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
-      `Neutral claim-local basis clones: ${neutralClaimLocalBasisClones}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
       `Direction-basis normalizations: ${directionBasisNormalizations}. ` +

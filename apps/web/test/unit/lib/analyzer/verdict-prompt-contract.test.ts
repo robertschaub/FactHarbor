@@ -366,16 +366,19 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("without publishing the decisive value or finding");
     });
 
-    it("advocate treats Stage 2 direction metadata as authoritative", () => {
+    it("advocate treats Stage 2 claimDirection as authoritative and directionBasis as advisory", () => {
       const section = extractSection(promptContent, "VERDICT_ADVOCATE");
-      expect(section).toContain("Treat Stage 2 direction metadata as authoritative");
+      expect(section).toContain("Treat Stage 2 `claimDirection` as authoritative");
       expect(section).toContain('claimDirection = "neutral"');
-      expect(section).toContain("do not use its substance as directional support or contradiction");
+      expect(section).toContain("do not place it in `supportingEvidenceIds`, `contradictingEvidenceIds`, or directional `boundaryFindings`");
+      expect(section).toContain("Treat `directionBasis` as diagnostic guidance");
+      expect(section).toContain("not as a second veto over `claimDirection`");
       expect(section).toContain("concern_only");
       expect(section).toContain("allegation_only");
       expect(section).toContain("collateral_context");
       expect(section).toContain("ambiguous_or_insufficient");
-      expect(section).toContain("may only affect confidence, caveats, limitations, or background explanation");
+      expect(section).toContain("typically low-probative for direction");
+      expect(section).toContain("prefer using them for confidence, caveats, limitations, or background explanation");
     });
 
     it("advocate constrains boundary findings to direct claim-local directions", () => {

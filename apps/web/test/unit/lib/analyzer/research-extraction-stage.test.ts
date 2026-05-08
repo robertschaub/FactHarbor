@@ -838,7 +838,7 @@ describe("Research Extraction Stage", () => {
           { evidenceIndex: 0, applicability: "direct", relevantClaimIds: [], reasoning: "explicitly unmapped" },
         ],
       }).assessments[0].relevantClaimIds).toEqual([]);
-      expect(ApplicabilityAssessmentOutputSchema.parse({
+      const parsed = ApplicabilityAssessmentOutputSchema.parse({
         assessments: [
           {
             evidenceIndex: 0,
@@ -848,14 +848,14 @@ describe("Research Extraction Stage", () => {
             reasoning: "mapped with claim-local direction",
           },
         ],
-      }).assessments[0].claimDirectionByClaimId).toEqual([
-        {
-          claimId: "AC_01",
-          claimDirection: "supports",
-          directionBasis: "ambiguous_or_insufficient",
-          directnessJustification: "",
-        },
-      ]);
+      });
+      const entry = parsed.assessments[0].claimDirectionByClaimId![0];
+      expect(entry).toMatchObject({
+        claimId: "AC_01",
+        claimDirection: "supports",
+        directnessJustification: "",
+      });
+      expect(entry.directionBasis).toBeUndefined();
     });
 
     it("should classify evidence and populate applicability field", async () => {
@@ -1063,7 +1063,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("normalizes non-directional basis to neutral before existing directional evidence is stored", async () => {
+    it("does not let a non-directional basis neutralization erase existing directional evidence", async () => {
       const claims = [
         createClaim({
           id: "AC_01",
@@ -1105,9 +1105,7 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         id: "EV_01",
-        claimDirection: "neutral",
-        directionBasis: "collateral_context",
-        directnessJustification: "overlapping actor but different target path",
+        claimDirection: "contradicts",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
@@ -1267,7 +1265,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("preserves distinct neutral basis metadata for each claim-local mapping", async () => {
+    it("does not split neutral evidence by claim-local basis variance", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Target process complied with a domestic standard" }),
         createClaim({ id: "AC_02", statement: "Target process met an international standard" }),
@@ -1310,26 +1308,58 @@ describe("Research Extraction Stage", () => {
 
       const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
 
-      expect(result).toHaveLength(2);
-      expect(result).toEqual(expect.arrayContaining([
-        expect.objectContaining({
-          id: "EV_01__neutral_AC_01",
-          claimDirection: "neutral",
-          directionBasis: "procedural_fact_only",
-          directnessJustification: "procedural fact without domestic standards outcome",
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "neutral",
+        directionBasis: "procedural_fact_only",
+        directnessJustification: "procedural fact without domestic standards outcome",
+        relevantClaimIds: ["AC_01", "AC_02"],
+      });
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral claim-local direction clones: 0."),
+      );
+    });
+
+    it("keeps missing direction basis non-authoritative for existing directional evidence", async () => {
+      const claims = [
+        createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
+      ];
+      const evidence = [
+        createEvidence({
+          id: "EV_01",
+          statement: "The source directly supports the target claim.",
+          claimDirection: "supports",
           relevantClaimIds: ["AC_01"],
         }),
-        expect.objectContaining({
-          id: "EV_01__neutral_AC_02",
-          claimDirection: "neutral",
-          directionBasis: "concern_only",
-          directnessJustification: "concern without international standards outcome",
-          relevantClaimIds: ["AC_02"],
-        }),
-      ]));
-      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
-        expect.stringContaining("Neutral claim-local basis clones: 2."),
-      );
+      ];
+
+      mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({
+        assessments: [
+          {
+            evidenceIndex: 0,
+            applicability: "direct",
+            relevantClaimIds: ["AC_01"],
+            claimDirectionByClaimId: [
+              { claimId: "AC_01", claimDirection: "supports" },
+            ],
+            reasoning: "direction supplied without optional basis",
+          },
+        ],
+      });
+
+      const result = await assessEvidenceApplicability(claims, evidence, "BR", mockConfig);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: "EV_01",
+        claimDirection: "supports",
+        relevantClaimIds: ["AC_01"],
+        applicability: "direct",
+      });
+      expect(result[0].directionBasis).toBeUndefined();
     });
 
     it("should apply LLM claim-local direction to already-scoped neutral evidence", async () => {

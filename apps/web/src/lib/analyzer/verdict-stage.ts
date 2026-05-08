@@ -23,7 +23,6 @@
 
 import {
   CONFIDENCE_TIER_MIN,
-  DIRECTIONAL_BASES,
   INSUFFICIENT_CONFIDENCE_MAX,
   type AnalysisWarning,
   type AtomicClaim,
@@ -2570,10 +2569,6 @@ function isSingleClaimScopedEvidence(item: EvidenceItem, claimId: string): boole
     && item.relevantClaimIds[0] === claimId;
 }
 
-function hasDirectionalAdjudicationBasis(item: EvidenceItem): boolean {
-  return item.directionBasis === undefined || DIRECTIONAL_BASES.has(item.directionBasis);
-}
-
 function buildNeutralCitationAdjudicationCases(
   verdicts: CBClaimVerdict[],
   evidence: EvidenceItem[],
@@ -2606,7 +2601,6 @@ function buildNeutralCitationAdjudicationCases(
           || item.claimDirection !== "neutral"
           || item.applicability !== "direct"
           || !isSingleClaimScopedEvidence(item, collapse.claimId)
-          || !hasDirectionalAdjudicationBasis(item)
         ) {
           return null;
         }
@@ -2654,7 +2648,6 @@ function buildNeutralCitationAdjudicationCases(
         item.claimDirection === "neutral"
         && item.applicability === "direct"
         && isSingleClaimScopedEvidence(item, verdict.claimId)
-        && hasDirectionalAdjudicationBasis(item)
         && !existingCandidateIds.has(item.id),
       )
       .map((item): NeutralCitationCandidate => ({
@@ -2748,7 +2741,6 @@ function buildNeutralCitationAdjudicationCases(
         item.claimDirection === "neutral"
         && item.applicability === "direct"
         && isSingleClaimScopedEvidence(item, verdict.claimId)
-        && hasDirectionalAdjudicationBasis(item),
       )
       .map((item): NeutralCitationCandidate => ({
         evidenceId: item.id,
