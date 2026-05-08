@@ -2426,26 +2426,10 @@ export function allClaimsSufficient(
     });
     if (claimEvidence.length < effectiveThreshold) return false;
 
-    if (
-      includeSeeded &&
-      minResearchedIterationsPerClaim > 0 &&
-      researchedIterationsByClaim &&
-      !claimEvidence.some((e) => !e.isSeeded)
-    ) {
-      // Seeded preliminary evidence can guide Stage 2, but it should not be
-      // enough to declare a claim sufficient after a searched pass that found
-      // no claim-local evidence of its own.
-      return false;
-    }
-
-    if (
-      includeSeeded &&
-      minResearchedIterationsPerClaim > 0 &&
-      researchedIterationsByClaim &&
-      !claimEvidence.some((e) => !e.isSeeded && (e.claimDirection === "supports" || e.claimDirection === "contradicts"))
-    ) {
-      // A searched pass that only contributes neutral/table-navigation evidence
-      // should not let seeded evidence terminate main research.
+    if (!claimEvidence.some((e) => !e.isSeeded && (e.claimDirection === "supports" || e.claimDirection === "contradicts"))) {
+      // Neutral/background evidence can explain a report, but at least one
+      // searched directional item is needed before Stage 2 calls a claim
+      // sufficient for verdict generation.
       return false;
     }
 

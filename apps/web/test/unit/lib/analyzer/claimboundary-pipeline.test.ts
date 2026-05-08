@@ -3366,10 +3366,10 @@ describe("allClaimsSufficient", () => {
       createAtomicClaim({ id: "AC_02", statement: "Claim 2" }),
     ];
     const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" }, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study", temporal: "2024" } },
-      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
+      { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" }, claimDirection: "supports" },
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "Study", temporal: "2024" } },
     ] as any[];
@@ -3438,7 +3438,7 @@ describe("allClaimsSufficient", () => {
     // prevent sufficiency from firing before the loop has run at all.
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3450,7 +3450,7 @@ describe("allClaimsSufficient", () => {
   it("MT-1: returns true when minimum iterations completed and evidence threshold met", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3459,10 +3459,21 @@ describe("allClaimsSufficient", () => {
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1)).toBe(true);
   });
 
+  it("returns false when searched evidence is neutral-only", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false, claimDirection: "neutral" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false, claimDirection: "neutral" },
+    ] as any[];
+
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1)).toBe(false);
+  });
+
   it("MT-1: guard is configurable — minMainIterations=0 disables the guard", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3487,7 +3498,7 @@ describe("allClaimsSufficient", () => {
   it("MT-3: requires additional iterations proportional to distinct event count", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3502,7 +3513,7 @@ describe("allClaimsSufficient", () => {
   it("MT-3: single distinct event uses normal minMainIterations (no extra requirement)", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3515,7 +3526,7 @@ describe("allClaimsSufficient", () => {
   it("MT-3: zero distinct events uses normal minMainIterations", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study A" }, isSeeded: false, claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study B" }, isSeeded: false },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "Study C" }, isSeeded: false },
     ] as any[];
@@ -3538,7 +3549,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
   it("returns true when claim meets both count and diversity (source types)", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://a.com/2" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
     ] as any[];
@@ -3550,7 +3561,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
   it("returns true when claim meets diversity via domains (not source types)", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://b.com/1" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://c.com/1" },
     ] as any[];
@@ -3562,7 +3573,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
   it("returns false when claim has enough items but fails diversity", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://a.com/2" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
     ] as any[];
@@ -3574,7 +3585,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
   it("returns true without diversityConfig even if diversity is low (backward compat)", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "news_primary", sourceUrl: "https://a.com/2" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "news_primary", sourceUrl: "https://a.com/3" },
     ] as any[];
@@ -3591,7 +3602,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
     const evidence = [
       // AC_01: diverse
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
       // AC_02: not diverse
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://a.com/4" },
@@ -3608,7 +3619,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
     const evidence = [
       // 1 seeded + 2 non-seeded = 3 total, diverse
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
     ] as any[];
 
@@ -3622,7 +3633,7 @@ describe("allClaimsSufficient with diversityConfig", () => {
   it("uses D5 minItems threshold instead of pipeline threshold", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
     ] as any[];
@@ -3697,7 +3708,7 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
   it("claim without seeded evidence is NOT regressed by the per-claim floor", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", claimDirection: "supports" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1" },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
     ] as any[];
@@ -3713,7 +3724,7 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
     const evidence = [
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", claimDirection: "supports" },
     ] as any[];
 
     // minResearchedIterationsPerClaim=0 → guard disabled

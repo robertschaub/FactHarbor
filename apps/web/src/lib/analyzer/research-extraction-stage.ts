@@ -733,8 +733,18 @@ export async function assessEvidenceApplicability(
         const existingEntry = existingDirectionEntries[0].entry;
         if (existingEntry.claimDirection !== itemDirection) {
           if (existingEntry.claimDirection === "neutral") {
-            // Missing/defaulted basis and weak neutral reassessments must not
-            // erase an already-directional extracted item.
+            // Missing/defaulted weak neutral reassessments must not erase an
+            // already-directional extracted item. Explicit non-directional
+            // bases are authoritative self-consistency signals.
+            if (existingEntry.directionBasis !== undefined && !DIRECTIONAL_BASES.has(existingEntry.directionBasis)) {
+              assessedItem = {
+                ...assessedItem,
+                claimDirection: existingEntry.claimDirection,
+                directionBasis: existingEntry.directionBasis,
+                directnessJustification: existingEntry.directnessJustification,
+              };
+              itemDirection = existingEntry.claimDirection;
+            }
           } else {
             assessedItem = {
               ...assessedItem,
