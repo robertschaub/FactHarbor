@@ -2426,6 +2426,18 @@ export function allClaimsSufficient(
     });
     if (claimEvidence.length < effectiveThreshold) return false;
 
+    if (
+      includeSeeded &&
+      minResearchedIterationsPerClaim > 0 &&
+      researchedIterationsByClaim &&
+      !claimEvidence.some((e) => !e.isSeeded)
+    ) {
+      // Seeded preliminary evidence can guide Stage 2, but it should not be
+      // enough to declare a claim sufficient after a searched pass that found
+      // no claim-local evidence of its own.
+      return false;
+    }
+
     // Diversity check (mirrors D5 Control 1 disjunctive OR gate)
     if (diversityConfig) {
       const distinctSourceTypes = new Set(

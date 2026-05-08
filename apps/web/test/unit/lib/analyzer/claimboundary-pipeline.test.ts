@@ -3613,12 +3613,24 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
   });
 
-  it("claim with seeded evidence AND 1 researched iteration IS sufficient", () => {
+  it("claim with seeded evidence and 1 researched iteration but no non-seeded evidence is NOT sufficient", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+    ] as any[];
+
+    const researchedByClaim: Record<string, number> = { AC_01: 1 };
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
+  });
+
+  it("claim with seeded evidence, 1 researched iteration, and non-seeded evidence IS sufficient", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
     ] as any[];
 
     const researchedByClaim: Record<string, number> = { AC_01: 1 };
@@ -3661,7 +3673,7 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
       // AC_01: heavily seeded, 0 research iterations
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "news_primary", sourceUrl: "https://a.com/1", isSeeded: true },
       { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "peer_reviewed_study", sourceUrl: "https://b.com/1", isSeeded: true },
-      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1" },
       // AC_02: researched, has iterations
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "D" }, sourceType: "news_primary", sourceUrl: "https://d.com/1" },
       { relevantClaimIds: ["AC_02"], evidenceScope: { methodology: "E" }, sourceType: "peer_reviewed_study", sourceUrl: "https://e.com/1" },

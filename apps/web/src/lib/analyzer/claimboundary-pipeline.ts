@@ -1218,6 +1218,7 @@ export async function runClaimBoundaryAnalysis(
       const claimEvidence = state.evidenceItems.filter(
         e => e.relevantClaimIds?.includes(claim.id)
       );
+      const hasNonSeededClaimEvidence = claimEvidence.some((e) => !e.isSeeded);
       const distinctSourceTypes = new Set(
         claimEvidence.map(e => e.sourceType).filter(Boolean)
       );
@@ -1242,6 +1243,7 @@ export async function runClaimBoundaryAnalysis(
 
       if (
         providerSearchAttempts <= 0 ||
+        !hasNonSeededClaimEvidence ||
         !hasSufficientItems ||
         (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)
       ) {
@@ -1252,16 +1254,19 @@ export async function runClaimBoundaryAnalysis(
             warning.details?.claimId === claim.id,
         );
         if (!alreadyWarnedZeroAcquisition) {
-          state.warnings.push({
-            type: providerSearchAttempts <= 0 ? "selected_claim_zero_acquisition" : "insufficient_evidence",
-            severity: providerSearchAttempts <= 0 ? "error" : "warning",
-            message: providerSearchAttempts <= 0
-              ? `Claim ${claim.id} had zero provider search attempts in Stage 2. Verdict set to UNVERIFIED.`
+          const insufficiencyMessage = providerSearchAttempts <= 0
+            ? `Claim ${claim.id} had zero provider search attempts in Stage 2. Verdict set to UNVERIFIED.`
+            : !hasNonSeededClaimEvidence
+              ? `Claim ${claim.id} has no non-seeded Stage 2 evidence after provider search. Verdict set to UNVERIFIED.`
               : `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
                 `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +
                 `${distinctSourceTypes.size} source types (min ${sufficiencyMinSourceTypes}), ` +
                 `${distinctDomains.size} normalized domains (min ${sufficiencyMinDistinctDomains}). ` +
-                `Verdict set to UNVERIFIED.`,
+                `Verdict set to UNVERIFIED.`;
+          state.warnings.push({
+            type: providerSearchAttempts <= 0 ? "selected_claim_zero_acquisition" : "insufficient_evidence",
+            severity: providerSearchAttempts <= 0 ? "error" : "warning",
+            message: insufficiencyMessage,
             details: providerSearchAttempts <= 0
               ? {
                   claimId: claim.id,
