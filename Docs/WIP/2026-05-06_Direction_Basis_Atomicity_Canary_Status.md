@@ -54,6 +54,7 @@
 | Bolsonaro EN full acquisition trace | `a42c4d84...` | `56671233...` | `04dbc99f` | `LEANING-FALSE` 34 / 24 | 3 / 3 | Diagnostic result. Confirms support-source loss happens primarily before final evidence: Time.com, Al Jazeera, and Poder360 never entered sourceTrace; HRW appeared only as relevance-rejected Stage 2 results; OAS contradiction material was fetched/extracted/admitted. |
 | Bolsonaro EN after neutral standards discovery query | `1acf8bcc...` | `265eaa34...` | `506e3178` | `UNVERIFIED` 55 / 40 | 3 / 3 | Improved one run from false-side to support-only claim verdicts. Queries now included standards/compliance routes (`ICCPR Article 14`, tribunal independence/impartiality, UN HRC). AC_01/02/03 had 7/5/7 supports and 0 cited contradictions, but confidence stayed low due source concentration and lack of independent direct international assessment. |
 | Bolsonaro PT control after neutral standards discovery query | `a673586b...` | `fb41d4b6...` | `506e3178` | `MOSTLY-TRUE` 73 / 63 | 3 prepared / 2 selected | Good multilingual control. The prompt edit did not regress PT. Residual: ACS still omits AC_03 (`As sentencas... foram justas`) as `opinion_or_subjective`, which is a separate selection/evaluative-claim lane. |
+| Bolsonaro PT exact user-reviewed report | n/a | `0a3c00180b124625b056f5abd5b194e6` | `1519f688+df479f83` | `MOSTLY-TRUE` 73 / 70 | 3 prepared / 2 selected | Captain judged the report good except missing AC_03. Inspection confirmed Stage 1 extracted the sentence-justice claim, but ACS classified it as `opinion_or_subjective` and dropped it. |
 | Bolsonaro EN replicate after neutral standards discovery query | `6f0d7ac5...` | `b2d065f4...` | `506e3178` | `LEANING-FALSE` 38 / 51 | 3 / 3 | Bad replicate. Queries included the new route class but acquisition/applicability again admitted contradiction-heavy evidence for AC_02/AC_03. Time.com and Al Jazeera remained absent; HRW stayed relevance-rejected; PBS/Poder360 appeared but did not stabilize support. Confirms the narrow query edit is insufficient. |
 
 ## Evidence from completed reports
@@ -429,3 +430,28 @@ Recommended next fix, pending explicit Captain approval because it edits `apps/w
 - Generic rule to add: for rule-governed standard claims, `direct_substantive_finding` requires an adopted/operative target-specific finding, standards outcome, legally effective consequence, remedy, annulment, disqualification, or target-specific safeguard provided/denied/upheld/rejected/exercised. Role facts, party/legal-team objections, appearance-risk material, criticism, non-controlling dissents, unusual-but-allowed procedure, and unresolved appeal caveats stay neutral with `concern_only`, `procedural_fact_only`, or `non_controlling_position_only` unless they establish that operative target-path outcome.
 - Add focused prompt-contract tests with abstract examples only.
 - After approval and local verification, commit, restart/reseed, and run one Bolsonaro EN canary only. Stop if collateral/concern items still become `direct_substantive_finding` contradictions.
+
+## 2026-05-09 PT AC_03 ACS Selection Patch
+
+Captain identified job `0a3c00180b124625b056f5abd5b194e6` as good except that the downstream report omitted the atomic claim `as sentencas proferidas foram justas`.
+
+Finding:
+- Stage 1 is not the failure. `PreparedStage1Json` contains `AC_03`: `As sentenças proferidas no processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado foram justas.`
+- ACS recommendation is the failure. `ClaimSelectionJson` ranks `AC_03` but excludes it from `selectedClaimIds`, labeling it `opinion_or_subjective`, low-yield, and redundant with `AC_01`/`AC_02`.
+- The selection cap did not force the omission: `selectionAdmissionCap = 3` and there were exactly 3 candidate claims.
+
+Patch:
+- Amend `CLAIM_SELECTION_RECOMMENDATION` only.
+- Narrow `opinion_or_subjective` to personal-preference/aesthetic/rhetorical/unsupported value judgments with no externally checkable standard.
+- Add a standards-grounded evaluative-claim rule so LLM selection treats externally assessable fairness/legitimacy/justification claims as eligible for `fact_check_worthy` or `unclear`.
+- Add an outcome-vs-process rule so a resulting decision/outcome/fairness claim is not collapsed into process/procedure/compliance unless it is truly duplicate wording.
+
+Verification so far:
+- `npm -w apps/web test -- test/unit/lib/analyzer/claim-selection-recommendation.test.ts`: passed, 16 tests.
+- `git diff --check`: passed.
+- Full `npm test` was attempted twice and failed only on runner integration timeouts; the two failed files passed together in isolation.
+
+Next:
+- Commit/reseed before live validation.
+- Run one exact `bolsonaro-pt` canary only.
+- Required gate: 3 prepared and 3 selected/final claims, with the sentence-justice/verdict-fairness claim present downstream. Stop and inspect before any further jobs.

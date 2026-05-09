@@ -111,7 +111,8 @@
       "latestVerifiedJobId": "da3580fe3fbd4ee5b3c6c7280fc4c09f",
       "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 58.2, "confidence": 61 },
       "knownOpenIssues": [
-        "MIXED or false-side outcomes are regressions unless backed by strong target-specific evidence that overturns the original legal-basis/fairness expectation"
+        "MIXED or false-side outcomes are regressions unless backed by strong target-specific evidence that overturns the original legal-basis/fairness expectation",
+        "ACS must not drop the sentence-justice/verdict-fairness clause as mere opinion; reports with only two selected/final claims are structurally incomplete even when the top-line verdict is in band"
       ]
     },
     {

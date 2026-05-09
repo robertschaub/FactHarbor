@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-09
-**Status:** Active plan updated — corrected Captain expectations applied; Option A and the first diagnostic-only canary did not close quality; static comparator packet produced; stop further additive patching until that root-cause packet is reviewed
+**Status:** Active plan updated — corrected Captain expectations applied; Option A and the first post-fix canary did not close quality; static comparator packet produced; Portuguese AC_03 selection omission isolated as a separate ACS lane
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -35,7 +35,7 @@ If no best usable comparator exists for an in-scope family, write `NO-COMPARATOR
 
 ### Current Plan Shape
 
-The active lane is now comparator-first root-cause review, not another local guard or prompt patch. The remaining live-job budget from the latest allocation is 9 jobs; spend none until a reviewed static packet identifies a generic root cause and a minimal change surface.
+The active lane is now comparator-first root-cause review, not another local guard or prompt patch. One post-fix asylum canary was spent on 2026-05-09 and failed the corrected band, leaving 8 jobs from the latest allocation. Spend no further Stage 2 validation jobs until the failed attempt is classified and the next hypothesis has a minimal change surface. The Portuguese AC_03 omission is a separate ACS selection issue discovered from a user-approved exact job and should be validated with one PT canary only after commit/reseed.
 
 Required static packet before more jobs:
 
@@ -341,4 +341,46 @@ Verification passed:
 - `npm test` — full safe suite passed.
 - `git diff --check` — passed.
 
-Live validation status: **not run yet**. Before spending the first job, commit the prompt/test change, reseed prompts, restart affected services, and then run `asylum-235000-de` first. Remaining live-job budget stays at 9.
+Live validation status: **failed first gate** after commit/reseed/restart.
+
+- Commit under test: `cdfe3a6b1c4e970223ea1b08c4232075de1de0fe`.
+- Active prompt hash after reseed: `8a1c83bde60b97fdafee0a96717533602ceffbcc115843378b83bac481d8d7fd`.
+- First canary: `asylum-235000-de`, job `da3adba136d14edeb91512bdda8c00c3`.
+- Result: `MOSTLY-TRUE` 85/72.
+- Corrected band: true-side label yes, but truth must stay 58-75 and confidence 40-70. This is still over-calibrated.
+
+Debt-guard classification: keep the static applicability-direction contract as a prompt-contract improvement, but quarantine the live-quality claim. Do not proceed to the planned Bolsonaro EN canary from this validation wave until a new root-cause decision is made.
+
+Remaining live-job budget after this canary: 8.
+
+### 12.6 Separate ACS Selection Lane — Portuguese Bolsonaro AC_03
+
+Captain flagged local job `0a3c00180b124625b056f5abd5b194e6` as otherwise good but missing the atomic claim `as sentencas proferidas foram justas`.
+
+Inspection:
+
+- Input was the exact Captain-approved `bolsonaro-pt` wording.
+- Job result: `MOSTLY-TRUE` 73/70, in band for `bolsonaro-pt`.
+- Commit recorded by the job: `1519f6886ee3cb9c2891ac34d38960275feb25ab+df479f83`.
+- `PreparedStage1Json` contained all three claims, including `AC_03`: `As sentenças proferidas no processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado foram justas.`
+- `ClaimSelectionJson` ranked `AC_03` third but selected only `AC_01` and `AC_02`. It labeled `AC_03` as `opinion_or_subjective`, low yield, and redundant with the compliance claims.
+
+Root cause: not Stage 1 extraction. The existing LLM-mediated ACS recommendation prompt was too broad about `opinion_or_subjective` and allowed a standards-grounded verdict/outcome-fairness claim to be collapsed into process/legal compliance.
+
+Patch prepared:
+
+- Amend only `CLAIM_SELECTION_RECOMMENDATION`.
+- Clarify that `opinion_or_subjective` means personal-preference/aesthetic/rhetorical/unsupported value judgment with no externally checkable standard.
+- Add a standards-grounded evaluative-claim rule: evaluative/normative claims can still be `fact_check_worthy` or `unclear` when assessable against rules, safeguards, methods, institutional records, expert standards, or documented outcomes.
+- Add an outcome-vs-process rule: do not collapse a resulting decision/outcome/fairness claim into a separate process/procedure/compliance claim unless it is truly duplicate wording.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/claim-selection-recommendation.test.ts` — 16 tests passed.
+- `git diff --check` — passed.
+- `npm -w apps/web test -- test/unit/lib/drain-runner-pause.integration.test.ts test/unit/lib/runner-concurrency-split.integration.test.ts` — 19 tests passed after the full safe suite exposed runner-test timeouts.
+- `npm test` — attempted twice; both attempts failed only on runner integration test timeouts that passed in isolation. Treat as unrelated runner flakiness, not evidence against the ACS prompt patch.
+
+Internal review/debate result: accept with caution. The patch amends the existing LLM selector and adds no deterministic semantic override. Main risk is over-promoting weak value judgments; mitigated by keeping the external-standards requirement and leaving `opinion_or_subjective` non-recommendable when no standard exists.
+
+Next live gate for this separate lane: commit, reseed prompts, restart if needed, then run one `bolsonaro-pt` exact canary. Success criterion: 3 prepared and 3 selected/final claims, with the verdict-fairness / sentence-justice claim present downstream. Stop after that one job and inspect before spending more.

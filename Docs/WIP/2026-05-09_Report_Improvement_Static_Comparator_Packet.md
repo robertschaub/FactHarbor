@@ -3,13 +3,15 @@
 Date: 2026-05-09
 Role: Lead Developer + LLM Expert
 Scope: Static report review only. No prompt, code, config, or live-job changes in this packet.
-Job budget status: 9 live jobs preserved.
+Job budget status: 9 live jobs preserved at packet creation; 8 remain after the later `asylum-235000-de` canary `da3adba136d14edeb91512bdda8c00c3`.
 
 ## Purpose
 
 This packet records the evidence needed before continuing the report-improvement plan. It compares the recent weak reports against the corrected Captain expectations, benchmark JSONs, report-quality rules, and best usable reports.
 
 The next implementation step should not start from a generic "run more jobs" posture. It should start from the observed Stage 2 direction/applicability failure pattern below, then use one narrow, reviewable change.
+
+2026-05-09 addendum: Captain later identified local Portuguese job `0a3c00180b124625b056f5abd5b194e6` as good except that `as sentencas proferidas foram justas` was missing downstream. Inspection showed this is a separate ACS selection lane, not Stage 1 decomposition: prepared Stage 1 contained all three claims, but claim selection dropped `AC_03` as `opinion_or_subjective` even though the cap allowed three claims. That lane is being handled by a narrow `CLAIM_SELECTION_RECOMMENDATION` prompt amendment; it does not replace the Stage 2 direction/applicability diagnosis below.
 
 ## Authority Sources Loaded
 
@@ -71,6 +73,8 @@ Bolsonaro decomposition is not the current dominant failure. The recent weak rep
 - International fair-trial compliance for verdicts
 
 That means the older two-claim/omitted-verdict concern is not sufficient to explain `af77168b` or `fff7c275`. It remains a guardrail, but not the primary current root cause.
+
+Separate later finding: `0a3c00180b124625b056f5abd5b194e6` proves a distinct ACS selection failure can still omit the Portuguese sentence-justice/verdict-fairness claim after Stage 1 extracts it. Do not confuse that with the EN Stage 2 support-starvation lane.
 
 Asylum decomposition is also structurally acceptable: the target and comparators use one atomic claim for the current Swiss asylum-area count.
 

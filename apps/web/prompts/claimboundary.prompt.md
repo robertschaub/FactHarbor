@@ -955,18 +955,20 @@ Assess every candidate claim together. For each claim, assign one primary treatm
 3. **Use exactly one primary treatment label per claim.**
    - `fact_check_worthy`: factual and worth prioritizing for fact-checking.
    - `fact_non_check_worthy`: factual but not strong enough for v1 recommendation priority.
-   - `opinion_or_subjective`: primarily evaluative, rhetorical, or subjective for v1 treatment.
+   - `opinion_or_subjective`: primarily personal-preference, aesthetic, rhetorical, or unsupported value judgment with no externally checkable standard for v1 treatment.
    - `unclear`: control state when you cannot safely place the claim into the other buckets.
 4. **Rank the entire candidate set.** `rankedClaimIds` must contain every input claim exactly once, ordered from strongest overall recommendation candidate to weakest.
 5. **Recommendation cap.** `recommendedClaimIds` must contain at most `${maxRecommendedClaims}` claims.
 6. **Normal recommendation rule.** Recommend from `fact_check_worthy` first.
 7. **Limited `unclear` promotion.** Recommend an `unclear` claim only when higher-ranked `fact_check_worthy` claims would otherwise leave a distinct thesis-relevant dimension uncovered.
-8. **Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.** They may stay in the ranked list and in the assessments, but they should not appear in `recommendedClaimIds`.
-9. **Coverage means thesis-relevant distinctness.** `coversDistinctRelevantDimension` should be `true` only when the claim preserves a materially different thesis-relevant dimension from the stronger claims already competing for recommendation.
-10. **Redundancy must stay narrow.** `redundancyWithClaimIds` should name only materially competing claims from the same candidate set. Do not generate broad noisy cross-links.
-11. **No omissions, no duplicates.** Every input claim must appear once in `assessments` and once in `rankedClaimIds`. Use the exact provided claim IDs.
-12. **Non-empty rationale fields.** `rationale` and every `recommendationRationale` must be non-empty, concise, and grounded in ranking, coverage, redundancy, and expected evidence yield.
-13. **Language discipline.** Reason from semantic content, not English-specific wording. Keep the output usable for multilingual inputs.
+8. **Standards-grounded evaluative claims.** Do not label a claim `opinion_or_subjective` merely because it uses evaluative or normative language. If the claim can be assessed against externally checkable standards, rules, safeguards, methods, institutional records, expert standards, or documented outcomes, treat it as eligible for `fact_check_worthy` or `unclear` depending on evidence yield.
+9. **Do not collapse outcome assessment into process compliance.** When the candidate set separately contains a process/procedure/compliance claim and a resulting decision/outcome/fairness claim, treat the outcome claim as a distinct thesis-relevant dimension unless it is truly duplicate wording.
+10. **Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.** They may stay in the ranked list and in the assessments, but they should not appear in `recommendedClaimIds`.
+11. **Coverage means thesis-relevant distinctness.** `coversDistinctRelevantDimension` should be `true` only when the claim preserves a materially different thesis-relevant dimension from the stronger claims already competing for recommendation.
+12. **Redundancy must stay narrow.** `redundancyWithClaimIds` should name only materially competing claims from the same candidate set. Do not generate broad noisy cross-links.
+13. **No omissions, no duplicates.** Every input claim must appear once in `assessments` and once in `rankedClaimIds`. Use the exact provided claim IDs.
+14. **Non-empty rationale fields.** `rationale` and every `recommendationRationale` must be non-empty, concise, and grounded in ranking, coverage, redundancy, and expected evidence yield.
+15. **Language discipline.** Reason from semantic content, not English-specific wording. Keep the output usable for multilingual inputs.
 
 ### Input
 

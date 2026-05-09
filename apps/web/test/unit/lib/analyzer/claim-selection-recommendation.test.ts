@@ -168,6 +168,9 @@ describe("CLAIM_SELECTION_RECOMMENDATION prompt contract", () => {
     expect(section).toContain("Use exactly one primary treatment label per claim.");
     expect(section).toContain("Rank the entire candidate set.");
     expect(section).toContain("Recommend from `fact_check_worthy` first.");
+    expect(section).toContain("Standards-grounded evaluative claims.");
+    expect(section).toContain("Do not label a claim `opinion_or_subjective` merely because it uses evaluative or normative language.");
+    expect(section).toContain("Do not collapse outcome assessment into process compliance.");
     expect(section).toContain("Do not recommend `fact_non_check_worthy` or `opinion_or_subjective` in v1.");
     expect(section).toContain("unique ordered permutation of all input claim IDs");
     expect(section).toContain("If no claim should be recommended, return an empty `recommendedClaimIds` array");
