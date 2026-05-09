@@ -522,3 +522,41 @@ Debt-guard classification after the failed gate:
 - **Keep, but monitor** the extraction prompt's stale-endpoint rule as the intended generic direction correction. It removed stale false-side dominance, which is the behavior expected by the plan.
 - **Quarantine the live-quality claim** for `2258d99a`: it is not an accepted quality fix because it overcalibrates the family.
 - Do **not** stack another prompt change in this turn. The next hypothesis must be debated/reviewed as a separate Stage 4 calibration / near-threshold weighting issue, not another Stage 2 acquisition or broad query fix.
+
+### 12.10 Stage 4 Threshold Calibration Canary — 2026-05-09
+
+Debt-guard classification:
+
+- Stage 4 threshold calibration prompt `eda022fc`: **keep as a static contract, quarantine its live-quality claim**. The change is generic, prompt-only, and adds no code mechanism, flag, fallback, deterministic clamp, or family-specific wording. The canary did not exercise the intended Stage 4 calibration path because it reached Stage 4 with no directional evidence.
+- Stage 2 freshness exposure `2258d99a`: **keep structurally**. The earlier canary proved it can neutralize stale-current contradictions and keep the end-2025 official total supportive when that source is admitted.
+- Current canary `5855f86b6b924c8fb4017ec2bd0e2d31`: **active first-gate failure**. Do not spend another live job until a separate reviewed hypothesis localizes why the current official aggregate route disappears or remains non-directional in this run.
+
+Prompt/test change:
+
+- Commit under test: `eda022fcd30db7e3f1323a69719fa674e9f6c7dc`.
+- Prompt hash under test: `c50f1d795cd5887493736c3015fe3bae01728a7cd2828156ac1d5ae1351526b1`.
+- The `VERDICT_ADVOCATE` and `VERDICT_RECONCILIATION` sections now distinguish directional support from certainty calibration for barely satisfied threshold/current-stock claims.
+- Verification before live job: focused `verdict-prompt-contract` test passed (`108` tests), `npm -w apps/web run build` passed and reseeded the prompt, and `git diff --check` passed.
+
+Live gate result:
+
+- Canary: `asylum-235000-de` exact input, job `5855f86b6b924c8fb4017ec2bd0e2d31`.
+- Result: `UNVERIFIED` 50/0.
+- Band assessment: **failed first gate**. It is outside the corrected true-side band and below the expected confidence range.
+- Search providers: `Serper (cached), Serper, Wikipedia, Serper, Google-CSE (circuit-open), Wikipedia`.
+- Evidence balance: 7 neutral, 0 support, 0 contradiction, 2 sources.
+- Warning: `insufficient_evidence` — "Claim AC_01 has no non-seeded Stage 2 evidence after provider search."
+- Remaining live-job budget: 3.
+
+Observed effect:
+
+- The run did not retrieve or admit the decisive official 2025 aggregate route as Stage 2 directional evidence. It used preliminary/admin source snippets and SEM statistics-page context, but all 7 final evidence items were neutral.
+- Main/refinement queries targeted current SEM or 2025 Bestandstabelle routes but returned either irrelevant current-statistics pages or zero results. The 2025 annual-commentary route that powered `f079c5b6c5f84aa0941aafcff1b734a5`, `3ba25fe7c99f4b96822e37a6a65f6bb1`, and deployed comparator `6a60b3eb0df540c0b16228d9367b1366` did not survive into non-seeded Stage 2 evidence.
+- The old malformed preliminary numeric query remains visible (`mehr als 235` without the thousands magnitude), but this canary's first actionable failure is not Stage 4 calibration. It is source route acquisition/admission: the claim reaches verdict with no direct supportive aggregate evidence.
+
+Next hypothesis gate:
+
+1. Do **not** run another live job before a no-edit trace comparison of `5855f86b6b924c8fb4017ec2bd0e2d31` against `f079c5b6c5f84aa0941aafcff1b734a5` and deployed comparator `6a60b3eb0df540c0b16228d9367b1366`.
+2. Localize why the source-native 2025 aggregate route appears in some runs and not this one: query generation, relevance selection, fetch/extraction, seeded-vs-non-seeded evidence admission, or Gate 4 non-seeded evidence policy.
+3. Keep the next change generic and LLM-mediated. Do not fix this by adding asylum/SEM-specific search terms, deterministic source recognition, or another verdict-stage guard.
+4. If the next reviewed hypothesis points to query/acquisition rather than verdict calibration, classify `eda022fc` as static-keep/live-unvalidated and shift the active lane back upstream rather than stacking more Stage 4 wording.
