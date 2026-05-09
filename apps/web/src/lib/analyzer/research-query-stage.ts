@@ -82,6 +82,15 @@ function enforceFreshnessContract(
     return normalized;
   }
 
+  const hasCurrentSnapshotRouteWithoutDateFilter = normalized.some(
+    (query) =>
+      (query.retrievalLane === "primary_direct" || query.retrievalLane === "navigational")
+      && query.freshnessWindow === "none",
+  );
+  if (hasCurrentSnapshotRouteWithoutDateFilter) {
+    return normalized;
+  }
+
   const hasCurrentSnapshotQuery = normalized.some(
     (query) =>
       (query.retrievalLane === "primary_direct" || query.retrievalLane === "navigational")
