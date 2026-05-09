@@ -29,9 +29,9 @@ Agent checklist:
 **2026-05-09 Captain correction:** Prior tables incorrectly listed `MIXED` as acceptable for `bolsonaro-en`, `bolsonaro-pt`, and `asylum-235000-de`. That was not Captain's original expectation. These families must be true-side: Bolsonaro is legal-basis strongly supported and procedural-fairness largely supported with caveats; asylum-current-total is an official SEM aggregate/threshold claim where caveats belong in confidence and reasoning, not a neutral verdict direction. The same correction pass also moved `bundesrat-simple` to the high-true chronology expectation based on Captain-preferred exact comparators.
 
 - **Good expectation / comparator set (5/8):** `bundesrat-rechtskraftig`, `bundesrat-simple`, `bolsonaro-en`, `bolsonaro-pt`, `hydrogen-en`
-- **Watch (2/8):** `asylum-235000-de`, `plastic-en` — main old issue fixed, residual variance open
+- **Watch (2/8):** `asylum-235000-de`, `plastic-en` — asylum artifact retrieval improved, but current-stack stability rerun still failed from component-stitching verdict logic; plastic evidence variance remains open
 - **Not validated (1/8):** `asylum-wwii-de` — no current-stack rerun yet
-- **Release-blockers:** none of these families currently block release; one isolated rerun each for Bundesrat + Plastic would clear the last open-item noise from the 2026-04-16 concurrent-submission anomaly.
+- **Release-blockers:** none formally declared in this file; `asylum-235000-de` is no longer cleanup-only and should stay in the active report-improvement lane until the component-stitching failure is fixed.
 
 **Bolsonaro current-state caution:** The true-side expectation is stable and supported by good historical/variant comparator reports, but those reports do not prove current HEAD is fixed. Recent canonical `bolsonaro-en` current-stack failures remain a separate Stage 2/Stage 4 diagnosis lane.
 
@@ -108,7 +108,7 @@ Each item has a concrete next step, owner expectation, and whether it blocks rel
 |---|---|---|
 | `asylum-wwii-de` | Single isolated rerun on current stack to produce a first verdict band. | No — but keeps the family permanently "not validated" until run |
 | `bundesrat-rechtskraftig` + `plastic-en` | One isolated (non-concurrent) rerun each to clear the 2026-04-16 concurrent-submission collapse from the record. | No — the collapse was ruled infrastructure; reruns just remove ambiguity |
-| `asylum-235000-de` | Rerun with explicit source-inspection to confirm one clean official SEM aggregate surfaces, not a stitched component total. `MIXED` is a regression; near-certain `TRUE` is a calibration issue. | No — current family behavior is usable, cleanup-tier |
+| `asylum-235000-de` | Rerun with explicit source-inspection confirmed XLSX artifact retrieval, including current RU sheets, but stability job `511c2b17299a49a5a9640505c40eac0f` flipped false-side after stitching current component tables into an agent-composed total. Next work: prevent component tables from replacing one clean official SEM aggregate unless the source itself provides a complete non-overlapping aggregate. | Yes — active report-improvement lane; no more jobs before a generic component-stitching fix |
 | `bolsonaro-en` current-stack regression and evidence-pool residue | Use the comparator reports above when diagnosing current canonical failures. Ongoing monitoring of whether uncited `state.gov` items remain in the evidence pool across runs. `MIXED` or false-side outputs are regressions unless strong target-specific evidence overturns the original true-side expectation. | No — comparator citations are clean, but current canonical validation remains open |
 | Q-S1.3 / Q-S1.1 / Q-V6 / Q-ST5 check activation | Add per-family annotations (`anchorTokens`, `minDistinctEvents`, `trueButMisleading`, `crossLanguageVariantOf`) to `benchmark-expectations.json` as data becomes available. | No — the checks are dormant until then |
 

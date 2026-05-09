@@ -61,7 +61,8 @@
       "knownOpenIssues": [
         "inconsistent retrieval of direct official SEM aggregate total from primary Swiss source family",
         "can still regress to UNVERIFIED 57/40 with refinement path changes",
-        "MIXED is not acceptable for this family; close-threshold caveats belong in confidence/reasoning, not verdict direction"
+        "MIXED is not acceptable for this family; close-threshold caveats belong in confidence/reasoning, not verdict direction",
+        "current-stack stability rerun 511c2b17299a49a5a9640505c40eac0f fetched current XLSX/RU sheets but regressed false-side by stitching component tables into an agent-composed total instead of using one clean official SEM aggregate"
       ]
     },
     {

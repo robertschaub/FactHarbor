@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-09
-**Status:** Active plan updated — corrected Captain expectations applied; exact `asylum-235000-de` canary now passes on `2147d5ed`; residual current-artifact selection caveat remains before spending more jobs
+**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` artifact retrieval now works, but stability rerun failed from component-stitching verdict flip
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -35,7 +35,7 @@ If no best usable comparator exists for an in-scope family, write `NO-COMPARATOR
 
 ### Current Plan Shape
 
-The active lane moved from failed-attempt recovery into first-pass validation review. Earlier asylum canaries failed the corrected band for stale/current route, threshold direction, support inflation, and then missing current data artifacts. The latest committed fix (`2147d5ed`) lets the pipeline discover and parse source data artifacts from official HTML pages, and the exact `asylum-235000-de` canary `1df476e9638f49a3bbd4e7622c33fdfc` now passes at `LEANING-TRUE` 68/58. Do not spend the remaining live-job budget in a batch: inspect the passing report against the best comparators, then decide whether one stability rerun or a different family canary is worth the next job.
+The active lane moved from source discovery to verdict semantics. Earlier asylum canaries failed the corrected band for stale/current route, threshold direction, support inflation, and then missing current data artifacts. Commit `2147d5ed` fixed the artifact-discovery/parsing gap: exact canary `1df476e9638f49a3bbd4e7622c33fdfc` passed at `LEANING-TRUE` 68/58, and stability rerun `511c2b17299a49a5a9640505c40eac0f` fetched the previously missing RU sheets (`6-50`, `6-51`). The stability rerun still failed at `LEANING-FALSE` 32/60 because the verdict stitched current component tables into a custom total instead of requiring one clean official SEM aggregate. Stop live jobs on this lane until that generic component-stitching failure is addressed.
 
 Required static packet before more jobs:
 
@@ -741,3 +741,25 @@ Next gate:
 2. Spend no additional asylum job until the passing report is compared against `Captain_Quality_Expectations.md`, `benchmark-expectations.json`, `report-quality-expectations.json`, and the best exact/family comparators.
 3. If a stability rerun is approved, spend exactly one more exact `asylum-235000-de` job and stop if it falls outside band.
 4. Otherwise use the next job on a different corrected-family canary only after stating the expected band and stop rule.
+
+Stability rerun result:
+
+- Canary: exact `asylum-235000-de`, job `511c2b17299a49a5a9640505c40eac0f`.
+- Result: `LEANING-FALSE` 32/60.
+- Band assessment: **failed first gate**. False-side output is outside the corrected Captain expectation.
+- Positive signal: artifact retrieval is now stable enough to fetch current SEM March 2026 XLSX artifacts, including the previously missing `6-50` and `6-51` RU sheets.
+- Failure mechanism: the verdict stage stitched a custom component total from current SEM partial tables (`N`, `F`, `S`, `B`, `RU`) and treated that stitched total as decisive false-side evidence. This violates the family expectation: the report must surface one clean official SEM aggregate total or explicitly state that no current complete aggregate is available; it must not replace the official aggregate with an agent-composed component sum.
+- Secondary symptom: the final reasoning drifted from the input wording `Personen aus dem Asylbereich` toward `Geflüchtete`, with a single NZZ title as support, while the SEM component stitch dominated the verdict.
+
+Debt-guard classification for the next implementation turn:
+
+- `2147d5ed` source-data artifact retrieval: **keep**. Both canaries confirm the mechanism discovers and parses XLSX artifacts.
+- Live-quality claim for `asylum-235000-de`: **quarantine**. One pass plus one false-side failure means the family remains open.
+- Active first divergence: **Stage 4 / verdict synthesis uses component evidence as if it were an official complete aggregate**. This is not a search-provider, XLSX parser, or broad query-breadth problem.
+
+Next gate:
+
+1. Do not run another `asylum-235000-de` job before a no-edit trace of `511c2b17299a49a5a9640505c40eac0f` against passing `1df476e9638f49a3bbd4e7622c33fdfc` and deployed comparator `6a60b3eb0df540c0b16228d9367b1366`.
+2. Localize whether the component-stitching happens because `APPLICABILITY_ASSESSMENT` over-promotes component rows, Stage 4 overuses neutral component rows in reasoning, or both.
+3. The next fix, if any, must be generic and LLM-mediated: for current aggregate/threshold claims, component tables can contextualize uncertainty, but must not become a decisive directional total unless the source itself provides the complete non-overlapping aggregate or the claim's expected profile explicitly authorizes that composition.
+4. Remaining budget from the latest 8-job allocation after these two jobs: 6.
