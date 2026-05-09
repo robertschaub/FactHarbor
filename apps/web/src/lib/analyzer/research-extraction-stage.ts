@@ -633,6 +633,7 @@ export async function assessEvidenceApplicability(
     const foreignDomains: string[] = [];
     let claimMappingExtensions = 0;
     let neutralClaimDirectionClones = 0;
+    let neutralClaimDirectionDemotions = 0;
     let neutralCompanionClones = 0;
     let directionalCompanionClones = 0;
 
@@ -721,6 +722,15 @@ export async function assessEvidenceApplicability(
               directnessJustification: existingEntry.directnessJustification,
             };
             itemDirection = existingEntry.claimDirection;
+          } else {
+            assessedItem = {
+              ...assessedItem,
+              claimDirection: "neutral" as ClaimDirection,
+              directionBasis: existingEntry.directionBasis,
+              directnessJustification: existingEntry.directnessJustification,
+            };
+            itemDirection = "neutral";
+            neutralClaimDirectionDemotions++;
           }
         } else if (
           existingEntry.directionBasis !== undefined ||
@@ -809,6 +819,7 @@ export async function assessEvidenceApplicability(
       `Applicability applied: ${shouldApplyApplicability}. ` +
       `Claim mapping extensions: ${claimMappingExtensions}. ` +
       `Neutral claim-local direction clones: ${neutralClaimDirectionClones}. ` +
+      `Neutral claim-local direction demotions: ${neutralClaimDirectionDemotions}. ` +
       `Neutral companion clones: ${neutralCompanionClones}. ` +
       `Directional companion clones: ${directionalCompanionClones}. ` +
       `Foreign domains: ${foreignDomains.length > 0 ? foreignDomains.length : "none"}`

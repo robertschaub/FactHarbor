@@ -1362,14 +1362,22 @@ describe("Research Extraction Stage", () => {
       expect(result[0].directionBasis).toBeUndefined();
     });
 
-    it("does not let neutral reassessment basis erase existing directional evidence", async () => {
+    it("demotes existing directional evidence when the LLM explicitly reassesses it as neutral", async () => {
       const claims = [
-        createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
+        createClaim({
+          id: "AC_01",
+          statement: "Entity A has a current aggregate above threshold T",
+          freshnessRequirement: "current_snapshot",
+          expectedEvidenceProfile: {
+            primaryMetric: "current aggregate M",
+            componentMetrics: ["component A", "component B"],
+          },
+        }),
       ];
       const evidence = [
         createEvidence({
           id: "EV_01",
-          statement: "The source reports a concern without an operative finding.",
+          statement: "The source reports only component A, which is below threshold T.",
           claimDirection: "contradicts",
           relevantClaimIds: ["AC_01"],
         }),
@@ -1387,11 +1395,11 @@ describe("Research Extraction Stage", () => {
               {
                 claimId: "AC_01",
                 claimDirection: "neutral",
-                directionBasis: "concern_only",
-                directnessJustification: "concern without operative target outcome",
+                directionBasis: "direct_metric_value",
+                directnessJustification: "component-only value does not establish the decisive aggregate",
               },
             ],
-            reasoning: "explicit non-directional basis",
+            reasoning: "explicit neutral reassessment of a component-only metric",
           },
         ],
       });
@@ -1401,11 +1409,15 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         id: "EV_01",
-        claimDirection: "contradicts",
+        claimDirection: "neutral",
+        directionBasis: "direct_metric_value",
+        directnessJustification: "component-only value does not establish the decisive aggregate",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
       });
-      expect(result[0].directionBasis).toBeUndefined();
+      expect(mockDebugLogFileOnly).toHaveBeenCalledWith(
+        expect.stringContaining("Neutral claim-local direction demotions: 1."),
+      );
     });
 
     it("should apply LLM claim-local direction to already-scoped neutral evidence", async () => {
