@@ -560,3 +560,38 @@ Next hypothesis gate:
 2. Localize why the source-native 2025 aggregate route appears in some runs and not this one: query generation, relevance selection, fetch/extraction, seeded-vs-non-seeded evidence admission, or Gate 4 non-seeded evidence policy.
 3. Keep the next change generic and LLM-mediated. Do not fix this by adding asylum/SEM-specific search terms, deterministic source recognition, or another verdict-stage guard.
 4. If the next reviewed hypothesis points to query/acquisition rather than verdict calibration, classify `eda022fc` as static-keep/live-unvalidated and shift the active lane back upstream rather than stacking more Stage 4 wording.
+
+### 12.11 Current Aggregate Route Query Repair Candidate — 2026-05-09
+
+Debt-guard classification:
+
+- Stage 4 threshold calibration prompt `eda022fc`: **keep as a static contract, quarantine its live-quality claim**. The latest canary did not reach Stage 4 with direct supporting evidence, so it remains unvalidated by live quality.
+- Stage 2 freshness exposure `2258d99a`: **keep structurally**. It remains the right metadata path for stale-current direction handling.
+- Current query route behavior: **incomplete-existing-mechanism**. `GENERATE_QUERIES` already has current-snapshot and source-native artifact rules, but the live trace shows the contract was too narrow after partial current evidence: it allowed over-specific dated/current-route queries while missing the latest complete official aggregate artifact route.
+
+No-edit localization result:
+
+- Failed canary `5855f86b6b924c8fb4017ec2bd0e2d31` generated current/date-heavy routes such as `SEM Asylstatistik aktuelle Zahlen 31. März 2026 Gesamtbestand` and an over-specific 2025 route that returned zero results.
+- Comparator `f079c5b6c5f84aa0941aafcff1b734a5` found the decisive route through the more compact source-native publication/category query `SEM Asylstatistik Jahresbericht 2025 Bestand Kategorien`.
+- The first actionable divergence is query route acquisition, not verdict calibration, provider fallback, deterministic relevance rescue, or Gate 4 policy.
+
+Candidate fix implemented:
+
+- `GENERATE_QUERIES` now treats the newest routine current-statistics route and the latest complete official/institutional publication or data artifact as complementary when either may carry the decisive value.
+- When current overview, landing-page, dashboard, or component evidence may not expose the direct `primaryMetric` or umbrella total, it reserves one query for the latest complete source-native publication, data artifact, annex, table, or file.
+- Refinement now pivots incomplete current aggregate coverage toward latest complete artifacts and avoids invented exact date/month/edition/page labels unless those labels are already present in the claim, profile, distinct-events metadata, or existing evidence.
+- The change is prompt-only, generic, multilingual-safe, and LLM-mediated. It does not add provider tuning, family-specific search terms, deterministic source recognition, a fallback path, or a new code mechanism.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts` — 135 tests passed.
+- `npm -w apps/web run build` — passed; `postbuild` reseeded `claimboundary` to hash `f8cff7b1986f...`.
+- `git diff --check` — passed before docs.
+- Broad `npm test` hit three unrelated runner integration timeouts; the failed files passed immediately when rerun directly (`drain-runner-pause.integration.test.ts` and `runner-concurrency-split.integration.test.ts`, 19 tests). Treat this as unrelated parallel test noise, not a prompt-patch contradiction.
+
+Next gate:
+
+1. Commit this candidate fix on `main`.
+2. Restart/reseed runtime state after the commit.
+3. Spend exactly one live job on the Captain-defined `asylum-235000-de` input.
+4. Stop immediately if it is false-side, `MIXED`, `UNVERIFIED`, or outside the 58-75 truth / 40-70 confidence band. Classify this candidate as keep/quarantine/revert before any next edit.

@@ -688,6 +688,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("not automatic substitutes for one another");
       expect(section).toContain("recurring official statistics series or update stream");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
+      expect(section).toContain("newest routine current-statistics route and the latest complete official or institutional publication/data artifact");
+      expect(section).toContain("Do not exclude the latest complete source-native release solely because it is periodic or retrospective");
+      expect(section).toContain("overview, landing page, current dashboard, or component source");
+      expect(section).toContain("do not invent an exact date, month, edition label, or page label");
     });
 
     it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
@@ -747,6 +751,17 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("both direct-value and source-native archive coverage");
       expect(section).toContain("decisive side-specific totals");
       expect(section).toContain("both still needed");
+    });
+
+    it("pivots incomplete current aggregate coverage toward latest complete artifacts", () => {
+      const section = extractSection(promptContent, "GENERATE_QUERIES");
+      expect(section).toContain("If current official evidence is still incomplete");
+      expect(section).toContain("complete publication, artifact, table, annex, or data file");
+      expect(section).toContain("rather than repeating only the same current landing page");
+      expect(section).toContain("current/present aggregate claim is represented mainly by partial components");
+      expect(section).toContain("latest complete source-native publication");
+      expect(section).toContain("Pair it with the source-native archive or recurring-series path");
+      expect(section).toContain("avoid adding precise month/day labels unless existing evidence already established them");
     });
   });
 

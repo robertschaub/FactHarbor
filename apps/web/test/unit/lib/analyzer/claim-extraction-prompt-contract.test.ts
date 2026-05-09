@@ -784,7 +784,9 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("runtime date for \"current\", \"latest\", \"present\"");
       expect(section).toContain("newest source-native publication");
       expect(section).toContain("available on or before `${currentDate}`");
-      expect(section).toContain("Do not drift to an older annual/retrospective summary");
+      expect(section).toContain("newest routine current-statistics route and the latest complete official or institutional publication/data artifact");
+      expect(section).toContain("Do not exclude the latest complete source-native release solely because it is periodic or retrospective");
+      expect(section).toContain("do not invent an exact date, month, edition label, or page label");
       expect(section).toContain("**Current Date:**");
     });
 
