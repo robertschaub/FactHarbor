@@ -37,6 +37,6 @@
 - Search results may differ slightly (Serper vs Google CSE return different result sets)
 - Any live validation jobs will now use Serper as the primary search provider
 - The comparator baselines in the static packet were produced under the old config (Google CSE primary) — note this when comparing future job outputs
-- UCM config persists across restarts (no reseed needed — `activatedBy: "admin"` configs are not overwritten by system defaults)
+- After force-reseeding from JSON defaults, the active search DB row should be only a system-owned mirror of `apps/web/configs/search.default.json`, not a custom/admin override; future JSON default changes auto-refresh on restart
 
-**Config version:** `serper-p1-google-fallback` (hash: `3599e181...`)
+**Config version:** system default from `apps/web/configs/search.default.json`

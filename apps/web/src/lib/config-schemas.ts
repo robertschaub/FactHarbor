@@ -70,8 +70,8 @@ export const SearchConfigSchema = z.object({
   enabled: z.boolean(),
   provider: z.enum(["auto", "google-cse", "serpapi", "brave", "serper"]),
   mode: z.enum(["standard", "grounded"]),
-  autoMode: z.enum(["accumulate", "first-success"]).default("accumulate")
-    .describe("AUTO provider dispatch: 'accumulate' fills slots from multiple providers until maxResults; 'first-success' stops after first provider with results (default: accumulate)"),
+  autoMode: z.enum(["accumulate", "first-success"]).default("first-success")
+    .describe("AUTO provider dispatch: 'accumulate' fills slots from multiple providers until maxResults; 'first-success' stops after first provider with results (default: first-success)"),
   searchRelevanceMode: z.enum(["STRICT", "MODERATE", "RELAXED"]).optional().describe("Search relevance classification mode (default: MODERATE)"),
   maxResults: z.number().int().min(1).max(20),
   maxSourcesPerIteration: z.number().int().min(1).max(20),
@@ -180,7 +180,7 @@ export const DEFAULT_SEARCH_CONFIG: SearchConfig = {
   enabled: true,
   provider: "auto",
   mode: "standard",
-  autoMode: "accumulate",
+  autoMode: "first-success",
   maxResults: 10,
   maxSourcesPerIteration: 8,
   timeoutMs: 12000,

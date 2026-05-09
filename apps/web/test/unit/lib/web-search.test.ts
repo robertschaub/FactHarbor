@@ -10,6 +10,7 @@ const {
   mockRecordFailure,
   mockRecordSearchQuery,
   mockSearchGoogleCse,
+  mockSearchSerper,
   mockSearchBrave,
   mockSearchWikipedia,
   mockSearchSemanticScholar,
@@ -22,6 +23,7 @@ const {
   mockRecordFailure: vi.fn(),
   mockRecordSearchQuery: vi.fn(),
   mockSearchGoogleCse: vi.fn(),
+  mockSearchSerper: vi.fn(),
   mockSearchBrave: vi.fn(),
   mockSearchWikipedia: vi.fn(),
   mockSearchSemanticScholar: vi.fn(),
@@ -47,6 +49,10 @@ vi.mock("@/lib/search-google-cse", () => ({
   searchGoogleCse: mockSearchGoogleCse,
 }));
 
+vi.mock("@/lib/search-serper", () => ({
+  searchSerper: mockSearchSerper,
+}));
+
 vi.mock("@/lib/search-brave", () => ({
   searchBrave: mockSearchBrave,
 }));
@@ -68,6 +74,7 @@ describe("searchWebWithProvider", () => {
     vi.clearAllMocks();
     vi.stubEnv("GOOGLE_CSE_API_KEY", "test-key");
     vi.stubEnv("GOOGLE_CSE_ID", "test-cse");
+    vi.stubEnv("SERPER_API_KEY", "test-serper");
     vi.stubEnv("BRAVE_API_KEY", "test-brave");
     mockGetCachedSearchResults.mockResolvedValue(null);
     mockCacheSearchResults.mockResolvedValue(undefined);
@@ -76,6 +83,7 @@ describe("searchWebWithProvider", () => {
     mockRecordFailure.mockReturnValue(undefined);
     mockRecordSearchQuery.mockReturnValue(undefined);
     mockSearchGoogleCse.mockResolvedValue([]);
+    mockSearchSerper.mockResolvedValue([]);
     mockSearchBrave.mockResolvedValue([]);
     mockSearchWikipedia.mockResolvedValue([]);
     mockSearchSemanticScholar.mockResolvedValue([]);
@@ -140,18 +148,19 @@ describe("searchWebWithProvider", () => {
     expect(response.providersUsed).toContain("Wikipedia");
   });
 
-  it("falls back to DEFAULT_SEARCH_CONFIG if config is missing evaluationSearch block", async () => {
-    // If we pass no config, it uses global defaults
-    mockSearchGoogleCse.mockResolvedValue([{ url: "https://def.com", title: "Def", snippet: null }]);
+  it("uses Serper as default primary and does not top up with Google CSE after Serper returns results", async () => {
+    mockSearchSerper.mockResolvedValue([{ url: "https://serper.example", title: "Serper", snippet: null }]);
+    mockSearchGoogleCse.mockResolvedValue([{ url: "https://google.example", title: "Google", snippet: null }]);
 
     const response = await searchWebWithProvider({
       query: "test query",
       maxResults: 5,
-      // No config passed -> should use DEFAULT_SEARCH_CONFIG
     });
 
-    expect(mockSearchGoogleCse).toHaveBeenCalled();
+    expect(mockSearchSerper).toHaveBeenCalledTimes(1);
+    expect(mockSearchGoogleCse).not.toHaveBeenCalled();
     expect(response.results).toHaveLength(1);
+    expect(response.providersUsed[0]).toBe("Serper");
   });
 
   // ---------------------------------------------------------------------------

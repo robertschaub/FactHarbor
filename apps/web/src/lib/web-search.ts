@@ -304,8 +304,8 @@ export async function searchWebWithProvider(options: WebSearchOptions): Promise<
           results.push(...providerResults);
           // 0 results is a valid response (not a failure); reset consecutive failures
           recordSuccess(providerInfo.provider.name, cbConfig);
-          // In "first-success" mode, stop after first provider with results (legacy behavior).
-          // In "accumulate" mode (default), continue to fill remaining slots from next providers.
+          // In "first-success" mode (default), stop after first provider with results.
+          // In "accumulate" mode, continue to fill remaining slots from next providers.
           if (autoMode === "first-success" && providerResults.length > 0) break;
         } catch (err) {
           if (err instanceof SearchProviderError) {

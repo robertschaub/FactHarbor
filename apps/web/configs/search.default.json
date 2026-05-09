@@ -3,7 +3,7 @@
   "enabled": true,
   "provider": "auto",
   "mode": "standard",
-  "autoMode": "accumulate",
+  "autoMode": "first-success",
   "maxResults": 10,
   "maxSourcesPerIteration": 8,
   "timeoutMs": 12000,
