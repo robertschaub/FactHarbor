@@ -331,6 +331,15 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("misleadingness");
     });
 
+    it("calibrates barely satisfied threshold claims without flipping direction", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      expect(advocate).toContain("barely satisfies the asserted relation still supports the claim");
+      expect(advocate).toContain("calibrate `truthPercentage` and `confidence` below near-certain levels");
+      expect(reconciliation).toContain("barely satisfied relation as a calibration issue");
+      expect(reconciliation).toContain("preserving the supporting direction unless direct contradicting evidence defeats the relation");
+    });
+
     it("reconciliation blocks one-sided proxy wins but allows close-ecosystem convergence", () => {
       const section = extractSection(promptContent, "VERDICT_RECONCILIATION");
       expect(section).toContain("Per-side ecosystem evidence sufficiency and close-ecosystem convergence");
