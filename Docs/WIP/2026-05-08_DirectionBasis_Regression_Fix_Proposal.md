@@ -595,3 +595,27 @@ Next gate:
 2. Restart/reseed runtime state after the commit.
 3. Spend exactly one live job on the Captain-defined `asylum-235000-de` input.
 4. Stop immediately if it is false-side, `MIXED`, `UNVERIFIED`, or outside the 58-75 truth / 40-70 confidence band. Classify this candidate as keep/quarantine/revert before any next edit.
+
+Live gate result:
+
+- Commit under test: `a61aaf3237438c53874edc18e0e4780c2e8d60ab`.
+- Prompt hash under test: `f8cff7b1986f4bb1f4e034879ae9f3a89eb263f02a3b20ed97bd207459efc0d7`.
+- Canary: `asylum-235000-de` exact input, job `b6dfe982ac2145bd8e72cb21d0173cdd`.
+- Result: `UNVERIFIED` 50/24.
+- Band assessment: **failed first gate**. It is outside the corrected true-side band and below the expected confidence range.
+- Search providers: `Serper, Wikipedia, Serper, Google-CSE, Wikipedia, Serper, Google-CSE (circuit-open), Wikipedia`.
+- Evidence balance: 0 support, 5 contradiction, 9 neutral, 14 total.
+- Warnings/errors: `verdict_citation_integrity_guard:error` and `verdict_integrity_failure:error` because the final verdict had no supporting decisive citation side after sanitation.
+- Remaining live-job budget: 2.
+
+Observed effect:
+
+- The query repair improved the targeted acquisition failure: the run fetched the official 2025 SEM annual-commentary PDF and a CMS copy, including the decisive `Total Personen aus dem Asylbereich (inkl. RU) ... 235 057` evidence.
+- The next first divergence is now evidence direction/applicability: the threshold-satisfying 2025 value was repeatedly labeled `contradicts` even though the claim says "more than 235 000" and the source value is 235 057.
+- This means `a61aaf32` is **static-keep / live-quality quarantined**: keep the query-route amendment as a useful acquisition repair, but do not treat it as a report-quality fix until the direction failure is resolved.
+
+Next hypothesis gate:
+
+1. Do **not** run another live job before a no-edit direction trace comparison against `f079c5b6c5f84aa0941aafcff1b734a5`, where the same official 2025 value was supporting.
+2. Localize why `EXTRACT_EVIDENCE` or `APPLICABILITY_ASSESSMENT` can still mark a current threshold-satisfying primary metric as contradiction despite `freshnessRequirement = current_snapshot`.
+3. Keep the next fix generic and LLM-mediated. Do not add numeric clamps, family-specific terms, deterministic source recognition, or another verdict-stage guard.
