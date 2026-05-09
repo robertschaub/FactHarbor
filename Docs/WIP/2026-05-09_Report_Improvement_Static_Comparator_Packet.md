@@ -2,8 +2,8 @@
 
 Date: 2026-05-09
 Role: Lead Developer + LLM Expert
-Scope: Static report review only. No prompt, code, config, or live-job changes in this packet.
-Job budget status: 9 live jobs preserved at packet creation; 8 remain after the later `asylum-235000-de` canary `da3adba136d14edeb91512bdda8c00c3`.
+Scope: Static report review packet, later amended with current-pipeline rerun outcomes.
+Job budget status: 9 live jobs preserved at packet creation; 8 remained after `asylum-235000-de` canary `da3adba136d14edeb91512bdda8c00c3`; 5 remain after the later current-pipeline PT and asylum reruns recorded below.
 
 ## Purpose
 
@@ -12,6 +12,8 @@ This packet records the evidence needed before continuing the report-improvement
 The next implementation step should not start from a generic "run more jobs" posture. It should start from the observed Stage 2 direction/applicability failure pattern below, then use one narrow, reviewable change.
 
 2026-05-09 addendum: Captain later identified local Portuguese job `0a3c00180b124625b056f5abd5b194e6` as good except that `as sentencas proferidas foram justas` was missing downstream. Inspection showed this is a separate ACS selection lane, not Stage 1 decomposition: prepared Stage 1 contained all three claims, but claim selection dropped `AC_03` as `opinion_or_subjective` even though the cap allowed three claims. That lane is being handled by a narrow `CLAIM_SELECTION_RECOMMENDATION` prompt amendment; it does not replace the Stage 2 direction/applicability diagnosis below.
+
+2026-05-09 current-pipeline rerun addendum: after the ACS and UCM repairs, draft-backed `bolsonaro-pt` job `1644fcf2e800417a948c46416d9eec48` passed the corrected band (`LEANING-TRUE` 63/58) and retained all three final atomic claims including `AC_03`. The fresh exact `asylum-235000-de` job `0ea1066324f141f2ad6a81c53cf9a3ca` failed hard (`MOSTLY-FALSE` 22/78). It had one support, two contradictions, and 13 neutral evidence items; the contradictions were stale/narrow SEM route values (2023 factsheet and 2024 `Total Personen aus dem Asylbereich (inkl. RU)` = 226,706), while the best local comparator `3ba25fe7c99f4b96822e37a6a65f6bb1` had 15 supports and surfaced the current 2025 route. This confirms the next lane should remain asylum current-snapshot / official aggregate route handling, not more PT ACS work.
 
 ## Authority Sources Loaded
 

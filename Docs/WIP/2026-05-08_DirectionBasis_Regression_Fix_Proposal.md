@@ -35,7 +35,7 @@ If no best usable comparator exists for an in-scope family, write `NO-COMPARATOR
 
 ### Current Plan Shape
 
-The active lane is now comparator-first root-cause review, not another local guard or prompt patch. One post-fix asylum canary was spent on 2026-05-09 and failed the corrected band, leaving 8 jobs from the latest allocation. Spend no further Stage 2 validation jobs until the failed attempt is classified and the next hypothesis has a minimal change surface. The Portuguese AC_03 omission is a separate ACS selection issue discovered from a user-approved exact job and should be validated with one PT canary only after commit/reseed.
+The active lane is now comparator-first root-cause review, not another local guard or prompt patch. The first post-fix asylum canary and the later current-pipeline rerun both failed the corrected band, so the stop rule remains active. The Portuguese AC_03 omission is a separate ACS selection issue; the current draft-backed PT report now validates that lane end to end. Spend no further Stage 2 validation jobs until the asylum failed attempt is classified and the next hypothesis has a minimal change surface.
 
 Required static packet before more jobs:
 
@@ -303,7 +303,7 @@ Rejected for now: broader first-pass query breadth, new deterministic semantic r
 
 ### 12.4 Live-Job Budget And Stop Rule
 
-Remaining budget from the latest Captain allocation: 9 jobs. Spend only after static comparator review and a minimal generic fix proposal are written.
+Remaining budget from the latest Captain allocation: 5 jobs after the 2026-05-09 current-pipeline PT and asylum reruns in Section 12.7. Spend only after static comparator review and a minimal generic fix proposal are written.
 
 Before any live job:
 
@@ -392,4 +392,32 @@ Validation result:
 - Draft-only ACS check after repaired UCM: draft `58af6533aeb34604b996131fafb0b341`, `AWAITING_CLAIM_SELECTION`, 3 recommendations. `rankedClaimIds`, `recommendedClaimIds`, and `selectedClaimIds` are all `["AC_01", "AC_02", "AC_03"]`.
 - Draft assessment for `AC_03`: `fact_check_worthy`, expected evidence yield `medium`, `coversDistinctRelevantDimension: true`; rationale treats it as outcome fairness / sentencing proportionality / evidentiary sufficiency rather than mere opinion.
 
-Conclusion: ACS selection omission is fixed at the draft/recommendation layer. No final draft-backed report job was confirmed yet; do that only if Captain wants to spend one more full report job for an end-to-end report artifact under repaired UCM. Remaining full-job budget after the asylum and direct PT jobs: 7.
+Conclusion: ACS selection omission is fixed at the draft/recommendation layer. The final draft-backed report validation is recorded in Section 12.7. Remaining full-job budget after the current-pipeline PT and asylum reruns: 5.
+
+### 12.7 Current-Pipeline Reruns After ACS And UCM Repair — 2026-05-09
+
+Runtime preparation:
+
+- Repo HEAD: `6cf74370a6a4dd19140f14208a85aff4e41b03e0`.
+- Prompt/config reseed: prompts and UCM configs unchanged.
+- Search config active in logs: Serper used as primary; Google CSE remains fallback-only and hit quota when fallback was attempted.
+- Web runner restarted; jobs recorded current executed web commit.
+
+Fresh reports:
+
+| Family | Job | Path | Result | Band assessment | Structural notes |
+|---|---|---|---|---|---|
+| `bolsonaro-pt` | `1644fcf2e800417a948c46416d9eec48` | Confirmed draft `58af6533aeb34604b996131fafb0b341` with `AC_01`, `AC_02`, `AC_03` selected | `LEANING-TRUE` 63/58 | Passes corrected true-side band | Final report contains all 3 atomic claims and 3 claim verdicts, including `AC_03`: `As sentenças proferidas no processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado foram justas.` It has 6 claim boundaries and 179 evidence items. Caveat: research time-budget warning and AC_03 is weaker (`55/52`) than process/legal-compliance subclaims. |
+| `asylum-235000-de` | `0ea1066324f141f2ad6a81c53cf9a3ca` | Direct exact Captain input | `MOSTLY-FALSE` 22/78 | Fails corrected true-side band | One atomic claim, 5 boundaries, 16 evidence items. Evidence direction skew: 1 support, 2 contradiction, 13 neutral. The run treated stale/narrow SEM values as direct contradictions: 2023 factsheet count and 2024 `Total Personen aus dem Asylbereich (inkl. RU)` = 226,706. It found the NZZ `über 235 000 Geflüchtete` item only as medium support and did not surface the current official 2025 aggregate route that the best local comparator used. |
+
+Comparator delta for asylum:
+
+- Best local exact comparator `3ba25fe7c99f4b96822e37a6a65f6bb1` (`1514c632`) was `LEANING-TRUE` 62/68 with 36 evidence items and a much healthier direction mix: 15 support, 4 contradiction, 17 neutral.
+- The fresh failed run has lower yield and lets stale or alternate-route official counts dominate direction. This is the same family of failure already tracked in the static comparator packet, but now under the repaired UCM and current HEAD.
+
+Decision:
+
+- Do not spend another live job on this lane now.
+- Treat the PT ACS fix as validated end to end.
+- Treat asylum as the active first-gate failure. Before editing, load `/debt-guard`, classify the current Stage 2/applicability/source-currentness attempt as keep/quarantine/revert at the mechanism level, and compare `0ea1066324f141f2ad6a81c53cf9a3ca` directly against `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed comparator `6a60b3eb0df540c0b16228d9367b1366`.
+- Next hypothesis should focus on generic current-snapshot / endpoint / standing-stock threshold handling and official aggregate route selection. Do not add family-specific search text, deterministic semantic rescue, or another broad query expansion.
