@@ -451,7 +451,12 @@ Verification so far:
 - `git diff --check`: passed.
 - Full `npm test` was attempted twice and failed only on runner integration timeouts; the two failed files passed together in isolation.
 
-Next:
-- Commit/reseed before live validation.
-- Run one exact `bolsonaro-pt` canary only.
-- Required gate: 3 prepared and 3 selected/final claims, with the sentence-justice/verdict-fairness claim present downstream. Stop and inspect before any further jobs.
+Validation:
+- Patch commit `1b5a8045` amended the existing ACS recommendation prompt and updated expectation docs.
+- Direct report smoke job `5d6d1dac0bea4b92ad0d0b27da084bc2` finished `LEANING-TRUE` 64/50 and contains all three final claim verdicts, including `AC_03` as `UNVERIFIED` 55/45. Because it was direct `/v1/analyze`, it has no draft/selection metadata and does not prove ACS recommendation behavior.
+- Draft-only ACS check `58af6533aeb34604b996131fafb0b341` reached `AWAITING_CLAIM_SELECTION` with `rankedClaimIds`, `recommendedClaimIds`, and `selectedClaimIds` all equal to `["AC_01", "AC_02", "AC_03"]`.
+- `AC_03` was assessed as `fact_check_worthy`, `expectedEvidenceYield: medium`, `coversDistinctRelevantDimension: true`, with rationale tied to outcome fairness / sentencing proportionality / evidentiary sufficiency.
+
+Conclusion:
+- The ACS omission is fixed at recommendation/default-selection level.
+- No final draft-backed report was confirmed after the draft check. If Captain wants a visible end-to-end browser report under the repaired UCM search config, confirm that draft or create a fresh draft-backed PT report and spend one full job. Otherwise preserve the remaining full-job budget for the Stage 2/asylum/Bolsonaro EN lanes.

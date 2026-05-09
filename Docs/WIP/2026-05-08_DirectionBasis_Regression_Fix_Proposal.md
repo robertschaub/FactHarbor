@@ -383,4 +383,13 @@ Verification:
 
 Internal review/debate result: accept with caution. The patch amends the existing LLM selector and adds no deterministic semantic override. Main risk is over-promoting weak value judgments; mitigated by keeping the external-standards requirement and leaving `opinion_or_subjective` non-recommendable when no standard exists.
 
-Next live gate for this separate lane: commit, reseed prompts, restart if needed, then run one `bolsonaro-pt` exact canary. Success criterion: 3 prepared and 3 selected/final claims, with the verdict-fairness / sentence-justice claim present downstream. Stop after that one job and inspect before spending more.
+Validation result:
+
+- Patch commit: `1b5a8045b2afdbf4b44a2278485228ff95bc320e`.
+- Prompt hash used after reseed: `3a96816337ae045309f63143e3c26e78c9ad680f430be5fc467d778676e90bc0`.
+- Direct `/v1/analyze` smoke job: `5d6d1dac0bea4b92ad0d0b27da084bc2`, `LEANING-TRUE` 64/50, with all three final claim verdicts including `AC_03` (`UNVERIFIED` 55/45). This confirms downstream can carry AC_03 but does **not** validate ACS selection because direct jobs have empty `PreparedStage1Json` / `ClaimSelectionJson`.
+- UCM search repair became active after that direct job: active `search/default` hash `ed766a8ef9009032be5d30977a48e5b81a26fd1041be06710f31ebac4ade605f` with Serper priority 1 and Google CSE priority 2. Treat the direct job as ACS/final-claim smoke only, not source-mix or verdict-calibration proof under repaired UCM.
+- Draft-only ACS check after repaired UCM: draft `58af6533aeb34604b996131fafb0b341`, `AWAITING_CLAIM_SELECTION`, 3 recommendations. `rankedClaimIds`, `recommendedClaimIds`, and `selectedClaimIds` are all `["AC_01", "AC_02", "AC_03"]`.
+- Draft assessment for `AC_03`: `fact_check_worthy`, expected evidence yield `medium`, `coversDistinctRelevantDimension: true`; rationale treats it as outcome fairness / sentencing proportionality / evidentiary sufficiency rather than mere opinion.
+
+Conclusion: ACS selection omission is fixed at the draft/recommendation layer. No final draft-backed report job was confirmed yet; do that only if Captain wants to spend one more full report job for an end-to-end report artifact under repaired UCM. Remaining full-job budget after the asylum and direct PT jobs: 7.
