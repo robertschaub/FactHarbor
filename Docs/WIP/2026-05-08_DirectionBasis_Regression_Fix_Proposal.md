@@ -421,3 +421,41 @@ Decision:
 - Treat the PT ACS fix as validated end to end.
 - Treat asylum as the active first-gate failure. Before editing, load `/debt-guard`, classify the current Stage 2/applicability/source-currentness attempt as keep/quarantine/revert at the mechanism level, and compare `0ea1066324f141f2ad6a81c53cf9a3ca` directly against `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed comparator `6a60b3eb0df540c0b16228d9367b1366`.
 - Next hypothesis should focus on generic current-snapshot / endpoint / standing-stock threshold handling and official aggregate route selection. Do not add family-specific search text, deterministic semantic rescue, or another broad query expansion.
+
+### 12.8 Debate Decision — How To Continue
+
+Debate tier: standard Advocate / Challenger / Reconciler.
+
+Proposition debated: continue by implementing one narrow, generic Stage 2/source-currentness fix for `asylum-235000-de` now, after `/debt-guard` classification, with no more live jobs until the fix is committed.
+
+Verdict: **MODIFY**.
+
+Decision:
+
+- Continue toward one narrow generic fix, but do **not** edit yet.
+- The next action is a no-edit localization pass after `/debt-guard` classification.
+- Implementation starts only after the failed report and comparators identify the first trace-backed divergence where the current official aggregate route disappears or loses direction.
+
+Rationale:
+
+- The current asylum failure is real and materially below comparator behavior.
+- Comparator reports prove the target behavior is possible and define the desired report shape.
+- The current evidence does not yet locate whether the first failure is query generation, acquisition/provider ranking, fetch/extraction, applicability/direction mapping, evidence capping, citation selection, or aggregation.
+- Editing before first-divergence localization risks another additive prompt patch, broad query expansion, or benchmark overfit.
+
+Next concrete step:
+
+1. Load `/debt-guard`.
+2. Classify the current failed attempt and recent related changes as keep / quarantine / revert at the mechanism level.
+3. Compare `0ea1066324f141f2ad6a81c53cf9a3ca` against `3ba25fe7c99f4b96822e37a6a65f6bb1` and `6a60b3eb0df540c0b16228d9367b1366` by trace layer:
+   - Stage 1 expected evidence profile and primary metric route.
+   - Stage 2 queries and provider/cache results.
+   - Source acquisition and fetch success/failure.
+   - Evidence extraction and source-currentness/yield.
+   - Applicability/direction mapping.
+   - Evidence filtering/capping and final citation arrays.
+   - Verdict calibration.
+4. Write one falsifiable generic hypothesis tied to the first divergence.
+5. Implement only if that hypothesis supports a narrow, multilingual-safe, generic fix that does not touch the validated PT ACS lane.
+
+Stop / re-debate if localization points outside Stage 2/source-currentness, requires broad query expansion, depends on family-specific terms, revives deterministic semantic rescue, touches `directionBasis` as a behavioral lock, or needs another live job before a committed fix.
