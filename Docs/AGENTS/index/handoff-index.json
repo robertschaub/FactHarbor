@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-06T10:19:50.099Z",
-  "count": 387,
+  "generatedAt": "2026-05-09T11:58:54.500Z",
+  "count": 390,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,23 +4462,6 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
-      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
-      "date": "2026-04-19",
-      "roles": [
-        "llm_expert"
-      ],
-      "topics": [
-        "claim",
-        "extraction",
-        "atomicity",
-        "review"
-      ],
-      "files_touched": [
-        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
-      ],
-      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
-    },
-    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8137,6 +8120,83 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-08_Lead_Architect_LLM_Expert_Search_Cost_Review.md",
+      "date": "2026-05-08",
+      "roles": [
+        "lead_architect",
+        "llm_expert"
+      ],
+      "topics": [
+        "search",
+        "cost",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-08_Lead_Architect_LLM_Expert_Search_Cost_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Relevant anchors: `apps/web/configs/search.default.json`, `apps/web/src/lib/web-search.ts`, `apps/web/src/lib/config-schemas.ts`, `apps/web/configs/sr.default.json`, `apps/web/src/app/api/internal/evaluate-source/route.ts`, `apps/web/config.db`, `apps/api/factharbor.db`, and `Docs/AGENTS/Handoffs/20"
+    },
+    {
+      "file": "2026-05-08_Lead_Developer_LLM_Expert_Report_Improvement_State_And_Next_Steps.md",
+      "date": "2026-05-08",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "improvement",
+        "state",
+        "and",
+        "next",
+        "steps"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-08_Lead_Developer_LLM_Expert_Report_Improvement_State_And_Next_Steps.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Current implementation still has direction-basis behavior in code and prompts: the 13-value taxonomy is live, Stage 2 normalizes explicit non-directional-basis directional outputs to neutral, the overwrite path can still let explicit non-directional basis neutralize existing direction, Stage 4 block"
+    },
+    {
+      "file": "2026-05-09_Lead_Developer_Report_Improvement_Static_Comparator_Packet.md",
+      "date": "2026-05-09",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "report",
+        "improvement",
+        "static",
+        "comparator",
+        "packet"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md`. It contains the target/comparator job table, four-source quality check, stage-separated diagnosis, rejected alternatives, minimal proposed change surface, validation sequence, and a Sonnet review prompt. The likely next"
+    },
+    {
+      "file": "2026-05-09_Lead_Developer_Stage2_Applicability_Direction_Prompt_Fix.md",
+      "date": "2026-05-09",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "stage2",
+        "applicability",
+        "direction",
+        "prompt",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/prompts/claimboundary.prompt.md"
+      ],
+      "summary": "Use `Docs/WIP/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md` Section 12.5 as the current implementation state. The next action is not more prompt piling; it is commit/reseed/restart plus the first serial live canary if Captain approves the git/runtime gate."
     }
   ]
 }

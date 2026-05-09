@@ -23,7 +23,7 @@ Skills are **Claude Code-native** but also usable by any other LLM tool (Gemini,
 | [Debug Check](#debug-check) | `/debug` | Post-change health check; log + test analysis | No |
 | [Explain Code](#explain-code) | `/explain-code` | Explain how code works with analogies and diagrams | No |
 | [Prompt Diagnosis](#prompt-diagnosis) | `/prompt-diagnosis` | RAG-augmented prompting deficiency analysis with runtime prompt-hash plus commit context | No |
-| [Report Review](#report-review) | `/report-review` | Holistic job-report analysis: expectations, evidence, boundaries, verdict reasoning, warnings | No |
+| [Report Review](#report-review) | `/report-review` | Holistic job-report analysis: expectations, best comparators, evidence, boundaries, verdict reasoning, warnings | No |
 | [Docs Update](#docs-update) | `/docs-update` | Update living docs across `Docs/` and archive only clearly obsolete material | No |
 | [WIP Update](#wip-update) | `/wip-update` | Consolidate `Docs/WIP/`, sync backlog/status, and archive completed or historical WIP docs | No |
 
@@ -644,9 +644,9 @@ Recent Handoffs            → jobId + prompt hash           git show <hash>:pro
 **File:** [`.claude/skills/report-review/SKILL.md`](../../.claude/skills/report-review/SKILL.md)
 
 Holistic review workflow for concrete analysis jobs and job families. It compares observed reports
-against benchmark expectations, inspects evidence health and boundary structure, audits verdict
-reasoning and warning severity, and proposes only AGENTS-compliant fixes. It operates on local
-reports, databases, logs, prompts, and git history.
+against benchmark expectations and best usable comparator reports, inspects evidence health and
+boundary structure, audits verdict reasoning and warning severity, and proposes only
+AGENTS-compliant fixes. It operates on local reports, databases, logs, prompts, and git history.
 
 ### When to use
 
@@ -677,15 +677,19 @@ Examples:
    before any same-input or same-commit comparators are loaded.
 3. Reads benchmark expectations, report-quality checks, prior handoffs, and in-scope job payloads
    from the API DB, `test-output/`, and repo-root result JSONs.
-4. Runs a structured review over evidence, claim boundaries, verdicts, warnings, prompt/runtime
+4. Compares target reports against Captain intent and best usable exact/family comparators listed
+   in `Docs/AGENTS/Captain_Quality_Expectations.md`.
+5. Runs a structured review over evidence, claim boundaries, verdicts, warnings, prompt/runtime
    provenance, regressions, and rerun stability.
-5. Produces constrained fix proposals that must stay generic, multilingual, and evidence-backed.
+6. Produces constrained fix proposals that must stay generic, multilingual, and evidence-backed.
    Prompt edits are allowed only when inspected-job evidence shows prompt behavior is implicated;
    otherwise they stay provisional-only.
 
 ### Key guardrails
 
 - Exact user-supplied jobs are the primary evidence base; nearby jobs are supplemental only.
+- Report quality must not be judged in isolation when a Captain expectation or best comparator
+  exists; comparator relation must be labeled exact/variant, local/deployed, and historical/current.
 - A missing or inaccessible requested job must be reported explicitly rather than substituted away.
 - Prompt changes require inspected-job evidence and may not be stacked speculatively on top of
   code/config/runtime uncertainty.

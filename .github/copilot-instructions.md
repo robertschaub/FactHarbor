@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-05-09 -->
 
 # Copilot / AI agent instructions — FactHarbor
 
@@ -34,6 +34,11 @@ Data flow: UI -> API (creates job) -> Runner (POST `/api/internal/run-job`) -> `
 	- `O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas`
 	- `Using hydrogen for cars is more efficient than using electricity`
 	- `Plastic recycling is pointless`
+
+## Report Quality Reviews
+
+- When judging a report, compare it with `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, and the best usable comparator reports listed in the Captain expectations file.
+- Label comparator relation: exact vs. variant, local vs. deployed, current-stack vs. historical. Do not judge a report in isolation when expectations or comparators exist.
 
 ## Failed-Attempt Recovery
 

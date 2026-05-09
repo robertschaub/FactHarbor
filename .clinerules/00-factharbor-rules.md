@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-05-09 -->
 
 # FactHarbor — Cline Rules
 
@@ -44,6 +44,11 @@ Data flow: UI -> API (creates job) -> Runner (POST /api/internal/run-job) -> Pip
 
 - For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
 - Debt Guard is balanced: compare undoing/amending previous code against adding new code, then choose the evidence-backed path with the lowest net complexity.
+
+## Report Quality Reviews
+
+- Compare report-quality judgments with `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, and the best usable comparators listed in the Captain expectations file.
+- Label comparators as exact/variant, local/deployed, and current-stack/historical.
 
 ## Commands
 

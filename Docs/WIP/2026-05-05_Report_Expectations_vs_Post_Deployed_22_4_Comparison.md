@@ -17,6 +17,99 @@ Current runs on `1514c632` show:
 
 There is **no single safe "best commit" across all families** after `deployed_22.4`. The strongest aggregate scorer with at least three formal benchmark families is `959b7280bc000ce85660b9c56c69959457deed30`, but it only covers 3 formal families, predates later ACS/admission work, and its mechanically good Bolsonaro EN run still merges proceedings and verdicts into 2 AtomicClaims. The broadest post-tag comparator is `945de23604450311199f983a0416f6e54c4cfa53`, covering 6 formal families, but it has weak asylum, Bolsonaro EN, and plastic scores. The correct conclusion is still per-family: use the best commit/job per family as diagnostic comparator, not as a wholesale rollback target.
 
+## Expectation Correction Addendum: 2026-05-09
+
+This WIP contains historical rows written before Captain corrected the expectation sources. Canonical state now lives in `Docs/AGENTS/Captain_Quality_Expectations.md` and `Docs/AGENTS/benchmark-expectations.json`. Do not use older rows in this document to conclude that `MIXED` is acceptable for Bolsonaro or asylum-current-total, or that a high-`TRUE` `bundesrat-simple` report is a failure.
+
+Current corrected expectations:
+
+- `bundesrat-simple`: `TRUE` / `MOSTLY-TRUE`, truth 85-100, confidence 75-95. Preferred exact local comparators: `a6b0e0fc14984926a678a462456bc110` and `a53573047fe64778a76e53cb578900c7`.
+- `bolsonaro-en` / `bolsonaro-pt`: `LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-85, confidence 45-75. `MIXED` is not acceptable unless new target-specific evidence overturns the Captain expectation.
+- `asylum-235000-de`: `LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70. Caveats belong in source reasoning and confidence, not a neutral verdict direction.
+
+## Full-Stack `2f7a2805` Baseline Addendum: 2026-05-07
+
+After the B-prime hybrid prompt rollback failed, a clean detached worktree was started from `2f7a2805c44c3a72f9102c94f54aee30bd114ba9` on isolated ports `3100` / `5100`, with its own SQLite API DB and UCM DB. This was a diagnostic baseline only; it was not merged, promoted, or used to modify `main`.
+
+One isolated schema bootstrap fix was needed for the old API DB: add nullable/boolean-compatible `Jobs.IsHidden` with default `0`, because the `2f7a2805` EF model already expects the column but its migration sequence did not create it in a fresh DB. This did not change analysis code or prompts.
+
+Three Captain-defined inputs were run through the full old stack:
+
+| Family | Baseline job | Runtime | Result | Structure / evidence | Comparison signal |
+|---|---:|---|---|---|---|
+| `plastic-en` | `5b0df483d0c743e7a8fe72bf2c319f45` | clean `2f7a2805` | `MOSTLY-FALSE` 27/64 | 3 AtomicClaims; 3 claim verdicts; 97 evidence items; 35 sources; 18 search queries | Passes the expected false-side band and is clearly better than recent local `main` job `1595fc6f` on `ee90c04f`, which returned `LEANING-TRUE` 65/72. |
+| `asylum-235000-de` | `1246198d311c46f596f0d4fc0c3184e1` | clean `2f7a2805` | `MOSTLY-TRUE` 74/61 | 1 AtomicClaim; 1 claim verdict; 21 evidence items; 21 sources; 8 search queries | Passes the expected positive-side band and is clearly better than recent local `main` job `5d0ac4b`, which returned `UNVERIFIED` 50/12 on `ee90c04f`. |
+| `bolsonaro-en` | `119b8c344b6d4e708503e39346a8a49e` | clean `2f7a2805` | `LEANING-TRUE` 62/55 | 3 AtomicClaims: Brazilian law, proceedings fair-trial standards, verdicts fair-trial standards; claim verdicts `70/70`, `58/52`, `52/45`; 116 evidence items; 42 sources; 28 search queries | Passes the documented positive-side band and is better than recent local `main` jobs from `04dbc99f` through `f72fc08c`, which remained `UNVERIFIED` / `LEANING-FALSE`. |
+
+Important runtime caveat: the old stack is substantially slower and noisier. Plastic took about 24 minutes and Bolsonaro about 27 minutes, with many source-fetch and source-reliability warnings. The old stack should therefore not be treated as an operationally safe rollback target without separate runtime review.
+
+Revised conclusion from this addendum:
+
+- The B-prime result proves that simply restoring old prompt text into current code is not sufficient.
+- The full-stack `2f7a2805` result proves that the quality regression is real and likely comes from code/prompt interaction accumulated after `2f7a2805`, not from prompts alone.
+- `2f7a2805` is now a high-value diagnostic baseline for `plastic-en`, `asylum-235000-de`, and `bolsonaro-en`.
+- A wholesale rollback still needs caution because current main contains later ACS/admission correctness work and because the old runtime has major latency/noise issues.
+- The next investigation should diff full-stack behavior between `2f7a2805` and current `main` around Stage 2 acquisition/applicability and Stage 4 evidence-direction use, while separately deciding whether any newer ACS/admission substrate must be re-applied on top of a simplified pipeline.
+
+## Focused Bisection Addendum: 2026-05-08
+
+Purpose: isolate the first regression point for the exact Captain-defined input `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`, after current `main` produced `UNVERIFIED` / false-side reports while `2f7a2805` and `1514c632` produced good reports.
+
+Setup: runs used the isolated worktree `C:\DEV\FactHarbor-bisect-probe` on ports `3200` / `5200`, with fresh per-commit API/config databases. The canonical checkout remained `main`. The probe required local-only fresh-DB bootstrap workarounds for historical API migrations (`ClaimSelectionDrafts` table precreate and `Jobs.IsHidden` column add). These were database setup fixes only, not source changes.
+
+| Commit | Job | Input | Result | Evidence signal | Interpretation |
+|---|---|---|---|---|---|
+| `1514c632` | `c29d8b41` | asylum-235000-de | `MOSTLY-TRUE` 84/72 | Direct path, exact input preserved. | Good post-Lane-2/3 baseline. Asylum regression is later than `1514c632`. |
+| `1514c632` | `f2c56122` | plastic-en | `FAILED` at 60% | API stale watchdog marked terminal before the analyzer finished verdict generation. | Operationally inconclusive; do not use as quality evidence. Confirms old broad runs can still trip stale-watchdog behavior. |
+| `ba266a69` | `d1b2b845` | asylum-235000-de | `MOSTLY-TRUE` 75/72 | 30 final evidence, 13 support / 3 contradict / 14 neutral. | Stage 1 multi-claim atomicity slice still passes this input. |
+| `a62e60b6` | `4182ad7e` | asylum-235000-de | `LEANING-FALSE` 35/40 | 18 final evidence, 0 support / 2 contradict / 16 neutral. The two contradictions are 2023 standing-population route values; SEM March 2026 tables and SEM calculation guidance are kept neutral. | First isolated bad point. The direction-basis structural contract over-neutralizes support-side numeric/current-stock evidence and lets stale/route-mismatched contradiction dominate. |
+| `a62e60b6` | `f5bdbe55` | asylum-235000-de | `UNVERIFIED` 50/35 | 10 final evidence, 1 support / 5 contradict / 4 neutral. Query set again emphasizes `N/F/S`, SEM factsheet/statistics differences, and `unter 235000` routes. | Repeat confirms `a62e60b6` is bad for this family, though the exact failure mode varies by LLM/search variance. |
+
+Current conclusion: the first confirmed Asylum regression point is `a62e60b6` (`fix(stage2): enforce claim-local direction basis`). The mechanism is not ACS admission, Stage 1 atomicity, or Stage 4 alone.
+
+Important reviewer correction: the first bad run did **not** show runtime self-consistency normalization firing (`Direction-basis normalizations: 0`). The failure is therefore not "the normalizer rewrote support to neutral." The more precise mechanism is that the new applicability prompt/schema contract made claim-local direction depend on the new `directionBasis` field, but the LLM did not reliably classify current official aggregate-route evidence as directional. In parallel, the Stage 1 expected-evidence profile and Stage 2 queries drifted toward a narrower `N/F/S` / 2023 comparator route and explicit `unter 235000` contradiction searches. The bad result is an interaction between direction-basis enforcement, expected-evidence profile variance, and source retrieval, not a pure one-line code-normalizer bug.
+
+The direction-basis schema remains risky because missing basis defaults to `ambiguous`, and `claimDirectionByClaimId` is optional. That means future runs can silently leave potentially directional evidence neutral unless the LLM emits the new fields correctly. Tests added by `a62e60b6` cover collateral-context neutralization, but they do not cover the asylum-like invariant: current official stock/component evidence must remain directional, and stale/alternate-route comparator records must not dominate a current-count claim unless the profile explicitly makes that route/timeframe dispositive.
+
+Decision implication: do not keep piling more prompt/code layers on top of the direction-basis lane before simplifying it. The next evidence-backed options are:
+
+1. Quarantine `a62e60b6` and descendants that depend on its `directionBasis` contract, then re-run the three control canaries on a simplification branch.
+2. If keeping the mechanism, narrow it to metadata or explicit LLM self-consistency only: do not let defaulted/missing `directionBasis = ambiguous` mutate or prevent existing directional evidence, and require tests/provenance that numeric/current-stock side evidence remains directional before any broader rollout.
+3. Keep Lane 2/3 admission/coverage and Stage 1 atomicity work separate; this bisection did not implicate them.
+
+## Direction-Basis Simplification Attempt Addendum: 2026-05-08 Evening
+
+After reviewer debate, Option A from `Docs/WIP/2026-05-08_DirectionBasis_Regression_Fix_Proposal.md` was implemented on `main` in `324efeb1` (`fix(stage2): reduce direction basis authority`). The intended behavior was to stop missing/defaulted `directionBasis` values from carrying authority, prevent basis-only evidence splitting, and soften the Stage 4 direction-basis binding without fully removing explicit LLM self-consistency normalization.
+
+Later focused amendments attempted to address remaining Stage 2 starvation and Stage 4 citation-direction behavior:
+
+| Commit | Purpose | Validation result |
+|---|---|---|
+| `f3e9c443` | Keep neutral-only passes researching. | Not implicated as a direct regression, but did not recover quality alone. |
+| `d61f7294` | Enforce directional sufficiency. | Not enough to recover Bolsonaro EN. |
+| `f7ca0208` | Skip duplicate claim queries. | Plausible budget fix; not enough to recover quality. |
+| `fbf47ea2` | Block non-directional citation adjudication in Stage 4. | Narrowly correct, but live Bolsonaro still failed. Keep under review because it preserves some direction-basis authority. |
+| `48995373` | Require targeted admitted evidence for sufficiency. | **Reverted** by `49ab262d` after a live Asylum regression. |
+
+Live validation after these changes:
+
+| Commit | Job | Family | Result | Key signal |
+|---|---|---|---|---|
+| `fbf47ea2` | `2f1bf6271cc641d599d2815d9e6b5092` | `bolsonaro-en` | `LEANING-FALSE` 37/32 | Stage 4 no longer promoted explicit non-directional neutral evidence, but Stage 2 still supplied contradiction-heavy pools. |
+| `48995373` | `26679e42118e4a27a68b06c7aa2b8208` | `bolsonaro-en` | `UNVERIFIED` 46/40 | Targeted admitted coverage improved; verdict quality did not. |
+| `48995373` | `133bcd7c7e4140a5b4b89db0b60f0c6d` | `asylum-235000-de` | `UNVERIFIED` 50/24 | Unsafe control failure: SEM evidence stating `235,057` persons was marked as contradiction despite the justification noting it satisfies `>235,000`. |
+| `49ab262d` | `fa0b0b48ed454c298de9c2c693caf662` | `asylum-235000-de` | `MOSTLY-FALSE` 25/72 | Current main after revert can still fail this control, driven by source/direction variance. |
+| `49ab262d` | `afb038bc91884639a57d5b737e5199ce` | `asylum-235000-de` | `MOSTLY-TRUE` 82/72 | Repeat on the same commit can pass, showing high live variance rather than a stable recovery. |
+| `49ab262d` | `af77168bd72e4b0db20cbd5aae483adf` | `bolsonaro-en` | `MOSTLY-FALSE` 27/44 | Stable fail with correct 3-AtomicClaim split, but 0 supports and many contradictions for the fair-trial proceedings/verdict claims. |
+
+Current conclusion: the incremental direction-basis repair path has reached the stop rule. The system is still worse than the clean `2f7a2805` diagnostic baseline on `bolsonaro-en`, and `asylum-235000-de` is unstable. The next step should be a simplification/review lane, not another guard or prompt patch:
+
+1. Keep `2f7a2805` as a diagnostic comparator, not an immediate wholesale rollback.
+2. Preserve the later ACS/admission and Stage 1 atomicity fixes unless a dependency review implicates them.
+3. Reassess whether `directionBasis` should remain diagnostic metadata only; remove or quarantine behavioral locks before adding new evidence-direction machinery.
+4. Compare current `APPLICABILITY_ASSESSMENT`, `EXTRACT_EVIDENCE`, and `VERDICT_ADVOCATE` sections against `2f7a2805` and propose a smaller, reviewed prompt surface.
+5. Spend the remaining live-job budget only after this simplification plan is reviewed and implemented.
+
 ## Superseding Live Investigation Addendum: 2026-05-05 Evening
 
 This addendum supersedes the earlier "current latest" Bolsonaro rows where the newer jobs below are more recent. It does **not** change the broad conclusion: current `main` is a good ACS/admission baseline, but not a stable report-quality baseline for Bolsonaro.
@@ -232,7 +325,7 @@ Add a staleness register when this document is next reworked:
 | Old claim | Source doc | Current evidence | Disposition |
 |---|---|---|---|
 | "Bolsonaro solved" | April 16 expectations | visible U.S.-citation contamination improved, but current exact EN fails direction and atomicity | Preserve only as "visible contamination improved"; mark report quality open. |
-| "`bundesrat-simple` probably solved" | April 16 expectations | latest exact job `TRUE` 96/91 vs expected 35-60 | Stale; review expectation or treat as active defect. |
+| "`bundesrat-simple` probably solved" | April 16 expectations | latest exact job `TRUE` 96/91 vs older expected 35-60 | Resolved by 2026-05-09 Captain correction: high-`TRUE` is now expected for the literal chronology wording. |
 | "Prompt split is needed" | April 20 split plan | runtime already loads sections; current risk is section content/governance | Do not physically split now; add section-level tooling. |
 
 ### Revised Validation Plan
@@ -244,7 +337,7 @@ Mini-wave:
 | # | Input family/control | Purpose | Pass / decision signal |
 |---:|---|---|---|
 | 1 | `bolsonaro-en` | Critical current regression repeat | Stage attribution matrix decides whether the current failure is stable and which lane owns it. |
-| 2 | `bundesrat-simple` | Under-covered exact input | Repeated high-`TRUE` means active defect or expectation mismatch. |
+| 2 | `bundesrat-simple` | Expectation-corrected exact input | Repeated high-`TRUE` is now the desired shape; use `a6b0...` / `a535...` as preferred comparators. |
 | 3 | `plastic-en` | Solved-family / Stage 4 variance control | `FALSE`/`MOSTLY-FALSE`/`MIXED`, truth 10-35, confidence 55-80, >=2 boundaries. |
 
 Optional fourth mini-wave job if the runtime is clean and the first three are still pending/healthy:
@@ -259,11 +352,11 @@ Expansion wave, only after the mini-wave is classified:
 |---:|---|---|---|
 | 5 | `bundesrat-rechtskraftig` | Anchor-preservation control | Not `UNVERIFIED`; expected label set; truth 35-60 plus noise; >=2 boundaries. |
 | 6 | `asylum-wwii-de` | Artifact collection / first current-stack band evidence | No formal pass band; do not update expectations without Captain review. Inspect separation of current count vs WWII comparison and source routes. |
-| 7 | `bolsonaro-pt` | Multilingual transfer control | `LEANING-TRUE`/`MIXED`, truth 50-75, confidence 40-65, >=3 boundaries. |
+| 7 | `bolsonaro-pt` | Multilingual transfer control | `LEANING-TRUE`/`MOSTLY-TRUE`, truth 58-85, confidence 45-75, >=3 boundaries. |
 | 8 | `asylum-235000-de` | Source-quality watch | Formal pass plus source inspection for one clean official SEM aggregate or equivalent source-native umbrella total. |
 | 9 | `hydrogen-en` | Solved-family sentinel | `FALSE`/`MOSTLY-FALSE`, truth 5-25, confidence 65-85, distinct efficiency-frame boundaries. |
 | 10 | `bolsonaro-en` repeat | Variance check | Apply Stage attribution matrix. |
-| 11 | `bundesrat-simple` repeat | Variance check | Distinguish stable overclaim from one-run variance. |
+| 11 | `bundesrat-simple` repeat | Variance check | Confirm high-true chronology with the procedural caveat preserved; do not treat high truth as overclaim by itself. |
 | 12 | `bolsonaro-en` repeat | Critical repeat | If repeated failures classify to the same lane, start that lane before spending more validation jobs. |
 
 Operational rule for this wave: the worktree must be clean or docs must be stashed before service restart/submission so the jobs record `1514c632`, not `1514c632+<doc-dirty>`. Current docs-only dirt is enough to add a dirty suffix, and untracked files make the build dirty without their contents being included in the suffix.
@@ -301,8 +394,8 @@ Scoring note:
 
 | Family / control | Expected | Latest job | Date UTC | Commit | Latest result | Structure / coverage | Assessment |
 |---|---|---|---|---|---|---|---|
-| `asylum-235000-de` | `LEANING-TRUE` or `MIXED`, truth 55-75, conf 40-70, >=1 boundary | `3ba25fe7` | 2026-05-04 21:18 | `1514c632` | `LEANING-TRUE` 62/68 | 6 boundaries, 1 AtomicClaim, 1 selected/cap 1, 8 searches, 36 final evidence, zero selected-claim starvation | **Pass.** In band and structurally healthy. Stronger 2026-05-03 result `f475b0ab` was `MOSTLY-TRUE` 80/78, but that is outside the formal label/band even if semantically encouraging. |
-| `bolsonaro-en` | `LEANING-TRUE` or `MIXED`, truth 55-75, conf 45-65, >=3 boundaries | `1ae07d6f` | 2026-05-04 21:20 | `1514c632` | `LEANING-FALSE` 32/59 | 6 boundaries, 2 prepared claims, 2 selected/cap 2, AC_01 4 searches/62 final evidence, AC_02 8 searches/52 final evidence, zero selected-claim starvation | **Fail.** Wrong verdict direction and truth band. AC_02 merges proceedings and verdicts; expected split is 3 AtomicClaims. Evidence is searched and abundant, so this is not Lane 2/3 starvation. |
+| `asylum-235000-de` | `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-75, conf 40-70, >=1 boundary | `3ba25fe7` | 2026-05-04 21:18 | `1514c632` | `LEANING-TRUE` 62/68 | 6 boundaries, 1 AtomicClaim, 1 selected/cap 1, 8 searches, 36 final evidence, zero selected-claim starvation | **Pass.** In band and structurally healthy. Stronger 2026-05-03 result `f475b0ab` was `MOSTLY-TRUE` 80/78, which is within the corrected label set and slightly above the truth/confidence band. |
+| `bolsonaro-en` | `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-85, conf 45-75, >=3 boundaries | `1ae07d6f` | 2026-05-04 21:20 | `1514c632` | `LEANING-FALSE` 32/59 | 6 boundaries, 2 prepared claims, 2 selected/cap 2, AC_01 4 searches/62 final evidence, AC_02 8 searches/52 final evidence, zero selected-claim starvation | **Fail.** Wrong verdict direction and truth band. AC_02 merges proceedings and verdicts; expected split is 3 AtomicClaims. Evidence is searched and abundant, so this is not Lane 2/3 starvation. |
 | `hydrogen-en` | `FALSE` or `MOSTLY-FALSE`, truth 5-25, conf 65-85, >=2 boundaries | `16b0d093` | 2026-05-04 21:24 | `1514c632` | `FALSE` 7/80 | 6 boundaries, 1 AtomicClaim, 1 selected/cap 1, 8 searches, 62 final evidence, zero selected-claim starvation | **Pass.** Verdict exactly matches expectation. Boundary set preserves tank-to-wheel and well-to-wheel distinctions even though Stage 1 produced one AtomicClaim. |
 | `svp-pdf-260324` | No formal benchmark band. ACS control: many prepared claims allowed; admitted selected claims must be capped and searched. | `07405ec5` | 2026-05-05 06:34 | `1514c632` | `LEANING-TRUE` 66/45 | 26+ prepared in family; latest selected `AC_16, AC_13, AC_18`, 3 selected/cap 3, zero selected-claim starvation; coverage: 5/5/5 searches, final evidence 12/3/9, all sufficient | **ACS pass.** Latest run is better than `f77eaea0` because no selected claim has zero final evidence. Still no formal truth/confidence expectation for the whole PDF. |
 
@@ -311,11 +404,11 @@ Scoring note:
 | Family | Latest job | Date UTC | Commit | Result | Expected band | Score | Assessment |
 |---|---:|---|---|---|---|---:|---|
 | `bundesrat-rechtskraftig` | `6cbb1afd` | 2026-04-28 22:50 | `82bed8c9` | `LEANING-TRUE` 61/73 | labels `MIXED`/`LEANING-TRUE`/`LEANING-FALSE`, truth 35-60, conf 55-85 | 98.2 | Pass within noise. Truth is 1pp above max, below 8pp tolerance. |
-| `bundesrat-simple` | `80c4d53f` | 2026-04-24 08:31 | `078be27b` | `TRUE` 96/91 | labels `MIXED`/`LEANING-TRUE`/`LEANING-FALSE`, truth 35-60, conf 55-85 | 16.4 | Fail. Only one post-tag exact run found; no good post-tag comparator for this exact input. |
-| `asylum-235000-de` | `3ba25fe7` | 2026-05-04 21:18 | `1514c632` | `LEANING-TRUE` 62/68 | `LEANING-TRUE`/`MIXED`, truth 55-75, conf 40-70 | 100 | Pass. Current run is also the formal-band best post-tag. |
+| `bundesrat-simple` | `80c4d53f` | 2026-04-24 08:31 | `078be27b` | `TRUE` 96/91 | labels `TRUE`/`MOSTLY-TRUE`, truth 85-100, conf 75-95 | 100 | Pass under the 2026-05-09 Captain correction. Preferred comparators remain `a6b0...` / `a535...` because Captain explicitly selected them as better reports. |
+| `asylum-235000-de` | `3ba25fe7` | 2026-05-04 21:18 | `1514c632` | `LEANING-TRUE` 62/68 | `LEANING-TRUE`/`MOSTLY-TRUE`, truth 58-75, conf 40-70 | 100 | Pass. Current run is also the formal-band best post-tag. |
 | `asylum-wwii-de` | `5772cbb8` | 2026-04-28 22:52 | `82bed8c9` | `LEANING-FALSE` 42/50 | No formal band yet | n/a | Cannot formally judge. Needs Captain-defined band after isolated current-stack review. |
-| `bolsonaro-en` | `1ae07d6f` | 2026-05-04 21:20 | `1514c632` | `LEANING-FALSE` 32/59 | `LEANING-TRUE`/`MIXED`, truth 55-75, conf 45-65 | 20 | Fail. Latest run is materially worse than expectation and worse than best post-tag comparator. |
-| `bolsonaro-pt` | `353fe741` | 2026-05-01 15:16 | `92eef011` | `LEANING-TRUE` 60/57 | `LEANING-TRUE`/`MIXED`, truth 50-75, conf 40-65 | 100 | Pass. Latest and best post-tag exact run. |
+| `bolsonaro-en` | `1ae07d6f` | 2026-05-04 21:20 | `1514c632` | `LEANING-FALSE` 32/59 | `LEANING-TRUE`/`MOSTLY-TRUE`, truth 58-85, conf 45-75 | 20 | Fail. Latest run is materially worse than expectation and worse than best post-tag comparator. |
+| `bolsonaro-pt` | `353fe741` | 2026-05-01 15:16 | `92eef011` | `LEANING-TRUE` 60/57 | `LEANING-TRUE`/`MOSTLY-TRUE`, truth 58-85, conf 45-75 | 100 | Pass. Latest and best post-tag exact run. |
 | `hydrogen-en` | `16b0d093` | 2026-05-04 21:24 | `1514c632` | `FALSE` 7/80 | `FALSE`/`MOSTLY-FALSE`, truth 5-25, conf 65-85 | 100 | Pass. Latest and best post-tag exact run. |
 | `plastic-en` | `e543bb5e` | 2026-05-01 13:38 | `e45b1515` | `MOSTLY-FALSE` 28/72 | `MOSTLY-FALSE`/`FALSE`/`MIXED`, truth 10-35, conf 55-80 | 100 | Pass. Latest and best post-tag exact run. |
 
@@ -324,7 +417,7 @@ Scoring note:
 | Family / control | Best job | Date UTC | Commit | Result | Why best |
 |---|---:|---|---|---|---|
 | `bundesrat-rechtskraftig` | `bb040bdd` | 2026-04-28 11:52 | `945de23604450311199f983a0416f6e54c4cfa53` | `LEANING-TRUE` 60/82 | Hits label, truth upper edge, confidence band, boundary requirement. |
-| `bundesrat-simple` | `80c4d53f` | 2026-04-24 08:31 | `078be27bed6f5a005d8184c06c2412e0dd20c395` | `TRUE` 96/91 | Only post-tag exact run found, but it fails expectation; not a quality-best result. |
+| `bundesrat-simple` | `80c4d53f` | 2026-04-24 08:31 | `078be27bed6f5a005d8184c06c2412e0dd20c395` | `TRUE` 96/91 | Passes the corrected high-true expectation, but Captain later preferred `a6b0...` / `a535...` as cleaner report-shape comparators. |
 | `asylum-235000-de` | `3ba25fe7` | 2026-05-04 21:18 | `1514c632e427f857339827c04132f659d487e3a8` | `LEANING-TRUE` 62/68 | Best formal-band result. Note: `f475b0ab` on `f896c889` was semantically strong at `MOSTLY-TRUE` 80/78 but outside the formal expected label/truth band. |
 | `asylum-wwii-de` | n/a | n/a | n/a | n/a | No formal band; do not choose a "best" by score. Latest exact run is `5772cbb8` (`LEANING-FALSE` 42/50) on `82bed8c9`. |
 | `bolsonaro-en` | `91bf6083` | 2026-05-01 03:57 | `b5421841ea7f608ddb30906a0de785f365231b12` | `LEANING-TRUE` 63/52 | Best post-tag formal + structural match. Prepared and selected 3 claims: Brazilian law, proceedings fair-trial, verdicts fair-trial. Current `1514c632` regressed to 2 claims and `LEANING-FALSE`. |
@@ -384,7 +477,7 @@ This confirms the Lane 2/3 rollout is doing what it was designed to do: prevent 
 
 Current job `1ae07d6f` on `1514c632`:
 
-- Expected: `LEANING-TRUE` or `MIXED`, truth 55-75, confidence 45-65, minimum 3 boundaries.
+- Expected: `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-85, confidence 45-75, minimum 3 boundaries.
 - Actual: `LEANING-FALSE` 32/59.
 - Prepared claims:
   - `AC_01`: "The legal proceedings against Jair Bolsonaro complied with Brazilian law."
@@ -446,7 +539,7 @@ This is a clean pass against the documented expectation even though Stage 1 prod
 |---|---|---|---|---|---|
 | `a98ec095` | 2026-04-19 07:52 | CH/DE fact-checking auxiliary | `MOSTLY-TRUE` 73/55 | `8f3ca9dd+8d56a484` | Strong comparator for the old CH/DE-specific issue. |
 | `01dfef57` | 2026-04-19 09:26 | Swiss-only fact-checking auxiliary | `LEANING-FALSE` 31/40 | `8f3ca9dd+8d56a484` | Narrow auxiliary; not a benchmark family. |
-| `429932cb` | 2026-04-19 09:29 | `bolsonaro-pt` | `MIXED` 54/49 | `8f3ca9dd+8d56a484` | In formal PT band, but not best later PT comparator. |
+| `429932cb` | 2026-04-19 09:29 | `bolsonaro-pt` | `MIXED` 54/49 | `8f3ca9dd+8d56a484` | Historical loose-band point only. Under the 2026-05-09 Captain correction, this is not an acceptable PT comparator. |
 | `02dc8880` | 2026-04-19 09:41 | CH/DE fact-checking auxiliary | `MOSTLY-TRUE` 72/55 | `8f3ca9dd+8d56a484` | Strongest old CH/DE comparator; supports partial prompt-drift diagnosis, not full rollback. |
 | `c1a566f3` | 2026-04-19 10:27 | Swiss-only fact-checking auxiliary | `TRUE` 94/65 | created on `8f3ca9dd+0a116e65`, executed on `9caad992+ff5b6bab` | Mixed provenance; not a clean `8f3ca9dd` data point. |
 
@@ -457,7 +550,7 @@ Conclusion: `best_reports_19.4` is useful as a **specific CH/DE comparator** and
 | Family / control | Best local comparator since 2026-04-19 | Commit/provenance | Result | Structure / reason |
 |---|---:|---|---|---|
 | `bundesrat-rechtskraftig` | `bb040bdd` | `945de236` | `LEANING-TRUE` 60/82 | Best formal fit; 6 boundaries, 2 claims. Current latest `6cbb1afd` remains pass-like at 61/73. |
-| `bundesrat-simple` | none good | `3a8dfd60` / `3add5697`; latest `80c4d53f` / `078be27b` | `MOSTLY-TRUE` 83/80; latest `TRUE` 96/91 | Exact simple input still fails the formal 35-60 truth band. This remained under-covered in the post-22.4 slice and stays open. |
+| `bundesrat-simple` | `a6b0e0fc14984926a678a462456bc110` / `a53573047fe64778a76e53cb578900c7` | `eaacd9ce+39837e3a` / `ace3c114+1dab4976`; latest `80c4d53f` / `078be27b` | `TRUE` 97/89; `TRUE` 96/88; latest `TRUE` 96/91 | Captain-corrected high-true expectation. These are now good literal-chronology comparators, with `a6b0...` / `a535...` preferred for report shape. |
 | `asylum-235000-de` | `3ba25fe7` | `1514c632` | `LEANING-TRUE` 62/68 | Current best formal fit; ACS coverage healthy. Older `ace3c114+1dab4976` / `b491d9e3` was `MOSTLY-TRUE` 83/70, semantically encouraging but outside formal band. |
 | `asylum-wwii-de` | no formal best | latest `5772cbb8` / `82bed8c9` | `LEANING-FALSE` 42/50 | No formal expected band. Public deployed comparators are `MOSTLY-FALSE` 28/40 and 22/77; expectation still needs Captain-approved definition. |
 | `bolsonaro-en` | `91bf6083` | `b5421841` | `LEANING-TRUE` 63/52 | Best exact benchmark comparator because Stage 1 prepared 3 claims and admission selected all 3: Brazilian law, proceedings fair-trial standards, verdicts fair-trial standards. Current `1ae07d6f` regressed to 2 prepared claims and `LEANING-FALSE` 32/59. |
@@ -473,7 +566,7 @@ Formal benchmark families only; `asylum-wwii-de`, SVP, and auxiliary CH/DE fact-
 
 | Commit/provenance | Formal families covered | Family-best mean | Important caveat |
 |---|---:|---:|---|
-| `ace3c114+1dab4976` | 7 | 75.5 | Broadest post-19.4 local comparator, but dirty runtime. It has useful broad evidence, not a clean rollback target. It still fails `bundesrat-simple` badly (`TRUE` 96/88) and has only moderate/dirty evidence for several families. |
+| `ace3c114+1dab4976` | 7 | 75.5 | Broadest post-19.4 local comparator, but dirty runtime. It has useful broad evidence, not a clean rollback target. Its `bundesrat-simple` result (`TRUE` 96/88) now matches the corrected expectation, but several other families remain moderate/dirty. |
 | `959b7280` | 3 | 91.7 | Best clean narrow aggregate among >=3 formal families, but only covers Bolsonaro EN, hydrogen, plastic. Its Bolsonaro exact run had only 2 claim verdicts, so it is weaker than `91bf6083` as an atomicity comparator. |
 | `1514c632` | 3 | 76.7 | Current main; excellent ACS/Lane 2/3 baseline, passes asylum and hydrogen, fails Bolsonaro EN. |
 | `945de236` | 5-6 depending on exact aggregation | ~61-67 | Broad diagnostic comparator; good Bundesrat/hydrogen/PT, weak asylum/Bolsonaro EN/plastic. |
@@ -503,7 +596,7 @@ No public exact deployed job was found for the current exact `bolsonaro-en` benc
 
 | Dimension from earlier investigations | Earlier finding | Newer/local-current evidence | Current assessment |
 |---|---|---|---|
-| Stage 1 anchor preservation / anti-inference | Bundesrat hidden deployed jobs showed omission of `rechtskräftig`, interpretation injection, and core-assertion underweighting. | `bundesrat-rechtskraftig` latest local `6cbb1afd` is pass-like, but `bundesrat-simple` latest `80c4d53f` is `TRUE` 96/91 against a 35-60 expected band. | Hard `rechtskräftig` blocker improved, simple chronology/legal-overclaim control remains unresolved or under-specified. |
+| Stage 1 anchor preservation / anti-inference | Bundesrat hidden deployed jobs showed omission of `rechtskräftig`, interpretation injection, and core-assertion underweighting. | `bundesrat-rechtskraftig` latest local `6cbb1afd` is pass-like. `bundesrat-simple` latest `80c4d53f` is `TRUE` 96/91 and now aligns with the corrected high-true chronology expectation. | Hard `rechtskräftig` blocker improved; `bundesrat-simple` is no longer evidence of a formal expectation failure. |
 | Stage 1 atomicity on compound legal/fair-trial inputs | Older strong Bolsonaro reports had 3 claim verdicts or 3 prepared claims. | Current exact `1ae07d6f` has 2 prepared/selected claims and merges proceedings+verdicts. `91bf6083` prepared and selected 3 claims; deployed `eb02cd2e` had 3 claim verdicts on variant wording. | Current EN exact regression is confirmed; first fix lane should target generic compound-assertion atomicity before verdict tuning. |
 | Stage 2 evidence/source health | Asylum family should reach one clean official SEM aggregate total; CH/DE fact-checking should avoid off-target institutional proxy pages. | Current asylum exact `3ba25fe7` is formally good and well searched, but this pass did not independently prove the one-source SEM aggregate ideal. CH/DE auxiliary latest local `19b38326` remains bad relative to `a98ec095`/`02dc8880`. | Asylum is pass but needs source-quality audit; CH/DE auxiliary remains a prompt/source-health lane if Captain keeps it in scope. |
 | Boundary / matrix health | Early April reviews warned about boundary concentration and matrix honesty. | Hydrogen current `16b0d093` has the clearest healthy boundary split. Bolsonaro current has 6 boundaries but bad claim shape and verdict direction; boundary count alone does not prove quality. | Reapplied check confirms boundary count is necessary but insufficient; atomic claim shape and evidence direction are higher signal for current Bolsonaro. |
@@ -518,5 +611,5 @@ No public exact deployed job was found for the current exact `bolsonaro-en` benc
 4. **Do not full-revert to `best_reports_19.4` or `ace3c114+1dab4976`.** `best_reports_19.4` is too narrow and dirty; `ace3c114+1dab4976` is broader but still dirty and fails important families. Preserve them as comparators only.
 5. **Use `959b7280` only as a narrow clean historical comparator, not a rollback target.** It is the best mean scorer among >=3 formal families, but lacks broad coverage and is weaker than `91bf6083` for Bolsonaro atomicity.
 6. **Use `945de236` as broad diagnostic comparator only.** It covers most formal families after the tag, but quality is mixed.
-7. **Add or update formal expectations for `asylum-wwii-de`, `bundesrat-simple`, and any CH/DE fact-checking auxiliary only after Captain-approved review.** Current data can compare histories but cannot mechanically judge those families without a stable expected band.
+7. **Add or update formal expectations for `asylum-wwii-de` and any CH/DE fact-checking auxiliary only after Captain-approved review.** `bundesrat-simple` has now been corrected to the high-true chronology band in the canonical expectation files.
 8. **Keep SVP as ACS/admission control unless Captain defines a report-level truth/confidence expectation.**

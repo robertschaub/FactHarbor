@@ -21,6 +21,7 @@ This skill ensures that Gemini CLI follows the FactHarbor development lifecycle 
 ### 2. Executing a Task
 - **Engineering Standard**: All analysis-affecting logic MUST use LLM intelligence (no regex/heuristics).
 - **Bugfixing Standard**: For every bugfix, regression fix, failing test/build fix, review finding, runtime defect repair, or failed-validation recovery, read and apply `.claude/skills/debt-guard/SKILL.md` before editing.
+- **Report Quality Standard**: When judging report quality, compare the target report with Captain expectations, benchmark/Q-code JSONs, and the best usable comparator reports listed in `Docs/AGENTS/Captain_Quality_Expectations.md`; label comparators as exact/variant, local/deployed, and current/historical.
 - **Architecture Reference**: Follow patterns in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
 - **Multilingual Support**: Ensure analysis handles non-English inputs correctly.
 

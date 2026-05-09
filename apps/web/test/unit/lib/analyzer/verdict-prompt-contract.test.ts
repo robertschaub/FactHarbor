@@ -1041,7 +1041,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("ambiguous_or_insufficient");
       expect(section).toContain("Use `directionBasis` as diagnostic metadata");
       expect(section).toContain("not as a second veto over `claimDirection`");
-      expect(section).toContain("keep the truth-direction label");
+      expect(section).toContain("Directional entries (`\"supports\"` or `\"contradicts\"`) must be justified by a directional basis");
+      expect(section).toContain("Do not pair a non-directional basis with `\"supports\"` or `\"contradicts\"`");
     });
 
     it("requires a same-target bridge before rule-governed concern material becomes directional", () => {
@@ -1051,6 +1052,18 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Procedural roles, public-access limits, alleged coordination");
       expect(section).toContain("dual-role facts, criticism, concern");
       expect(section).toContain("safeguard denial/provision, compliance/noncompliance outcome");
+      expect(section).toContain("role facts, objections, criticism, concern, appearance-risk material");
+      expect(section).toContain("same target's safeguard/remedy action, operative outcome, or standards conclusion");
+    });
+
+    it("keeps stale or alternate numeric endpoints as caveats unless they are the accepted route", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("current-snapshot, endpoint, standing-stock, or threshold claims");
+      expect(section).toContain("older endpoint values, prior-period totals");
+      expect(section).toContain("alternate-window values, and alternate-category values are neutral context or calibration caveats");
+      expect(section).toContain("current/recent decisive route");
+      expect(section).toContain("A current/recent authoritative value that satisfies the threshold or comparison side is directional support");
+      expect(section).toContain("not in the opposite direction");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {

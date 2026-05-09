@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-05-09 -->
 
 # GEMINI.md
 
@@ -34,6 +34,10 @@ You are an expert software engineer working on **FactHarbor**.
 *   **Learnings:** Check `Docs/AGENTS/Role_Learnings.md` for recent lessons before starting complex tasks.
 *   **Diffs:** Always provide unified diffs for code changes.
 *   **Internal knowledge startup:** If your Gemini surface supports MCP and `fhAgentKnowledge` is configured, call `preflight_task` first. A prompt beginning `As <Role>,` or `As <Role>:` defines the active role and triggers `preflight_task`; pass the task body, `role="<Role>"`, and the first explicit `Skill:` value if present. Otherwise use `npm run fh-knowledge -- preflight-task --task "..." [--role ...] [--skill ...]`. Setup guide: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
+
+## Report Quality Reviews
+
+When judging report quality, compare the target report with `Docs/AGENTS/Captain_Quality_Expectations.md`, `Docs/AGENTS/benchmark-expectations.json`, `Docs/AGENTS/report-quality-expectations.json`, and the best usable comparator reports listed in the Captain expectations file. State whether comparators are exact or variants, local or deployed, and current-stack or historical.
 
 ## Index-First Lookup
 

@@ -1,4 +1,4 @@
-<!-- Sync with /AGENTS.md. Last synced: 2026-04-26 -->
+<!-- Sync with /AGENTS.md. Last synced: 2026-05-09 -->
 
 # Claude Code instructions — FactHarbor
 
@@ -30,6 +30,7 @@ Data flow: UI → API (`JobService`) → Runner (POST `/api/internal/run-job`) �
 - **Roles** ("As \<Role\>"): `Docs/AGENTS/Roles/` — activation protocol in `Docs/AGENTS/Policies/Handoff_Protocol.md`.
 - **Multi-agent workflows & collaboration**: `Docs/AGENTS/Multi_Agent_Collaboration_Rules.md`.
 - **Skill selection**: follow `AGENTS.md` §Named Workflows. Mandatory gates apply first, explicit user skill assignments next, then `fhAgentKnowledge.preflight_task` for role-activated or ambiguous tasks, then skill metadata/table matching. Do not add meta-routing skills.
+- **Report quality review**: follow `AGENTS.md` §Report Quality Baseline Comparison; compare reports against Captain expectations, benchmark/Q-code JSONs, and listed best comparators.
 - **Permissions mode**: `.claude/settings.json` uses `bypassPermissions` because this repo relies on local safety hooks plus a solo-maintainer workflow where agents are expected to make direct code changes without repeated approval prompts.
 - **Internal knowledge MCP rollout**: `Docs/DEVELOPMENT/Agent_Knowledge_MCP_Setup.md`.
 

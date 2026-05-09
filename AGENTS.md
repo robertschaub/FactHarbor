@@ -162,6 +162,17 @@ Trivial single-site bugfixes may use `/debt-guard`'s compact path, but they stil
 - **Quality gates:** Gate 1 (claim validation) and Gate 4 (confidence) are mandatory
 - **Evidence-weighted contestation:** Challenges to a verdict must be backed by documented evidence to count as "contested". Unsubstantiated objections (opinion, political criticism, denial without counter-evidence) are classified as "doubted" — they MUST NOT reduce a verdict's truth percentage or confidence. Only evidence-backed counter-arguments may alter verdicts. This applies to debate challenger outputs, aggregation weighting, and any future contestation logic. Existing implementation: `contestationWeights` in `aggregation.ts` (opinion=1.0, disputed=0.7, established=0.5) and `factualBasis` classification in verdict prompts.
 
+### Report Quality Baseline Comparison (MANDATORY)
+
+When judging analysis report quality — including `/report-review`, manual job review, regression diagnosis, "best report" selection, or release readiness — agents MUST compare the target report against:
+
+- `Docs/AGENTS/Captain_Quality_Expectations.md` for Captain intent and best comparator report IDs.
+- `Docs/AGENTS/benchmark-expectations.json` for canonical inputs, accepted verdict/truth/confidence bands, latest verified observations, and rerun priority.
+- `Docs/AGENTS/report-quality-expectations.json` for Q-code structural checks.
+- The best usable exact/family comparator reports listed in `Captain_Quality_Expectations.md`, when available.
+
+State whether each comparator is exact vs. variant, local vs. deployed, and current-stack vs. historical. Do not judge a report in isolation when a Captain expectation or comparator exists. If no best comparator exists, state that explicitly and do not invent one from nearby jobs.
+
 ### Report Quality & Event Communication
 
 > **TL;DR:** Severity = verdict impact. Routine ops → silent/info. System failures → warning+. Evidence scarcity (analytical reality) → info/warning, never error/severe. If the verdict wouldn't change, it's silent or info.

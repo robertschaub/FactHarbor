@@ -1,7 +1,7 @@
 {
   "_schemaVersion": "1.0.0",
-  "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md. Update this file after each significant rerun wave — it is the authoritative source; the WIP doc is the narrative source. Fields null = no verified expectation yet.",
-  "_lastUpdated": "2026-04-16",
+  "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
+  "_lastUpdated": "2026-05-09",
   "_sourceHandoffs": [
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
@@ -33,32 +33,35 @@
       "slug": "bundesrat-simple",
       "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben",
       "language": "de",
-      "expectedVerdictLabels": ["MIXED", "LEANING-TRUE", "LEANING-FALSE"],
-      "truthPercentageBand": { "min": 35, "max": 60 },
-      "confidenceBand": { "min": 55, "max": 85 },
+      "expectedVerdictLabels": ["TRUE", "MOSTLY-TRUE"],
+      "truthPercentageBand": { "min": 85, "max": 100 },
+      "confidenceBand": { "min": 75, "max": 95 },
       "minBoundaryCount": 2,
       "qualityStatus": "PROBABLY-SOLVED",
-      "qualityStatusNote": "No fresh direct live rerun on current tree. Inferred from rechtskräftig variant success — same fix set applies.",
-      "latestVerifiedJobId": null,
-      "latestObserved": null,
-      "knownOpenIssues": []
+      "qualityStatusNote": "Captain correction on 2026-05-09: simple wording is a literal chronology claim. High-true reports are preferred when they state that signature before parliamentary/popular approval happened while caveating that signature is not final democratic approval. Preferred exact local comparators: a6b0e0fc14984926a678a462456bc110 and a53573047fe64778a76e53cb578900c7. These are comparator/expectation anchors, not proof of current HEAD quality.",
+      "latestVerifiedJobId": "a6b0e0fc14984926a678a462456bc110",
+      "latestObserved": { "verdictLabel": "TRUE", "truthPercentage": 97, "confidence": 89 },
+      "knownOpenIssues": [
+        "no clean current-HEAD rerun after the 2026-05-09 expectation correction; use preferred comparators for report shape, not runtime proof"
+      ]
     },
     {
       "slug": "asylum-235000-de",
       "inputValue": "Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz",
       "language": "de",
-      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
-      "truthPercentageBand": { "min": 55, "max": 75 },
+      "expectedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+      "truthPercentageBand": { "min": 58, "max": 75 },
       "confidenceBand": { "min": 40, "max": 70 },
       "minBoundaryCount": 1,
       "qualityStatus": "IMPROVED-NOT-CLOSED",
-      "qualityStatusNote": "Recovers to sane verdict range on current tree. Strongest desired behavior — consistent retrieval of one clean official SEM aggregate total — is still inconsistent. Can regress to UNVERIFIED 57/40 under refinement path.",
+      "qualityStatusNote": "Must be true-side. Captain correction on 2026-05-09 removed prior MIXED allowance; caveats about source retrieval, freshness, or threshold closeness belong in confidence/reasoning, not a neutral verdict direction. Strongest desired behavior — consistent retrieval of one clean official SEM aggregate total — is still inconsistent.",
       "latestVerifiedJobId": "e5becebed30b4f6089035c47f28beaf6",
       "latestObserved": { "verdictLabel": "MOSTLY-TRUE", "truthPercentage": 78, "confidence": 68 },
       "_note_rerun_2026-04-16": "Rerun e5becebe at HEAD 35a22fba returned MOSTLY-TRUE 78/68. Truth 78 is 3 pts above band max 75 — within 8-pt noise tolerance. Band held; no adjustment needed. Higher confidence (68) is a positive signal.",
       "knownOpenIssues": [
         "inconsistent retrieval of direct official SEM aggregate total from primary Swiss source family",
-        "can still regress to UNVERIFIED 57/40 with refinement path changes"
+        "can still regress to UNVERIFIED 57/40 with refinement path changes",
+        "MIXED is not acceptable for this family; close-threshold caveats belong in confidence/reasoning, not verdict direction"
       ]
     },
     {
@@ -81,32 +84,35 @@
       "slug": "bolsonaro-en",
       "inputValue": "Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?",
       "language": "en",
-      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
-      "truthPercentageBand": { "min": 55, "max": 75 },
-      "confidenceBand": { "min": 45, "max": 65 },
+      "expectedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+      "truthPercentageBand": { "min": 58, "max": 85 },
+      "confidenceBand": { "min": 45, "max": 75 },
       "minBoundaryCount": 3,
       "qualityStatus": "SOLVED-VISIBLE-CONTAMINATION",
-      "qualityStatusNote": "U.S. government (state.gov) citation contamination fixed on the stronger backstop (ec9840ff). Intermediate fix run still ended MIXED 50.5/54 with visible contamination. Residual uncited state.gov items may remain in evidence pool.",
+      "qualityStatusNote": "Must be true-side with caveats. Captain correction on 2026-05-09 removed prior MIXED allowance; original Bolsonaro expectation records legal basis as strongly supported and procedural fairness as largely supported with legitimate concerns. U.S. government (state.gov) citation contamination fixed on the stronger backstop (ec9840ff), but residual uncited state.gov items may remain in evidence pool.",
       "latestVerifiedJobId": "ec9840ff97994392a7ea9784beb5d79a",
       "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 64.2, "confidence": 50 },
       "_note_rerun_2026-04-16": "Rerun da3580fe (PT variant, not EN) confirmed LEANING-TRUE 58/61 at HEAD 35a22fba — see bolsonaro-pt entry for EN twin confirmation.",
       "knownOpenIssues": [
-        "residual uncited state.gov-domain items still in evidence pool (not cited in final report but present in intermediary evidence set)"
+        "residual uncited state.gov-domain items still in evidence pool (not cited in final report but present in intermediary evidence set)",
+        "MIXED or false-side outcomes are regressions unless backed by strong target-specific evidence that overturns the original legal-basis/fairness expectation"
       ]
     },
     {
       "slug": "bolsonaro-pt",
       "inputValue": "O processo judicial contra Jair Bolsonaro por tentativa de golpe de Estado respeitou o direito processual brasileiro e os requisitos constitucionais, e as sentencas proferidas foram justas",
       "language": "pt",
-      "expectedVerdictLabels": ["LEANING-TRUE", "MIXED"],
-      "truthPercentageBand": { "min": 50, "max": 75 },
-      "confidenceBand": { "min": 40, "max": 65 },
+      "expectedVerdictLabels": ["LEANING-TRUE", "MOSTLY-TRUE"],
+      "truthPercentageBand": { "min": 58, "max": 85 },
+      "confidenceBand": { "min": 45, "max": 75 },
       "minBoundaryCount": 3,
       "qualityStatus": "CONFIRMED-ON-CURRENT-HEAD",
-      "qualityStatusNote": "Direct rerun da3580fe at HEAD 35a22fba confirms LEANING-TRUE 58.2/61. Inferential status converted to confirmed. Language-agnostic fixes transferred correctly from EN variant.",
+      "qualityStatusNote": "Must be true-side with caveats. Captain correction on 2026-05-09 removed prior MIXED allowance; original Bolsonaro expectation records legal basis as strongly supported and procedural fairness as largely supported with legitimate concerns. Direct rerun da3580fe at HEAD 35a22fba confirms LEANING-TRUE 58.2/61. Language-agnostic fixes transferred correctly from EN variant.",
       "latestVerifiedJobId": "da3580fe3fbd4ee5b3c6c7280fc4c09f",
       "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 58.2, "confidence": 61 },
-      "knownOpenIssues": []
+      "knownOpenIssues": [
+        "MIXED or false-side outcomes are regressions unless backed by strong target-specific evidence that overturns the original legal-basis/fairness expectation"
+      ]
     },
     {
       "slug": "hydrogen-en",
