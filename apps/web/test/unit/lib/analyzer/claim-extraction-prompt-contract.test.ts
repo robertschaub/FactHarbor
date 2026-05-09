@@ -798,6 +798,11 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not leave source-native current-side or reference-side values `contextual` solely because the source reports only one side");
       expect(section).toContain("Do not mark a direct quantitative source value as `contextual` merely because it carries a metric-class, temporal-window, or category-scope caveat");
       expect(section).toContain("classify it as `supports` or `contradicts` and preserve the caveat in `evidenceScope`");
+      expect(section).toContain("normalize grouped numerals before comparing");
+      expect(section).toContain("never ignore punctuation that functions as a decimal marker");
+      expect(section).toContain("Preserve true decimal fractions");
+      expect(section).toContain("A value strictly above a greater-than threshold supports that threshold relation");
+      expect(section).toContain("not as opposite direction");
       expect(section).toContain("source-native values for either side can be directional even if no source states the full comparison sentence");
     });
 

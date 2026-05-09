@@ -258,6 +258,10 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("Do not infer a missing value merely because a report or archive is comprehensive");
       expect(section).toContain("For numeric comparison claims");
       expect(section).toContain("Do not keep an item neutral solely because it reports only one side of the comparison");
+      expect(section).toContain("normalize grouped numerals before comparing");
+      expect(section).toContain("never ignore punctuation that functions as a decimal marker");
+      expect(section).toContain("Preserve true decimal fractions");
+      expect(section).toContain("A value strictly above a greater-than threshold supports that threshold relation");
       expect(section).toContain("For target-object legal/procedural/process claims");
     });
   });
@@ -1092,6 +1096,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("current/recent decisive route");
       expect(section).toContain("A current/recent authoritative value that satisfies the threshold or comparison side is directional support");
       expect(section).toContain("not in the opposite direction");
+      expect(section).toContain("normalize grouped numerals before comparing");
+      expect(section).toContain("never ignore punctuation that functions as a decimal marker");
+      expect(section).toContain("narrow margins as confidence, misleadingness, precision, or freshness caveats");
     });
 
     it("keeps foreign government assessments as foreign_reaction even when framed as substantive analysis", () => {
