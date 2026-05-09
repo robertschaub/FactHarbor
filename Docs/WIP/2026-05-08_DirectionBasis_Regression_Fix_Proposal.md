@@ -666,3 +666,41 @@ Rejected next moves:
 - No more live jobs before the no-edit trace. The latest allocation's live-job budget for this lane is now **0**.
 - Do not add family-specific source terms, named entities, deterministic numeric rules, hard clamps, or another verdict-stage guard without first proving the upstream support semantics cannot carry the fix.
 - Do not revive broad first-pass query expansion or behavioral `directionBasis` locks; both were already rejected or simplified earlier in this plan.
+
+### 12.13 Profile Support-Inflation Static Fix - 2026-05-09
+
+No-edit trace result:
+
+- Latest failed canary `e6a0afc3ca01472b943c51c380cbeaa7` (`TRUE` 87/72) differs from deployed comparator `6a60b3eb0df540c0b16228d9367b1366` (`MOSTLY-TRUE` 72/70) before verdict weighting.
+- The deployed comparator keeps `expectedEvidenceProfile` generic: it names the overall current asylum-area stock, source families, and component categories without copying observed result values.
+- The current canary's Stage 1 profile already includes evidence-discovered result values: `235 057`, `226 706`, `+3,7 %`, and component counts. Stage 2 then treats those profile entries as accepted routes, so prior-year and component rows become directional support for the current narrow-threshold claim.
+- This explains why `e6a0...` has `supports=6`, `contradicts=0`, `neutral=7` and a near-certain `CB_01`, while the deployed comparator has only two supports, one calibrated prior-year counterpoint, and seventeen neutral/context rows.
+
+Debt-guard result:
+
+- Classification: **incomplete-existing-mechanism**.
+- Chosen option: **amend existing prompt contracts** in place.
+- Rejected path: no verdict clamp, no deterministic post-hoc support filter, no provider/config change, no family-specific terms, and no additional live job before static repair.
+- Net mechanism count: unchanged.
+
+Candidate fix implemented:
+
+- Commit: `9e801335b3ea1326be1246ab9a8353115314a7dd`.
+- Active prompt hash after build/reseed: `cae5097eb69a...`.
+- `CLAIM_EXTRACTION_PASS2` now says preliminary evidence may inform source-native labels, metric classes, route families, publication families, and methodology names, but must not turn observed result values into accepted profile targets unless the original input contains those values.
+- `EXTRACT_EVIDENCE` now says evidence-discovered older values in `expectedEvidenceProfile` are not enough to make stale endpoints "explicitly evaluated" for current/recent metric claims.
+- `APPLICABILITY_ASSESSMENT` now says route acceptance must come from the input-authored truth condition, decisive metric route, comparison relation, or explicitly accepted metric class; evidence-discovered observed values and `componentMetrics` entries do not by themselves accept alternate routes.
+- For current threshold/current-stock claims with a direct `primaryMetric`, component rows and prior/reference rows are calibration context unless the evidence item itself reports the complete decisive aggregate, states the source-native comparison relation that satisfies the claim, or documents a transparent non-overlapping composition.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts` - 135 tests passed.
+- `npm -w apps/web run build` - passed and reseeded `claimboundary`.
+- `git diff --check` - passed.
+
+Next gate:
+
+1. Do not treat `9e801335` as live-validated yet. It is a static candidate only.
+2. If Captain grants more live-job budget, restart/refresh runtime if needed and spend exactly one exact `asylum-235000-de` canary on `9e801335`.
+3. Stop immediately on any band failure. Expected acceptance remains `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-75, confidence 40-70, with prior-year/component rows not inflating support.
+4. If the next canary still over-scores, first inspect whether the new profile is clean and whether component/prior rows stayed neutral before touching Stage 4 again.
