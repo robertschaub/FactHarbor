@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-09
-**Status:** Active plan updated — corrected Captain expectations applied; Option A and the first post-fix canary did not close quality; static comparator packet produced; Portuguese AC_03 selection omission isolated as a separate ACS lane
+**Status:** Active plan updated — corrected Captain expectations applied; exact `asylum-235000-de` canary now passes on `2147d5ed`; residual current-artifact selection caveat remains before spending more jobs
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -35,7 +35,7 @@ If no best usable comparator exists for an in-scope family, write `NO-COMPARATOR
 
 ### Current Plan Shape
 
-The active lane is now comparator-first root-cause review, not another local guard or prompt patch. The first post-fix asylum canary and the later current-pipeline rerun both failed the corrected band, so the stop rule remains active. The Portuguese AC_03 omission is a separate ACS selection issue; the current draft-backed PT report now validates that lane end to end. Spend no further Stage 2 validation jobs until the asylum failed attempt is classified and the next hypothesis has a minimal change surface.
+The active lane moved from failed-attempt recovery into first-pass validation review. Earlier asylum canaries failed the corrected band for stale/current route, threshold direction, support inflation, and then missing current data artifacts. The latest committed fix (`2147d5ed`) lets the pipeline discover and parse source data artifacts from official HTML pages, and the exact `asylum-235000-de` canary `1df476e9638f49a3bbd4e7622c33fdfc` now passes at `LEANING-TRUE` 68/58. Do not spend the remaining live-job budget in a batch: inspect the passing report against the best comparators, then decide whether one stability rerun or a different family canary is worth the next job.
 
 Required static packet before more jobs:
 
@@ -704,3 +704,40 @@ Next gate:
 2. If Captain grants more live-job budget, restart/refresh runtime if needed and spend exactly one exact `asylum-235000-de` canary on `9e801335`.
 3. Stop immediately on any band failure. Expected acceptance remains `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-75, confidence 40-70, with prior-year/component rows not inflating support.
 4. If the next canary still over-scores, first inspect whether the new profile is clean and whether component/prior rows stayed neutral before touching Stage 4 again.
+
+### 12.14 Source Data Artifact Retrieval Live Pass - 2026-05-09
+
+Post-`9e801335` validation found one more upstream gap before the report could reach the intended calibrated true-side band:
+
+- `bfe7bb89783e4632a7d8148ff70119a2` on `7e5acec2`: `TRUE` 92/82. The route found the 2025 official aggregate, but still overtrusted the end-2025 value for a `zurzeit` claim.
+- `e27ad1a368164c95b2e68a9339b93fb7` on `6924daa0`: `TRUE` 90/78. Current-route awareness improved, but the current SEM March 2026 page only contributed page-level evidence; the linked current data tables were not fetched/extracted.
+- No-edit trace: `retrieval.ts` discovered same-family PDFs but not `.xlsx` artifacts, and XLSX URLs were not parsed as structured source text if fetched directly. The current SEM page exposes relevant monthly `.xlsx` tables, so the first concrete missing mechanism was source-data artifact discovery/parsing, not another verdict prompt layer.
+
+Candidate fix implemented:
+
+- Commit: `2147d5ed037fee4f78d3c6690ceeeb134eb66728`.
+- `retrieval.ts` now discovers same-family document/data artifact links from HTML pages, including `.xlsx`, and parses XLSX text with a small Office Open XML reader built from Node built-ins.
+- `research-acquisition-stage.ts` now lets the LLM relevance gate classify more discovered same-family follow-up candidates while fetching only the top limited subset, preserving the no-pile-up constraint.
+- UCM defaults now expose `discoveredFollowUpCandidateLimit` and `discoveredFollowUpFetchLimit`.
+- Verification before live job: targeted retrieval/acquisition/config-drift tests passed, `npm -w apps/web run build` passed, full safe `npm test` passed, and runtime was restarted/reseeded on the commit.
+
+Live gate result:
+
+- Canary: exact `asylum-235000-de`, job `1df476e9638f49a3bbd4e7622c33fdfc`.
+- Result: `LEANING-TRUE` 68/58.
+- Band assessment: **passes corrected Captain band** (`LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70).
+- Evidence shape: 28 evidence items, 21 sources, quality gates passed. The run fetched and parsed current SEM March 2026 `.xlsx` artifacts such as `6-10-best-asylprozess-2026-03`.
+- Report reasoning: correctly treats 235 057 at end-2025 as formally above the threshold, but downgrades for the 57-person margin, missing full March 2026 aggregate, and source concentration.
+
+Residual caveat:
+
+- The job did not fetch the manually identified current `6-51` RU sheet. It selected current `6-10`, `6-20`, and `6-22` instead.
+- Some March 2026 partial-current evidence is still tagged `contradicts` even though the final reasoning correctly says it is not a methodologically complete contradiction to the wider `Asylbereich` claim.
+- This is not a reason to spend another job immediately. It is a focused report-review item: inspect whether the current artifact-selection prompt or follow-up candidate ranking should prefer complete aggregate/composition tables when the current page exposes multiple source-native data artifacts.
+
+Next gate:
+
+1. Treat `2147d5ed` as the first live pass for this lane, not as broad benchmark closure.
+2. Spend no additional asylum job until the passing report is compared against `Captain_Quality_Expectations.md`, `benchmark-expectations.json`, `report-quality-expectations.json`, and the best exact/family comparators.
+3. If a stability rerun is approved, spend exactly one more exact `asylum-235000-de` job and stop if it falls outside band.
+4. Otherwise use the next job on a different corrected-family canary only after stating the expected band and stop rule.
