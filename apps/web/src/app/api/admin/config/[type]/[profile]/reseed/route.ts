@@ -1,9 +1,12 @@
 /**
- * Admin API - Prompt Reseed from File
+ * Admin API - Config Reseed from File
  *
- * POST /api/admin/config/prompt/:profile/reseed - Re-seed prompt from disk file
+ * POST /api/admin/config/:type/:profile/reseed - Re-seed config from disk file
  *
- * Useful for development workflow: edit file on disk, then sync to database.
+ * For prompts: re-seeds from prompt markdown files.
+ * For other config types (search, calculation, pipeline, sr): re-seeds from
+ * the JSON default file, resetting to system ownership so future file changes
+ * are auto-applied on restart.
  *
  * Body:
  * - force: boolean (default: false) - If true, re-seed even if active config exists
@@ -12,6 +15,10 @@
 import { NextResponse } from "next/server";
 import {
   seedPromptFromFile,
+  loadDefaultConfigFromFile,
+  saveConfigBlob,
+  activateConfig,
+  updateConfigBlobMetadata,
   VALID_PROMPT_PROFILES,
   type ConfigType,
 } from "@/lib/config-storage";
@@ -20,32 +27,57 @@ import { checkAdminKey } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
+const NON_PROMPT_CONFIG_TYPES = ["search", "calculation", "pipeline", "sr"] as const;
+type NonPromptConfigType = (typeof NON_PROMPT_CONFIG_TYPES)[number];
 
+function isNonPromptConfigType(type: string): type is NonPromptConfigType {
+  return (NON_PROMPT_CONFIG_TYPES as readonly string[]).includes(type);
+}
 
 interface RouteParams {
   params: Promise<{ type: string; profile: string }>;
 }
 
 /**
- * POST - Re-seed prompt from disk file
+ * POST - Re-seed config from disk file
  */
 export async function POST(req: Request, context: RouteParams) {
   const { type, profile } = await context.params;
 
-  // 1. Auth check
   if (!checkAdminKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // 2. Only prompts can be reseeded
-  if (!isValidConfigType(type) || type !== "prompt") {
+  if (!isValidConfigType(type)) {
     return NextResponse.json(
-      { error: "Reseed only available for prompt configs" },
+      { error: `Invalid config type: ${type}` },
       { status: 400 },
     );
   }
 
-  // 3. Validate profile against known profiles
+  let force = false;
+  try {
+    const body = await req.json().catch(() => ({}));
+    force = body.force === true;
+  } catch {
+    // Default to force=false
+  }
+
+  if (type === "prompt") {
+    return reseedPrompt(profile, force, req);
+  }
+
+  if (isNonPromptConfigType(type) && profile === "default") {
+    return reseedNonPromptDefault(type, force);
+  }
+
+  return NextResponse.json(
+    { error: `Reseed not supported for ${type}/${profile}` },
+    { status: 400 },
+  );
+}
+
+async function reseedPrompt(profile: string, force: boolean, req: Request) {
   if (!VALID_PROMPT_PROFILES.includes(profile as any)) {
     return NextResponse.json(
       { error: `Invalid profile: ${profile}. Valid profiles: ${VALID_PROMPT_PROFILES.join(", ")}` },
@@ -53,16 +85,6 @@ export async function POST(req: Request, context: RouteParams) {
     );
   }
 
-  // 4. Parse body for force flag
-  let force = false;
-  try {
-    const body = await req.json().catch(() => ({}));
-    force = body.force === true;
-  } catch {
-    // Default to force=false if body parsing fails
-  }
-
-  // 5. Reseed from file
   try {
     const result = await seedPromptFromFile(
       profile,
@@ -72,12 +94,7 @@ export async function POST(req: Request, context: RouteParams) {
 
     if (result.error) {
       return NextResponse.json(
-        {
-          success: false,
-          seeded: false,
-          error: result.error,
-          profile,
-        },
+        { success: false, seeded: false, error: result.error, profile },
         { status: 500 },
       );
     }
@@ -98,6 +115,61 @@ export async function POST(req: Request, context: RouteParams) {
       contentHash: result.contentHash,
       fromFile: `${profile}.prompt.md`,
       profile,
+    });
+  } catch (err: unknown) {
+    console.error("[Config-API] reseed error:", err);
+    return NextResponse.json(
+      { error: `Reseed failed: ${err instanceof Error ? err.message : String(err)}` },
+      { status: 500 },
+    );
+  }
+}
+
+async function reseedNonPromptDefault(configType: NonPromptConfigType, force: boolean) {
+  try {
+    const defaultContent = loadDefaultConfigFromFile(configType);
+    if (!defaultContent) {
+      return NextResponse.json(
+        { error: `No default file found for ${configType}` },
+        { status: 404 },
+      );
+    }
+
+    if (!force) {
+      return NextResponse.json({
+        success: true,
+        seeded: false,
+        reason: `Use force=true to reset ${configType}/default to file defaults (system ownership).`,
+        configType,
+      });
+    }
+
+    const { blob, isNew } = await saveConfigBlob(
+      configType as ConfigType,
+      "default",
+      defaultContent,
+      "Initial default config",
+      "system",
+    );
+
+    if (!isNew) {
+      await updateConfigBlobMetadata(blob.contentHash, "system", "Initial default config");
+    }
+
+    await activateConfig(
+      configType as ConfigType,
+      "default",
+      blob.contentHash,
+      "system",
+      "reseed-from-file",
+    );
+
+    return NextResponse.json({
+      success: true,
+      seeded: true,
+      contentHash: blob.contentHash,
+      fromFile: `${configType}.default.json`,
+      configType,
     });
   } catch (err: unknown) {
     console.error("[Config-API] reseed error:", err);

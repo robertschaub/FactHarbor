@@ -33,8 +33,8 @@
   "providers": {
     "googleCse": {
       "enabled": true,
-      "priority": 1,
-      "dailyQuotaLimit": 8000
+      "priority": 2,
+      "dailyQuotaLimit": 100
     },
     "serpapi": {
       "enabled": false,
@@ -48,7 +48,7 @@
     },
     "serper": {
       "enabled": true,
-      "priority": 2,
+      "priority": 1,
       "dailyQuotaLimit": 0
     },
     "wikipedia": {

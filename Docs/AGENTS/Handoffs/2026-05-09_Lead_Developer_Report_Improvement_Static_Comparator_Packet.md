@@ -18,3 +18,25 @@
 **For next agent:** Start from `Docs/WIP/2026-05-09_Report_Improvement_Static_Comparator_Packet.md`. It contains the target/comparator job table, four-source quality check, stage-separated diagnosis, rejected alternatives, minimal proposed change surface, validation sequence, and a Sonnet review prompt. The likely next step is a focused Sonnet Lead Architect + LLM Expert review, then one narrow Stage 2 LLM-mediated applicability/direction change only if that review agrees.
 
 **Learnings:** Not appended. No stable reusable role learning beyond the existing plan guardrails.
+
+---
+
+### UCM Search Config Change — 2026-05-09 12:30 UTC
+
+**What changed:** Search provider priority swapped as part of cost reduction Phase 1.
+
+| Setting | Before | After |
+|---|---|---|
+| `serper.priority` | 2 | **1** (primary) |
+| `googleCse.priority` | 1 | **2** (fallback) |
+| `googleCse.dailyQuotaLimit` | 8000 | **100** (free tier) |
+
+**Why:** Google Cloud billing was disabled for the FactHarbor project. Google CSE is now capped at 100 free queries/day. Serper ($1/1k queries) handles all primary search volume. Saving ~$130–170/Mo.
+
+**Impact on report improvement work:**
+- Search results may differ slightly (Serper vs Google CSE return different result sets)
+- Any live validation jobs will now use Serper as the primary search provider
+- The comparator baselines in the static packet were produced under the old config (Google CSE primary) — note this when comparing future job outputs
+- UCM config persists across restarts (no reseed needed — `activatedBy: "admin"` configs are not overwritten by system defaults)
+
+**Config version:** `serper-p1-google-fallback` (hash: `3599e181...`)

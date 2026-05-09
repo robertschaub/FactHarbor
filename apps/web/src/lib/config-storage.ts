@@ -1258,6 +1258,22 @@ async function ensureDefaultConfig(
 }
 
 /**
+ * Update blob metadata (created_by, version_label) for an existing blob.
+ * Used by reseed to reclaim system ownership of a blob that was originally saved by admin.
+ */
+export async function updateConfigBlobMetadata(
+  contentHash: string,
+  createdBy: string,
+  versionLabel: string,
+): Promise<void> {
+  const database = await getDb();
+  await database.run(
+    `UPDATE config_blobs SET created_by = ?, version_label = ?, updated_utc = ?, updated_by = ? WHERE content_hash = ?`,
+    [createdBy, versionLabel, new Date().toISOString(), createdBy, contentHash],
+  );
+}
+
+/**
  * Close database connection (for cleanup)
  */
 export async function closeConfigDb(): Promise<void> {
