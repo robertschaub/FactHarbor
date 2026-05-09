@@ -505,7 +505,10 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not leave it as `\"none\"` solely because the comparator/reference side is historical");
       expect(section).toContain("present-state proposition rather than leaving its time window ambiguous");
       expect(section).toContain("recurring official statistics series");
-      expect(section).toContain("copy that source-native wording into `expectedEvidenceProfile` verbatim");
+      expect(section).toContain("copy that source-native label or route wording into `expectedEvidenceProfile` verbatim");
+      expect(section).toContain("must not turn preliminary evidence's observed result values into accepted profile targets");
+      expect(section).toContain("Evidence-discovered measured values, prior-period figures, percentage changes, and component counts belong in evidence items");
+      expect(section).toContain("Do not copy the source's observed measured result, prior-period comparator value, percentage change, or component count");
     });
   });
 

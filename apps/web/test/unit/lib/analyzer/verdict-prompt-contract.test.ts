@@ -912,6 +912,7 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Explicit route acceptance must appear in the claim/profile's decisive metric route");
       expect(section).toContain("componentMetrics` entry is not enough");
       expect(section).toContain("does not make an alternate metric class directional support");
+      expect(section).toContain("Do not treat an evidence-discovered older value as \"explicitly evaluated\" merely because it appears in `expectedEvidenceProfile`");
       expect(section).toContain("admitted, hosted, served, processed, ever counted");
       expect(section).toContain("Do not classify those items as `supports` for an endpoint/timepoint stock");
       expect(section).toContain("`claimDirection` is relative to the comparison relationship");
@@ -1175,8 +1176,12 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("same order of magnitude, shared unit, or a broad magnitude bucket is not enough for `\"supports\"`");
       expect(section).toContain("set that companion's `claimDirectionByClaimId` entry to `\"contradicts\"`");
       expect(section).toContain("Keep period totals, cumulative totals, sub-counts, or alternate metric classes separate");
-      expect(section).toContain("Route acceptance must come from the decisive metric route");
+      expect(section).toContain("Route acceptance must come from the input-authored truth condition, decisive metric route");
+      expect(section).toContain("evidence-discovered observed value in `expectedEvidenceProfile`");
       expect(section).toContain("`componentMetrics` list does not by itself accept an alternate route");
+      expect(section).toContain("component rows and prior/reference rows may be materially relevant and useful for calibration");
+      expect(section).toContain("they are not independent directional support merely because they are source-native or listed in `componentMetrics`");
+      expect(section).toContain("documents a transparent composition that establishes the decisive aggregate without overlap");
       expect(section).toContain("Treat totals for units admitted, hosted, served, processed, ever counted");
       expect(section).toContain("not endpoint/standing-stock support");
       expect(section).toContain("do not use `\"supports\"` to mean \"this is the correct side.\"");
