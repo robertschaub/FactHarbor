@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-09
-**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` artifact retrieval now works, but stability rerun failed from component-stitching verdict flip
+**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` now has a current in-band canary after component-evidence neutralization, but remains watch-listed for residual narrative component reconstruction
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -35,7 +35,7 @@ If no best usable comparator exists for an in-scope family, write `NO-COMPARATOR
 
 ### Current Plan Shape
 
-The active lane moved from source discovery to verdict semantics. Earlier asylum canaries failed the corrected band for stale/current route, threshold direction, support inflation, and then missing current data artifacts. Commit `2147d5ed` fixed the artifact-discovery/parsing gap: exact canary `1df476e9638f49a3bbd4e7622c33fdfc` passed at `LEANING-TRUE` 68/58, and stability rerun `511c2b17299a49a5a9640505c40eac0f` fetched the previously missing RU sheets (`6-50`, `6-51`). The stability rerun still failed at `LEANING-FALSE` 32/60 because the verdict stitched current component tables into a custom total instead of requiring one clean official SEM aggregate. Stop live jobs on this lane until that generic component-stitching failure is addressed.
+The active lane moved from source discovery to verdict semantics. Earlier asylum canaries failed the corrected band for stale/current route, threshold direction, support inflation, missing current data artifacts, and then component-stitching. Commit `2147d5ed` fixed artifact discovery/parsing. Commit `989b3d02` added generic prompt guidance that component-only/current partial rows must stay contextual unless the source provides the complete non-overlapping aggregate. Commit `10d72b80` fixed the Stage 2 applicability merge path so an explicit LLM neutral reassessment can demote an existing directional extraction instead of being ignored. The latest exact canary `fd93d0de531243a18d2097b38351f4d4` passed at `LEANING-TRUE` 70/60: March component rows are neutral and the only cited contradiction is the older SEM end-2024 total. This is a current pass, not broad closure; residual narrative caveats still use component reconstruction and should be reviewed before spending more asylum jobs.
 
 Required static packet before more jobs:
 
@@ -763,3 +763,51 @@ Next gate:
 2. Localize whether the component-stitching happens because `APPLICABILITY_ASSESSMENT` over-promotes component rows, Stage 4 overuses neutral component rows in reasoning, or both.
 3. The next fix, if any, must be generic and LLM-mediated: for current aggregate/threshold claims, component tables can contextualize uncertainty, but must not become a decisive directional total unless the source itself provides the complete non-overlapping aggregate or the claim's expected profile explicitly authorizes that composition.
 4. Remaining budget from the latest 8-job allocation after these two jobs: 6.
+
+### 12.15 Component Evidence Neutralization Pass - 2026-05-09
+
+No-edit trace result:
+
+- Failing stability job `511c2b17299a49a5a9640505c40eac0f` and passing canary `1df476e9638f49a3bbd4e7622c33fdfc` both reached the current SEM XLSX artifact family. Retrieval was no longer the first cause.
+- The failed run turned partial current components (`6-10`, `6-50`, `6-51`, status rows, and related component sheets) into a custom March total and treated that stitched number as false-side evidence.
+- The deployed comparator `6a60b3eb0df540c0b16228d9367b1366` uses the official SEM end-2025 aggregate as the support anchor, treats the older end-2024 value as a dated counterpoint, and leaves incomplete current component data as calibration context.
+
+Debt-guard classification:
+
+- `2147d5ed` source-data artifact retrieval: **keep**.
+- Component-only verdict flip in `511c2b...`: **incomplete-existing-mechanism** in LLM-mediated extraction/applicability semantics, not a reason to add deterministic post-processing or broaden search.
+- Prompt component-completeness repair `989b3d02`: **keep**. It is generic, multilingual-safe, and extends the existing LLM extraction/applicability contract rather than adding a new mechanism.
+- Stage 2 neutral reassessment merge repair `10d72b80`: **keep**. It removes an internal contradiction where the applicability LLM could explicitly mark an item neutral but the merge path preserved the old directional label.
+
+Candidate fixes implemented:
+
+- `989b3d02 fix(prompt): keep incomplete component arithmetic neutral`
+  - `EXTRACT_EVIDENCE` and `APPLICABILITY_ASSESSMENT` now say component-only or incomplete component arithmetic is contextual unless the source itself provides the complete non-overlapping aggregate or the expected profile explicitly authorizes that composition.
+  - Prompt-contract tests were added for extraction, applicability, and self-check language.
+- `10d72b80 fix(stage2): honor neutral applicability reassessments`
+  - `assessEvidenceApplicability` now allows explicit neutral claim-local reassessments to demote existing directional extraction results.
+  - Added a focused unit test proving a component-only below-threshold item can be demoted from `contradicts` to `neutral`.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts` - passed.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/research-extraction-stage.test.ts` - passed.
+- `npm -w apps/web run build` - passed and reseeded unchanged prompts after the code-only fix.
+- Full safe `npm test` - passed before the live canary.
+- Runtime restarted/reseeded on committed code before submission.
+
+Live gate result:
+
+- Canary: exact `asylum-235000-de`, job `fd93d0de531243a18d2097b38351f4d4`.
+- Commit under test: `10d72b80cd35373b639f1c05e5fb6770f67b38b3+e3b0c442`.
+- Result: `LEANING-TRUE` 70/60.
+- Band assessment: **passes corrected Captain band** (`LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70).
+- Evidence shape: 36 evidence items, 3 support, 1 contradiction, 32 neutral. The only cited contradiction is the older SEM end-2024 official aggregate (`226 706`), explicitly dated as not current. Current March component rows are neutral and carry directness justifications saying they are incomplete for the aggregate.
+- Residual caveat: the final reasoning still uses component reconstruction as a caveat when discussing March 2026 uncertainty. That is acceptable as uncertainty context in this canary, but it should not become decisive support or contradiction in later runs.
+
+Next gate:
+
+1. Do not batch-spend the remaining budget on asylum. This is a current pass plus one prior false-side stability failure, so the family is **improved, current-pass, watch** rather than closed.
+2. If another asylum job is considered, first do a short no-edit review of `fd93d0de531243a18d2097b38351f4d4` against `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed `6a60b3eb0df540c0b16228d9367b1366`, focused only on whether component reconstruction stayed caveat-only.
+3. The next best use of the remaining jobs is likely a different corrected-family canary, especially canonical `bolsonaro-en`, after restating its true-side band and stop rule.
+4. Remaining budget from the latest 8-job allocation after this canary: 4.
