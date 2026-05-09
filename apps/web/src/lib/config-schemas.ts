@@ -598,6 +598,10 @@ export const PipelineConfigSchema = z.object({
     .describe("Stagger delay in milliseconds between same-domain requests within a fetch batch. Reduces fetch-collapse risk when multiple sources share a domain. 0 disables staggering. Default: 500."),
   fetchDomainSkipThreshold: z.number().int().min(0).max(10).optional()
     .describe("After this many consecutive 401/403 failures from the same domain within a fetchSources() call, best-effort skip later same-domain URLs. 0 disables. Default: 2."),
+  discoveredFollowUpCandidateLimit: z.number().int().min(1).max(50).optional()
+    .describe("Max same-family follow-up URLs from each fetched HTML source considered by relevance classification (default: 20). Raises discovery coverage for document/data landing pages without increasing fetched follow-ups."),
+  discoveredFollowUpFetchLimit: z.number().int().min(1).max(10).optional()
+    .describe("Max same-family follow-up URLs fetched from each fetched HTML source after relevance classification (default: 3)."),
   researchMaxQueriesPerIteration: z.number().int().min(1).max(5).optional()
     .describe("Maximum number of search queries generated per research iteration (default: 4)"),
   researchFirstPassMaxQueriesPerClaim: z.number().int().min(1).max(5).optional()
@@ -1261,6 +1265,8 @@ export const DEFAULT_PIPELINE_CONFIG: PipelineConfig = {
   minEvidenceContentLength: 100,
   fetchSameDomainDelayMs: 500,
   fetchDomainSkipThreshold: 2,
+  discoveredFollowUpCandidateLimit: 20,
+  discoveredFollowUpFetchLimit: 3,
   researchMaxQueriesPerIteration: 4,
   researchFirstPassMaxQueriesPerClaim: 1,
   researchFirstPassRelevanceTopNFetch: 2,

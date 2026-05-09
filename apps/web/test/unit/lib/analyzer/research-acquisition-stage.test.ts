@@ -696,6 +696,68 @@ describe("research-acquisition-stage", () => {
       );
     });
 
+    it("should classify more discovered candidates than it fetches so late relevant artifacts can win", async () => {
+      const { extractTextFromUrl } = await import("@/lib/retrieval");
+      const attemptedUrls: string[] = [];
+      vi.mocked(extractTextFromUrl).mockImplementation(async (url: string) => {
+        attemptedUrls.push(url);
+        if (url === "https://publisher.example/landing") {
+          return {
+            text: "Landing page ".repeat(20),
+            title: "Landing page",
+            contentType: "text/html",
+            discoveredFollowUpUrls: [
+              "https://publisher.example/artifact-1",
+              "https://publisher.example/artifact-2",
+              "https://publisher.example/artifact-3",
+              "https://publisher.example/artifact-4",
+              "https://publisher.example/artifact-5",
+            ],
+          };
+        }
+
+        return {
+          text: "Selected artifact content ".repeat(20),
+          title: url.split("/").pop() ?? "artifact",
+          contentType: "text/html",
+        };
+      });
+
+      const classifyDiscoveredSources = vi.fn(async (sources: Array<{ url: string; title: string; snippet?: string | null }>) => {
+        expect(sources.map((source) => source.url)).toEqual([
+          "https://publisher.example/artifact-1",
+          "https://publisher.example/artifact-2",
+          "https://publisher.example/artifact-3",
+          "https://publisher.example/artifact-4",
+          "https://publisher.example/artifact-5",
+        ]);
+        return [
+          { url: "https://publisher.example/artifact-5", relevanceScore: 0.96, originalRank: 4 },
+        ];
+      });
+
+      const state = createMinimalState();
+      await fetchSources(
+        [{ url: "https://publisher.example/landing" }],
+        "test query",
+        state,
+        {
+          parallelExtractionLimit: 1,
+          sourceFetchTimeoutMs: 5000,
+          fetchSameDomainDelayMs: 0,
+          discoveredFollowUpCandidateLimit: 5,
+          discoveredFollowUpFetchLimit: 2,
+        },
+        { classifyDiscoveredSources },
+      );
+
+      expect(attemptedUrls).toEqual([
+        "https://publisher.example/landing",
+        "https://publisher.example/artifact-5",
+      ]);
+      expect(state.sources.map((source) => source.url)).toEqual(attemptedUrls);
+    });
+
     it("should preserve the top discovered document artifact when the classifier omits it", async () => {
       const { extractTextFromUrl } = await import("@/lib/retrieval");
       const attemptedUrls: string[] = [];

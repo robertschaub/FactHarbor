@@ -4,6 +4,7 @@
  * Extracts text content from URLs, including:
  * - HTML pages (via cheerio)
  * - PDF documents (via pdf2json)
+ * - XLSX spreadsheets (via Office Open XML extraction)
  *
  * @version 1.3.0 - SSRF hardening: private IP blocking, scheme enforcement, redirect validation, size cap
  */
@@ -13,6 +14,7 @@ import { promises as fs } from "fs";
 import { lookup } from "dns/promises";
 import * as os from "os";
 import * as path from "path";
+import { inflateRawSync } from "zlib";
 import { Worker } from "worker_threads";
 import { getFamilyDomain } from "@/lib/domain-utils";
 
@@ -453,18 +455,229 @@ function isPdfUrl(url: string, contentType?: string): boolean {
   return urlLower.endsWith(".pdf") || urlLower.includes(".pdf?");
 }
 
+function isXlsxUrl(url: string, contentType?: string): boolean {
+  if (contentType?.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+    return true;
+  }
+  const urlLower = url.toLowerCase();
+  return urlLower.endsWith(".xlsx") || urlLower.includes(".xlsx?");
+}
+
+function isPlainDataUrl(url: string, contentType?: string): boolean {
+  const normalizedContentType = (contentType ?? "").toLowerCase();
+  if (
+    normalizedContentType.includes("text/csv")
+    || normalizedContentType.includes("application/json")
+    || normalizedContentType.includes("application/xml")
+    || normalizedContentType.includes("text/xml")
+  ) {
+    return true;
+  }
+
+  const urlLower = url.toLowerCase();
+  return urlLower.endsWith(".csv")
+    || urlLower.includes(".csv?")
+    || urlLower.endsWith(".json")
+    || urlLower.includes(".json?")
+    || urlLower.endsWith(".xml")
+    || urlLower.includes(".xml?");
+}
+
+function isDiscoverableDocumentUrl(url: string, contentType?: string): boolean {
+  return isPdfUrl(url, contentType)
+    || isXlsxUrl(url, contentType)
+    || isPlainDataUrl(url, contentType);
+}
+
 function extractYearScore(value: string): number {
   const matches = value.match(/\b(?:19|20)\d{2}\b/g);
   if (!matches) return 0;
   return Math.max(...matches.map((match) => Number.parseInt(match, 10)));
 }
 
+interface ZipEntry {
+  fileName: string;
+  compressionMethod: number;
+  compressedSize: number;
+  localHeaderOffset: number;
+}
+
+function findEndOfCentralDirectory(buffer: Buffer): number {
+  const signature = 0x06054b50;
+  const minOffset = Math.max(0, buffer.length - 0xffff - 22);
+  for (let offset = buffer.length - 22; offset >= minOffset; offset--) {
+    if (buffer.readUInt32LE(offset) === signature) {
+      return offset;
+    }
+  }
+  throw new Error("Invalid XLSX/ZIP file: central directory not found");
+}
+
+function listZipEntries(buffer: Buffer): ZipEntry[] {
+  const eocdOffset = findEndOfCentralDirectory(buffer);
+  const centralDirectorySize = buffer.readUInt32LE(eocdOffset + 12);
+  const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
+  const centralDirectoryEnd = centralDirectoryOffset + centralDirectorySize;
+  const entries: ZipEntry[] = [];
+  let offset = centralDirectoryOffset;
+
+  while (offset < centralDirectoryEnd) {
+    if (buffer.readUInt32LE(offset) !== 0x02014b50) {
+      throw new Error("Invalid XLSX/ZIP file: malformed central directory");
+    }
+
+    const compressionMethod = buffer.readUInt16LE(offset + 10);
+    const compressedSize = buffer.readUInt32LE(offset + 20);
+    const fileNameLength = buffer.readUInt16LE(offset + 28);
+    const extraLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const localHeaderOffset = buffer.readUInt32LE(offset + 42);
+    const fileName = buffer.toString("utf8", offset + 46, offset + 46 + fileNameLength);
+
+    entries.push({
+      fileName,
+      compressionMethod,
+      compressedSize,
+      localHeaderOffset,
+    });
+    offset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return entries;
+}
+
+function readZipEntry(buffer: Buffer, entry: ZipEntry): Buffer {
+  const offset = entry.localHeaderOffset;
+  if (buffer.readUInt32LE(offset) !== 0x04034b50) {
+    throw new Error(`Invalid XLSX/ZIP file: malformed local header for ${entry.fileName}`);
+  }
+  const fileNameLength = buffer.readUInt16LE(offset + 26);
+  const extraLength = buffer.readUInt16LE(offset + 28);
+  const dataStart = offset + 30 + fileNameLength + extraLength;
+  const compressed = buffer.subarray(dataStart, dataStart + entry.compressedSize);
+
+  if (entry.compressionMethod === 0) {
+    return compressed;
+  }
+  if (entry.compressionMethod === 8) {
+    return inflateRawSync(compressed);
+  }
+  throw new Error(`Unsupported XLSX compression method ${entry.compressionMethod}`);
+}
+
+function decodeXmlEntities(value: string): string {
+  return value
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+function stripXmlTags(value: string): string {
+  return decodeXmlEntities(value.replace(/<[^>]+>/g, ""));
+}
+
+function extractXmlTextValues(xml: string, tagName: string): string[] {
+  const values: string[] = [];
+  const pattern = new RegExp(`<${tagName}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tagName}>`, "g");
+  for (const match of xml.matchAll(pattern)) {
+    const text = stripXmlTags(match[1] ?? "").replace(/\s+/g, " ").trim();
+    if (text) values.push(text);
+  }
+  return values;
+}
+
+function extractSharedStrings(xml: string | null): string[] {
+  if (!xml) return [];
+  return extractXmlTextValues(xml, "si");
+}
+
+function extractInlineString(cellXml: string): string {
+  return extractXmlTextValues(cellXml, "is").join(" ").trim();
+}
+
+function extractCellValue(cellXml: string, sharedStrings: string[]): string | null {
+  const typeMatch = cellXml.match(/\st="([^"]+)"/);
+  const type = typeMatch?.[1] ?? "";
+
+  if (type === "inlineStr") {
+    return extractInlineString(cellXml) || null;
+  }
+
+  const valueMatch = cellXml.match(/<v>([\s\S]*?)<\/v>/);
+  if (!valueMatch) {
+    return null;
+  }
+
+  const rawValue = decodeXmlEntities(valueMatch[1] ?? "").trim();
+  if (!rawValue) return null;
+  if (type === "s") {
+    const sharedValue = sharedStrings[Number.parseInt(rawValue, 10)];
+    return sharedValue?.trim() || rawValue;
+  }
+  return rawValue;
+}
+
+function extractSheetRows(xml: string, sharedStrings: string[]): string[] {
+  const rows: string[] = [];
+  for (const rowMatch of xml.matchAll(/<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/g)) {
+    const cells: string[] = [];
+    const rowXml = rowMatch[1] ?? "";
+    for (const cellMatch of rowXml.matchAll(/<c(?:\s[^>]*)?>([\s\S]*?)<\/c>/g)) {
+      const cellValue = extractCellValue(cellMatch[0] ?? "", sharedStrings);
+      cells.push(cellValue ?? "");
+    }
+    const line = cells
+      .map((cell) => cell.replace(/\s+/g, " ").trim())
+      .join(" | ")
+      .replace(/(?:\s*\|\s*)+$/g, "")
+      .trim();
+    if (line) rows.push(line);
+  }
+  return rows;
+}
+
+export function extractTextFromXlsxBuffer(buffer: Buffer): string {
+  if (!buffer || buffer.length === 0) {
+    throw new Error("XLSX buffer is empty");
+  }
+  if (buffer.toString("ascii", 0, 2) !== "PK") {
+    throw new Error("Invalid XLSX format");
+  }
+
+  const entries = listZipEntries(buffer);
+  const entryByName = new Map(entries.map((entry) => [entry.fileName, entry] as const));
+  const sharedStringsEntry = entryByName.get("xl/sharedStrings.xml");
+  const sharedStrings = extractSharedStrings(
+    sharedStringsEntry ? readZipEntry(buffer, sharedStringsEntry).toString("utf8") : null,
+  );
+  const sheetEntries = entries
+    .filter((entry) => /^xl\/worksheets\/sheet\d+\.xml$/i.test(entry.fileName))
+    .sort((left, right) => left.fileName.localeCompare(right.fileName, undefined, { numeric: true }));
+
+  const output: string[] = [];
+  for (const sheetEntry of sheetEntries) {
+    const sheetXml = readZipEntry(buffer, sheetEntry).toString("utf8");
+    const rows = extractSheetRows(sheetXml, sharedStrings);
+    if (rows.length === 0) continue;
+    output.push(`# Sheet: ${sheetEntry.fileName}`);
+    output.push(...rows);
+  }
+
+  const text = output.join("\n").trim();
+  if (!text) {
+    throw new Error("Extracted XLSX text is empty");
+  }
+  return text;
+}
+
 /**
- * Discover linked PDF artifacts from an already-fetched HTML page.
+ * Discover linked document/data artifacts from an already-fetched HTML page.
  * Restricting follow-ups to the same family domain keeps navigation bounded
  * while still allowing common publisher asset hosts (for example sibling CDN/CMS hosts).
  */
-export function extractSameFamilyPdfUrlsFromHtml(html: string, pageUrl: string): string[] {
+export function extractSameFamilyDocumentUrlsFromHtml(html: string, pageUrl: string): string[] {
   let page: URL;
   try {
     page = new URL(pageUrl);
@@ -488,7 +701,7 @@ export function extractSameFamilyPdfUrlsFromHtml(html: string, pageUrl: string):
     }
 
     if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return;
-    if (!isPdfUrl(resolved.href)) return;
+    if (!isDiscoverableDocumentUrl(resolved.href)) return;
     if (resolved.href === page.href) return;
     if (getFamilyDomain(resolved.hostname) !== pageFamilyDomain) return;
 
@@ -502,6 +715,11 @@ export function extractSameFamilyPdfUrlsFromHtml(html: string, pageUrl: string):
     if (pathDelta !== 0) return pathDelta;
     return left.localeCompare(right);
   });
+}
+
+export function extractSameFamilyPdfUrlsFromHtml(html: string, pageUrl: string): string[] {
+  return extractSameFamilyDocumentUrlsFromHtml(html, pageUrl)
+    .filter((url) => isPdfUrl(url));
 }
 
 function normalizeDiscoveryUrl(resolved: URL): string {
@@ -594,7 +812,7 @@ export function extractSameFamilyFollowUpUrlsFromHtml(html: string, pageUrl: str
   const merged = [
     ...extractSameFamilyFeedUrlsFromHtml(html, pageUrl),
     ...extractSameFamilyListingUrlsFromHtml(html, pageUrl),
-    ...extractSameFamilyPdfUrlsFromHtml(html, pageUrl),
+    ...extractSameFamilyDocumentUrlsFromHtml(html, pageUrl),
   ];
 
   const seen = new Set<string>();
@@ -877,7 +1095,7 @@ async function readResponseBodyWithLimit(response: Response, maxBytes: number): 
 
 /**
  * Fetch and extract text from a URL
- * Supports HTML pages and PDF documents
+ * Supports HTML pages, PDF documents, and common data artifacts.
  */
 export async function extractTextFromUrl(
   url: string,
@@ -903,7 +1121,7 @@ export async function extractTextFromUrl(
       redirect: "follow",
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/pdf,application/xml;q=0.9,*/*;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/json,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Connection": "keep-alive",
       },
@@ -937,6 +1155,23 @@ export async function extractTextFromUrl(
 
     const contentType = response.headers.get("content-type") || "";
 
+    // Handle XLSX spreadsheets.
+    if (isXlsxUrl(url, contentType)) {
+      console.log("[Retrieval] Processing as XLSX");
+      const responseBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+      const buffer = Buffer.from(responseBytes);
+      const text = extractTextFromXlsxBuffer(buffer);
+      const urlPath = new URL(url).pathname;
+      const filename = urlPath.split("/").pop() || "spreadsheet";
+      const title = filename.replace(/\.xlsx$/i, "").replace(/[_-]/g, " ");
+
+      return {
+        text: buildDistributedExcerpt(text, maxLength),
+        title,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      };
+    }
+
     // Handle PDF
     if (isPdfUrl(url, contentType)) {
       console.log("[Retrieval] Processing as PDF");
@@ -962,6 +1197,22 @@ export async function extractTextFromUrl(
         contentType: "application/pdf",
       };
     }
+
+    // Handle plain data artifacts before passing content through HTML extraction.
+    if (isPlainDataUrl(url, contentType)) {
+      const bytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
+      const text = new TextDecoder("utf-8").decode(bytes).trim();
+      if (!text) {
+        throw new Error("Extracted data artifact text is empty");
+      }
+      const urlPath = new URL(url).pathname;
+      const filename = urlPath.split("/").pop() || "data";
+      return {
+        text: buildDistributedExcerpt(text, maxLength),
+        title: filename.replace(/[_-]/g, " "),
+        contentType: contentType.split(";")[0] || "text/plain",
+      };
+    }
     
     // Handle HTML with streaming size enforcement for chunked/no-Content-Length responses.
     const htmlBytes = await readResponseBodyWithLimit(response, MAX_RESPONSE_SIZE_BYTES);
@@ -976,7 +1227,7 @@ export async function extractTextFromUrl(
     
     // Extract text
     const text = extractTextFromHtml(html, { requestedUrl: url });
-    const discoveredDocumentUrls = extractSameFamilyPdfUrlsFromHtml(html, response.url || url);
+    const discoveredDocumentUrls = extractSameFamilyDocumentUrlsFromHtml(html, response.url || url);
     
     return {
       text: text.slice(0, maxLength),

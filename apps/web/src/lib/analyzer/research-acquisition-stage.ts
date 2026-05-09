@@ -8,7 +8,8 @@ import {
 } from "./types";
 import { PipelineConfig } from "@/lib/config-schemas";
 
-const MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE = 3;
+const DEFAULT_DISCOVERED_FOLLOW_UP_CANDIDATE_LIMIT = 20;
+const DEFAULT_DISCOVERED_FOLLOW_UP_FETCH_LIMIT = 3;
 const MAX_DISCOVERY_DEPTH = 3;
 
 interface DiscoveredSourceCandidate {
@@ -135,7 +136,7 @@ export async function fetchSources(
   relevantSources: Array<{ url: string; relevanceScore?: number }>,
   searchQuery: string,
   state: CBResearchState,
-  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold">,
+  pipelineConfig?: Pick<PipelineConfig, "sourceFetchTimeoutMs" | "parallelExtractionLimit" | "sourceExtractionMaxLength" | "iterationRetryDelayMs" | "minEvidenceContentLength" | "fetchSameDomainDelayMs" | "fetchDomainSkipThreshold" | "discoveredFollowUpCandidateLimit" | "discoveredFollowUpFetchLimit">,
   options?: FetchSourcesOptions,
 ): Promise<Array<{ url: string; title: string; text: string }>> {
   type FetchCandidate = { url: string; relevanceScore?: number; depth: number };
@@ -160,6 +161,10 @@ export async function fetchSources(
   const retryDelayMs = pipelineConfig?.iterationRetryDelayMs ?? 2000;
   const minContentLength = pipelineConfig?.minEvidenceContentLength ?? 100;
   const sameDomainDelayMs = pipelineConfig?.fetchSameDomainDelayMs ?? 500;
+  const discoveredFollowUpCandidateLimit =
+    pipelineConfig?.discoveredFollowUpCandidateLimit ?? DEFAULT_DISCOVERED_FOLLOW_UP_CANDIDATE_LIMIT;
+  const discoveredFollowUpFetchLimit =
+    pipelineConfig?.discoveredFollowUpFetchLimit ?? DEFAULT_DISCOVERED_FOLLOW_UP_FETCH_LIMIT;
 
   // Domain-level short-circuit: after N consecutive 401/403 failures from the same
   // domain, best-effort skip later same-domain URLs within this fetchSources() call.
@@ -281,13 +286,13 @@ export async function fetchSources(
     if (!urls || urls.length === 0) return;
     if (parentDepth >= MAX_DISCOVERY_DEPTH) return;
 
-    // The per-parent discovery frontier is capped before LLM relevance scoring.
+    // The per-parent discovery frontier is bounded before LLM relevance scoring.
     // Prefer direct document/data artifacts first so the freshest official source-native
     // evidence is not dropped behind feed/listing hops that can be explored later.
     const prioritizedUrls = prioritizeDiscoveredFollowUps(urls);
     let queuedForParent = 0;
     for (const url of prioritizedUrls) {
-      if (queuedForParent >= MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE) break;
+      if (queuedForParent >= discoveredFollowUpCandidateLimit) break;
       if (queuedUrls.has(url) || pendingUrls.has(url)) continue;
       pendingUrls.add(url);
       pendingDiscovered.push({
@@ -451,7 +456,7 @@ export async function fetchSources(
       : null;
 
     if (!classifiedDiscovered) {
-      for (const candidate of pendingDiscovered) {
+      for (const candidate of pendingDiscovered.slice(0, discoveredFollowUpFetchLimit)) {
         if (queuedUrls.has(candidate.url)) continue;
         queuedUrls.add(candidate.url);
         nextFrontier.push({
@@ -500,7 +505,7 @@ export async function fetchSources(
     for (const discoveredGroup of discoveredByParent.values()) {
       const selectedDiscovered = selectTopSources(
         discoveredGroup,
-        MAX_DISCOVERED_FOLLOW_UPS_PER_SOURCE,
+        discoveredFollowUpFetchLimit,
       );
       for (const candidate of selectedDiscovered) {
         if (queuedUrls.has(candidate.url)) continue;

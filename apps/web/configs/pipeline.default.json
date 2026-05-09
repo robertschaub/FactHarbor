@@ -160,6 +160,8 @@
   "minEvidenceContentLength": 100,
   "fetchSameDomainDelayMs": 500,
   "fetchDomainSkipThreshold": 2,
+  "discoveredFollowUpCandidateLimit": 20,
+  "discoveredFollowUpFetchLimit": 3,
   "researchMaxQueriesPerIteration": 4,
   "researchFirstPassMaxQueriesPerClaim": 1,
   "researchFirstPassRelevanceTopNFetch": 2,
