@@ -459,3 +459,44 @@ Next concrete step:
 5. Implement only if that hypothesis supports a narrow, multilingual-safe, generic fix that does not touch the validated PT ACS lane.
 
 Stop / re-debate if localization points outside Stage 2/source-currentness, requires broad query expansion, depends on family-specific terms, revives deterministic semantic rescue, touches `directionBasis` as a behavioral lock, or needs another live job before a committed fix.
+
+### 12.9 No-Edit Localization Result And Candidate Fix — 2026-05-09
+
+`/debt-guard` classification:
+
+- PT ACS fix `1b5a8045`: **keep**. It was validated by draft-backed `bolsonaro-pt` job `1644fcf2e800417a948c46416d9eec48` and is outside the current asylum failure.
+- Broad first-pass query breadth `090a25c1`: **rejected / keep reverted**. Prior validation showed only marginal Bolsonaro movement and regressions in Asylum and Plastic; do not revive this path.
+- Stage 2 applicability-direction contract from `cdfe3a6b`: **keep as a static contract, quarantine its live-quality claim**. The latest asylum failure proves the contract was not sufficient in practice, but the rule itself remains correct.
+- Current failed asylum job `0ea1066324f141f2ad6a81c53cf9a3ca`: **active first-gate failure**. Do not submit another live job until the candidate fix is committed and runtime state is refreshed.
+
+Trace comparison:
+
+- Failed current job `0ea1066324f141f2ad6a81c53cf9a3ca` generated only one main query and one refinement query before contradiction search. It did not fetch the current 2025 SEM annual-commentary route.
+- Best local exact comparator `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed exact comparator `6a60b3eb0df540c0b16228d9367b1366` both fetched `stat-jahr-2025-kommentar` and cited the end-2025 total `235 057`.
+- The deployed comparator is the cleaner direction model: the 2025 official total is support and the 2024 total is only one older counterpoint. The local comparator is in-band but internally imperfect because it still labels the 2025 threshold-satisfying total as contradiction while the reasoning uses it as support.
+- The failed current run shows the operative bug clearly on evidence metadata: `EV_1778336433880` labels the end-2024 SEM total `226 706` as `direct_metric_value` contradiction even though `AC_01` has `freshnessRequirement = current_snapshot`; `EV_1778336358693` keeps a 2023 narrower route as contradiction without a direction-basis override.
+
+First divergence:
+
+The currentness contract exists in the prompt text but was not consistently available where direction was first assigned and then re-assessed. `EXTRACT_EVIDENCE` did not expose `freshnessRequirement` in its input block, and `assessEvidenceApplicability(...)` omitted `freshnessRequirement` from the claims JSON even though `APPLICABILITY_ASSESSMENT` contains the stale/current rule. This made the LLM infer currentness from prose/profile wording while another numeric-direction rule encouraged treating any below-threshold endpoint as contradiction.
+
+Candidate fix implemented:
+
+- `extractResearchEvidence(...)` now passes `freshnessRequirement` to the `EXTRACT_EVIDENCE` prompt and includes it for every claim in `allClaims`.
+- `assessEvidenceApplicability(...)` now includes `freshnessRequirement` for every claim in the `APPLICABILITY_ASSESSMENT` claims payload.
+- `EXTRACT_EVIDENCE` now displays `Current Date` and `Freshness Requirement` and mirrors the already-approved generic currentness rule: older endpoints, prior-period totals, and age-mismatched snapshots are contextual calibration evidence unless the claim/profile evaluates that older endpoint or the source states it remains the current decisive route.
+
+This is a metadata-exposure and prompt-placement fix, not broad query expansion, provider tuning, domain-specific search text, deterministic semantic rescue, or a behavioral `directionBasis` lock.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/research-extraction-stage.test.ts test/unit/lib/analyzer/verdict-prompt-contract.test.ts` — 173 tests passed.
+- `npm -w apps/web run build` — passed; `postbuild` reseeded the local `claimboundary` prompt to hash `e88cac5b6617...`.
+- `git diff --check` — passed.
+
+Next gate:
+
+1. Commit this candidate fix on `main`.
+2. Restart/reseed runtime state after the commit.
+3. Spend exactly one live job on the Captain-defined `asylum-235000-de` input.
+4. Stop immediately if it is still false-side, `MIXED`, or outside the 58-75 truth / 40-70 confidence band. Classify this candidate as keep/quarantine/revert before any next edit.

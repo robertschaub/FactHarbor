@@ -280,10 +280,12 @@ export async function extractResearchEvidence(
   const rendered = await loadAndRenderSection("claimboundary", "EXTRACT_EVIDENCE", {
     currentDate,
     claim: targetClaim.statement,
+    freshnessRequirement: targetClaim.freshnessRequirement ?? "none",
     expectedEvidenceProfile: JSON.stringify(targetClaim.expectedEvidenceProfile ?? {}, null, 2),
     allClaims: JSON.stringify(claimSet.map((claim) => ({
       id: claim.id,
       statement: claim.statement,
+      freshnessRequirement: claim.freshnessRequirement ?? "none",
       expectedEvidenceProfile: claim.expectedEvidenceProfile ?? {},
     })), null, 2),
     sourceContent: sources.map((s, i) =>
@@ -532,6 +534,7 @@ export async function assessEvidenceApplicability(
     claims: JSON.stringify(claims.map(c => ({
       id: c.id,
       statement: c.statement,
+      freshnessRequirement: c.freshnessRequirement ?? "none",
       expectedEvidenceProfile: c.expectedEvidenceProfile ?? {},
     })), null, 2),
     inferredGeography: formatPromptInferredGeography(normalizedRelevantGeographies),

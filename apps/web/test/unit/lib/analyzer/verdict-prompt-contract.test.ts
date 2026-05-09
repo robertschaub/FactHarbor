@@ -800,13 +800,14 @@ describe("Stage-2 prompt contract", () => {
   const EXTRACT_EVIDENCE_VARS: Record<string, string> = {
     currentDate: "2026-04-06",
     claim: "Entity A complied with procedural law during proceeding B",
+    freshnessRequirement: "current_snapshot",
     expectedEvidenceProfile: JSON.stringify({
       methodologies: ["source-native comparator route"],
       expectedMetrics: ["current metric", "reference metric"],
       expectedSourceTypes: ["government_report"],
       primaryMetric: "current metric",
     }),
-    allClaims: '[{"id":"AC_01","statement":"Entity A has current metric M","expectedEvidenceProfile":{"expectedMetrics":["current metric"]}},{"id":"AC_02","statement":"Entity A is close to reference metric R","expectedEvidenceProfile":{"expectedMetrics":["current metric","reference metric"]}}]',
+    allClaims: '[{"id":"AC_01","statement":"Entity A has current metric M","freshnessRequirement":"current_snapshot","expectedEvidenceProfile":{"expectedMetrics":["current metric"]}},{"id":"AC_02","statement":"Entity A is close to reference metric R","freshnessRequirement":"current_snapshot","expectedEvidenceProfile":{"expectedMetrics":["current metric","reference metric"]}}]',
     sourceContent: "[Source 1: Test]\nURL: https://example.com\nContent about proceedings...",
     sourceUrl: "https://example.com",
   };
@@ -954,6 +955,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("closest authoritative measures");
       expect(section).toContain("flow or process metrics");
       expect(section).toContain("current stock, standing population, or inventory");
+      expect(section).toContain("Freshness-contracted metric claims");
+      expect(section).toContain("older endpoint values, prior-period totals, and age-mismatched snapshots");
+      expect(section).toContain("Do not turn a stale endpoint into directional contradiction");
     });
 
     it("institutional-ecosystem extraction allows convergent actor and network pages to evidence ecosystem existence", () => {
@@ -975,7 +979,7 @@ describe("Stage-2 prompt contract", () => {
 
   /** Stage 2 applicability assessment (research-extraction-stage.ts:441-445) */
   const APPLICABILITY_ASSESSMENT_VARS: Record<string, string> = {
-    claims: '[{"id":"AC_01","statement":"Entity A complied with procedural law"}]',
+    claims: '[{"id":"AC_01","statement":"Entity A complied with procedural law","freshnessRequirement":"current_snapshot"}]',
     inferredGeography: "BR",
     relevantGeographies: '["BR"]',
     evidenceItems: '[{"index":0,"statement":"Test evidence","sourceUrl":"https://example.com","sourceTitle":"Test","category":"legal_document"}]',
@@ -1098,7 +1102,7 @@ describe("Stage-2 prompt contract", () => {
 
     it("marks historical/reference totals direct for approximate comparison comparator sides", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
-      expect(section).toContain("Each claim may include `expectedEvidenceProfile`");
+      expect(section).toContain("Each claim may include `freshnessRequirement` and `expectedEvidenceProfile`");
       expect(section).toContain("approximate current-versus-historical or current-versus-reference comparisons");
       expect(section).toContain("comparator route named in `expectedEvidenceProfile`");
       expect(section).toContain("different metric class from the route the claim most naturally implies");

@@ -1439,6 +1439,7 @@ For endpoint, standing-stock, or current-snapshot comparisons, evidence that rep
   - When an official or organizational source explicitly recommends creating a dedicated structure, monitoring body, coordination mechanism, or similar institutional layer because current handling is missing, fragmented, or ad hoc, that finding may support a claim about the present absence or weakness of a systematic ecosystem. Do not force it to `"contextual"` solely because it is framed as a recommendation rather than a headline statement of absence.
   - **Partial findings under broad evaluative predicates:** When the claim uses a broad evaluative predicate asserting absence of value, benefit, or effectiveness (e.g., "has no benefit", "is useless", "brings nothing"), classify evidence showing any measurable, documented positive outcome as `contradicts` — unless the source itself explicitly concludes that the positive outcome is negligible, immaterial, or insufficient to constitute a real benefit. A partial or limited benefit still refutes an absolute claim of zero benefit. Do not equate a small measured effect with no effect.
   - **Status-finality claims:** When a claim asserts that a legal, procedural, or institutional status is already final, binding, approved, ratified, in force, or otherwise completed, evidence showing that additional approval, ratification, referendum, promulgation, judicial confirmation, or another completion step is still pending must be classified as `contradicts`, not `contextual`. Evidence that only confirms signing, filing, submission, or recommendation without final completion does not support a claim of already-final legal status.
+  - **Freshness-contracted metric claims:** When `Freshness Requirement` is `current_snapshot` or `recent`, classify older endpoint values, prior-period totals, and age-mismatched snapshots as contextual calibration evidence unless the claim/profile explicitly evaluates that older endpoint or the source states that the older value remains the current decisive route. Do not turn a stale endpoint into directional contradiction merely because it is numerically below or above the claimed present-state threshold.
 - `probativeValue`: Assess based on source quality, methodology rigor, and directness.
 - `sourceType` must use exactly one canonical value from this list: `peer_reviewed_study`, `fact_check_report`, `government_report`, `legal_document`, `news_primary`, `news_secondary`, `expert_statement`, `organization_report`, `other`. Use `other` only when no listed type fits.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
@@ -1448,6 +1449,16 @@ For endpoint, standing-stock, or current-snapshot comparisons, evidence that rep
 **Claim:**
 ```
 ${claim}
+```
+
+**Current Date:**
+```
+${currentDate}
+```
+
+**Freshness Requirement:**
+```
+${freshnessRequirement}
 ```
 
 **Expected Evidence Profile:**
@@ -2694,7 +2705,7 @@ Before returning each `claimDirectionByClaimId` entry, run this self-check:
 ```
 ${claims}
 ```
-Each claim may include `expectedEvidenceProfile`; use it to preserve the intended metric route, comparator class, source-native quantities, and decisive evidence type when assessing applicability and claim mapping.
+Each claim may include `freshnessRequirement` and `expectedEvidenceProfile`; use them to preserve the intended currentness contract, metric route, comparator class, source-native quantities, and decisive evidence type when assessing applicability and claim mapping.
 
 **Inferred Geography:**
 ```

@@ -458,6 +458,7 @@ describe("Research Extraction Stage", () => {
       const claim = createClaim({
         id: "AC_01",
         statement: "Entity A is close to benchmark B.",
+        freshnessRequirement: "current_snapshot",
         expectedEvidenceProfile: {
           methodologies: ["source-native comparator route"],
           expectedMetrics: ["current metric", "reference metric"],
@@ -477,6 +478,10 @@ describe("Research Extraction Stage", () => {
         ([, section]) => section === "EXTRACT_EVIDENCE",
       );
       expect(renderCall).toBeDefined();
+      expect(renderCall![2]).toMatchObject({
+        currentDate: "2026-03-23",
+        freshnessRequirement: "current_snapshot",
+      });
       const profile = JSON.parse(renderCall![2].expectedEvidenceProfile);
       expect(profile).toMatchObject({
         methodologies: ["source-native comparator route"],
@@ -489,6 +494,7 @@ describe("Research Extraction Stage", () => {
         expect.objectContaining({
           id: "AC_01",
           statement: "Entity A is close to benchmark B.",
+          freshnessRequirement: "current_snapshot",
           expectedEvidenceProfile: expect.objectContaining({
             primaryMetric: "current metric",
           }),
@@ -1578,6 +1584,7 @@ describe("Research Extraction Stage", () => {
       const claims = [createClaim({
         id: "AC_01",
         statement: "Country A courts",
+        freshnessRequirement: "current_snapshot",
         expectedEvidenceProfile: {
           methodologies: ["procedural record"],
           expectedMetrics: ["case-specific process"],
@@ -1613,6 +1620,7 @@ describe("Research Extraction Stage", () => {
       expect(claimsArg[0]).toMatchObject({
         id: "AC_01",
         statement: "Country A courts",
+        freshnessRequirement: "current_snapshot",
         expectedEvidenceProfile: {
           methodologies: ["procedural record"],
           expectedMetrics: ["case-specific process"],
