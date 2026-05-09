@@ -339,9 +339,13 @@ describe("Stage-4 prompt contract", () => {
       const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
       const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
       expect(advocate).toContain("barely satisfies the asserted relation still supports the claim");
-      expect(advocate).toContain("calibrate `truthPercentage` and `confidence` below near-certain levels");
+      expect(advocate).toContain("do not use the `TRUE`/near-certain band");
+      expect(advocate).toContain("middle or weak true-side `truthPercentage`");
+      expect(advocate).toContain("calibrates robustness of the measured relation rather than reversing evidence direction");
       expect(reconciliation).toContain("barely satisfied relation as a calibration issue");
       expect(reconciliation).toContain("preserving the supporting direction unless direct contradicting evidence defeats the relation");
+      expect(reconciliation).toContain("A small reduction from one near-certain score to another near-certain score is insufficient");
+      expect(reconciliation).toContain("move the result out of the `TRUE`/near-certain band");
     });
 
     it("reconciliation blocks one-sided proxy wins but allows close-ecosystem convergence", () => {
