@@ -342,10 +342,14 @@ describe("Stage-4 prompt contract", () => {
       expect(advocate).toContain("do not use the `TRUE`/near-certain band");
       expect(advocate).toContain("middle or weak true-side `truthPercentage`");
       expect(advocate).toContain("calibrates robustness of the measured relation rather than reversing evidence direction");
+      expect(advocate).toContain("only complete decisive value comes from a prior reporting snapshot");
+      expect(advocate).toContain("current-route evidence is absent, neutral, component-only, or not fetchable");
       expect(reconciliation).toContain("barely satisfied relation as a calibration issue");
       expect(reconciliation).toContain("preserving the supporting direction unless direct contradicting evidence defeats the relation");
       expect(reconciliation).toContain("A small reduction from one near-certain score to another near-certain score is insufficient");
       expect(reconciliation).toContain("move the result out of the `TRUE`/near-certain band");
+      expect(reconciliation).toContain("support comes from a prior reporting snapshot with a narrow margin");
+      expect(reconciliation).toContain("Do not answer with `TRUE`/near-certain merely because the prior snapshot technically satisfies the relation");
     });
 
     it("reconciliation blocks one-sided proxy wins but allows close-ecosystem convergence", () => {
@@ -695,6 +699,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("endpoint stock versus period/window total or cumulative flow ambiguous");
       expect(section).toContain("not automatic substitutes for one another");
       expect(section).toContain("recurring official statistics series or update stream");
+      expect(section).toContain("return separate queries for (a) the newest current/live source-native route");
+      expect(section).toContain("If returning only one query, prioritize the newest current route");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
       expect(section).toContain("newest routine current-statistics route and the latest complete official or institutional publication/data artifact");
       expect(section).toContain("Do not exclude the latest complete source-native release solely because it is periodic or retrospective");
