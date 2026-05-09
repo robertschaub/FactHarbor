@@ -619,3 +619,50 @@ Next hypothesis gate:
 1. Do **not** run another live job before a no-edit direction trace comparison against `f079c5b6c5f84aa0941aafcff1b734a5`, where the same official 2025 value was supporting.
 2. Localize why `EXTRACT_EVIDENCE` or `APPLICABILITY_ASSESSMENT` can still mark a current threshold-satisfying primary metric as contradiction despite `freshnessRequirement = current_snapshot`.
 3. Keep the next fix generic and LLM-mediated. Do not add numeric clamps, family-specific terms, deterministic source recognition, or another verdict-stage guard.
+
+### 12.12 Grouped Numeric Direction And Narrow-Margin Calibration Canaries - 2026-05-09
+
+Debt-guard classification:
+
+- Query-route repair `a61aaf32`: **keep as static acquisition repair, quarantine live-quality claim**. The later canaries confirm it can fetch the official complete aggregate artifact route, but the family still fails the corrected band.
+- Grouped-numeric prompt repair `a0632591`: **keep**. It is generic, prompt-only, and fixed the concrete direction/arithmetic failure where `235 057` was treated as below `235 000`. It adds no family-specific wording, deterministic numeric clamp, provider tuning, or new code mechanism.
+- Narrow-margin calibration prompt `86491d0a`: **keep as a static contract, quarantine live-quality claim**. It improved calibration but did not reach the Captain band.
+- Current lane: **active first-gate failure**. No more live jobs should be submitted on this lane until the remaining support-inflation mechanism is localized and one minimal generic patch is reviewed.
+
+Live gate after `a0632591`:
+
+- Commit under test: `a0632591d1143f12c30c22da98d993066ff7d8fd`.
+- Prompt hash under test: `d2ec29f96728b89daefbb7ab0b0830ac4cb879db379f81f0da84e7d300418966`.
+- Canary: exact `asylum-235000-de`, job `73bf5061515d471ca746a80c27df8fe8`.
+- Result: `TRUE` 93/78.
+- Band assessment: **failed first gate**. The decisive current aggregate evidence was now on the correct side, but truth and confidence remained above the corrected 58-75 / 40-70 Captain band.
+- Evidence effect: final direction counts were support-heavy and contradiction-free (`supports=4`, `contradicts=0`, `neutral=10`). The prompt repair solved grouped-number direction, not verdict calibration.
+
+Live gate after `86491d0a`:
+
+- Commit under test: `86491d0a29e5a866a955c749ad510d1a7e57752b`.
+- Prompt hash under test: `ac6914aa50577c30208f10f22f2d94e7907aeb45aa5fe66af6187f5feda7ff0d`.
+- Canary: exact `asylum-235000-de`, job `e6a0afc3ca01472b943c51c380cbeaa7`.
+- Result: `TRUE` 87/72.
+- Band assessment: **failed first gate**. The change moved the result in the right direction from 93/78 to 87/72, but truth remains too high and confidence is still above the expected band.
+- Search/config note: the run used the repaired Serper-primary / Google-CSE-fallback runtime. Provider behavior is not the first remaining cause in this trace.
+
+Observed remaining divergence:
+
+- The final report still has zero contradictions and multiple supports for one narrow threshold claim (`supports=6`, `contradicts=0`, `neutral=7`).
+- Claim verdict `AC_01` lists support IDs that include the direct current aggregate (`235 057`) **and** older/prior-year/source-native comparator rows such as `226 706` from 2024.
+- The 2024 comparator-side evidence is useful context for calibration, but it should not increase directional support for the current claim merely because it is part of the same source-native table or comparison route.
+- Boundary `CB_01` remains near-certain (`95/90`) before aggregation, so Stage 4 starts from an inflated support picture and only partially discounts source concentration, missing latest-period uncertainty, and the 57-person margin.
+
+Next no-edit trace:
+
+1. Compare `e6a0afc3ca01472b943c51c380cbeaa7` against exact local comparator `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed comparator `6a60b3eb0df540c0b16228d9367b1366`.
+2. Inspect `claimDirectionByClaimId`, `directionBasis`, `directnessJustification`, boundary evidence membership, and final verdict support IDs for direct target-metric evidence versus prior-year/comparator/context evidence.
+3. Confirm whether the remaining first cause is `APPLICABILITY_ASSESSMENT` overclassifying contextual comparator rows as support, Stage 4 overcounting contextual support, or both.
+4. Only after that trace, debate one minimal generic fix. The likely acceptable shape is an LLM-mediated support-semantics clarification: direct support should mean the evidence directly establishes the target metric/current threshold relation; prior-period, comparator-side, component, or methodology rows calibrate and contextualize unless they themselves establish the target claim.
+
+Rejected next moves:
+
+- No more live jobs before the no-edit trace. The latest allocation's live-job budget for this lane is now **0**.
+- Do not add family-specific source terms, named entities, deterministic numeric rules, hard clamps, or another verdict-stage guard without first proving the upstream support semantics cannot carry the fix.
+- Do not revive broad first-pass query expansion or behavioral `directionBasis` locks; both were already rejected or simplified earlier in this plan.
