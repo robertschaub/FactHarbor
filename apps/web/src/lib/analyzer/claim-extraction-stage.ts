@@ -1544,10 +1544,23 @@ export async function extractClaims(
         );
         state.llmCalls++;
 
+        const atomicityRetryMax = deriveAtomicityRepairGate1Max({
+          baseMax: effectiveMax,
+          configuredMax: maxCap,
+          originalClaimCount: finalAcceptedClaims.length,
+          repairSeeds: atomicityRepairSeeds,
+        });
+        if (atomicityRetryMax > effectiveMax) {
+          console.info(
+            `[Stage1] Multi-claim atomicity repair raised Gate 1 cap from ${effectiveMax} to ${atomicityRetryMax} ` +
+            `to preserve ${atomicityRepairSeeds.length} LLM-requested split(s).`,
+          );
+        }
+
         const atomicityRetryGate1Input = selectClaimsForGate1(
           atomicityRetryPass2.atomicClaims as unknown as AtomicClaim[],
           centralityThreshold,
-          effectiveMax,
+          atomicityRetryMax,
           undefined,
           atomicityRetryPass2.inputClassification,
           structuralInputType,
@@ -3632,6 +3645,44 @@ export function getHighConfidenceMultiClaimAtomicityRepairs(
         .filter((subclaim) => subclaim.length > 0),
     }))
     .filter((recommendation) => recommendation.proposedSubclaims.length >= 2);
+}
+
+export function deriveAtomicityRepairGate1Max(params: {
+  baseMax: number;
+  configuredMax: number;
+  originalClaimCount: number;
+  repairSeeds: MultiClaimAtomicitySplitRecommendation[];
+}): number {
+  const baseMax = Math.max(0, Math.floor(params.baseMax));
+  const configuredMax = Math.max(0, Math.floor(params.configuredMax));
+  const originalClaimCount = Math.max(0, Math.floor(params.originalClaimCount));
+
+  if (configuredMax === 0 || params.repairSeeds.length === 0) {
+    return Math.min(baseMax, configuredMax);
+  }
+
+  const splitClaimIds = new Set<string>();
+  let proposedSubclaimCount = 0;
+
+  for (const seed of params.repairSeeds) {
+    const originalClaimId = seed.originalClaimId.trim();
+    if (!originalClaimId || splitClaimIds.has(originalClaimId)) {
+      continue;
+    }
+
+    splitClaimIds.add(originalClaimId);
+    proposedSubclaimCount += seed.proposedSubclaims
+      .map((subclaim) => subclaim.trim())
+      .filter((subclaim) => subclaim.length > 0)
+      .length;
+  }
+
+  const repairTargetCount = Math.max(
+    originalClaimCount,
+    originalClaimCount - splitClaimIds.size + proposedSubclaimCount,
+  );
+
+  return Math.min(configuredMax, Math.max(baseMax, repairTargetCount));
 }
 
 export function summarizeMultiClaimAtomicityAudit(

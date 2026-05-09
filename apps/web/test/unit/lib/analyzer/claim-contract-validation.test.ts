@@ -20,6 +20,7 @@ import {
   evaluateSingleClaimAtomicityValidation,
   getPrioritySalienceAnchorsForAtomicityValidation,
   getHighConfidenceMultiClaimAtomicityRepairs,
+  deriveAtomicityRepairGate1Max,
   MultiClaimAtomicityAuditOutputSchema,
   runClaimContractValidationWithRetry,
   selectPreferredSingleClaimContractChallenge,
@@ -465,6 +466,56 @@ describe("MultiClaimAtomicityAuditOutputSchema", () => {
     expect(summary?.auditDecision).toBe("pass");
     expect(summary?.preservedRelationClaimIds).toEqual(["AC_01"]);
     expect(summary?.retryTriggered).toBe(false);
+  });
+});
+
+describe("deriveAtomicityRepairGate1Max", () => {
+  it("raises the repair Gate 1 cap to preserve LLM-requested split seeds", () => {
+    const max = deriveAtomicityRepairGate1Max({
+      baseMax: 3,
+      configuredMax: 5,
+      originalClaimCount: 3,
+      repairSeeds: [
+        {
+          originalClaimId: "AC_03",
+          proposedSubclaims: [
+            "The process met the standard.",
+            "The result met the standard.",
+          ],
+          splitReason: "Input-authored process/result units can receive different verdicts.",
+        },
+      ],
+    });
+
+    expect(max).toBe(4);
+  });
+
+  it("keeps the normal cap when no split expansion is requested", () => {
+    const max = deriveAtomicityRepairGate1Max({
+      baseMax: 3,
+      configuredMax: 5,
+      originalClaimCount: 3,
+      repairSeeds: [],
+    });
+
+    expect(max).toBe(3);
+  });
+
+  it("never exceeds the configured max atomic claims cap", () => {
+    const max = deriveAtomicityRepairGate1Max({
+      baseMax: 3,
+      configuredMax: 4,
+      originalClaimCount: 4,
+      repairSeeds: [
+        {
+          originalClaimId: "AC_02",
+          proposedSubclaims: ["Seed A", "Seed B", "Seed C"],
+          splitReason: "Multiple explicit units.",
+        },
+      ],
+    });
+
+    expect(max).toBe(4);
   });
 });
 
