@@ -500,3 +500,25 @@ Next gate:
 2. Restart/reseed runtime state after the commit.
 3. Spend exactly one live job on the Captain-defined `asylum-235000-de` input.
 4. Stop immediately if it is still false-side, `MIXED`, or outside the 58-75 truth / 40-70 confidence band. Classify this candidate as keep/quarantine/revert before any next edit.
+
+Live gate result:
+
+- Commit under test: `2258d99aa6bfa07587bfafc02f43e11f6ba1a0a6`.
+- Prompt hash under test: `e88cac5b6617df07e92e188d951cff2cabc4475e76f86f44920f6d99698ba2bf`.
+- Canary: `asylum-235000-de` exact input, job `f079c5b6c5f84aa0941aafcff1b734a5`.
+- Result: `TRUE` 93/82.
+- Band assessment: **failed first gate**. Label is true-side, but truth and confidence are both above the corrected Captain band.
+- Remaining live-job budget: 4.
+
+Observed effect:
+
+- The candidate fixed the immediate stale-contradiction symptom: the 2023 narrower route and older contextual items are neutral, the end-2025 SEM total `235 057` is supporting, and there are no final contradicting citations.
+- The candidate did not solve calibration. Stage 4 treated a narrow threshold exceedance of only 57 persons plus source concentration on the official SEM data pipeline as near-certain truth.
+- The job also still shows malformed preliminary numeric query text (`mehr als 235` without the thousands magnitude), but the successful 2025 acquisition means that is not the first post-fix failure.
+
+Debt-guard classification after the failed gate:
+
+- **Keep** the code-level metadata exposure (`freshnessRequirement` into extraction and applicability payloads). It is structurally correct and does not add semantic heuristics.
+- **Keep, but monitor** the extraction prompt's stale-endpoint rule as the intended generic direction correction. It removed stale false-side dominance, which is the behavior expected by the plan.
+- **Quarantine the live-quality claim** for `2258d99a`: it is not an accepted quality fix because it overcalibrates the family.
+- Do **not** stack another prompt change in this turn. The next hypothesis must be debated/reviewed as a separate Stage 4 calibration / near-threshold weighting issue, not another Stage 2 acquisition or broad query fix.
