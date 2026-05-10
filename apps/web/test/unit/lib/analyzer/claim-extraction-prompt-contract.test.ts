@@ -635,13 +635,16 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("independently be verified, falsified, or dated on their own");
       expect(pass2).toContain("treat the input as `multi_assertion_input`");
       expect(pass2).toContain("Process/result assessment override");
+      expect(pass2).toContain("own wording separately names");
       expect(pass2).toContain("process/procedure/proceeding and its result");
       expect(pass2).toContain("Split the process/procedure assessment and the result/outcome assessment");
+      expect(pass2).toContain("Do not infer a separate result/outcome claim merely because a broad process word could include later phases");
       expect(pass2).toContain("Extract one thesis-direct atomic claim per explicit independently verifiable proposition");
       expect(pass2).toContain("preserve each explicit independently verifiable proposition");
       expect(pass2).toContain("Do NOT omit a later coordinated proposition");
       expect(pass2).toContain("Do NOT let one returned claim absorb or paraphrase away another explicit coordinated proposition");
       expect(pass2).toContain("Do NOT keep a combined \"process and result met the standard\" claim");
+      expect(pass2).toContain("Do not create an extra result/outcome claim for a predicate that the input applied only to a broad process/proceeding noun");
       expect(pass2).toContain("preserve the shared anchor");
       expect(pass2).toContain("do NOT keep the unsplit whole sentence alongside branch claims");
       expect(pass2).toContain("A conjunctive clause such as \"A and B decided\" does NOT count as a single atomic branch");
