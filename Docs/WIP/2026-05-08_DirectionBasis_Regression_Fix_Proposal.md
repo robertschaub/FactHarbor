@@ -811,3 +811,103 @@ Next gate:
 2. If another asylum job is considered, first do a short no-edit review of `fd93d0de531243a18d2097b38351f4d4` against `3ba25fe7c99f4b96822e37a6a65f6bb1` and deployed `6a60b3eb0df540c0b16228d9367b1366`, focused only on whether component reconstruction stayed caveat-only.
 3. The next best use of the remaining jobs is likely a different corrected-family canary, especially canonical `bolsonaro-en`, after restating its true-side band and stop rule.
 4. Remaining budget from the latest 8-job allocation after this canary: 4.
+
+### 12.16 Bolsonaro EN Current Pass - 2026-05-10
+
+Captain restated the target after the first current true-side pass still left AC_02/AC_03 `MIXED`: the canonical `bolsonaro-en` input must keep the three-claim split, and the proceedings/fair-trial and verdict/fair-trial claims should be verifiable and true-side under the corrected expectation unless direct operative defect evidence defeats them.
+
+Debt-guard classification before this slice:
+
+- Prior claim-shape and seeded-sufficiency fixes: **keep**. They are generic and still necessary for the input to prepare and retain three claims.
+- High-harm confidence advisory label fix (`dc312317`): **keep**. Advisory confidence should not override canonical truth-scale labels to `UNVERIFIED`.
+- First current validation after `dc312317`, job `15ff9e18fea34816b8ee6fd8d96d87c2`: **quarantine as incomplete**. It fixed preparation and verifiability but left AC_02/AC_03 as `MIXED`, outside Captain's corrected true-side expectation.
+
+Narrow fixes and live evidence:
+
+- `48e884d3 fix(prompts): keep remedy mechanics caveated` kept appeal/remedy mechanics and model-background standards commentary from becoming direct contradiction without an operative bridge. Live job `9d7fe6fed6a746b893a6ccc0176de733` recovered the article top line (`LEANING-TRUE` 59/40) but left AC_02/AC_03 `UNVERIFIED`; keep as directionally correct but insufficient.
+- `ffe7a455 fix(verdict): repair one-sided middle-band claims` repairs one-sided direct-evidence verdicts stuck in the mixed/UNVERIFIED band. Live job `5b8f118288964d1a84541123091c4803` still failed overall (`UNVERIFIED` 56/28) because AC_02 had no direct support to repair; keep the guard, but it is not the whole cause.
+- `5dc1d675 fix(research): prioritize safeguard records for standards claims` adds generic query guidance for rule-governed standards claims: when only one query may survive budget/truncation, prefer the directly evaluated target's safeguard/process record over broad standards commentary. Focused prompt/stage tests passed, runtime was restarted/reseeded, and exact job `8761ab59a825430ab3bd2ae325dc4573` passed.
+
+Current exact pass:
+
+- Job: `8761ab59a825430ab3bd2ae325dc4573`
+- Commit/prompt: `5dc1d67568a2239b89ea6df96918360fd57cb83a+a8d67c56`, prompt hash `d4096000536c83efc77374d384f5aa5c0ab1e337e125405ad06c4c183a75dd4a`
+- Overall: `LEANING-TRUE` 65/50, 6 boundaries, 3 claims
+- AC_01: `MOSTLY-TRUE` 74/63, 9 supports / 0 contradictions
+- AC_02: `LEANING-TRUE` 58/48, 8 supports / 0 contradictions
+- AC_03: `LEANING-TRUE` 62/44, 4 supports / 0 contradictions
+- `state.gov` residue check: one preliminary-search candidate was present, but it was not selected for fetch and extracted zero evidence; no final-citation contamination was found in the verified report view.
+
+Quality read:
+
+- This satisfies the corrected `bolsonaro-en` expectation at article level and fixes the user-reported "others should be verifiable" issue: AC_02 and AC_03 are now explicit, supported, and true-side.
+- Treat as **current-pass/watch**, not broad closure. AC_03 confidence is 44, just below the family confidence band if claim-level bands are enforced; the report also has one admin-only claim-local citation registry warning for AC_02. Neither issue changes the visible verdict, but both should be reviewed before promoting `8761ab59` as the preferred current-stack comparator.
+- The query prompt amendment did not visibly rewrite the first AC_02 query in this run; the live improvement came from the combined current stack surfacing and mapping target-path safeguards. Do not over-attribute the pass to a single changed line.
+
+Next gate:
+
+1. Do not spend another Bolsonaro EN job immediately.
+2. Do a no-edit report-quality review of `8761ab59a825430ab3bd2ae325dc4573` against `Captain_Quality_Expectations.md`, `benchmark-expectations.json`, `report-quality-expectations.json`, and exact comparators `91bf6083d26e407c98a474d89d2e618f` / `85812d61a3984fa6bb945d4096eaa039`.
+3. Only if that review identifies a focused stability question, spend one more exact Bolsonaro EN rerun; otherwise move to the next open family/control.
+4. Captain later granted an 8-job budget for the active rerun lane. This Bolsonaro EN slice spent 3 live jobs (`9d7fe6f`, `5b8f118`, `8761ab59`), so count at most 5 remaining from that later allocation unless Captain resets the budget.
+
+### 12.17 Bolsonaro EN No-Edit Comparator Review - 2026-05-10
+
+Assisted review:
+
+- Comparator helper: inspected `8761ab59`, exact local comparator `91bf6083d26e407c98a474d89d2e618f`, and exact deployed comparator `85812d61a3984fa6bb945d4096eaa039`.
+- Adversarial Q-code reviewer: applied `report-quality-expectations.json`, `benchmark-expectations.json`, and Captain current-pass/watch notes.
+- Main thread independently verified structured fields through local/deployed APIs.
+
+Decision:
+
+- **Do not spend another Bolsonaro EN job now.**
+- `8761ab59` is a legitimate current-stack exact pass and should supplement the comparator set, not replace `91bf6083` or `85812d61` as best comparators.
+- Core checks pass: job succeeded, article band passes, 3 claims and 6 boundaries, every claim has cited supporting evidence, source-type mix is broad, and no user-visible warning is emitted.
+- Remaining watch items are not rerun triggers:
+  - AC_03 confidence is 44, slightly below the family confidence band if claim-level bands are enforced, while article confidence is in band.
+  - One AC_02 claim-local citation registry warning is admin-only and the cited ID resolves as claim-local evidence.
+  - One `state.gov` item exists only as a rejected preliminary-search candidate with `selectedForFetch=false` and `extractedEvidenceCount=0`.
+  - `meta.evidenceBalance` reports 18 support / 19 contradiction / 41 neutral, while final evidence/narrative report 24 support / 0 contradiction / 61 neutral. This is a reporting-consistency follow-up, not a reason to rerun.
+
+Next gate:
+
+1. Keep `bolsonaro-en` at **current-pass/watch**.
+2. Preserve `91bf6083` as best exact local historical comparator and `85812d61` as best exact deployed comparator.
+3. Spend the next live-job budget on higher-value open validations unless Captain explicitly wants to close Bolsonaro EN stability with one same-stack repeat.
+4. If implementing anything from this review, start with a no-live-job investigation of the `meta.evidenceBalance` vs final-direction accounting mismatch.
+
+### 12.18 Asylum-WWII First Current Band - 2026-05-10
+
+Scope:
+
+- Exact Captain-defined input: `235000 Flüchtlinge leben in der Schweiz, das sind fast so viel im am Ende des Zweiten Weltkrieges.`
+- Runtime under test: local current stack `5dc1d67568a2239b89ea6df96918360fd57cb83a+ee246bc0`, prompt hash `d4096000536c83efc77374d384f5aa5c0ab1e337e125405ad06c4c183a75dd4a`.
+- No source/prompt/config edit was made for this slice; this was a validation/discovery run after the Bolsonaro EN no-job review.
+
+Live jobs:
+
+- `9e1f0f0014564edeaa0e673b43dc27e6`: `MOSTLY-FALSE` 25/73, 2 AtomicClaims, 6 ClaimAssessmentBoundaries, 55 evidence items, 44 sources.
+  - AC_01 current count: `MIXED` 55/75. The report recognized SEM/asylum-area support but kept definition caveats around "Flüchtlinge".
+  - AC_02 WWII comparison: `MOSTLY-FALSE` 18/72. The report treated the end-of-WWII value as endpoint stock around 100k-115k, not cumulative wartime admissions.
+- `ce265797d3fc4540a45aaeac99510e4a`: `LEANING-FALSE` 30/63, 2 AtomicClaims, 6 ClaimAssessmentBoundaries, 38 evidence items, 32 sources.
+  - AC_01 current count: `LEANING-TRUE` 65/72, grounded in the SEM 2025 aggregate around 235,057.
+  - AC_02 WWII comparison: `MOSTLY-FALSE` 22/58, again dominant and endpoint-stock based.
+
+Assisted review result:
+
+- The two exact current-stack reports agree on the important shape: the current 235k subclaim can be true-side or caveated depending on definition, but the historical-comparison subclaim dominates and is false-side.
+- Local `808e6f8ac29a4850b10ff04c9c534d85` is not a best comparator despite being exact and true-side. It appears to use cumulative WWII admissions/flows as support for an endpoint-stock comparison, which is the failure mode this family must catch.
+- Useful deployed comparators are exact `a48a621091da41f59bf1cb64676f6b76` (`MOSTLY-FALSE` 22/77) and near-exact `96282803637a46c28efe10f32b2cb47d` (`LEANING-FALSE` 41/61; missing final period).
+
+Expectation update:
+
+- `Docs/AGENTS/benchmark-expectations.json` now sets `asylum-wwii-de` to `MOSTLY-FALSE` / `LEANING-FALSE`, truth 18-42, confidence 50-75, min 2 boundaries.
+- `Docs/AGENTS/Captain_Quality_Expectations.md` now lists the current local pair and deployed comparators, with the explicit rule that "am Ende des Zweiten Weltkrieges" means endpoint stock unless Captain says otherwise.
+
+Next gate:
+
+1. Do not spend another immediate `asylum-wwii-de` job. Two exact current-stack runs are enough to move the family out of "not validated".
+2. Keep the family on watch until Captain accepts the new false-side band or requests one later stability spot-check.
+3. If reviewing future reports, fail any report that treats cumulative WWII admissions/flows as direct support for the endpoint-stock comparison.
+4. Latest renewed 8-job budget: 2 jobs spent on this slice, 6 remain.
