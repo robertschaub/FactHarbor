@@ -164,3 +164,6 @@ apps/web/scripts/tmp-sr-*
 # Agent context-extension reload artifacts are local, temporary, and may mention
 # investigation state that should not be committed.
 .codex/context-extension/
+
+# Codex CLI run artifacts (ephemeral agent session state)
+.codex-run/
