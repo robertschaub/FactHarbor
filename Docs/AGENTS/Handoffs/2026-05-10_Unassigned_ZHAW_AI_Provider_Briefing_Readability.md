@@ -1,0 +1,9 @@
+---
+### 2026-05-10 | Unassigned | Codex (GPT-5) | ZHAW AI Provider Briefing Readability Pass
+**Task:** Reorganize `C:\DEV\FactHarbor-internal\Operations\Finance\Finanzierung\ZHAW_Briefing_AI_Provider_Konditionen_2026-05-09.md` for readability and reduce information less important for ZHAW.
+**Files touched:** `C:\DEV\FactHarbor-internal\Operations\Finance\Finanzierung\ZHAW_Briefing_AI_Provider_Konditionen_2026-05-09.md`; `Docs/AGENTS/Handoffs/2026-05-10_Unassigned_ZHAW_AI_Provider_Briefing_Readability.md`; `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Kept the corrected framing: the paper describes FactHarbor's minimal Betrieb/Entwicklung resource needs and how ZHAW may reduce its own cost share for overlapping ZHAW/FactHarbor work. It does not define cost allocation between ZHAW and FactHarbor. Research credits/grants are explicitly outside scope. NPO discounts are stated with official OpenAI/Anthropic price references, and provider claims were tightened to eligibility/contract checks rather than assumptions.
+**Open items:** Provider pricing, eligibility, model availability, billing terms, and UI/API coverage remain volatile and should be rechecked before external submission or budget commitment.
+**Warnings:** Do not reintroduce Forderungs-Sprache toward ZHAW. Keep the document neutral: "zu prüfen", "offen", "mögliche ZHAW-interne Abklärungen". Do not treat Claude for Education, Azure/Foundry, AWS/GCP provider channels, GitHub Education, or FactHarbor NPO subscriptions as automatically covering API, Claude Code, Codex UI, and search costs.
+**For next agent:** Start from the rewritten briefing if preparing a ZHAW note. Current structure: Minimalbedarf by Betrieb vs Entwicklung, existing FactHarbor NPO discounts, ZHAW-relevant cost blocks, actually used services, provider channels, out-of-scope research grants/credits, optional ZHAW-internal clarification list, and sources.
+**Learnings:** no
