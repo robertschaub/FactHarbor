@@ -111,25 +111,38 @@ For FactHarbor, the practical recognition stack is:
   - Result: stronger legal nonprofit status and possible inclusion in the public Zurich list of tax-exempt institutions
   - **Not a blocker for Goodstack** but strongly recommended for long-term donor and foundation credibility
 
-### Phase 4: Claude for Nonprofits Application (Target: ~Week 5-6)
+### Phase 4: Claude for Nonprofits Application ✅ COMPLETED 2026-05-10
 
 **Prerequisites before applying:**
 
 - [X] Verein registered on zefix.ch (Handelsregister entry visible) — confirmed live 2026-05-07: https://www.zefix.ch/de/search/entity/list/firm/1747231
 - [X] Org email `info@factharbor.ch` set up (for Goodstack agent verification)
-- [ ] Statutes PDF ready (signed, dated 30+ days before application)
-- [ ] Bank statement PDF ready (original electronic, dated 30+ days before application)
+- [X] Statutes PDF ready
 - [X] UID assigned: `CHE-448.446.098`
 
 **Application steps:**
 
-- [ ] Go to [Claude for Nonprofits](https://claude.com/solutions/nonprofits)
-- [ ] Complete Goodstack validation form (2–3 minutes)
-  - Goodstack will verify: org exists in registry, compliance checks, eligibility, agent email
-- [ ] If additional docs requested: upload statutes PDF + bank statement PDF
-- [ ] Receive eligibility confirmation email from Anthropic
-- [ ] Sign up using verified email — select "With my team" (minimum 5 seats)
-- [ ] Complete Team plan setup ($8/user/month with 75% discount)
+- [X] Complete Goodstack validation — approved by Anthropic (confirmation email received 2026-05-10)
+- [X] Sign up for Claude for Teams with `info@factharbor.ch`
+- [X] NPO discount auto-applied at checkout
+- [X] Team workspace "Factharbor" created, domain `factharbor.ch` registered
+- [X] First invoice paid: $51.89 (May 10, 2026)
+
+**Active plan details (as of 2026-05-10):**
+
+- Workspace: "Factharbor" (Org-ID: `0e93098f-9030-400d-b3b3-d1b749bc732d`)
+- Plan: Team-Plan (Nonprofit)
+- Seats: 2 (1 available), 1 member
+- Billing breakdown: 1 × Team plan - Nonprofit ($8.00/mo) + 1 × Claude Team - Nonprofit Premium ($40.00/mo) = **$48.00/mo** + tax = $51.89/mo
+- Next billing: June 10, 2026
+- Payment: Visa ····3977
+- Admin account: `info@factharbor.ch`
+
+**Personal plan migration:**
+
+- Previous personal plan on `11rschaub@gmail.com`: Claude Max ($216.20/mo)
+- Cancellation scheduled: May 11, 2026
+- Extra usage balance at cancellation: $230.01 (check whether this transfers or is forfeited)
 
 ### Phase 4b: OpenAI for Nonprofits Application (Target: parallel to Phase 4)
 
@@ -221,7 +234,7 @@ For FactHarbor, the practical recognition stack is:
 | Domain registration (factharbor.ch)                     | CHF 15–30/year                         |
 | Email hosting for info@factharbor.ch (ProtonMail etc.) | CHF 0–48/year                          |
 | Bank account                                            | CHF 0 (many banks free for Verein)      |
-| Claude for Nonprofits (5 seats)                         | ~$10/month ($2/seat after 75% discount) |
+| Claude for Nonprofits (active)                          | $51.89/month (1 seat: $8 base + $40 Premium + tax) |
 | **Total one-time**                                      | **~CHF 700–1,700**                     |
 
 ## Timeline Summary
@@ -235,8 +248,9 @@ For FactHarbor, the practical recognition stack is:
 2026-05-06:  ✅ Tax-exemption application submitted (Gemeinnützige Zwecke, Kanton Zürich)
 2026-05-07:  ✅ Zefix entry live: https://www.zefix.ch/de/search/entity/list/firm/1747231
 ~2026-05-xx: Bank account opening confirmation / first bank document (expected next artifact)
-~2026-05-23: 30-day doc age met → Apply Goodstack (covers both Anthropic + OpenAI)
-~2026-05-24: Goodstack verified (1-72 hours) → Claude for Nonprofits + OpenAI for Nonprofits
+2026-05-10:  ✅ Goodstack approved → Claude for Nonprofits activated (Team-Plan Nonprofit, $51.89/mo)
+2026-05-11:  Personal Claude Max plan cancellation effective; extra usage balance $230.01
+~2026-05-xx: Apply Goodstack for OpenAI for Nonprofits (same validation covers both)
 Parallel:    Tax-exempt application, TechSoup, AWS/Google credits
 ```
 
