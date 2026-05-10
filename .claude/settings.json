@@ -4,14 +4,15 @@
     "CLAUDE_CODE_EFFORT_LEVEL": "max",
     "MAX_THINKING_TOKENS": "63999"
   },
-  "showThinkingSummaries": true,
   "permissions": {
-    "defaultMode": "bypassPermissions",
     "allow": [
       "Bash(git log:*)",
       "Bash(npm test)",
-      "Bash(node scripts/build-index.mjs)"
-    ]
+      "Bash(node scripts/build-index.mjs)",
+      "Read(//c/DEV/FactHarbor-internal/Operations/Finance/Finanzierung/**)",
+      "Read(//c/DEV/FactHarbor-internal/**)"
+    ],
+    "defaultMode": "bypassPermissions"
   },
   "hooks": {
     "PostToolUse": [
@@ -45,5 +46,6 @@
         ]
       }
     ]
-  }
+  },
+  "showThinkingSummaries": true
 }
