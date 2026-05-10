@@ -899,6 +899,7 @@ describe("Research Extraction Stage", () => {
     it("routes applicability direction decisions through the extraction model tier", async () => {
       const claims = [createClaim({ statement: "Entity A's current metric is comparable to reference metric B" })];
       const evidence = [createEvidence({ statement: "Source-native metric value for the reference side." })];
+      const config = { extractEvidenceLlmTimeoutMs: 234567 } as any;
 
       mockLoadSection.mockResolvedValue({ content: "prompt", variables: {} });
       mockGenerateText.mockResolvedValue({ text: "" } as any);
@@ -908,9 +909,12 @@ describe("Research Extraction Stage", () => {
         ],
       });
 
-      await assessEvidenceApplicability(claims, evidence, "CH", mockConfig);
+      await assessEvidenceApplicability(claims, evidence, "CH", config);
 
-      expect(mockGetModelForTask).toHaveBeenCalledWith("extract_evidence", undefined, mockConfig);
+      expect(mockGetModelForTask).toHaveBeenCalledWith("extract_evidence", undefined, config);
+      expect(mockGenerateText).toHaveBeenCalledWith(expect.objectContaining({
+        timeout: 234567,
+      }));
     });
 
     it("should preserve existing claim mappings and add LLM-assessed comparison claim mappings", async () => {

@@ -583,6 +583,7 @@ export async function assessEvidenceApplicability(
         { role: "user", content: "Classify each evidence item by applicability and claim relevance." },
       ],
       temperature: pipelineConfig?.relevanceClassificationTemperature ?? 0.1,
+      timeout: pipelineConfig.extractEvidenceLlmTimeoutMs,
       output: Output.object({ schema: ApplicabilityAssessmentOutputSchema }),
       providerOptions: getStructuredOutputProviderOptions(
         model.provider,
