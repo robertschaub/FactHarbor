@@ -773,6 +773,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("broad target-specific standards/compliance discovery");
       expect(section).toContain("neutral safeguard, record, compliance, assessment, or standards wording");
       expect(section).toContain("alleged-defect, violation, criticism, dissent, official-docket, or artifact-only route");
+      expect(section).toContain("When query budget or downstream truncation may leave only one returned query");
+      expect(section).toContain("prioritize the directly evaluated target's source-native safeguard/process record");
+      expect(section).toContain("Standard-definition and commentary routes are secondary");
     });
 
     it("preserves source-native route labels in generated queries", () => {
