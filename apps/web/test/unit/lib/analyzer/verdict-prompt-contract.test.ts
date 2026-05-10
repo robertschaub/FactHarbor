@@ -435,6 +435,27 @@ describe("Stage-4 prompt contract", () => {
       expect(reconciliation).toContain("keep the limitation as a confidence, misleadingness, or middle-range truth caveat");
     });
 
+    it("verdict prompts keep neutral standards caveats from defeating one-sided direct support", () => {
+      const advocate = extractSection(promptContent, "VERDICT_ADVOCATE");
+      const reconciliation = extractSection(promptContent, "VERDICT_RECONCILIATION");
+      const validation = extractSection(promptContent, "VERDICT_DIRECTION_VALIDATION");
+      const repair = extractSection(promptContent, "VERDICT_DIRECTION_REPAIR");
+
+      expect(advocate).toContain("For rule-governed legality, procedure, fairness, compliance, validity, or standards claims");
+      expect(advocate).toContain("do not move the verdict to a false-side, low-truth, or UNVERIFIED result solely because unanswered components or concerns remain");
+      expect(advocate).toContain("Absence of a formal assessment by a specific external tribunal, monitor, or standards body is not itself contrary evidence");
+
+      expect(reconciliation).toContain("reconcile neutral caveats as caveats");
+      expect(reconciliation).toContain("do not accept a challenge that lowers the verdict to false-side, low-truth, or UNVERIFIED solely from neutral concern-only");
+      expect(reconciliation).toContain("It may cap confidence, but it does not defeat direct target-path safeguard support");
+
+      expect(validation).toContain("flag the issue as a truth/calibration mismatch");
+      expect(validation).toContain("Do not instruct the repair step to move such neutral material into `contradictingEvidenceIds`");
+
+      expect(repair).toContain("do not reclassify that neutral material as contradiction");
+      expect(repair).toContain("set truth to a weak-support or middle-true range unless the evidence pool contains direct contradicting items");
+    });
+
     it("direction validation rejects non-direct directional citations", () => {
       const section = extractSection(promptContent, "VERDICT_DIRECTION_VALIDATION");
       expect(section).toContain("Consider the `applicability` field when present");
