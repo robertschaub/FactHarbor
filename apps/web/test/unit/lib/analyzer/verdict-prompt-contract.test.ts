@@ -970,10 +970,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
       expect(section).toContain("earlier or parallel episodes, collateral inquiries, sanctions, or broader institutional controversies");
       expect(section).toContain("decision artifact, evidentiary act, remedy/safeguard, or other procedural feature of the directly evaluated target itself");
+      expect(section).toContain("same named proceeding, process path, decision, verdict");
+      expect(section).toContain("same judge, panel, court, institution, jurisdiction");
       expect(section).toContain("a source does not need to pronounce the final compliance answer");
       expect(section).toContain("target-specific safeguard or defect records can be directional");
       expect(section).toContain("evidence access, witness participation, appeal paths, recusal/remedy review");
       expect(section).toContain("do not demote the item to `contextual` merely because no international body or final standards authority states the whole conclusion");
+      expect(section).toContain("Do NOT treat a denied, rejected, or upheld party request as a contradiction");
+      expect(section).toContain("Separate restrictive measures, custody conditions, sanctions");
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
@@ -1066,7 +1070,8 @@ describe("Stage-2 prompt contract", () => {
     it("keeps overlap-only rule-governed controversies contextual unless they document the target path", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
-      expect(section).toContain("earlier or parallel episode, collateral inquiry, sanction episode, or broader institutional controversy");
+      expect(section).toContain("earlier or parallel episode, collateral inquiry, sanction episode, separate restrictive measure");
+      expect(section).toContain("adjacent litigation, or broader institutional controversy");
       expect(section).toContain("directly documents the target path");
       expect(section).toContain("Overlap in actors or institutions alone is insufficient");
     });
@@ -1097,16 +1102,18 @@ describe("Stage-2 prompt contract", () => {
     it("requires a same-target bridge before rule-governed concern material becomes directional", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("requires a concrete bridge to the same evaluated proceeding");
-      expect(section).toContain("decision, verdict, safeguard, remedy, or standards outcome");
+      expect(section).toContain("decision, verdict, final determination, safeguard");
+      expect(section).toContain("same judge, panel, court, institution, jurisdiction");
       expect(section).toContain("Procedural roles, public-access limits, alleged coordination");
       expect(section).toContain("dual-role facts, criticism, concern");
       expect(section).toContain("safeguard denial/provision, compliance/noncompliance outcome");
+      expect(section).toContain("separate restrictive measures, custody conditions");
       expect(section).toContain("`direct_safeguard_record` is component-level directional evidence");
       expect(section).toContain("reasoned decisions, public hearings, evidence access, witness participation");
       expect(section).toContain("even when no source states the whole standards conclusion");
-      expect(section).toContain("Use `\"neutral\"` for bare chronology, role labels, docket membership, allegations, concerns, or appearance-risk material");
+      expect(section).toContain("Use `\"neutral\"` for bare chronology, role labels, docket membership, denied/rejected/upheld party requests without a source-stated standards defect");
       expect(section).toContain("role facts, objections, criticism, concern, appearance-risk material");
-      expect(section).toContain("same target's safeguard/remedy action, operative outcome, or standards conclusion");
+      expect(section).toContain("same target's safeguard/remedy action, right impairment, operative outcome, or standards conclusion");
     });
 
     it("allows neutral external target-path safeguard documentation to be direct without letting foreign official positions through", () => {
