@@ -994,6 +994,7 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("decision artifact, evidentiary act, remedy/safeguard, or other procedural feature of the directly evaluated target itself");
       expect(section).toContain("same named proceeding, process path, decision, verdict");
       expect(section).toContain("same judge, panel, court, institution, jurisdiction");
+      expect(section).toContain("Broader institutional reports about related investigations, confidentiality practices, expression limits");
       expect(section).toContain("a source does not need to pronounce the final compliance answer");
       expect(section).toContain("target-specific safeguard or defect records can be directional");
       expect(section).toContain("evidence access, witness participation, appeal paths, recusal/remedy review");
@@ -1003,6 +1004,8 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Potential or apparent adjudicator bias");
       expect(section).toContain("adopted recusal/disqualification decision");
       expect(section).toContain("Limited, narrow, short-deadline");
+      expect(section).toContain("unlikely-to-change-the-outcome appeal/remedy mechanics");
+      expect(section).toContain("Do not infer a standards violation from an outcome-probability prediction");
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
@@ -1141,6 +1144,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Use `\"neutral\"` with `\"concern_only\"` or `\"procedural_fact_only\"`");
       expect(section).toContain("Dissents, minority votes, expert views, party motions");
       expect(section).toContain("Limited, narrow, short-deadline");
+      expect(section).toContain("unlikely-to-change-the-outcome appeal/remedy mechanics");
+      expect(section).toContain("Do not infer a standards violation from an outcome-probability prediction");
+      expect(section).toContain("Broader institutional reports about related investigations, confidentiality practices, expression limits");
+      expect(section).toContain("`\"collateral_context\"` unless the item evaluates the exact target proceeding/path");
       expect(section).toContain("role facts, objections, criticism, concern, appearance-risk material");
       expect(section).toContain("same target's safeguard/remedy action, right impairment, operative outcome, or standards conclusion");
     });
