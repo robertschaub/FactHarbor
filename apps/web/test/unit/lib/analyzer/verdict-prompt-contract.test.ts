@@ -978,6 +978,9 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("do not demote the item to `contextual` merely because no international body or final standards authority states the whole conclusion");
       expect(section).toContain("Do NOT treat a denied, rejected, or upheld party request as a contradiction");
       expect(section).toContain("Separate restrictive measures, custody conditions, sanctions");
+      expect(section).toContain("Potential or apparent adjudicator bias");
+      expect(section).toContain("adopted recusal/disqualification decision");
+      expect(section).toContain("Limited, narrow, short-deadline");
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
@@ -1112,6 +1115,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("reasoned decisions, public hearings, evidence access, witness participation");
       expect(section).toContain("even when no source states the whole standards conclusion");
       expect(section).toContain("Use `\"neutral\"` for bare chronology, role labels, docket membership, denied/rejected/upheld party requests without a source-stated standards defect");
+      expect(section).toContain("victim/decision-maker overlap");
+      expect(section).toContain("Use `\"neutral\"` with `\"concern_only\"` or `\"procedural_fact_only\"`");
+      expect(section).toContain("Dissents, minority votes, expert views, party motions");
+      expect(section).toContain("Limited, narrow, short-deadline");
       expect(section).toContain("role facts, objections, criticism, concern, appearance-risk material");
       expect(section).toContain("same target's safeguard/remedy action, right impairment, operative outcome, or standards conclusion");
     });
