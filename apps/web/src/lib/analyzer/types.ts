@@ -282,7 +282,9 @@ export type SourceType =
 /**
  * Basis for a claim-local evidence direction assignment.
  * This is diagnostic metadata explaining why the LLM assigned the
- * claim-local direction; it is not a second source of behavioral authority.
+ * claim-local direction. Undefined basis is not a veto; runtime may only
+ * use an explicit non-directional basis as a schema-consistency guard when
+ * the same LLM output also assigns a directional claimDirection.
  */
 export const DIRECTION_BASIS_VALUES = [
   "direct_substantive_finding",

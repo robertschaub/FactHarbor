@@ -83,6 +83,24 @@ export const ApplicabilityAssessmentOutputSchema = z.object({
   })),
 });
 
+type ClaimDirectionLabel = NonNullable<EvidenceItem["claimDirection"]>;
+
+const DIRECTIONAL_DIRECTION_BASES = new Set<DirectionBasis>([
+  "direct_substantive_finding",
+  "direct_metric_value",
+  "direct_source_native_comparison_side",
+  "direct_safeguard_record",
+  "operative_standards_outcome",
+]);
+
+function normalizeClaimDirectionByBasis(
+  direction: ClaimDirectionLabel,
+  basis?: DirectionBasis,
+): ClaimDirectionLabel {
+  if (direction === "neutral" || basis === undefined) return direction;
+  return DIRECTIONAL_DIRECTION_BASES.has(basis) ? direction : "neutral";
+}
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -591,7 +609,7 @@ export async function assessEvidenceApplicability(
     // Existing mappings are preserved; this pass only fills missing multi-claim
     // links found by the same LLM call.
     const knownClaimIds = new Set(claims.map((claim) => claim.id));
-    type ClaimDirection = NonNullable<EvidenceItem["claimDirection"]>;
+    type ClaimDirection = ClaimDirectionLabel;
     interface DirectionWithBasis {
       claimDirection: ClaimDirection;
       directionBasis?: DirectionBasis;
@@ -607,7 +625,7 @@ export async function assessEvidenceApplicability(
       for (const directionEntry of assessment.claimDirectionByClaimId ?? []) {
         if (!knownClaimIds.has(directionEntry.claimId)) continue;
         const basis = directionEntry.directionBasis;
-        const direction: ClaimDirection = directionEntry.claimDirection;
+        const direction = normalizeClaimDirectionByBasis(directionEntry.claimDirection, basis);
 
         directionByClaim.set(directionEntry.claimId, {
           claimDirection: direction,

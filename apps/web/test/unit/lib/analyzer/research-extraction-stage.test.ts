@@ -1069,7 +1069,7 @@ describe("Research Extraction Stage", () => {
       );
     });
 
-    it("keeps direction basis diagnostic when an existing directional item remains directional", async () => {
+    it("neutralizes existing directional evidence when the LLM pairs direction with an explicit non-directional basis", async () => {
       const claims = [
         createClaim({
           id: "AC_01",
@@ -1111,7 +1111,7 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         id: "EV_01",
-        claimDirection: "contradicts",
+        claimDirection: "neutral",
         directionBasis: "collateral_context",
         relevantClaimIds: ["AC_01"],
         applicability: "direct",
@@ -1218,7 +1218,7 @@ describe("Research Extraction Stage", () => {
       });
     });
 
-    it("preserves LLM claim-local direction when direction basis is diagnostic metadata", async () => {
+    it("does not clone directional claim-local evidence when the LLM supplies an explicit non-directional basis", async () => {
       const claims = [
         createClaim({ id: "AC_01", statement: "Target process complied with the relevant standard" }),
       ];
@@ -1256,8 +1256,8 @@ describe("Research Extraction Stage", () => {
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
-        id: "EV_01__supports_AC_01",
-        claimDirection: "supports",
+        id: "EV_01",
+        claimDirection: "neutral",
         directionBasis: "concern_only",
         directnessJustification: "concern without operative target outcome",
         relevantClaimIds: ["AC_01"],
