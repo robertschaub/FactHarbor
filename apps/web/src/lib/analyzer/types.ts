@@ -1064,6 +1064,7 @@ export type AnalysisWarningType =
   | "verdict_direction_issue"          // Verdict direction validation found truth%/evidence misalignment
   | "verdict_citation_integrity_guard" // Final citation sanitation removed decisive/invalid directional citations
   | "direction_rescue_plausible"       // Verdict direction issue was overridden by plausibility rescue
+  | "high_harm_low_confidence"         // High-harm claim stayed directional but confidence is below advisory floor
   | "challenger_failure"               // Adversarial challenger LLM call failed (malformed output, timeout, etc.) — verdict proceeds without challenge
   | "llm_tpm_guard_fallback"           // OpenAI TPM guard swapped to smaller model (routine successful fallback)
   | "low_claim_count"                  // D1: Claim decomposition produced fewer claims than minimum after reprompt attempts

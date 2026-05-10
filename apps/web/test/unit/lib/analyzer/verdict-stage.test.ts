@@ -3504,7 +3504,7 @@ describe("enforceHarmConfidenceFloor", () => {
     highHarmMinConfidence: 50,
   };
 
-  it("should downgrade high-harm claim with low confidence to UNVERIFIED", () => {
+  it("should flag high-harm claim with low confidence without overriding verdict", () => {
     const verdicts = [createVerdict({
       harmPotential: "high",
       confidence: 30,
@@ -3512,14 +3512,15 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "MOSTLY-TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");
-    // Original truthPercentage and confidence preserved for transparency
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
     expect(result[0].truthPercentage).toBe(72);
     expect(result[0].confidence).toBe(30);
+    expect(warnings[0]?.type).toBe("high_harm_low_confidence");
   });
 
-  it("should downgrade critical-harm claim with low confidence to UNVERIFIED", () => {
+  it("should flag critical-harm claim with low confidence without overriding verdict", () => {
     const verdicts = [createVerdict({
       harmPotential: "critical",
       confidence: 45,
@@ -3527,8 +3528,10 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "MOSTLY-TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(warnings[0]?.type).toBe("high_harm_low_confidence");
   });
 
   it("should NOT downgrade high-harm claim with sufficient confidence", () => {
@@ -3539,8 +3542,10 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "MOSTLY-TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
     expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(warnings).toHaveLength(0);
   });
 
   it("should NOT affect medium-harm claims regardless of confidence", () => {
@@ -3551,8 +3556,10 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "MOSTLY-TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
     expect(result[0].verdict).toBe("MOSTLY-TRUE");
+    expect(warnings).toHaveLength(0);
   });
 
   it("should NOT affect low-harm claims regardless of confidence", () => {
@@ -3563,11 +3570,13 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
     expect(result[0].verdict).toBe("TRUE");
+    expect(warnings).toHaveLength(0);
   });
 
-  it("should leave already-UNVERIFIED verdicts unchanged", () => {
+  it("should leave already-UNVERIFIED verdicts unchanged while flagging the confidence issue", () => {
     const verdicts = [createVerdict({
       harmPotential: "critical",
       confidence: 20,
@@ -3575,8 +3584,10 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "UNVERIFIED",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
     expect(result[0].verdict).toBe("UNVERIFIED");
+    expect(warnings[0]?.type).toBe("high_harm_low_confidence");
   });
 
   it("should be disabled when threshold is 0", () => {
@@ -3588,8 +3599,10 @@ describe("enforceHarmConfidenceFloor", () => {
       verdict: "TRUE",
     })];
 
-    const result = enforceHarmConfidenceFloor(verdicts, disabledConfig);
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, disabledConfig, warnings);
     expect(result[0].verdict).toBe("TRUE");
+    expect(warnings).toHaveLength(0);
   });
 
   it("should handle mixed verdicts (some high-harm, some not)", () => {
@@ -3611,10 +3624,12 @@ describe("enforceHarmConfidenceFloor", () => {
       }),
     ];
 
-    const result = enforceHarmConfidenceFloor(verdicts, config);
-    expect(result[0].verdict).toBe("UNVERIFIED");    // high-harm, low confidence
+    const warnings: any[] = [];
+    const result = enforceHarmConfidenceFloor(verdicts, config, warnings);
+    expect(result[0].verdict).toBe("MOSTLY-TRUE");   // high-harm, low confidence; label preserved
     expect(result[1].verdict).toBe("MOSTLY-TRUE");   // medium-harm, not affected
     expect(result[2].verdict).toBe("MOSTLY-TRUE");   // high-harm, sufficient confidence
+    expect(warnings).toHaveLength(1);
   });
 
   it("should use the exact threshold boundary correctly", () => {
@@ -3625,12 +3640,14 @@ describe("enforceHarmConfidenceFloor", () => {
     })];
     expect(enforceHarmConfidenceFloor(atThreshold, config)[0].verdict).toBe("MOSTLY-TRUE");
 
-    // Confidence one below threshold — SHOULD be downgraded
+    // Confidence one below threshold — SHOULD be flagged but not relabeled
     const belowThreshold = [createVerdict({
       harmPotential: "high", confidence: 49,
       truthPercentage: 72, verdict: "MOSTLY-TRUE",
     })];
-    expect(enforceHarmConfidenceFloor(belowThreshold, config)[0].verdict).toBe("UNVERIFIED");
+    const warnings: any[] = [];
+    expect(enforceHarmConfidenceFloor(belowThreshold, config, warnings)[0].verdict).toBe("MOSTLY-TRUE");
+    expect(warnings[0]?.type).toBe("high_harm_low_confidence");
   });
 
   it("should respect UCM-configured highHarmFloorLevels", () => {
@@ -3641,12 +3658,14 @@ describe("enforceHarmConfidenceFloor", () => {
     })];
     expect(enforceHarmConfidenceFloor(mediumHarm, config)[0].verdict).toBe("MOSTLY-TRUE");
 
-    // With "medium" added to floor levels: medium-harm now triggers
+    // With "medium" added to floor levels: medium-harm now emits the advisory warning
     const expandedConfig: VerdictStageConfig = {
       ...config,
       highHarmFloorLevels: ["critical", "high", "medium"],
     };
-    expect(enforceHarmConfidenceFloor(mediumHarm, expandedConfig)[0].verdict).toBe("UNVERIFIED");
+    const warnings: any[] = [];
+    expect(enforceHarmConfidenceFloor(mediumHarm, expandedConfig, warnings)[0].verdict).toBe("MOSTLY-TRUE");
+    expect(warnings[0]?.type).toBe("high_harm_low_confidence");
   });
 });
 

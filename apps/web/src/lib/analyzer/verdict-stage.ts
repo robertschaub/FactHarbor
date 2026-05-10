@@ -302,8 +302,8 @@ export interface VerdictStageConfig {
 
   /**
    * Minimum confidence required for high-harm claims (harmPotential "critical" or "high")
-   * before a definitive verdict is issued. Claims below this threshold are downgraded
-   * to UNVERIFIED regardless of truth percentage.
+   * before a definitive verdict is considered fully confident. Claims below this
+   * threshold keep their canonical verdict label and emit an informational warning.
    *
    * Addresses C8 (advisory-only validation) from Stammbach/Ash political bias analysis.
    * Default 50. Set to 0 to disable.
@@ -591,8 +591,8 @@ export async function runVerdictStage(
     }
   }
 
-  // Step 5b: High-harm confidence floor (C8 — Stammbach/Ash bias mitigation)
-  const harmEnforcedVerdicts = enforceHarmConfidenceFloor(validatedVerdicts, config);
+  // Step 5b: High-harm confidence advisory (C8 — Stammbach/Ash bias mitigation)
+  const harmEnforcedVerdicts = enforceHarmConfidenceFloor(validatedVerdicts, config, warnings);
 
   // Gate 4: Confidence classification
   const finalVerdicts = classifyConfidence(harmEnforcedVerdicts);
@@ -3788,22 +3788,22 @@ export function runStructuralConsistencyCheck(
  * Enforce minimum confidence for high-harm claims.
  *
  * Claims with harmPotential "critical" or "high" that fall below the
- * configured minimum confidence are downgraded to UNVERIFIED. This prevents
- * low-evidence definitive verdicts on potentially harmful topics.
+ * configured minimum confidence are flagged for caution. The canonical
+ * truth-scale mapping remains authoritative for the verdict label.
  *
  * Rationale: A claim like "Treatment X cures disease Y" scored at 72%
- * (MOSTLY-TRUE) with only 25% confidence is epistemically dangerous —
- * it gives a definitive-sounding verdict without sufficient evidentiary
- * backing. For high-harm claims, insufficient confidence should yield
- * UNVERIFIED rather than a misleading directional verdict.
+ * (MOSTLY-TRUE) with only 25% confidence is epistemically risky, but
+ * overriding the label creates inconsistent results such as UNVERIFIED 72%.
+ * Preserve the label and expose the low confidence through warning metadata.
  *
  * @param verdicts - Verdicts from the debate pipeline
  * @param config - Verdict stage configuration (highHarmMinConfidence threshold)
- * @returns Verdicts with high-harm low-confidence claims downgraded to UNVERIFIED
+ * @returns Verdicts unchanged; warnings carry the advisory floor signal
  */
 export function enforceHarmConfidenceFloor(
   verdicts: CBClaimVerdict[],
   config: VerdictStageConfig,
+  warnings?: AnalysisWarning[],
 ): CBClaimVerdict[] {
   const threshold = config.highHarmMinConfidence ?? 50;
   if (threshold <= 0) return verdicts; // Disabled
@@ -3814,18 +3814,26 @@ export function enforceHarmConfidenceFloor(
     const isHighHarm = (floorLevels as ReadonlyArray<string>).includes(v.harmPotential);
     if (!isHighHarm || v.confidence >= threshold) return v;
 
-    // Already UNVERIFIED — no change needed
-    if (v.verdict === "UNVERIFIED") return v;
-
     console.warn(
       `[VerdictStage] High-harm claim ${v.claimId} (harmPotential=${v.harmPotential}) ` +
-      `has confidence ${v.confidence}% < threshold ${threshold}% — downgrading to UNVERIFIED`
+      `has confidence ${v.confidence}% < threshold ${threshold}% — preserving canonical verdict ${v.verdict}`
     );
+    warnings?.push({
+      type: "high_harm_low_confidence",
+      severity: "info",
+      message:
+        `Claim ${v.claimId}: high-harm confidence ${v.confidence}% is below advisory floor ${threshold}%; ` +
+        `canonical verdict ${v.verdict} preserved.`,
+      details: {
+        claimId: v.claimId,
+        harmPotential: v.harmPotential,
+        confidence: v.confidence,
+        threshold,
+        verdict: v.verdict,
+      },
+    });
 
-    return {
-      ...v,
-      verdict: "UNVERIFIED" as ClaimVerdict7Point,
-    };
+    return v;
   });
 }
 
