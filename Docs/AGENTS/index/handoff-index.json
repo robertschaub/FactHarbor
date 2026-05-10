@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-10T21:59:11.751Z",
-  "count": 399,
+  "generatedAt": "2026-05-10T22:24:13.506Z",
+  "count": 401,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8399,6 +8416,41 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from the rewritten briefing if preparing a ZHAW note. Current structure: Minimalbedarf by Betrieb vs Entwicklung, existing FactHarbor NPO discounts, ZHAW-relevant cost blocks, actually used services, provider channels, out-of-scope research grants/credits, optional ZHAW-internal clarification "
+    },
+    {
+      "file": "2026-05-11_DevOps_Gist_Sync_Secret_Repair.md",
+      "date": "2026-05-11",
+      "roles": [
+        "devops_expert"
+      ],
+      "topics": [
+        "devops",
+        "gist",
+        "sync",
+        "secret",
+        "repair"
+      ],
+      "files_touched": [
+        "GIST_PAT",
+        "robertschaub/FactHarbor-internal",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Latest rerun `25641172865` attempt 2 succeeded on commit `a52831a04967495b2e78da2628934babf5852c1c`; Gist `updated_at` became `2026-05-10T22:22:15Z`; local-vs-Gist content check returned `GIST_CONTENT_MATCHES_LOCAL`. If Gist sync breaks again, check `GIST_PAT` freshness/permissions first.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "keep existing workflow; external secret repair",
+            "root_cause": "GIST_PAT was reset after the last successful sync and then passed as empty auth to gist-sync-action, causing GitHub API 401 responses.",
+            "fix": "Updated repository secret GIST_PAT for robertschaub/FactHarbor-internal using the authenticated gh token with gist scope; reran the latest failed workflow.",
+            "verifiers": "gh run watch 25641172865 --exit-status succeeded; Gist API updated_at is 2026-05-10T22:22:15Z; local-vs-Gist content comparison returned GIST_CONTENT_MATCHES_LOCAL.",
+            "complexity_budget": "no workflow or source-code change; no new automation mechanism; one external secret update.",
+            "residual_risk": "token lifecycle and over-broad token scope; prefer a dedicated Gist PAT when available."
+          }
+        }
+      }
     }
   ]
 }

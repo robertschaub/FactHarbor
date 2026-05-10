@@ -2497,3 +2497,8 @@ Follow-up asylum-WWII first-band validation: spent 2 jobs from Captain's renewed
 ### 2026-05-10 | Unassigned | Codex (GPT-5) | ZHAW AI Provider Briefing Readability Pass -- [Standard] [open-items: yes]
 **For next agent:** `C:\DEV\FactHarbor-internal\Operations\Finance\Finanzierung\ZHAW_Briefing_AI_Provider_Konditionen_2026-05-09.md` now separates FactHarbor minimal Betrieb vs Entwicklung needs, existing FactHarbor NPO discounts, ZHAW-relevant cost blocks, provider channels, out-of-scope research credits/grants, and optional ZHAW-internal clarification points. Keep the language neutral toward ZHAW and recheck volatile provider eligibility, billing terms, and UI/API coverage before external submission.
 → Docs/AGENTS/Handoffs/2026-05-10_Unassigned_ZHAW_AI_Provider_Briefing_Readability.md
+
+---
+### 2026-05-11 | DevOps Expert | Codex (GPT-5) | Gist Sync Secret Repair -- [Standard] [open-items: yes]
+**For next agent:** Fixed stale Gist sync for `C:\DEV\FactHarbor-internal\Operations\Finance\Finanzierung\ZHAW_Briefing_AI_Provider_Konditionen_2026-05-09.md` by updating the `robertschaub/FactHarbor-internal` GitHub Actions `GIST_PAT` secret; workflow run `25641172865` attempt 2 now succeeds and the Gist content matches local. Do not rerun older failed run `25637799387`, because it would reapply an older commit; rotate to a dedicated least-privilege Gist PAT later.
+-> Docs/AGENTS/Handoffs/2026-05-11_DevOps_Gist_Sync_Secret_Repair.md
