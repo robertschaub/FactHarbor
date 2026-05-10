@@ -2495,6 +2495,75 @@ describe("validateVerdicts (Step 5)", () => {
     expect(groundingValidationCalls).toBe(3);
   });
 
+  it("repairs one-sided direct support stuck in the UNVERIFIED band", async () => {
+    const verdicts: CBClaimVerdict[] = [createCBVerdict({
+      claimId: "AC_01",
+      truthPercentage: 52,
+      verdict: "UNVERIFIED",
+      confidence: 38,
+      confidenceTier: "LOW",
+      reasoning: "Neutral caveats and missing external assessment keep this unverified.",
+      supportingEvidenceIds: ["EV_S1", "EV_S2"],
+      contradictingEvidenceIds: [],
+    })];
+    const claims = [createAtomicClaim({ id: "AC_01", statement: "The target procedure met the stated standard." })];
+    const boundaries = [createClaimBoundary({ id: "CB_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_S1", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports", applicability: "direct" }),
+      createEvidenceItem({ id: "EV_S2", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "supports", applicability: "direct" }),
+      createEvidenceItem({ id: "EV_N1", claimBoundaryId: "CB_01", relevantClaimIds: ["AC_01"], claimDirection: "neutral", applicability: "direct" }),
+    ];
+    const coverageMatrix = buildCoverageMatrix(claims, boundaries, evidence);
+
+    let directionValidationCalls = 0;
+    const mockLLM = vi.fn(async (key: string) => {
+      if (key === "VERDICT_GROUNDING_VALIDATION") {
+        return [{ claimId: "AC_01", groundingValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_VALIDATION") {
+        directionValidationCalls += 1;
+        if (directionValidationCalls < 3) {
+          return [{
+            claimId: "AC_01",
+            directionValid: false,
+            issues: ["Middle-band verdict treats neutral caveats as defeating one-sided direct support"],
+          }];
+        }
+        return [{ claimId: "AC_01", directionValid: true, issues: [] }];
+      }
+      if (key === "VERDICT_DIRECTION_REPAIR") {
+        return {
+          claimId: "AC_01",
+          truthPercentage: 60,
+          reasoning: "Direct support remains one-sided; unresolved caveats lower confidence rather than making the claim unverified.",
+          supportingEvidenceIds: ["EV_S1", "EV_S2"],
+          contradictingEvidenceIds: [],
+        };
+      }
+      return [];
+    }) as unknown as LLMCallFn;
+
+    const config: VerdictStageConfig = {
+      ...DEFAULT_VERDICT_STAGE_CONFIG,
+      verdictDirectionPolicy: "retry_once_then_safe_downgrade",
+    };
+
+    const result = await validateVerdicts(
+      verdicts,
+      evidence,
+      mockLLM,
+      config,
+      [],
+      { claims, boundaries, coverageMatrix },
+    );
+
+    expect(result[0].truthPercentage).toBe(60);
+    expect(result[0].verdict).toBe("LEANING-TRUE");
+    expect(result[0].supportingEvidenceIds).toEqual(["EV_S1", "EV_S2"]);
+    expect(result[0].contradictingEvidenceIds).toEqual([]);
+    expect((mockLLM as ReturnType<typeof vi.fn>).mock.calls.some((c) => c[0] === "VERDICT_DIRECTION_REPAIR")).toBe(true);
+  });
+
   it("accepts structurally normalized citations before invoking repair", async () => {
     const verdicts: CBClaimVerdict[] = [createCBVerdict({
       claimId: "AC_01",
@@ -5492,6 +5561,19 @@ describe("isVerdictDirectionPlausible", () => {
     });
     const ev = [
       createEvidenceItem({ id: "EV_S1", claimDirection: "supports", applicability: "direct" }),
+    ];
+    expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
+  });
+
+  it("returns false when an UNVERIFIED-band verdict cites one-sided direct support", () => {
+    const verdict = createCBVerdict({
+      truthPercentage: 52,
+      supportingEvidenceIds: ["EV_S1", "EV_S2"],
+      contradictingEvidenceIds: [],
+    });
+    const ev = [
+      createEvidenceItem({ id: "EV_S1", claimDirection: "supports", applicability: "direct" }),
+      createEvidenceItem({ id: "EV_S2", claimDirection: "supports", applicability: "direct" }),
     ];
     expect(isVerdictDirectionPlausible(verdict, ev)).toBe(false);
   });

@@ -2025,21 +2025,21 @@ export function isVerdictDirectionPlausible(
   calcConfig?: CalcConfig,
 ): boolean {
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
+  const mixedBandWithOneSidedDirectEvidence = verdict.truthPercentage >= VERDICT_BANDS.MIXED
+    && verdict.truthPercentage < VERDICT_BANDS.LEANING_TRUE
+    && (
+      (summary.directSupportingCount > 0 && summary.directContradictingCount === 0)
+      || (summary.directContradictingCount > 0 && summary.directSupportingCount === 0)
+    );
 
   if (
     summary.misbucketedSupportingIds.length > 0
     || summary.misbucketedContradictingIds.length > 0
     || summary.nonDirectSupportingIds.length > 0
     || summary.nonDirectContradictingIds.length > 0
+    || mixedBandWithOneSidedDirectEvidence
     || (verdict.truthPercentage > 50 && summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
     || (verdict.truthPercentage < 50 && summary.directContradictingCount === 0 && summary.directSupportingCount > 0)
-    || (
-      verdict.truthPercentage === 50
-      && (
-        (summary.directSupportingCount === 0 && summary.directContradictingCount > 0)
-        || (summary.directContradictingCount === 0 && summary.directSupportingCount > 0)
-      )
-    )
   ) {
     return false;
   }
@@ -2115,6 +2115,8 @@ function getDeterministicDirectionIssues(
 ): string[] {
   const summary = summarizeBucketWeightedEvidenceDirection(verdict, evidence, calcConfig);
   const issues: string[] = [];
+  const mixedBand = verdict.truthPercentage >= VERDICT_BANDS.MIXED
+    && verdict.truthPercentage < VERDICT_BANDS.LEANING_TRUE;
 
   if (summary.misbucketedSupportingIds.length > 0) {
     issues.push(
@@ -2146,22 +2148,14 @@ function getDeterministicDirectionIssues(
       `Truth percentage ${verdict.truthPercentage}% points below the midpoint, but the direct cited evidence is one-sided toward support (${summary.directSupportingCount} supporting, 0 contradicting).`,
     );
   }
-  if (
-    verdict.truthPercentage === 50
-    && summary.directSupportingCount === 0
-    && summary.directContradictingCount > 0
-  ) {
+  if (mixedBand && summary.directSupportingCount === 0 && summary.directContradictingCount > 0) {
     issues.push(
-      `A 50% midpoint verdict requires mixed direct evidence, but only direct contradicting citations are present (${summary.directContradictingCount} contradicting, 0 supporting).`,
+      `A middle-band verdict requires mixed direct evidence, mostly neutral evidence, or no direct evidence, but only direct contradicting citations are present (${summary.directContradictingCount} contradicting, 0 supporting).`,
     );
   }
-  if (
-    verdict.truthPercentage === 50
-    && summary.directContradictingCount === 0
-    && summary.directSupportingCount > 0
-  ) {
+  if (mixedBand && summary.directContradictingCount === 0 && summary.directSupportingCount > 0) {
     issues.push(
-      `A 50% midpoint verdict requires mixed direct evidence, but only direct supporting citations are present (${summary.directSupportingCount} supporting, 0 contradicting).`,
+      `A middle-band verdict requires mixed direct evidence, mostly neutral evidence, or no direct evidence, but only direct supporting citations are present (${summary.directSupportingCount} supporting, 0 contradicting).`,
     );
   }
 
