@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T08:59:43.781Z",
+  "generatedAt": "2026-05-09T21:30:05.820Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -47,6 +47,7 @@
         "shouldProtectValidatedAnchorCarriers",
         "buildMultiEventRepromptGuidance",
         "getHighConfidenceMultiClaimAtomicityRepairs",
+        "deriveAtomicityRepairGate1Max",
         "summarizeMultiClaimAtomicityAudit",
         "shouldRunMultiEventReprompt",
         "evaluateClaimContractValidation",
