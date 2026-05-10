@@ -1234,16 +1234,28 @@ export async function runClaimBoundaryAnalysis(
       const directionalEvidence = claimEvidence.filter(
         (e) => e.claimDirection === "supports" || e.claimDirection === "contradicts",
       );
+      const directDirectionalEvidence = directionalEvidence.filter(
+        (e) => !e.applicability || e.applicability === "direct",
+      );
+      const hasOneSidedDirectDirectionalEvidence =
+        directDirectionalEvidence.length >= authoritativeDirectionalMinItems &&
+        directDirectionalEvidence.every((e) => e.probativeValue !== "low") &&
+        new Set(directDirectionalEvidence.map((e) => e.claimDirection)).size === 1;
       const hasAuthoritativeDirectionalSufficiency =
         hasSufficientItems &&
         directionalEvidence.length >= authoritativeDirectionalMinItems &&
         directionalEvidence.every((e) => Boolean(e.sourceType) && authoritativeDirectionalSourceTypes.has(e.sourceType!)) &&
         directionalEvidence.every((e) => e.probativeValue !== "low") &&
         new Set(directionalEvidence.map((e) => e.claimDirection)).size === 1;
+      const hasResearchedDirectSeededSufficiency =
+        providerSearchAttempts > 0 &&
+        hasSufficientItems &&
+        hasSufficientSourceDiversity &&
+        hasOneSidedDirectDirectionalEvidence;
 
       if (
         providerSearchAttempts <= 0 ||
-        !hasNonSeededClaimEvidence ||
+        (!hasNonSeededClaimEvidence && !hasResearchedDirectSeededSufficiency) ||
         !hasSufficientItems ||
         (!hasSufficientSourceDiversity && !hasAuthoritativeDirectionalSufficiency)
       ) {
@@ -1256,7 +1268,7 @@ export async function runClaimBoundaryAnalysis(
         if (!alreadyWarnedZeroAcquisition) {
           const insufficiencyMessage = providerSearchAttempts <= 0
             ? `Claim ${claim.id} had zero provider search attempts in Stage 2. Verdict set to UNVERIFIED.`
-            : !hasNonSeededClaimEvidence
+            : (!hasNonSeededClaimEvidence && !hasResearchedDirectSeededSufficiency)
               ? `Claim ${claim.id} has no non-seeded Stage 2 evidence after provider search. Verdict set to UNVERIFIED.`
               : `Claim ${claim.id} has insufficient evidence for reliable verdict: ` +
                 `${claimEvidence.length} items (min ${sufficiencyMinItems}), ` +

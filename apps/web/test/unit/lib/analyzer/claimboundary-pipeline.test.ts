@@ -3693,6 +3693,18 @@ describe("allClaimsSufficient with per-claim researched-iteration floor", () => 
     expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(false);
   });
 
+  it("claim with seeded direct one-sided evidence and targeted research is sufficient", () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "A" }, sourceType: "expert_statement", sourceUrl: "https://a.com/1", isSeeded: true, claimDirection: "supports", applicability: "direct", probativeValue: "high" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "B" }, sourceType: "organization_report", sourceUrl: "https://b.com/1", isSeeded: true, claimDirection: "supports", applicability: "direct", probativeValue: "medium" },
+      { relevantClaimIds: ["AC_01"], evidenceScope: { methodology: "C" }, sourceType: "government_report", sourceUrl: "https://c.com/1", isSeeded: true, claimDirection: "supports", applicability: "direct", probativeValue: "medium" },
+    ] as any[];
+
+    const researchedByClaim: Record<string, number> = { AC_01: 1 };
+    expect(allClaimsSufficient(claims, evidence, 3, 1, 1, 0, diversityConfig, researchedByClaim, 1)).toBe(true);
+  });
+
   it("claim with seeded evidence, 1 researched iteration, and directional non-seeded evidence IS sufficient", () => {
     const claims = [createAtomicClaim({ id: "AC_01" })];
     const evidence = [

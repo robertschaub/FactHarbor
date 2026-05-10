@@ -2479,14 +2479,7 @@ export function allClaimsSufficient(
     });
     if (claimEvidence.length < effectiveThreshold) return false;
 
-    if (!claimEvidence.some((e) => !e.isSeeded && (e.claimDirection === "supports" || e.claimDirection === "contradicts"))) {
-      // Neutral/background evidence can explain a report, but at least one
-      // searched directional item is needed before Stage 2 calls a claim
-      // sufficient for verdict generation.
-      return false;
-    }
-
-    // Diversity check (mirrors D5 Control 1 disjunctive OR gate)
+    let hasSufficientDiversity = true;
     if (diversityConfig) {
       const distinctSourceTypes = new Set(
         claimEvidence.map(e => e.sourceType).filter(Boolean),
@@ -2496,10 +2489,32 @@ export function allClaimsSufficient(
           .map(e => extractDomain(e.sourceUrl))
           .filter((d): d is string => Boolean(d)),
       );
-      const hasSufficientDiversity =
+      hasSufficientDiversity =
         distinctSourceTypes.size >= diversityConfig.minSourceTypes ||
         distinctDomains.size >= diversityConfig.minDistinctDomains;
       if (!hasSufficientDiversity) return false;
+    }
+
+    const directDirectionalEvidence = claimEvidence.filter((e) =>
+      (e.claimDirection === "supports" || e.claimDirection === "contradicts") &&
+      (!e.applicability || e.applicability === "direct") &&
+      e.probativeValue !== "low"
+    );
+    const hasSeededDirectDirectionalSufficiency =
+      includeSeeded &&
+      hasSufficientDiversity &&
+      directDirectionalEvidence.length >= effectiveThreshold &&
+      new Set(directDirectionalEvidence.map((e) => e.claimDirection)).size === 1;
+
+    if (
+      !claimEvidence.some((e) => !e.isSeeded && (e.claimDirection === "supports" || e.claimDirection === "contradicts")) &&
+      !hasSeededDirectDirectionalSufficiency
+    ) {
+      // Neutral/background evidence can explain a report, but at least one
+      // searched directional item is needed before Stage 2 calls a claim
+      // sufficient for verdict generation, unless targeted search has already
+      // run and the claim has diverse, direct, one-sided seeded evidence.
+      return false;
     }
 
     return true;
