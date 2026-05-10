@@ -970,6 +970,10 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("legality, procedure, fairness, or similar rule-governed standards");
       expect(section).toContain("earlier or parallel episodes, collateral inquiries, sanctions, or broader institutional controversies");
       expect(section).toContain("decision artifact, evidentiary act, remedy/safeguard, or other procedural feature of the directly evaluated target itself");
+      expect(section).toContain("a source does not need to pronounce the final compliance answer");
+      expect(section).toContain("target-specific safeguard or defect records can be directional");
+      expect(section).toContain("evidence access, witness participation, appeal paths, recusal/remedy review");
+      expect(section).toContain("do not demote the item to `contextual` merely because no international body or final standards authority states the whole conclusion");
       expect(section).toContain("Overlap in actors or institutions alone does not create that bridge");
     });
 
@@ -1097,8 +1101,21 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Procedural roles, public-access limits, alleged coordination");
       expect(section).toContain("dual-role facts, criticism, concern");
       expect(section).toContain("safeguard denial/provision, compliance/noncompliance outcome");
+      expect(section).toContain("`direct_safeguard_record` is component-level directional evidence");
+      expect(section).toContain("reasoned decisions, public hearings, evidence access, witness participation");
+      expect(section).toContain("even when no source states the whole standards conclusion");
+      expect(section).toContain("Use `\"neutral\"` for bare chronology, role labels, docket membership, allegations, concerns, or appearance-risk material");
       expect(section).toContain("role facts, objections, criticism, concern, appearance-risk material");
       expect(section).toContain("same target's safeguard/remedy action, operative outcome, or standards conclusion");
+    });
+
+    it("allows neutral external target-path safeguard documentation to be direct without letting foreign official positions through", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Foreign media or neutral external reporting on the directly evaluated target's events is usually \"contextual\"");
+      expect(section).toContain("It may be \"direct\" for a rule-governed standards claim");
+      expect(section).toContain("documents a concrete target-specific safeguard, defect, remedy, decision artifact, evidentiary act, appeal/review path, or standards outcome");
+      expect(section).toContain("Do not treat publisher nationality alone as a directness blocker");
+      expect(section).toContain("Foreign government's own actions or official assessments remain `foreign_reaction`");
     });
 
     it("keeps stale or alternate numeric endpoints as caveats unless they are the accepted route", () => {
@@ -1121,7 +1138,7 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Foreign academic study rates Country A institutions as failing core standards");
       expect(section).toContain("Negative example (contrast)");
       expect(section).toContain("-> `contextual`");
-      expect(section).toContain("Neutral external reporting or analysis about the directly evaluated target remains \"contextual\"");
+      expect(section).toContain("Neutral external reporting or analysis about the directly evaluated target remains \"contextual\" unless it supplies concrete sourced target-path evidence");
     });
 
     it("uses an issuing-authority override for official foreign-government publications", () => {
