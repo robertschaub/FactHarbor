@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-09T15:38:23.003Z",
-  "count": 394,
+  "generatedAt": "2026-05-10T20:50:48.672Z",
+  "count": 396,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8286,6 +8286,62 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Primary anchors: `apps/web/configs/sr.default.json:22`, `apps/web/src/lib/config-schemas.ts:1337`, `apps/web/src/lib/config-schemas.ts:1398`, `apps/web/configs/search.default.json:6`, `apps/web/src/lib/web-search.ts:290`, and `apps/web/src/lib/config-schemas.ts:102`. Focused verifier already run and"
+    },
+    {
+      "file": "2026-05-10_LLM_Expert_Anthropic_Cache_Opt_Out_Partial_Patch.md",
+      "date": "2026-05-10",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "anthropic_cache",
+        "stage2",
+        "extract_evidence",
+        "cost",
+        "partial_patch"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/llm.ts",
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts"
+      ],
+      "summary": "2026-05-10 | LLM Expert | Codex (GPT-5) | Anthropic Cache Opt-Out Partial Patch"
+    },
+    {
+      "file": "2026-05-10_Senior_Developer_Anthropic_Cache_Opt_Out_Verification.md",
+      "date": "2026-05-10",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "anthropic_cache",
+        "stage2",
+        "extract_evidence",
+        "cost",
+        "verification"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer/llm.ts",
+        "apps/web/src/lib/analyzer/research-extraction-stage.ts",
+        "apps/web/test/unit/lib/analyzer/research-extraction-stage.test.ts",
+        "apps/web/test/unit/lib/analyzer/llm-routing.test.ts",
+        "Docs/AGENTS/Handoffs/2026-05-10_Senior_Developer_Anthropic_Cache_Opt_Out_Verification.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "2026-05-10 | Senior Developer | Codex (GPT-5) | Anthropic Cache Opt-Out Verification",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "keep the helper/callsite amendment and add direct helper test coverage.",
+            "net_mechanism_count": "unchanged.",
+            "verification": "targeted Vitest files, web build, and git diff --check all passed.",
+            "residual_debt": "live cache ROI telemetry remains a separate post-deployment measurement task."
+          }
+        }
+      }
     }
   ]
 }

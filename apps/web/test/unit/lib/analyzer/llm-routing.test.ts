@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getModel, getModelForTask } from "@/lib/analyzer/llm";
+import { getModel, getModelForTask, getPromptCachingOptions } from "@/lib/analyzer/llm";
 import { DEFAULT_PIPELINE_CONFIG, type PipelineConfig } from "@/lib/config-schemas";
 
 function buildConfig(overrides: Partial<PipelineConfig>): PipelineConfig {
@@ -41,5 +41,21 @@ describe("tiered model routing", () => {
     expect(getModelForTask("understand", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
     expect(getModelForTask("extract_evidence", undefined, config).modelName).toBe("claude-3-5-haiku-20241022");
     expect(getModelForTask("verdict", undefined, config).modelName).toBe("claude-sonnet-4-20250514");
+  });
+});
+
+describe("prompt caching options", () => {
+  it("returns Anthropic cache control by default for Anthropic providers", () => {
+    expect(getPromptCachingOptions("anthropic")).toEqual({
+      anthropic: { cacheControl: { type: "ephemeral" } },
+    });
+    expect(getPromptCachingOptions("claude")).toEqual({
+      anthropic: { cacheControl: { type: "ephemeral" } },
+    });
+  });
+
+  it("honors explicit opt-out without affecting non-Anthropic providers", () => {
+    expect(getPromptCachingOptions("anthropic", { enabled: false })).toBeUndefined();
+    expect(getPromptCachingOptions("openai")).toBeUndefined();
   });
 });

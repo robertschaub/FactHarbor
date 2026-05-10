@@ -324,7 +324,7 @@ export async function extractResearchEvidence(
         {
           role: "system",
           content: rendered.content,
-          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider),
+          providerOptions: getPromptCachingOptions(pipelineConfig.llmProvider, { enabled: false }),
         },
         {
           role: "user",

@@ -387,9 +387,16 @@ export function getProviderType(modelInfo: ModelInfo): ProviderType {
  * Usage: Add to system messages in generateText() calls:
  *   { role: "system", content: prompt, providerOptions: getPromptCachingOptions(provider) }
  */
+export interface PromptCachingPolicy {
+  enabled?: boolean;
+}
+
 export function getPromptCachingOptions(
   provider?: string,
+  policy: PromptCachingPolicy = {},
 ): { anthropic: { cacheControl: { type: string } } } | undefined {
+  if (policy.enabled === false) return undefined;
+
   const p = (provider || "anthropic").toLowerCase();
   if (p !== "anthropic" && p !== "claude") return undefined;
   return {

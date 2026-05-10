@@ -14,7 +14,8 @@ import {
 import { debugLog, debugLogFileOnly } from "@/lib/analyzer/debug";
 import {
   getModelForTask,
-  extractStructuredOutput
+  extractStructuredOutput,
+  getPromptCachingOptions,
 } from "@/lib/analyzer/llm";
 import { generateText } from "ai";
 import { mapCategory } from "@/lib/analyzer/pipeline-utils";
@@ -29,7 +30,9 @@ vi.mock("@/lib/analyzer/llm", () => ({
   getModelForTask: vi.fn(() => ({ model: { id: "mock-model" }, modelName: "mock-model", provider: "anthropic" })),
   extractStructuredOutput: vi.fn((result) => result),
   getStructuredOutputProviderOptions: vi.fn(() => ({})),
-  getPromptCachingOptions: vi.fn(() => ({})),
+  getPromptCachingOptions: vi.fn((_provider?: string, policy?: { enabled?: boolean }) =>
+    policy?.enabled === false ? undefined : { anthropic: { cacheControl: { type: "ephemeral" } } },
+  ),
 }));
 
 vi.mock("@/lib/analyzer/prompt-loader", () => ({
@@ -59,6 +62,7 @@ const mockDebugLog = vi.mocked(debugLog);
 const mockDebugLogFileOnly = vi.mocked(debugLogFileOnly);
 const mockMapCategory = vi.mocked(mapCategory);
 const mockGetModelForTask = vi.mocked(getModelForTask);
+const mockGetPromptCachingOptions = vi.mocked(getPromptCachingOptions);
 
 // ============================================================================
 // HELPERS
@@ -452,6 +456,26 @@ describe("Research Extraction Stage", () => {
       expect(result).toHaveLength(1);
       expect(result[0].statement).toBe("extracted evidence");
       expect(result[0].relevantClaimIds).toEqual(["AC_01"]);
+    });
+
+    it("should disable Anthropic prompt caching for full-source extraction", async () => {
+      const claim = createClaim({ id: "AC_01", statement: "Test claim" });
+      const sources = [{ url: "https://example.com/1", title: "Source 1", text: "source body" }];
+      const config = { llmProvider: "anthropic" } as any;
+
+      mockLoadSection.mockResolvedValue({ content: "extraction prompt", variables: {} });
+      mockGenerateText.mockResolvedValue({ text: "" } as any);
+      mockExtractOutput.mockReturnValue({ evidenceItems: [] });
+
+      await extractResearchEvidence(claim, sources, config, "2026-03-23");
+
+      expect(mockGetPromptCachingOptions).toHaveBeenCalledWith("anthropic", { enabled: false });
+      const generateCall = mockGenerateText.mock.calls[0]?.[0] as any;
+      expect(generateCall.messages[0]).toMatchObject({
+        role: "system",
+        content: "extraction prompt",
+      });
+      expect(generateCall.messages[0].providerOptions).toBeUndefined();
     });
 
     it("passes the expected evidence profile to the extraction prompt", async () => {
