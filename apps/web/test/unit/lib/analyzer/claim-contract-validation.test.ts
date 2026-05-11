@@ -1819,10 +1819,19 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("repeats the original predicate at the start");
     expect(section).toContain("appends an explanatory tail");
     expect(section).toContain("makes a narrower proxy proposition the thing being verified");
-    expect(section).toContain("Treat a dash, colon, relative clause, causal clause, complement clause, or equivalent explanatory tail as material proxy drift");
+    expect(section).toContain("Dimension qualification is allowed, but tail narrowing is not");
+    expect(section).toContain("Qualification stops at the dimension label");
+    expect(section).toContain("as material proxy drift by default unless the added condition");
+    expect(section).toContain("Do not approve such a tail on the rationale that it is consistent with the predicate");
+    expect(section).toContain("specifies what the predicate looks like");
     expect(section).toContain("Also fail sufficient-condition drift");
     expect(section).toContain("would merely serve as evidence for, or a possible reason supporting, that predicate");
     expect(section).toContain("A preserved broad primary claim does not cure material proxy drift");
+    expect(section).toContain("Broad-evaluative explanatory-tail drift meets this threshold by default");
+    expect(section).toContain("Broad-evaluative tail override");
+    expect(section).toContain('MUST be assessed as `proxyDriftSeverity: "material"` and `recommendedAction: "retry"`');
+    expect(section).toContain('`inputAssessment.preservesOriginalClaimContract` MUST be `false`');
+    expect(section).toContain('`inputAssessment.rePromptRequired` MUST be `true`');
   });
 });
 

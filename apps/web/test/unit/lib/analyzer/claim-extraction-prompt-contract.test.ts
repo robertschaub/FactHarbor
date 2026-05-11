@@ -612,7 +612,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass1).not.toBeNull();
       expect(pass1).toContain("For broad evaluative predicates, use the same discipline");
       expect(pass1).toContain("Do not append an explanatory proxy clause after the neutral dimension label");
-      expect(pass1).toContain("mechanisms, thresholds, causal stories, or metric details belong in `searchHint`");
+      expect(pass1).toContain("the rough claim should end at the dimension label");
+      expect(pass1).toContain("unless the input itself contains the additional condition, mechanism, threshold, causal story, or metric");
       expect(pass1).toContain("Dimension-vs-reason distinction");
       expect(pass1).toContain("merely be evidence for, or a possible reason supporting, that predicate");
 
@@ -621,8 +622,11 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("or the input-language equivalent");
       expect(pass2).toContain("not faithful merely because it starts with the original evaluative predicate");
       expect(pass2).toContain("causal clause, complement clause, or equivalent explanatory tail");
-      expect(pass2).toContain("Stop the `statement` after the neutral dimension qualifier whenever possible");
+      expect(pass2).toContain("material proxy drift by default unless that added condition");
+      expect(pass2).toContain("Stop the `statement` after the neutral dimension qualifier");
       expect(pass2).toContain("Put candidate mechanisms, measurable routes, thresholds, and evidence strategy in `expectedEvidenceProfile`");
+      expect(pass2).toContain("Do not keep a tail because it is consistent with the predicate");
+      expect(pass2).toContain("explains what the predicate looks like in that dimension");
       expect(pass2).toContain("A thesis-direct dimension claim must remain the original predicate evaluated within a neutral dimension");
       expect(pass2).toContain("A preserved broad primary claim does not license sibling dimension claims");
       expect(pass2).toContain("sufficient-condition claims");
