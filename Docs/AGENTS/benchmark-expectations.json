@@ -140,20 +140,19 @@
       "slug": "plastic-en",
       "inputValue": "Plastic recycling is pointless",
       "language": "en",
-      "expectedVerdictLabels": ["MOSTLY-FALSE", "FALSE", "MIXED"],
-      "truthPercentageBand": { "min": 10, "max": 35 },
+      "expectedVerdictLabels": ["FALSE", "MOSTLY-FALSE", "LEANING-FALSE", "MIXED"],
+      "truthPercentageBand": { "min": 10, "max": 42 },
       "confidenceBand": { "min": 55, "max": 80 },
       "minBoundaryCount": 2,
-      "qualityStatus": "OPERATIONAL-RECOVERED-QUALITY-WATCH",
-      "qualityStatusNote": "Stage 4 advocate parse-failure fixed and the 2026-05-10 operational stale-watchdog failure is repaired by runner heartbeat commit 37554ace. Current diagnostic job 939563ecbea14a4c90249eb13c9743ef improved the exact input from high MIXED 52 to LEANING-FALSE 37/62 with 3 claims, 6 boundaries, 144 evidence items, and no report_damaged collapse. Report-quality calibration remains open: truth 37 is within the 8-point tolerance but above the nominal 10-35 band, and LEANING-FALSE is not currently in expectedVerdictLabels. Captain decision required before changing the accepted label set.",
+      "qualityStatus": "ACCEPTED-CURRENT-STACK-CONTROL",
+      "qualityStatusNote": "Stage 4 advocate parse-failure fixed and the 2026-05-10 operational stale-watchdog failure is repaired by runner heartbeat commit 37554ace. Captain accepted LEANING-FALSE as acceptable for plastic reports in English and other languages, and accepted current exact job 939563ecbea14a4c90249eb13c9743ef as a good report. That job improved the exact input from high MIXED 52 to LEANING-FALSE 37/62 with 3 claims, 6 boundaries, 144 evidence items, and no report_damaged collapse. Best historical exact comparator 32f00bb32d644a909f0c99521e800536 remains useful for stronger false-side shape.",
       "latestVerifiedJobId": "939563ecbea14a4c90249eb13c9743ef",
       "latestObserved": { "verdictLabel": "LEANING-FALSE", "truthPercentage": 37, "confidence": 62 },
       "_failed_rerun_2026-04-16": "Rerun 89c8f2ec at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls, plus 4 preliminary_fetch source_fetch_failure (info). Root cause same as Bundesrat: Stage 2 LLM timeout under concurrent load. NOT confirmed as a Stage 4 parse regression — needs isolated rerun.",
       "knownOpenIssues": [
         "evidence aggregation variance across runs",
-        "not a reliable family for asserting total report-quality stability",
-        "current diagnostic 939563ecbea14a4c90249eb13c9743ef improved materially, but LEANING-FALSE is a strict Q-BE1 mismatch until Captain accepts or rejects it for this family",
-        "best exact comparator 32f00bb32d644a909f0c99521e800536 remains stronger at MOSTLY-FALSE 21/68 with more balanced evidence"
+        "best exact comparator 32f00bb32d644a909f0c99521e800536 remains stronger at MOSTLY-FALSE 21/68 with more balanced evidence",
+        "plastic remains a control lane, not a reliable family for asserting total report-quality stability"
       ]
     }
   ],

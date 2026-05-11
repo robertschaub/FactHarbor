@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-11T19:50:46.479Z",
-  "count": 401,
+  "generatedAt": "2026-05-11T20:14:46.151Z",
+  "count": 402,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -4462,6 +4462,23 @@
       "summary": "Wait for or unblock job `df612169dab34eb788beb66384ace691`, then compare it against `7ff65fb0557d483e84c9192bef141998`, `4c5218a2960444c29baccff13f21cb38`, and `02dc888046844002a0c3f4d25caa89df`. Primary anchors for the implemented forward fix are [claimboundary.prompt.md](/c:/DEV/FactHarbor/apps/we"
     },
     {
+      "file": "2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md",
+      "date": "2026-04-19",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "claim",
+        "extraction",
+        "atomicity",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-04-19_LLM_Expert_Claim_Extraction_Atomicity_Review.md"
+      ],
+      "summary": "The approved contract is in `apps/web/prompts/claimboundary.prompt.md` at the Pass 1 and Pass 2 classification override bullets. The supporting guard test is in `apps/web/test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts`."
+    },
+    {
       "file": "2026-04-19_LLM_Expert_Exclusivity_Guard_Prompt_Review.md",
       "date": "2026-04-19",
       "roles": [
@@ -8449,7 +8466,7 @@
         "review"
       ],
       "files_touched": [],
-      "summary": "Start from current `main` HEAD `21e9a817`. The next decision is Captain-owned: accept `LEANING-FALSE` as an allowed `plastic-en` label or keep the stricter current label set. If accepted, update the mechanical expected labels and optionally spend one same-stack repeat only if deployment approval req"
+      "summary": "Start from current `main` HEAD after the Captain acceptance docs. Do not spend another immediate plastic job. If deployment validation needs one more current-hash run, spend at most one exact `plastic-en` repeat after commit/restart. Otherwise use remaining budget on higher-value watch lanes. If fut"
     }
   ]
 }

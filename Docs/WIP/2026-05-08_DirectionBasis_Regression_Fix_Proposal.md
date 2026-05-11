@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-11
-**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` has current in-band canaries but remains watch-listed, while `plastic-en` improved from high-mixed to false-side edge after the Stage 2 query-ordering/diagnostics slice and now needs a Captain expectation decision on `LEANING-FALSE`
+**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` has current in-band canaries but remains watch-listed, and Captain accepted `plastic-en` current exact job `939563ecbea14a4c90249eb13c9743ef` (`LEANING-FALSE` 37/62) as a good report with `LEANING-FALSE` accepted for plastic reports in English and other languages
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -19,8 +19,8 @@ This remains the active report-improvement WIP plan, but the May 8 execution seq
 | `bolsonaro-pt` | Same true-side bar as EN, with multilingual transfer expected. |
 | `asylum-235000-de` | `LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70. `MIXED` is a regression; near-certain `TRUE` is also a calibration/source-direction issue. |
 | `bundesrat-simple` | `TRUE` / `MOSTLY-TRUE`, truth 85-100, confidence 75-95. Use exact local comparators `a6b0e0fc14984926a678a462456bc110` and `a53573047fe64778a76e53cb578900c7`. |
-| `plastic-en` | `MOSTLY-FALSE` / `FALSE` / `MIXED`, truth 10-35, confidence 55-80. Keep as a control for overcorrection. |
-| `asylum-wwii-de` | No official band and no accepted best comparator yet. Do not use as pass/fail evidence until Captain defines the expected band. |
+| `plastic-en` | `FALSE` / `MOSTLY-FALSE` / `LEANING-FALSE` / `MIXED`, truth 10-42, confidence 55-80. Keep as a control for overcorrection. Captain accepts `LEANING-FALSE` for plastic reports in English and other languages. |
+| `asylum-wwii-de` | `MOSTLY-FALSE` / `LEANING-FALSE`, truth 18-42, confidence 50-75. Current count can be true-side or definition-caveated, but the end-of-WWII comparison is false-side when treated as endpoint stock. |
 
 ### Mandatory Report-Quality Comparison Rule
 
@@ -1036,8 +1036,24 @@ Assisted review result:
 
 Next gate:
 
-1. Do not spend another immediate plastic job before the Captain decision below.
-2. Captain decision needed: either add `LEANING-FALSE` to the accepted `plastic-en` label set as a false-side edge outcome, or keep the stricter current labels and treat `939563ec` as still below the desired quality bar.
-3. If Captain accepts `LEANING-FALSE`, update `benchmark-expectations.json` mechanically and run at most one same-stack exact plastic repeat only if deployment approval requires a fresh job hash on `4b3fb1d4`.
-4. If Captain rejects `LEANING-FALSE`, do not add another prompt patch. The next no-job investigation should focus on why contradiction/refuting research still admits mostly support-direction evidence for broad absolute claims.
+1. Captain decision completed: `LEANING-FALSE` is accepted for plastic reports in English and other languages, and `939563ec` is a good report.
+2. `benchmark-expectations.json` now includes `LEANING-FALSE` for `plastic-en` and expands the nominal truth band to 10-42.
+3. Do not spend another immediate plastic job. Run one same-stack exact plastic repeat only if deployment approval requires a fresh job hash after the docs/expectation commit.
+4. If future plastic reports regress to high true-side or support-tail proxy claims, investigate contradiction/refuting research direction before adding another prompt patch.
 5. Budget accounting since the latest 8-job reset: 3 plastic jobs spent in this slice (`bbbbc491`, `7222f560`, `939563ec`); conservative remaining budget is 5.
+
+### 12.22 Captain Plastic Expectation Acceptance - 2026-05-11
+
+Captain explicitly accepted `LEANING-FALSE` as acceptable for plastic reports in English and other languages, and accepted exact current-stack job `939563ecbea14a4c90249eb13c9743ef` as a good report.
+
+Expectation changes:
+
+- `Docs/AGENTS/benchmark-expectations.json`: `plastic-en.expectedVerdictLabels` now includes `LEANING-FALSE`; nominal truth band is 10-42 so `939563ec` is in band without relying on the 8-point noise tolerance.
+- `Docs/AGENTS/Captain_Quality_Expectations.md`: `plastic-en` moved into the good expectation/comparator set, with `939563ec` named as accepted current-stack exact and `32f00bb32d644a909f0c99521e800536` retained as the stronger historical exact comparator.
+- `Docs/AGENTS/report-quality-expectations.json`: source note updated; no Q-code structural change needed.
+
+Next gate:
+
+1. No additional plastic job is needed for expectation acceptance.
+2. If deployment validation needs one more current-hash run, spend at most one exact `plastic-en` repeat after commit/restart.
+3. Otherwise use remaining budget on higher-value watch lanes, especially `asylum-235000-de` or Bolsonaro EN only if a no-edit review identifies a focused stability question.
