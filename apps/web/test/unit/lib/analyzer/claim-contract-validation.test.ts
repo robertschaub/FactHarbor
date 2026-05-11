@@ -1390,10 +1390,11 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
   // substring check was deleted because it uses the same .includes() anti-pattern
   // as the F4 anchor check (fails on German morphology and paraphrasing, causing
   // ~60% false-positive anchorOverrideRetry). The LLM's preservedByQuotes field
-  // is now trusted as-is. Structural validity is checked via validPreservedIds
-  // (ID existence + thesis-directness) and the self-consistency check below.
+  // is now trusted as-is. Anchor provenance validity is checked via
+  // validPreservedIds (ID existence + thesis-directness). Per-claim drift is
+  // still a contract consistency issue, but not an anchor-provenance failure.
 
-  it("rejects LLM self-contradiction: preservedInClaimIds cites a claim marked recommendedAction=retry", () => {
+  it("rejects contract self-contradiction without converting valid anchor carriers into anchor omission", () => {
     const claims = [makeClaim("AC_01", "The council signed the treaty before parliament decided.")];
     const result = makeResult({
       anchorText: "before parliament decided",
@@ -1413,11 +1414,12 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
 
     expect(evaluated.summary.preservesContract).toBe(false);
     expect(evaluated.effectiveRePromptRequired).toBe(true);
-    expect(evaluated.anchorRetryReason).toContain("LLM self-contradiction");
-    expect(evaluated.anchorRetryReason).toContain("AC_01");
+    expect(evaluated.anchorRetryReason).toBeUndefined();
+    expect(evaluated.summary.summary).toContain("contract_self_consistency_failed");
+    expect(evaluated.summary.summary).toContain("AC_01");
   });
 
-  it("rejects LLM self-contradiction: proxyDriftSeverity=material alone is sufficient", () => {
+  it("rejects proxy-drift self-contradiction without emitting anchor retry guidance", () => {
     const claims = [makeClaim("AC_01", "Test claim with some preserved wording.")];
     const result = makeResult({
       anchorText: "some preserved wording",
@@ -1436,7 +1438,37 @@ describe("evaluateClaimContractValidation — provenance gate", () => {
     const evaluated = evaluateClaimContractValidation(result, claims);
 
     expect(evaluated.summary.preservesContract).toBe(false);
-    expect(evaluated.anchorRetryReason).toContain("LLM self-contradiction");
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.anchorRetryReason).toBeUndefined();
+    expect(evaluated.summary.summary).toContain("contract_self_consistency_failed");
+  });
+
+  it("does not treat anchor-preserving material drift as anchor provenance failure when top-level validation already requests retry", () => {
+    const claims = [makeClaim("AC_01", "The service is pointless in terms of practical utility — it rarely reaches users.")];
+    const result = makeResult({
+      preservesOriginalClaimContract: false,
+      rePromptRequired: true,
+      summary: "The claim preserves the broad predicate but appends an explanatory proxy tail.",
+      anchorText: "pointless",
+      preservedInClaimIds: ["AC_01"],
+      preservedByQuotes: ["The service is pointless in terms of practical utility"],
+      claims: [{
+        claimId: "AC_01",
+        preservesEvaluativeMeaning: true,
+        usesNeutralDimensionQualifier: true,
+        proxyDriftSeverity: "material",
+        recommendedAction: "retry",
+        reasoning: "explanatory proxy tail",
+      }],
+    });
+
+    const evaluated = evaluateClaimContractValidation(result, claims);
+
+    expect(evaluated.summary.preservesContract).toBe(false);
+    expect(evaluated.effectiveRePromptRequired).toBe(true);
+    expect(evaluated.anchorRetryReason).toBeUndefined();
+    expect(evaluated.summary.summary).toBe("The claim preserves the broad predicate but appends an explanatory proxy tail.");
+    expect(evaluated.summary.truthConditionAnchor?.validPreservedIds).toEqual(["AC_01"]);
   });
 
   // --------------------------------------------------------------------------

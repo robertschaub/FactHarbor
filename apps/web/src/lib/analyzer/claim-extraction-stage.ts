@@ -3773,6 +3773,7 @@ export function evaluateClaimContractValidation(
   const anchor = contractResult.truthConditionAnchor;
   let anchorOverrideRetry = false;
   let anchorRetryReason: string | undefined;
+  let contractSelfConsistencyRetryReason: string | undefined;
   let validPreservedIds: string[] = [];
 
   if (anchor?.presentInInput && anchor.anchorText) {
@@ -3814,11 +3815,11 @@ export function evaluateClaimContractValidation(
 
     // LLM self-consistency check (structural, not semantic): if the LLM
     // lists a claim as anchor-preserving in preservedInClaimIds but that
-    // same claim is marked as drifted in the per-claim assessment array
-    // (recommendedAction=retry, proxyDriftSeverity=material, or
-    // preservesEvaluativeMeaning=false), the LLM is internally contradicting
-    // itself. This is a pure structural cross-check of LLM output against
-    // itself, NOT a deterministic semantic re-check.
+    // same claim is marked as drifted in the per-claim assessment array,
+    // the claim set still needs retry when the top-level assessment forgot
+    // to request one. That is a whole-contract consistency problem, not
+    // proof that the anchor carrier is invalid. A claim can preserve the
+    // anchor text and still drift via a proxy tail or other added condition.
     const claimAssessmentById = new Map(
       (contractResult.claims ?? []).map((c) => [c.claimId, c] as const),
     );
@@ -3832,29 +3833,33 @@ export function evaluateClaimContractValidation(
       );
     });
 
-    // Override the LLM's judgment when the validator actually cites anchor
-    // carriers but none survive structural validation, OR when it contradicts
-    // itself between preservedInClaimIds and its per-claim assessment.
+    // Override the LLM's anchor-preservation judgment only when the validator
+    // actually cites anchor carriers but none survive structural validation.
     // If the validator cites no carrier IDs at all, leave that case to the
     // validator's own top-level assessment: some article-level caveats can be
     // acceptable without a thesis-direct carrier, and forcing a retry here
     // would turn that observational anchor into a false report_damaged.
     const noValidIds = citedPreservedIds.length > 0 && validPreservedIds.length === 0;
     const selfContradicted = contradictedPreservedIds.length > 0;
-    if (noValidIds || selfContradicted) {
+    if (noValidIds) {
       anchorOverrideRetry = true;
       const reasons: string[] = [];
-      if (noValidIds) {
-        const existingCited = citedPreservedIds.filter((id) => claimIds.has(id));
-        const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
-        if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
-          reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
-        } else {
-          reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
-        }
+      const existingCited = citedPreservedIds.filter((id) => claimIds.has(id));
+      const tangentialCited = existingCited.filter((id) => !directClaimIds.has(id));
+      if (existingCited.length > 0 && tangentialCited.length === existingCited.length) {
+        reasons.push(`all cited preservedInClaimIds [${tangentialCited.join(",")}] are tangential/contextual; thesis-direct claim required`);
+      } else {
+        reasons.push("no valid cited claim IDs after structural check (existence + thesis-direct)");
       }
-      if (selfContradicted) reasons.push(`LLM self-contradiction on claim(s) [${contradictedPreservedIds.join(",")}] — listed as anchor-preserving but flagged as drifted in per-claim assessment`);
       anchorRetryReason = `anchor_provenance_failed: "${anchor.anchorText}" — ${reasons.join("; ")}. LLM cited preservedInClaimIds=[${citedPreservedIds.join(",")}], valid IDs=[${validPreservedIds.join(",")}]`;
+    }
+
+    if (
+      selfContradicted
+      && contractResult.inputAssessment.rePromptRequired === false
+    ) {
+      contractSelfConsistencyRetryReason =
+        `contract_self_consistency_failed: claim(s) [${contradictedPreservedIds.join(",")}] were listed as anchor-preserving but flagged as drifted in per-claim assessment`;
     }
   }
 
@@ -3865,8 +3870,14 @@ export function evaluateClaimContractValidation(
       `normative_injection: claims [${antiInf.injectedClaimIds.join(",")}] added normative/legal assertion not in input`;
   }
 
-  const effectiveRePromptRequired = contractResult.inputAssessment.rePromptRequired || anchorOverrideRetry;
-  const preservesContract = contractResult.inputAssessment.preservesOriginalClaimContract && !anchorOverrideRetry;
+  const effectiveRePromptRequired =
+    contractResult.inputAssessment.rePromptRequired
+    || anchorOverrideRetry
+    || !!contractSelfConsistencyRetryReason;
+  const preservesContract =
+    contractResult.inputAssessment.preservesOriginalClaimContract
+    && !anchorOverrideRetry
+    && !contractSelfConsistencyRetryReason;
   // C9 (Phase 5): validator returned a usable result. Any failure here is a
   // genuine contract violation, not a validator-availability issue.
   const failureMode: "contract_violated" | undefined = !preservesContract || effectiveRePromptRequired
@@ -3878,7 +3889,10 @@ export function evaluateClaimContractValidation(
       ran: true,
       preservesContract,
       rePromptRequired: effectiveRePromptRequired,
-      summary: contractResult.inputAssessment.summary ?? "",
+      summary: [
+        contractResult.inputAssessment.summary ?? "",
+        contractSelfConsistencyRetryReason,
+      ].filter(Boolean).join("; "),
       ...(failureMode ? { failureMode } : {}),
       ...(anchorRetryReason ? { anchorRetryReason } : {}),
       ...(anchor ? {
