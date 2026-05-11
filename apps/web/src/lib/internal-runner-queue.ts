@@ -181,6 +181,14 @@ function getRunnerWatchdogIntervalMs(): number {
   return 30_000;
 }
 
+export function resolveRunnerHeartbeatIntervalMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number.parseInt(env.FH_RUNNER_JOB_HEARTBEAT_INTERVAL_MS ?? "", 10);
+  if (Number.isFinite(raw) && raw >= 60_000) {
+    return raw;
+  }
+  return 5 * 60 * 1000;
+}
+
 function parseApiUtcTimestampMs(value: unknown): number | null {
   if (typeof value !== "string" || !value.trim()) return null;
   const hasTimezone = /(?:Z|[+\-]\d{2}:\d{2})$/i.test(value);
@@ -321,6 +329,7 @@ async function runJobBackground(jobId: string) {
     const qs = getRunnerQueueState();
     const executedWebGitCommitHash = getWebGitCommitHash();
     let acquiredSlot = false;
+    let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
     const emit = async (level: "info" | "warn" | "error", message: string, progress?: number) => {
       await apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
@@ -331,8 +340,27 @@ async function runJobBackground(jobId: string) {
       });
     };
 
+    const startHeartbeat = () => {
+      if (heartbeatTimer) return;
+      heartbeatTimer = setInterval(() => {
+        void apiPutInternal(apiBase, adminKey, `/internal/v1/jobs/${jobId}/status`, {
+          status: "RUNNING",
+          level: "info",
+          message: "Runner heartbeat",
+        }).catch((err) => {
+          console.warn(`[Runner] Heartbeat failed for ${jobId}:`, err);
+        });
+      }, resolveRunnerHeartbeatIntervalMs());
+
+      const timer = heartbeatTimer as { unref?: () => void };
+      if (typeof timer.unref === "function") {
+        timer.unref();
+      }
+    };
+
     try {
       acquiredSlot = true;
+      startHeartbeat();
 
     const job = await apiGet(apiBase, adminKey, `/v1/jobs/${jobId}`);
     const inputType = job.inputType as "text" | "url";
@@ -488,6 +516,10 @@ async function runJobBackground(jobId: string) {
         }
       } catch {}
     } finally {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      }
       const qs2 = getRunnerQueueState();
       if (acquiredSlot) {
         qs2.runningCount = Math.max(0, qs2.runningCount - 1);

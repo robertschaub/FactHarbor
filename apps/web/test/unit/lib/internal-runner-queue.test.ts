@@ -5,6 +5,7 @@ import {
   normalizeDraftPreparationProgress,
   normalizeRunningProgress,
   resolveRunnerConcurrencyBudget,
+  resolveRunnerHeartbeatIntervalMs,
 } from "@/lib/internal-runner-queue";
 
 describe("normalizeRunningProgress", () => {
@@ -88,5 +89,27 @@ describe("resolveRunnerConcurrencyBudget", () => {
       jobMaxConcurrency: 2,
       draftPreparationMaxConcurrency: 1,
     });
+  });
+});
+
+describe("resolveRunnerHeartbeatIntervalMs", () => {
+  it("defaults to five minutes", () => {
+    expect(resolveRunnerHeartbeatIntervalMs({} as NodeJS.ProcessEnv)).toBe(5 * 60 * 1000);
+  });
+
+  it("accepts explicit intervals of at least one minute", () => {
+    expect(
+      resolveRunnerHeartbeatIntervalMs({
+        FH_RUNNER_JOB_HEARTBEAT_INTERVAL_MS: "120000",
+      } as NodeJS.ProcessEnv),
+    ).toBe(120000);
+  });
+
+  it("ignores intervals below one minute", () => {
+    expect(
+      resolveRunnerHeartbeatIntervalMs({
+        FH_RUNNER_JOB_HEARTBEAT_INTERVAL_MS: "5000",
+      } as NodeJS.ProcessEnv),
+    ).toBe(5 * 60 * 1000);
   });
 });
