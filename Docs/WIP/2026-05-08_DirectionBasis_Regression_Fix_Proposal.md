@@ -911,3 +911,47 @@ Next gate:
 2. Keep the family on watch until Captain accepts the new false-side band or requests one later stability spot-check.
 3. If reviewing future reports, fail any report that treats cumulative WWII admissions/flows as direct support for the endpoint-stock comparison.
 4. Latest renewed 8-job budget: 2 jobs spent on this slice, 6 remain.
+
+### 12.19 Bundesrat Accepted Rerun And SVP PDF Control - 2026-05-11
+
+Scope:
+
+- No source, prompt, or config edit was made in this slice.
+- Captain clarified after the asylum-WWII pair that `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz` is the better asylum validation input than the WWII-comparison input. Treat future asylum spend accordingly: use the exact current-total input unless Captain explicitly asks for the historical-comparison variant.
+
+Bundesrat-rechtskräftig isolated rerun:
+
+- Job: `f8e72c84fb004f23945e23c81973fc26`.
+- Exact Captain-defined input: `Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben`.
+- Result: `LEANING-FALSE` 32/80, 3 AtomicClaims, 5 ClaimAssessmentBoundaries, 88 evidence items, 33 sources, no user-visible warnings.
+- Runtime metadata from result: `4609e9b9c80bd6c2414ecd183b5bc684ed2ab297+31b54819`, prompt hash `d4096000536c83efc77374d384f5aa5c0ab1e337e125405ad06c4c183a75dd4a`.
+- Quality read: Captain accepted this as good. The old concurrent-run zero-evidence collapse is cleared for this family. Truth 32 is 3 points below the nominal 35-60 band, but inside the repo's 8-point noise tolerance; the report is structurally strong and keeps the `rechtskräftig` legal-force anchor dominant while preserving the true chronology.
+- Docs updated: `benchmark-expectations.json` now promotes `f8e72c84` to latest verified/current comparator and removes `bundesrat-rechtskraftig` from `highPriorityReruns`; `Captain_Quality_Expectations.md` names `f8e72c84` as the preferred exact current-stack comparator.
+
+Plastic control attempt:
+
+- Job: `9d7ab72a60114878a96c30ffc517c347`.
+- Exact Captain-defined input: `Plastic recycling is pointless`.
+- Result: `FAILED`, progress 60, no verdict/report.
+- Quality read: not usable as report-quality evidence. Inspect the operational failure before spending another plastic job.
+
+SVP PDF URL control:
+
+- Job: `4cc3dabe4dfa46d6b0b12ba1c1f0efa4`.
+- User-approved URL input: `https://www.svp.ch/wp-content/uploads/260324_Argumentarium-ohne-Q-A-DE.pdf`.
+- Result: `LEANING-TRUE` 58/55, 5 AtomicClaims, 1 boundary, 78 evidence items, 58 sources.
+- Runtime metadata from result: `0e643c4a913491bfe2b7b2def5124f133c18b1b6+53548a94`, prompt hash `d4096000536c83efc77374d384f5aa5c0ab1e337e125405ad06c4c183a75dd4a`.
+- Useful signal: broad URL/article processing works on the current stack; core population-growth claims came out mostly true-side, the Germany 16x comparison was correctly false-side, and the report did not collapse despite 8 main research iterations.
+- Residual quality issues: two user-visible warnings remain. Research time budget was exceeded after 13 minutes, and AC_04 (`Seit dem Jahr 2000 wurden über 655'000 asylrechtliche Gesuche...`) stayed `UNVERIFIED` because evidence lacked source-type/domain diversity. Treat this as a control report with caveats, not as a new benchmark family or proof that asylum-current is closed.
+
+Budget accounting:
+
+- Latest renewed 8-job budget after the Captain reset: asylum-WWII pair spent 2, Bundesrat accepted rerun spent 1, plastic failed attempt spent 1, SVP PDF control spent 1.
+- Remaining submitted-job budget by conservative count: 3.
+
+Next gate:
+
+1. Do not spend more jobs until the Captain chooses the next target.
+2. If continuing asylum quality work, prefer the exact `asylum-235000-de` current-total input, not the WWII comparison, and spend at most one job after a short no-edit comparator review.
+3. If continuing plastic, inspect why `9d7ab72` failed before rerunning.
+4. If continuing SVP URL/article controls, track AC_04 evidence-source diversity and research-time budget pressure rather than changing benchmark expectations.

@@ -1,7 +1,7 @@
 {
   "_schemaVersion": "1.0.0",
   "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
-  "_lastUpdated": "2026-05-10",
+  "_lastUpdated": "2026-05-11",
   "_sourceHandoffs": [
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
@@ -19,14 +19,14 @@
       "truthPercentageBand": { "min": 35, "max": 60 },
       "confidenceBand": { "min": 55, "max": 85 },
       "minBoundaryCount": 2,
-      "qualityStatus": "SOLVED-MAIN-BLOCKER",
-      "qualityStatusNote": "Stage 1 contract/anchor failure fixed. Semantic polish on rechtskräftig anchor may still vary across runs.",
-      "latestVerifiedJobId": "b92201bb47454f7498a1919c4a82c567",
-      "latestObserved": { "verdictLabel": "MIXED", "truthPercentage": 48, "confidence": 72 },
+      "qualityStatus": "CONFIRMED-ON-CURRENT-STACK",
+      "qualityStatusNote": "Stage 1 contract/anchor failure fixed. Current isolated rerun f8e72c84fb004f23945e23c81973fc26 on 2026-05-10 succeeded as LEANING-FALSE 32/80 with 3 AtomicClaims, 5 boundaries, 88 evidence items, and no user-visible warnings; Captain accepted it as good. Truth 32 is 3 points below the nominal band minimum but inside the 8-point noise tolerance. Semantic polish on the rechtskräftig anchor may still vary across runs.",
+      "latestVerifiedJobId": "f8e72c84fb004f23945e23c81973fc26",
+      "latestObserved": { "verdictLabel": "LEANING-FALSE", "truthPercentage": 32, "confidence": 80 },
       "_failed_rerun_2026-04-16": "Rerun 4177998a at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls. Root cause: Stage 2 evidence extraction timed out (467 Fix3 LLM timeouts logged that day; 5 jobs submitted concurrently). NOT treated as a regression — needs isolated single-job rerun to confirm qualityStatus.",
       "knownOpenIssues": [
         "semantic precision on rechtskräftig anchor — claim shape still slightly variable",
-        "failed isolated-rerun needed: 2026-04-16 concurrent-submission collapse not yet ruled in/out as regression"
+        "latest accepted rerun sits just below the nominal truth band but within repository noise tolerance"
       ]
     },
     {
@@ -145,22 +145,18 @@
       "confidenceBand": { "min": 55, "max": 80 },
       "minBoundaryCount": 2,
       "qualityStatus": "PARSE-FAILURE-FIXED",
-      "qualityStatusNote": "Stage 4 advocate parse-failure fixed; no longer forces report into fallback UNVERIFIED states. Broader evidence/aggregation variance remains. Useful as stress test but not proof of total stability.",
+      "qualityStatusNote": "Stage 4 advocate parse-failure fixed; no longer forces report into fallback UNVERIFIED states. Broader evidence/aggregation variance remains. Latest isolated attempt 9d7ab72a60114878a96c30ffc517c347 failed operationally at progress 60 with no report and is not usable report-quality evidence.",
       "latestVerifiedJobId": "a97ec59eeb5e43c69ae8d7583eecfcb3",
       "latestObserved": { "verdictLabel": "MOSTLY-FALSE", "truthPercentage": 21, "confidence": 71 },
       "_failed_rerun_2026-04-16": "Rerun 89c8f2ec at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls, plus 4 preliminary_fetch source_fetch_failure (info). Root cause same as Bundesrat: Stage 2 LLM timeout under concurrent load. NOT confirmed as a Stage 4 parse regression — needs isolated rerun.",
       "knownOpenIssues": [
         "evidence aggregation variance across runs",
         "not a reliable family for asserting total report-quality stability",
-        "failed isolated-rerun needed: 2026-04-16 concurrent-submission collapse not yet ruled in/out as regression"
+        "latest isolated rerun attempt 9d7ab72a60114878a96c30ffc517c347 failed at progress 60; inspect operational failure before spending another plastic job"
       ]
     }
   ],
   "highPriorityReruns": [
-    {
-      "slug": "bundesrat-rechtskraftig",
-      "reason": "2026-04-16 concurrent-submission rerun collapsed to UNVERIFIED 50/0 (zero evidence, LLM timeout). Isolated single-job rerun needed to confirm SOLVED-MAIN-BLOCKER status."
-    },
     {
       "slug": "plastic-en",
       "reason": "2026-04-16 concurrent-submission rerun collapsed to UNVERIFIED 50/0 (zero evidence, LLM timeout). Isolated single-job rerun needed to confirm PARSE-FAILURE-FIXED status."
