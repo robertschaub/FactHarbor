@@ -3994,6 +3994,66 @@ describe("Stage 2: generateResearchQueries", () => {
     ]);
   });
 
+  it("prioritizes refuting variants during contradiction iterations", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A support route 1", rationale: "pro 1", variantType: "supporting" },
+        { query: "entity A refute route 1", rationale: "con 1", variantType: "refuting" },
+        { query: "entity A support route 2", rationale: "pro 2", variantType: "supporting" },
+        { query: "entity A refute route 2", rationale: "con 2", variantType: "refuting" },
+      ],
+    });
+
+    const result = await generateResearchQueries(
+      claim,
+      "contradiction",
+      [],
+      { queryStrategyMode: "pro_con", researchMaxQueriesPerIteration: 3 } as any,
+      "2026-02-17",
+    );
+
+    expect(result).toEqual([
+      { query: "entity A refute route 1", rationale: "con 1" },
+      { query: "entity A refute route 2", rationale: "con 2" },
+      { query: "entity A support route 1", rationale: "pro 1" },
+    ]);
+  });
+
+  it("prioritizes the underrepresented variant during contrarian iterations", async () => {
+    const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
+    const existingEvidence = [
+      { relevantClaimIds: ["AC_01"], claimDirection: "supports" },
+      { relevantClaimIds: ["AC_01"], claimDirection: "supports" },
+      { relevantClaimIds: ["AC_01"], claimDirection: "contradicts" },
+    ] as any;
+
+    mockLoadSection.mockResolvedValue({ content: "generate queries prompt", variables: {} });
+    mockGenerateText.mockResolvedValue({ text: "" } as any);
+    mockExtractOutput.mockReturnValue({
+      queries: [
+        { query: "entity A support route", rationale: "pro", variantType: "supporting" },
+        { query: "entity A refute route", rationale: "con", variantType: "refuting" },
+      ],
+    });
+
+    const result = await generateResearchQueries(
+      claim,
+      "contrarian",
+      existingEvidence,
+      { queryStrategyMode: "pro_con" } as any,
+      "2026-02-17",
+    );
+
+    expect(result).toEqual([
+      { query: "entity A refute route", rationale: "con" },
+      { query: "entity A support route", rationale: "pro" },
+    ]);
+  });
+
   it("keeps partially unlabeled pro_con queries instead of dropping them", async () => {
     const claim = createAtomicClaim({ id: "AC_01", statement: "Entity A claim" });
 

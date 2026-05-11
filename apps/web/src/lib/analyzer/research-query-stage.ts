@@ -280,44 +280,34 @@ export async function generateResearchQueries(
         (query) => query.variantType !== "supporting" && query.variantType !== "refuting",
       );
 
-      const merged: GeneratedResearchQuery[] = [];
+      const toGeneratedQuery = (query: typeof validated.queries[number]): GeneratedResearchQuery => ({
+        query: query.query,
+        rationale: query.rationale,
+        ...(query.retrievalLane !== undefined ? { retrievalLane: query.retrievalLane } : {}),
+        ...(query.freshnessWindow !== undefined ? { freshnessWindow: query.freshnessWindow } : {}),
+      });
+
+      const interleaved: typeof validated.queries = [];
       const maxVariantLength = Math.max(supportingQueries.length, refutingQueries.length);
       for (let i = 0; i < maxVariantLength; i++) {
-        if (supportingQueries[i]) {
-          merged.push({
-            query: supportingQueries[i].query,
-            rationale: supportingQueries[i].rationale,
-            ...(supportingQueries[i].retrievalLane !== undefined ? { retrievalLane: supportingQueries[i].retrievalLane } : {}),
-            ...(supportingQueries[i].freshnessWindow !== undefined ? { freshnessWindow: supportingQueries[i].freshnessWindow } : {}),
-          });
-        }
-        if (refutingQueries[i]) {
-          merged.push({
-            query: refutingQueries[i].query,
-            rationale: refutingQueries[i].rationale,
-            ...(refutingQueries[i].retrievalLane !== undefined ? { retrievalLane: refutingQueries[i].retrievalLane } : {}),
-            ...(refutingQueries[i].freshnessWindow !== undefined ? { freshnessWindow: refutingQueries[i].freshnessWindow } : {}),
-          });
-        }
+        if (supportingQueries[i]) interleaved.push(supportingQueries[i]);
+        if (refutingQueries[i]) interleaved.push(refutingQueries[i]);
       }
 
-      for (const unlabeled of unlabeledQueries) {
-        merged.push({
-          query: unlabeled.query,
-          rationale: unlabeled.rationale,
-          ...(unlabeled.retrievalLane !== undefined ? { retrievalLane: unlabeled.retrievalLane } : {}),
-          ...(unlabeled.freshnessWindow !== undefined ? { freshnessWindow: unlabeled.freshnessWindow } : {}),
-        });
+      let orderedQueries: typeof validated.queries;
+      if (iterationType === "contradiction") {
+        orderedQueries = [...refutingQueries, ...unlabeledQueries, ...supportingQueries];
+      } else if (iterationType === "contrarian" && claimSupports !== claimContradicts) {
+        orderedQueries = claimSupports > claimContradicts
+          ? [...refutingQueries, ...unlabeledQueries, ...supportingQueries]
+          : [...supportingQueries, ...unlabeledQueries, ...refutingQueries];
+      } else {
+        orderedQueries = [...interleaved, ...unlabeledQueries];
       }
 
-      const normalized = merged.length > 0
-        ? merged
-        : validated.queries.map(({ query, rationale, retrievalLane, freshnessWindow }) => ({
-          query,
-          rationale,
-          ...(retrievalLane !== undefined ? { retrievalLane } : {}),
-          ...(freshnessWindow !== undefined ? { freshnessWindow } : {}),
-        }));
+      const normalized = orderedQueries.length > 0
+        ? orderedQueries.map(toGeneratedQuery)
+        : validated.queries.map(toGeneratedQuery);
 
       finalQueries = normalized.slice(0, maxQueries);
     }
