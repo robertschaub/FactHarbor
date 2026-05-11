@@ -53,13 +53,13 @@
       "truthPercentageBand": { "min": 58, "max": 75 },
       "confidenceBand": { "min": 40, "max": 70 },
       "minBoundaryCount": 1,
-      "qualityStatus": "IMPROVED-CURRENT-PASS-WATCH",
-      "qualityStatusNote": "Must be true-side. Captain correction on 2026-05-09 removed prior MIXED allowance; caveats about source retrieval, freshness, threshold closeness, or incomplete current component tables belong in confidence/reasoning, not a neutral or false-side verdict direction. Latest current canary fd93d0de531243a18d2097b38351f4d4 passed in band with component rows neutral; still watch residual narrative component reconstruction and prior stability variance.",
-      "latestVerifiedJobId": "fd93d0de531243a18d2097b38351f4d4",
-      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 70, "confidence": 60 },
+      "qualityStatus": "IMPROVED-CURRENT-STABILITY-PASS-WATCH",
+      "qualityStatusNote": "Must be true-side. Captain correction on 2026-05-09 removed prior MIXED allowance; caveats about source retrieval, freshness, threshold closeness, or incomplete current component tables belong in confidence/reasoning, not a neutral or false-side verdict direction. Latest current stability canary aaaa8f6572c14b2bb3593866e1eefde5 passed in band as MOSTLY-TRUE 75/68 with one claim, 6 boundaries, 45 evidence items, and no user-visible warnings. Still watch residual narrative component reconstruction and prior stability variance.",
+      "latestVerifiedJobId": "aaaa8f6572c14b2bb3593866e1eefde5",
+      "latestObserved": { "verdictLabel": "MOSTLY-TRUE", "truthPercentage": 75, "confidence": 68 },
       "_note_rerun_2026-04-16": "Rerun e5becebe at HEAD 35a22fba returned MOSTLY-TRUE 78/68. Truth 78 is 3 pts above band max 75 — within 8-pt noise tolerance. Band held; no adjustment needed. Higher confidence (68) is a positive signal.",
       "knownOpenIssues": [
-        "current pass exists after source-data artifact retrieval and component-neutralization fixes, but not enough repeated evidence to close the family",
+        "two post-fix current passes now exist, but the latest is at the upper truth-band edge and the family still has prior false-side stability history",
         "residual narrative can still use component reconstruction as uncertainty context; it must not become decisive support or contradiction unless the source supplies a complete non-overlapping aggregate",
         "MIXED is not acceptable for this family; close-threshold caveats belong in confidence/reasoning, not verdict direction",
         "prior current-stack stability rerun 511c2b17299a49a5a9640505c40eac0f fetched current XLSX/RU sheets but regressed false-side by stitching component tables into an agent-composed total instead of using one clean official SEM aggregate"
@@ -144,22 +144,17 @@
       "truthPercentageBand": { "min": 10, "max": 35 },
       "confidenceBand": { "min": 55, "max": 80 },
       "minBoundaryCount": 2,
-      "qualityStatus": "PARSE-FAILURE-FIXED",
-      "qualityStatusNote": "Stage 4 advocate parse-failure fixed; no longer forces report into fallback UNVERIFIED states. Broader evidence/aggregation variance remains. Latest isolated attempt 9d7ab72a60114878a96c30ffc517c347 failed operationally at progress 60 with no report and is not usable report-quality evidence.",
-      "latestVerifiedJobId": "a97ec59eeb5e43c69ae8d7583eecfcb3",
-      "latestObserved": { "verdictLabel": "MOSTLY-FALSE", "truthPercentage": 21, "confidence": 71 },
+      "qualityStatus": "OPERATIONAL-RECOVERED-QUALITY-WATCH",
+      "qualityStatusNote": "Stage 4 advocate parse-failure fixed and the 2026-05-10 operational stale-watchdog failure is repaired by runner heartbeat commit 37554ace. Current clean job 38655e2b60d24aaf93ea16d044d1a1c4 succeeded as MIXED 52/68 with 3 claims, 6 boundaries, 124 evidence items, and heartbeat events. Report-quality calibration remains open because truth 52 is above the 10-35 expected truth band.",
+      "latestVerifiedJobId": "38655e2b60d24aaf93ea16d044d1a1c4",
+      "latestObserved": { "verdictLabel": "MIXED", "truthPercentage": 52, "confidence": 68 },
       "_failed_rerun_2026-04-16": "Rerun 89c8f2ec at HEAD 35a22fba returned UNVERIFIED 50/0 with 0 evidence items, 0 boundaries, 12 LLM calls, plus 4 preliminary_fetch source_fetch_failure (info). Root cause same as Bundesrat: Stage 2 LLM timeout under concurrent load. NOT confirmed as a Stage 4 parse regression — needs isolated rerun.",
       "knownOpenIssues": [
         "evidence aggregation variance across runs",
         "not a reliable family for asserting total report-quality stability",
-        "latest isolated rerun attempt 9d7ab72a60114878a96c30ffc517c347 failed at progress 60; inspect operational failure before spending another plastic job"
+        "current clean job 38655e2b60d24aaf93ea16d044d1a1c4 no longer fails operationally, but truth 52 is above the expected calibrated false-side band"
       ]
     }
   ],
-  "highPriorityReruns": [
-    {
-      "slug": "plastic-en",
-      "reason": "2026-04-16 concurrent-submission rerun collapsed to UNVERIFIED 50/0 (zero evidence, LLM timeout). Isolated single-job rerun needed to confirm PARSE-FAILURE-FIXED status."
-    }
-  ]
+  "highPriorityReruns": []
 }

@@ -955,3 +955,46 @@ Next gate:
 2. If continuing asylum quality work, prefer the exact `asylum-235000-de` current-total input, not the WWII comparison, and spend at most one job after a short no-edit comparator review.
 3. If continuing plastic, inspect why `9d7ab72` failed before rerunning.
 4. If continuing SVP URL/article controls, track AC_04 evidence-source diversity and research-time budget pressure rather than changing benchmark expectations.
+
+### 12.20 Runner Heartbeat Fix And Current Plastic Verification - 2026-05-11
+
+Captain reset the live-job budget to 8 and then requested fixing failed plastic job `9d7ab72a60114878a96c30ffc517c347`.
+
+Debt-guard classification:
+
+- Symptom: `9d7ab72` was `FAILED` at progress 60 with no report.
+- Verifier: event history shows `Job failed: Stale job (no progress update for 15 minutes)` at 22:44:30, followed by continued analyzer progress (`Verdict generation complete`, `Analysis complete`, `Storing result`) and `Ignored result store after terminal status FAILED`.
+- Classification: **incomplete-existing-mechanism**. The stale recovery mechanism treated an active local run as dead because long LLM stages can exceed 15 minutes without a status/progress write.
+- Rejected fixes: raising the stale threshold globally, disabling stale recovery, adding plastic-specific retry/report logic, or allowing late result storage over terminal failed jobs.
+- Chosen fix: amend the existing runner mechanism with a low-frequency active-job heartbeat while `runJobBackground` owns the local job execution.
+
+Implementation:
+
+- Commit: `37554ace fix(runner): heartbeat active jobs during long stages`.
+- File: `apps/web/src/lib/internal-runner-queue.ts`.
+- Behavior: active locally tracked jobs now write `Runner heartbeat` every 5 minutes by default (`FH_RUNNER_JOB_HEARTBEAT_INTERVAL_MS` can override with intervals >= 60 seconds). The heartbeat refreshes `UpdatedUtc` without changing progress and is cleared in `finally`.
+- Tests: `apps/web/test/unit/lib/internal-runner-queue.test.ts` now covers heartbeat interval resolution.
+
+Verification:
+
+- Focused runner test: passed (`14` tests).
+- `npm -w apps/web run build`: passed; prompt/config reseed reported `0 changed`.
+- Full safe `npm test`: passed.
+- Runtime restarted/reseeded on clean commit `37554ace`.
+
+Live outcomes from the reset 8-job budget:
+
+- `asylum-235000-de` stability job `aaaa8f6572c14b2bb3593866e1eefde5` ran before the runner patch activation, with manual heartbeats to avoid the known stale-watchdog false failure. It succeeded as `MOSTLY-TRUE` 75/68 on `acf99731`, with 1 claim, 6 boundaries, 45 evidence items, 48 sources, and no user-visible warnings. This is in band but at the truth-band ceiling, so keep watch.
+- Plastic verification job `38655e2b60d24aaf93ea16d044d1a1c4` ran after restart on `37554ace` and succeeded as `MIXED` 52/68, with 3 claims, 6 boundaries, 124 evidence items, and 29 sources. Event history shows heartbeat updates at 13:45, 13:50, 13:55, and 14:00, then `Analysis complete`, `Storing result`, and `Done` with no stale failure.
+
+Quality read:
+
+- The user-reported failure mode for `9d7ab72` is fixed operationally: the analyzer can now survive long late-stage spans and store the result.
+- Plastic report quality remains open. Current clean `38655e2b` is not a best comparator because truth 52 is above the expected calibrated false-side band, even though `MIXED` is an allowed label in the current JSON row.
+- Do not spend another plastic job before a no-edit comparison against best exact comparator `32f00bb32d644a909f0c99521e800536`, focused on why current evidence/adjudication shifted from false-side to high mixed.
+
+Budget:
+
+- Reset budget: 8.
+- Spent in this slice: 2 (`aaaa8f65` asylum, `38655e2b` plastic).
+- Remaining submitted-job budget: 6.
