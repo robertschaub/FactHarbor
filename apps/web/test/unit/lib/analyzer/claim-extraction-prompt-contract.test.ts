@@ -165,6 +165,12 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");
+      expect(section).toContain("If the Contract Validation Summary identifies broad-evaluative explanatory-tail drift");
+      expect(section).toContain("repair is primarily deletion, not reinterpretation");
+      expect(section).toContain("keeping the original predicate plus its neutral dimension qualifier and deleting the explanatory tail");
+      expect(section).toContain('Do not leave a dash, colon, "i.e.", parenthetical explanation');
+      expect(section).toContain("Do not substitute a different proxy predicate");
+      expect(section).toContain("Move any useful evidence route, measurable mechanism, threshold, causal chain, or metric target");
       expect(section).toContain("Do not shift it onto a different clause");
       expect(section).toContain("Do not externalize the anchor into a supporting sub-claim");
       expect(section).toContain("Do not add chronology, causality, legality, or verdict language");
