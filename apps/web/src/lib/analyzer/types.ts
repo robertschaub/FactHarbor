@@ -877,6 +877,54 @@ export interface ClaimSelectionStage1Observability {
   retryValidationMs?: number;
   repairPassMs?: number;
   repairValidationMs?: number;
+  contractRepair?: {
+    attempted: boolean;
+    anchorText?: string;
+    anchorPresentInInput?: boolean;
+    anchorMissingBeforeRepair?: boolean;
+    shouldAttemptRepair?: boolean;
+    adopted?: boolean;
+    adoptedStage?: "repair" | "refined-repair";
+    beforeClaims?: Array<{
+      id: string;
+      statement: string;
+      thesisRelevance?: string;
+      centrality?: string;
+    }>;
+    candidateClaims?: Array<{
+      id: string;
+      statement: string;
+      thesisRelevance?: string;
+      centrality?: string;
+    }>;
+    validation?: {
+      attempts: number;
+      resultAvailable: boolean;
+      preservesContract?: boolean;
+      rePromptRequired?: boolean;
+      effectiveRePromptRequired?: boolean;
+      failureMode?: "contract_violated" | "validator_unavailable";
+      summary?: string;
+      refinedRepairAnchorText?: string;
+      shouldAttemptRefinedRepair?: boolean;
+      refinedSkipReason?: string;
+    };
+    refinedCandidateClaims?: Array<{
+      id: string;
+      statement: string;
+      thesisRelevance?: string;
+      centrality?: string;
+    }>;
+    refinedValidation?: {
+      attempts: number;
+      resultAvailable: boolean;
+      preservesContract?: boolean;
+      rePromptRequired?: boolean;
+      effectiveRePromptRequired?: boolean;
+      failureMode?: "contract_violated" | "validator_unavailable";
+      summary?: string;
+    };
+  };
 }
 
 export interface ClaimSelectionDraftObservability {

@@ -232,6 +232,15 @@ export interface PreliminaryEvidenceItem {
  * @param state - The mutable research state
  * @returns CBClaimUnderstanding with atomic claims
  */
+function toRepairClaimSnapshots(claims: AtomicClaim[]) {
+  return claims.map((claim) => ({
+    id: claim.id,
+    statement: claim.statement,
+    thesisRelevance: claim.thesisRelevance,
+    centrality: claim.centrality,
+  }));
+}
+
 export async function extractClaims(
   state: CBResearchState
 ): Promise<CBClaimUnderstanding> {
@@ -651,8 +660,18 @@ export async function extractClaims(
         contractValidationSummary,
         repairAnchorText,
       );
+      stage1Observability.contractRepair = {
+        attempted: false,
+        anchorText: repairAnchorText,
+        anchorPresentInInput,
+        anchorMissingBeforeRepair: anchorMissing,
+        shouldAttemptRepair,
+        adopted: false,
+        beforeClaims: toRepairClaimSnapshots(currentClaims),
+      };
 
       if (shouldAttemptRepair && repairAnchorText) {
+        stage1Observability.contractRepair.attempted = true;
         if (anchor?.anchorText?.trim() && anchor.anchorText.trim() !== repairAnchorText) {
           console.info(
             `[Stage1] Narrowed repair anchor from "${anchor.anchorText.trim()}" to salience-backed span "${repairAnchorText}" before contract repair.`,
@@ -684,6 +703,9 @@ export async function extractClaims(
           }
           if (repairedPass2) {
             state.llmCalls++;
+            stage1Observability.contractRepair.candidateClaims = toRepairClaimSnapshots(
+              repairedPass2.atomicClaims as unknown as AtomicClaim[],
+            );
 
             // C17 [BLOCKER FIX]: mandatory re-validation refresh after repair.
             // Decoupled from Gate 1 to ensure structural and semantic correctness.
@@ -737,12 +759,23 @@ export async function extractClaims(
                 salienceCommitment,
                 activePass2.distinctEvents ?? [],
               );
+              stage1Observability.contractRepair.validation = {
+                attempts: repairValidationAttempts,
+                resultAvailable: true,
+                preservesContract: evaluatedRepair.summary.preservesContract,
+                rePromptRequired: evaluatedRepair.summary.rePromptRequired,
+                effectiveRePromptRequired: evaluatedRepair.effectiveRePromptRequired,
+                failureMode: evaluatedRepair.summary.failureMode,
+                summary: evaluatedRepair.summary.summary,
+              };
               if (!evaluatedRepair.effectiveRePromptRequired) {
                 activePass2 = { ...activePass2, atomicClaims: repairedPass2.atomicClaims };
                 stageAttribution = "repair";
                 lastContractValidatedClaims = repairedPass2.atomicClaims as unknown as AtomicClaim[];
                 contractValidationSummary = evaluatedRepair.summary;
                 contractValidationSummary.stageAttribution = stageAttribution;
+                stage1Observability.contractRepair.adopted = true;
+                stage1Observability.contractRepair.adoptedStage = "repair";
                 console.info(
                   `[Stage1] Contract repair produced ${repairedPass2.atomicClaims.length} claim(s) with anchor "${repairAnchorText}" fused and validated cleanly.`
                 );
@@ -753,7 +786,14 @@ export async function extractClaims(
                     repairedPass2.atomicClaims as unknown as AtomicClaim[],
                     salienceCommitment,
                   ) ?? repairAnchorText;
-                if (shouldAttemptContractRepair(evaluatedRepair.summary, refinedRepairAnchorText)) {
+                const shouldAttemptRefinedRepair = shouldAttemptContractRepair(evaluatedRepair.summary, refinedRepairAnchorText);
+                stage1Observability.contractRepair.validation = {
+                  ...stage1Observability.contractRepair.validation,
+                  refinedRepairAnchorText,
+                  shouldAttemptRefinedRepair,
+                  ...(!shouldAttemptRefinedRepair ? { refinedSkipReason: "refined_repair_not_applicable" } : {}),
+                };
+                if (shouldAttemptRefinedRepair) {
                   console.info(
                     "[Stage1] Contract repair did not validate cleanly; attempting one refined repair with the post-repair validation summary.",
                   );
@@ -770,6 +810,9 @@ export async function extractClaims(
                   );
                   if (refinedRepairedPass2) {
                     state.llmCalls++;
+                    stage1Observability.contractRepair.refinedCandidateClaims = toRepairClaimSnapshots(
+                      refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[],
+                    );
                     state.onEvent?.("Validating refined claim contract repair...", 28);
                     const {
                       result: refinedRepairValidationResult,
@@ -805,12 +848,23 @@ export async function extractClaims(
                         salienceCommitment,
                         activePass2.distinctEvents ?? [],
                       );
+                      stage1Observability.contractRepair.refinedValidation = {
+                        attempts: refinedRepairValidationAttempts,
+                        resultAvailable: true,
+                        preservesContract: evaluatedRefinedRepair.summary.preservesContract,
+                        rePromptRequired: evaluatedRefinedRepair.summary.rePromptRequired,
+                        effectiveRePromptRequired: evaluatedRefinedRepair.effectiveRePromptRequired,
+                        failureMode: evaluatedRefinedRepair.summary.failureMode,
+                        summary: evaluatedRefinedRepair.summary.summary,
+                      };
                       if (!evaluatedRefinedRepair.effectiveRePromptRequired) {
                         activePass2 = { ...activePass2, atomicClaims: refinedRepairedPass2.atomicClaims };
                         stageAttribution = "repair";
                         lastContractValidatedClaims = refinedRepairedPass2.atomicClaims as unknown as AtomicClaim[];
                         contractValidationSummary = evaluatedRefinedRepair.summary;
                         contractValidationSummary.stageAttribution = stageAttribution;
+                        stage1Observability.contractRepair.adopted = true;
+                        stage1Observability.contractRepair.adoptedStage = "refined-repair";
                         console.info(
                           `[Stage1] Refined contract repair produced ${refinedRepairedPass2.atomicClaims.length} claim(s) and validated cleanly.`,
                         );
@@ -818,6 +872,10 @@ export async function extractClaims(
                         console.info("[Stage1] Refined contract repair did not validate cleanly; keeping pre-repair set.");
                       }
                     } else {
+                      stage1Observability.contractRepair.refinedValidation = {
+                        attempts: refinedRepairValidationAttempts,
+                        resultAvailable: false,
+                      };
                       console.warn("[Stage1] Refined contract repair could not be re-validated; keeping pre-repair set.");
                     }
                   } else {
@@ -828,6 +886,11 @@ export async function extractClaims(
                 }
               }
             } else {
+              stage1Observability.contractRepair.validation = {
+                attempts: repairValidationAttempts,
+                resultAvailable: false,
+                refinedSkipReason: "repair_validation_unavailable",
+              };
               console.warn("[Stage1] Contract repair could not be re-validated; keeping pre-repair set.");
             }
           } else {

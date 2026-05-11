@@ -362,6 +362,7 @@ export function buildClaimBoundaryResultJson(params: {
   const analysisObservability = {
     ...(acsResearchWaste ? { acsResearchWaste } : {}),
     ...(acquisitionTrace ? { acquisitionTrace } : {}),
+    ...(state.stage1Observability ? { stage1: state.stage1Observability } : {}),
   };
 
   return {
