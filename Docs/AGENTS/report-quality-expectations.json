@@ -1,11 +1,11 @@
 {
   "_schemaVersion": "1.0.0",
   "_purpose": "Machine-readable quality expectations for /report-review. The skill describes HOW to run the checks (phase flow, debate, fixes); this file describes WHAT to check. Update this file when the canonical quality criteria change — the skill will pick up new Q-codes automatically via its dimensionMap traversal.",
-  "_lastUpdated": "2026-05-09",
+  "_lastUpdated": "2026-05-11",
   "_sourceDocs": [
     "Docs/WIP/2026-04-11_Canonical_Quality_Criteria.md",
     "Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md",
-    "Docs/AGENTS/Captain_Quality_Expectations.md (2026-05-09 Captain correction; no Q-code structural change)",
+    "Docs/AGENTS/Captain_Quality_Expectations.md (2026-05-09 Captain correction; 2026-05-11 plastic expectation review note; no Q-code structural change)",
     "AGENTS.md (Fundamental Rules, Report Quality & Event Communication)",
     "Docs/AGENTS/Role_Learnings.md (LLM Expert entries on self-eval bias and deterministic adjudication)"
   ],

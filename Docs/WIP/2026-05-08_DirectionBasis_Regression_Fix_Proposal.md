@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
-**Date:** 2026-05-08; updated 2026-05-09
-**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` now has a current in-band canary after component-evidence neutralization, but remains watch-listed for residual narrative component reconstruction
+**Date:** 2026-05-08; updated 2026-05-11
+**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` has current in-band canaries but remains watch-listed, while `plastic-en` improved from high-mixed to false-side edge after the Stage 2 query-ordering/diagnostics slice and now needs a Captain expectation decision on `LEANING-FALSE`
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -998,3 +998,46 @@ Budget:
 - Reset budget: 8.
 - Spent in this slice: 2 (`aaaa8f65` asylum, `38655e2b` plastic).
 - Remaining submitted-job budget: 6.
+
+### 12.21 Plastic False-Side Edge And Deploy-Readiness Review - 2026-05-11
+
+Scope:
+
+- Exact Captain-defined input: `Plastic recycling is pointless`.
+- Goal: investigate whether current code/prompt quality is deployable and at least as good as the current deployment/comparator set, without piling prompt changes on top of failed validation.
+- Runtime after final cleanup: local `main` commit `4b3fb1d431bb11d496ae74bf4ce0ba563de8d49e`, web `/api/version` confirmed on localhost, API health OK.
+
+Debt-guard / failed-attempt classification:
+
+| Commit | Classification | Reason |
+|---|---|---|
+| `01466a0d` Stage 2 contradiction-query ordering | Keep, residual watch | Current canary exercised the contradiction loop (`contradictionIterationsUsed=1`) and moved the report from high `MIXED` toward false-side. It did not fully solve direction skew, so do not broaden from it without a new verifier. |
+| `3bd484a4` repair-prompt reinforcement | Reverted by `4b3fb1d4` | The only canary that exercised the repair prompt still failed in Stage 1; the successful canary passed on retry and did not use `CLAIM_CONTRACT_REPAIR`. Keeping it would be pile-up. |
+| `0b3238b9` Stage 1 repair observability | Keep | Diagnostics-only, no semantic behavior change. Useful if the Stage 1 repair path fails again. |
+| `7b6cce38` result-builder type fix | Keep | Minimal plumbing needed for the observability payload. |
+
+Live jobs in this slice:
+
+- `bbbbc49180d5440492461ec6d0ff2d4`: exact plastic on `01466a0d`; `UNVERIFIED` 50/0 with zero evidence. Not a Stage 2 verifier because it aborted in Stage 1 contract repair.
+- `7222f56018c64d94ba9f1026d5fbd229`: exact plastic after prompt reinforcement `3bd484a4`; again `UNVERIFIED` 50/0 with zero evidence. This contradicted the prompt-fix claim.
+- `939563ecbea14a4c90249eb13c9743ef`: exact plastic on `7b6cce38` before reverting the unused prompt change; `LEANING-FALSE` 37/62, 3 AtomicClaims, 6 boundaries, 144 evidence items, 34 sources, no `report_damaged`.
+
+Report-quality comparison:
+
+- Captain/JSON bar remains `MOSTLY-FALSE` / `FALSE` / `MIXED`, truth 10-35, confidence 55-80, min 2 boundaries. With the repository 8-point tolerance, truth 37 is inside the expanded truth band, but the label is a strict Q-BE1 miss because `LEANING-FALSE` is not listed.
+- Best exact local comparator remains `32f00bb32d644a909f0c99521e800536` (`MOSTLY-FALSE` 21/68). It is still stronger: better nominal truth calibration and more balanced evidence.
+- Prior current exact reports `38655e2b60d24aaf93ea16d044d1a1c4` and `8e3c9b9d58304dfe9cb4705b5c67cb41` were high `MIXED` 52; `939563ec` is a material improvement.
+- Deployed family variant `800431527e254d2888ef56ba23af4688` is German and not exact, but its `LEANING-FALSE` 29/59 shape supports that false-side edge reports can be acceptable family controls.
+
+Assisted review result:
+
+- Technical review: deploy-ready only as an operationally safer/current-watch improvement, and only after excluding the unvalidated prompt change. Do not call plastic fully closed.
+- Report-quality review: conditional pass for release gating, not a new best comparator. `LEANING-FALSE` 37/62 is mostly an expectation metadata decision plus residual quality watch, not the same hard miss as `MIXED` 52.
+
+Next gate:
+
+1. Do not spend another immediate plastic job before the Captain decision below.
+2. Captain decision needed: either add `LEANING-FALSE` to the accepted `plastic-en` label set as a false-side edge outcome, or keep the stricter current labels and treat `939563ec` as still below the desired quality bar.
+3. If Captain accepts `LEANING-FALSE`, update `benchmark-expectations.json` mechanically and run at most one same-stack exact plastic repeat only if deployment approval requires a fresh job hash on `4b3fb1d4`.
+4. If Captain rejects `LEANING-FALSE`, do not add another prompt patch. The next no-job investigation should focus on why contradiction/refuting research still admits mostly support-direction evidence for broad absolute claims.
+5. Budget accounting since the latest 8-job reset: 3 plastic jobs spent in this slice (`bbbbc491`, `7222f560`, `939563ec`); conservative remaining budget is 5.
