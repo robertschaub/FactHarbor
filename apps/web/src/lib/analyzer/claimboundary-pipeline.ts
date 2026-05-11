@@ -321,6 +321,7 @@ export function buildClaimBoundaryResultJson(params: {
     | "contradictionIterationsUsed"
     | "contradictionSourcesFound"
     | "acquisitionTrace"
+    | "stage1Observability"
   >;
   detectedUrl?: string;
   llmProvider?: string;
