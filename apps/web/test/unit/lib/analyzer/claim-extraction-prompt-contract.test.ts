@@ -604,6 +604,31 @@ describe("Stage-1 prompt contract", () => {
     });
   });
 
+  describe("ambiguous evaluative predicate discipline", () => {
+    it("keeps dimension claims predicate-faithful without explanatory proxy tails", () => {
+      const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");
+      const pass2 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS2");
+
+      expect(pass1).not.toBeNull();
+      expect(pass1).toContain("For broad evaluative predicates, use the same discipline");
+      expect(pass1).toContain("Do not append an explanatory proxy clause after the neutral dimension label");
+      expect(pass1).toContain("mechanisms, thresholds, causal stories, or metric details belong in `searchHint`");
+      expect(pass1).toContain("Dimension-vs-reason distinction");
+      expect(pass1).toContain("merely be evidence for, or a possible reason supporting, that predicate");
+
+      expect(pass2).not.toBeNull();
+      expect(pass2).toContain("No explanatory proxy tails");
+      expect(pass2).toContain("or the input-language equivalent");
+      expect(pass2).toContain("not faithful merely because it starts with the original evaluative predicate");
+      expect(pass2).toContain("causal clause, complement clause, or equivalent explanatory tail");
+      expect(pass2).toContain("Stop the `statement` after the neutral dimension qualifier whenever possible");
+      expect(pass2).toContain("Put candidate mechanisms, measurable routes, thresholds, and evidence strategy in `expectedEvidenceProfile`");
+      expect(pass2).toContain("A thesis-direct dimension claim must remain the original predicate evaluated within a neutral dimension");
+      expect(pass2).toContain("A preserved broad primary claim does not license sibling dimension claims");
+      expect(pass2).toContain("sufficient-condition claims");
+    });
+  });
+
   describe("decomposition integrity guard", () => {
     it("forbids whole-input carry-through when a comparison sentence is decomposed", () => {
       const pass1 = extractSection(promptContent, "CLAIM_EXTRACTION_PASS1");

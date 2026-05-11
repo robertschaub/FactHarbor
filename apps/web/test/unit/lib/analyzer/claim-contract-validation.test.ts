@@ -1812,6 +1812,18 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain('Do not mark that carrier as `recommendedAction: "retry"` or `proxyDriftSeverity: "material"` solely because');
     expect(section).toContain("If `antiInferenceCheck.normativeClaimInjected` is true, then `rePromptRequired` must be true.");
   });
+
+  it("treats predicate-preserving explanatory proxy tails as material drift", () => {
+    const section = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+    expect(section).not.toBeNull();
+    expect(section).toContain("repeats the original predicate at the start");
+    expect(section).toContain("appends an explanatory tail");
+    expect(section).toContain("makes a narrower proxy proposition the thing being verified");
+    expect(section).toContain("Treat a dash, colon, relative clause, causal clause, complement clause, or equivalent explanatory tail as material proxy drift");
+    expect(section).toContain("Also fail sufficient-condition drift");
+    expect(section).toContain("would merely serve as evidence for, or a possible reason supporting, that predicate");
+    expect(section).toContain("A preserved broad primary claim does not cure material proxy drift");
+  });
 });
 
 describe("CLAIM_SINGLE_CLAIM_ATOMICITY_VALIDATION prompt contract", () => {
