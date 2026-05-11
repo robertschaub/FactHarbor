@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-10T22:24:13.506Z",
-  "count": 401,
+  "generatedAt": "2026-05-11T19:50:31.743Z",
+  "count": 402,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8451,6 +8451,22 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-11_Lead_Developer_LLM_Expert_Plastic_Deploy_Readiness_Review.md",
+      "date": "2026-05-11",
+      "roles": [
+        "lead_developer",
+        "llm_expert"
+      ],
+      "topics": [
+        "plastic",
+        "deploy",
+        "readiness",
+        "review"
+      ],
+      "files_touched": [],
+      "summary": "Start from current `main` HEAD `21e9a817`. The next decision is Captain-owned: accept `LEANING-FALSE` as an allowed `plastic-en` label or keep the stricter current label set. If accepted, update the mechanical expected labels and optionally spend one same-stack repeat only if deployment approval req"
     }
   ]
 }
