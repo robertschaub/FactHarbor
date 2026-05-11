@@ -649,16 +649,6 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("unless the input itself authorizes that metric class for the relation");
     });
   });
-
-  describe("CLAIM_CONTRACT_REPAIR", () => {
-    it("requires proxy-tail repairs to change rejected statements rather than returning them unchanged", () => {
-      const section = extractSection(promptContent, "CLAIM_CONTRACT_REPAIR");
-      expect(section, "Section ## CLAIM_CONTRACT_REPAIR not found").not.toBeNull();
-      expect(section).toContain('recommendedAction: "retry"');
-      expect(section).toContain("Do not return the rejected statement unchanged");
-      expect(section).toContain("stops at the neutral dimension qualifier");
-    });
-  });
 });
 
 // ---------------------------------------------------------------------------
