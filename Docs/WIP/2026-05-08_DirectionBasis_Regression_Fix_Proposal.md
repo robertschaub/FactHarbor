@@ -1095,3 +1095,82 @@ Next gate:
 2. Restart/refresh runtime prompt state before submitting a canary.
 3. Spend at most one exact `asylum-235000-de` canary if Captain wants live confirmation of this prompt-only consistency patch.
 4. If a new canary still shows duplicate conflicting directions, stop and debate a bounded LLM-backed evidence-pool consistency pass; do not stack deterministic matching or broad query changes.
+
+### 12.24 Runtime And Timing Debt Register - 2026-05-12
+
+Captain asked to preserve the timing issues found during the May 11/12 validation work so they can be addressed separately from report-quality fixes.
+
+Observed current-stack timing:
+
+| Job | Family | Result | Duration | Evidence / sources | Boundaries | LLM calls | Timing note |
+|---|---|---:|---:|---:|---:|---:|---|
+| `4e9aef50951c48f58c4c758fc5fe18a6` | `asylum-235000-de` | `MOSTLY-FALSE` 18/72 | 11.94 min | 23 / 19 | 5 | 29 | Failed quality canary; still near 12 min. |
+| `9bde7fdbb0cf454896169e6844e9fb1b` | `asylum-235000-de` | `LEANING-TRUE` 68/58 | 13.89 min | 33 / 25 | 6 | 30 | Passed band; 32 normalized scopes and 6 boundaries made clustering/verdict nontrivial. |
+| `38655e2b60d24aaf93ea16d044d1a1c4` | `plastic-en` | `MIXED` 52/68 | 23.04 min | 124 / 29 | 6 | 44 | Heartbeat fix prevented false stale failure but did not reduce duration. |
+| `939563ecbea14a4c90249eb13c9743ef` | `plastic-en` | `LEANING-FALSE` 37/62 | 28.43 min | 144 / 34 | 6 | 51 | Good accepted report, but expensive in wall time and LLM calls. |
+| `d174b136feff4e898b9ba394272cd7e3` | `asylum-235000-de` | `MOSTLY-FALSE` 15/78 | 15.51 min | 31 / 22 | 6 | 31 | Failed quality canary; confirms current local asylum jobs are still above old UX expectations even when evidence volume is moderate. |
+
+Known or likely timing drivers:
+
+- The current CB stack performs more LLM quality work than the older deployed expectation: Stage 1 contract validation/repair, multi-iteration research, evidence applicability/mapping, scope normalization, boundary clustering, multi-role verdict debate, grounding/direction validation, and narrative generation.
+- Research fan-out is a major wall-time driver. In `9bde7fdb...`, the second research iteration expanded to multiple queries, many fetched sources, and per-source capped evidence after extraction. Some work is spent on items later dropped or neutralized.
+- Scope normalization and clustering scale with the number of unique evidence scopes. The `9bde7fdb...` trace had 32 normalized scopes and clustering took roughly minutes, not seconds.
+- Plastic reports are heavier because evidence volume is much larger: 124-144 evidence items, 29-34 sources, and 44-51 LLM calls in the two recent plastic runs.
+- Google-CSE fallback 429s are not currently a verdict-quality failure, but they add latency/noise whenever Serper returns no usable results and `first-success` falls through to Google-CSE.
+- Queue/concurrency settings can add user-visible waiting time when more than one job is active; earlier notes identified `FH_RUNNER_MAX_CONCURRENCY=1` as an operational queueing factor.
+- The runner heartbeat fix addresses false stale failures during long late-stage spans; it is not a performance optimization.
+- Product copy or user expectation around "2-5 minutes" is stale for current local CB validation depth. Recent local nontrivial jobs are closer to 12-30 minutes.
+
+Later optimization plan, separate from quality fixes:
+
+1. Build a small timing ledger from job events/metrics for at least the accepted comparator set, including phase durations, evidence count, source count, scope count, boundaries, LLM calls, and provider fallbacks.
+2. Decide target budgets by report family and UI context: quick claim, heavy article/PDF, and benchmark validation should not share one ETA.
+3. Attack no-quality-loss waste first: duplicate URL/source variants before fetch/extract, provider fallback noise, repeated extraction of mirrored artifacts, and work that is predictably dropped by per-source cap.
+4. Profile scope normalization and clustering separately; consider batching, early scope consolidation, or caps only if report quality is preserved.
+5. Review model-tiering only after phase timing data exists. Do not downgrade models blindly while report quality is still under validation.
+6. Update UI progress/ETA messaging to current measured ranges until real optimizations land.
+
+Do not mix this timing work into the active report-quality patch unless a timing issue causes an operational failure or changes verdict quality.
+
+### 12.25 Post-Timing Canary Failure - 2026-05-12
+
+After the timing note above was written, the exact `asylum-235000-de` canary `d174b136feff4e898b9ba394272cd7e3` finished on committed local `main` state:
+
+- Commit under test: `238858acf98d45e180a21ec8a2b466c80f5e9900`.
+- Prompt hash under test: `86b44a3a9eeb6f821416881c6839ce6fd0f95d5e5969d863c7131740beafe44a`.
+- Result: `MOSTLY-FALSE` 15/78.
+- Expected band: `LEANING-TRUE` or `MOSTLY-TRUE`, truth 58-75, confidence 40-70.
+- Evidence/source shape: 31 evidence items, 22 sources, 6 boundaries, 31 LLM calls.
+- Final evidence balance: 0 supporting / 1 contradicting / 30 neutral.
+- Duration: 15.51 minutes.
+
+Stop-rule status: **active**. Do not submit additional jobs from the remaining budget until this failure is classified and the next hypothesis is reviewed.
+
+Failed-attempt classification:
+
+- `238858ac` evidence-balance recomputation: **keep**. It fixes stale published metadata after applicability reassessment and is not implicated in the missing-source failure.
+- `238858ac` / prompt hash `86b44a3a...` evidence-pool direction-consistency prompt patch: **keep as structural prompt-contract hardening, but quarantine its live-quality claim**. The failed canary did not include the duplicate 2025 aggregate source, so it did not validate whether the patch resolves duplicate conflicting directions. It also did not cause the failure surface, because acquisition never admitted the decisive 2025 aggregate.
+
+Comparator trace against good current-stack exact report `9bde7fdbb0cf454896169e6844e9fb1b`:
+
+| Dimension | Failed `d174b136...` | Good `9bde7fdb...` |
+|---|---|---|
+| First Stage 2 main query | `SEM Asylstatistik 2024 Gesamtbestand Personen Asylbereich` | `SEM Ausländer- und Asylstatistik 2026 aktueller Bestand` |
+| Second main iteration | Repeated 2024 aggregate and then component/status queries | Included current 2026 route plus `SEM Jahresbericht Asylstatistik 2024 2025 Gesamtbestand Asylbereich` |
+| Decisive source acquisition | Fetched `stat-jahr-2024-kommentar.pdf` and 2025/2026 partial component tables only | Fetched `stat-jahr-2025-kommentar-d.pdf`, `admin.ch` 2025 release, and current 2026 component pages |
+| Decisive evidence | `226 706` year-end 2024 aggregate as contradiction | `235 057` year-end 2025 aggregate as support, with current 2026 absence caveated |
+| Source-route failure point | No generated query targeted the latest complete annual aggregate artifact after the 2024 route dominated | One query explicitly bridged the annual-report family across 2024/2025 and admitted the 2025 aggregate |
+
+Root-cause signal:
+
+- The first confirmed divergence is upstream of verdict calibration and upstream of the new duplicate-direction prompt patch.
+- The failed run's Stage 1 `expectedEvidenceProfile` preserved a current-snapshot contract, but its `sourceNativeRoutes` over-indexed on `SEM - Ausländer- und Asylstatistik 2024 (Jahresbericht, erschienen Juni 2025)` and omitted an explicit latest-complete annual aggregate route.
+- Stage 2 then followed that route into 2024 aggregate evidence and later current component tables, without generating the successful comparator's annual-report query that covered both the prior and latest complete publication.
+- The failure is therefore best classified as **source-route/current-aggregate acquisition instability**, not a verdict-side direction-consistency regression.
+
+Next recommended plan:
+
+1. No more live jobs until the next hypothesis is written and reviewed.
+2. Do a no-edit inspection of Stage 1/Stage 2 prompt and code contracts for current-snapshot aggregate claims, focused on why "latest complete official aggregate artifact" is not mandatory enough when preliminary evidence names a stale publication.
+3. If editing is justified, use `/debt-guard` and prefer one simplification-oriented change: make the existing current-snapshot query/profile contract consistently preserve both routes, (a) newest current/live route and (b) latest complete source-native aggregate artifact. Do not add domain-specific terms, deterministic semantic matching, or report-specific query hacks.
+4. Only after commit/reseed/restart, spend at most one exact `asylum-235000-de` canary. Stop again on first family-band failure.
