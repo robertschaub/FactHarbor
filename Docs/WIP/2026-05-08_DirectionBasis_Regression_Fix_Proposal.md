@@ -1542,3 +1542,17 @@ Next gate:
 3. Spend exactly one Bolsonaro EN canary and stop again on failure.
 4. Pass condition: true-side overall (`LEANING-TRUE` or `MOSTLY-TRUE`) with the three intended claims preserved; AC_02/AC_03 must use direct target-path safeguard/verdict records as citations or explicitly explain why any omitted direct side is not probative.
 5. If the rerun still goes false-side or `UNVERIFIED`, do not stack another prompt rule. Escalate to a focused Stage-4 prompt-audit/reduction or a reviewer debate on whether `VERDICT_RECONCILIATION` should receive a smaller claim-local evidence pack.
+
+Follow-up canary on `61ee6d53`:
+
+- Job: `8b51c1e1a36d4941bf97c0facbcafb60`.
+- Result: partial recovery only — overall `LEANING-TRUE` 65, but confidence `24` and AC_02/AC_03 remained `UNVERIFIED` after direction-integrity safe downgrade.
+- Runtime improved to 19.0 minutes, with a smaller final evidence pool (`73` items, `17` sources) than the failed `c3e50afe` run.
+- Root cause narrowed further: the direction repair prompt correctly received one-sided direct-support issues, but returned middle-band values (`50`/`55`). The integrity policy then correctly rejected those middle-band repairs because `LEANING-TRUE` begins at 58.
+
+Additional amendment:
+
+- `VERDICT_DIRECTION_REPAIR` now states the structural band guide explicitly: values `43` through `57` are middle-band, and one-sided direct-support repair must use `58` or higher unless it clears directional arrays because the cited direct support is not materially probative.
+- Verification passed: `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm -w apps/web run build`, and `git diff --check`.
+
+Next gate remains one exact Bolsonaro EN canary after commit/restart. If it still leaves AC_02/AC_03 `UNVERIFIED`, stop and escalate to prompt reduction/reviewer debate rather than adding more prompt clauses.
