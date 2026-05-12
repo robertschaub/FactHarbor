@@ -1130,6 +1130,18 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("Do not pair a non-directional basis with `\"supports\"` or `\"contradicts\"`");
     });
 
+    it("requires duplicate evidence direction consistency before returning claim-local directions", () => {
+      const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
+      expect(section).toContain("Evidence-Pool Direction Consistency");
+      expect(section).toContain("same substantive statement");
+      expect(section).toContain("same measured value");
+      expect(section).toContain("must not conflict");
+      expect(section).toContain("URL variants, mirrored publications, translated titles");
+      expect(section).toContain("the JSON `claimDirection` field must contain the corrected direction");
+      expect(section).toContain("while the `directnessJustification` says the evidence supports the claim");
+      expect(section).toContain("scope/route/time/target difference that changes direction");
+    });
+
     it("requires a same-target bridge before rule-governed concern material becomes directional", () => {
       const section = extractSection(promptContent, "APPLICABILITY_ASSESSMENT");
       expect(section).toContain("requires a concrete bridge to the same evaluated proceeding");

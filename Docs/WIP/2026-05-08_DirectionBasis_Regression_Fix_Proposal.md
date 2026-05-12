@@ -1057,3 +1057,41 @@ Next gate:
 1. No additional plastic job is needed for expectation acceptance.
 2. If deployment validation needs one more current-hash run, spend at most one exact `plastic-en` repeat after commit/restart.
 3. Otherwise use remaining budget on higher-value watch lanes, especially `asylum-235000-de` or Bolsonaro EN only if a no-edit review identifies a focused stability question.
+
+### 12.23 Asylum Current Duplicate-Direction Consistency Patch - 2026-05-12
+
+Context:
+
+- Exact `asylum-235000-de` canary `9bde7fdbb0cf454896169e6844e9fb1b` on prompt hash `a8498978...` passed the Captain band as `LEANING-TRUE` 68/58.
+- The report still had a semantic consistency defect: the same official SEM 2025 aggregate statement appeared twice via URL variants, once as `supports` and once as `contradicts`.
+- The `contradicts` item's `directnessJustification` itself said the value exceeded the threshold and should support the claim.
+
+Debt-guard decision:
+
+- Classification: **incomplete-existing-mechanism**.
+- Existing mechanism: `APPLICABILITY_ASSESSMENT` already performs claim-local LLM direction reassessment over the full evidence pool.
+- Chosen option: amend the existing prompt contract.
+- Rejected option: add a new post-applicability LLM adjudication pass. That may become necessary if live validation still shows conflicts, but it would increase mechanism count before exhausting the existing full-pool applicability pass.
+- Rejected option: deterministic duplicate text/number matching or direction repair. That would violate the LLM-intelligence boundary for semantic direction decisions.
+
+Implementation:
+
+- Added an `Evidence-Pool Direction Consistency` rule to `APPLICABILITY_ASSESSMENT`.
+- The rule says repeated materially identical evidence for the same AtomicClaim must not receive conflicting directions unless a scope, route, time, metric, or target difference explicitly changes the direction.
+- The rule also requires the JSON `claimDirection` field to match the model's own correction/justification rather than leaving a contradicted field plus a narrative correction.
+- Added prompt-contract coverage in `verdict-prompt-contract.test.ts`.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts`: passed (`112` tests).
+- `npm -w apps/web test -- test/unit/lib/analyzer/research-extraction-stage.test.ts`: passed (`67` tests).
+- `npm -w apps/web test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`: passed (`385` passed, `1` skipped).
+- `npm -w apps/web run build`: passed and reseeded the claimboundary prompt (`86b44a3a9eeb...`).
+- `git diff --check`: passed.
+
+Next gate:
+
+1. Commit before any live job.
+2. Restart/refresh runtime prompt state before submitting a canary.
+3. Spend at most one exact `asylum-235000-de` canary if Captain wants live confirmation of this prompt-only consistency patch.
+4. If a new canary still shows duplicate conflicting directions, stop and debate a bounded LLM-backed evidence-pool consistency pass; do not stack deterministic matching or broad query changes.
