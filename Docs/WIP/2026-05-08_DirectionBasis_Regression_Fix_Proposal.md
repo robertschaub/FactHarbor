@@ -1567,13 +1567,14 @@ Final canary on `9b0e8efd`:
 
 Quality verdict:
 
-- **Direction repaired, but not comparator-level quality.**
+- **Captain-accepted current OK/watch; not comparator-level quality.**
 - All three claims are now true-side: AC_01 `LEANING-TRUE` 65/50, AC_02 `LEANING-TRUE` 62/32, AC_03 `LEANING-TRUE` 62/30.
 - The report is materially better than the `c3e50afe` failure and the `61ee6d53` partial recovery because AC_02/AC_03 are no longer safe-downgraded.
+- Captain accepted the report as OK on 2026-05-12.
 - It is still weaker than the preferred exact comparators (`91bf6083` 63/52 local, `85812d61` 68/62 deployed) because overall confidence is 2pp below the canonical band and fair-trial/verdict confidence remains low.
 
 Decision:
 
 - Stop additional Bolsonaro EN jobs for now. The last fix achieved the targeted direction repair; further prompt clauses would risk pile-up.
-- Treat `aedb3a05` as current-watch partial recovery, not a best comparator and not deploy-readiness proof.
-- Next recommended work is a no-edit quality review / prompt-audit reduction focused on why AC_02/AC_03 confidence stays low despite one-sided direct support and no direct contradiction.
+- Treat `aedb3a05` as Captain-accepted current OK/watch, not a best comparator.
+- Next recommended work is a no-edit quality review / prompt-audit reduction only if release-readiness requires comparator-level confidence; do not spend more immediate Bolsonaro EN jobs just to chase the last 2 confidence points.
