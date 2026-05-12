@@ -1706,3 +1706,70 @@ Residual risk:
 - This should reduce duplicate exact URL fetch/parse work, especially for URL/PDF inputs such as the SVP PDF control, but it will not solve long final-report research time when research selects many distinct sources.
 - It does not cancel or deduplicate already-running duplicate drafts; that remains a separate admin/control design slice.
 - No live job has been submitted from this patch yet. Commit and runtime restart are required before any validation job, so the job records the correct source revision.
+
+### 12.37 Plastic Selection Preparation Contract Fix - 2026-05-12
+
+Trigger:
+
+- Captain surfaced failed selection session `5bb38e4674554026aae07fd4b290354e` for exact Captain input `Plastic recycling is pointless`.
+- Failure message: `Stage 1 preparation failed contract preservation and cannot continue.`
+- The initial extraction produced the intended three broad-evaluative dimension claims, but with explanatory proxy tails. Contract repair correctly removed the tails, then refined contract validation wrongly treated the neutral dimension labels themselves as proxy drift.
+
+Debt-guard result:
+
+- Classification: incomplete existing mechanism.
+- Existing mechanism: Pass 2 already requires broad-evaluative dimension claims to preserve the original predicate and stop at the neutral dimension label; contract repair already deletes post-label explanatory tails.
+- Chosen option: amend the existing `CLAIM_CONTRACT_VALIDATION` prompt boundary.
+- Rejected path: no code override, no deterministic semantic acceptance rule, and no new repair/fallback path. The bug was validator prompt overreach, not a missing code mechanism.
+- Reviewer help: side-agent review agreed that the repair path behaved as designed and that the narrow generic prompt amendment was the right fix.
+
+Patch:
+
+- Commit `beacc9339e879283c43664876dc33247df78b27b`.
+- `CLAIM_CONTRACT_VALIDATION` now states that a neutral dimension label is not an explanatory tail by itself.
+- The strict tail rule remains intact: statements still fail when they add non-input mechanisms, thresholds, causal stories, viability/contribution tests, metric results, or other sufficient-condition tails after the dimension label.
+- Prompt-contract tests now lock both sides of the boundary.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claim-contract-validation.test.ts test/unit/lib/analyzer/claim-extraction-prompt-contract.test.ts` passed (`98` tests).
+- `npm -w apps/web run build` passed.
+- `git diff --check` passed.
+- Local runtime restarted with `scripts/restart-clean.ps1`; `/api/fh/version` reported `beacc9339e879283c43664876dc33247df78b27b`.
+- Active `claimboundary` prompt profile hash: `992a6faad40b7b254ccffa189a9fc9ca0170633ff8889ce65abff63a1eef2287`.
+
+Live preparation retry:
+
+- Retried the same draft `5bb38e4674554026aae07fd4b290354e` after commit/restart.
+- Result: `AWAITING_CLAIM_SELECTION`, progress `100`, `Prepared 3 candidate claim(s) and 3 recommendation(s). Awaiting user selection.`
+- Runtime provenance in draft: commit `beacc9339e879283c43664876dc33247df78b27b`; prompt hash `992a6faad40b7b254ccffa189a9fc9ca0170633ff8889ce65abff63a1eef2287`.
+- Prep timing: total prep `230.6s`, Stage 1 `217.7s`.
+- Contract repair adopted: `true`; repair validation preserves contract: `true`.
+- Prepared claims:
+  - `AC_01`: `Plastic recycling is pointless in terms of environmental impact.`
+  - `AC_02`: `Plastic recycling is pointless in terms of economic viability.`
+  - `AC_03`: `Plastic recycling is pointless in terms of practical effectiveness.`
+- Contract summary now says all three preserve `pointless`, use neutral dimension qualifiers, and stop without explanatory tails.
+
+Residual risk:
+
+- This validates the preparation failure only. No full plastic report job was run from this patch.
+- The fix is generic and should help any broad-evaluative ambiguous predicate with clean dimension labels, but the live verifier was the Captain-defined plastic input because that was the failing session.
+
+### 12.38 SVP PDF Post-Reuse Timing Sample - 2026-05-12
+
+Job:
+
+- `9e2522c90ed944738f0a2eac2fcd7a14`.
+- Input: `https://www.svp.ch/wp-content/uploads/260324_Argumentarium-ohne-Q-A-DE.pdf`.
+- Result: `LEANING-FALSE` 38/40.
+- Runtime: created `2026-05-12T16:58:28Z`, completed `2026-05-12T17:21:59Z`, about `23.5m` total wall-clock.
+- Provenance: commit `fb2943db8fdc81a8abe9713ec076f80c3a7c1e54`, prompt hash `608d073de13e74a96005f7cc8e045479f31dae1bdbe1774dfc7ac3f140faf50c`.
+- Shape: 3 claims, 6 boundaries, 46 evidence items, 40 sources, 45 LLM calls, 5 main research iterations.
+- Warnings: one user-visible `budget_exceeded` warning after the 11-minute research budget; 8 info-level analysis warnings.
+
+Interpretation:
+
+- This is useful timing evidence for commit `fb2943db` / resolved URL source reuse, but not a clean speed win. Total time remains above the Captain's preferred 15-minute average.
+- The lower evidence volume versus `15d1c2` (46 vs. 60 evidence items) suggests the result is directionally better on later-stage load, but the run still hit the research budget and needs quality review before being treated as a good SVP comparator.
+- Do not infer that resolved URL reuse solved the main performance issue. The next performance work should still focus on research iteration/budget behavior and source/evidence volume, not another prompt-quality patch.
