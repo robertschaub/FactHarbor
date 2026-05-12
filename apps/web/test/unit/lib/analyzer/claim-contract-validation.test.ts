@@ -1853,10 +1853,14 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("makes a narrower proxy proposition the thing being verified");
     expect(section).toContain("Dimension qualification is allowed, but tail narrowing is not");
     expect(section).toContain("Qualification stops at the dimension label");
+    expect(section).toContain("broad comparative efficiency/resource-use predicate");
+    expect(section).toContain("including a parenthetical alias that merely names the same boundary");
     expect(section).toContain("The neutral dimension label itself is not an explanatory tail");
-    expect(section).toContain("Do not fail a claim merely because the dimension label names the natural assessment dimension");
+    expect(section).toContain("Do not fail a claim merely because the dimension label names the natural assessment dimension or measurement boundary");
     expect(section).toContain("as material proxy drift by default unless the added condition");
     expect(section).toContain("If the statement ends immediately after the neutral dimension label, do not reinterpret that label as the explanatory tail");
+    expect(section).toContain("do not reinterpret a concise measurement-window or system-boundary label as an explanatory tail");
+    expect(section).toContain("It becomes material drift only if the added wording asserts a result, threshold, causal mechanism, loss narrative, sufficiency condition, or adjacent performance proxy");
     expect(section).toContain("Do not approve such a tail on the rationale that it is consistent with the predicate");
     expect(section).toContain("specifies what the predicate looks like");
     expect(section).toContain("Also fail sufficient-condition drift");
@@ -1870,6 +1874,9 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("Neutral-dimension acceptance guard");
     expect(section).toContain("do NOT classify the qualifier itself as proxy drift or as the explanatory tail");
     expect(section).toContain('set `usesNeutralDimensionQualifier: true`, `proxyDriftSeverity: "none"` or `"mild"`, and `recommendedAction: "keep"`');
+    expect(section).toContain("Comparative/system-boundary acceptance guard");
+    expect(section).toContain("parenthetical alias naming the same boundary");
+    expect(section).toContain("This guard does NOT permit result claims, mechanism claims, thresholds, loss narratives, sufficiency tests, or adjacent performance proxies after the qualifier");
   });
 });
 

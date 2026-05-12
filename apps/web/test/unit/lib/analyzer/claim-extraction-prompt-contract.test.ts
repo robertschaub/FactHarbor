@@ -165,6 +165,8 @@ describe("Stage-1 prompt contract", () => {
       expect(section).toContain("Do not narrow that primary claim with stage labels, methodology windows, measurement frames, or proxy metrics");
       expect(section).toContain('preserve the user\'s original predicate and present the dimension as a neutral qualifier such as `in terms of [dimension]`');
       expect(section).toContain("Do not replace the original predicate with a proxy formulation");
+      expect(section).toContain("a short neutral measurement-window or system-boundary label may be the dimension qualifier itself");
+      expect(section).toContain("Do not delete that label merely because it is method-like or parenthetical");
       expect(section).toContain("If the Contract Validation Summary identifies broad-evaluative explanatory-tail drift");
       expect(section).toContain("repair is primarily deletion, not reinterpretation");
       expect(section).toContain("keeping the original predicate plus its neutral dimension qualifier and deleting the explanatory tail");
@@ -595,6 +597,8 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).not.toBeNull();
       expect(pass2).toContain("comparative efficiency, optimization, or resource-use predicates");
       expect(pass2).toContain("full-pathway vs. use-phase-only vs. conversion-stage efficiency");
+      expect(pass2).toContain("A short neutral measurement-window or system-boundary label may be part of that qualifier");
+      expect(pass2).toContain("it must not add a result, threshold, causal mechanism, loss narrative, or adjacent performance proxy");
       expect(pass2).toContain("keep the original compared entities and broad predicate at the same level of generality as the input");
       expect(pass2).toContain("the atomic claim must keep that same comparison rather than restating it as a different metric, mechanism, or proxy claim");
       expect(pass2).toContain("Keep narrower specificity inside `expectedEvidenceProfile`, search queries, or evidence scopes instead of the claim statement");
@@ -642,6 +646,8 @@ describe("Stage-1 prompt contract", () => {
       expect(contract).toContain("The neutral dimension label itself is not an explanatory tail");
       expect(contract).toContain("If the statement ends immediately after the neutral dimension label, do not reinterpret that label as the explanatory tail");
       expect(contract).toContain("Neutral-dimension acceptance guard");
+      expect(contract).toContain("Comparative/system-boundary acceptance guard");
+      expect(contract).toContain("parenthetical alias naming the same boundary");
     });
   });
 
