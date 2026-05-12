@@ -1,7 +1,7 @@
 # DirectionBasis Regression Fix — Debate-Consolidated Proposal
 
 **Date:** 2026-05-08; updated 2026-05-11
-**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` has current in-band canaries but remains watch-listed, and Captain accepted `plastic-en` current exact job `939563ecbea14a4c90249eb13c9743ef` (`LEANING-FALSE` 37/62) as a good report with `LEANING-FALSE` accepted for plastic reports in English and other languages
+**Status:** Active plan updated — corrected Captain expectations applied; `asylum-235000-de` and `bolsonaro-en` have Captain-accepted current exact watch reports, `bundesrat-simple` has a current-head high-true quality pass with timing warning, and Captain accepted `plastic-en` current exact job `939563ecbea14a4c90249eb13c9743ef` (`LEANING-FALSE` 37/62) as a good report with `LEANING-FALSE` accepted for plastic reports in English and other languages
 **Bisection source:** GPT Agent (Codex), confirmed `a62e60b6` as first bad point
 **Debate participants:** Lead Architect (Opus 4.7), LLM Expert (Sonnet 4.6), Code Reviewer (Sonnet 4.6), Devil's Advocate (Opus 4.7)
 
@@ -1578,3 +1578,34 @@ Decision:
 - Stop additional Bolsonaro EN jobs for now. The last fix achieved the targeted direction repair; further prompt clauses would risk pile-up.
 - Treat `aedb3a05` as Captain-accepted current OK/watch, not a best comparator.
 - Next recommended work is a no-edit quality review / prompt-audit reduction only if release-readiness requires comparator-level confidence; do not spend more immediate Bolsonaro EN jobs just to chase the last 2 confidence points.
+
+### 12.34 Bundesrat-Simple Current-Head Canary And Timing Watch - 2026-05-12
+
+Canary on `bce6365f`:
+
+- Job: `1de78d0a5a2c428baba3f40d189e46a7`.
+- Input: `Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben`.
+- Result: `TRUE` 97/93.
+- Runtime: about 23.7 minutes wall-clock (`2026-05-12T14:12:41Z` to `2026-05-12T14:36:25Z`).
+- Result metadata: commit `bce6365fd7a6b6aee9ec2da61a5729871131eb6f`, prompt hash `608d073de13e74a96005f7cc8e045479f31dae1bdbe1774dfc7ac3f140faf50c`.
+- Evidence shape: 2 AtomicClaims, 5 boundaries, 65 evidence items, 41 sources.
+- Warnings: 11 total, with 1 user-visible `budget_exceeded` warning after the research time budget.
+
+Quality verdict:
+
+- **Current-head report-quality pass; timing watch.**
+- The result is inside the corrected `bundesrat-simple` band (`TRUE` / `MOSTLY-TRUE`, truth 85-100, confidence 75-95).
+- It matches the Captain-preferred exact comparators `a6b0e0fc14984926a678a462456bc110` and `a53573047fe64778a76e53cb578900c7`: literal chronology true, with procedural caveat that signature is not final democratic approval.
+- It should not displace `a6b0` / `a535` as cleaner best report-shape comparators because the current-head canary had a visible budget warning.
+
+Timing diagnosis:
+
+- Search itself was not the main delay: Serper returned one observed query in about 1.5 seconds.
+- The slow path was downstream processing: large PDF extraction, source/evidence volume, applicability assessment, scope normalization/clustering, and verdict debate/validation.
+- The log also recorded contrarian retrieval skipped because the runtime ceiling was already close.
+
+Decision:
+
+- Stop additional `bundesrat-simple` jobs for now. The quality question is answered.
+- Do not add another report-semantics prompt rule for this lane.
+- If release readiness requires no user-visible budget warnings on simple controls, open a separate timing/performance slice rather than mixing it with current report-quality fixes.

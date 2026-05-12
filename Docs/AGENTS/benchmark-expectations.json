@@ -37,12 +37,13 @@
       "truthPercentageBand": { "min": 85, "max": 100 },
       "confidenceBand": { "min": 75, "max": 95 },
       "minBoundaryCount": 2,
-      "qualityStatus": "PROBABLY-SOLVED",
-      "qualityStatusNote": "Captain correction on 2026-05-09: simple wording is a literal chronology claim. High-true reports are preferred when they state that signature before parliamentary/popular approval happened while caveating that signature is not final democratic approval. Preferred exact local comparators: a6b0e0fc14984926a678a462456bc110 and a53573047fe64778a76e53cb578900c7. These are comparator/expectation anchors, not proof of current HEAD quality.",
-      "latestVerifiedJobId": "a6b0e0fc14984926a678a462456bc110",
-      "latestObserved": { "verdictLabel": "TRUE", "truthPercentage": 97, "confidence": 89 },
+      "qualityStatus": "CONFIRMED-ON-CURRENT-HEAD-TIMING-WATCH",
+      "qualityStatusNote": "Captain correction on 2026-05-09: simple wording is a literal chronology claim. High-true reports are preferred when they state that signature before parliamentary/popular approval happened while caveating that signature is not final democratic approval. Current exact canary 1de78d0a5a2c428baba3f40d189e46a7 on 2026-05-12 at bce6365f confirmed the corrected band as TRUE 97/93 with 2 AtomicClaims, 5 boundaries, 65 evidence items, and 41 sources. It matches the preferred exact local comparators a6b0e0fc14984926a678a462456bc110 and a53573047fe64778a76e53cb578900c7 on verdict shape, but it hit a user-visible research budget warning and took about 23.7 minutes wall-clock; treat report quality as confirmed and runtime as watch debt.",
+      "latestVerifiedJobId": "1de78d0a5a2c428baba3f40d189e46a7",
+      "latestObserved": { "verdictLabel": "TRUE", "truthPercentage": 97, "confidence": 93 },
       "knownOpenIssues": [
-        "no clean current-HEAD rerun after the 2026-05-09 expectation correction; use preferred comparators for report shape, not runtime proof"
+        "latest current-head canary hit a user-visible budget_exceeded warning after the research time budget, so runtime/research breadth remains an operational watch item even though verdict quality passed",
+        "do not spend another immediate bundesrat-simple job just to repeat the high-true verdict; next work is timing/performance diagnosis if release readiness requires no user-visible budget warnings"
       ]
     },
     {
