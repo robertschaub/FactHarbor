@@ -1759,6 +1759,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 ### Rules
 
 - **Report language:** Write all report-authored analytical text (reasoning, explanations, verdicts) in `${reportLanguage}`. Preserve source-authored evidence text (quotes, excerpts, titles) in their original language — do not translate them.
+- Treat `${currentDate}` as the runtime date for "current", "latest", "present", and equivalent freshness language in Atomic Claims, evidence scopes, and verdict wording. Do not describe a prior reporting endpoint as the current fact unless the evidence establishes that endpoint as the current decisive route.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - For each claim, consider evidence from ALL boundaries, not just one.
 - `truthPercentage`: 0 = completely false, 100 = completely true. Base this on the weight and quality of evidence, not on the number of evidence items. **truthPercentage measures factual accuracy of the extracted AtomicClaim only.** If the claim's wording is misleading, deceptive, or omits important context, express that EXCLUSIVELY through `misleadingness` and `reasoning` — do NOT reduce truthPercentage to penalize misleading framing. A claim can be simultaneously TRUE (the stated fact is correct) and HIGHLY MISLEADING (the framing creates a false impression). These are independent assessments.
@@ -1813,6 +1814,11 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 **Atomic Claims:**
 ```
 ${atomicClaims}
+```
+
+**Current Date:**
+```
+${currentDate}
 ```
 
 **Evidence Items (grouped by ClaimBoundary):**
@@ -1889,6 +1895,7 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 ### Rules
 
 - Do not assume any particular language. Analyze in the original language of the evidence.
+- Treat `${currentDate}` as the runtime date for "current", "latest", "present", and equivalent freshness language. Challenge verdicts that silently anchor a current-status claim to an older snapshot without explaining the temporal limitation or evidence that the older endpoint remains decisive.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Be genuinely adversarial — provide specific counter-arguments, not vague skepticism.
 - Use `evidenceIds` as the authoritative machine-readable citation channel for each challenge point.
@@ -1909,6 +1916,11 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 **Claim Verdicts (with per-boundary breakdown):**
 ```
 ${claimVerdicts}
+```
+
+**Current Date:**
+```
+${currentDate}
 ```
 
 **Evidence Items:**
@@ -1969,6 +1981,7 @@ Produce a final verdict that:
 ### Rules
 
 - **Report language:** Write all report-authored analytical text (reasoning, challenge responses, reconciliation notes) in `${reportLanguage}`. Preserve source-authored evidence text in original language.
+- Treat `${currentDate}` as the runtime date for "current", "latest", "present", and equivalent freshness language in claim verdicts, challenges, evidence scopes, and final reasoning. Do not reconcile a current-status claim as false or true by treating an older endpoint as current unless the evidence establishes that endpoint as the current decisive route; otherwise express the endpoint as stale/prior-period evidence that affects confidence, limitations, or uncertainty.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - Consider challenges seriously. If a challenge point is valid, adjust the verdict. If unfounded, explain why with evidence citations.
 - Use `supportingEvidenceIds`, `contradictingEvidenceIds`, and `adjustmentBasedOnChallengeIds` as the authoritative citation/traceability channel.
@@ -2021,6 +2034,11 @@ Produce a final verdict that:
 **Advocate Verdicts:**
 ```
 ${advocateVerdicts}
+```
+
+**Current Date:**
+```
+${currentDate}
 ```
 
 **Challenges:**
@@ -2352,6 +2370,7 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 ### Rules
 
 - **Report language:** Write the entire narrative in `${reportLanguage}`. This includes headline, key finding, limitations, and all analytical text. Preserve source-authored evidence text (titles, excerpts, quotes) in original language — do not translate them.
+- Treat `${currentDate}` as the runtime date for "current", "latest", "present", and equivalent freshness language in narrative wording. Do not narrate a prior reporting endpoint as the current fact unless the final claim verdicts establish it as the current decisive route; otherwise name it as a prior snapshot or temporal limitation.
 - Do not hardcode any keywords, entity names, or domain-specific categories.
 - `headline`: One sentence capturing the overall finding.
 - `evidenceBaseSummary`: Quantitative summary — e.g., "14 evidence items from 9 sources across 3 analytical perspectives."
@@ -2370,6 +2389,11 @@ Given the final claim verdicts, weighted aggregation results, and boundary infor
 **Claim Verdicts (final):**
 ```
 ${claimVerdicts}
+```
+
+**Current Date:**
+```
+${currentDate}
 ```
 
 **Overall Aggregation:**

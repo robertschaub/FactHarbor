@@ -297,6 +297,24 @@ describe("Stage-4 prompt contract", () => {
       expect(section).toContain("${evidenceItems}");
     });
 
+    it("verdict debate sections expose the runtime current date for freshness-sensitive reasoning", () => {
+      const cases: Array<{ name: string; vars: Record<string, string> }> = [
+        { name: "VERDICT_ADVOCATE", vars: ADVOCATE_VARS },
+        { name: "VERDICT_CHALLENGER", vars: CHALLENGER_VARS },
+        { name: "VERDICT_RECONCILIATION", vars: RECONCILIATION_VARS },
+      ];
+
+      for (const { name, vars } of cases) {
+        const section = extractSection(promptContent, name);
+        expect(section, `Section ## ${name} not found`).not.toBeNull();
+        expect(section).toContain("runtime date");
+        expect(section).toContain("Current Date");
+
+        const { rendered } = renderWithVars(section!, vars);
+        expect(rendered).toContain(vars.currentDate);
+      }
+    });
+
     it("grounding validator treats inline machine IDs as defensive legacy cases, not expected prose", () => {
       const section = extractSection(promptContent, "VERDICT_GROUNDING_VALIDATION");
       expect(section).toContain("Reasoning SHOULD avoid raw machine IDs");
@@ -575,6 +593,16 @@ describe("Stage-5 prompt contract", () => {
       const section = extractSection(promptContent, "VERDICT_NARRATIVE");
       expect(section).toContain("materially different directional conclusions");
       expect(section).toContain("limitations");
+    });
+
+    it("exposes runtime current date and prevents stale endpoint narration", () => {
+      const section = extractSection(promptContent, "VERDICT_NARRATIVE");
+      expect(section).toContain("runtime date");
+      expect(section).toContain("Current Date");
+      expect(section).toContain("prior snapshot or temporal limitation");
+
+      const { rendered } = renderWithVars(section!, VERDICT_NARRATIVE_VARS);
+      expect(rendered).toContain(VERDICT_NARRATIVE_VARS.currentDate);
     });
   });
 });

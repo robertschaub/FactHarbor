@@ -1210,3 +1210,71 @@ Next gate:
 2. Refresh/restart localhost if needed and confirm `/api/fh/version` reports the new commit.
 3. Spend exactly one exact `asylum-235000-de` canary.
 4. Stop if it is outside `LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70, or if it fails to run the refinement lane when the latest aggregate is still missing after first main iteration.
+
+### 12.27 Stale Runtime Canary And Stage 4 Date-Awareness Finding - 2026-05-12
+
+After commit `e51b85ed`, one exact `asylum-235000-de` canary was submitted:
+
+- Job: `74747a1b258b4d7da7672804ec73bc46`.
+- Input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+- Result: `MOSTLY-FALSE` 25/38.
+- Duration: about 19 minutes (`2026-05-12T07:31:53Z` to `2026-05-12T07:50:44Z`).
+- Runner metadata: `executedWebGitCommitHash` and `promptContentHash` were both `null`.
+- Web listener PID `44288` had started at `2026-05-11T22:15:35+02:00`, before the `e51b85ed` web code change.
+
+Classification:
+
+- The job is **not valid as a clean verification of `e51b85ed`**, because the web runner process was stale and the job metadata did not record the intended commit or prompt hash.
+- Keep `e51b85ed`; do not infer that the primary-source refinement change failed from this job alone.
+- The job still provides useful diagnostic evidence: the active runtime did not run a `primary_source_refinement` ledger entry and the final narrative/reasoning remained temporally fragile.
+
+Observed failure details:
+
+- Stage 2 found current SEM March 2026 component artifacts, including `6-10`, `6-50`, `6-51`, and `2-30`.
+- The final verdict hand-assembled a contested component calculation and treated broad/narrow category choice as false-side, rather than surfacing the Captain-expected official umbrella aggregate or using uncertainty/limitations.
+- The earlier failed job `d174b136feff4e898b9ba394272cd7e3` exposed a cleaner date-awareness symptom: it narrated `zurzeit` as if end-2024 were the current anchor (`... lag Ende 2024 deutlich tiefer`) even though the runtime date was `2026-05-12`.
+
+Root-cause addition:
+
+- Stage 1, Stage 2 query generation, and Stage 2 extraction already expose `currentDate`.
+- Stage 4 code injects `currentDate` into prompt variables, and Stage 5 narrative generation also passes `currentDate`.
+- The Stage 4 prompt sections did not visibly expose the current date in `VERDICT_ADVOCATE`, `VERDICT_CHALLENGER`, `VERDICT_RECONCILIATION`, or `VERDICT_NARRATIVE`.
+- This is best classified as **incomplete existing mechanism**: the date variable existed, but the verdict/narrative prompts did not show it to the LLM.
+
+Reviewer input:
+
+- Explorer `Gibbs` independently reviewed the finding and recommended the same lowest-net-complexity fix: add explicit `Current Date` fields and a generic runtime-date rule to Stage 4 verdict/narrative sections.
+- Gibbs recommended waiting on further research/extraction prompt edits until a properly restarted canary tests `e51b85ed`.
+
+### 12.28 Stage 4 Runtime-Date Prompt Patch - 2026-05-12
+
+Debt-guard classification:
+
+- Classification: **incomplete-existing-mechanism**.
+- Existing mechanism: `currentDate` is already wired into Stage 4 prompt rendering and Stage 5 narrative rendering.
+- Chosen option: amend the existing prompt contract to expose that variable and tell verdict/narrative roles how to use it for current/latest/present wording.
+- Rejected option: add new date-aware code, deterministic evidence-age logic, or a separate post-hoc validator. That would increase mechanism count before using the already-wired prompt variable.
+- Rejected option: edit Stage 1/Stage 2 query/extraction prompts again in the same slice. Those already contain explicit current-date contracts; stacking changes there before a clean restarted canary would mix hypotheses.
+
+Implementation:
+
+- `apps/web/prompts/claimboundary.prompt.md`:
+  - `VERDICT_ADVOCATE` now exposes `Current Date` and warns not to describe a prior reporting endpoint as current unless evidence establishes it as the current decisive route.
+  - `VERDICT_CHALLENGER` now exposes `Current Date` and challenges silent anchoring of current-status claims to older snapshots.
+  - `VERDICT_RECONCILIATION` now exposes `Current Date` and requires older endpoints to be treated as stale/prior-period evidence unless established as current.
+  - `VERDICT_NARRATIVE` now exposes `Current Date` and prevents prior endpoints from being narrated as current facts.
+- `apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts` now verifies the Stage 4 debate sections and narrative section expose the runtime date and render the supplied date.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts test/unit/lib/analyzer/prompt-frontmatter-drift.test.ts`: passed (`119` tests).
+- `npm -w apps/web run build`: passed and reseeded `claimboundary` prompt from file (`5737b5bab778...`).
+- `git diff --check`: passed.
+
+Next gate:
+
+1. Commit the prompt/test/doc patch.
+2. Restart localhost web/API with `scripts/restart-clean.ps1` so the runner uses the committed web code and reseeded prompt.
+3. Verify both `http://localhost:3000/api/version` and `http://localhost:3000/api/fh/version` point at the intended commit where possible.
+4. Submit exactly one exact `asylum-235000-de` canary.
+5. Accept only if it lands in the Captain band and records a usable commit/prompt hash. Stop on any false-side/MIXED result, missing commit metadata, or missing refinement lane when the latest aggregate route is still unresolved after first main.
