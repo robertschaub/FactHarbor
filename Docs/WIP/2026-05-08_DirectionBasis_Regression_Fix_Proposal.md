@@ -1382,3 +1382,58 @@ Next gate:
 3. Spend exactly one exact `asylum-235000-de` canary.
 4. Accept only if it admits an official SEM aggregate source for the decisive value, not merely a secondary-source or component-arithmetic true-side result.
 5. If it still misses the official aggregate, stop and consider Gibbs's proposed evidence-summary context patch rather than adding another prompt rule.
+
+### 12.31 Refinement Fetch Breadth Patch - 2026-05-12
+
+Canary after `6ce48692`:
+
+- Job: `2ee047fd218f4067963b778d41e2784b`.
+- Input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+- Result: `MOSTLY-FALSE` 22/58.
+- Runtime: about 16.5 minutes (`2026-05-12T09:27:06Z` to `2026-05-12T09:43:39Z`).
+- Result metadata: commit `6ce486923855d983b19146a31294624b5021739e`, prompt hash `2e9f20dea67b1c93e4b29853d7a5fc3a34793f67f7f51c715fc2fbde45b7b1e6`.
+
+Quality verdict:
+
+- **Failed verifier; stop rule remains active.**
+- The run found current SEM March 2026 component tables and NZZ secondary support, but still returned false-side.
+- The verdict reason anchored on the stale 2024 official aggregate (`226 706`) and a flawed March 2026 component calculation (`135 179 + 4 853 + 67 863 = 207 895`).
+- Manual official-source check confirms the Captain expectation remains valid: SEM's 2025 annual commentary states `Total Personen aus dem Asylbereich (inkl. RU) = 235 057` and breaks out `Total anerkannte Flüchtlinge = 94 261`, including `Flüchtlinge Ausweis B = 67 823` and `Flüchtlinge Ausweis C = 26 438`.
+
+Failed-attempt classification:
+
+- `f2e70bfd` Stage 4 runtime-date patch: **keep**. It fixes a real stale-endpoint narration risk, but source coverage still controls the verdict.
+- `377397a9` refinement no-op patch: **keep**. The refinement lane now executes and records telemetry.
+- `6ce48692` refinement route-priority prompt patch: **keep as directionally right**, but **quarantine its live-quality claim**. The right source class was found as a candidate but not fetched.
+
+Root cause:
+
+- The decisive SEM 2025 annual commentary was already LLM-rated relevant during the refinement search.
+- It was not selected for fetch because the bounded refinement pass inherited the first-pass source-fetch cap while the claim was still below the researched-iteration floor.
+- Local config uses `researchFirstPassRelevanceTopNFetch = 2`; the refinement query had more relevant candidates than that. The fetched top two were a current landing/archive route, while the latest complete annual aggregate artifact remained below the cap.
+- Reviewer `Gibbs` independently confirmed this is source selection, not another prompt gap: the complete artifact was found and accepted by relevance classification, but `selectedForFetch` was false.
+
+Debt-guard decision:
+
+- Classification: **incomplete-existing-mechanism**.
+- Chosen option: amend the existing primary-source refinement mechanism in place.
+- Rejected option: add SEM/asylum-specific route logic or deterministic text/number matching.
+- Rejected option: immediately enrich `existingEvidenceSummary`; that may still help future query targeting, but this failure already produced the needed candidate and lost it at fetch selection.
+
+Implementation:
+
+- `apps/web/src/lib/analyzer/research-orchestrator.ts` now keeps first-pass fetch throttling for ordinary main research, but refinement uses the normal `relevanceTopNFetch` breadth.
+- `apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts` adds coverage proving main first-pass fetch remains capped while the refinement pass can fetch the lower-ranked complete-artifact candidate set.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/primary-source-refinement.test.ts`: passed (`16` tests).
+- `npm -w apps/web run test -- test/unit/lib/analyzer/primary-source-refinement.test.ts test/unit/lib/analyzer/research-orchestrator-progress.test.ts test/unit/lib/analyzer/research-orchestrator.test.ts`: passed (`26` tests).
+
+Next gate:
+
+1. Run build and `git diff --check`.
+2. Commit this code/test/doc patch before any new live job.
+3. Restart localhost and verify version endpoints report the committed hash.
+4. Spend at most one exact `asylum-235000-de` canary.
+5. Accept only if the report admits the official SEM 2025 aggregate `235 057` or an equivalent complete official aggregate route. A secondary-source-only true-side label is not sufficient.

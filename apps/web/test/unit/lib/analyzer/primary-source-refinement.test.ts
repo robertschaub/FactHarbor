@@ -259,6 +259,104 @@ describe("primary-source refinement", () => {
     );
   });
 
+  it("does not apply first-pass fetch breadth throttling to primary-source refinement", async () => {
+    const mainResults = Array.from({ length: 5 }, (_, index) => ({
+      url: `https://example.com/main-${index}`,
+      title: `Main ${index}`,
+      snippet: "main route",
+    }));
+    const refinementResults = Array.from({ length: 4 }, (_, index) => ({
+      url: `https://example.com/refinement-${index}`,
+      title: `Refinement ${index}`,
+      snippet: "official complete artifact",
+    }));
+
+    mockSearchWebWithProvider
+      .mockResolvedValueOnce({
+        results: mainResults,
+        providersUsed: ["mock"],
+        errors: [],
+      })
+      .mockResolvedValueOnce({
+        results: refinementResults,
+        providersUsed: ["mock"],
+        errors: [],
+      });
+    mockClassifyRelevance
+      .mockResolvedValueOnce(mainResults.map((result, index) => ({
+        ...result,
+        relevanceScore: 0.9 - index * 0.01,
+        originalRank: index,
+      })))
+      .mockResolvedValueOnce(refinementResults.map((result, index) => ({
+        ...result,
+        relevanceScore: 0.9 - index * 0.01,
+        originalRank: index,
+      })));
+    mockFetchSources.mockImplementation((sources: Array<{ url: string; title?: string }>) => Promise.resolve(
+      sources.map((source) => ({
+        url: source.url,
+        title: source.title ?? source.url,
+        text: source.url.includes("refinement") ? "government complete artifact" : "secondary body",
+      })),
+    ));
+    mockExtractResearchEvidence.mockImplementation((_claim: unknown, sources: Array<{ url: string; title?: string }>) =>
+      Promise.resolve(sources.map((source) => {
+        const sourceType = source.url.includes("refinement") ? "government_report" : "news_secondary";
+        return {
+          id: `EV_${source.url.split("-").pop()}`,
+          statement: sourceType,
+          category: "statistic",
+          specificity: "medium",
+          sourceId: "",
+          sourceUrl: source.url,
+          sourceTitle: source.title ?? source.url,
+          sourceExcerpt: sourceType,
+          claimDirection: "supports",
+          probativeValue: sourceType === "government_report" ? "high" : "medium",
+          sourceType,
+          relevantClaimIds: ["AC_01"],
+        };
+      })),
+    );
+
+    const claim = {
+      id: "AC_01",
+      statement: "current total claim",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: ["current total"],
+        expectedSourceTypes: ["government_report"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState();
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        researchFirstPassRelevanceTopNFetch: 2,
+        maxEvidenceItemsPerSource: 5,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockFetchSources).toHaveBeenCalledTimes(2);
+    expect(mockFetchSources.mock.calls[0][0]).toHaveLength(2);
+    expect(mockFetchSources.mock.calls[1][0]).toHaveLength(4);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
   it("does not run refinement when expected metrics are empty even if primary source types are expected", async () => {
     const claim = {
       id: "AC_01",

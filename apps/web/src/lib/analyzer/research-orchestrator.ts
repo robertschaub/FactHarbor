@@ -1609,7 +1609,8 @@ export async function runResearchIteration(
         // 4. Fetch top sources — sorted by relevance score desc, original search rank asc (tie-break)
         const { selectTopSources } = await import("./pipeline-utils");
         const configuredTopN = pipelineConfig.relevanceTopNFetch ?? 5;
-        const topN = isBelowResearchFloor
+        const shouldUseFirstPassFetchCap = focus !== "refinement" && isBelowResearchFloor;
+        const topN = shouldUseFirstPassFetchCap
           ? Math.min(configuredTopN, pipelineConfig.researchFirstPassRelevanceTopNFetch ?? 2)
           : configuredTopN;
         const selectedForFetch = selectTopSources(relevantSources, topN);
