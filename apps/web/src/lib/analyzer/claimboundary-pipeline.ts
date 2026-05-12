@@ -365,6 +365,10 @@ export function buildClaimBoundaryResultJson(params: {
     ...(acquisitionTrace ? { acquisitionTrace } : {}),
     ...(state.stage1Observability ? { stage1: state.stage1Observability } : {}),
   };
+  const analysisWarnings = reconcileEvidencePoolImbalanceWarnings(
+    state.warnings,
+    evidenceBalance,
+  );
 
   return {
     _schemaVersion: "3.2.0-cb",
@@ -422,8 +426,42 @@ export function buildClaimBoundaryResultJson(params: {
     claimAcquisitionLedger: state.claimAcquisitionLedger,
     ...(Object.keys(analysisObservability).length > 0 ? { analysisObservability } : {}),
     qualityGates: assessment.qualityGates,
-    analysisWarnings: state.warnings,
+    analysisWarnings,
   };
+}
+
+function buildEvidencePoolImbalanceWarning(evidenceBalance: EvidenceBalanceMetrics): AnalysisWarning {
+  const direction = evidenceBalance.balanceRatio > 0.5 ? "supporting" : "contradicting";
+  const directional = evidenceBalance.supporting + evidenceBalance.contradicting;
+  const majorityCount = direction === "supporting" ? evidenceBalance.supporting : evidenceBalance.contradicting;
+  const majorityPct = Math.round(Math.max(evidenceBalance.balanceRatio, 1 - evidenceBalance.balanceRatio) * 100);
+
+  return {
+    type: "evidence_pool_imbalance",
+    severity: "info",
+    message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}%, ${majorityCount} of ${directional} directional items). ` +
+      `${evidenceBalance.supporting} supporting, ${evidenceBalance.contradicting} contradicting, ${evidenceBalance.neutral} neutral out of ${evidenceBalance.total} total.`,
+  };
+}
+
+function isSnapshotEvidencePoolImbalanceWarning(warning: AnalysisWarning): boolean {
+  return (
+    warning.type === "evidence_pool_imbalance" &&
+    !warning.message.startsWith("Contrarian retrieval failed:")
+  );
+}
+
+function reconcileEvidencePoolImbalanceWarnings(
+  warnings: AnalysisWarning[],
+  evidenceBalance: EvidenceBalanceMetrics,
+): AnalysisWarning[] {
+  const retainedWarnings = warnings.filter(
+    (warning) => !isSnapshotEvidencePoolImbalanceWarning(warning),
+  );
+
+  return evidenceBalance.isSkewed
+    ? [...retainedWarnings, buildEvidencePoolImbalanceWarning(evidenceBalance)]
+    : retainedWarnings;
 }
 
 function compactMarkdownText(value: unknown, maxLength = 700): string {
@@ -1089,12 +1127,7 @@ export async function runClaimBoundaryAnalysis(
       const directional = evidenceBalance.supporting + evidenceBalance.contradicting;
       const majorityCount = direction === "supporting" ? evidenceBalance.supporting : evidenceBalance.contradicting;
       const majorityPct = Math.round(Math.max(evidenceBalance.balanceRatio, 1 - evidenceBalance.balanceRatio) * 100);
-      state.warnings.push({
-        type: "evidence_pool_imbalance",
-        severity: "info",
-        message: `Evidence pool is heavily skewed toward ${direction} evidence (${majorityPct}%, ${majorityCount} of ${directional} directional items). ` +
-          `${evidenceBalance.supporting} supporting, ${evidenceBalance.contradicting} contradicting, ${evidenceBalance.neutral} neutral out of ${evidenceBalance.total} total.`,
-      });
+      state.warnings.push(buildEvidencePoolImbalanceWarning(evidenceBalance));
       console.warn(
         `[Pipeline] Evidence pool imbalance detected: ${evidenceBalance.supporting}S/${evidenceBalance.contradicting}C/${evidenceBalance.neutral}N ` +
         `(${direction}: ${majorityPct}%, ${majorityCount}/${directional} directional, threshold: ${Math.round(skewThreshold * 100)}%)`
@@ -1184,6 +1217,7 @@ export async function runClaimBoundaryAnalysis(
       ? assessed.filter((item) => item.applicability !== "foreign_reaction")
       : assessed;
     evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
+    state.warnings = reconcileEvidencePoolImbalanceWarnings(state.warnings, evidenceBalance);
     const removedCount = removedItems.length;
     if (removedCount > 0) {
       console.info(

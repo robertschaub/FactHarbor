@@ -1437,3 +1437,53 @@ Next gate:
 3. Restart localhost and verify version endpoints report the committed hash.
 4. Spend at most one exact `asylum-235000-de` canary.
 5. Accept only if the report admits the official SEM 2025 aggregate `235 057` or an equivalent complete official aggregate route. A secondary-source-only true-side label is not sufficient.
+
+### 12.32 Post-Fetch-Breadth Canary Acceptance And Diagnostic Cleanup - 2026-05-12
+
+Canary after `5068efef`:
+
+- Job: `bb2133a191894da9bacf4f63e4b458ac`.
+- Input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+- Result: `MOSTLY-TRUE` 78/68.
+- Result metadata: commit `5068efeffe2d97d06136ba136c492cfdf48ab6ed`, prompt hash `2e9f20dea67b1c93e4b29853d7a5fc3a34793f67f7f51c715fc2fbde45b7b1e6`.
+- Evidence shape: 1 claim, 4 boundaries, 38 evidence items, 28 sources, 2 direct supporting items, 0 final contradicting items, 36 neutral/context items.
+
+Quality verdict:
+
+- **Current pass/watch; Captain accepted this as a very good report.**
+- The report admits the decisive official SEM 2025 aggregate: `Total Personen aus dem Asylbereich (inkl. RU) = 235 057`.
+- It does not decide the verdict by agent-composed component stitching. March 2026/monthly component tables are caveats/context because no complete current aggregate was available.
+- It correctly places the close-threshold issue in reasoning and confidence: the official value is only 57 persons above 235 000.
+- Truth 78 is 3 points above the nominal 58-75 band, but inside the established 8-point tolerance. Keep the family on watch because prior current-stack runs flipped false-side.
+
+Residual issue found:
+
+- The final `meta.evidenceBalance` is correct (`2` supporting / `0` contradicting / `36` neutral), but the report carried an admin-only `evidence_pool_imbalance` info warning from the pre-applicability evidence pool saying the evidence was 100% contradicting.
+- This is a stale diagnostic snapshot, not report-quality evidence. The final claim verdict and evidence table are internally coherent.
+
+Debt-guard decision:
+
+- Classification: **incomplete-existing-mechanism**.
+- Chosen option: amend the existing evidence-pool warning mechanism in `apps/web/src/lib/analyzer/claimboundary-pipeline.ts`.
+- Rejected option: add a second report scrubber or new warning type. That would stack another mechanism on top of an existing diagnostic path.
+
+Implementation:
+
+- `buildEvidencePoolImbalanceWarning` now centralizes the snapshot warning text.
+- `reconcileEvidencePoolImbalanceWarnings` removes stale balance-snapshot warnings and regenerates one from the final evidence balance only when the final pool is actually skewed.
+- Contrarian retrieval operational warnings using the same warning type are preserved.
+- The pipeline now reconciles warnings immediately after applicability updates the evidence pool, before Stage 3/4, and `buildClaimBoundaryResultJson` applies the same reconciliation defensively at serialization.
+- `Docs/AGENTS/benchmark-expectations.json` and `Docs/AGENTS/Captain_Quality_Expectations.md` now record `bb2133` as the latest accepted current exact report for `asylum-235000-de`, while keeping the family in pass/watch.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`: passed (`386` tests, `1` skipped).
+- `npm -w apps/web run build`: passed; prompt/config reseed reported `0 changed`.
+- `git diff --check`: passed.
+
+Next gate:
+
+1. Commit this code/test/doc patch before any new live jobs.
+2. Do not spend another immediate asylum-current job.
+3. Continue with deployment-readiness review using `bb2133` as the current exact local comparator, plus the older exact local/deployed comparators in `Captain_Quality_Expectations.md`.
+4. If Captain wants broader release confidence, run a small cross-input batch only after this patch is committed and localhost is restarted so job metadata records the cleanup commit.

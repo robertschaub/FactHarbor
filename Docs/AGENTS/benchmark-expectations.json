@@ -1,7 +1,7 @@
 {
   "_schemaVersion": "1.0.0",
   "_note": "Machine-readable benchmark expectations for /report-review. Derived from Docs/WIP/2026-04-16_Benchmark_Report_Quality_Status_Matrix.md, with 2026-05-09 Captain correction removing erroneous MIXED acceptability for true-side Bolsonaro and asylum-current-total families, and correcting bundesrat-simple from the older mixed/leaning band to a high-true literal-chronology band. Update this file after each significant rerun wave — it is the mechanical source for bands; Docs/AGENTS/Captain_Quality_Expectations.md is the living narrative/comparator source. Historical WIP docs are supporting context only. Fields null = no verified expectation yet.",
-  "_lastUpdated": "2026-05-11",
+  "_lastUpdated": "2026-05-12",
   "_sourceHandoffs": [
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Benchmark_Report_Quality_Status_Matrix.md",
     "Docs/AGENTS/Handoffs/2026-04-16_LLM_Expert_Bolsonaro_Foreign_Assessment_Backstop_Verification.md",
@@ -54,12 +54,13 @@
       "confidenceBand": { "min": 40, "max": 70 },
       "minBoundaryCount": 1,
       "qualityStatus": "IMPROVED-CURRENT-STABILITY-PASS-WATCH",
-      "qualityStatusNote": "Must be true-side. Captain correction on 2026-05-09 removed prior MIXED allowance; caveats about source retrieval, freshness, threshold closeness, or incomplete current component tables belong in confidence/reasoning, not a neutral or false-side verdict direction. Latest current stability canary aaaa8f6572c14b2bb3593866e1eefde5 passed in band as MOSTLY-TRUE 75/68 with one claim, 6 boundaries, 45 evidence items, and no user-visible warnings. Still watch residual narrative component reconstruction and prior stability variance.",
-      "latestVerifiedJobId": "aaaa8f6572c14b2bb3593866e1eefde5",
-      "latestObserved": { "verdictLabel": "MOSTLY-TRUE", "truthPercentage": 75, "confidence": 68 },
+      "qualityStatusNote": "Must be true-side. Captain correction on 2026-05-09 removed prior MIXED allowance; caveats about source retrieval, freshness, threshold closeness, or incomplete current component tables belong in confidence/reasoning, not a neutral or false-side verdict direction. Captain accepted current exact canary bb2133a191894da9bacf4f63e4b458ac as very good: MOSTLY-TRUE 78/68, one claim, 4 boundaries, 38 evidence items, and the decisive SEM 2025 aggregate 235 057 as direct support. Truth 78 is 3 pts above nominal band max 75 but within the existing 8-point noise tolerance; keep watch because of prior false-side stability variance.",
+      "latestVerifiedJobId": "bb2133a191894da9bacf4f63e4b458ac",
+      "latestObserved": { "verdictLabel": "MOSTLY-TRUE", "truthPercentage": 78, "confidence": 68 },
       "_note_rerun_2026-04-16": "Rerun e5becebe at HEAD 35a22fba returned MOSTLY-TRUE 78/68. Truth 78 is 3 pts above band max 75 — within 8-pt noise tolerance. Band held; no adjustment needed. Higher confidence (68) is a positive signal.",
       "knownOpenIssues": [
-        "two post-fix current passes now exist, but the latest is at the upper truth-band edge and the family still has prior false-side stability history",
+        "three post-fix current passes now exist, including Captain-accepted bb2133a191894da9bacf4f63e4b458ac, but the latest is just above the nominal truth-band edge and the family still has prior false-side stability history",
+        "admin-only evidence_pool_imbalance snapshot warnings must reconcile with final meta.evidenceBalance after applicability; stale contradiction-skew diagnostics are reporting bugs, not report-quality evidence",
         "residual narrative can still use component reconstruction as uncertainty context; it must not become decisive support or contradiction unless the source supplies a complete non-overlapping aggregate",
         "MIXED is not acceptable for this family; close-threshold caveats belong in confidence/reasoning, not verdict direction",
         "prior current-stack stability rerun 511c2b17299a49a5a9640505c40eac0f fetched current XLSX/RU sheets but regressed false-side by stitching component tables into an agent-composed total instead of using one clean official SEM aggregate"

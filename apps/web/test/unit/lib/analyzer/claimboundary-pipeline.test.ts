@@ -630,6 +630,98 @@ describe("ClaimAssessmentBoundary Pipeline Stages (skeleton)", () => {
       expect(resultJson.adjudicationPath).toEqual(assessment.adjudicationPath);
     });
 
+    it("does not serialize stale evidence-pool imbalance snapshots after final rebalance", () => {
+      const claims = [createAtomicClaim({ id: "AC_01" })];
+      const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
+      const coverageMatrix = buildCoverageMatrix(claims, boundaries, []);
+      const assessment: OverallAssessment = {
+        truthPercentage: 65,
+        verdict: "LEANING-TRUE",
+        confidence: 58,
+        verdictNarrative: createVerdictNarrative(),
+        hasMultipleBoundaries: false,
+        claimBoundaries: boundaries,
+        claimVerdicts: [createCBClaimVerdict({ claimId: "AC_01", truthPercentage: 65, confidence: 58 })],
+        coverageMatrix,
+        qualityGates: {
+          passed: true,
+          gate1Stats: { total: 1, passed: 1, filtered: 0, centralKept: 1 },
+          gate4Stats: { total: 1, publishable: 1, highConfidence: 0, mediumConfidence: 1, lowConfidence: 0, insufficient: 0, centralKept: 0 },
+          summary: { totalEvidenceItems: 38, totalSources: 28, searchesPerformed: 9, contradictionSearchPerformed: true },
+        },
+      };
+
+      const resultJson = buildClaimBoundaryResultJson({
+        assessment,
+        input: { inputType: "text", inputValue: "Entity A currently exceeds threshold B." },
+        state: {
+          languageIntent: null,
+          understanding: { atomicClaims: claims } as any,
+          evidenceItems: [],
+          sources: [],
+          searchQueries: [],
+          claimAcquisitionLedger: {},
+          warnings: [
+            {
+              type: "evidence_pool_imbalance",
+              severity: "info",
+              message: "Evidence pool is heavily skewed toward contradicting evidence (100%, 8 of 8 directional items). 0 supporting, 8 contradicting, 30 neutral out of 38 total.",
+            },
+            {
+              type: "evidence_pool_imbalance",
+              severity: "info",
+              message: "Contrarian retrieval failed: provider unavailable. Continuing with existing evidence pool.",
+            },
+            {
+              type: "source_fetch_failure",
+              severity: "info",
+              message: "One source fetch failed.",
+            },
+          ],
+          llmCalls: 1,
+          mainIterationsUsed: 1,
+          contradictionIterationsUsed: 0,
+          contradictionSourcesFound: 0,
+        },
+        llmProvider: "anthropic",
+        verdictModelName: "mock-verdict",
+        understandModelName: "mock-understand",
+        extractModelName: "mock-extract",
+        runtimeModelsUsed: new Set(["mock-understand", "mock-verdict"]),
+        runtimeRoleModels: {},
+        searchProvider: "mock-search",
+        searchProviders: "mock-search",
+        evidenceBalance: { supporting: 2, contradicting: 0, neutral: 36, total: 38, balanceRatio: 1, isSkewed: false },
+        promptContentHash: "__PROMPT__",
+        boundaryCount: boundaries.length,
+      });
+
+      expect(resultJson.meta.evidenceBalance).toMatchObject({
+        supporting: 2,
+        contradicting: 0,
+        neutral: 36,
+        isSkewed: false,
+      });
+      expect(resultJson.analysisWarnings).toHaveLength(2);
+      expect(resultJson.analysisWarnings).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "evidence_pool_imbalance",
+            message: expect.stringContaining("heavily skewed toward contradicting"),
+          }),
+        ]),
+      );
+      expect(resultJson.analysisWarnings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: "evidence_pool_imbalance",
+            message: expect.stringContaining("Contrarian retrieval failed"),
+          }),
+          expect.objectContaining({ type: "source_fetch_failure" }),
+        ]),
+      );
+    });
+
     it("preserves claim freshnessRequirement in the serialized understanding artifact", () => {
       const claims = [createAtomicClaim({ id: "AC_01", freshnessRequirement: "current_snapshot" })];
       const boundaries = [createClaimAssessmentBoundary({ id: "CB_01" })];
