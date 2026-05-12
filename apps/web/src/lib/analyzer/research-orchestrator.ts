@@ -1914,6 +1914,13 @@ export async function runResearchIteration(
       );
     }
     state.onEvent?.(`Generating direct-source refinement queries for ${targetClaim.id}...`, -1);
+    const maxRefinementCandidates = Math.max(
+      refinementBudget,
+      Math.min(
+        pipelineConfig.researchMaxQueriesPerIteration ?? 3,
+        Math.max(refinementBudget + 1, 2),
+      ),
+    );
     const generatedRefinementPlan = sortGeneratedResearchQueries(await generateResearchQueries(
       targetClaim,
       "refinement",
@@ -1921,7 +1928,7 @@ export async function runResearchIteration(
       pipelineConfig,
       currentDate,
       state.understanding?.distinctEvents ?? [],
-      refinementBudget,
+      maxRefinementCandidates,
       {
         language: searchConfig.searchLanguageOverride ?? state.understanding?.detectedLanguage,
         geography: searchConfig.searchGeographyOverride ?? state.understanding?.inferredGeography,
@@ -1935,7 +1942,7 @@ export async function runResearchIteration(
     );
     state.llmCalls++;
 
-    if (!refinementPlan.some(hasExplicitRetrievalMetadata)) {
+    if (refinementPlan.length > 0 && !refinementPlan.some(hasExplicitRetrievalMetadata)) {
       console.warn(
         `[Stage2] Refinement queries for claim "${targetClaim.id}" also lacked retrieval metadata; ` +
         `continuing with fallback ordering because skipping the refinement pass can hide recoverable primary sources.`,
@@ -1969,6 +1976,28 @@ export async function runResearchIteration(
       debugLog(
         `[Stage2] Primary-source refinement ${recoveredPrimaryCoverage ? "recovered" : "did not recover"} ` +
         `non-seeded primary coverage for claim ${targetClaim.id}.`,
+      );
+    } else {
+      const noSelectionReason = generatedRefinementPlan.length === 0
+        ? "primary_source_refinement:no_query_generated"
+        : "primary_source_refinement:no_unsearched_query";
+      const refinementTelemetry = createClaimIterationTelemetryEntry(
+        iterationIndex,
+        "refinement",
+        generatedRefinementPlan.map((query) => query.query),
+        targetClaim.freshnessRequirement,
+        noSelectionReason,
+      );
+      refinementTelemetry.durationMs = Date.now() - refinementStartedAt;
+      recordClaimIterationTelemetry(state, targetClaim.id, refinementTelemetry);
+      state.onEvent?.(`No executable direct-source refinement queries selected for ${targetClaim.id}.`, -1);
+      debugLog(
+        `[Stage2] Primary-source refinement generated no executable query for claim ${targetClaim.id}.`,
+        {
+          generatedQueries: generatedRefinementPlan.length,
+          unsearchedQueries: refinementPlan.length,
+          laneReason: noSelectionReason,
+        },
       );
     }
   }

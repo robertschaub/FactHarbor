@@ -1057,4 +1057,154 @@ describe("primary-source refinement", () => {
     );
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
+
+  it("over-generates refinement candidates and executes the first unsearched candidate after duplicate filtering", async () => {
+    mockGenerateResearchQueries.mockImplementation((_claim: unknown, iterationType: string) => {
+      if (iterationType === "refinement") {
+        return Promise.resolve([
+          {
+            query: "broad secondary query",
+            rationale: "duplicate of the already searched main route",
+            retrievalLane: "primary_direct",
+            freshnessWindow: "none",
+          },
+          {
+            query: "official current aggregate total",
+            rationale: "alternate direct route",
+            retrievalLane: "primary_direct",
+            freshnessWindow: "none",
+          },
+        ]);
+      }
+
+      return Promise.resolve([
+        {
+          query: "broad secondary query",
+          rationale: "main",
+          retrievalLane: "secondary_context",
+          freshnessWindow: "none",
+        },
+      ]);
+    });
+
+    const claim = {
+      id: "AC_01",
+      statement: "current aggregate metric claim",
+      freshnessRequirement: "current_snapshot",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: ["current aggregate total", "component total"],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "current aggregate total",
+        componentMetrics: ["component total"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState();
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        researchMaxQueriesPerIteration: 3,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockGenerateResearchQueries.mock.calls[1][6]).toBe(2);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(mockSearchWebWithProvider.mock.calls[1][0]).toEqual(
+      expect.objectContaining({
+        query: "official current aggregate total",
+      }),
+    );
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
+  });
+
+  it("records a refinement ledger entry when all generated refinement candidates were already searched", async () => {
+    mockGenerateResearchQueries.mockImplementation((_claim: unknown, iterationType: string) => {
+      if (iterationType === "refinement") {
+        return Promise.resolve([
+          {
+            query: "broad secondary query",
+            rationale: "duplicate of the already searched main route",
+            retrievalLane: "primary_direct",
+            freshnessWindow: "none",
+          },
+        ]);
+      }
+
+      return Promise.resolve([
+        {
+          query: "broad secondary query",
+          rationale: "main",
+          retrievalLane: "secondary_context",
+          freshnessWindow: "none",
+        },
+      ]);
+    });
+
+    const claim = {
+      id: "AC_01",
+      statement: "current aggregate metric claim",
+      freshnessRequirement: "current_snapshot",
+      expectedEvidenceProfile: {
+        methodologies: [],
+        expectedMetrics: ["current aggregate total", "component total"],
+        expectedSourceTypes: ["government_report"],
+        primaryMetric: "current aggregate total",
+        componentMetrics: ["component total"],
+      },
+      relevantGeographies: ["CH"],
+    } as any;
+
+    const state = makeState();
+
+    await runResearchIteration(
+      claim,
+      "main",
+      { maxSourcesPerIteration: 5 } as any,
+      {
+        perClaimQueryBudget: 4,
+        relevanceTopNFetch: 5,
+        maxEvidenceItemsPerSource: 5,
+        researchMaxQueriesPerIteration: 3,
+        primarySourceRefinementEnabled: true,
+        primarySourceRefinementMaxQueries: 1,
+        freshQueryCacheTtlDays: 1,
+      } as any,
+      5,
+      "2026-04-15",
+      state,
+    );
+
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+    expect(state.claimAcquisitionLedger.AC_01?.iterations.map((entry) => entry.iterationType)).toEqual([
+      "main",
+      "refinement",
+    ]);
+    const refinementEntry = state.claimAcquisitionLedger.AC_01?.iterations[1];
+    expect(refinementEntry).toEqual(
+      expect.objectContaining({
+        iterationType: "refinement",
+        searchAttempts: 0,
+        laneReason: "primary_source_refinement:no_unsearched_query",
+      }),
+    );
+    expect(refinementEntry?.generatedQueries).toEqual(["broad secondary query"]);
+  });
 });

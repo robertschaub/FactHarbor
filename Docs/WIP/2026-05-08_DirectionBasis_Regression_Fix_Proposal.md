@@ -1278,3 +1278,52 @@ Next gate:
 3. Verify both `http://localhost:3000/api/version` and `http://localhost:3000/api/fh/version` point at the intended commit where possible.
 4. Submit exactly one exact `asylum-235000-de` canary.
 5. Accept only if it lands in the Captain band and records a usable commit/prompt hash. Stop on any false-side/MIXED result, missing commit metadata, or missing refinement lane when the latest aggregate route is still unresolved after first main.
+
+### 12.29 Clean Canary Failure And Refinement Candidate Patch - 2026-05-12
+
+Clean restarted canary after `f2e70bfd`:
+
+- Job: `2d72a002274f4606aa97d177d2d58344`.
+- Input: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`.
+- Result: `MOSTLY-FALSE` 15/68.
+- Duration: about 16 minutes (`2026-05-12T08:11:38Z` to `2026-05-12T08:27:48Z`).
+- Result metadata inside `resultJson.meta`: commit `f2e70bfd5e412938daae3250723887879a38140e`, prompt hash `5737b5bab77852b7d6ce5ad1bb68b7e300e2f057e9f0b73dc2df62ec1abf8a31`.
+- Official external check: the SEM 2025 annual commentary route exists and reports `Total Personen aus dem Asylbereich (inkl. RU)` as `235 057`; the report missed this decisive source and instead anchored on the 2024 `226 706` aggregate.
+
+Failed-attempt classification:
+
+- `e51b85ed` primary-source refinement always-run change: **keep direction, amend implementation**. The refinement branch started, but did not execute a refinement search after duplicate filtering.
+- `f2e70bfd` Stage 4 runtime-date prompt patch: **keep**. The prompt fix is still needed, but it cannot correct a missing decisive 2025 source by itself.
+
+Root cause:
+
+- The event history proves the runner reached `Generating direct-source refinement queries for AC_01...`.
+- `claimAcquisitionLedger.AC_01` contains only `main`, `contradiction`, and `contrarian` iterations; `searchQueries` contains no `focus: refinement`.
+- Side-agent review (`Boole`, `Gibbs`) agreed on the failure mode: the refinement branch generated candidates, then `filterUnsearchedClaimQueries` likely removed them all as duplicates. Because the code only records telemetry inside `selectedRefinementQueries.length > 0`, the refinement lane silently disappeared.
+- This explains why the next steps fell back to contradiction/current-component routes and never recovered the latest complete annual aggregate artifact that the good comparator reached.
+
+Debt-guard decision:
+
+- Classification: **incomplete-existing-mechanism**.
+- Chosen option: amend the existing bounded refinement mechanism.
+- Rejected option: add asylum/SEM-specific query fallbacks or deterministic date/source-name matching. That would violate generic-by-design and LLM-intelligence rules.
+- Rejected option: stack another prompt change before fixing the structural no-op path.
+
+Implementation:
+
+- `apps/web/src/lib/analyzer/research-orchestrator.ts` now asks the LLM for a small refinement candidate pool larger than the execution budget, then still executes only the configured refinement budget after duplicate filtering.
+- If all generated refinement candidates are removed or none are generated, Stage 2 now records an explicit refinement ledger entry with `primary_source_refinement:no_unsearched_query` or `primary_source_refinement:no_query_generated`.
+- `apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts` adds coverage for the duplicate-first-candidate case and the all-duplicate/no-selected telemetry case.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/primary-source-refinement.test.ts`: passed (`15` tests).
+- `npm -w apps/web run test -- test/unit/lib/analyzer/primary-source-refinement.test.ts test/unit/lib/analyzer/verdict-prompt-contract.test.ts test/unit/lib/analyzer/prompt-frontmatter-drift.test.ts`: passed (`134` tests).
+- `npm -w apps/web run build`: passed; prompt/config reseed reported `0 changed`.
+
+Next gate:
+
+1. Commit this code/test/doc patch before any new live jobs.
+2. Restart localhost web/API and verify version endpoints report the new commit.
+3. Spend exactly one exact `asylum-235000-de` canary.
+4. Accept only if it reaches `LEANING-TRUE` / `MOSTLY-TRUE` within the Captain band, or stop and diagnose if it still misses the 2025 aggregate or records `primary_source_refinement:no_unsearched_query`.
