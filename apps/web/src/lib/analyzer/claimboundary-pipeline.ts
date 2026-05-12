@@ -1083,7 +1083,7 @@ export async function runClaimBoundaryAnalysis(
     // Evidence pool balance check (C13 — detect directional skew before verdict)
     const skewThreshold = initialCalcConfig.evidenceBalanceSkewThreshold ?? 0.8;
     const minDirectional = initialCalcConfig.evidenceBalanceMinDirectional ?? 3;
-    const evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
+    let evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
     if (evidenceBalance.isSkewed) {
       const direction = evidenceBalance.balanceRatio > 0.5 ? "supporting" : "contradicting";
       const directional = evidenceBalance.supporting + evidenceBalance.contradicting;
@@ -1183,6 +1183,7 @@ export async function runClaimBoundaryAnalysis(
     state.evidenceItems = shouldFilterApplicability
       ? assessed.filter((item) => item.applicability !== "foreign_reaction")
       : assessed;
+    evidenceBalance = assessEvidenceBalance(state.evidenceItems, skewThreshold, minDirectional);
     const removedCount = removedItems.length;
     if (removedCount > 0) {
       console.info(
