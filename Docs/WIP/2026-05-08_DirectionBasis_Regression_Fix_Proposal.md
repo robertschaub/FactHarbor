@@ -1626,3 +1626,52 @@ Decision:
 - Do not add another report-semantics prompt rule for this lane.
 - The `1de78` runtime exceeds the Captain's newly stated target for normal direct jobs, so it is useful performance evidence even though the report quality passed.
 - If release readiness requires no user-visible budget warnings on simple controls, open a separate timing/performance slice rather than mixing it with current report-quality fixes.
+
+### 12.35 Timing Phase 0 Ledger And Reviewer Consolidation - 2026-05-12
+
+Scope:
+
+- Captain asked to extend the timing/performance plan, call a reviewer, consolidate the plan, and execute immediately if low risk.
+- Execution was limited to Phase 0 measurement and documentation. No live jobs were submitted, and no code, prompt, model, or search behavior was changed.
+
+Reviewer finding:
+
+- Reviewer approved a narrow Phase 0 only.
+- Required separation: draft preparation / AtomicClaim selection latency, interactive user delay for `>3` claims, queue wait, active final-report runtime, and PDF/report-generation timing must be separate buckets.
+- Existing local data is diagnostic, not validation. Ledger rows should preserve job/draft IDs, commit/prompt/config provenance when available, status, local/current-stack/historical caveats, warnings, and whether the row is completed or running.
+- No immediate runtime optimization is low-risk enough inside this slice. The next optimization target should be nominated from the ledger, then reviewed separately before code changes.
+
+Final-job timing ledger from existing local data:
+
+| Job | Status | Result | Queue | Active final runtime | Total job wall | Stage1/reuse in job | Research | Applicability/SR | Clustering | Verdict+narrative | Shape / warnings |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `bb2133a191894da9bacf4f63e4b458ac` | succeeded | MOSTLY-TRUE 78/68 | 0.29m | 13.55m | 13.85m | 1.75m | 6.15m | 1.57m | 1.87m | 2.21m | 1 claim, 38 evidence, 28 sources, 4 boundaries, 0 user warnings |
+| `d174b136feff4e898b9ba394272cd7e3` | succeeded | MOSTLY-FALSE 15/78 | 0.40m | 15.11m | 15.51m | 1.62m | 7.68m | 1.26m | 2.00m | 2.55m | 1 claim, 31 evidence, 22 sources, 6 boundaries, 0 user warnings |
+| `1de78d0a5a2c428baba3f40d189e46a7` | succeeded | TRUE 97/93 | 2.45m | 21.28m | 23.73m | 2.12m | 11.10m | 2.56m | 2.59m | 2.89m | 2 claims, 65 evidence, 41 sources, 5 boundaries, 1 user warning (`budget_exceeded`) |
+| `aedb3a05046441aba3eb2f6047ca0e22` | succeeded | LEANING-TRUE 64/43 | 0.35m | 22.00m | 22.35m | 2.40m | 7.89m | 3.98m | 2.94m | 4.78m | 3 claims, 78 evidence, 21 sources, 6 boundaries, 0 user warnings |
+| `38655e2b60d24aaf93ea16d044d1a1c4` | succeeded | MIXED 52/68 | 0.03m | 23.01m | 23.04m | 2.44m | 6.72m | 4.44m | 4.44m | 4.97m | 3 claims, 124 evidence, 29 sources, 6 boundaries, 0 user warnings |
+| `939563ecbea14a4c90249eb13c9743ef` | succeeded | LEANING-FALSE 37/62 | 0.72m | 27.70m | 28.42m | 2.94m | 11.51m | 4.35m | 4.62m | 4.28m | 3 claims, 144 evidence, 34 sources, 6 boundaries, 0 user warnings |
+| `15d1c2aea5714e3baea3e9be53324e64` | running at capture | n/a | 0.40m | 13.20m and still running | 13.61m and still running | 0.01m (reused prepared Stage 1) | 13.14m and budget reached | not complete | not complete | not complete | SVP PDF final job from draft `17eb5f`; progress 58 at capture |
+
+Preparation / claim-selection draft timing ledger:
+
+| Draft | Input | Status | Prep wall / observed | Stage 1 | Recommendation | Candidates | Attribution / note |
+|---|---|---|---:|---:|---:|---:|---|
+| `07d6242864074dd381bdff412649a639` | SVP PDF URL | awaiting selection | 10.61m | 10.40m | 12.3s | 5 | Stage 1 retry; within 15m target; user selection delay separate |
+| `17eb5f1f9b0940f9b312dd14db2c4313` | SVP PDF URL | completed; final job `15d1c2...` | 13.24m | 13.04m | 12.0s | 5 | Stage 1 retry; contract validation 66.4s; final job reused snapshot |
+| `8ba46331a0f745a59929d112c7c57034` | SVP PDF URL | preparing | >20m at capture | unknown | n/a | n/a | progress 31, last event `LLM call: multi-claim atomicity audit`; prep/staleness watch |
+
+Consolidated interpretation:
+
+- The 15-minute target is reasonable for simple/current direct jobs, but several accepted current reports exceed it on active final-runtime alone.
+- Preparation for this SVP PDF can complete within 15 minutes, but almost all prep time is Stage 1. Stage 1 retry/contract validation is therefore a preparation-side optimization target, separate from final report runtime.
+- Interactive user selection delay for `>3` candidate claims is not a performance failure and must be excluded from final-runtime averages.
+- Research remains the first final-runtime bottleneck: `1de78` spent 11.10m in research and hit `budget_exceeded`; the running SVP final job already spent 13.14m in research and hit the research budget after reusing Stage 1.
+- Evidence volume drives later-stage cost. Plastic rows show applicability/SR + clustering + verdict/narrative together consume roughly 13-14 minutes when evidence volume is 124-144 items.
+- Queue time is usually small, but `1de78` had 2.45m queue wait; queue should remain a separate operational metric.
+
+Low-risk execution result:
+
+- Phase 0 ledger is complete enough to guide the next performance slice.
+- No code optimization was executed because the reviewer judged that no runtime optimization is low-risk enough before this measurement is reviewed.
+- Next recommended implementation candidate is still structural/no-quality-loss waste reduction, likely exact source/PDF fetch+parse reuse and duplicate/stale preparation control, but it must be handled as a separate reviewed code slice with `/debt-guard`, tests, commit, restart, and at most one live verifier if needed.
