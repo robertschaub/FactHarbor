@@ -1107,6 +1107,14 @@ Captain timing target added 2026-05-12:
 - For inputs that generate more than 3 AtomicClaims and wait for interactive Captain claim selection, the user-wait interval is allowed extra delay and should be measured separately from final-report processing.
 - UI/status reporting should distinguish preparation time, claim-selection wait time, queued runner time, and active analysis time. These should not be collapsed into one undifferentiated "analysis is slow" number.
 
+Preparation-side timing sample added 2026-05-12:
+
+- SVP PDF URL: `https://www.svp.ch/wp-content/uploads/260324_Argumentarium-ohne-Q-A-DE.pdf`.
+- Draft `07d6242864074dd381bdff412649a639`: completed preparation in `636470 ms` (`10.61 min`), with `623963 ms` in Stage 1, `12345 ms` in recommendation, 5 candidate claims, and Stage 1 attribution `retry`.
+- Draft `17eb5f1f9b0940f9b312dd14db2c4313`: completed preparation in `794673 ms` (`13.24 min`), with `782568 ms` in Stage 1, `12008 ms` in recommendation, 5 candidate claims, contract validation `66377 ms`, and Stage 1 attribution `retry`; final job `15d1c2aea5714e3baea3e9be53324e64` reused this prepared snapshot.
+- Draft `8ba46331a0f745a59929d112c7c57034` was still `PREPARING` at progress 31 after more than 20 minutes, last seen at `LLM call: multi-claim atomicity audit`; treat it as a preparation timing/staleness watch item, not as a completed prep sample yet.
+- Interpretation: completed SVP-PDF preparation is within the Captain's 15-minute target, but almost all time is Stage 1. The timing ledger must include preparation separately from final-job runtime and must flag duplicate/stale preparation attempts.
+
 Observed current-stack timing:
 
 | Job | Family | Result | Duration | Evidence / sources | Boundaries | LLM calls | Timing note |
@@ -1132,10 +1140,11 @@ Later optimization plan, separate from quality fixes:
 
 1. Build a small timing ledger from job events/metrics for at least the accepted comparator set, including phase durations, evidence count, source count, scope count, boundaries, LLM calls, and provider fallbacks.
 2. Decide target budgets by report family and UI context: normal direct reports should average around 15 minutes or less; heavy article/PDF jobs and interactive >3-AtomicClaim selection flows need separate timing buckets and ETA language.
-3. Attack no-quality-loss waste first: duplicate URL/source variants before fetch/extract, provider fallback noise, repeated extraction of mirrored artifacts, and work that is predictably dropped by per-source cap.
-4. Profile scope normalization and clustering separately; consider batching, early scope consolidation, or caps only if report quality is preserved.
-5. Review model-tiering only after phase timing data exists. Do not downgrade models blindly while report quality is still under validation.
-6. Update UI progress/ETA messaging to current measured ranges until real optimizations land.
+3. Include claim-selection draft observability in the ledger: preparation total, Stage 1 time, retry/repair attribution, contract-validation time, recommendation time, candidate count, user-wait time, final-job reuse, and duplicate/stale preparing drafts.
+4. Attack no-quality-loss waste first: duplicate URL/source variants before fetch/extract, provider fallback noise, repeated extraction of mirrored artifacts, and work that is predictably dropped by per-source cap.
+5. Profile scope normalization and clustering separately; consider batching, early scope consolidation, or caps only if report quality is preserved.
+6. Review model-tiering only after phase timing data exists. Do not downgrade models blindly while report quality is still under validation.
+7. Update UI progress/ETA messaging to current measured ranges until real optimizations land.
 
 Do not mix this timing work into the active report-quality patch unless a timing issue causes an operational failure or changes verdict quality.
 
