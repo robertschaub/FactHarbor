@@ -157,6 +157,69 @@ describe("runPreliminarySearch exact URL fetch reuse", () => {
     expect(state.llmCalls).toBe(4);
   });
 
+  it("reuses an already-resolved non-HTML input source instead of fetching it again", async () => {
+    mockSearchWebWithProvider.mockResolvedValue({
+      results: [
+        { url: "https://example.com/source.pdf", title: "Original PDF", snippet: "snippet" },
+      ],
+      providersUsed: ["google"],
+      errors: [],
+    });
+    mockClassifyRelevance.mockResolvedValue([
+      {
+        url: "https://example.com/source.pdf",
+        originalRank: 0,
+        relevanceScore: 0.95,
+        jurisdictionMatch: "direct",
+        reasoning: "direct match",
+      },
+    ]);
+    mockExtractStructuredOutput.mockReturnValue({
+      evidenceItems: [
+        {
+          statement: "Evidence reused from resolved source",
+          evidenceScope: { methodology: "analysis", temporal: "2026" },
+          sourceUrl: "https://example.com/source.pdf",
+          relevantClaimIds: ["AC_01"],
+        },
+      ],
+    });
+
+    const state = {
+      searchQueries: [],
+      llmCalls: 0,
+      sources: [
+        {
+          id: "S_001",
+          url: "https://example.com/source.pdf",
+          title: "Original PDF",
+          trackRecordScore: null,
+          fullText: "Cached PDF text ".repeat(20),
+          fetchedAt: new Date().toISOString(),
+          category: "application/pdf",
+          fetchSuccess: true,
+          searchQuery: "resolved-input",
+        },
+      ],
+      warnings: [],
+    } as any;
+
+    const result = await runPreliminarySearch(
+      [{ statement: "Test claim", searchHint: "original pdf" }],
+      mockSearchConfig,
+      { ...mockPipelineConfig, preliminarySearchQueriesPerClaim: 1 },
+      "2026-04-24",
+      state,
+    );
+
+    expect(mockExtractTextFromUrl).not.toHaveBeenCalled();
+    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(result).toHaveLength(1);
+    expect(result[0].sourceUrl).toBe("https://example.com/source.pdf");
+    expect(state.sources).toHaveLength(1);
+    expect(state.llmCalls).toBe(2);
+  });
+
   it("retries a later duplicate after an earlier shared fetch fails", async () => {
     const sharedResults = {
       results: [

@@ -2106,6 +2106,25 @@ export async function runPreliminarySearch(
       return existing;
     }
 
+    const existingDocumentSource = state.sources.find(
+      (source) =>
+        source.url === searchResult.url
+        && source.category !== "text/html"
+        && typeof source.fullText === "string"
+        && source.fullText.length > 100,
+    );
+    if (existingDocumentSource) {
+      const fetchPromise = Promise.resolve({
+        ok: true as const,
+        url: existingDocumentSource.url,
+        title: existingDocumentSource.title || searchResult.title || "",
+        text: existingDocumentSource.fullText,
+        contentType: existingDocumentSource.category,
+      });
+      sharedFetchPromises.set(searchResult.url, fetchPromise);
+      return fetchPromise;
+    }
+
     const fetchPromise: Promise<SharedFetchResult> = (async (): Promise<SharedFetchResult> => {
       try {
         const content = await extractTextFromUrl(searchResult.url, {

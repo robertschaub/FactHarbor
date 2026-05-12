@@ -205,7 +205,11 @@ vi.mock("@/lib/web-search", () => ({
 }));
 
 vi.mock("@/lib/retrieval", () => ({
-  extractTextFromUrl: vi.fn(async () => ({ text: "fetched text", contentType: "text/plain" })),
+  extractTextFromUrl: vi.fn(async () => ({
+    text: "fetched text",
+    title: "Fetched URL",
+    contentType: "text/plain",
+  })),
 }));
 
 vi.mock("@/lib/search-circuit-breaker", () => ({
@@ -251,6 +255,11 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
     const preparedStage1 = {
       version: 1,
       resolvedInputText: "resolved text after URL fetch",
+      resolvedInputSource: {
+        url: "https://example.com/original",
+        title: "Original PDF",
+        contentType: "application/pdf",
+      },
       preparedUnderstanding: {
         detectedLanguage: "en",
         detectedInputType: "url",
@@ -305,6 +314,15 @@ describe("runClaimBoundaryAnalysis prepared Stage 1 reuse", () => {
 
     const state = mockResearchEvidence.mock.calls[0][0];
     expect(state.originalInput).toBe("resolved text after URL fetch");
+    expect(state.sources).toMatchObject([
+      {
+        url: "https://example.com/original",
+        title: "Original PDF",
+        category: "application/pdf",
+        fullText: "resolved text after URL fetch",
+        searchQuery: "resolved-input",
+      },
+    ]);
     expect(state.understanding.atomicClaims.map((claim: { id: string }) => claim.id)).toEqual(["AC_B"]);
     expect(state.understanding.preFilterAtomicClaims.map((claim: { id: string }) => claim.id)).toEqual(["AC_B"]);
     expect(state.understanding.gate1Reasoning).toEqual([
@@ -425,5 +443,19 @@ describe("prepareStage1Snapshot provenance", () => {
       selectionCap: 5,
     });
     expect(prepared.preparedStage1.preparationProvenance?.resolvedInputSha256).toEqual(expect.any(String));
+    expect(prepared.preparedStage1.resolvedInputSource).toMatchObject({
+      url: "https://example.com/article.pdf",
+      title: "Fetched URL",
+      contentType: "text/plain",
+    });
+    expect(prepared.state.sources).toMatchObject([
+      {
+        url: "https://example.com/article.pdf",
+        title: "Fetched URL",
+        category: "text/plain",
+        fullText: "fetched text",
+        searchQuery: "resolved-input",
+      },
+    ]);
   });
 });

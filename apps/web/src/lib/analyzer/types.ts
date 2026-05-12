@@ -812,9 +812,16 @@ export type AnalysisInput = {
 export interface PreparedStage1Snapshot {
   version: 1;
   resolvedInputText: string;
+  resolvedInputSource?: PreparedResolvedInputSource;
   preparedUnderstanding: CBClaimUnderstanding;
   acquisitionTrace?: AcquisitionTraceObservability;
   preparationProvenance?: PreparedStage1Provenance;
+}
+
+export interface PreparedResolvedInputSource {
+  url: string;
+  title?: string;
+  contentType: string;
 }
 
 export interface PreparedStage1Provenance {

@@ -1651,7 +1651,7 @@ Final-job timing ledger from existing local data:
 | `aedb3a05046441aba3eb2f6047ca0e22` | succeeded | LEANING-TRUE 64/43 | 0.35m | 22.00m | 22.35m | 2.40m | 7.89m | 3.98m | 2.94m | 4.78m | 3 claims, 78 evidence, 21 sources, 6 boundaries, 0 user warnings |
 | `38655e2b60d24aaf93ea16d044d1a1c4` | succeeded | MIXED 52/68 | 0.03m | 23.01m | 23.04m | 2.44m | 6.72m | 4.44m | 4.44m | 4.97m | 3 claims, 124 evidence, 29 sources, 6 boundaries, 0 user warnings |
 | `939563ecbea14a4c90249eb13c9743ef` | succeeded | LEANING-FALSE 37/62 | 0.72m | 27.70m | 28.42m | 2.94m | 11.51m | 4.35m | 4.62m | 4.28m | 3 claims, 144 evidence, 34 sources, 6 boundaries, 0 user warnings |
-| `15d1c2aea5714e3baea3e9be53324e64` | running at capture | n/a | 0.40m | 13.20m and still running | 13.61m and still running | 0.01m (reused prepared Stage 1) | 13.14m and budget reached | not complete | not complete | not complete | SVP PDF final job from draft `17eb5f`; progress 58 at capture |
+| `15d1c2aea5714e3baea3e9be53324e64` | succeeded | LEANING-FALSE 35/24 | 0.40m | 25.53m | 25.94m | 0.06m (reused prepared Stage 1) | 13.14m and budget reached | 4.00m | 2.98m | 5.36m | SVP PDF final job from draft `17eb5f`; 3 selected claims, 60 evidence, 33 sources, 6 boundaries, 3 user warnings (`budget_exceeded`, `verdict_citation_integrity_guard`, `verdict_integrity_failure`); pre-patch timing/quality evidence |
 
 Preparation / claim-selection draft timing ledger:
 
@@ -1666,7 +1666,8 @@ Consolidated interpretation:
 - The 15-minute target is reasonable for simple/current direct jobs, but several accepted current reports exceed it on active final-runtime alone.
 - Preparation for this SVP PDF can complete within 15 minutes, but almost all prep time is Stage 1. Stage 1 retry/contract validation is therefore a preparation-side optimization target, separate from final report runtime.
 - Interactive user selection delay for `>3` candidate claims is not a performance failure and must be excluded from final-runtime averages.
-- Research remains the first final-runtime bottleneck: `1de78` spent 11.10m in research and hit `budget_exceeded`; the running SVP final job already spent 13.14m in research and hit the research budget after reusing Stage 1.
+- Research remains the first final-runtime bottleneck: `1de78` spent 11.10m in research and hit `budget_exceeded`; the pre-patch SVP final job spent 13.14m in research and hit the research budget after reusing Stage 1.
+- The pre-patch SVP final job also failed report-quality expectations (`LEANING-FALSE` 35/24 with verdict integrity warnings), so it is timing/root-cause evidence only, not an acceptable report comparator.
 - Evidence volume drives later-stage cost. Plastic rows show applicability/SR + clustering + verdict/narrative together consume roughly 13-14 minutes when evidence volume is 124-144 items.
 - Queue time is usually small, but `1de78` had 2.45m queue wait; queue should remain a separate operational metric.
 
@@ -1675,3 +1676,33 @@ Low-risk execution result:
 - Phase 0 ledger is complete enough to guide the next performance slice.
 - No code optimization was executed because the reviewer judged that no runtime optimization is low-risk enough before this measurement is reviewed.
 - Next recommended implementation candidate is still structural/no-quality-loss waste reduction, likely exact source/PDF fetch+parse reuse and duplicate/stale preparation control, but it must be handled as a separate reviewed code slice with `/debt-guard`, tests, commit, restart, and at most one live verifier if needed.
+
+### 12.36 Resolved URL Source Reuse Slice - 2026-05-12
+
+Debt-guard result:
+
+- Classification: incomplete existing mechanism.
+- Existing mechanism: exact same-job document/data source reuse already exists in Stage 2 acquisition, and Stage 1 preliminary search already reuses exact duplicate fetches within the preparation run.
+- Missing edge: a URL input is fetched once to resolve the analysis text, but that resolved non-HTML body was not entered into either reuse path. If the same PDF/data URL appears again during preliminary search or final research, the runner can download/parse it again.
+- Chosen option: amend the existing reuse mechanism in place.
+- Rejected path: do not add duplicate-draft reuse now. Public draft creation returns a one-time access token and only the hash is stored, so safe reuse of an existing active draft needs an ownership/token design and is not a low-risk timing patch.
+
+Patch summary:
+
+- `prepareStage1Snapshot` now records lightweight resolved-input source metadata (`url`, `title`, `contentType`) alongside `resolvedInputText`.
+- The pipeline seeds the already-resolved input body as a reusable fetched source only when the content type is non-HTML. HTML is deliberately excluded so follow-up discovery remains fresh.
+- Draft-backed jobs seed the same reusable source from the prepared snapshot, so final jobs can reuse the prepared PDF/data body without re-fetching if the exact URL is selected by research.
+- Stage 1 preliminary search also checks existing non-HTML sources before calling `extractTextFromUrl`, preserving the established document/data reuse boundary.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claimboundary-prepared-stage1.test.ts` passed.
+- `npm -w apps/web run test -- test/unit/lib/analyzer/claim-extraction-preliminary-search-dedupe.test.ts` passed.
+- `npm -w apps/web run build` passed and reseeded `0` prompt/config changes.
+- `git diff --check` passed.
+
+Residual risk:
+
+- This should reduce duplicate exact URL fetch/parse work, especially for URL/PDF inputs such as the SVP PDF control, but it will not solve long final-report research time when research selects many distinct sources.
+- It does not cancel or deduplicate already-running duplicate drafts; that remains a separate admin/control design slice.
+- No live job has been submitted from this patch yet. Commit and runtime restart are required before any validation job, so the job records the correct source revision.

@@ -36,6 +36,7 @@ import type {
   AnalysisInput,
   OverallAssessment,
   PreparedStage1Snapshot,
+  PreparedResolvedInputSource,
   SourceType,
 } from "./types";
 
@@ -684,11 +685,12 @@ async function resolveAnalysisText(params: {
   inputValue: string;
   pipelineConfig: PipelineConfig;
   onEvent?: (message: string, progress: number) => void;
-}): Promise<{ analysisText: string; detectedUrl?: string }> {
+}): Promise<{ analysisText: string; detectedUrl?: string; resolvedInputSource?: PreparedResolvedInputSource }> {
   const { inputType, inputValue, pipelineConfig, onEvent } = params;
 
   let analysisText = inputValue;
   let detectedUrl: string | undefined;
+  let resolvedInputSource: PreparedResolvedInputSource | undefined;
 
   if (inputType === "url") {
     onEvent?.("Fetching URL content...", 3);
@@ -705,6 +707,11 @@ async function resolveAnalysisText(params: {
       throw new Error("URL returned no extractable text content");
     }
     analysisText = fetched.text;
+    resolvedInputSource = {
+      url: inputValue,
+      title: fetched.title,
+      contentType: fetched.contentType,
+    };
     console.log(`[Pipeline] URL content fetched: ${analysisText.length} chars, type: ${fetched.contentType}`);
   }
 
@@ -719,6 +726,11 @@ async function resolveAnalysisText(params: {
         throw new Error("URL returned no extractable text content");
       }
       analysisText = fetched.text;
+      resolvedInputSource = {
+        url: detectedUrl,
+        title: fetched.title,
+        contentType: fetched.contentType,
+      };
       console.log(`[Pipeline] Auto-fetched URL (text input): ${analysisText.length} chars, type: ${fetched.contentType}`);
     } catch (fetchError) {
       const msg = fetchError instanceof Error ? fetchError.message : String(fetchError);
@@ -726,7 +738,33 @@ async function resolveAnalysisText(params: {
     }
   }
 
-  return { analysisText, detectedUrl };
+  return { analysisText, detectedUrl, resolvedInputSource };
+}
+
+function seedReusableResolvedInputSource(
+  state: CBResearchState,
+  source: PreparedResolvedInputSource | undefined,
+  fullText: string,
+): void {
+  if (!source?.url || !source.contentType || !fullText.trim()) return;
+
+  // Match Stage 2's established reuse boundary: document/data bodies are safe to
+  // reuse by exact URL, while HTML is re-fetched so follow-up discovery remains fresh.
+  if (source.contentType === "text/html") return;
+  if (state.sources.some((existing) => existing.url === source.url)) return;
+
+  state.sources.push({
+    id: `S_${String(state.sources.length + 1).padStart(3, "0")}`,
+    url: source.url,
+    title: source.title || source.url,
+    trackRecordScore: null,
+    fullText,
+    fetchedAt: new Date().toISOString(),
+    category: source.contentType,
+    fetchSuccess: true,
+    searchQuery: "resolved-input",
+    relevanceScore: null,
+  });
 }
 
 function buildPreparedResearchState(params: {
@@ -742,6 +780,11 @@ function buildPreparedResearchState(params: {
     pipelineConfig,
     onEvent: input.onEvent,
   });
+  seedReusableResolvedInputSource(
+    state,
+    preparedStage1.resolvedInputSource,
+    preparedStage1.resolvedInputText,
+  );
 
   const understanding = structuredClone(preparedStage1.preparedUnderstanding);
   const selectedClaimIds = input.selectedClaimIds ?? [];
@@ -856,7 +899,7 @@ export async function prepareStage1Snapshot(
   const effectivePipelineConfig =
     pipelineConfig ?? pipelineConfigResult.config;
 
-  const { analysisText, detectedUrl } = await resolveAnalysisText({
+  const { analysisText, detectedUrl, resolvedInputSource } = await resolveAnalysisText({
     inputType: input.inputType,
     inputValue: input.inputValue,
     pipelineConfig: effectivePipelineConfig,
@@ -870,6 +913,7 @@ export async function prepareStage1Snapshot(
     pipelineConfig: effectivePipelineConfig,
     onEvent: input.onEvent,
   });
+  seedReusableResolvedInputSource(state, resolvedInputSource, analysisText);
 
   const understanding = await extractClaims(state);
   state.understanding = understanding;
@@ -879,6 +923,7 @@ export async function prepareStage1Snapshot(
     preparedStage1: {
       version: 1,
       resolvedInputText: analysisText,
+      ...(resolvedInputSource ? { resolvedInputSource } : {}),
       preparedUnderstanding: understanding,
       acquisitionTrace: cloneAcquisitionTrace(state.acquisitionTrace),
       preparationProvenance: {
