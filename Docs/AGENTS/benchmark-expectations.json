@@ -134,8 +134,8 @@
       "minBoundaryCount": 2,
       "qualityStatus": "SOLVED",
       "qualityStatusNote": "TTW/WTW conflation fixed. Report now correctly exposes distinct full-pathway and tank-to-wheel claims/boundaries. Cleanup territory — no active firefighting needed.",
-      "latestVerifiedJobId": "db144edda1dc45ddbdadf61fd6c9256e",
-      "latestObserved": { "verdictLabel": "FALSE", "truthPercentage": 12, "confidence": 82 },
+      "latestVerifiedJobId": "1f838f8b81804aa6997601507a46da07",
+      "latestObserved": { "verdictLabel": "FALSE", "truthPercentage": 8, "confidence": 78 },
       "knownOpenIssues": []
     },
     {

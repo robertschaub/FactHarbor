@@ -1773,3 +1773,32 @@ Interpretation:
 - This is useful timing evidence for commit `fb2943db` / resolved URL source reuse, but not a clean speed win. Total time remains above the Captain's preferred 15-minute average.
 - The lower evidence volume versus `15d1c2` (46 vs. 60 evidence items) suggests the result is directionally better on later-stage load, but the run still hit the research budget and needs quality review before being treated as a good SVP comparator.
 - Do not infer that resolved URL reuse solved the main performance issue. The next performance work should still focus on research iteration/budget behavior and source/evidence volume, not another prompt-quality patch.
+
+### 12.39 Hydrogen Boundary-Label Fix And Grander Draft Triage - 2026-05-12
+
+Hydrogen failure:
+
+- Exact Captain input `Using hydrogen for cars is more efficient than using electricity` first failed as job `7cfa1e2107af4821bed5d672ea650052`: `UNVERIFIED` 50/0, no boundaries/evidence, `report_damaged`.
+- Root cause: Pass 2 correctly extracted WTW and TTW measurement-boundary claims, but `CLAIM_CONTRACT_VALIDATION` treated concise boundary labels/parenthetical aliases as explanatory proxy tails.
+- Debt-guard classification: incomplete existing mechanism. The plastic neutral-dimension patch stays `keep`; this was a latent inconsistency between the efficiency-decomposition rule and the later tail override.
+- Fix: commit `d59483917407e4745787f89542454dcfb27737f2` amends `CLAIM_EXTRACTION_PASS2`, `CLAIM_CONTRACT_VALIDATION`, and `CLAIM_CONTRACT_REPAIR` so short neutral measurement-window/system-boundary labels are accepted as dimension labels, while result claims, mechanisms, thresholds, loss narratives, sufficiency tests, and adjacent performance proxies remain forbidden.
+- Review: side-agent investigation and debt-guard review both passed; no topic-specific wording, no new fallback, net mechanism count unchanged.
+- Verification before live use: focused prompt-contract tests (`98` tests), `npm -w apps/web run build`, and `git diff --check` passed. Runtime restarted/reseeded; API version reported `d5948391`; active `claimboundary` prompt hash `6f39b64e18ebba3179f445522abd2822e5d94e264af5a783945ab50ff8667a3d`.
+
+Hydrogen canary after fix:
+
+- Job `1f838f8b81804aa6997601507a46da07`.
+- Result: `FALSE` 8/78, inside the canonical hydrogen band (`FALSE` / `MOSTLY-FALSE`, truth 5-25, confidence 65-85, min 2 boundaries).
+- Shape: 2 AtomicClaims, 6 boundaries, 54 evidence items, 20 sources, 58 LLM calls, 3 main research iterations, 1 contradiction iteration.
+- Atomic claims: AC_01 full pathway/well-to-wheel `FALSE` 5/82; AC_02 on-board/tank-to-wheel `FALSE` 12/74.
+- Warnings: 16 admin/info diagnostics, 0 user-visible warnings.
+- Runtime: about 17.6 minutes wall-clock (`2026-05-12T18:42:41Z` to `2026-05-12T19:00:18Z`). This is slightly above the 15-minute target but much better than the plastic/SVP long-tail rows; keep as performance watch, not quality blocker.
+- Budget accounting from the latest 8-job allocation in this slice: plastic full report `f5e4f506...`, failed hydrogen canary `7cfa1e21...`, and fixed hydrogen canary `1f838f8b...` consumed 3 submitted jobs; conservative remaining budget is 5.
+
+Grander draft triage:
+
+- Captain pasted selection draft `b3a175bdd5be404f90efc058e3284dae` for the anchored Grander URL.
+- Status: `FAILED`, Stage 1 preparation failed contract preservation. Prep took about 279.4s; contract validation took 23.3s; 5 candidate claims existed.
+- Provenance: old runtime `d30b99318ab936c25e73d274d2d9276dbaa79897`, old prompt hash `992a6faad40b7b254ccffa189a9fc9ca0170633ff8889ce65abff63a1eef2287`. Do not treat this as a failure of current `d5948391` / prompt `6f39b64e...`.
+- Failure summary: validator rejected omitted explicit conjuncts (`Tragkraft/Transportfähigkeit`, `Widerstandskraft`, `Haltbarkeit`, `Nachverkeimungspotential`, overall causal improvement thesis) and rejected consequence/mechanism tails on selected claims. This is legitimate contract-preservation pressure, not a random runtime crash.
+- Recommendation: do not spend budget on Grander unless Captain explicitly promotes this URL into the current validation set. If promoted, rerun once on current code as a URL/article stress test and stop on any Stage 1 contract failure; compare against the April 2026 Grander follow-up notes before patching.
