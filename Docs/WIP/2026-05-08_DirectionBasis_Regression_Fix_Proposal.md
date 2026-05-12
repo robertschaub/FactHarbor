@@ -1556,3 +1556,24 @@ Additional amendment:
 - Verification passed: `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts`, `npm -w apps/web run build`, and `git diff --check`.
 
 Next gate remains one exact Bolsonaro EN canary after commit/restart. If it still leaves AC_02/AC_03 `UNVERIFIED`, stop and escalate to prompt reduction/reviewer debate rather than adding more prompt clauses.
+
+Final canary on `9b0e8efd`:
+
+- Job: `aedb3a05046441aba3eb2f6047ca0e22`.
+- Result: `LEANING-TRUE` 64/43.
+- Runtime: 22.4 minutes.
+- Result metadata: commit `9b0e8efdae983425a896d034558d34ac5f7c728c`, prompt hash `608d073de13e74a96005f7cc8e045479f31dae1bdbe1774dfc7ac3f140faf50c`.
+- Evidence shape: 3 claims, 6 boundaries, 78 evidence items, 21 sources, 31 supporting / 0 contradicting / 47 neutral, 0 user-visible warnings.
+
+Quality verdict:
+
+- **Direction repaired, but not comparator-level quality.**
+- All three claims are now true-side: AC_01 `LEANING-TRUE` 65/50, AC_02 `LEANING-TRUE` 62/32, AC_03 `LEANING-TRUE` 62/30.
+- The report is materially better than the `c3e50afe` failure and the `61ee6d53` partial recovery because AC_02/AC_03 are no longer safe-downgraded.
+- It is still weaker than the preferred exact comparators (`91bf6083` 63/52 local, `85812d61` 68/62 deployed) because overall confidence is 2pp below the canonical band and fair-trial/verdict confidence remains low.
+
+Decision:
+
+- Stop additional Bolsonaro EN jobs for now. The last fix achieved the targeted direction repair; further prompt clauses would risk pile-up.
+- Treat `aedb3a05` as current-watch partial recovery, not a best comparator and not deploy-readiness proof.
+- Next recommended work is a no-edit quality review / prompt-audit reduction focused on why AC_02/AC_03 confidence stays low despite one-sided direct support and no direct contradiction.

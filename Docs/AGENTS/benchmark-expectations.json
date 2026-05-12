@@ -94,15 +94,15 @@
       "truthPercentageBand": { "min": 58, "max": 85 },
       "confidenceBand": { "min": 45, "max": 75 },
       "minBoundaryCount": 3,
-      "qualityStatus": "IMPROVED-CURRENT-PASS-WATCH",
-      "qualityStatusNote": "Must be true-side with caveats. Captain correction on 2026-05-09 removed prior MIXED allowance; original Bolsonaro expectation records legal basis as strongly supported and procedural fairness as largely supported with legitimate concerns. Current exact canary 8761ab59a825430ab3bd2ae325dc4573 on 5dc1d675 passed overall and preserved the intended 3-claim split: AC_01 MOSTLY-TRUE 74/63, AC_02 LEANING-TRUE 58/48, AC_03 LEANING-TRUE 62/44. Keep watch because AC_03 confidence is just below the family band if assessed claim-by-claim, and one claim-local citation registry warning remains admin-only.",
-      "latestVerifiedJobId": "8761ab59a825430ab3bd2ae325dc4573",
-      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 65, "confidence": 50 },
+      "qualityStatus": "PARTIAL-RECOVERY-CURRENT-WATCH",
+      "qualityStatusNote": "Must be true-side with caveats. Captain correction on 2026-05-09 removed prior MIXED allowance; original Bolsonaro expectation records legal basis as strongly supported and procedural fairness as largely supported with legitimate concerns. Current exact canary aedb3a05046441aba3eb2f6047ca0e22 on 9b0e8efd recovered true-side shape after Stage-4 direction-summary and repair-band fixes: overall LEANING-TRUE 64/43, AC_01 65/50, AC_02 62/32, AC_03 62/30, no user-visible warnings. This is a watch-level partial recovery because overall confidence is 2pp below the canonical band and fair-trial/verdict claim confidence remains low; keep 91bf6083 / 85812d61 as stronger comparators.",
+      "latestVerifiedJobId": "aedb3a05046441aba3eb2f6047ca0e22",
+      "latestObserved": { "verdictLabel": "LEANING-TRUE", "truthPercentage": 64, "confidence": 43 },
       "_note_rerun_2026-04-16": "Rerun da3580fe (PT variant, not EN) confirmed LEANING-TRUE 58/61 at HEAD 35a22fba — see bolsonaro-pt entry for EN twin confirmation.",
       "knownOpenIssues": [
-        "current pass is one exact canary, not repeated stability closure",
-        "one state.gov preliminary-search candidate remains, but it was not selected for fetch and extracted zero evidence in latestVerifiedJobId",
-        "AC_03 confidence 44 is below the family confidence band if judged at individual-claim level, while overall report confidence is in band",
+        "current pass is one exact canary and is a partial recovery, not repeated stability closure",
+        "latest current exact run has no user-visible warnings and all three claims true-side, but overall confidence is 2pp below the family band",
+        "AC_02/AC_03 confidence remains low because unresolved impartiality/appellate-review caveats are treated as confidence limiters despite one-sided direct support",
         "MIXED or false-side outcomes are regressions unless backed by strong target-specific evidence that overturns the original legal-basis/fairness expectation"
       ]
     },
