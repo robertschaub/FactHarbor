@@ -78,6 +78,7 @@ function renderWithVars(
 const ADVOCATE_VARS: Record<string, string> = {
   atomicClaims: '[{"id":"AC_01","statement":"Test claim","freshnessRequirement":"current_snapshot"}]',
   evidenceItems: '[{"id":"EV_01","statement":"Test evidence","applicability":"direct"}]',
+  directionalEvidenceSummaryByClaim: '[{"claimId":"AC_01","direct":{"supports":1,"contradicts":0,"neutral":0},"directSupportingEvidenceIds":["EV_01"],"directContradictingEvidenceIds":[]}]',
   claimBoundaries: '[{"id":"CB_01","name":"Test boundary"}]',
   coverageMatrix: '{"claims":["AC_01"],"boundaries":["CB_01"],"counts":[[5]]}',
   sourcePortfolioByClaim: '{"AC_01":[]}',
@@ -89,6 +90,7 @@ const ADVOCATE_VARS: Record<string, string> = {
 const CHALLENGER_VARS: Record<string, string> = {
   claimVerdicts: '[{"claimId":"AC_01","truthPercentage":72}]',
   evidenceItems: '[{"id":"EV_01","statement":"Test evidence","applicability":"direct"}]',
+  directionalEvidenceSummaryByClaim: '[{"claimId":"AC_01","direct":{"supports":1,"contradicts":0,"neutral":0},"directSupportingEvidenceIds":["EV_01"],"directContradictingEvidenceIds":[]}]',
   claimBoundaries: '[{"id":"CB_01","name":"Test boundary"}]',
   sourcePortfolioByClaim: '{"AC_01":[]}',
   currentDate: "2026-04-02",
@@ -100,6 +102,7 @@ const RECONCILIATION_VARS: Record<string, string> = {
   challenges: '[{"claimId":"AC_01","challengePoints":[]}]',
   consistencyResults: '[{"claimId":"AC_01","spread":5}]',
   evidenceItems: '[{"id":"EV_01","claimDirection":"supports","applicability":"direct"},{"id":"EV_02","claimDirection":"contextual","applicability":"contextual"}]',
+  directionalEvidenceSummaryByClaim: '[{"claimId":"AC_01","direct":{"supports":1,"contradicts":0,"neutral":0},"directSupportingEvidenceIds":["EV_01"],"directContradictingEvidenceIds":[]}]',
   sourcePortfolioByClaim: '{"AC_01":[]}',
   reportLanguage: "German",
   currentDate: "2026-04-02",

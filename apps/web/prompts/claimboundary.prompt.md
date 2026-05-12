@@ -1770,6 +1770,7 @@ Evidence is organized by ClaimBoundary (methodological grouping). Each boundary 
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning`. Keep reasoning natural-language only.
 - Treat `applicability` as binding for directional citation arrays. Only evidence items marked `direct` may appear in `supportingEvidenceIds` or `contradictingEvidenceIds`. Items marked `contextual` or `foreign_reaction` may inform confidence, limitations, or background reasoning, but they are not directional support or contradiction.
 - Treat Stage 2 `claimDirection` as authoritative for directional citation arrays. If an evidence item has `claimDirection = "neutral"`, do not place it in `supportingEvidenceIds`, `contradictingEvidenceIds`, or directional `boundaryFindings`, even if the text appears critical or favorable. Treat `directionBasis` as diagnostic guidance, not as a second veto over `claimDirection`: non-directional values such as `question_only`, `allegation_only`, `concern_only`, `procedural_fact_only`, `non_controlling_position_only`, `collateral_context`, `source_existence_only`, or `ambiguous_or_insufficient` are typically low-probative for direction, so prefer using them for confidence, caveats, limitations, or background explanation unless specific direct claim-direction evidence warrants otherwise.
+- Use the Directional Evidence Summary by Claim as a structural checklist for each claim's direct supporting and contradicting evidence. The summary is an index into Evidence Items, not a substitute for reading the evidence substance. If your verdict omits all direct evidence from a non-empty side, or assigns a false-side/MIXED/UNVERIFIED result while the direct evidence is one-sided or strongly imbalanced, the reasoning must explicitly explain why those direct items are not materially probative; otherwise include the strongest direct items from that side in the matching citation array.
 - For `boundaryFindings.evidenceDirection`, use `"supports"` or `"contradicts"` only when that boundary contains direct evidence already labeled with the matching claim-local `claimDirection`. If a boundary contains only neutral/contextual evidence for the claim, its `evidenceDirection` must be `"neutral"` or, where mixed direct support and neutral caveats exist, no stronger than `"mixed"`.
 - Do not use source-existence, report-coverage, archive-coverage, dataset-availability, or methodology-only evidence as a directional citation for a substantive claim unless the AtomicClaim itself is about that source, archive, dataset, methodology, or availability. If such evidence only says that a source collection covers the topic, mentions that figures exist elsewhere, or documents how records were compiled without publishing the decisive value or finding, use it only as contextual reasoning and leave it out of `supportingEvidenceIds`/`contradictingEvidenceIds`.
 - Per-boundary findings provide quantitative signals — assess each boundary's evidence independently before synthesizing.
@@ -1825,6 +1826,11 @@ ${currentDate}
 **Evidence Items (grouped by ClaimBoundary):**
 ```
 ${evidenceItems}
+```
+
+**Directional Evidence Summary by Claim (structural index into Evidence Items):**
+```
+${directionalEvidenceSummaryByClaim}
 ```
 
 **ClaimBoundaries:**
@@ -1902,6 +1908,7 @@ For each claim verdict provided, conduct a structured adversarial analysis:
 - Use `evidenceIds` as the authoritative machine-readable citation channel for each challenge point.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `description`. Keep challenge prose natural-language only.
 - If a verdict uses evidence marked `contextual` or `foreign_reaction` inside `supportingEvidenceIds` or `contradictingEvidenceIds`, treat that as a concrete structural weakness and challenge the verdict on that basis rather than treating the non-direct item as clean directional evidence.
+- Use the Directional Evidence Summary by Claim to check both sides of each verdict. Challenge verdicts that ignore a non-empty direct evidence side, overstate a thin direct side, or lower truth mainly from neutral/contextual concern material while stronger direct evidence points the other way.
 - **Every challenge point MUST cite specific evidence IDs** that it references, disputes, or identifies as problematic. If your challenge is about absent evidence, cite the evidence items that SHOULD have a counterpart but don't. Challenges with zero evidence IDs are structurally weak and will be discounted.
 - "Maybe more research would help" is NOT a valid challenge. State what specific evidence is missing, what type of source would provide it, and why its absence matters for the verdict.
 - Each challenge point must be specific enough that the reconciler can evaluate and respond to it directly.
@@ -1927,6 +1934,11 @@ ${currentDate}
 **Evidence Items:**
 ```
 ${evidenceItems}
+```
+
+**Directional Evidence Summary by Claim (structural index into Evidence Items):**
+```
+${directionalEvidenceSummaryByClaim}
 ```
 
 **ClaimBoundaries:**
@@ -1988,6 +2000,7 @@ Produce a final verdict that:
 - Use `supportingEvidenceIds`, `contradictingEvidenceIds`, and `adjustmentBasedOnChallengeIds` as the authoritative citation/traceability channel.
 - Do NOT embed raw machine identifiers such as `EV_*`, `S_*`, `CB_*`, or `CP_*` in `reasoning` or `challengeResponses.response`. Keep report prose natural-language only.
 - Treat `applicability` and `claimDirection` in Evidence Items as binding for final directional citation arrays. Only `direct` evidence with `claimDirection = "supports"` may appear in `supportingEvidenceIds`, and only `direct` evidence with `claimDirection = "contradicts"` may appear in `contradictingEvidenceIds`. Evidence marked `contextual` or `foreign_reaction`, or evidence with neutral/mixed direction, may inform confidence, caveats, limitations, or background reasoning, but it is not directional support or contradiction.
+- Use the Directional Evidence Summary by Claim as a final citation-completeness checklist. If the final verdict changes direction, lowers truth, or leaves a side empty despite non-empty direct evidence on that side, explain the probative reason in reasoning and align the citation arrays with the final rationale.
 - Do not convert source-existence, report-coverage, archive-coverage, dataset-availability, or methodology-only material into directional support or contradiction for a substantive claim unless the AtomicClaim itself asks about that source, archive, dataset, methodology, or availability. If the material only establishes that a collection, report, table set, or methodology exists or covers a topic, keep it contextual unless the evidence statement itself gives the decisive value, event/outcome, rule outcome, or measured condition.
 - If the final assessment for a claim relies only on contextual, foreign-reaction, neutral, mixed, absent, or confidence-limiting material rather than direct directional evidence, keep the relevant directional citation array empty and express the uncertainty through a mixed/UNVERIFIED-style truth range and lower confidence. Do not convert absence of direct evidence into a directional contradiction.
 - Each challenge point includes a `challengeValidation` object. If `evidenceIdsValid` is false, the challenge cites non-existent evidence — treat those citations as hallucinated, do NOT give them analytical weight.
@@ -2055,6 +2068,11 @@ ${consistencyResults}
 **Evidence Items:**
 ```
 ${evidenceItems}
+```
+
+**Directional Evidence Summary by Claim (structural index into Evidence Items):**
+```
+${directionalEvidenceSummaryByClaim}
 ```
 
 **Source Portfolio by Claim (per-claim, per-source reliability and evidence concentration):**

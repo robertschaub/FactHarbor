@@ -37,6 +37,7 @@ import {
   stripPhantomEvidenceIds,
   buildSourcePortfolio,
   buildSourcePortfolioByClaim,
+  buildDirectionalEvidenceSummaryByClaim,
   isVerdictDirectionPlausible,
   getClaimLocalEvidence,
   DEFAULT_VERDICT_STAGE_CONFIG,
@@ -307,6 +308,35 @@ describe("advocateVerdict (Step 1)", () => {
     });
     expect(sent).not.toHaveProperty("sourceExcerpt");
     expect(sent).not.toHaveProperty("specificity");
+  });
+
+  it("should provide claim-level directional evidence summary to verdict prompts", async () => {
+    const claims = [createAtomicClaim({ id: "AC_01" })];
+    const evidence = [
+      createEvidenceItem({ id: "EV_SUPPORT_HIGH", claimDirection: "supports", probativeValue: "high" }),
+      createEvidenceItem({ id: "EV_SUPPORT_LOW", claimDirection: "supports", probativeValue: "low" }),
+      createEvidenceItem({ id: "EV_CONTRA", claimDirection: "contradicts", probativeValue: "medium" }),
+      createEvidenceItem({ id: "EV_CONTEXT", claimDirection: "supports", applicability: "contextual" }),
+      createEvidenceItem({ id: "EV_OTHER", relevantClaimIds: ["AC_02"], claimDirection: "supports" }),
+    ];
+    const boundaries = [createClaimBoundary()];
+    const matrix = buildCoverageMatrix(claims, boundaries, evidence);
+    const mockLLM = createMockLLM({ VERDICT_ADVOCATE: advocateResponse() });
+
+    await advocateVerdict(claims, evidence, boundaries, matrix, mockLLM);
+
+    const callInput = (mockLLM as unknown as { mock: { calls: unknown[][] } }).mock.calls[0][1] as {
+      directionalEvidenceSummaryByClaim: ReturnType<typeof buildDirectionalEvidenceSummaryByClaim>;
+    };
+
+    expect(callInput.directionalEvidenceSummaryByClaim).toEqual([{
+      claimId: "AC_01",
+      direct: { supports: 2, contradicts: 1, neutral: 0 },
+      contextual: { supports: 1, contradicts: 0, neutral: 0 },
+      foreignReaction: { supports: 0, contradicts: 0, neutral: 0 },
+      directSupportingEvidenceIds: ["EV_SUPPORT_HIGH", "EV_SUPPORT_LOW"],
+      directContradictingEvidenceIds: ["EV_CONTRA"],
+    }]);
   });
 
   it("should clamp truth percentage to 0-100", async () => {

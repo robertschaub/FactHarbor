@@ -1487,3 +1487,58 @@ Next gate:
 2. Do not spend another immediate asylum-current job.
 3. Continue with deployment-readiness review using `bb2133` as the current exact local comparator, plus the older exact local/deployed comparators in `Captain_Quality_Expectations.md`.
 4. If Captain wants broader release confidence, run a small cross-input batch only after this patch is committed and localhost is restarted so job metadata records the cleanup commit.
+
+### 12.33 Bolsonaro EN Stop-On-First-Bad Validation And Stage-4 Direction Summary Patch - 2026-05-12
+
+Validation gate after `c3e50afe`:
+
+- Job: `176d8345b6424abcacf1bfe1f4f8d0dd`.
+- Input: `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`.
+- Result: `UNVERIFIED` 43/24.
+- Runtime: 26.8 minutes (`2026-05-12T10:54:31Z` to `2026-05-12T11:21:19Z`).
+- Result metadata: commit `c3e50afed6ef57a203e4bb5eb16f2b834b354c3a`, prompt hash `2e9f20dea67b1c93e4b29853d7a5fc3a34793f67f7f51c715fc2fbde45b7b1e6`.
+- Stop rule: active. No additional validation jobs were submitted after this failure.
+
+Quality verdict:
+
+- **Failed verifier; not deploy-ready on this exact current head.**
+- Atomic claim selection is good: AC_01 Brazilian-law compliance, AC_02 proceedings/fair-trial standards, AC_03 verdicts/fair-trial standards.
+- Final evidence balance is strongly true-side (`28` supporting / `1` contradicting / `67` neutral), so the failure is not a lack of retrieved support.
+- AC_02 regressed false-side (`LEANING-FALSE` 35/38) despite having multiple direct supporting safeguard records in the final claim-local evidence pool.
+- AC_03 was downgraded to `UNVERIFIED` by the direction-integrity policy after the verdict used a midpoint score while citing only direct supporting evidence and no direct contradiction.
+
+Root cause:
+
+- Stage 2 already produced the structural evidence labels needed to avoid the failure.
+- Stage 4 verdict synthesis did not reliably use the complete direct supporting/contradicting side inventory when the evidence pool was large.
+- The existing prompt rules already said not to lower legality/procedure/fairness claims into false-side or `UNVERIFIED` from neutral caveats when direct target-path support exists. Adding another free-form rule alone would be prompt pile-up.
+
+Debt-guard decision:
+
+- Classification: **incomplete-existing-mechanism**.
+- Keep: `c3e50afe` stale `evidence_pool_imbalance` warning reconciliation; it is not causal and passed focused tests/build.
+- Keep/watch: `5068efef` refinement fetch breadth; it produced the Captain-accepted asylum-current report, but it contributes to longer runtimes and larger evidence pools.
+- Amend: Stage 4 prompt packaging, not the retrieval layer and not the integrity guard.
+- Rejected: domain-specific Bolsonaro wording, disabling direction-integrity safe downgrade, or adding another contradiction/safeguard hardcoded rule.
+
+Implementation:
+
+- `apps/web/src/lib/analyzer/verdict-stage.ts` now builds `directionalEvidenceSummaryByClaim` from existing LLM-assigned evidence metadata.
+- The summary is structural only: per-claim direct/contextual/foreign-reaction counts and direct supporting/contradicting evidence IDs, sorted by probative value. It does not reinterpret evidence text.
+- `VERDICT_ADVOCATE`, `VERDICT_CHALLENGER`, and `VERDICT_RECONCILIATION` now receive the summary as an index/checklist alongside the full evidence items.
+- `claimboundary.prompt.md` instructs verdict roles to use that summary as a citation-completeness checklist, while still reading the underlying evidence substance.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-stage.test.ts`: passed (`193` tests).
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts`: passed (`114` tests).
+- `npm -w apps/web run build`: passed; prompt reseed updated `claimboundary` prompt hash prefix to `3a1129904b26`.
+- `git diff --check`: passed.
+
+Next gate:
+
+1. Commit this patch before spending another live job.
+2. Restart localhost and verify web/API version endpoints report the new commit.
+3. Spend exactly one Bolsonaro EN canary and stop again on failure.
+4. Pass condition: true-side overall (`LEANING-TRUE` or `MOSTLY-TRUE`) with the three intended claims preserved; AC_02/AC_03 must use direct target-path safeguard/verdict records as citations or explicitly explain why any omitted direct side is not probative.
+5. If the rerun still goes false-side or `UNVERIFIED`, do not stack another prompt rule. Escalate to a focused Stage-4 prompt-audit/reduction or a reviewer debate on whether `VERDICT_RECONCILIATION` should receive a smaller claim-local evidence pack.

@@ -102,6 +102,21 @@ type VerdictPromptEvidenceItem = Pick<
   | "scopeQuality"
 >;
 
+type DirectionCountSummary = {
+  supports: number;
+  contradicts: number;
+  neutral: number;
+};
+
+type ClaimDirectionalEvidenceSummary = {
+  claimId: string;
+  direct: DirectionCountSummary;
+  contextual: DirectionCountSummary;
+  foreignReaction: DirectionCountSummary;
+  directSupportingEvidenceIds: string[];
+  directContradictingEvidenceIds: string[];
+};
+
 /**
  * Build a lean evidence payload for verdict-stage prompts.
  * Keeps fields used by VERDICT_ADVOCATE / VERDICT_CHALLENGER contracts
@@ -133,6 +148,70 @@ function toVerdictPromptEvidenceItems(
     derivedFromSourceUrl: item.derivedFromSourceUrl,
     scopeQuality: item.scopeQuality,
   }));
+}
+
+const probativeRank: Record<NonNullable<EvidenceItem["probativeValue"]>, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+function sortDirectionalEvidenceIds(a: EvidenceItem, b: EvidenceItem): number {
+  const rankDelta = (probativeRank[b.probativeValue ?? "low"] ?? 0)
+    - (probativeRank[a.probativeValue ?? "low"] ?? 0);
+  if (rankDelta !== 0) return rankDelta;
+  return a.id.localeCompare(b.id);
+}
+
+function emptyDirectionCounts(): DirectionCountSummary {
+  return { supports: 0, contradicts: 0, neutral: 0 };
+}
+
+function incrementDirection(counts: DirectionCountSummary, direction: EvidenceItem["claimDirection"]): void {
+  if (direction === "supports") counts.supports += 1;
+  else if (direction === "contradicts") counts.contradicts += 1;
+  else counts.neutral += 1;
+}
+
+export function buildDirectionalEvidenceSummaryByClaim(
+  claimIds: string[],
+  evidence: EvidenceItem[],
+): ClaimDirectionalEvidenceSummary[] {
+  return claimIds.map((claimId) => {
+    const direct = emptyDirectionCounts();
+    const contextual = emptyDirectionCounts();
+    const foreignReaction = emptyDirectionCounts();
+    const directSupports: EvidenceItem[] = [];
+    const directContradicts: EvidenceItem[] = [];
+
+    for (const item of evidence) {
+      if (!item.relevantClaimIds?.includes(claimId)) continue;
+
+      const applicability = item.applicability ?? "direct";
+      if (applicability === "foreign_reaction") {
+        incrementDirection(foreignReaction, item.claimDirection);
+      } else if (applicability === "contextual") {
+        incrementDirection(contextual, item.claimDirection);
+      } else {
+        incrementDirection(direct, item.claimDirection);
+        if (item.claimDirection === "supports") directSupports.push(item);
+        if (item.claimDirection === "contradicts") directContradicts.push(item);
+      }
+    }
+
+    return {
+      claimId,
+      direct,
+      contextual,
+      foreignReaction,
+      directSupportingEvidenceIds: directSupports
+        .sort(sortDirectionalEvidenceIds)
+        .map((item) => item.id),
+      directContradictingEvidenceIds: directContradicts
+        .sort(sortDirectionalEvidenceIds)
+        .map((item) => item.id),
+    };
+  });
 }
 
 type DirectionValidationEvidencePoolItem = {
@@ -643,10 +722,15 @@ export async function advocateVerdict(
   sourcePortfolioByClaim?: Record<string, SourcePortfolioEntry[]>,
 ): Promise<CBClaimVerdict[]> {
   const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
+  const directionalEvidenceSummaryByClaim = buildDirectionalEvidenceSummaryByClaim(
+    claims.map((claim) => claim.id),
+    evidence,
+  );
 
   const result = await llmCall("VERDICT_ADVOCATE", {
     atomicClaims: claims,
     evidenceItems: promptEvidenceItems,
+    directionalEvidenceSummaryByClaim,
     claimBoundaries: boundaries,
     coverageMatrix: {
       claims: coverageMatrix.claims,
@@ -772,9 +856,14 @@ export async function selfConsistencyCheck(
 
   // Re-run advocate prompt 2 times at elevated temperature
   const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
+  const directionalEvidenceSummaryByClaim = buildDirectionalEvidenceSummaryByClaim(
+    claims.map((claim) => claim.id),
+    evidence,
+  );
   const input = {
     atomicClaims: claims,
     evidenceItems: promptEvidenceItems,
+    directionalEvidenceSummaryByClaim,
     claimBoundaries: boundaries,
     coverageMatrix: {
       claims: coverageMatrix.claims,
@@ -846,6 +935,7 @@ async function runSelfConsistencyAdvocateOnce(
   input: {
     atomicClaims: AtomicClaim[];
     evidenceItems: VerdictPromptEvidenceItem[];
+    directionalEvidenceSummaryByClaim: ClaimDirectionalEvidenceSummary[];
     claimBoundaries: ClaimAssessmentBoundary[];
     coverageMatrix: {
       claims: string[];
@@ -927,6 +1017,10 @@ export async function adversarialChallenge(
   // Temperature clamped to [0.1, 0.7] — same bounds as selfConsistencyTemperature
   const temperature = Math.max(0.1, Math.min(0.7, config.challengerTemperature));
   const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
+  const directionalEvidenceSummaryByClaim = buildDirectionalEvidenceSummaryByClaim(
+    advocateVerdicts.map((verdict) => verdict.claimId),
+    evidence,
+  );
 
   const result = await llmCall("VERDICT_CHALLENGER", {
     claimVerdicts: advocateVerdicts.map((v) => ({
@@ -939,6 +1033,7 @@ export async function adversarialChallenge(
       boundaryFindings: v.boundaryFindings,
     })),
     evidenceItems: promptEvidenceItems,
+    directionalEvidenceSummaryByClaim,
     claimBoundaries: boundaries,
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
   }, { tier: config.debateRoles.challenger.strength, temperature, providerOverride: config.debateRoles.challenger.provider, callContext: { debateRole: "challenger", promptKey: "VERDICT_CHALLENGER" } });
@@ -981,6 +1076,10 @@ export async function reconcileVerdicts(
   // Validate challenge evidence IDs before reconciliation
   const validatedChallengeDoc = validateChallengeEvidence(challengeDoc, evidence);
   const promptEvidenceItems = toVerdictPromptEvidenceItems(evidence);
+  const directionalEvidenceSummaryByClaim = buildDirectionalEvidenceSummaryByClaim(
+    advocateVerdicts.map((verdict) => verdict.claimId),
+    evidence,
+  );
 
   const result = await llmCall("VERDICT_RECONCILIATION", {
     advocateVerdicts: advocateVerdicts.map((v) => ({
@@ -995,6 +1094,7 @@ export async function reconcileVerdicts(
     challenges: validatedChallengeDoc.challenges,
     consistencyResults,
     evidenceItems: promptEvidenceItems,
+    directionalEvidenceSummaryByClaim,
     ...(sourcePortfolioByClaim && Object.keys(sourcePortfolioByClaim).length > 0 ? { sourcePortfolioByClaim } : {}),
     ...(config.reportLanguage ? { reportLanguage: config.reportLanguage } : {}),
   }, { tier: config.debateRoles.reconciler.strength, providerOverride: config.debateRoles.reconciler.provider, callContext: { debateRole: "reconciler", promptKey: "VERDICT_RECONCILIATION" } });
