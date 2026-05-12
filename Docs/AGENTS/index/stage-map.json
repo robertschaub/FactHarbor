@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-09T21:30:05.820Z",
+  "generatedAt": "2026-05-12T11:40:48.345Z",
   "stages": {
     "aggregation": {
       "file": "apps/web/src/lib/analyzer/aggregation-stage.ts",
@@ -106,6 +106,7 @@
     "verdict": {
       "file": "apps/web/src/lib/analyzer/verdict-stage.ts",
       "functions": [
+        "buildDirectionalEvidenceSummaryByClaim",
         "buildSourcePortfolio",
         "buildSourcePortfolioByClaim",
         "runVerdictStage",
