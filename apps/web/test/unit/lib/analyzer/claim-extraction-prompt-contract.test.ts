@@ -636,6 +636,12 @@ describe("Stage-1 prompt contract", () => {
       expect(pass2).toContain("A thesis-direct dimension claim must remain the original predicate evaluated within a neutral dimension");
       expect(pass2).toContain("A preserved broad primary claim does not license sibling dimension claims");
       expect(pass2).toContain("sufficient-condition claims");
+
+      const contract = extractSection(promptContent, "CLAIM_CONTRACT_VALIDATION");
+      expect(contract).not.toBeNull();
+      expect(contract).toContain("The neutral dimension label itself is not an explanatory tail");
+      expect(contract).toContain("If the statement ends immediately after the neutral dimension label, do not reinterpret that label as the explanatory tail");
+      expect(contract).toContain("Neutral-dimension acceptance guard");
     });
   });
 

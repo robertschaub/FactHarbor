@@ -1853,7 +1853,10 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain("makes a narrower proxy proposition the thing being verified");
     expect(section).toContain("Dimension qualification is allowed, but tail narrowing is not");
     expect(section).toContain("Qualification stops at the dimension label");
+    expect(section).toContain("The neutral dimension label itself is not an explanatory tail");
+    expect(section).toContain("Do not fail a claim merely because the dimension label names the natural assessment dimension");
     expect(section).toContain("as material proxy drift by default unless the added condition");
+    expect(section).toContain("If the statement ends immediately after the neutral dimension label, do not reinterpret that label as the explanatory tail");
     expect(section).toContain("Do not approve such a tail on the rationale that it is consistent with the predicate");
     expect(section).toContain("specifies what the predicate looks like");
     expect(section).toContain("Also fail sufficient-condition drift");
@@ -1864,6 +1867,9 @@ describe("CLAIM_CONTRACT_VALIDATION prompt contract", () => {
     expect(section).toContain('MUST be assessed as `proxyDriftSeverity: "material"` and `recommendedAction: "retry"`');
     expect(section).toContain('`inputAssessment.preservesOriginalClaimContract` MUST be `false`');
     expect(section).toContain('`inputAssessment.rePromptRequired` MUST be `true`');
+    expect(section).toContain("Neutral-dimension acceptance guard");
+    expect(section).toContain("do NOT classify the qualifier itself as proxy drift or as the explanatory tail");
+    expect(section).toContain('set `usesNeutralDimensionQualifier: true`, `proxyDriftSeverity: "none"` or `"mild"`, and `recommendedAction: "keep"`');
   });
 });
 
