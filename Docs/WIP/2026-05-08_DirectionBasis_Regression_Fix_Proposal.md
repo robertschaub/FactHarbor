@@ -1327,3 +1327,58 @@ Next gate:
 2. Restart localhost web/API and verify version endpoints report the new commit.
 3. Spend exactly one exact `asylum-235000-de` canary.
 4. Accept only if it reaches `LEANING-TRUE` / `MOSTLY-TRUE` within the Captain band, or stop and diagnose if it still misses the 2025 aggregate or records `primary_source_refinement:no_unsearched_query`.
+
+### 12.30 Refinement Route Priority Patch - 2026-05-12
+
+Canary after `377397a9`:
+
+- Job: `fac58feea8114d5197fadf8221cace00`.
+- Result: `LEANING-TRUE` 62/52, inside the Captain label/truth/confidence band.
+- Runtime: about 13.5 minutes (`2026-05-12T08:54:13Z` to `2026-05-12T09:07:44Z`).
+- Result metadata: commit `377397a9ad0a84ba92ae8d5bf70e4ab394596131`, prompt hash `5737b5bab77852b7d6ce5ad1bb68b7e300e2f057e9f0b73dc2df62ec1abf8a31`.
+- Refinement lane: executed and recorded `primary_source_refinement:recovered_non_seeded_primary_coverage`.
+
+Quality verdict:
+
+- **Not deploy-quality yet**, despite the true-side label pass.
+- The report did not admit the official SEM 2025 annual aggregate `235 057`.
+- The only supporting evidence was a NZZ secondary article (`Die Schweiz beherbergt mittlerweile über 235 000 Geflüchtete`).
+- The final reasoning/narrative said no official SEM aggregate was directly found and leaned on component arithmetic / plausibility, which violates the Captain expectation that this family surface one clean official SEM aggregate total.
+
+Failed-attempt classification:
+
+- `377397a9` refinement dedupe patch: **keep**. It fixed the no-op branch: the live job did execute a refinement search.
+- Live-quality claim for `377397a9`: **quarantine**. The patch repairs one mechanism but does not recover the decisive annual aggregate route.
+
+Root cause:
+
+- The `GENERATE_QUERIES` prompt contained a priority conflict:
+  - It correctly says current-snapshot runs should cover both the newest current/live route and the latest complete source-native artifact.
+  - But it also said that if only one query is returned, it should prioritize the newest current route.
+- For refinement after current/live routes already yielded component tables, that one-query priority is wrong: it should first target the latest complete source-native aggregate artifact.
+
+Reviewer input:
+
+- `Boole` independently diagnosed the same prompt-priority issue and recommended a prompt-only refinement-specific rule.
+- `Gibbs` identified a possible next code improvement: enrich the query generator's claim-local evidence summary so the LLM sees source titles/statements/temporal scopes, not just counts and methodologies. This is not applied in this slice because it is a larger context mechanism; reserve it for the next verifier if the prompt-priority fix is insufficient.
+
+Implementation:
+
+- `apps/web/prompts/claimboundary.prompt.md`:
+  - Current-snapshot one-query priority now applies **outside refinement**.
+  - Refinement on current-snapshot claims with a `primaryMetric` now says the first executable refinement query should target the latest complete source-native official/institutional publication, data artifact, table, annex, or recurring report likely to carry the complete `primaryMetric`, with `freshnessWindow: none`.
+  - It explicitly says not to spend the first refinement query on a generic current landing page, live dashboard, update stream, or component-only route unless that route itself is likely to expose the complete decisive metric.
+- `apps/web/test/unit/lib/analyzer/verdict-prompt-contract.test.ts` updated the query-generation contract assertions.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer/verdict-prompt-contract.test.ts test/unit/lib/analyzer/prompt-frontmatter-drift.test.ts`: passed (`119` tests).
+- `npm -w apps/web run build`: passed; prompt reseed updated `claimboundary` prompt hash prefix to `2e9f20dea67b...`.
+
+Next gate:
+
+1. Commit this prompt/test/doc patch.
+2. Restart/reseed localhost and confirm the version endpoints report the new commit.
+3. Spend exactly one exact `asylum-235000-de` canary.
+4. Accept only if it admits an official SEM aggregate source for the decisive value, not merely a secondary-source or component-arithmetic true-side result.
+5. If it still misses the official aggregate, stop and consider Gibbs's proposed evidence-summary context patch rather than adding another prompt rule.

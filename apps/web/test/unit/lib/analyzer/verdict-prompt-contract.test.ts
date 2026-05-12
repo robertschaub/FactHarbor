@@ -750,12 +750,14 @@ describe("Stage-2 prompt contract", () => {
       expect(section).toContain("not automatic substitutes for one another");
       expect(section).toContain("recurring official statistics series or update stream");
       expect(section).toContain("return separate queries for (a) the newest current/live source-native route");
-      expect(section).toContain("If returning only one query, prioritize the newest current route");
+      expect(section).toContain("Outside refinement, if returning only one query, prioritize the newest current route");
       expect(section).toContain("Avoid institution-plus-topic-only official queries");
       expect(section).toContain("newest routine current-statistics route and the latest complete official or institutional publication/data artifact");
       expect(section).toContain("Do not exclude the latest complete source-native release solely because it is periodic or retrospective");
       expect(section).toContain("overview, landing page, current dashboard, or component source");
       expect(section).toContain("do not invent an exact date, month, edition label, or page label");
+      expect(section).toContain("the first executable refinement query should target the latest complete source-native official/institutional publication");
+      expect(section).toContain("Do not spend the first refinement query on a generic current landing page");
     });
 
     it("query generation forces side-specific enumerative routes for comparative ecosystems", () => {
