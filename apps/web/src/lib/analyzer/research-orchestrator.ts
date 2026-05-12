@@ -407,16 +407,6 @@ function hasConcretePrimaryMetricCoverage(
   return coveredMetrics >= requiredCoverage;
 }
 
-function hasConcreteCurrentPrimaryMetricCoverage(
-  claim: AtomicClaim,
-  evidenceItems: EvidenceItem[],
-): boolean {
-  const primaryMetric = claim.expectedEvidenceProfile?.primaryMetric?.trim();
-  if (!primaryMetric) return false;
-
-  return hasConcreteMetricCoverage(claim, evidenceItems, [primaryMetric]);
-}
-
 function hasNonSeededPrimarySourceCoverage(
   claim: AtomicClaim,
   evidenceItems: EvidenceItem[],
@@ -452,11 +442,11 @@ function claimNeedsPrimarySourceRefinement(
 
   if (hasCurrentAggregateMetricRefinementContract(claim)) {
     // Stage 1 explicitly identified a decisive current aggregate metric plus
-    // secondary component metrics. Spend one bounded refinement pass on the
-    // direct aggregate route only when the direct metric is still missing, so
-    // component-rich official evidence cannot silently stand in for the
-    // umbrella artifact.
-    return !hasConcreteCurrentPrimaryMetricCoverage(claim, evidenceItems);
+    // secondary component metrics. Always spend the bounded refinement pass on
+    // the direct aggregate route; deterministic token-overlap checks cannot
+    // reliably tell whether existing numeric evidence is the current umbrella
+    // artifact or only a stale/partial lookalike.
+    return true;
   }
 
   if (expectedMetrics.length === 0 || candidateTypes.size === 0) {

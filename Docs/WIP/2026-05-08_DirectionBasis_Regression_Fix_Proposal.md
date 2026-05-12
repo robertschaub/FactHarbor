@@ -1174,3 +1174,39 @@ Next recommended plan:
 2. Do a no-edit inspection of Stage 1/Stage 2 prompt and code contracts for current-snapshot aggregate claims, focused on why "latest complete official aggregate artifact" is not mandatory enough when preliminary evidence names a stale publication.
 3. If editing is justified, use `/debt-guard` and prefer one simplification-oriented change: make the existing current-snapshot query/profile contract consistently preserve both routes, (a) newest current/live route and (b) latest complete source-native aggregate artifact. Do not add domain-specific terms, deterministic semantic matching, or report-specific query hacks.
 4. Only after commit/reseed/restart, spend at most one exact `asylum-235000-de` canary. Stop again on first family-band failure.
+
+### 12.26 Primary-Source Refinement Gate Fix - 2026-05-12
+
+Debt-guard classification:
+
+- Symptom: `d174b136...` failed because it never acquired the latest complete official aggregate artifact.
+- Existing mechanism: Stage 2 already has a bounded `primary_source_refinement` lane for current aggregate metric contracts.
+- Failure mode: `claimNeedsPrimarySourceRefinement` could suppress that lane when deterministic text overlap treated stale/partial numeric primary-source evidence as coverage of the direct current aggregate metric.
+- Chosen option: **amend existing mechanism**. For current aggregate metric contracts, always spend the existing bounded refinement pass instead of relying on token-overlap coverage to decide whether the current umbrella artifact is already present.
+- Rejected option: add deterministic date, metric, or source-name matching to distinguish stale/current aggregates. That would deepen the semantic heuristic problem and violate the LLM-intelligence boundary.
+- Rejected option: add a new post-hoc rescue pass. The existing refinement lane is the right mechanism; it was just being skipped.
+
+Independent review:
+
+- Explorer `Boole` confirmed the same diagnosis: the final 2024 aggregate was likely not the first suppressor because refinement only runs after the first main iteration, but earlier non-seeded official/methodology items with overlapping aggregate tokens could suppress the lane. The recommended fix was the same: for current aggregate contracts, return `true` and let the existing LLM-mediated refinement query run.
+
+Implementation:
+
+- `apps/web/src/lib/analyzer/research-orchestrator.ts`: current aggregate metric contracts now always request the bounded primary-source refinement lane.
+- Removed the now-unused `hasConcreteCurrentPrimaryMetricCoverage` helper from the active path.
+- `apps/web/test/unit/lib/analyzer/primary-source-refinement.test.ts`: updated the direct-primary-metric case to assert that stale/partial lookalike evidence does not suppress bounded refinement.
+
+Verification:
+
+- `npm -w apps/web test -- test/unit/lib/analyzer/primary-source-refinement.test.ts`: passed (`13` tests).
+- `npm -w apps/web test -- test/unit/lib/analyzer/claimboundary-pipeline.test.ts`: passed (`385` passed, `1` skipped).
+- `npm -w apps/web test -- test/unit/lib/analyzer/research-extraction-stage.test.ts`: passed (`67` tests).
+- `npm -w apps/web run build`: passed; prompt reseed reported `0 changed`.
+- `git diff --check`: passed.
+
+Next gate:
+
+1. Commit this code/test/doc change before submitting any live job.
+2. Refresh/restart localhost if needed and confirm `/api/fh/version` reports the new commit.
+3. Spend exactly one exact `asylum-235000-de` canary.
+4. Stop if it is outside `LEANING-TRUE` / `MOSTLY-TRUE`, truth 58-75, confidence 40-70, or if it fails to run the refinement lane when the latest aggregate is still missing after first main iteration.

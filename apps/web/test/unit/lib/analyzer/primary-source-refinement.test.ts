@@ -436,7 +436,7 @@ describe("primary-source refinement", () => {
     expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
 
-  it("does not run refinement when the direct primary metric is already evidenced for the current aggregate metric contract", async () => {
+  it("runs bounded refinement for current aggregate contracts even when direct primary metric text is already present", async () => {
     const claim = {
       id: "AC_01",
       statement: "current aggregate metric claim",
@@ -462,7 +462,7 @@ describe("primary-source refinement", () => {
       evidenceItems: [
         {
           id: "EV_primary_metric",
-          statement: "Current persons in the aggregate system total 235057.",
+          statement: "Prior-period current persons in the aggregate system totaled 220000.",
           category: "statistic",
           specificity: "medium",
           sourceId: "",
@@ -476,7 +476,7 @@ describe("primary-source refinement", () => {
           isSeeded: false,
           evidenceScope: {
             methodology: "official statistics",
-            temporal: "2026",
+            temporal: "prior complete reporting period",
           },
         },
       ],
@@ -499,9 +499,10 @@ describe("primary-source refinement", () => {
       state,
     );
 
-    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(1);
-    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(1);
-    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main"]);
+    expect(mockGenerateResearchQueries).toHaveBeenCalledTimes(2);
+    expect(mockGenerateResearchQueries.mock.calls[1][1]).toBe("refinement");
+    expect(mockSearchWebWithProvider).toHaveBeenCalledTimes(2);
+    expect(state.searchQueries.map((query) => query.focus)).toEqual(["main", "refinement"]);
   });
 
   it("still triggers refinement when descriptive source labels mask incomplete quantitative primary coverage", async () => {
