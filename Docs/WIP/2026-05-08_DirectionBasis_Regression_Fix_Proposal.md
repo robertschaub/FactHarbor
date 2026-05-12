@@ -1100,6 +1100,13 @@ Next gate:
 
 Captain asked to preserve the timing issues found during the May 11/12 validation work so they can be addressed separately from report-quality fixes.
 
+Captain timing target added 2026-05-12:
+
+- About **15 minutes average final-report runtime** is acceptable for normal direct analysis jobs; shorter remains better.
+- Do not optimize by weakening report quality, evidence transparency, or verdict safeguards just to beat 15 minutes.
+- For inputs that generate more than 3 AtomicClaims and wait for interactive Captain claim selection, the user-wait interval is allowed extra delay and should be measured separately from final-report processing.
+- UI/status reporting should distinguish preparation time, claim-selection wait time, queued runner time, and active analysis time. These should not be collapsed into one undifferentiated "analysis is slow" number.
+
 Observed current-stack timing:
 
 | Job | Family | Result | Duration | Evidence / sources | Boundaries | LLM calls | Timing note |
@@ -1124,7 +1131,7 @@ Known or likely timing drivers:
 Later optimization plan, separate from quality fixes:
 
 1. Build a small timing ledger from job events/metrics for at least the accepted comparator set, including phase durations, evidence count, source count, scope count, boundaries, LLM calls, and provider fallbacks.
-2. Decide target budgets by report family and UI context: quick claim, heavy article/PDF, and benchmark validation should not share one ETA.
+2. Decide target budgets by report family and UI context: normal direct reports should average around 15 minutes or less; heavy article/PDF jobs and interactive >3-AtomicClaim selection flows need separate timing buckets and ETA language.
 3. Attack no-quality-loss waste first: duplicate URL/source variants before fetch/extract, provider fallback noise, repeated extraction of mirrored artifacts, and work that is predictably dropped by per-source cap.
 4. Profile scope normalization and clustering separately; consider batching, early scope consolidation, or caps only if report quality is preserved.
 5. Review model-tiering only after phase timing data exists. Do not downgrade models blindly while report quality is still under validation.
@@ -1608,4 +1615,5 @@ Decision:
 
 - Stop additional `bundesrat-simple` jobs for now. The quality question is answered.
 - Do not add another report-semantics prompt rule for this lane.
+- The `1de78` runtime exceeds the Captain's newly stated target for normal direct jobs, so it is useful performance evidence even though the report quality passed.
 - If release readiness requires no user-visible budget warnings on simple controls, open a separate timing/performance slice rather than mixing it with current report-quality fixes.
