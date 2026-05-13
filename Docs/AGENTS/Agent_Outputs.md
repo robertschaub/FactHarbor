@@ -2754,3 +2754,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild V2 Documentation Equivalents -- [Standard] [open-items: yes]
 **For next agent:** Added V2 xWiki equivalents for `Quality and Trust`, `Pipeline Variants`, `Calculations and Verdicts`, `Evidence Lifecycle`, and `Source Reliability`, plus Markdown companions for V2 calculations and evidence lifecycle. Current/V1 docs now carry V2 target pointers while remaining runtime references. Franklin required one Evidence Lifecycle V2 diagram correction; Lorentz and Claude Opus 4.6 approved the corrected docs-only slice. No source, prompt, config, runtime, API, UI, or live-job behavior changed.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_V2_Documentation_Equivalents.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | V2 Clean-Room Boundary Enforcement -- [Standard] [open-items: yes]
+**For next agent:** Analyzer V2 now has a V2-owned ingress DTO plus a named `runner-ingress.ts` one-way mapping from current runner/job shape. Static boundary tests block imports from `@/lib/analyzer/**`, legacy prompt reuse in prompt-loading contexts, key V1 contract identifiers, and executable analyzer-v2 fixtures. Docs/spec now state no V1 code, prompt, type reuse, or cloning; runner compatibility mapping is allowed only at the seam. Franklin/Lorentz required the stricter no-cloning framing; Claude Opus approved the final patch.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_V2_Clean_Room_Boundary_Enforcement.md

@@ -64,6 +64,12 @@ Analysis-affecting cache keys include every value that can change the semantic a
 | Default runtime | V1 ClaimAssessmentBoundary until cutover approval
 | Cutover prerequisite | Contract, adapter, quality, shadow comparison, and live validation gates passed
 
+== Clean-Room Boundary ==
+
+V2 internals are built from V2 contracts, not copied V1 code or types. V2 modules must not import or clone V1 analyzer modules, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned TypeScript contracts.
+
+The current runner/job shape may be translated into V2 input only at a named ingress adapter. That adapter is structural and one-way: current job/request data -> V2-owned DTO. It does not make V1 analysis types part of V2.
+
 ----
 
 **Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]]

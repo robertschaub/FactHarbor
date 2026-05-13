@@ -27,6 +27,8 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 * V2 shadow output must not replace public ##resultJson## or ##reportMarkdown## before approval.
 * V2 may not skip Understand -> Research -> Boundary formation -> Verdict -> Aggregation/report.
 * V2 adapters may project ##ReportResult##, but they may not reinterpret verdict, confidence, or warning meaning.
+* V2 internals may not reuse or clone V1 analysis code, prompt profiles, prompt files, or pipeline-owned types.
+* Current runner/job compatibility is limited to a one-way ingress mapping into V2-owned contracts.
 * V1 cleanup must follow a ledger: each removed V1 mechanism needs a V2 owner, verifier, and rollback/reader decision.
 
 == Dispatch Model ==

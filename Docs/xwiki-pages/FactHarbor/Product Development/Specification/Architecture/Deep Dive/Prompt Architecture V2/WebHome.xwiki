@@ -24,6 +24,8 @@ Every V2 analysis prompt section must have:
 
 Prompt frontmatter variables must match rendered variables. Required-section render warnings should fail contract tests. Orphan sections remain quarantined until a real V2 caller is proven.
 
+V2 prompts must be newly specified. Existing V1 prompt files, profiles, and sections may be read as historical design input during review, but they must not be reused, copied, or loaded by V2 execution. Any prompt-backed V2 task needs its own V2 profile, section id, required-variable contract, output schema, approval record, and tests.
+
 == Model Policy ==
 
 One model task registry owns:
@@ -82,6 +84,8 @@ The implementation plan must classify these surfaces before prompt-backed V2 exe
 == Current Blocker ==
 
 Slice 6B, prompt-backed Claim Understanding execution, is blocked until Captain approval and LLM Expert review. Until then, V2 gateway policies remain static/non-executable and V2 analysis output remains a damaged shadow envelope.
+
+Boundary enforcement is expected before prompt-backed execution: analyzer-v2 source must fail tests if it imports V1 analyzer modules, references legacy prompt profiles/files in prompt-loading contexts, or exposes V1-shaped contracts as V2 internals.
 
 ----
 

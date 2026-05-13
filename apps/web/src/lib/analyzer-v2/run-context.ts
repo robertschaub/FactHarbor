@@ -1,8 +1,8 @@
-import type { AnalysisInput } from "@/lib/analyzer/types";
+import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
 export type ClaimBoundaryV2RunContext = {
   runId: string;
-  inputType: AnalysisInput["inputType"];
+  inputType: ClaimBoundaryV2Ingress["submitted"]["kind"];
   inputValue: string;
   resolvedInputText: string;
   detectedLanguage: "und";
@@ -31,19 +31,22 @@ function firstNonBlank(...values: Array<string | undefined>): string {
 }
 
 export function buildClaimBoundaryV2RunContext(
-  input: AnalysisInput,
+  input: ClaimBoundaryV2Ingress,
   options: BuildClaimBoundaryV2RunContextOptions = {},
 ): ClaimBoundaryV2RunContext {
   const now = options.now?.() ?? new Date();
   const generatedUtc = now.toISOString();
-  const selectedAtomicClaimIds = normalizeSelectedClaimIds(input.selectedClaimIds);
+  const selectedAtomicClaimIds = normalizeSelectedClaimIds(input.selectedAtomicClaimIds);
   const fallbackClaimId = "AC_V2_SHELL_01";
-  const inputValue = firstNonBlank(input.inputValue);
-  const resolvedInputText = firstNonBlank(input.preparedStage1?.resolvedInputText, inputValue);
+  const inputValue = firstNonBlank(input.submitted.value);
+  const resolvedInputText = firstNonBlank(
+    typeof input.preparedSeed?.resolvedText === "string" ? input.preparedSeed.resolvedText : undefined,
+    inputValue,
+  );
 
   return {
-    runId: input.jobId?.trim() || `v2-shell-${generatedUtc}`,
-    inputType: input.inputType,
+    runId: input.runIdHint || `v2-shell-${generatedUtc}`,
+    inputType: input.submitted.kind,
     inputValue,
     resolvedInputText,
     detectedLanguage: "und",

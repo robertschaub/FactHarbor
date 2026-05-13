@@ -581,6 +581,10 @@ V2 must be built in an isolated path. The proposed implementation boundary is:
 
 V2 modules may import shared structural utilities only when the utility is proven semantic-free. V1 may not import V2 stage internals. External adapters may consume `ReportResult` and compatibility fixtures; they may not call stage internals. Stages may not call UI, markdown, static HTML, API, validation, or metrics helpers.
 
+Clean-room boundary rule: V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types. Compatibility at the runner/storage edge is allowed only as a one-way structural mapping from current job/request data into V2-owned contracts. That mapping must live at a clearly named seam and must not expose V1 types into V2 internals. Internal V2 contracts are derived from this specification and the current slice's actual needs, not from copying V1 shapes.
+
+The current master V1 pipeline is not the report-quality oracle for V2. V2 quality comparison should use pinned deployed historical reports, Captain-defined benchmark expectations, and stored fixtures. Master V1 remains only a frozen runtime/compatibility/fallback path until V2 cutover.
+
 "Clean the current pipeline" means quarantine and remove V1 mechanisms only after V2 owns the equivalent contract and passes the named verifier. Cleanup must not leave FactHarbor in a broken intermediate state.
 
 ---
@@ -1206,6 +1210,8 @@ Failed-validation recovery during implementation must classify the prior attempt
 ## 18.1 Mechanism Retention And Cleanup Ledger
 
 No V1 mechanism may be carried into V2 only because V1 had it. Each retained mechanism needs an owner, allowed mechanism boundary, removed/quarantined parts, and verifier.
+
+No V1 type or prompt may be copied into V2 under a new name. If a concept is required, the implementation slice must define the minimal V2 contract from this specification and verify why each field exists. Similar field names are acceptable only at compatibility seams or when they are canonical domain terms, not because V1 already exposed them.
 
 | Mechanism family | V2 owner | Preserve/simplify/remove rule | Verifier before cutover |
 |---|---|---|---|

@@ -10,7 +10,7 @@ type PreparedAtomicClaimLike = {
   statement?: unknown;
 };
 
-type PreparedStage1SnapshotLike = {
+type AcsPreparedSnapshotShape = {
   resolvedInputText?: unknown;
   preparedUnderstanding?: {
     detectedInputType?: unknown;
@@ -22,7 +22,7 @@ type PreparedStage1SnapshotLike = {
   };
 };
 
-export type MigratePreparedStage1SnapshotOptions = {
+export type MigrateAcsPreparedSnapshotOptions = {
   currentDate: string;
   inputValue?: string;
   acsSnapshotHash?: string | null;
@@ -42,7 +42,7 @@ function asNonBlankString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
-function readPreparedClaims(snapshot: PreparedStage1SnapshotLike): PreparedAtomicClaimLike[] {
+function readPreparedClaims(snapshot: AcsPreparedSnapshotShape): PreparedAtomicClaimLike[] {
   const claims = snapshot.preparedUnderstanding?.atomicClaims;
   return Array.isArray(claims) ? claims as PreparedAtomicClaimLike[] : [];
 }
@@ -55,10 +55,10 @@ function hasDuplicate(values: string[]): boolean {
   return new Set(values).size !== values.length;
 }
 
-export function migratePreparedStage1SnapshotToClaimContract(
-  snapshot: PreparedStage1SnapshotLike,
+export function migrateAcsPreparedSnapshotToClaimContract(
+  snapshot: AcsPreparedSnapshotShape,
   selectedClaimIds: string[],
-  options: MigratePreparedStage1SnapshotOptions,
+  options: MigrateAcsPreparedSnapshotOptions,
 ): PreparedSnapshotClaimContractMigration {
   const normalizedSelectedClaimIds = normalizeSelectedClaimIds(selectedClaimIds);
   const preparedClaims = readPreparedClaims(snapshot);

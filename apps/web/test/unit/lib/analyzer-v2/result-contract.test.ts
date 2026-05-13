@@ -172,10 +172,13 @@ describe("analyzer-v2 JSON contract fixtures", () => {
   it("validates the V2 damaged shell envelope against the JSON schema", async () => {
     const shellResult = await runClaimBoundaryPipelineV2(
       {
-        jobId: "job-v2-contract-shell",
-        inputType: "text",
-        inputValue: "Structural shell contract input",
-        selectedClaimIds: ["AC_SELECTED_01"],
+        runIdHint: "job-v2-contract-shell",
+        submitted: {
+          kind: "text",
+          value: "Structural shell contract input",
+        },
+        preparedSeed: null,
+        selectedAtomicClaimIds: ["AC_SELECTED_01"],
       },
       {
         now: () => new Date("2026-05-13T12:34:56.000Z"),

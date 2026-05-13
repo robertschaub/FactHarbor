@@ -76,6 +76,8 @@ No live jobs have been used for the implemented V2 slices. The approved live-job
 * V2 can run only through explicit shadow routing.
 * V2 must not replace public ##resultJson## or ##reportMarkdown## before cutover approval.
 * External adapters may read ##ReportResult## and compatibility fixtures, but they may not call V2 stage internals.
+* V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types.
+* The runner/storage seam may translate current job data into V2-owned contracts, but V2 internals must use V2-specified DTOs only.
 * V1 cleanup happens only after V2 owns the equivalent contract and passes its verifier.
 
 == Deep Dives ==

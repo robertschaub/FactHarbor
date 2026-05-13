@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { migratePreparedStage1SnapshotToClaimContract } from "@/lib/analyzer-v2/claim-understanding/prepared-snapshot";
+import { migrateAcsPreparedSnapshotToClaimContract } from "@/lib/analyzer-v2/claim-understanding/prepared-snapshot";
 
 const fixturesDir = path.resolve(process.cwd(), "test/fixtures/analyzer-v2");
 
@@ -13,7 +13,7 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
   const prepared = readFixture<Record<string, any>>("acs-prepared-stage1-v1.fixture.json");
 
   it("converts a selected ACS claim structurally without rewriting the statement", () => {
-    const result = migratePreparedStage1SnapshotToClaimContract(prepared, ["AC_01"], {
+    const result = migrateAcsPreparedSnapshotToClaimContract(prepared, ["AC_01"], {
       currentDate: "2026-05-13",
       acsSnapshotHash: "fixture-acs-snapshot-hash",
       inputGroundingSeedHash: "fixture-input-grounding-seed-hash",
@@ -39,7 +39,7 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
   });
 
   it("blocks selected IDs that are absent from the prepared snapshot", () => {
-    const result = migratePreparedStage1SnapshotToClaimContract(prepared, ["AC_missing"], {
+    const result = migrateAcsPreparedSnapshotToClaimContract(prepared, ["AC_missing"], {
       currentDate: "2026-05-13",
     });
 
@@ -57,7 +57,7 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
   });
 
   it("rejects duplicate selected IDs before migration", () => {
-    const result = migratePreparedStage1SnapshotToClaimContract(prepared, ["AC_01", "AC_01"], {
+    const result = migrateAcsPreparedSnapshotToClaimContract(prepared, ["AC_01", "AC_01"], {
       currentDate: "2026-05-13",
     });
 
