@@ -2689,3 +2689,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2F Validation Matrix Compatibility -- [Standard] [open-items: yes]
 **For next agent:** Updated the older `scripts/run-validation-matrix.js` reader so V2 matrix metrics use canonical verdict fields, canonical `sources.items`, and normalized V2 warnings while legacy V1/unknown results keep the old `verdictSummary`/`analysisContexts`/`fetchSuccess` path. The script remains standalone CommonJS and import-safe for tests. Verified with focused script tests, syntax/import checks, web build, full safe web test, hot-path diff guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2F_Validation_Matrix_Compatibility.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2G Evidence Quality Reader Compatibility -- [Standard] [open-items: yes]
+**For next agent:** Updated the offline `scripts/measure-evidence-quality.ts` reader so V2 fixtures are parsed from canonical `evidence.evidenceItems` and `sources.items`, legacy V1 uses `evidenceItems`/`sources`, and unknown historical inputs keep the old `facts` preference. The script is now import-safe for tests. A runtime-adjacent `metrics-integration.ts` experiment was reverted after deputy review; analyzer runtime metrics remain deferred. Verified with focused script tests, CLI help smoke, web build, full safe web test, scope guard, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2G_Evidence_Quality_Reader_Compatibility.md
