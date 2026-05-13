@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T04:30:17.354Z",
-  "count": 406,
+  "generatedAt": "2026-05-13T04:33:47.606Z",
+  "count": 407,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8591,6 +8591,26 @@
       ],
       "files_touched": [
         "scripts/validation/extract-validation-summary.js"
+      ],
+      "summary": "Worktree: `C:\\DEV\\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2F_Validation_Matrix_Compatibility.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "2f",
+        "validation",
+        "matrix",
+        "compatibility"
+      ],
+      "files_touched": [
+        "scripts/run-validation-matrix.js"
       ],
       "summary": "Worktree: `C:\\DEV\\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`."
     }

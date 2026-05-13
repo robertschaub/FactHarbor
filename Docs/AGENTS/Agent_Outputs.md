@@ -2684,3 +2684,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2E Validation Summary Compatibility -- [Standard] [open-items: yes]
 **For next agent:** Updated `scripts/validation/extract-validation-summary.js` so validation batch summaries read V2 canonical verdict fields, V2 warning rationale, V2 fallback claim verdicts, and V1-shaped fallback quality gates while preserving legacy V1 and unknown/raw historical summary behavior. The script remains standalone CommonJS; tests pin V2/V1/raw behavior and import safety. Verified with focused script tests, syntax/import checks, web build, full safe web test, hot-path diff guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2E_Validation_Summary_Compatibility.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2F Validation Matrix Compatibility -- [Standard] [open-items: yes]
+**For next agent:** Updated the older `scripts/run-validation-matrix.js` reader so V2 matrix metrics use canonical verdict fields, canonical `sources.items`, and normalized V2 warnings while legacy V1/unknown results keep the old `verdictSummary`/`analysisContexts`/`fetchSuccess` path. The script remains standalone CommonJS and import-safe for tests. Verified with focused script tests, syntax/import checks, web build, full safe web test, hot-path diff guard, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2F_Validation_Matrix_Compatibility.md
