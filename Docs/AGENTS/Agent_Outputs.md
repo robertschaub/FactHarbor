@@ -2679,3 +2679,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2D Calibration/Audit Compatibility -- [Standard] [open-items: yes]
 **For next agent:** Wired calibration runner and paired-job audit read paths to the analyzer-v2 compatibility view for V2-only reads while preserving legacy V1 and unknown/raw fallback behavior. `SideResult.fullResultJson` remains canonical/original, V2 warning details are preserved for calibration diagnostics, and paired audit reads V2 canonical `verdict.truthPercentage` plus warning rationale through the adapter. Verified with focused V2/V1/raw calibration and audit tests, web build, full safe web test, hot-path diff guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2D_Calibration_Audit_Compatibility.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2E Validation Summary Compatibility -- [Standard] [open-items: yes]
+**For next agent:** Updated `scripts/validation/extract-validation-summary.js` so validation batch summaries read V2 canonical verdict fields, V2 warning rationale, V2 fallback claim verdicts, and V1-shaped fallback quality gates while preserving legacy V1 and unknown/raw historical summary behavior. The script remains standalone CommonJS; tests pin V2/V1/raw behavior and import safety. Verified with focused script tests, syntax/import checks, web build, full safe web test, hot-path diff guard, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2E_Validation_Summary_Compatibility.md
