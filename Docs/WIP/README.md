@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-04-24
-**Status**: Consolidation #12 complete. 48 files archived. 50 active markdown docs remain.
+**Last Updated**: 2026-05-12
+**Status**: Consolidation #12 complete. Pipeline rebuild specification track added.
 
 ---
 
@@ -64,6 +64,20 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](2026-04-21_Additive_Repair_Drift_Problem_Statement.md) — problem framing for additive repair drift in agent workflows; explains why agents keep stacking failed changes and why bounded backtracking is preferred over blanket rollback
 
 ### Other partially-done tracks
+- [2026-05-12_Pipeline_Rebuild_Specification_Plan.md](2026-05-12_Pipeline_Rebuild_Specification_Plan.md) — Plan V2 Baseline for reverse-engineering, simplifying, and rebuilding the current ClaimAssessmentBoundary pipeline on the `codex/pipeline-rebuild-spec` worktree
+- [2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md](2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md) — consolidated Claude/Gemini review and debate result behind the Plan V2 Baseline
+- [2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md](2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md) — governing constraints, quality baselines, handoff anchors, and Phase 2 entry rules after deputy-approved Phase 0
+- [2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md](2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md) — read-only Phase 2 inventory of analyzer, prompt/config/model, API/runner/ACS/report, warning/event, quality, and test surfaces for reverse-engineering
+- [2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md) — factual Stage 1 baseline covering extraction, salience, preliminary search, contract validation, Gate 1, atomicity, ACS prepared snapshots, prompt surfaces, tests, and risk registry
+- [2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md) — factual Stage 2 baseline covering search planning, acquisition, extraction, applicability, sufficiency, provenance, warnings, prompts, compatibility, tests, and risk registry
+- [2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md) — factual Stage 3 baseline covering scope normalization, boundary clustering, evidence boundary assignment, coverage matrix behavior, warnings, prompts, compatibility, tests, and risk registry
+- [2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md) — factual Stage 4 baseline covering verdict debate, provider resilience, citation integrity, repair paths, source-reliability calibration, Gate 4 thresholds, warnings, compatibility, tests, and risk registry
+- [2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md) — factual Stage 5 baseline covering aggregation, article adjudication, narrative/report quality, quality gates, result JSON, API/UI/export/metrics compatibility, prompts/config, tests, and risk registry
+- [2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md) — factual cross-cutting baseline for prompt loading/governance, UCM defaults, model routing, provider behavior, temperatures, budgets, timeouts, and drift/test gaps
+- [2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md](2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md) — factual cross-cutting baseline for result JSON, persistence/API, runner, ACS, UI, markdown/static export, validation, calibration, metrics, warnings, and quality-gate compatibility
+- [2026-05-12_Pipeline_Rebuild_Phase2_Mechanism_Registry_and_Complexity_Diagnosis.md](2026-05-12_Pipeline_Rebuild_Phase2_Mechanism_Registry_and_Complexity_Diagnosis.md) — consolidated Phase 2 mechanism registry, deterministic semantic hotspot registry, external contract disposition matrix, and complexity diagnosis for the cleaned target specification
+- [2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md](2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md) — deputy-approved cleaned target architecture for V2 pipeline implementation baseline, covering logical module boundaries, stage contracts, canonical result/adapters, prompt/config/model governance, warnings, tests, cutover strategy, and rejected alternatives
+- [2026-05-12_Pipeline_Rebuild_Target_Specification_Review_Consolidation.md](2026-05-12_Pipeline_Rebuild_Target_Specification_Review_Consolidation.md) — consolidated first- and second-pass deputy review result for the target specification; all reviewer lenses approved with no remaining blockers and no Captain escalation
 - [2026-04-09_Deterministic_Analysis_Hotspots_Review.md](2026-04-09_Deterministic_Analysis_Hotspots_Review.md) — top-5 deterministic hotspots; 2 highest partially addressed, 3 still open
 - [2026-04-07_Wikipedia_Integration_Review_and_Recommendations.md](2026-04-07_Wikipedia_Integration_Review_and_Recommendations.md) — 4-item implementation plan; unclear implementation status
 - [2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md](2026-03-30_9e4d_SRF_Factchecking_Architect_Review.md) — Stage 4 claim-local evidence scoping follow-up (verify resolution)

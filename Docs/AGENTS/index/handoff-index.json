@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-11T20:15:24.119Z",
-  "count": 401,
+  "generatedAt": "2026-05-12T23:12:14.568Z",
+  "count": 402,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -5727,13 +5727,15 @@
         "senior_developer"
       ],
       "topics": [
-        "build",
-        "index",
+        "build_index",
+        "handoff_index",
         "parser",
-        "regression",
-        "tests"
+        "regression_tests"
       ],
-      "files_touched": [],
+      "files_touched": [
+        "scripts/build-index.mjs",
+        "apps/web/test/unit/lib/build-index.test.ts"
+      ],
       "summary": "`parseHandoff(...)` in [scripts/build-index.mjs](scripts/build-index.mjs) is now directly testable, and [apps/web/test/unit/lib/build-index.test.ts](apps/web/test/unit/lib/build-index.test.ts) covers the exact role/topic fallback bug that caused `captain` slug tokens to disappear from the generated "
     },
     {
@@ -8450,6 +8452,40 @@
       ],
       "files_touched": [],
       "summary": "Start from current `main` HEAD after the Captain acceptance docs. Do not spend another immediate plastic job. If deployment validation needs one more current-hash run, spend at most one exact `plastic-en` repeat after commit/restart. Otherwise use remaining budget on higher-value watch lanes. If fut"
+    },
+    {
+      "file": "2026-05-12_Lead_Architect_Pipeline_Rebuild_Specification_Plan.md",
+      "date": "2026-05-12",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "specification",
+        "plan"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage2_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage3_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage4_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage5_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Prompt_Config_Model_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_External_Compatibility_Baseline.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Mechanism_Registry_and_Complexity_Diagnosis.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Review_Consolidation.md",
+        "Docs/WIP/README.md",
+        "Docs/AGENTS/Handoffs/2026-05-12_Lead_Architect_Pipeline_Rebuild_Specification_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Phase 1 context is captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`. Phase 2 source boundaries are captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`; Stage 1 baseline is captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.m"
     }
   ]
 }
