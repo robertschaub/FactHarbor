@@ -8,7 +8,7 @@ It is not permission to expose V2 public results before the approved cutover gat
 
 == Purpose ==
 
-The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, and Captain/deputy approval.
+The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, Captain/deputy approval, and a completed stabilization window. After that, V1 analysis code must be removed; only historical read compatibility remains.
 
 == Variant Lifecycle ==
 
@@ -18,7 +18,7 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 | V1 default | Current ClaimAssessmentBoundary pipeline remains production runtime. | V1 result JSON and report remain public. | V2 contracts, adapters, and shadow checks are ready.
 | V2 shadow | V2 runs only when explicitly gated for internal comparison. | V1 remains public; V2 output is non-public shadow evidence. | Shadow comparator, warning, schema, quality, cost, and latency gates pass.
 | V2 cutover | V2 produces public ##4.0.0-cb## results through compatibility adapters. | ##ReportResult## becomes public verdict authority. | Stability window confirms no critical regressions.
-| V1 cleanup | V1 hot-path code is removed only where V2 owns the equivalent contract. | V2 remains public authority; legacy readers keep historical V1 readability. | Cleanup ledger is complete and tests pass.
+| V1 cleanup | V1 hot-path and analysis code is removed where V2 owns the equivalent contract. | V2 remains public authority; legacy readers keep historical V1 readability through adapters/fixtures. | Cleanup ledger is complete, tests pass, and no V1 production analysis path remains.
 
 == Non-Negotiable Variant Rules ==
 
@@ -30,6 +30,7 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 * V2 internals may not reuse or clone V1 analysis code, prompt profiles, prompt files, or pipeline-owned types.
 * Current runner/job compatibility is limited to a one-way ingress mapping into V2-owned contracts.
 * V1 cleanup must follow a ledger: each removed V1 mechanism needs a V2 owner, verifier, and rollback/reader decision.
+* The completed redesign must have no V1 production analysis pipeline left.
 
 == Dispatch Model ==
 
@@ -84,12 +85,14 @@ V2 public cutover requires:
 
 == Cleanup Gate ==
 
-After cutover, V1 removal happens in small cleanup slices. A V1 mechanism can be removed only when:
+After cutover, V1 removal happens in small cleanup slices and is required for redesign completion. A V1 mechanism can be removed only when:
 
 * the equivalent V2 owner is implemented and verified;
 * persisted historical reports remain readable;
 * fallback behavior is either unnecessary or explicitly retained in an adapter;
 * documentation and handoff notes identify the removal decision.
+
+The cleanup process preserves historical report readability, but it must not preserve V1 as a callable analysis variant.
 
 ----
 

@@ -10,6 +10,8 @@ V1 remains the production runtime. V2 is currently isolated behind a disabled sh
 
 V2 replaces the current pipeline with a cleaner architecture that keeps FactHarbor's trust safeguards while reducing control-flow complexity, scattered compatibility logic, and duplicate policy decisions.
 
+The final redesign must remove the V1 pipeline implementation. V1 remains temporarily only as the current frozen runtime/fallback before cutover and as a historical compatibility reference. After V2 cutover and stabilization, V1 analysis code is removed through audited cleanup slices; historical reports remain readable through adapters and fixtures, not through a live V1 analysis path.
+
 The governing intent is:
 
 > Replace the current analysis pipeline with a cleaner, maintainable architecture. Start from a reverse-engineered current-state specification, clean and redesign it, then implement only after review approval. The UI should remain unchanged unless a concrete product, trust, or compatibility need is approved.
@@ -78,7 +80,7 @@ No live jobs have been used for the implemented V2 slices. The approved live-job
 * External adapters may read ##ReportResult## and compatibility fixtures, but they may not call V2 stage internals.
 * V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types.
 * The runner/storage seam may translate current job data into V2-owned contracts, but V2 internals must use V2-specified DTOs only.
-* V1 cleanup happens only after V2 owns the equivalent contract and passes its verifier.
+* V1 cleanup happens after V2 owns the equivalent contract and passes its verifier; it is mandatory before the redesign is considered complete.
 
 == Deep Dives ==
 

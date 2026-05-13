@@ -63,6 +63,7 @@ Analysis-affecting cache keys include every value that can change the semantic a
 | V1 compatibility schema | ##3.2.0-cb## remains readable
 | Default runtime | V1 ClaimAssessmentBoundary until cutover approval
 | Cutover prerequisite | Contract, adapter, quality, shadow comparison, and live validation gates passed
+| Final redesign state | V1 analysis pipeline implementation removed; historical V1 reports remain readable through adapters/fixtures
 
 == Clean-Room Boundary ==
 

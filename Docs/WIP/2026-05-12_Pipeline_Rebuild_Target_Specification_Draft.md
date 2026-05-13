@@ -14,6 +14,8 @@ This document defines the target architecture for replacing the current ClaimAss
 
 The goal is replacement, not additive refactoring. The new pipeline should be built as an isolated V2 path, then verified and cut over only after the specification and validation gates approve it. The current hot path must remain runnable until V2 passes the approved structural, compatibility, warning/report, quality, cost, and performance gates.
 
+The final redesigned state must not retain the V1 pipeline implementation as an alternate analysis path. V1 may remain temporarily as frozen runtime/fallback/compatibility support before cutover, but after V2 cutover and stabilization the V1 pipeline code must be removed in audited cleanup slices. Historical report readability remains supported through adapters/fixtures, not by keeping the V1 analysis pipeline alive.
+
 This draft intentionally does not edit source code, prompts, config, UI, or tests. It is the review package that should be challenged by Lead Architect, LLM Expert, Senior Developer, Code Reviewer, and Gemini/Challenger roles before implementation starts.
 
 ---
@@ -583,9 +585,9 @@ V2 modules may import shared structural utilities only when the utility is prove
 
 Clean-room boundary rule: V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types. Compatibility at the runner/storage edge is allowed only as a one-way structural mapping from current job/request data into V2-owned contracts. That mapping must live at a clearly named seam and must not expose V1 types into V2 internals. Internal V2 contracts are derived from this specification and the current slice's actual needs, not from copying V1 shapes.
 
-The current master V1 pipeline is not the report-quality oracle for V2. V2 quality comparison should use pinned deployed historical reports, Captain-defined benchmark expectations, and stored fixtures. Master V1 remains only a frozen runtime/compatibility/fallback path until V2 cutover.
+The current master V1 pipeline is not the report-quality oracle for V2. V2 quality comparison should use pinned deployed historical reports, Captain-defined benchmark expectations, and stored fixtures. Master V1 remains only a frozen runtime/compatibility/fallback path until V2 cutover and must not survive as a parallel production analysis path after the redesign is complete.
 
-"Clean the current pipeline" means quarantine and remove V1 mechanisms only after V2 owns the equivalent contract and passes the named verifier. Cleanup must not leave FactHarbor in a broken intermediate state.
+"Clean the current pipeline" means quarantine and remove V1 mechanisms after V2 owns the equivalent contract and passes the named verifier. Cleanup must not leave FactHarbor in a broken intermediate state, but it is a mandatory end-state requirement rather than an optional follow-up.
 
 ---
 
@@ -631,7 +633,7 @@ The public result schema should be versioned. Implementation-entry default:
 - public cutover schema: `4.0.0-cb`;
 - V1 public compatibility schema remains `3.2.0-cb`.
 
-The exact string can still be changed by deputy review before implementation, but it cannot remain open once the first result-contract implementation slice starts. V1 fallback/read compatibility has no automatic expiry. It may be retired only through an approved migration/retirement decision.
+The exact string can still be changed by deputy review before implementation, but it cannot remain open once the first result-contract implementation slice starts. Historical V1 read compatibility has no automatic expiry. The V1 analysis pipeline implementation does have an expiry: it must be removed after V2 cutover, stabilization, and audited cleanup verification.
 
 **ReportResult schema skeleton**
 
@@ -1184,7 +1186,7 @@ This is not approval to implement. It is the proposed order once the target spec
 10. Shadow run path that can compare V1/V2 without replacing public output.
 11. Comparator-based quality review and approved live validation only at the named gate.
 12. Controlled cutover with rollback plan.
-13. V1 cleanup only after V2 gates pass.
+13. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
 
 No expensive validation or live jobs are part of slices 1 through 10 unless Captain explicitly approves the spend.
 
@@ -1226,7 +1228,7 @@ No V1 type or prompt may be copied into V2 under a new name. If a concept is req
 | Result adapters | External adapters | preserve behavior through field-level mapping; remove independent verdict derivation when canonical fields exist | API/UI/export/metrics/validation fixture tests |
 | Legacy prompt/config/model surfaces | Prompt/model/LLM gateway and config snapshot | quarantine orphan/dead/unwired surfaces until consumer proof; remove only with verifier | prompt/config/model contract tests and deputy signoff |
 
-V1 cleanup can start only after this ledger has a completed verifier for the relevant mechanism and the deputy team approves deletion or quarantine. Cleanup means removing dead/stale/non-hot-path code after replacement is proven, not deleting the current product path first.
+V1 cleanup can start only after this ledger has a completed verifier for the relevant mechanism and the deputy team approves deletion or quarantine. Cleanup means removing dead/stale/non-hot-path code after replacement is proven, not deleting the current product path first. Once V2 owns the public path and the stabilization gate passes, remaining V1 analysis pipeline code is treated as removal debt with owners and deadlines; it is not an indefinitely supported variant.
 
 ---
 
@@ -1272,7 +1274,8 @@ These decisions are no longer all equally open. Some are implementation-entry de
 | Decision | Draft default | Must be resolved before | Escalate to Captain if |
 |---|---|---|---|
 | Public V2 schema version string | `4.0.0-cb`, with `4.0.0-cb-shadow` for shadow output | Slice 1 contract fixtures | public API/persisted report compatibility would break |
-| V1 compatibility lifetime | no automatic expiry; preserve historical reads | Slice 1 contract fixtures | retirement or migration is proposed |
+| V1 pipeline implementation lifetime | temporary only; remove after V2 cutover and stabilization | Slice 1 contract fixtures plus cleanup ledger | proposal tries to keep V1 as a parallel production variant |
+| Historical V1 read compatibility lifetime | no automatic expiry; preserve historical reads through adapters/fixtures | Slice 1 contract fixtures | retirement or migration is proposed |
 | V2 namespace/path | `apps/web/src/lib/analyzer-v2/` with `runClaimBoundaryPipelineV2(context)` | Slice 3 V2 shell | repo organization outside analyzer scope changes |
 | ACS V1 snapshot handling | consume/migrate by default and preserve selected IDs | Slice 1 fixtures and Slice 5 claim understanding | invalidation or user-visible draft loss is proposed |
 | Static HTML export | preserve through adapter | Slice 2 adapters | retirement is proposed |
