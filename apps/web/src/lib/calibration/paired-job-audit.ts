@@ -17,6 +17,7 @@ import * as path from "path";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
 import { z } from "zod";
+import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
 import { diagnoseInverseAsymmetry } from "./metrics";
 import type { SideResult } from "./types";
 
@@ -98,6 +99,15 @@ async function fetchJob(
 function extractWarnings(
   resultJson: Record<string, unknown>,
 ): Array<{ type: string; severity: string; message: string }> {
+  const view = toResultCompatibilityView(resultJson);
+  if (view.schemaKind === "v2" || view.schemaKind === "legacy-v1") {
+    return view.warnings.map((warning) => ({
+      type: warning.type,
+      severity: String(warning.severity ?? "info"),
+      message: String(warning.message ?? ""),
+    }));
+  }
+
   const raw = Array.isArray(resultJson.analysisWarnings)
     ? resultJson.analysisWarnings
     : Array.isArray(resultJson.warnings)
@@ -111,6 +121,15 @@ function extractWarnings(
       message: String(warning.message ?? ""),
     };
   });
+}
+
+function extractTruthPercentage(resultJson: Record<string, unknown>): number {
+  const view = toResultCompatibilityView(resultJson);
+  if (view.schemaKind === "v2" || view.schemaKind === "legacy-v1") {
+    return Number(view.truthPercentage ?? 50);
+  }
+
+  return Number(resultJson.truthPercentage ?? 50);
 }
 
 function countIntegrityDowngrades(
@@ -282,8 +301,8 @@ export async function runPairedJobAudit(
   const rjA = jobA.resultJson;
   const rjB = jobB.resultJson;
 
-  const truthPercentageA = Number(rjA.truthPercentage ?? 50);
-  const truthPercentageB = Number(rjB.truthPercentage ?? 50);
+  const truthPercentageA = extractTruthPercentage(rjA);
+  const truthPercentageB = extractTruthPercentage(rjB);
   const complementarityError = Math.abs(
     (truthPercentageA + truthPercentageB) - 100,
   );

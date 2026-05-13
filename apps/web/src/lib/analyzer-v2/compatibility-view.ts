@@ -7,6 +7,7 @@ export type CompatibilityWarning = {
   visibility: string | null;
   message: string | null;
   primaryIssueEligible: boolean;
+  details?: Record<string, unknown>;
 };
 
 export type CompatibilityClaim = {
@@ -141,6 +142,11 @@ function readV2FallbackFields(result: Record<string, unknown>): Record<string, u
 function mapV2Warnings(warnings: unknown[]): CompatibilityWarning[] {
   return warnings.map((warning) => {
     const item = asRecord(warning) ?? {};
+    const nestedDetails = asRecord(item.details) ?? {};
+    const details: Record<string, unknown> = { ...nestedDetails };
+    for (const key of ["category", "stage", "owner", "affected", "recoveryState", "damagedReportRelation"]) {
+      if (item[key] !== undefined) details[key] = item[key];
+    }
     return {
       type: asString(item.type) ?? "unknown",
       severity: asString(item.severity),
@@ -148,6 +154,7 @@ function mapV2Warnings(warnings: unknown[]): CompatibilityWarning[] {
       visibility: asString(item.visibility),
       message: asString(item.message) ?? asString(item.materialityRationale),
       primaryIssueEligible: item.primaryIssueEligible === true,
+      details: Object.keys(details).length > 0 ? details : undefined,
     };
   });
 }
@@ -155,6 +162,7 @@ function mapV2Warnings(warnings: unknown[]): CompatibilityWarning[] {
 function mapLegacyWarnings(warnings: unknown[]): CompatibilityWarning[] {
   return warnings.map((warning) => {
     const item = asRecord(warning) ?? {};
+    const details = asRecord(item.details) ?? undefined;
     return {
       type: asString(item.type) ?? "unknown",
       severity: asString(item.severity),
@@ -162,6 +170,7 @@ function mapLegacyWarnings(warnings: unknown[]): CompatibilityWarning[] {
       visibility: null,
       message: asString(item.message),
       primaryIssueEligible: asString(item.type) === "analysis_generation_failed",
+      details,
     };
   });
 }

@@ -55,6 +55,10 @@ describe("analyzer-v2 result compatibility view", () => {
         displaySeverity: "info",
         visibility: "admin_only",
         primaryIssueEligible: false,
+        details: expect.objectContaining({
+          stage: "evidence_lifecycle",
+          fixtureOnly: true,
+        }),
       }),
     ]);
     expect(view.primaryIssue).toBeNull();
@@ -112,6 +116,10 @@ describe("analyzer-v2 result compatibility view", () => {
     expect(surface.analysisWarnings[0]).toMatchObject({
       type: "source_fetch_degradation",
       displaySeverity: "info",
+      details: expect.objectContaining({
+        stage: "evidence_lifecycle",
+        fixtureOnly: true,
+      }),
     });
   });
 

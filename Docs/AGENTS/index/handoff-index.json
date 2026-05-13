@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T04:15:37.265Z",
-  "count": 404,
+  "generatedAt": "2026-05-13T04:23:03.506Z",
+  "count": 405,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8553,6 +8553,26 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2D_Calibration_Audit_Compatibility.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "2d",
+        "calibration",
+        "audit",
+        "compatibility"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/compatibility-view.ts"
+      ],
+      "summary": "Worktree: `C:\\DEV\\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`."
     }
   ]
 }

@@ -9,6 +9,10 @@
 
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import {
+  toLegacyReportSurfaceModel,
+  toResultCompatibilityView,
+} from "@/lib/analyzer-v2/compatibility-view";
+import {
   loadPipelineConfig,
   loadSearchConfig,
   loadCalcConfig,
@@ -577,13 +581,18 @@ function extractSideResult(
   rj: Record<string, any>,
   durationMs: number,
 ): SideResult {
+  const compatibilityView = toResultCompatibilityView(rj);
+  const readResult = compatibilityView.schemaKind === "v2"
+    ? toLegacyReportSurfaceModel(rj) as Record<string, any>
+    : rj;
+
   // Core verdicts
-  const truthPercentage: number = rj.truthPercentage ?? 50;
-  const confidence: number = rj.confidence ?? 0;
-  const verdict: string = rj.verdict ?? "UNVERIFIED";
+  const truthPercentage: number = readResult.truthPercentage ?? 50;
+  const confidence: number = readResult.confidence ?? 0;
+  const verdict: string = readResult.verdict ?? "UNVERIFIED";
 
   // Claim verdicts
-  const claimVerdicts = (rj.claimVerdicts ?? []).map((cv: any) => ({
+  const claimVerdicts = (readResult.claimVerdicts ?? []).map((cv: any) => ({
     claimId: cv.claimId ?? cv.id ?? "",
     claimText: cv.claimText ?? "",
     truthPercentage: cv.truthPercentage ?? 50,
@@ -601,7 +610,7 @@ function extractSideResult(
   }));
 
   // Evidence pool
-  const evidenceItems: any[] = rj.evidenceItems ?? [];
+  const evidenceItems: any[] = readResult.evidenceItems ?? [];
   const supporting = evidenceItems.filter(
     (e: any) => e.claimDirection === "supports",
   ).length;
@@ -618,7 +627,7 @@ function extractSideResult(
   const supportRatio = directional > 0 ? supporting / directional : 0.5;
 
   // Sources
-  const sources: any[] = rj.sources ?? [];
+  const sources: any[] = readResult.sources ?? [];
   const uniqueDomains = new Set(
     sources.map((s: any) => {
       try {
@@ -630,7 +639,7 @@ function extractSideResult(
   ).size;
 
   // Quality gates
-  const qg = rj.qualityGates ?? {};
+  const qg = readResult.qualityGates ?? {};
   const gate1Stats = {
     total: qg.gate1Stats?.total ?? 0,
     passed: qg.gate1Stats?.passed ?? 0,
@@ -643,10 +652,10 @@ function extractSideResult(
   };
 
   // Warnings (CB pipeline uses analysisWarnings; keep warnings as backward fallback)
-  const rawWarnings = Array.isArray(rj.analysisWarnings)
-    ? rj.analysisWarnings
-    : Array.isArray(rj.warnings)
-      ? rj.warnings
+  const rawWarnings = Array.isArray(readResult.analysisWarnings)
+    ? readResult.analysisWarnings
+    : Array.isArray(readResult.warnings)
+      ? readResult.warnings
       : [];
   const warnings = rawWarnings.map((w: any) => ({
     type: w.type ?? "",
@@ -676,12 +685,12 @@ function extractSideResult(
     uniqueDomains,
     gate1Stats,
     gate4Stats,
-    llmCalls: rj.meta?.llmCalls ?? 0,
-    searchQueries: (rj.searchQueries ?? []).length,
+    llmCalls: readResult.meta?.llmCalls ?? 0,
+    searchQueries: (readResult.searchQueries ?? []).length,
     durationMs,
-    estimatedCostUSD: rj.meta?.estimatedCostUSD ?? 0,
-    modelsUsed: rj.meta?.modelsUsed ?? {},
-    runtimeRoleModels: rj.meta?.runtimeRoleModels ?? undefined,
+    estimatedCostUSD: readResult.meta?.estimatedCostUSD ?? 0,
+    modelsUsed: readResult.meta?.modelsUsed ?? {},
+    runtimeRoleModels: readResult.meta?.runtimeRoleModels ?? undefined,
     warnings,
     fullResultJson: rj,
   };

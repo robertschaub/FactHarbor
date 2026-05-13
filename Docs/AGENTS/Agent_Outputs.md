@@ -2674,3 +2674,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2C Web Report Surface -- [Standard] [open-items: yes]
 **For next agent:** Wired the web job detail/report and HTML export surfaces to the analyzer-v2 compatibility view. Raw JSON remains raw; V2 display/export uses `toLegacyReportSurfaceModel`, with V2 coverage matrix mapped to legacy `{ claims, boundaries, counts }`, original meta preserved, and HTML export using canonical top-level `result.verdict` before legacy per-claim fallbacks. Debt-guard applied after the first focused export test exposed numeric per-claim verdict handling in the existing exporter. Verified with focused V2 adapter/export tests, web build, full safe web test, hot-path diff guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2C_Web_Report_Surface.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2D Calibration/Audit Compatibility -- [Standard] [open-items: yes]
+**For next agent:** Wired calibration runner and paired-job audit read paths to the analyzer-v2 compatibility view for V2-only reads while preserving legacy V1 and unknown/raw fallback behavior. `SideResult.fullResultJson` remains canonical/original, V2 warning details are preserved for calibration diagnostics, and paired audit reads V2 canonical `verdict.truthPercentage` plus warning rationale through the adapter. Verified with focused V2/V1/raw calibration and audit tests, web build, full safe web test, hot-path diff guard, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2D_Calibration_Audit_Compatibility.md

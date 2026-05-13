@@ -39,6 +39,29 @@ function makeJobBody(overrides?: Partial<{
   };
 }
 
+function makeV2JobResult(truthPercentage: number): Record<string, unknown> {
+  return {
+    _schemaVersion: "4.0.0-cb-shadow",
+    meta: {
+      schemaVersion: "4.0.0-cb-shadow",
+      pipeline: "claimboundary-v2",
+    },
+    verdict: {
+      label: "UNVERIFIED",
+      truthPercentage,
+      confidence: 70,
+    },
+    warnings: [
+      {
+        type: "source_fetch_degradation",
+        severity: "info",
+        materialityRationale: "Fixture V2 warning rationale.",
+        primaryIssueEligible: false,
+      },
+    ],
+  };
+}
+
 function mockFetch(...responses: Array<{ status?: number; ok?: boolean; body: unknown }>) {
   let callIndex = 0;
   return vi.fn().mockImplementation(() => {
@@ -116,6 +139,42 @@ describe("runPairedJobAudit", () => {
     expect(result.warningsA).toHaveLength(1);
     expect(result.warningsA[0].type).toBe("source_fetch_failure");
     expect(result.warningsB).toHaveLength(0);
+  });
+
+  it("reads V2 job truth percentages and warning rationale through the compatibility adapter", async () => {
+    const jobA = makeJobBody({
+      id: "job-a",
+      inputValue: "Claim A",
+      resultJson: makeV2JobResult(73),
+    });
+    const jobB = makeJobBody({
+      id: "job-b",
+      inputValue: "Claim B",
+      resultJson: makeV2JobResult(21),
+    });
+
+    vi.stubGlobal("fetch", mockFetch(
+      { body: jobA },
+      { body: jobB },
+    ));
+
+    const result = await runPairedJobAudit({
+      jobIdA: "job-a",
+      jobIdB: "job-b",
+      apiBaseUrl: TEST_API_URL,
+    });
+
+    expect(result.truthPercentageA).toBe(73);
+    expect(result.truthPercentageB).toBe(21);
+    expect(result.complementarityError).toBe(6);
+    expect(result.warningsA).toEqual([
+      {
+        type: "source_fetch_degradation",
+        severity: "info",
+        message: "Fixture V2 warning rationale.",
+      },
+    ]);
+    expect(result.integrityDowngradesA).toBe(0);
   });
 
   it("throws a descriptive error when a job is not found (404)", async () => {
