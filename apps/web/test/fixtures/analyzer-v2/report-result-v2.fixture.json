@@ -174,7 +174,59 @@
       "fallbackFields": {
         "truthPercentage": 50,
         "verdict": "UNVERIFIED",
-        "confidence": 0
+        "confidence": 0,
+        "claimBoundaries": [
+          {
+            "id": "CB_01",
+            "name": "Fixture boundary",
+            "shortName": "Fixture",
+            "description": "Structural ClaimAssessmentBoundary fixture.",
+            "constituentScopes": [],
+            "internalCoherence": 1,
+            "evidenceCount": 1
+          }
+        ],
+        "claimVerdicts": [
+          {
+            "claimId": "AC_01",
+            "claimText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+            "isCentral": true,
+            "verdict": 50,
+            "confidence": 0,
+            "truthPercentage": 50,
+            "riskTier": "B",
+            "reasoning": "Structural V2 compatibility fixture only.",
+            "supportingEvidenceIds": [
+              "EV_01"
+            ],
+            "highlightColor": "yellow"
+          }
+        ],
+        "searchQueries": [],
+        "qualityGates": {
+          "passed": false,
+          "gate1Stats": {
+            "total": 1,
+            "passed": 1,
+            "filtered": 0,
+            "centralKept": 1
+          },
+          "gate4Stats": {
+            "total": 1,
+            "publishable": 0,
+            "highConfidence": 0,
+            "mediumConfidence": 0,
+            "lowConfidence": 0,
+            "insufficient": 1,
+            "centralKept": 1
+          },
+          "summary": {
+            "totalEvidenceItems": 1,
+            "totalSources": 1,
+            "searchesPerformed": 0,
+            "contradictionSearchPerformed": false
+          }
+        }
       }
     }
   }
