@@ -158,6 +158,23 @@ Stale or rejected `.xwiki` content for V2:
 - Direct source-reliability truth-percentage formulas are not accepted as V2 verdict math until deputy review and comparator validation approve them.
 - Prompt examples or snippets from `.xwiki` are design references only; prompt text changes still need Captain approval and LLM Expert review.
 
+Compact Design Intent Mapping:
+
+| V2 area | xWiki intent preserved | Explicitly rejected or deferred mechanism | V2 authority |
+|---|---|---|---|
+| Request lifecycle | API owns job persistence/events; Next.js runner owns analysis execution | Changing public API/UI behavior as part of V2 rebuild | Sections 4.2 and 15; compatibility adapter tests |
+| Pipeline shape | Understand -> Research -> Boundary formation -> Verdict -> Aggregation/report | Stage skipping or collapsing verdicting into one prompt | Sections 3, 4, 7-12 |
+| Claim understanding | Gate 1 protects claim fidelity, analyzability, and selected-claim integrity | Copying old prompt wording; deterministic semantic claim filtering | Section 7; `ClaimContract` schema/tests |
+| ACS compatibility | Prepared Stage 1 snapshots and selected IDs remain consumable | Invalidating drafts or redoing selected Stage 1 without approval | Sections 7 and 15; ACS migration contract tests |
+| Evidence lifecycle | EvidenceItem remains source-backed and carries EvidenceScope metadata | Vague-phrase, keyword, or Jaccard semantic evidence decisions | Sections 8 and 16 |
+| Boundary formation | ClaimAssessmentBoundaries emerge after research from compatible EvidenceScopes | Predefining AnalysisContexts or exact-text semantic fingerprints | Sections 10 and 16 |
+| Verdict adjudication | Evidence-backed challenge and reconciliation remain trust safeguards | Baseless challenge weight reduction; deterministic direction correction | Sections 12, 14, and 16 |
+| Aggregation/result writer | One canonical result authority drives public interpretation | Adapter-side verdict reinterpretation or legacy formula carryover by default | Sections 6, 12, 15, and 18.1 |
+| Warning policy | User-visible warnings are governed by materiality, not raw event severity | Inline warning display rules in UI/API/export readers | Section 14; warning fixture/tests |
+| Prompt/model governance | UCM prompt sections and model policies remain explicit runtime contracts | New prompt text/profile/model execution without Captain approval and LLM Expert review | Section 13; gateway policy tests |
+| Source reliability | Source-trust signals remain valuable and should be observable | Direct truth-percentage source-reliability formulas without quality validation | Sections 8, 12, 18.1 |
+| Diagrams/readability | Human readers need xWiki-level lifecycle, entity, gate, and stage diagrams | Treating old diagrams as implementation proof | Sections 1.2 and 1.3 |
+
 ## 1.3 Reader-Level V2 Diagrams
 
 The following diagrams mirror the old xWiki diagram level, but describe the new V2 target and the current guarded implementation posture.

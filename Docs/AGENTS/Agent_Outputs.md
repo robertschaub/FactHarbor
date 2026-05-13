@@ -2729,3 +2729,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild xWiki Crosscheck And Diagrams -- [Standard] [open-items: yes]
 **For next agent:** Reviewed relevant `.xwiki` architecture and diagram pages as design intent, then added Sections 1.2-1.3 to `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`. The target spec now identifies useful xWiki intent, stale/rejected mechanisms, and includes V2 request lifecycle, detailed pipeline, entity model, and quality-gate/warning Mermaid diagrams.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Crosscheck_Diagrams.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild xWiki Integration Debate -- [Standard] [open-items: yes]
+**For next agent:** Franklin, Lorentz, and Claude Opus 4.6 reconciled the question of whether to debate deeper xWiki integration. Verdict: `MODIFY`; no broad spec rewrite or contract mutation, but add a compact `Design Intent Mapping` table to Section 1.2 of `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Integration_Debate.md
