@@ -49,6 +49,10 @@ import { JsonTreeView } from "./components/JsonTreeView";
 import { CopyButton } from "@/components/CopyButton";
 import { collectUsedModels, formatUsedModels } from "@/lib/model-usage";
 import { mergePolledJobSnapshot } from "@/lib/job-polling";
+import {
+  toLegacyReportSurfaceModel,
+  toResultCompatibilityView,
+} from "@/lib/analyzer-v2/compatibility-view";
 import FallbackReport from "@/components/FallbackReport";
 import {
   classifyWarningForDisplay,
@@ -981,9 +985,19 @@ export default function JobPage() {
   }, [report]);
   const jsonText = useMemo(() => (job?.resultJson ? JSON.stringify(job.resultJson, null, 2) : ""), [job]);
 
-  const result = job?.resultJson;
+  const rawResult = job?.resultJson;
+  const resultCompatibilityView = useMemo(
+    () => toResultCompatibilityView(rawResult, { reportMarkdown: job?.reportMarkdown }),
+    [rawResult, job?.reportMarkdown],
+  );
+  const result = useMemo(
+    () => resultCompatibilityView.schemaKind === "v2"
+      ? toLegacyReportSurfaceModel(rawResult, { reportMarkdown: job?.reportMarkdown })
+      : rawResult,
+    [rawResult, resultCompatibilityView.schemaKind, job?.reportMarkdown],
+  );
   const schemaVersion = result?.meta?.schemaVersion || "";
-  const hasV22Data = schemaVersion.startsWith("2.") || schemaVersion.startsWith("3.");
+  const hasV22Data = resultCompatibilityView.schemaKind === "v2" || schemaVersion.startsWith("2.") || schemaVersion.startsWith("3.");
   const displayCommitHash = job?.gitCommitHash || null;
   const twoPanelSummary = result?.twoPanelSummary;
   const articleAnalysis = result?.articleAnalysis;
@@ -1087,6 +1101,7 @@ export default function JobPage() {
   // ClaimAssessmentBoundary schema detection (Phase 3)
   const isCBSchema = (typeof result?._schemaVersion === "string" && result._schemaVersion.endsWith("-cb")) ||
                      (typeof result?.meta?.schemaVersion === "string" && result.meta.schemaVersion.endsWith("-cb")) ||
+                     resultCompatibilityView.schemaKind === "v2" ||
                      result?.meta?.pipeline === "claimboundary";
   const claimBoundaries = result?.claimBoundaries || [];
   const atomicClaimTextById = useMemo(() => {

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T04:07:47.295Z",
-  "count": 403,
+  "generatedAt": "2026-05-13T04:15:37.265Z",
+  "count": 404,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8510,6 +8510,49 @@
         "apps/api.Tests/Services/JobServiceTests.cs"
       ],
       "summary": "Continue Slice 2 one consumer at a time. Recommended next surface is the web job/report UI read path using `apps/web/src/lib/analyzer-v2/compatibility-view.ts`, then markdown/static export. Preserve the existing V1 analyzer hot path and avoid prompt/config/model/live-validation changes unless explic"
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2C_Web_Report_Surface.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "2c",
+        "web",
+        "report",
+        "surface"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/compatibility-view.ts",
+        "apps/web/src/app/jobs/[id]/page.tsx",
+        "apps/web/src/app/jobs/[id]/utils/generateHtmlReport.ts",
+        "apps/web/test/unit/lib/analyzer-v2/compatibility-view.test.ts",
+        "apps/web/test/unit/app/jobs/[id]/utils/generateHtmlReport.test.ts"
+      ],
+      "summary": "Continue with metrics/calibration/validation readers or markdown generation one surface at a time. Reuse `toResultCompatibilityView`/`toLegacyReportSurfaceModel`; do not duplicate schema detection or verdict-label derivation.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "failed-attempt recovery; incomplete-existing-mechanism in HTML exporter.",
+            "chosen_option": "amend existing exporter verdict selection.",
+            "rejected_path_and_why": "reverting V2 page/export wiring would discard valid adapter progress; adding a second V2 exporter would duplicate mechanisms.",
+            "what_was_removed_simplified": "no code removed; numeric per-claim verdicts are now excluded from string-label paths.",
+            "what_was_added": "fixture-backed V2 HTML export test and V2 coverage-matrix mapping in the compatibility adapter.",
+            "net_mechanism_count": "unchanged for exporter; adapter capability broadened within the existing compatibility mechanism.",
+            "budget_reconciliation": "actual diff stayed within expected web report/export surface; no new flags, retries, or parallel export path.",
+            "verification": "focused V2 adapter/export tests, web build, full safe web test, hot-path diff guard, git diff --check.",
+            "debt_accepted_and_removal_trigger": "static exporter still has legacy fallback threshold logic; remove or centralize when static export is fully contract-tested against V2/V1 fixtures.",
+            "residual_debt": "browser rendering was not screenshot-tested in this slice."
+          }
+        }
+      }
     }
   ]
 }

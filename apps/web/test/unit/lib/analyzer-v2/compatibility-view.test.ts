@@ -82,6 +82,7 @@ describe("analyzer-v2 result compatibility view", () => {
       meta: {
         schemaVersion: "4.0.0-cb-shadow",
         pipeline: "claimboundary-v2",
+        runId: "fixture-run-v2",
       },
       truthPercentage: 50,
       verdict: "UNVERIFIED",
@@ -97,7 +98,11 @@ describe("analyzer-v2 result compatibility view", () => {
     expect(surface.evidenceItems).toHaveLength(1);
     expect(surface.sources).toHaveLength(1);
     expect(surface.citedSources).toHaveLength(1);
-    expect(surface.coverageMatrix).toBeTruthy();
+    expect(surface.coverageMatrix).toEqual({
+      claims: ["AC_01"],
+      boundaries: ["CB_01"],
+      counts: [[1]],
+    });
     expect(surface.qualityGates).toMatchObject({
       summary: {
         totalEvidenceItems: 1,

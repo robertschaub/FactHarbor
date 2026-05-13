@@ -385,7 +385,10 @@ function buildVerdictBanner(input: HtmlReportInput): string {
   const { result, claimVerdicts } = input;
   const truthPct = norm(result?.truthPercentage ?? claimVerdicts[0]?.truthPercentage);
   const conf = norm(result?.confidence ?? claimVerdicts[0]?.confidence);
-  const verdict = result?.overallVerdict || claimVerdicts[0]?.verdict || verdictFromPct(truthPct, conf);
+  const verdict = result?.overallVerdict ||
+    result?.verdict ||
+    (typeof claimVerdicts[0]?.verdict === "string" ? claimVerdicts[0].verdict : null) ||
+    verdictFromPct(truthPct, conf);
   const v = vs(verdict);
   const narrative = result?.verdictNarrative;
   const keyFinding = narrative?.keyFinding || "";
@@ -472,7 +475,7 @@ function buildClaimVerdicts(input: HtmlReportInput): string {
     const ac = atomicClaims.find((a: any) => a.id === cv.claimId) || {};
     const tp = norm(cv.truthPercentage);
     const conf = norm(cv.confidence);
-    const verdict = cv.verdict || verdictFromPct(tp, conf);
+    const verdict = typeof cv.verdict === "string" ? cv.verdict : verdictFromPct(tp, conf);
     const v = vs(verdict);
     const displayTp = isFalseBand(verdict) ? 100 - tp : tp;
     const displayTpWord = isFalseBand(verdict) ? "false" : "true";
@@ -893,7 +896,10 @@ export function generateHtmlReport(input: HtmlReportInput): string {
   const meta = result?.meta || {};
   const narrative = result?.verdictNarrative;
 
-  const overallVerdict = result?.overallVerdict || input.claimVerdicts?.[0]?.verdict || "";
+  const overallVerdict = result?.overallVerdict ||
+    result?.verdict ||
+    (typeof input.claimVerdicts?.[0]?.verdict === "string" ? input.claimVerdicts[0].verdict : "") ||
+    "";
   const truthPct = norm(result?.truthPercentage ?? input.claimVerdicts?.[0]?.truthPercentage);
   const confPct = norm(result?.confidence ?? input.claimVerdicts?.[0]?.confidence);
   const dateStr = job.createdUtc ? new Date(job.createdUtc).toISOString().slice(0, 10) : "";

@@ -60,7 +60,7 @@ export type JobQuickFields = {
 
 export type LegacyReportSurfaceModel = {
   _schemaVersion: string | null;
-  meta: {
+  meta: Record<string, unknown> & {
     schemaVersion: string | null;
     pipeline: string | null;
   };
@@ -214,6 +214,25 @@ function mapV2ClaimVerdictsFromFallback(fallbackFields: Record<string, unknown>)
   return asArray(fallbackFields.claimVerdicts);
 }
 
+function mapV2CoverageMatrixToLegacy(matrix: unknown): unknown | null {
+  const source = asRecord(matrix);
+  if (!source) return null;
+
+  const claims = toStringArray(source.rows);
+  const boundaries = toStringArray(source.columns);
+  const cells = asArray(source.cells);
+  if (claims.length === 0 || boundaries.length === 0) return null;
+
+  const counts = claims.map((claimId) => boundaries.map((boundaryId) => {
+    const cell = cells
+      .map((value) => asRecord(value))
+      .find((value) => value?.claimId === claimId && value?.boundaryId === boundaryId);
+    return asArray(cell?.evidenceIds).length;
+  }));
+
+  return { claims, boundaries, counts };
+}
+
 function buildEmptyCompatibilityView(): ResultCompatibilityView {
   return {
     schemaKind: "unknown",
@@ -262,6 +281,7 @@ function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompat
   const boundaries = fallbackBoundaries.length > 0
     ? fallbackBoundaries
     : asArray(boundariesGroup.claimAssessmentBoundaries).map(mapV2BoundaryToLegacy);
+  const fallbackCoverageMatrix = fallbackFields.coverageMatrix ?? null;
 
   return {
     schemaKind: "v2",
@@ -279,7 +299,7 @@ function buildV2CompatibilityView(result: Record<string, unknown>): ResultCompat
     sources,
     citedSources: sources,
     searchQueries: asArray(fallbackFields.searchQueries),
-    coverageMatrix: boundariesGroup.coverageMatrix ?? null,
+    coverageMatrix: fallbackCoverageMatrix ?? mapV2CoverageMatrixToLegacy(boundariesGroup.coverageMatrix),
     qualityGates: fallbackFields.qualityGates ?? result.qualityGates ?? null,
     warnings,
     primaryIssue: firstPrimaryIssue(warnings),
@@ -362,11 +382,14 @@ export function toLegacyReportSurfaceModel(
   resultJson: unknown,
   options: { reportMarkdown?: string | null } = {},
 ): LegacyReportSurfaceModel {
+  const result = asRecord(resultJson);
+  const originalMeta = asRecord(result?.meta) ?? {};
   const view = toResultCompatibilityView(resultJson, options);
 
   return {
     _schemaVersion: view.schemaVersion,
     meta: {
+      ...originalMeta,
       schemaVersion: view.schemaVersion,
       pipeline: view.pipeline,
     },

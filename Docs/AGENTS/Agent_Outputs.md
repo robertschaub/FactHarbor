@@ -2669,3 +2669,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2B API Compatibility Mirror -- [Standard] [open-items: yes]
 **For next agent:** Added API-side compatibility helper `ResultCompatibility` plus fixture-backed tests. `JobService.StoreResultAsync` and `JobsController` list/detail now share one C# extractor: V2 trusts canonical `verdict.*` fields and `warnings[].primaryIssueEligible`; non-V2 JSON preserves legacy quick-field paths and `analysis_generation_failed` behavior. Verified with 31 API tests, web analyzer-v2 fixture tests, API build, web build, full safe web test, hot-path diff guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2B_API_Compatibility.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2C Web Report Surface -- [Standard] [open-items: yes]
+**For next agent:** Wired the web job detail/report and HTML export surfaces to the analyzer-v2 compatibility view. Raw JSON remains raw; V2 display/export uses `toLegacyReportSurfaceModel`, with V2 coverage matrix mapped to legacy `{ claims, boundaries, counts }`, original meta preserved, and HTML export using canonical top-level `result.verdict` before legacy per-claim fallbacks. Debt-guard applied after the first focused export test exposed numeric per-claim verdict handling in the existing exporter. Verified with focused V2 adapter/export tests, web build, full safe web test, hot-path diff guard, and `git diff --check`.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2C_Web_Report_Surface.md
