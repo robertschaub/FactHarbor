@@ -17,7 +17,7 @@ const completeBaseInput = {
   temperature: 0.2,
   outputSchemaVersion: "v2.claim_understanding_gate1.0",
   configSnapshotHash: "config-hash",
-  resultSchemaVersion: "4.0.0-cb-shadow",
+  resultSchemaVersion: "4.0.0-cb-precutover",
   inputIdentityHash: "input-hash",
   currentDateBucket: "2026-05-13",
 };

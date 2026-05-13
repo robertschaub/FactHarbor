@@ -153,13 +153,13 @@ Phase 0 exit condition: the verification surface is defined and the Captain Depu
 The approved implementation strategy must avoid a broken intermediate system.
 
 Default strategy:
-- Build the replacement as a parallel/shadow V2 pipeline or equivalent isolated path behind a controlled entry point.
+- Build the replacement as a gated pre-cutover V2 path or equivalent isolated path behind a controlled entry point.
 - Keep the current hot path runnable until V2 satisfies the approved structural, quality, compatibility, and report-integrity gates.
 - Delete or quarantine obsolete current-pipeline mechanisms only after the replacement boundary and verifier are proven.
 
 "Cleanup before rebuild" applies to dead, obsolete, duplicated, or superseded mechanisms outside the active hot path first. It does not authorize deleting risk-bearing hot-path behavior before a replacement passes verification.
 
-Phase 0 consent: parallel/shadow V2 or equivalent isolation is the approved default; no hot-path removal is allowed before the replacement verifier passes. Exit condition: Captain or the Captain Deputy team confirms the exact runnable-system strategy before implementation cleanup begins, unless Gate 0.6 requires escalation to Captain.
+Phase 0 consent: gated pre-cutover V2 or equivalent isolation is the approved default; no hot-path removal is allowed before the replacement verifier passes. Exit condition: Captain or the Captain Deputy team confirms the exact runnable-system strategy before implementation cleanup begins, unless Gate 0.6 requires escalation to Captain.
 
 ### Gate 0.6 - Review and Tie-Breaking
 
@@ -315,7 +315,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 **Goal:** Replace the current pipeline without a broken intermediate state.
 
 **Execution rule**
-- Build V2 in a parallel/shadow path or equivalent isolated structure behind a controlled entry point.
+- Build V2 in a gated pre-cutover path or equivalent isolated structure behind a controlled entry point.
 - Keep V1 hot path runnable until V2 passes approved structural, quality, compatibility, warning/report, and performance gates.
 - Remove dead/stale/non-hot-path mechanisms first where safe.
 - Remove risk-bearing V1 hot-path mechanisms only after their replacement has passed the named verifier.
@@ -334,6 +334,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - Gate 1, Gate 4, evidence transparency, warning materiality, and report integrity are preserved.
 - Safe tests and build pass.
 - Approved quality, multilingual, input-neutrality, semantic drift, cost, and latency checks pass or have Captain-approved residual risk.
+- After V1 analysis code is removed, the surviving pipeline owns final clean names; temporary rebuild labels are removed from runtime code by a verified naming-normalization cleanup slice.
 
 ## 8. Review Questions
 

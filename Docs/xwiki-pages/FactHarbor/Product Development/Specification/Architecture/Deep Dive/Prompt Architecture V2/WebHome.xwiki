@@ -83,7 +83,7 @@ The implementation plan must classify these surfaces before prompt-backed V2 exe
 
 == Current Blocker ==
 
-Slice 6B, prompt-backed Claim Understanding execution, is blocked until Captain approval and LLM Expert review. Until then, V2 gateway policies remain static/non-executable and V2 analysis output remains a damaged shadow envelope.
+Slice 6B, prompt-backed Claim Understanding execution, is blocked until Captain approval and LLM Expert review. Until then, V2 gateway policies remain static/non-executable and V2 analysis output remains a damaged pre-cutover envelope.
 
 Boundary enforcement is expected before prompt-backed execution: analyzer-v2 source must fail tests if it imports V1 analyzer modules, references legacy prompt profiles/files in prompt-loading contexts, or exposes V1-shaped contracts as V2 internals.
 

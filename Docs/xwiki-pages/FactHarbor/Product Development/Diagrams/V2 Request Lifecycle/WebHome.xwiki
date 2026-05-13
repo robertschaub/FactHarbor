@@ -1,7 +1,7 @@
 = V2 Request Lifecycle =
 
 {{info}}
-Target request lifecycle with V1 protected as the default runtime and V2 available only through an explicit shadow path until cutover.
+Target request lifecycle with V1 protected as the default runtime and V2 available only through an explicit pre-cutover path until cutover.
 {{/info}}
 
 {{mermaid}}
@@ -23,9 +23,9 @@ sequenceDiagram
   alt default production path
     Select->>V1: run current ClaimAssessmentBoundary pipeline
     V1-->>Runner: V1 result JSON and report
-  else explicit gated V2 shadow path
+  else explicit gated V2 pre-cutover path
     Select->>V2: runClaimBoundaryPipelineV2(context)
-    V2-->>Runner: 4.0.0-cb-shadow damaged or future V2 result
+    V2-->>Runner: 4.0.0-cb-precutover damaged or future V2 result
   end
 
   Runner->>Adapter: project result for API/UI/export/readers

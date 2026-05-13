@@ -26,7 +26,7 @@ The plan must not proceed to reverse-engineering until it adds hard gates for:
 - Locked external contracts and persisted-report compatibility.
 - Prompt/config/model-routing baseline.
 - Quality, benchmark, Q-code, multilingual, input-neutrality, and semantic-drift baseline.
-- Runnable-system strategy using parallel/shadow V2 or equivalent isolation.
+- Runnable-system strategy using gated pre-cutover V2 or equivalent isolation.
 - Explicit approval/tie-breaker rules for removing risk-bearing mechanisms.
 
 ## Debate Result
@@ -85,7 +85,7 @@ No reviewer requested Captain escalation. The notes were accepted and folded int
 
 - ACS/claim-selection surfaces are inventoried unconditionally during Phase 2.
 - Gate 0.4 now distinguishes Phase 0 verification-surface definition from Phase 6 execution.
-- Parallel/shadow V2 is recorded as the Phase 0 default runnable-system strategy.
+- Gated pre-cutover V2 is recorded as the Phase 0 default runnable-system strategy.
 - Structured-output schemas, multilingual mechanisms, cache structure, cost/latency baseline, prompt approval trail, reviewed-equivalent reviewer ownership, hot-path mechanism registry, and test-gap carry-forward were made explicit.
 
 **Decision:** Phase 1 is authorized under the Captain Deputy delegation rule.

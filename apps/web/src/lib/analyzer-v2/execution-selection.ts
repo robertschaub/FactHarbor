@@ -22,7 +22,7 @@ function normalizeRequestedVariant(value: unknown): string {
 }
 
 export function isAnalyzerV2ShellEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  return env.FH_ANALYZER_V2_SHELL === "enabled" || env.FH_ANALYZER_PIPELINE === "v2-shadow";
+  return env.FH_ANALYZER_V2_SHELL === "enabled" || env.FH_ANALYZER_PIPELINE === "v2-precutover";
 }
 
 export function resolveAnalyzerExecutionSelection(

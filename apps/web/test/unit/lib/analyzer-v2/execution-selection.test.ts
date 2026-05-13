@@ -51,10 +51,10 @@ describe("analyzer-v2 execution selection", () => {
     });
   });
 
-  it("supports the target-spec v2-shadow flag alias without changing public variants", () => {
-    expect(isAnalyzerV2ShellEnabled({ FH_ANALYZER_PIPELINE: "v2-shadow" })).toBe(true);
+  it("supports the target-spec v2-precutover gate without changing public variants", () => {
+    expect(isAnalyzerV2ShellEnabled({ FH_ANALYZER_PIPELINE: "v2-precutover" })).toBe(true);
     expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V2_VARIANT, {
-      FH_ANALYZER_PIPELINE: "v2-shadow",
+      FH_ANALYZER_PIPELINE: "v2-precutover",
     }).path).toBe("claimboundary-v2-shell");
   });
 

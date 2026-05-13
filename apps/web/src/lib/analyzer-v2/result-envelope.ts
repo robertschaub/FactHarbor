@@ -1,6 +1,6 @@
 import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
-export const CLAIMBOUNDARY_V2_SHADOW_SCHEMA_VERSION = "4.0.0-cb-shadow";
+export const CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION = "4.0.0-cb-precutover";
 export const CLAIMBOUNDARY_V2_PIPELINE = "claimboundary-v2";
 
 export type ClaimBoundaryV2Result = Record<string, unknown>;
@@ -40,7 +40,7 @@ function buildDamagedWarning(context: ClaimBoundaryV2RunContext) {
       selectedAtomicClaimIds: context.selectedAtomicClaimIds,
     },
     materialityRationale:
-      "Analyzer V2 is only a structural shadow envelope in this slice; no valid analysis stages or verdict generation ran.",
+      "Analyzer V2 is only a structural pre-cutover envelope in this slice; no valid analysis stages or verdict generation ran.",
     recoveryState: "not_recoverable",
     primaryIssueEligible: true,
     damagedReportRelation: "report_damaged",
@@ -87,18 +87,18 @@ export function buildDamagedClaimBoundaryV2Envelope(
   const warning = buildDamagedWarning(context);
   const compatibilityQualityGates = buildCompatibilityQualityGates(context);
   const reportMarkdown = [
-    "# V2 Shadow Pipeline Not Implemented",
+    "# V2 Pre-Cutover Pipeline Not Implemented",
     "",
-    "This is a damaged structural envelope for the disabled Analyzer V2 shadow path.",
+    "This is a damaged structural envelope for the gated Analyzer V2 pre-cutover path.",
     "No claim understanding, research, evidence extraction, ClaimAssessmentBoundary clustering, or verdict generation ran.",
   ].join("\n");
 
   return {
     reportMarkdown,
     resultJson: {
-      _schemaVersion: CLAIMBOUNDARY_V2_SHADOW_SCHEMA_VERSION,
+      _schemaVersion: CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION,
       meta: {
-        schemaVersion: CLAIMBOUNDARY_V2_SHADOW_SCHEMA_VERSION,
+        schemaVersion: CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION,
         pipeline: CLAIMBOUNDARY_V2_PIPELINE,
         resultContractVersion: 1,
         runId: context.runId,
@@ -155,7 +155,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
       narrative: {
         markdown: reportMarkdown,
         sections: {
-          headline: "V2 shadow pipeline not implemented.",
+          headline: "V2 pre-cutover pipeline not implemented.",
           keyFinding: "No analytical conclusion was produced.",
           evidenceBaseSummary: "No research or evidence extraction ran in this structural shell.",
           limitations: "This result is intentionally damaged and must not be treated as a valid report.",

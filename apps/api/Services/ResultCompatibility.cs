@@ -7,7 +7,7 @@ public static class ResultCompatibility
     private const string ClaimBoundaryV2Pipeline = "claimboundary-v2";
     private static readonly HashSet<string> ClaimBoundaryV2Schemas = new(StringComparer.Ordinal)
     {
-        "4.0.0-cb-shadow",
+        "4.0.0-cb-precutover",
         "4.0.0-cb",
     };
 

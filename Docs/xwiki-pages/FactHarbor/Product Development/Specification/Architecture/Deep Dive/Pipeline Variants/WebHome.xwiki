@@ -7,7 +7,7 @@
 {{/info}}
 
 {{info}}
-**V2 target note:** This page documents current runtime variants. For the rebuild coexistence, shadow, cutover, and cleanup plan, see [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]].
+**V2 target note:** This page documents current runtime variants. For the rebuild coexistence, pre-cutover routing, cutover, and cleanup plan, see [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]].
 {{/info}}
 
 == Architecture Overview ==

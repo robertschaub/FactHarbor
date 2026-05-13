@@ -62,7 +62,7 @@ Every warning or visible event that can leave the pipeline carries:
 == Schema Versions ==
 
 |= Schema |= Use
-| ##4.0.0-cb-shadow## | Internal shadow/non-public V2 result during guarded implementation.
+| ##4.0.0-cb-precutover## | V2 development result used before cutover during guarded implementation.
 | ##4.0.0-cb## | Planned public V2 cutover schema.
 | ##3.2.0-cb## | V1 public compatibility schema; remains readable until an approved retirement.
 

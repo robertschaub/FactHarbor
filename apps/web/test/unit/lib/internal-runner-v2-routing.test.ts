@@ -13,9 +13,9 @@ vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
 vi.mock("@/lib/analyzer-v2/pipeline-shell", () => ({
   runClaimBoundaryV2Shell: vi.fn(async () => ({
     resultJson: {
-      _schemaVersion: "4.0.0-cb-shadow",
+      _schemaVersion: "4.0.0-cb-precutover",
       meta: {
-        schemaVersion: "4.0.0-cb-shadow",
+        schemaVersion: "4.0.0-cb-precutover",
         pipeline: "claimboundary-v2",
         resultContractVersion: 1,
         runId: "mock-v2-run",

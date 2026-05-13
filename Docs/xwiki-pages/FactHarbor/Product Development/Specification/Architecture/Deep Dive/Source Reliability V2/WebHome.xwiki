@@ -1,19 +1,20 @@
 = Source Reliability V2 =
 
 {{info}}
-**Target Source Reliability Reference** - This page defines how V2 treats source reliability as an observable, versioned trust signal without adopting unapproved direct verdict formulas.
+**Target Source Reliability Integration Reference** - This page defines how V2 consumes the existing Source Reliability service as an observable, versioned trust signal without adopting unapproved direct verdict formulas.
 
-Current V1 source-reliability implementation and admin pages remain runtime documentation until V2 cutover.
+The Source Reliability service, cache, prompt/config surface, and admin pages are not replaced by the V2 pipeline rebuild. V2 defines the pipeline-side consumption boundary only.
 {{/info}}
 
 == Purpose ==
 
-Source reliability is useful for evidence transparency, source portfolio review, and verdict reasoning. V2 keeps that value while avoiding hidden or premature coupling between source-reliability scores and public truth percentages.
+Source reliability is useful for evidence transparency, source portfolio review, and verdict reasoning. V2 keeps the existing shared service and consumes its signal through a clear integration boundary, while avoiding hidden or premature coupling between source-reliability scores and public truth percentages.
 
 == V2 Position ==
 
 |= Topic |= V2 decision
 | Source reliability exists | Yes. It remains a source-trust signal that can be cached, audited, and shown to reviewer-facing or admin-facing surfaces.
+| Service implementation | Unchanged for the pipeline rebuild. Reuse the existing service/cache/admin surfaces behind a thin V2 consumption port.
 | Source reliability is semantic | Yes. Evaluation of source credibility, independence, expertise, and bias is LLM-owned unless a structural field is being validated.
 | Direct verdict weighting | Not adopted by default. Requires later deputy review, comparator evidence, and tests.
 | Storage and cache | Records must be versioned by provider/model/prompt/config/schema dimensions where those affect the signal.
@@ -62,6 +63,7 @@ A V2 SourceReliabilitySignal should record:
 | Provide approved adjudication context through the prompt/model gateway. | Hardcode domain, outlet, country, language, or topic-specific source weights.
 | Cache and reuse identical/equivalent source evaluations. | Treat search-provider rank as source credibility.
 | Surface stale/missing SR as admin diagnostics where non-material. | Hide material evidence degradation behind source reliability fallback values.
+| Wrap the existing service in a V2 source-trust port. | Fork, clone, or rename the Source Reliability service just because the pipeline is V2.
 
 == Relationship To Evidence And Verdicts ==
 
@@ -74,7 +76,7 @@ V2 verdict adjudication must therefore consider source reliability only alongsid
 Source reliability events follow the shared warning materiality test:
 
 * cache miss recovered by live evaluation: silent;
-* stale signal used only as non-public diagnostic: admin-only info;
+* stale signal used only as an admin diagnostic: admin-only info;
 * source portfolio uncertainty that materially lowers trust: user-visible warning;
 * source-reliability infrastructure failure that prevents required adjudication policy from running: error or damaged-report path depending on impact.
 

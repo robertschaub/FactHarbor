@@ -51,7 +51,7 @@ flowchart LR
   S8["Boundary formation"]
   S9["Verdict and Gate 4"]
   S10["Aggregation and result writer"]
-  S11["Shadow comparison"]
+  S11["Pre-cutover verification"]
   S12["Live validation gate"]
   S13["Cutover"]
   S14["V1 cleanup"]
@@ -83,9 +83,9 @@ flowchart TB
     FX["V1/V2 fixtures and schemas"]
   end
 
-  subgraph "V2 Offline Path - implemented but non-analytical"
+  subgraph "V2 Pre-Cutover Path - implemented but non-analytical"
     ENTRY["runClaimBoundaryPipelineV2"]
-    ENV["damaged 4.0.0-cb-shadow envelope"]
+    ENV["damaged 4.0.0-cb-precutover envelope"]
     GW["gateway policies blocked until approval"]
     CU["ClaimContract + ACS migration"]
   end
@@ -154,7 +154,7 @@ Useful design intent incorporated or reaffirmed:
 
 Stale or rejected `.xwiki` content for V2:
 
-- V1 schema strings such as `3.0.0-cb` are historical; V2 shadow uses `4.0.0-cb-shadow`.
+- V1 schema strings such as `3.0.0-cb` are historical; V2 pre-cutover runs use `4.0.0-cb-precutover`.
 - V1 monolithic pipeline files and some old function names are not V2 implementation targets.
 - Deterministic semantic filters such as vague-phrase matching, Jaccard-like dedupe, keyword provider detection, or direction correction cannot be reintroduced as analysis logic.
 - Direct source-reliability truth-percentage formulas are not accepted as V2 verdict math until deputy review and comparator validation approve them.
@@ -174,7 +174,7 @@ Compact Design Intent Mapping:
 | Aggregation/result writer | One canonical result authority drives public interpretation | Adapter-side verdict reinterpretation or legacy formula carryover by default | Sections 6, 12, 15, and 18.1 |
 | Warning policy | User-visible warnings are governed by materiality, not raw event severity | Inline warning display rules in UI/API/export readers | Section 14; warning fixture/tests |
 | Prompt/model governance | UCM prompt sections and model policies remain explicit runtime contracts | New prompt text/profile/model execution without Captain approval and LLM Expert review | Section 13; gateway policy tests |
-| Source reliability | Source-trust signals remain valuable and should be observable | Direct truth-percentage source-reliability formulas without quality validation | Sections 8, 12, 18.1 |
+| Source reliability | Existing service/cache/admin surfaces remain shared; V2 consumes source-trust signals through a thin integration boundary | Rebuilding, forking, or directly importing source-reliability truth-percentage formulas without quality validation | Sections 8, 12, 18.1 |
 | Diagrams/readability | Human readers need xWiki-level lifecycle, entity, gate, and stage diagrams | Treating old diagrams as implementation proof | Sections 1.2 and 1.3 |
 
 ## 1.3 Reader-Level V2 Diagrams
@@ -202,9 +202,9 @@ sequenceDiagram
   alt default production path
     Select->>V1: run current ClaimAssessmentBoundary pipeline
     V1-->>Runner: V1 result JSON and report
-  else explicit gated V2 shadow path
+  else explicit gated V2 pre-cutover path
     Select->>V2: runClaimBoundaryPipelineV2(context)
-    V2-->>Runner: 4.0.0-cb-shadow damaged or future V2 result
+    V2-->>Runner: 4.0.0-cb-precutover damaged or future V2 result
   end
 
   Runner->>Adapter: project result for API/UI/export/readers
@@ -552,7 +552,7 @@ Core principle: the orchestrator controls sequence and state handoff; it does no
 
 Five deputy reviewers returned **approve with required changes** and no Captain escalation. This revision folds their required changes into the spec:
 
-- implementation isolation is operationalized with a proposed V2 namespace, disabled-by-default shadow entry, feature flag, kill switch, and V1 protection rules;
+- implementation isolation is operationalized with a proposed V2 namespace, disabled-by-default pre-cutover entry, feature flag, kill switch, and V1 protection rules;
 - external adapters now require field-level mapping, ownership, fallback lifetime, and fixture-driven tests;
 - canonical result, warning, sufficiency, verdict, and compatibility contracts have schema skeletons and invariants;
 - every stage has explicit failure/event/gate behavior;
@@ -564,7 +564,7 @@ Implementation remains blocked until the review gate confirms these revisions.
 
 ---
 
-## 4.2 V2 Implementation Boundary And Shadow Strategy
+## 4.2 V2 Implementation Boundary And Pre-Cutover Strategy
 
 V2 must be built in an isolated path. The proposed implementation boundary is:
 
@@ -574,11 +574,11 @@ V2 must be built in an isolated path. The proposed implementation boundary is:
 | V2 public TypeScript entrypoint | `runClaimBoundaryPipelineV2(context)` exported from `apps/web/src/lib/analyzer-v2/index.ts` |
 | Shared contract artifacts | versioned JSON schemas/fixtures under `apps/web/test/fixtures/analyzer-v2/`, consumable by both TypeScript and API-side tests |
 | V1 hot path | remains `apps/web/src/lib/analyzer/claimboundary-pipeline.ts` until cutover approval |
-| Runner integration | V1 remains default; V2 can run only through an explicit disabled-by-default shadow flag |
-| Proposed shadow flag | `FH_ANALYZER_PIPELINE=v2-shadow` plus explicit internal-run request metadata |
-| Kill switch | absence of the shadow flag routes all runs to V1 |
+| Runner integration | V1 remains default; V2 can run only through an explicit disabled-by-default pre-cutover gate |
+| Proposed pre-cutover gate | `FH_ANALYZER_PIPELINE=v2-precutover` plus explicit internal-run request metadata |
+| Kill switch | absence of the pre-cutover gate routes all runs to V1 |
 | Public persistence | V2 must not replace public `resultJson` or `reportMarkdown` before cutover approval |
-| Allowed V1 changes before cutover | contract fixtures, compatibility adapters, adapter/test seams, and explicit shadow-routing guard only |
+| Allowed V1 changes before cutover | contract fixtures, compatibility adapters, adapter/test seams, and explicit pre-cutover routing guard only |
 | Forbidden before cutover | deleting V1 hot-path mechanisms, changing public UI behavior, changing public API behavior, replacing V1 output, or running V2 for normal public jobs |
 
 V2 modules may import shared structural utilities only when the utility is proven semantic-free. V1 may not import V2 stage internals. External adapters may consume `ReportResult` and compatibility fixtures; they may not call stage internals. Stages may not call UI, markdown, static HTML, API, validation, or metrics helpers.
@@ -586,6 +586,12 @@ V2 modules may import shared structural utilities only when the utility is prove
 Clean-room boundary rule: V2 implementation must not import, reuse, alias, extend, or clone V1 pipeline analysis code, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned types. Compatibility at the runner/storage edge is allowed only as a one-way structural mapping from current job/request data into V2-owned contracts. That mapping must live at a clearly named seam and must not expose V1 types into V2 internals. Internal V2 contracts are derived from this specification and the current slice's actual needs, not from copying V1 shapes.
 
 The current master V1 pipeline is not the report-quality oracle for V2. V2 quality comparison should use pinned deployed historical reports, Captain-defined benchmark expectations, and stored fixtures. Master V1 remains only a frozen runtime/fallback path until V2 cutover and must not survive as a parallel production analysis path after the redesign is complete. Backward investigation is handled by checking out old commits as worktrees, never by preserving V1 code for forward development.
+
+**Final naming policy**
+
+V2 should not accumulate awkward names only because V1 still occupies the current runtime namespace. During rebuild, the temporary namespace is the module/package boundary: `apps/web/src/lib/analyzer-v2/`, the gated pre-cutover schema, and the pre-cutover runner flag. Inside that boundary, contracts should use clean domain names such as `PipelineRunContext`, `ReportResult`, `ClaimContract`, `EvidenceCorpus`, `BoundarySet`, and `VerdictSet`, not permanent names like `V2InternalEvaluationResult`.
+
+After V2 cutover stabilizes and V1 analysis code is deleted, a mandatory naming-normalization cleanup slice must rename surviving V2 package/entrypoint/schema labels to final names and add a guard that fails if obsolete rebuild labels, `precutover`, or unnecessary `V2` prefixes remain in final runtime code. Shared services that are not V1-pipeline-owned, such as Source Reliability, keep their meaningful service names.
 
 "Clean the current pipeline" means quarantine and remove V1 mechanisms after V2 owns the equivalent contract and passes the named verifier. Cleanup must not leave FactHarbor in a broken intermediate state, but it is a mandatory end-state requirement rather than an optional follow-up.
 
@@ -629,7 +635,7 @@ V2 should use explicit typed handoff objects. Names below are logical contract n
 
 The public result schema should be versioned. Implementation-entry default:
 
-- shadow/internal schema: `4.0.0-cb-shadow`;
+- pre-cutover schema: `4.0.0-cb-precutover`;
 - public cutover schema: `4.0.0-cb`;
 - V1 public compatibility schema remains `3.2.0-cb`.
 
@@ -1176,17 +1182,18 @@ This is not approval to implement. It is the proposed order once the target spec
 
 1. Golden result, ACS, warning, and legacy fixtures plus JSON schema contract tests.
 2. Compatibility adapters for V1 fixture, V2 fixture, API list/detail, job UI, markdown, static HTML, metrics, validation, calibration, and historical reports.
-3. Isolated V2 shell returning a fixture/stub result, disabled by default behind the shadow flag.
+3. Isolated V2 shell returning a fixture/stub result, disabled by default behind the pre-cutover gate.
 4. Prompt/config/model gateway skeleton, cache governance, and dead-knob detection.
 5. Claim understanding and Gate 1, including ACS snapshot consumption/migration and `InputGroundingSeed`.
 6. Evidence lifecycle and sufficiency gate, with retrieval policies and source-language-first behavior.
 7. Boundary formation.
 8. Verdict adjudication and Gate 4.
 9. Aggregation and canonical result writer.
-10. Shadow run path that can compare V1/V2 without replacing public output.
+10. Pre-cutover verification path that can compare V1/V2 without replacing public output.
 11. Comparator-based quality review and approved live validation only at the named gate.
 12. Controlled cutover with rollback plan.
 13. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
+14. Mandatory naming-normalization cleanup after V1 deletion: surviving package, entrypoint, schema, and documentation names become the final clean names, with a guard against leftover rebuild labels in runtime code.
 
 No expensive validation or live jobs are part of slices 1 through 10 unless Captain explicitly approves the spend.
 
@@ -1195,7 +1202,7 @@ Failed-validation recovery during implementation must classify the prior attempt
 **Cutover checklist**
 
 - V1 hot path still runnable.
-- Shadow flag and kill switch verified.
+- Pre-cutover gate and kill switch verified.
 - API list/detail parity verified.
 - UI fixture render and smoke check pass.
 - Markdown and static HTML export parity pass.
@@ -1206,6 +1213,7 @@ Failed-validation recovery during implementation must classify the prior attempt
 - Comparator/Q-code quality gate accepted by deputy team.
 - Rollback path documented.
 - V1 cleanup list has owner, verifier, and deletion criteria.
+- Final naming-normalization slice has owner, verifier, and runtime-code guard.
 
 ---
 
@@ -1228,7 +1236,7 @@ No V1 type or prompt may be copied into V2 under a new name. If a concept is req
 | Result adapters | External adapters | preserve behavior through field-level mapping; remove independent verdict derivation when canonical fields exist | API/UI/export/metrics/validation fixture tests |
 | Legacy prompt/config/model surfaces | Prompt/model/LLM gateway and config snapshot | quarantine orphan/dead/unwired surfaces until consumer proof; remove only with verifier | prompt/config/model contract tests and deputy signoff |
 
-V1 cleanup can start only after this ledger has a completed verifier for the relevant mechanism and the deputy team approves deletion or quarantine. Cleanup means removing dead/stale/non-hot-path code after replacement is proven, not deleting the current product path first. Once V2 owns the public path and the stabilization gate passes, remaining V1 analysis pipeline code is treated as removal debt with owners and deadlines; it is not an indefinitely supported variant.
+V1 cleanup can start only after this ledger has a completed verifier for the relevant mechanism and the deputy team approves deletion or quarantine. Cleanup means removing dead/stale/non-hot-path code after replacement is proven, not deleting the current product path first. Once V2 owns the public path and the stabilization gate passes, remaining V1 analysis pipeline code is treated as removal debt with owners and deadlines; it is not an indefinitely supported variant. After V1 deletion, final naming normalization is part of cleanup completion, not optional polish.
 
 ---
 
@@ -1273,7 +1281,7 @@ These decisions are no longer all equally open. Some are implementation-entry de
 
 | Decision | Draft default | Must be resolved before | Escalate to Captain if |
 |---|---|---|---|
-| Public V2 schema version string | `4.0.0-cb`, with `4.0.0-cb-shadow` for shadow output | Slice 1 contract fixtures | public API/persisted report compatibility would break |
+| Public V2 schema version string | `4.0.0-cb`, with `4.0.0-cb-precutover` before cutover | Slice 1 contract fixtures | public API/persisted report compatibility would break |
 | V1 pipeline implementation lifetime | temporary only; remove after V2 cutover and stabilization | Slice 1 contract fixtures plus cleanup ledger | proposal tries to keep V1 as a parallel production variant |
 | Historical V1 read compatibility lifetime | no automatic expiry for persisted reports; preserve reads through adapters/fixtures, not pipeline code | Slice 1 contract fixtures | retirement or migration is proposed |
 | V1 behavioral archaeology | use old commits/worktrees, not retained forward-code paths | Git history plus tagged/deployed revision references | proposal keeps V1 implementation for backward investigation |

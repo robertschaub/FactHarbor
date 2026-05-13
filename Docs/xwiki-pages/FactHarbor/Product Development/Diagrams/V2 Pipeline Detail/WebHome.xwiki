@@ -1,7 +1,7 @@
 = V2 Pipeline Detail =
 
 {{info}}
-Detailed target flow for the V2 rebuild. Implemented state is partial: V2 is currently an isolated, disabled-by-default, non-analytical shadow path.
+Detailed target flow for the V2 rebuild. Implemented state is partial: V2 is currently an isolated, disabled-by-default, non-analytical pre-cutover path.
 {{/info}}
 
 {{mermaid}}

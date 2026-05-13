@@ -116,7 +116,7 @@ export function getResultSchemaKind(resultJson: unknown): ResultSchemaKind {
   const pipeline = asString(meta?.pipeline);
 
   if (
-    (schemaVersion === "4.0.0-cb-shadow" || schemaVersion === "4.0.0-cb") &&
+    (schemaVersion === "4.0.0-cb-precutover" || schemaVersion === "4.0.0-cb") &&
     pipeline === "claimboundary-v2"
   ) {
     return "v2";

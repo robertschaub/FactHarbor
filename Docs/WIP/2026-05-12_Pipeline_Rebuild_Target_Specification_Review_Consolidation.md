@@ -30,9 +30,9 @@ All five reviewers returned **approve with required changes**. No reviewer reque
 |---|---|---|
 | Lead Architect | Approve with required changes | add uniform stage failure/event/gate matrix; lock implementation-entry decisions; clarify cleanup semantics; make runtime/cost measurable |
 | LLM Expert | Approve with required changes | require verifier for every hotspot; add cache governance; strengthen source-language-first policy; add prompt-genericity gate; clarify source-classification boundaries |
-| Senior Developer | Approve with required changes | define V2 namespace/entrypoint/shadow flag; move adapters earlier; make ACS default concrete; define cross-language schema ownership; split tests per slice |
+| Senior Developer | Approve with required changes | define V2 namespace/entrypoint/pre-cutover gate; move adapters earlier; make ACS default concrete; define cross-language schema ownership; split tests per slice |
 | Code Reviewer | Approve with required changes | lock schema skeleton/defaults; separate provider/search retry ownership; strengthen UI/export tests; add typed warning contract; specify ACS behavior |
-| Challenger | Approve with required changes | add field-level adapter mappings; add mechanism retention/deletion ledger; operationalize shadow path; make cutover gates concrete; add decision dependency order |
+| Challenger | Approve with required changes | add field-level adapter mappings; add mechanism retention/deletion ledger; operationalize pre-cutover path; make cutover gates concrete; add decision dependency order |
 
 ---
 
@@ -41,7 +41,7 @@ All five reviewers returned **approve with required changes**. No reviewer reque
 The target specification was revised to include:
 
 - Section 4.1: deputy review consolidation.
-- Section 4.2: V2 implementation boundary and shadow strategy, including `apps/web/src/lib/analyzer-v2/`, `runClaimBoundaryPipelineV2(context)`, disabled-by-default shadow flag, kill switch, and V1 protection rules.
+- Section 4.2: V2 implementation boundary and pre-cutover strategy, including `apps/web/src/lib/analyzer-v2/`, `runClaimBoundaryPipelineV2(context)`, disabled-by-default pre-cutover gate, kill switch, and V1 protection rules.
 - Section 6: default V2 schema strings, `ReportResult` skeleton, `WarningEvent` skeleton, and typed provider/search outcome ownership.
 - Section 7: concrete ACS consume/migrate default and selected-claim preservation.
 - Section 8: source-language-first multilingual/search policy and source-classification boundary.
@@ -69,7 +69,7 @@ All five reviewers returned **approve**. No remaining blockers. No Captain escal
 | Code Reviewer | Approve | none | no |
 | Challenger | Approve | none | no |
 
-Implementation-review reminder from Lead Architect: verify during implementation that the shadow flag cannot accidentally route public jobs to V2.
+Implementation-review reminder from Lead Architect: verify during implementation that the pre-cutover gate cannot accidentally route public jobs to V2.
 
 ---
 
@@ -84,7 +84,7 @@ This does not mean unrestricted implementation. Implementation must follow the a
 3. Isolated V2 shell, disabled by default.
 4. Prompt/config/model gateway skeleton.
 5. Stage-by-stage implementation.
-6. Shadow comparison.
+6. Pre-cutover verification.
 7. Approved live validation gate.
 8. Controlled cutover.
 9. V1 cleanup only after V2 gates pass.

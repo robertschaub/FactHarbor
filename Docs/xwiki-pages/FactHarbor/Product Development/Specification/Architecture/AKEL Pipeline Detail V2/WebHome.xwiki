@@ -58,11 +58,11 @@ Analysis-affecting cache keys include every value that can change the semantic a
 |= Boundary item |= V2 target
 | V2 code root | ##apps/web/src/lib/analyzer-v2/##
 | Public TypeScript entrypoint | ##runClaimBoundaryPipelineV2(context)##
-| Shadow schema | ##4.0.0-cb-shadow##
+| Pre-cutover schema | ##4.0.0-cb-precutover##
 | Public cutover schema | ##4.0.0-cb##
 | V1 compatibility schema | ##3.2.0-cb## remains readable
 | Default runtime | V1 ClaimAssessmentBoundary until cutover approval
-| Cutover prerequisite | Contract, adapter, quality, shadow comparison, and live validation gates passed
+| Cutover prerequisite | Contract, adapter, quality, pre-cutover verification, and live validation gates passed
 | Final redesign state | V1 analysis pipeline implementation removed; historical V1 reports remain readable through adapters/fixtures
 | Old behavior investigation | Use old commits/worktrees, not retained V1 code in the forward architecture
 
@@ -71,6 +71,14 @@ Analysis-affecting cache keys include every value that can change the semantic a
 V2 internals are built from V2 contracts, not copied V1 code or types. V2 modules must not import or clone V1 analyzer modules, V1 prompt files, V1 prompt profiles, or V1 pipeline-owned TypeScript contracts.
 
 The current runner/job shape may be translated into V2 input only at a named ingress adapter. That adapter is structural and one-way: current job/request data -> V2-owned DTO. It does not make V1 analysis types part of V2.
+
+== Final Naming Policy ==
+
+V2 should not end with awkward names only because V1 still occupies the current runtime namespace. During rebuild, disambiguation belongs at the package and gate boundary: ##apps/web/src/lib/analyzer-v2/##, the pre-cutover schema, and the pre-cutover runner gate.
+
+Inside that boundary, V2 contracts should use clean domain names such as ##PipelineRunContext##, ##ReportResult##, ##ClaimContract##, ##EvidenceCorpus##, ##BoundarySet##, and ##VerdictSet##. Obsolete rebuild labels are not final architecture names.
+
+After V2 cutover stabilizes and V1 analysis code is deleted, a mandatory naming-normalization cleanup slice renames the surviving package, entrypoints, schemas, and docs to final names and adds a guard against leftover temporary rebuild labels in runtime code. Shared services that are not V1-pipeline-owned, such as Source Reliability, keep their existing meaningful service names.
 
 ----
 

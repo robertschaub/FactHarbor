@@ -29,7 +29,7 @@ describe("analyzer-v2 result compatibility view", () => {
 
     expect(view).toMatchObject({
       schemaKind: "v2",
-      schemaVersion: "4.0.0-cb-shadow",
+      schemaVersion: "4.0.0-cb-precutover",
       pipeline: "claimboundary-v2",
       verdictLabel: "UNVERIFIED",
       truthPercentage: 50,
@@ -82,9 +82,9 @@ describe("analyzer-v2 result compatibility view", () => {
     const surface = toLegacyReportSurfaceModel(v2Fixture);
 
     expect(surface).toMatchObject({
-      _schemaVersion: "4.0.0-cb-shadow",
+      _schemaVersion: "4.0.0-cb-precutover",
       meta: {
-        schemaVersion: "4.0.0-cb-shadow",
+        schemaVersion: "4.0.0-cb-precutover",
         pipeline: "claimboundary-v2",
         runId: "fixture-run-v2",
       },

@@ -1,7 +1,7 @@
 = Pipeline Variants V2 =
 
 {{info}}
-**Target Variant And Cutover Reference** - This page defines how V2 coexists with the current V1 runtime during rebuild, shadow validation, cutover, and cleanup.
+**Target Variant And Cutover Reference** - This page defines how V2 coexists with the current V1 runtime during rebuild, pre-cutover verification, cutover, and cleanup.
 
 It is not permission to expose V2 public results before the approved cutover gate.
 {{/info}}
@@ -15,8 +15,8 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 {{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
 
 |= State |= Runtime role |= Public result authority |= Exit condition
-| V1 default | Current ClaimAssessmentBoundary pipeline remains production runtime. | V1 result JSON and report remain public. | V2 contracts, adapters, and shadow checks are ready.
-| V2 shadow | V2 runs only when explicitly gated for internal comparison. | V1 remains public; V2 output is non-public shadow evidence. | Shadow comparator, warning, schema, quality, cost, and latency gates pass.
+| V1 default | Current ClaimAssessmentBoundary pipeline remains production runtime. | V1 result JSON and report remain public. | V2 contracts, adapters, and pre-cutover checks are ready.
+| V2 pre-cutover | V2 runs only when explicitly gated for development and cutover verification. | V1 remains public until cutover; V2 output is a development artifact. | Verification comparator, warning, schema, quality, cost, and latency gates pass.
 | V2 cutover | V2 produces public ##4.0.0-cb## results through compatibility adapters. | ##ReportResult## becomes public verdict authority. | Stability window confirms no critical regressions.
 | V1 cleanup | V1 hot-path and analysis code is removed where V2 owns the equivalent contract. | V2 remains public authority; legacy readers keep historical V1 readability through adapters/fixtures. | Cleanup ledger is complete, tests pass, and no V1 production analysis path remains.
 
@@ -24,7 +24,7 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 
 * V1 remains the default runtime until cutover approval.
 * V2 starts isolated under ##apps/web/src/lib/analyzer-v2/##.
-* V2 shadow output must not replace public ##resultJson## or ##reportMarkdown## before approval.
+* V2 pre-cutover output must not replace public ##resultJson## or ##reportMarkdown## before approval.
 * V2 may not skip Understand -> Research -> Boundary formation -> Verdict -> Aggregation/report.
 * V2 adapters may project ##ReportResult##, but they may not reinterpret verdict, confidence, or warning meaning.
 * V2 internals may not reuse or clone V1 analysis code, prompt profiles, prompt files, or pipeline-owned types.
@@ -38,18 +38,18 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 flowchart TB
   REQ["Job execution request"] --> SEL["Pipeline selector"]
   SEL -->|"default"| V1["V1 ClaimAssessmentBoundary"]
-  SEL -->|"explicit shadow flag + kill switch open"| V2["V2 pipeline"]
+  SEL -->|"explicit V2 gate + kill switch open"| V2["V2 pipeline"]
   V1 --> A1["V1 result"]
-  V2 --> A2["4.0.0-cb-shadow result"]
+  V2 --> A2["4.0.0-cb-precutover result"]
   A1 --> PUB["Public API/UI/report/export"]
-  A2 --> SHADOW["Shadow comparison artifacts"]
-  SHADOW -. "cutover approval only" .-> PUB2["Future public 4.0.0-cb"]
+  A2 --> VERIFY["Pre-cutover verification artifacts"]
+  VERIFY -. "cutover approval only" .-> PUB2["Future public 4.0.0-cb"]
 
   classDef live fill:#e8f4ff,stroke:#2463a7,color:#08233d
-  classDef shadow fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef precutover fill:#fff4d6,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
   class REQ,SEL,V1,A1,PUB live
-  class V2,A2,SHADOW shadow
+  class V2,A2,VERIFY precutover
   class PUB2 future
 {{/mermaid}}
 
@@ -80,7 +80,7 @@ V2 public cutover requires:
 1. contract and schema fixtures for every canonical public field;
 1. adapter parity tests for list/detail/report/export/validation readers;
 1. quality-gate and warning-materiality tests;
-1. shadow comparison against approved Captain-defined inputs;
+1. pre-cutover verification against approved Captain-defined inputs;
 1. comparator report review against Captain quality expectations;
 1. cost and latency review using measured baselines;
 1. explicit Captain or delegated deputy approval.

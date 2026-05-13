@@ -164,7 +164,7 @@ describe("analyzer-v2 JSON contract fixtures", () => {
 
   it("validates the V2 ReportResult golden fixture against the JSON schema", () => {
     expectValid(reportV2Schema, reportV2);
-    expect(reportV2._schemaVersion).toBe("4.0.0-cb-shadow");
+    expect(reportV2._schemaVersion).toBe("4.0.0-cb-precutover");
     expect((reportV2.meta as Record<string, JsonValue>).schemaVersion).toBe(reportV2._schemaVersion);
     expect((reportV2.meta as Record<string, JsonValue>).pipeline).toBe("claimboundary-v2");
   });

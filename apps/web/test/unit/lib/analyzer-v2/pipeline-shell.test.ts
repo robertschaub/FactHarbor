@@ -3,7 +3,7 @@ import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
 
 describe("analyzer-v2 shell", () => {
-  it("returns an explicitly damaged V2 shadow envelope without running analysis", async () => {
+  it("returns an explicitly damaged V2 pre-cutover envelope without running analysis", async () => {
     const onEvent = vi.fn();
 
     const result = await runClaimBoundaryV2Shell({
@@ -14,7 +14,7 @@ describe("analyzer-v2 shell", () => {
     });
 
     expect(result.resultJson).toMatchObject({
-      _schemaVersion: "4.0.0-cb-shadow",
+      _schemaVersion: "4.0.0-cb-precutover",
       meta: {
         pipeline: "claimboundary-v2",
         runId: "job-v2-shell",
@@ -51,7 +51,7 @@ describe("analyzer-v2 shell", () => {
 
     expect(view).toMatchObject({
       schemaKind: "v2",
-      schemaVersion: "4.0.0-cb-shadow",
+      schemaVersion: "4.0.0-cb-precutover",
       pipeline: "claimboundary-v2",
       verdictLabel: "UNVERIFIED",
       truthPercentage: 50,

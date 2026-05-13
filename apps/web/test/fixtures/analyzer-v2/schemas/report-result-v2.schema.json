@@ -20,7 +20,7 @@
   "properties": {
     "_schemaVersion": {
       "enum": [
-        "4.0.0-cb-shadow",
+        "4.0.0-cb-precutover",
         "4.0.0-cb"
       ]
     },
@@ -38,7 +38,7 @@
       "properties": {
         "schemaVersion": {
           "enum": [
-            "4.0.0-cb-shadow",
+            "4.0.0-cb-precutover",
             "4.0.0-cb"
           ]
         },
