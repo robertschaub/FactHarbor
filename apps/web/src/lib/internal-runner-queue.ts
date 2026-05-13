@@ -1,5 +1,10 @@
 import { runClaimBoundaryAnalysis } from "@/lib/analyzer/claimboundary-pipeline";
 import { prepareStage1Snapshot } from "@/lib/analyzer/claimboundary-pipeline";
+import {
+  CLAIMBOUNDARY_V1_VARIANT,
+  resolveAnalyzerExecutionSelection,
+} from "@/lib/analyzer-v2/execution-selection";
+import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { generateClaimSelectionRecommendation } from "@/lib/analyzer/claim-selection-recommendation";
 import { debugLog, runWithDebugLogContext } from "@/lib/analyzer/debug";
 import { probeLLMConnectivity } from "@/lib/connectivity-probe";
@@ -31,7 +36,7 @@ import type {
   PreparedStage1Snapshot,
 } from "@/lib/analyzer/types";
 
-type PipelineVariant = "claimboundary";
+type PipelineVariant = "claimboundary" | "claimboundary-v2";
 
 type RunnerQueueState = {
   runningCount: number;
@@ -409,24 +414,33 @@ async function runJobBackground(jobId: string) {
       }
     }
 
-    await emit("info", "Preparing input (pipeline: claimboundary)", 5);
+    const executionSelection = resolveAnalyzerExecutionSelection(requestedVariant);
+
+    await emit("info", `Preparing input (pipeline: ${executionSelection.executedVariant})`, 5);
 
     let result: any;
 
-    result = await runClaimBoundaryAnalysis({
+    const analysisInput = {
       jobId,
       inputType,
       inputValue,
       preparedStage1,
       selectedClaimIds,
-      onEvent: async (m, p) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
-    });
+      onEvent: async (m: string, p: number) => emit(p === 0 ? "warn" : "info", m, p > 0 ? p : undefined),
+    };
+
+    result = executionSelection.path === "claimboundary-v2-shell"
+      ? await runClaimBoundaryV2Shell(analysisInput)
+      : await runClaimBoundaryAnalysis(analysisInput);
 
     if (result?.resultJson?.meta) {
-      result.resultJson.meta.pipelineVariant = "claimboundary";
+      result.resultJson.meta.pipelineVariant = executionSelection.executedVariant;
       result.resultJson.meta.executedWebGitCommitHash = executedWebGitCommitHash;
-      if (requestedVariant !== "claimboundary") {
-        result.resultJson.meta.pipelineVariantRequested = requestedVariant;
+      if (executionSelection.requestedVariant !== executionSelection.executedVariant) {
+        result.resultJson.meta.pipelineVariantRequested = executionSelection.requestedVariant;
+      }
+      if (executionSelection.fallbackReason) {
+        result.resultJson.meta.pipelineVariantFallbackReason = executionSelection.fallbackReason;
       }
     }
 
@@ -774,8 +788,8 @@ export async function drainRunnerQueue() {
         }
         jobVariant = (j.pipelineVariant || "claimboundary") as PipelineVariant;
       } catch {}
-      // All jobs are claimboundary now — no queue partitioning needed
-      if (!jobVariant) jobVariant = "claimboundary";
+      // Queue partitioning is still unnecessary; missing/unknown variants fall back to V1.
+      if (!jobVariant) jobVariant = CLAIMBOUNDARY_V1_VARIANT;
 
       let claim: RunnerSlotClaimResult;
       try {

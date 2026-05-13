@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T05:25:45.321Z",
-  "count": 409,
+  "generatedAt": "2026-05-13T05:35:30.027Z",
+  "count": 410,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8655,6 +8655,48 @@
         "apps/web/test/unit/scripts/live-runner-result-readers.test.ts"
       ],
       "summary": "Start Slice 3 with the live-job budget still at 8. Add only a disabled V2 shell/routing seam first, keep V1 default/hot path protected, and use live jobs only after there is a runtime-relevant V2 or V1 smoke target. Do not make legacy live runners official validation gates."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_3_Disabled_V2_Shell.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline-rebuild",
+        "analyzer-v2",
+        "runner-routing",
+        "disabled-shell",
+        "live-jobs"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/execution-selection.ts",
+        "apps/web/src/lib/analyzer-v2/pipeline-shell.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/test/unit/lib/analyzer-v2/execution-selection.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/pipeline-shell.test.ts",
+        "apps/web/test/unit/lib/internal-runner-v2-routing.test.ts"
+      ],
+      "summary": "Start Slice 4 from `apps/web/src/lib/analyzer-v2/pipeline-shell.ts` and `apps/web/src/lib/analyzer-v2/execution-selection.ts`. Preserve the double gate and V1 default, do not expose V2 publicly yet, and spend live jobs only after a real V2 artifact exists to compare or smoke.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "introduced-regression for the TypeScript failure; the new `analysisInput` object lost contextual typing for `onEvent`.",
+            "chosen_option": "amend the existing Slice 3 mechanism in place.",
+            "rejected_path_and_why": "reverting Slice 3 was disproportionate because focused behavior tests passed; adding a helper would have increased complexity for a two-parameter type gap.",
+            "what_was_removed_simplified": "no code removed; one stale queue comment was updated after verification.",
+            "what_was_added": "explicit `onEvent` parameter types only for the fix; the slice itself added the planned temporary V2 shell seam.",
+            "net_mechanism_count": "unchanged for the fix; planned temporary increase for the disabled V2 shell with removal trigger above.",
+            "budget_reconciliation": "actual fix stayed inside the one-file amendment budget and did not broaden analyzer/API/UI/prompt/config scope.",
+            "verification": "failed `tsc` rerun passed; focused tests, build, full safe suite, and diff checks passed.",
+            "debt_accepted_and_removal_trigger": "fail-fast V2 shell remains until replaced by real V2 orchestrator in a later slice.",
+            "residual_debt": "no live validation yet because the shell intentionally has no analytical output."
+          }
+        }
+      }
     }
   ]
 }
