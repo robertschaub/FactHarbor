@@ -433,7 +433,9 @@ async function runJobBackground(jobId: string) {
       ? await runClaimBoundaryV2Shell(analysisInput)
       : await runClaimBoundaryAnalysis(analysisInput);
 
-    if (result?.resultJson?.meta) {
+    if (result?.resultJson?.meta && executionSelection.path === "claimboundary-v2-shell") {
+      result.resultJson.meta.executedWebGitCommitHash = executedWebGitCommitHash;
+    } else if (result?.resultJson?.meta) {
       result.resultJson.meta.pipelineVariant = executionSelection.executedVariant;
       result.resultJson.meta.executedWebGitCommitHash = executedWebGitCommitHash;
       if (executionSelection.requestedVariant !== executionSelection.executedVariant) {

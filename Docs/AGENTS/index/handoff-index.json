@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T05:35:30.027Z",
-  "count": 410,
+  "generatedAt": "2026-05-13T05:48:33.282Z",
+  "count": 411,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8697,6 +8697,26 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_4_V2_Damaged_Envelope.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "4",
+        "v2",
+        "damaged",
+        "envelope"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/run-context.ts"
+      ],
+      "summary": "Start from `runClaimBoundaryPipelineV2` in `apps/web/src/lib/analyzer-v2/orchestrator.ts`; it is the seam the prompt/config/model gateway should call into or wrap."
     }
   ]
 }

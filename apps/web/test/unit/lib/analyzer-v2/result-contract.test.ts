@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { runClaimBoundaryPipelineV2 } from "@/lib/analyzer-v2";
 
 type JsonValue =
   | null
@@ -166,6 +167,34 @@ describe("analyzer-v2 JSON contract fixtures", () => {
     expect(reportV2._schemaVersion).toBe("4.0.0-cb-shadow");
     expect((reportV2.meta as Record<string, JsonValue>).schemaVersion).toBe(reportV2._schemaVersion);
     expect((reportV2.meta as Record<string, JsonValue>).pipeline).toBe("claimboundary-v2");
+  });
+
+  it("validates the V2 damaged shell envelope against the JSON schema", async () => {
+    const shellResult = await runClaimBoundaryPipelineV2(
+      {
+        jobId: "job-v2-contract-shell",
+        inputType: "text",
+        inputValue: "Structural shell contract input",
+        selectedClaimIds: ["AC_SELECTED_01"],
+      },
+      {
+        now: () => new Date("2026-05-13T12:34:56.000Z"),
+      },
+    );
+    const resultJson = JSON.parse(JSON.stringify(shellResult.resultJson)) as Record<string, JsonValue>;
+
+    expectValid(reportV2Schema, resultJson);
+    expect((resultJson.meta as Record<string, JsonValue>).runId).toBe("job-v2-contract-shell");
+    expect((resultJson.meta as Record<string, JsonValue>).generatedUtc).toBe("2026-05-13T12:34:56.000Z");
+    expect((resultJson.qualityGates as Record<string, JsonValue>).damagedReport).toBe(true);
+    expect((resultJson.narrative as Record<string, JsonValue>).reportQualityStatus).toBe("damaged");
+    expect(resultJson.warnings).toEqual([
+      expect.objectContaining({
+        type: "report_damaged",
+        visibility: "blocking",
+        primaryIssueEligible: true,
+      }),
+    ]);
   });
 
   it("validates the standalone WarningEvent fixture and embedded report warning", () => {

@@ -2704,3 +2704,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 3 Disabled V2 Shell -- [Standard] [open-items: yes]
 **For next agent:** Added the double-gated disabled V2 shell seam: `execution-selection.ts` keeps V1 default, `pipeline-shell.ts` fails fast with `ANALYZER_V2_SHELL_NOT_IMPLEMENTED`, and `internal-runner-queue.ts` calls V2 only for stored `claimboundary-v2` jobs plus `FH_ANALYZER_V2_SHELL=enabled` or `FH_ANALYZER_PIPELINE=v2-shadow`. Public API/UI/prompts/config stayed unchanged, no live jobs were used, and the approved budget remains 8 for the first runtime-relevant V2 gate.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_3_Disabled_V2_Shell.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 4 V2 Damaged Envelope -- [Standard] [open-items: yes]
+**For next agent:** `runClaimBoundaryV2Shell` now returns a schema-valid `4.0.0-cb-shadow` damaged envelope through `runClaimBoundaryPipelineV2`; the envelope is explicitly non-analytical (`UNVERIFIED`, confidence 0, `report_damaged`, `damagedReport: true`). Runner V2 metadata now stays schema-valid by avoiding V1-only `meta.pipelineVariant*`; prompt/config/model gateway remains the next slice. No live jobs used; budget remains 8.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_4_V2_Damaged_Envelope.md

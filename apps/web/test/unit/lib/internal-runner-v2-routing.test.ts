@@ -12,7 +12,19 @@ vi.mock("@/lib/analyzer/claimboundary-pipeline", () => ({
 
 vi.mock("@/lib/analyzer-v2/pipeline-shell", () => ({
   runClaimBoundaryV2Shell: vi.fn(async () => ({
-    resultJson: { meta: { pipeline: "claimboundary-v2" }, warnings: [] },
+    resultJson: {
+      _schemaVersion: "4.0.0-cb-shadow",
+      meta: {
+        schemaVersion: "4.0.0-cb-shadow",
+        pipeline: "claimboundary-v2",
+        resultContractVersion: 1,
+        runId: "mock-v2-run",
+        generatedUtc: "2026-05-13T00:00:00.000Z",
+        currentDate: "2026-05-13",
+        executedWebGitCommitHash: null,
+      },
+      warnings: [],
+    },
     reportMarkdown: "V2 shell fixture report",
   })),
 }));
@@ -190,15 +202,18 @@ describe("internal runner V2 shell routing", () => {
     expect(runClaimBoundaryV2Shell).toHaveBeenCalledTimes(1);
     expect(resultBodies[0].resultJson.meta).toMatchObject({
       pipeline: "claimboundary-v2",
-      pipelineVariant: "claimboundary-v2",
     });
+    expect(resultBodies[0].resultJson.meta.executedWebGitCommitHash).toEqual(expect.any(String));
+    expect(resultBodies[0].resultJson.meta.pipelineVariant).toBeUndefined();
+    expect(resultBodies[0].resultJson.meta.pipelineVariantRequested).toBeUndefined();
+    expect(resultBodies[0].resultJson.meta.pipelineVariantFallbackReason).toBeUndefined();
     expect(resultBodies[0].reportMarkdown).toBe("V2 shell fixture report");
   });
 
-  it("fails the job cleanly when the enabled V2 shell throws", async () => {
+  it("fails the job cleanly when the enabled V2 shell throws unexpectedly", async () => {
     process.env.FH_ANALYZER_V2_SHELL = "enabled";
     vi.mocked(runClaimBoundaryV2Shell).mockRejectedValueOnce(
-      new Error("ANALYZER_V2_SHELL_NOT_IMPLEMENTED: test failure"),
+      new Error("V2 shell unexpected test failure"),
     );
 
     const { statusBodies, resultBodies } = await runQueuedJobHarness({
@@ -211,7 +226,7 @@ describe("internal runner V2 shell routing", () => {
     expect(statusBodies).toEqual(expect.arrayContaining([
       expect.objectContaining({
         status: "FAILED",
-        message: expect.stringContaining("ANALYZER_V2_SHELL_NOT_IMPLEMENTED"),
+        message: expect.stringContaining("V2 shell unexpected test failure"),
       }),
     ]));
   });
