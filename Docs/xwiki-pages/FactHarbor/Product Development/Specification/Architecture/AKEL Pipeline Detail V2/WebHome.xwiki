@@ -64,6 +64,7 @@ Analysis-affecting cache keys include every value that can change the semantic a
 | Default runtime | V1 ClaimAssessmentBoundary until cutover approval
 | Cutover prerequisite | Contract, adapter, quality, shadow comparison, and live validation gates passed
 | Final redesign state | V1 analysis pipeline implementation removed; historical V1 reports remain readable through adapters/fixtures
+| Old behavior investigation | Use old commits/worktrees, not retained V1 code in the forward architecture
 
 == Clean-Room Boundary ==
 

@@ -8,7 +8,7 @@ It is not permission to expose V2 public results before the approved cutover gat
 
 == Purpose ==
 
-The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, Captain/deputy approval, and a completed stabilization window. After that, V1 analysis code must be removed; only historical read compatibility remains.
+The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, Captain/deputy approval, and a completed stabilization window. After that, V1 analysis code must be removed; only historical report read compatibility remains. Old V1 behavior is investigated through old commits/worktrees, not by keeping V1 code in the forward architecture.
 
 == Variant Lifecycle ==
 
@@ -62,6 +62,8 @@ Compatibility adapters exist so UI, API, export, validation, metrics, and histor
 * preserve historical V1 result readability;
 * report missing canonical fields as adapter/report integrity failures;
 * remain fixture-tested against V1 and V2 examples.
+
+Compatibility adapters preserve data readability, not old behavior execution. They must not keep V1 callable for backward investigation; use Git history and old-commit worktrees for that.
 
 Their forbidden responsibilities are:
 

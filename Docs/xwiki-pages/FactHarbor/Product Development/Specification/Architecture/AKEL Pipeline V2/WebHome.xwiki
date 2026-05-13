@@ -10,7 +10,7 @@ V1 remains the production runtime. V2 is currently isolated behind a disabled sh
 
 V2 replaces the current pipeline with a cleaner architecture that keeps FactHarbor's trust safeguards while reducing control-flow complexity, scattered compatibility logic, and duplicate policy decisions.
 
-The final redesign must remove the V1 pipeline implementation. V1 remains temporarily only as the current frozen runtime/fallback before cutover and as a historical compatibility reference. After V2 cutover and stabilization, V1 analysis code is removed through audited cleanup slices; historical reports remain readable through adapters and fixtures, not through a live V1 analysis path.
+The final redesign must remove the V1 pipeline implementation. V1 remains temporarily only as the current frozen runtime/fallback before cutover. After V2 cutover and stabilization, V1 analysis code is removed through audited cleanup slices; historical reports remain readable through adapters and fixtures, not through a live V1 analysis path. Investigation of old V1 behavior uses old commits/worktrees, not retained forward-code paths.
 
 The governing intent is:
 
