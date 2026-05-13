@@ -16,6 +16,8 @@ The goal is replacement, not additive refactoring. The new pipeline should be bu
 
 The final redesigned state must not retain the V1 pipeline implementation as an alternate analysis path. V1 may remain temporarily as frozen runtime/fallback support before cutover, but after V2 cutover and stabilization the V1 pipeline code must be removed in audited cleanup slices. Historical report readability remains supported through adapters/fixtures, not by keeping the V1 analysis pipeline alive. Investigation of old V1 behavior uses Git history and old-commit worktrees, not retained forward-code paths.
 
+Captain quality rationale: V1 is not the quality target for V2. The current pipeline is judged insufficiently stable and below the desired report-quality bar, with no acceptable progress since the last deployment and little meaningful progress after the early ClaimAssessmentBoundary creation period. V2 therefore preserves only explicitly justified concepts, contracts, and safeguards; it must not preserve V1 code, prompts, or mechanisms merely because they are current.
+
 This draft intentionally does not edit source code, prompts, config, UI, or tests. It is the review package that should be challenged by Lead Architect, LLM Expert, Senior Developer, Code Reviewer, and Gemini/Challenger roles before implementation starts.
 
 ---
@@ -1223,6 +1225,14 @@ No V1 mechanism may be carried into V2 only because V1 had it. Each retained mec
 
 No V1 type or prompt may be copied into V2 under a new name. If a concept is required, the implementation slice must define the minimal V2 contract from this specification and verify why each field exists. Similar field names are acceptable only at compatibility seams or when they are canonical domain terms, not because V1 already exposed them.
 
+V1 prompt cleanup condition: V1 analysis prompt files, prompt profiles, prompt sections, and UCM active prompt entries are removal debt once V2 owns the corresponding prompt-backed task. They must be removed from runtime selection after all of these are true:
+
+- the V2 task has its own prompt profile, section id, required-variable contract, output schema, approval record, and tests;
+- no runtime code, prompt registry, config profile, or model-task route can load the V1 prompt/profile/section;
+- historical report readability relies only on stored report data, fixtures, and adapters, not on reloading V1 prompts;
+- static prompt-boundary guards and prompt/config/model contract tests pass;
+- deputy signoff records whether any V1 prompt material is archived for historical reading only or deleted from the forward tree.
+
 | Mechanism family | V2 owner | Preserve/simplify/remove rule | Verifier before cutover |
 |---|---|---|---|
 | Claim integrity repairs | Claim understanding | preserve contract validation, repair, atomicity, and salience intent; simplify overlapping retries under `ClaimIntegrityPolicy` | Gate 1/ACS/contract tests |
@@ -1234,7 +1244,8 @@ No V1 type or prompt may be copied into V2 under a new name. If a concept is req
 | Article adjudication | Aggregation/result writer | preserve only as explicit, observable, UCM/model-task-owned mechanism; default behavior-preserving until quality validation approves changes | adjudication fallback and quality tests |
 | Warning display | Warning/event policy | preserve materiality policy; remove raw-severity-only public filtering | cross-surface warning parity tests |
 | Result adapters | External adapters | preserve behavior through field-level mapping; remove independent verdict derivation when canonical fields exist | API/UI/export/metrics/validation fixture tests |
-| Legacy prompt/config/model surfaces | Prompt/model/LLM gateway and config snapshot | quarantine orphan/dead/unwired surfaces until consumer proof; remove only with verifier | prompt/config/model contract tests and deputy signoff |
+| V1 analysis prompt files/profiles/sections | Prompt/model/LLM gateway and config snapshot | no reuse, copy, alias, or active runtime loading; remove from runtime after V2-owned prompt task is approved and verified; archive only if historical reading value remains | prompt-boundary static guard, prompt/config/model contract tests, UCM active-profile check, deputy signoff |
+| Legacy config/model surfaces | Prompt/model/LLM gateway and config snapshot | quarantine orphan/dead/unwired surfaces until consumer proof; remove only with verifier | prompt/config/model contract tests and deputy signoff |
 
 V1 cleanup can start only after this ledger has a completed verifier for the relevant mechanism and the deputy team approves deletion or quarantine. Cleanup means removing dead/stale/non-hot-path code after replacement is proven, not deleting the current product path first. Once V2 owns the public path and the stabilization gate passes, remaining V1 analysis pipeline code is treated as removal debt with owners and deadlines; it is not an indefinitely supported variant. After V1 deletion, final naming normalization is part of cleanup completion, not optional polish.
 

@@ -10,6 +10,8 @@ It is not permission to expose V2 public results before the approved cutover gat
 
 The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, Captain/deputy approval, and a completed stabilization window. After that, V1 analysis code must be removed; only historical report read compatibility remains. Old V1 behavior is investigated through old commits/worktrees, not by keeping V1 code in the forward architecture.
 
+Captain quality rationale: the current V1 pipeline is not accepted as the V2 quality target. It is judged insufficiently stable and below the required report-quality bar, so V2 must not keep V1 code, prompts, or mechanisms active for comfort or backward investigation.
+
 == Variant Lifecycle ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
@@ -30,6 +32,7 @@ The V2 rebuild uses a temporary dual-variant posture so the current product rema
 * V2 internals may not reuse or clone V1 analysis code, prompt profiles, prompt files, or pipeline-owned types.
 * Current runner/job compatibility is limited to a one-way ingress mapping into V2-owned contracts.
 * V1 cleanup must follow a ledger: each removed V1 mechanism needs a V2 owner, verifier, and rollback/reader decision.
+* V1 prompt files, profiles, sections, and active prompt entries are removed from runtime selection once the corresponding V2 prompt-backed task is owned and verified.
 * The completed redesign must have no V1 production analysis pipeline left.
 
 == Dispatch Model ==
@@ -92,6 +95,7 @@ After cutover, V1 removal happens in small cleanup slices and is required for re
 * the equivalent V2 owner is implemented and verified;
 * persisted historical reports remain readable;
 * fallback behavior is either unnecessary or explicitly retained in an adapter;
+* V1 prompt files/profiles/sections have no active runtime consumer for the replaced task;
 * documentation and handoff notes identify the removal decision.
 
 The cleanup process preserves historical report readability, but it must not preserve V1 as a callable analysis variant.

@@ -49,6 +49,8 @@ Prepare FactHarbor for replacing the current ClaimAssessmentBoundary analysis pi
 
 The goal is not a smaller pipeline at any cost. The target is a pipeline that is clearly less complex than the current one while preserving FactHarbor's analysis guarantees: input neutrality, multilingual robustness, evidence transparency, mandatory quality gates, warning materiality, report integrity, and LLM-powered semantic judgment.
 
+Captain quality rationale: the current pipeline is not accepted as the quality baseline to preserve. It is judged insufficiently stable and below the required report-quality bar, with no acceptable progress since the last deployment and little meaningful progress after the early ClaimAssessmentBoundary creation period. The rebuild must therefore avoid carrying V1 code, prompts, or mechanisms forward by default.
+
 ## 2. Captain Intent
 
 Captain's intent is to replace the current analysis pipeline with a new pipeline, not to keep extending the existing one.
@@ -332,6 +334,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - V2 replaces V1 without UI regression unless an approved UI change exists.
 - Public report JSON and persisted historical reports remain compatible unless Captain approved a versioned migration.
 - Gate 1, Gate 4, evidence transparency, warning materiality, and report integrity are preserved.
+- V1 analysis prompt files, prompt profiles, prompt sections, and active UCM prompt entries are removed from runtime selection once V2 owns and verifies the corresponding prompt-backed task.
 - Safe tests and build pass.
 - Approved quality, multilingual, input-neutrality, semantic drift, cost, and latency checks pass or have Captain-approved residual risk.
 - After V1 analysis code is removed, the surviving pipeline owns final clean names; temporary rebuild labels are removed from runtime code by a verified naming-normalization cleanup slice.

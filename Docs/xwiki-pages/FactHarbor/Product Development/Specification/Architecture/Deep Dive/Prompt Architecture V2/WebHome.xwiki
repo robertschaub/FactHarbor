@@ -26,6 +26,18 @@ Prompt frontmatter variables must match rendered variables. Required-section ren
 
 V2 prompts must be newly specified. Existing V1 prompt files, profiles, and sections may be read as historical design input during review, but they must not be reused, copied, or loaded by V2 execution. Any prompt-backed V2 task needs its own V2 profile, section id, required-variable contract, output schema, approval record, and tests.
 
+== V1 Prompt Cleanup Conditions ==
+
+V1 analysis prompt files, prompt profiles, prompt sections, and active UCM prompt entries are removal debt once V2 owns the corresponding prompt-backed task. They must be removed from runtime selection when:
+
+* the V2 task has its own prompt profile, section id, required-variable contract, output schema, approval record, and tests;
+* no runtime code, prompt registry, config profile, or model-task route can load the V1 prompt/profile/section;
+* historical report readability uses stored report data, fixtures, and adapters, not prompt reloads;
+* static prompt-boundary guards and prompt/config/model contract tests pass;
+* deputy signoff records whether any V1 prompt material is archived for historical reading only or deleted from the forward tree.
+
+V1 prompt material must not remain active as a fallback or comparator after V2 cutover. Old prompt behavior can be investigated through old commits/worktrees.
+
 == Model Policy ==
 
 One model task registry owns:
@@ -78,6 +90,7 @@ The implementation plan must classify these surfaces before prompt-backed V2 exe
 | ##CLAIM_GROUPING## prompt section | Quarantine or assign real V2 caller with tests.
 | ##model-tiering.ts## vs active model resolver behavior | Decide one authority.
 | legacy model tier aliases and ##orchestrated## profile usage | Remove, quarantine, or map explicitly.
+| V1 ClaimAssessmentBoundary prompt files/profiles/sections | Remove from runtime selection once V2-owned task contracts and tests exist; archive only for historical reading if approved.
 | duplicate or weakly wired config knobs | Fail contract tests until resolved.
 | hardcoded call-site temperatures and budgets | Move to model policy or classify as structural constants.
 
