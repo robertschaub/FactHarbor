@@ -3,14 +3,16 @@
  * Execute via: npm run test:baseline
  */
 
-const { BASELINE_TEST_CASES } = require('../src/lib/analyzer/test-cases');
 const fs = require('fs');
 const path = require('path');
+const { extractRunnerResultMetrics } = require('./result-metrics-reader');
 
 const OUTPUT_FILE = path.join(__dirname, '../../baseline-results-' + new Date().toISOString().split('T')[0] + '.json');
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
 
 async function runBaseline() {
+  const { BASELINE_TEST_CASES } = require('../src/lib/analyzer/test-cases');
+
   console.log('========================================');
   console.log('FactHarbor Baseline Test Execution');
   console.log('========================================\n');
@@ -76,6 +78,8 @@ async function runBaseline() {
         // Metrics not available
       }
 
+      const resultMetrics = extractRunnerResultMetrics(result);
+
       results.push({
         testCase: {
           id: testCase.id,
@@ -86,17 +90,17 @@ async function runBaseline() {
         },
         jobId,
         result: {
-          verdict: result.articleVerdict,
-          truthPercentage: result.articleTruthPercentage,
-          confidence: result.articleVerdictConfidence,
-          claimsCount: result.claims?.length || 0,
-          scopesCount: result.analysisContexts?.length || 0,
+          verdict: resultMetrics.verdict,
+          truthPercentage: resultMetrics.truthPercentage,
+          confidence: resultMetrics.confidence,
+          claimsCount: resultMetrics.claimsCount,
+          scopesCount: resultMetrics.contextsCount,
         },
         metrics,
         success: true,
       });
 
-      console.log(`  ✓ ${result.articleVerdict} (${result.articleTruthPercentage}%)\n`);
+      console.log(`  ✓ ${resultMetrics.verdict} (${resultMetrics.truthPercentage}%)\n`);
 
     } catch (error) {
       console.error(`  ✗ ${error.message}\n`);
@@ -155,7 +159,11 @@ async function waitForJob(jobId, timeoutMs = 300000) {
   throw new Error('Job timed out');
 }
 
-runBaseline().catch(error => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+if (require.main === module) {
+  runBaseline().catch(error => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}
+
+module.exports = { runBaseline };

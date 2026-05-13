@@ -2694,3 +2694,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2G Evidence Quality Reader Compatibility -- [Standard] [open-items: yes]
 **For next agent:** Updated the offline `scripts/measure-evidence-quality.ts` reader so V2 fixtures are parsed from canonical `evidence.evidenceItems` and `sources.items`, legacy V1 uses `evidenceItems`/`sources`, and unknown historical inputs keep the old `facts` preference. The script is now import-safe for tests. A runtime-adjacent `metrics-integration.ts` experiment was reverted after deputy review; analyzer runtime metrics remain deferred. Verified with focused script tests, CLI help smoke, web build, full safe web test, scope guard, and `git diff --check`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2G_Evidence_Quality_Reader_Compatibility.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 2H Legacy Live Runner Readers -- [Standard] [open-items: yes]
+**For next agent:** Added a shared structural reader for legacy live-job scripts at `apps/web/scripts/result-metrics-reader.js`, made `baseline-runner.js` import-safe, routed `regression-test.js` through the shared reader, and pinned V2/V1/unknown behavior in `apps/web/test/unit/scripts/live-runner-result-readers.test.ts`. Deputy team plus Claude Opus advisors chose this offline Slice 2H; no live jobs were used, so the approved budget remains 8 for Slice 3+.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2H_Legacy_Live_Runner_Readers.md

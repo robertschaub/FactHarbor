@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T04:44:24.800Z",
-  "count": 408,
+  "generatedAt": "2026-05-13T05:25:45.321Z",
+  "count": 409,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8634,6 +8634,27 @@
         "scripts/measure-evidence-quality.ts"
       ],
       "summary": "Worktree: `C:\\DEV\\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2H_Legacy_Live_Runner_Readers.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline-rebuild",
+        "analyzer-v2",
+        "legacy-runners",
+        "result-readers",
+        "live-jobs"
+      ],
+      "files_touched": [
+        "apps/web/scripts/result-metrics-reader.js",
+        "apps/web/scripts/baseline-runner.js",
+        "apps/web/test/scripts/regression-test.js",
+        "apps/web/test/unit/scripts/live-runner-result-readers.test.ts"
+      ],
+      "summary": "Start Slice 3 with the live-job budget still at 8. Add only a disabled V2 shell/routing seam first, keep V1 default/hot path protected, and use live jobs only after there is a runtime-relevant V2 or V1 smoke target. Do not make legacy live runners official validation gates."
     }
   ]
 }

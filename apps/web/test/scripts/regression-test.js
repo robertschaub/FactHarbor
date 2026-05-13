@@ -4,6 +4,7 @@
  */
 
 const API_URL = process.env.FH_API_URL || 'http://localhost:3000';
+const { extractRunnerResultMetrics } = require('../../scripts/result-metrics-reader');
 
 // Test cases from user's evidence
 const REGRESSION_TEST_CASES = [
@@ -72,17 +73,7 @@ async function waitForJob(jobId, timeoutMs = 300000) {
 }
 
 function extractMetrics(result) {
-  const claims = result.claims || [];
-  const contexts = result.analysisContexts || [];
-  
-  return {
-    verdict: result.articleVerdict,
-    truthPercentage: result.articleTruthPercentage,
-    confidence: result.articleVerdictConfidence,
-    claimsCount: claims.length,
-    contextsCount: contexts.length,
-    // Note: search count not available in result, would need debug logs
-  };
+  return extractRunnerResultMetrics(result);
 }
 
 function compareToBaseline(current, baseline, testCase) {
@@ -259,4 +250,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { runRegressionTest, REGRESSION_TEST_CASES };
+module.exports = { runRegressionTest, REGRESSION_TEST_CASES, extractMetrics };
