@@ -119,6 +119,312 @@ The next implementation step is Slice 6B only if the Captain approves prompt-cha
 
 ---
 
+## 1.2 xWiki Architecture Crosscheck - 2026-05-13
+
+This specification is implementation-led: source reverse-engineering and current contract tests remain authoritative for the V2 rebuild. The `.xwiki` architecture documentation was reviewed as design intent and as a model for reader-level diagrams, with stale portions filtered out before being carried forward.
+
+Reviewed `.xwiki` sources:
+
+| xWiki page | Useful for V2 | Staleness / caution |
+|---|---|---|
+| `Architecture/WebHome.xwiki` | Reader-level 5-stage overview and audience navigation style | "Start simple" wording must not override this project phase's completeness/correctness bar |
+| `System Design/WebHome.xwiki` | Two-service lifecycle and API/runner responsibility split | Some route/file names may drift from current code |
+| `AKEL Pipeline/WebHome.xwiki` and `AKEL Pipeline Detail/WebHome.xwiki` | Human-readable stage flow, sequence diagram level, LLM call budget framing | Old diagrams show V1 mechanisms and schema versions, not V2 ownership |
+| `Deep Dive/Pipeline Variants/WebHome.xwiki` | Non-negotiable invariants: no stage skipping, fail closed, no synthetic evidence, result envelope | Variant dispatch details are V1/V2 compatibility context, not V2 target design |
+| `Data Model/WebHome.xwiki` and diagram pages | Entity hierarchy and ERD readability | Field names and schema versions are V1-oriented |
+| `Deep Dive/Context Detection/WebHome.xwiki` | EvidenceScope vs ClaimAssessmentBoundary separation and evidence-emergent boundary rationale | Some examples and function names are historical |
+| `Quality and Trust/WebHome.xwiki` and quality gate diagrams | Gate 1/Gate 4 placement and defense-in-depth explanation style | Deterministic confidence/evidence mechanisms must be revalidated against current AGENTS rules |
+| `Deep Dive/Prompt Architecture/WebHome.xwiki` | UCM prompt authority, section rendering, provider-output governance | Provider detection snippets and known exceptions are V1 implementation details |
+| `Deep Dive/Verdict Debate Pattern/WebHome.xwiki` | Multi-role verdict adjudication and evidence-backed challenge principle | Exact step count/model tiers remain V2 policy decisions, not automatic carry-forward |
+| `Deep Dive/Direction Semantics/WebHome.xwiki` | Direction-layer separation and warning against deterministic direction correction | Prompt snippets cannot be copied without approval |
+| `Source Reliability/*` | Batch prefetch/sync lookup as a clean integration pattern | Direct verdict weighting formulas are not accepted V2 design until quality-validated |
+
+Useful design intent incorporated or reaffirmed:
+
+- keep `.xwiki`-level diagrams in the target spec, not only code-facing tables;
+- preserve the two-service request lifecycle: API owns job persistence/events, Next.js runner owns analysis;
+- keep EvidenceScope as per-evidence metadata and ClaimAssessmentBoundary as post-research evidence-emergent grouping;
+- keep Gate 1 and Gate 4 as named trust checkpoints, but make V2 warning/materiality policy the user-facing authority;
+- keep structured verdict adjudication with evidence-backed challenge and reconciliation; do not collapse to one prompt;
+- keep UCM/prompt section governance and explicit prompt/model/cache policy before any LLM-backed stage executes;
+- keep a result/entity ERD so external adapters and reviewers can see the contract relationships;
+- use diagrams to show where V2 is intentionally simpler: one run context, one gateway, one result writer, one warning policy, and thin adapters.
+
+Stale or rejected `.xwiki` content for V2:
+
+- V1 schema strings such as `3.0.0-cb` are historical; V2 shadow uses `4.0.0-cb-shadow`.
+- V1 monolithic pipeline files and some old function names are not V2 implementation targets.
+- Deterministic semantic filters such as vague-phrase matching, Jaccard-like dedupe, keyword provider detection, or direction correction cannot be reintroduced as analysis logic.
+- Direct source-reliability truth-percentage formulas are not accepted as V2 verdict math until deputy review and comparator validation approve them.
+- Prompt examples or snippets from `.xwiki` are design references only; prompt text changes still need Captain approval and LLM Expert review.
+
+## 1.3 Reader-Level V2 Diagrams
+
+The following diagrams mirror the old xWiki diagram level, but describe the new V2 target and the current guarded implementation posture.
+
+### V2 Request Lifecycle
+
+```mermaid
+sequenceDiagram
+  participant User as User / UI
+  participant API as API service
+  participant Runner as Next.js runner
+  participant Select as Pipeline selector
+  participant V1 as V1 CB pipeline
+  participant V2 as V2 pipeline shell
+  participant Adapter as Compatibility adapters
+  participant Store as Job storage / events
+
+  User->>API: submit analysis input
+  API->>Store: create queued job
+  API->>Runner: POST internal run-job
+  Runner->>Select: choose persisted pipeline variant
+
+  alt default production path
+    Select->>V1: run current ClaimAssessmentBoundary pipeline
+    V1-->>Runner: V1 result JSON and report
+  else explicit gated V2 shadow path
+    Select->>V2: runClaimBoundaryPipelineV2(context)
+    V2-->>Runner: 4.0.0-cb-shadow damaged or future V2 result
+  end
+
+  Runner->>Adapter: project result for API/UI/export/readers
+  Adapter-->>Runner: compatible result surfaces
+  Runner->>API: PATCH job result and status
+  API->>Store: persist result JSON, events, quick fields
+  API-->>User: SSE / polling update
+```
+
+### Target V2 Pipeline Detail
+
+```mermaid
+flowchart TB
+  subgraph Entry["Entry and Run State"]
+    IN["PipelineRunContext\ninput, currentDate, selected claims,\nconfig snapshot, prompt profile, model policy"]
+    LEDGER["Observability ledger\nstage events, warnings, usage, timings"]
+  end
+
+  subgraph Gateways["Shared Gateways"]
+    LLMG["Prompt / Model / LLM Gateway\nrender section, validate variables,\nroute model task, parse structured output"]
+    WARN["Warning and Event Policy\nmateriality, visibility, primary issue,\ndamaged-report relation"]
+    CACHE["Cache Governance\nprompt/model/config/input/schema dimensions"]
+  end
+
+  subgraph S1["Stage 1: Claim Understanding and Gate 1"]
+    ACS["ACS prepared snapshot migration\nstructural selected-ID preservation"]
+    CU["LLM claim understanding\nnot implemented until Slice 6B approval"]
+    G1["Gate 1\nclaim contract validation and repair policy"]
+    CC["ClaimContract"]
+  end
+
+  subgraph S2["Stage 2: Evidence Lifecycle"]
+    QP["Query plan"]
+    ACQ["Source acquisition and fetch"]
+    REL["Relevance and applicability"]
+    EXT["Evidence extraction\nEvidenceItem + EvidenceScope"]
+    EC["EvidenceCorpus"]
+  end
+
+  subgraph S25["Stage 2.5: Sufficiency Gate"]
+    SUFF["SufficiencyAssessment\ncontinue, refine, caveat, or damage"]
+  end
+
+  subgraph S3["Stage 3: Boundary Formation"]
+    BF["LLM EvidenceScope congruence"]
+    COV["Coverage matrix"]
+    BS["BoundarySet"]
+  end
+
+  subgraph S4["Stage 4: Verdict Adjudication and Gate 4"]
+    ADV["Advocate"]
+    CHAL["Evidence-backed challenger"]
+    REC["Reconciliation"]
+    VAL["Grounding, direction, citation validation"]
+    G4["Gate 4 confidence integrity"]
+    VS["VerdictSet"]
+  end
+
+  subgraph S5["Stage 5: Aggregation and Result Writer"]
+    AGG["Aggregation policy"]
+    NAR["Narrative/report composition"]
+    RR["Canonical ReportResult"]
+    ADAPT["External CompatibilityView\nAPI, UI, markdown, HTML, metrics, validation"]
+  end
+
+  IN --> LEDGER
+  IN --> ACS --> CC
+  IN --> CU --> G1 --> CC
+  LLMG --> CU
+  LLMG --> QP
+  LLMG --> REL
+  LLMG --> EXT
+  LLMG --> BF
+  LLMG --> ADV
+  LLMG --> CHAL
+  LLMG --> REC
+  LLMG --> VAL
+  CACHE --> LLMG
+  WARN --> G1
+  WARN --> SUFF
+  WARN --> G4
+  WARN --> RR
+  CC --> QP --> ACQ --> REL --> EXT --> EC
+  EC --> SUFF --> BF --> COV --> BS
+  BS --> ADV --> CHAL --> REC --> VAL --> G4 --> VS
+  VS --> AGG --> NAR --> RR --> ADAPT
+  LEDGER -.-> RR
+
+  classDef gateway fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef stage fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef output fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  class LLMG,WARN,CACHE gateway
+  class IN,ACS,CU,G1,QP,ACQ,REL,EXT,SUFF,BF,COV,ADV,CHAL,REC,VAL,G4,AGG,NAR stage
+  class CC,EC,BS,VS,RR,ADAPT,LEDGER output
+```
+
+### Target V2 Entity Model
+
+```mermaid
+erDiagram
+  PIPELINE_RUN_CONTEXT ||--|| CLAIM_CONTRACT : "creates"
+  PIPELINE_RUN_CONTEXT ||--|| CONFIG_SNAPSHOT : "uses"
+  PIPELINE_RUN_CONTEXT ||--|| OBSERVABILITY_LEDGER : "records"
+
+  CLAIM_CONTRACT ||--o{ ATOMIC_CLAIM : "selects"
+  CLAIM_CONTRACT ||--o{ WARNING_EVENT : "emits"
+  CLAIM_CONTRACT ||--o| ACS_MIGRATION : "may_use"
+
+  EVIDENCE_CORPUS ||--o{ SOURCE_RECORD : "contains"
+  EVIDENCE_CORPUS ||--o{ EVIDENCE_ITEM : "contains"
+  SOURCE_RECORD ||--o{ EVIDENCE_ITEM : "provides"
+  EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : "has"
+  EVIDENCE_ITEM }o--o{ ATOMIC_CLAIM : "relates_to"
+
+  SUFFICIENCY_ASSESSMENT ||--|| EVIDENCE_CORPUS : "assesses"
+  SUFFICIENCY_ASSESSMENT ||--o{ WARNING_EVENT : "emits"
+
+  BOUNDARY_SET ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "contains"
+  CLAIM_ASSESSMENT_BOUNDARY ||--o{ EVIDENCE_SCOPE : "groups"
+  CLAIM_ASSESSMENT_BOUNDARY ||--o{ EVIDENCE_ITEM : "assigns"
+  BOUNDARY_SET ||--|| COVERAGE_MATRIX : "has"
+
+  VERDICT_SET ||--o{ CLAIM_VERDICT : "contains"
+  CLAIM_VERDICT }o--|| ATOMIC_CLAIM : "rates"
+  CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
+  CLAIM_VERDICT }o--o{ CLAIM_ASSESSMENT_BOUNDARY : "uses"
+  CLAIM_VERDICT ||--o{ VERDICT_CHALLENGE : "addresses"
+  VERDICT_SET ||--o{ WARNING_EVENT : "emits"
+
+  REPORT_RESULT ||--|| CLAIM_CONTRACT : "summarizes"
+  REPORT_RESULT ||--|| EVIDENCE_CORPUS : "references"
+  REPORT_RESULT ||--|| BOUNDARY_SET : "presents"
+  REPORT_RESULT ||--|| VERDICT_SET : "aggregates"
+  REPORT_RESULT ||--o{ WARNING_EVENT : "publishes"
+  REPORT_RESULT ||--|| COMPATIBILITY_VIEW : "projects"
+
+  PIPELINE_RUN_CONTEXT {
+    string runId
+    string currentDate
+    string originalInput
+    string promptProfile
+    string resultSchemaVersion
+  }
+  CLAIM_CONTRACT {
+    string schemaVersion
+    string gate1Status
+    json selectedAtomicClaimIds
+  }
+  ATOMIC_CLAIM {
+    string id
+    string statement
+    boolean selected
+  }
+  EVIDENCE_ITEM {
+    string id
+    string statement
+    string probativeValue
+    string claimDirection
+  }
+  EVIDENCE_SCOPE {
+    string methodology
+    string temporal
+    string boundaries
+    string geographic
+  }
+  CLAIM_ASSESSMENT_BOUNDARY {
+    string id
+    string label
+    string scopeSummary
+  }
+  CLAIM_VERDICT {
+    string claimId
+    float truthPercentage
+    float confidence
+    string gate4Status
+  }
+  WARNING_EVENT {
+    string type
+    string category
+    string displaySeverity
+    boolean primaryIssueEligible
+  }
+  REPORT_RESULT {
+    string schemaVersion
+    string verdictLabel
+    float truthPercentage
+    float confidence
+    boolean damagedReport
+  }
+```
+
+### V2 Quality Gates And Warning Materiality
+
+```mermaid
+flowchart TB
+  INPUT["Input / ACS prepared snapshot"] --> G1{{"Gate 1\nClaim contract integrity"}}
+  G1 -->|"pass"| RESEARCH["Evidence lifecycle"]
+  G1 -->|"blocked or fail"| DAMAGE1["Damaged or blocked result\nno semantic repair by adapter"]
+
+  RESEARCH --> SUFF{{"Sufficiency gate"}}
+  SUFF -->|"sufficient"| BOUNDARY["Boundary formation"]
+  SUFF -->|"scarce but usable"| SCARCE["Analytical reality warning\nvisible only if materially useful"]
+  SUFF -->|"not usable"| DAMAGE2["Damaged or low-confidence result"]
+  SCARCE --> BOUNDARY
+
+  BOUNDARY --> VERDICT["Verdict adjudication"]
+  VERDICT --> G4{{"Gate 4\nconfidence and citation integrity"}}
+  G4 -->|"pass"| RESULT["Canonical ReportResult"]
+  G4 -->|"caveat"| WARNED["ReportResult with user-visible caveat"]
+  G4 -->|"no trustworthy verdict"| DAMAGE3["Damaged report"]
+
+  DAMAGE1 --> POLICY["Warning/Event Policy"]
+  DAMAGE2 --> POLICY
+  DAMAGE3 --> POLICY
+  WARNED --> POLICY
+  RESULT --> POLICY
+
+  POLICY --> MAT{{"Would verdict be materially different\nwithout this event?"}}
+  MAT -->|"No"| INFO["silent or admin-only info"]
+  MAT -->|"Maybe"| WARNING["user-visible warning"]
+  MAT -->|"Yes"| ERROR["error or damaged report"]
+  INFO --> ADAPTERS["API / UI / markdown / HTML / validation adapters"]
+  WARNING --> ADAPTERS
+  ERROR --> ADAPTERS
+
+  classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef ok fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef warn fill:#fff0cc,stroke:#9a6700,color:#3a2600
+  classDef error fill:#fde2e2,stroke:#a33a3a,color:#3b0d0d
+  class G1,SUFF,G4,MAT gate
+  class RESEARCH,BOUNDARY,VERDICT,RESULT,INFO,ADAPTERS ok
+  class SCARCE,WARNED,WARNING warn
+  class DAMAGE1,DAMAGE2,DAMAGE3,ERROR error
+```
+
+The old `.xwiki` diagrams showed the current CB pipeline as a dense single-path flow. The V2 diagrams intentionally make the policy gateways visible because that is the architectural simplification: stages own domain outputs, shared gateways own prompt/model/cache and warning behavior, and adapters own compatibility.
+
+---
+
 ## 2. Governing Intent
 
 Captain intent, restated in implementation-ready wording:

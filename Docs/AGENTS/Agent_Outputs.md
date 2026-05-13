@@ -2724,3 +2724,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Progress Diagrams -- [Standard] [open-items: yes]
 **For next agent:** Updated `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` with Section 1.1, including current Slice 6A status and Mermaid diagrams for implementation progression and architecture boundaries. Review consolidation status now reflects implementation in progress. No source/prompt/config/API/UI/live-job behavior changed.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Progress_Diagrams.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild xWiki Crosscheck And Diagrams -- [Standard] [open-items: yes]
+**For next agent:** Reviewed relevant `.xwiki` architecture and diagram pages as design intent, then added Sections 1.2-1.3 to `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`. The target spec now identifies useful xWiki intent, stale/rejected mechanisms, and includes V2 request lifecycle, detailed pipeline, entity model, and quality-gate/warning Mermaid diagrams.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Crosscheck_Diagrams.md

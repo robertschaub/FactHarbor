@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T06:16:40.655Z",
-  "count": 414,
+  "generatedAt": "2026-05-13T07:02:00.085Z",
+  "count": 415,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8774,6 +8774,24 @@
         "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts"
       ],
       "summary": "Start from `apps/web/src/lib/analyzer-v2/claim-understanding/types.ts`, `prepared-snapshot.ts`, and the gateway tests before adding any native claim-understanding implementation."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Crosscheck_Diagrams.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "xwiki",
+        "crosscheck",
+        "diagrams"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md"
+      ],
+      "summary": "Read Sections 1.2 and 1.3 of `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` before reviewing the V2 design with human readers."
     }
   ]
 }
