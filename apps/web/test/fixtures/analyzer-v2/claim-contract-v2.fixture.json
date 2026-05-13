@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "v2.claim_contract.0",
+  "input": {
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "resolvedInputText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "detectedLanguage": "de",
+    "selectedAtomicClaimIds": [
+      "AC_01"
+    ]
+  },
+  "inputGroundingSeed": {
+    "source": "acs_prepared_snapshot",
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "resolvedInputText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "detectedLanguage": "de",
+    "currentDate": "2026-05-13",
+    "acsSnapshotHash": "fixture-acs-snapshot-hash",
+    "inputGroundingSeedHash": "fixture-input-grounding-seed-hash"
+  },
+  "atomicClaims": [
+    {
+      "id": "AC_01",
+      "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "selected": true,
+      "source": "acs_prepared_snapshot",
+      "gate1Status": {
+        "status": "passed",
+        "source": "acs_prepared_snapshot",
+        "summary": "V1 prepared snapshot reported Gate 1 overall pass.",
+        "reasons": []
+      },
+      "integrityEvents": [
+        {
+          "type": "acs_snapshot_consumed",
+          "severity": "info",
+          "message": "V2 claim contract consumed selected claims from the V1 prepared snapshot without rewriting claim text.",
+          "claimIds": [
+            "AC_01"
+          ]
+        }
+      ]
+    }
+  ],
+  "integrityEvents": [
+    {
+      "type": "acs_snapshot_consumed",
+      "severity": "info",
+      "message": "V2 claim contract consumed selected claims from the V1 prepared snapshot without rewriting claim text.",
+      "claimIds": [
+        "AC_01"
+      ]
+    }
+  ],
+  "acsMigration": {
+    "sourceSchemaVersion": "prepared-stage1-v1",
+    "status": "accepted",
+    "selectedClaimFinalityPreserved": true
+  }
+}

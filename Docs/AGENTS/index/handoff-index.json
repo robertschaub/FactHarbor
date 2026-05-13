@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T05:57:20.467Z",
-  "count": 412,
+  "generatedAt": "2026-05-13T06:10:59.041Z",
+  "count": 413,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8737,6 +8737,26 @@
         "apps/web/src/lib/analyzer-v2/gateway/types.ts"
       ],
       "summary": "Start in `apps/web/src/lib/analyzer-v2/gateway/policy.ts` and `cache-governance.ts` before adding any V2 stage that renders a prompt or calls a model."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_6A_Claim_Understanding_Contracts.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "6a",
+        "claim",
+        "understanding",
+        "contracts"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts"
+      ],
+      "summary": "Start from `apps/web/src/lib/analyzer-v2/claim-understanding/types.ts`, `prepared-snapshot.ts`, and the gateway tests before adding any native claim-understanding implementation."
     }
   ]
 }

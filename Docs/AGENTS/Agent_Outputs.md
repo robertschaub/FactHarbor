@@ -2714,3 +2714,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 5 Gateway Governance Skeleton -- [Standard] [open-items: yes]
 **For next agent:** Added V2-local gateway contracts under `apps/web/src/lib/analyzer-v2/gateway/`: static task policy, pure cache-key governance, and a surface ledger covering every current V1 stage plus quarantine/defer candidates (`CLAIM_GROUPING`, `orchestrated`, `model-tiering`, config knobs, hardcoded model params). Tests block unapproved executable tasks and enforce ledger exhaustiveness. No prompt/config/model/runtime/API/UI changes; no live jobs used; budget remains 8.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_5_Gateway_Governance_Skeleton.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 6A Claim Understanding Contracts -- [Standard] [open-items: yes]
+**For next agent:** Added V2 `ClaimContract` types/schema/fixture plus a pure ACS prepared-snapshot migration adapter in `apps/web/src/lib/analyzer-v2/claim-understanding/`. Gateway policy now declares Claim Understanding variables and cache dimensions while remaining non-executable. Franklin, Lorentz, and Claude Opus 4.6 approved the contracts-only boundary; no prompt/runtime/API/UI/live-job changes were made.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_6A_Claim_Understanding_Contracts.md

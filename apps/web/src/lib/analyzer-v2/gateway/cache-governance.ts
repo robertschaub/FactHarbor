@@ -60,6 +60,21 @@ export const ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY: AnalyzerV2CachePolicy = {
   approval: PENDING_APPROVAL,
 };
 
+export const ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY: AnalyzerV2CachePolicy = {
+  policyId: "v2.semantic.claim-understanding",
+  requiredDimensions: [
+    ...ANALYZER_V2_BASE_SEMANTIC_CACHE_DIMENSIONS,
+    "acsSnapshotHash",
+    "inputGroundingSeedHash",
+  ],
+  optionalDimensions: [
+    "languageContextHash",
+    "searchContextHash",
+    "adapterVersion",
+  ],
+  approval: PENDING_APPROVAL,
+};
+
 function hasCacheDimensionValue(input: AnalyzerV2CacheKeyInput, dimension: AnalyzerV2CacheDimension): boolean {
   const value = input[dimension];
   return (typeof value === "string" && value.trim().length > 0)

@@ -32,6 +32,21 @@ describe("analyzer-v2 gateway policy registry", () => {
     }
   });
 
+  it("declares claim-understanding variables and cache policy without making it executable", () => {
+    const task = getAnalyzerV2GatewayTask("claim_understanding_gate1");
+
+    expect(task.status).toBe("blockedUntilPromptApproved");
+    expect(task.promptPolicy?.requiredVariables).toEqual([
+      "currentDate",
+      "analysisInput",
+      "acsSnapshotJson",
+      "inputGroundingSeedJson",
+    ]);
+    expect(task.promptPolicy?.outputSchemaVersion).toBe("v2.claim_understanding_gate1.0");
+    expect(task.cachePolicy?.policyId).toBe("v2.semantic.claim-understanding");
+    expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+  });
+
   it("does not allow executable status without approved prompt, model, and cache policies", () => {
     const base = getAnalyzerV2GatewayTask("claim_understanding_gate1");
     const approved = {

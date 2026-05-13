@@ -1,5 +1,6 @@
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
+  ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
 import type {
@@ -17,11 +18,15 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
   approvedAt: null,
 };
 
-function blockedPrompt(sectionId: string, outputSchemaVersion: string): AnalyzerV2PromptPolicy {
+function blockedPrompt(
+  sectionId: string,
+  outputSchemaVersion: string,
+  requiredVariables: readonly string[] = [],
+): AnalyzerV2PromptPolicy {
   return {
     profile: "claimboundary-v2",
     sectionId,
-    requiredVariables: [],
+    requiredVariables,
     outputSchemaVersion,
     approval: MISSING_APPROVAL,
   };
@@ -45,6 +50,8 @@ function task(params: {
   modelTask: AnalyzerV2ModelTask;
   promptSectionId: string;
   outputSchemaVersion: string;
+  requiredVariables?: readonly string[];
+  claimUnderstandingCache?: boolean;
   sourceAware?: boolean;
   notes: string;
 }): AnalyzerV2GatewayTask {
@@ -52,9 +59,15 @@ function task(params: {
     id: params.id,
     owner: params.owner,
     status: "blockedUntilPromptApproved",
-    promptPolicy: blockedPrompt(params.promptSectionId, params.outputSchemaVersion),
+    promptPolicy: blockedPrompt(
+      params.promptSectionId,
+      params.outputSchemaVersion,
+      params.requiredVariables,
+    ),
     modelPolicy: blockedModel(params.modelTask),
-    cachePolicy: params.sourceAware
+    cachePolicy: params.claimUnderstandingCache
+      ? ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY
+      : params.sourceAware
       ? ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY
       : ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
     verifier: "target-spec Section 13 plus current V1 prompt/model callsite inventory",
@@ -70,6 +83,13 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
     modelTask: "understand",
     promptSectionId: "V2_CLAIM_UNDERSTANDING_GATE1",
     outputSchemaVersion: "v2.claim_understanding_gate1.0",
+    requiredVariables: [
+      "currentDate",
+      "analysisInput",
+      "acsSnapshotJson",
+      "inputGroundingSeedJson",
+    ],
+    claimUnderstandingCache: true,
     notes: "Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval.",
   }),
   task({

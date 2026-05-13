@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
+  ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
   buildAnalyzerV2CacheKeyParts,
   validateAnalyzerV2CacheKeyInput,
@@ -68,5 +69,28 @@ describe("analyzer-v2 cache governance", () => {
       },
     );
     expect(completeSourceAware.valid).toBe(true);
+  });
+
+  it("requires ACS and input-grounding dimensions for claim-understanding cache policy", () => {
+    const missingClaimUnderstandingDimensions = validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+      completeBaseInput,
+    );
+
+    expect(missingClaimUnderstandingDimensions.valid).toBe(false);
+    expect(missingClaimUnderstandingDimensions.missingDimensions).toEqual([
+      "acsSnapshotHash",
+      "inputGroundingSeedHash",
+    ]);
+
+    const completeClaimUnderstanding = validateAnalyzerV2CacheKeyInput(
+      ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
+      {
+        ...completeBaseInput,
+        acsSnapshotHash: "acs-hash",
+        inputGroundingSeedHash: "seed-hash",
+      },
+    );
+    expect(completeClaimUnderstanding.valid).toBe(true);
   });
 });

@@ -56,6 +56,8 @@ export type AnalyzerV2CacheDimension =
   | "configSnapshotHash"
   | "resultSchemaVersion"
   | "inputIdentityHash"
+  | "acsSnapshotHash"
+  | "inputGroundingSeedHash"
   | "sourceIdentityHash"
   | "languageContextHash"
   | "searchContextHash"

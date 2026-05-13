@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/claim-contract-v2.schema.json",
+  "title": "Analyzer V2 ClaimContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "input",
+    "inputGroundingSeed",
+    "atomicClaims",
+    "integrityEvents",
+    "acsMigration"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "v2.claim_contract.0"
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inputType",
+        "inputValue",
+        "resolvedInputText",
+        "detectedLanguage",
+        "selectedAtomicClaimIds"
+      ],
+      "properties": {
+        "inputType": {
+          "enum": [
+            "text",
+            "url"
+          ]
+        },
+        "inputValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolvedInputText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detectedLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selectedAtomicClaimIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "inputGroundingSeed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "inputType",
+        "inputValue",
+        "resolvedInputText",
+        "detectedLanguage",
+        "currentDate",
+        "acsSnapshotHash",
+        "inputGroundingSeedHash"
+      ],
+      "properties": {
+        "source": {
+          "enum": [
+            "acs_prepared_snapshot",
+            "direct_input"
+          ]
+        },
+        "inputType": {
+          "enum": [
+            "text",
+            "url"
+          ]
+        },
+        "inputValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolvedInputText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detectedLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currentDate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acsSnapshotHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "inputGroundingSeedHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "atomicClaims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/atomicClaim"
+      }
+    },
+    "integrityEvents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/integrityEvent"
+      }
+    },
+    "acsMigration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceSchemaVersion",
+        "status",
+        "selectedClaimFinalityPreserved"
+      ],
+      "properties": {
+        "sourceSchemaVersion": {
+          "const": "prepared-stage1-v1"
+        },
+        "status": {
+          "enum": [
+            "accepted",
+            "blocked"
+          ]
+        },
+        "selectedClaimFinalityPreserved": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "atomicClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "selected",
+        "source",
+        "gate1Status",
+        "integrityEvents"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "source": {
+          "enum": [
+            "acs_prepared_snapshot",
+            "v2_claim_understanding"
+          ]
+        },
+        "gate1Status": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "source",
+            "summary",
+            "reasons"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "passed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "source": {
+              "enum": [
+                "acs_prepared_snapshot",
+                "v2_claim_understanding"
+              ]
+            },
+            "summary": {
+              "type": "string"
+            },
+            "reasons": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "integrityEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/integrityEvent"
+          }
+        }
+      }
+    },
+    "integrityEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "severity",
+        "message",
+        "claimIds"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "acs_snapshot_consumed",
+            "duplicate_selected_claim_id",
+            "prepared_snapshot_invalid",
+            "selected_claim_missing"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
