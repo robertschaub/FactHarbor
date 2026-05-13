@@ -232,62 +232,14 @@ public sealed class JobService
         job.ReportMarkdown = reportMarkdown;
         job.UpdatedUtc = DateTime.UtcNow;
 
-        // Extract verdict for quick display in lists
-        try
-        {
-            var doc = JsonDocument.Parse(job.ResultJson);
-            var root = doc.RootElement;
-
-            // Try multiple paths to find the overall truth percentage and confidence.
-            // ClaimBoundary pipeline: top-level truthPercentage + confidence
-            // Dynamic pipeline: verdictSummary.overallVerdict + verdictSummary.overallConfidence
-            // Legacy formats: articleAnalysis, twoPanelSummary
-            int? truthPct = null;
-            int? confidence = null;
-
-            if (root.TryGetProperty("truthPercentage", out var tpProp) && tpProp.ValueKind == JsonValueKind.Number)
-                truthPct = (int)tpProp.GetDouble();
-            else if (root.TryGetProperty("verdictSummary", out var vsProp) && vsProp.TryGetProperty("overallVerdict", out var vsOvProp) && vsOvProp.ValueKind == JsonValueKind.Number)
-                truthPct = (int)vsOvProp.GetDouble();
-            else if (root.TryGetProperty("articleAnalysis", out var aaProp) && aaProp.TryGetProperty("articleTruthPercentage", out var atpProp) && atpProp.ValueKind == JsonValueKind.Number)
-                truthPct = (int)atpProp.GetDouble();
-            else if (root.TryGetProperty("twoPanelSummary", out var tpsProp) && tpsProp.TryGetProperty("factharborAnalysis", out var faProp) && faProp.TryGetProperty("overallVerdict", out var ovProp) && ovProp.ValueKind == JsonValueKind.Number)
-                truthPct = (int)ovProp.GetDouble();
-
-            if (root.TryGetProperty("confidence", out var cProp) && cProp.ValueKind == JsonValueKind.Number)
-                confidence = (int)cProp.GetDouble();
-            else if (root.TryGetProperty("verdictSummary", out var vsProp2) && vsProp2.TryGetProperty("overallConfidence", out var vsConfProp) && vsConfProp.ValueKind == JsonValueKind.Number)
-                confidence = (int)vsConfProp.GetDouble();
-            else if (root.TryGetProperty("twoPanelSummary", out var tpsProp2) && tpsProp2.TryGetProperty("factharborAnalysis", out var faProp2) && faProp2.TryGetProperty("confidence", out var cProp2) && cProp2.ValueKind == JsonValueKind.Number)
-                confidence = (int)cProp2.GetDouble();
-
-            if (truthPct.HasValue)
-            {
-                job.TruthPercentage = truthPct.Value;
-                job.VerdictLabel = MapPercentageToVerdict(truthPct.Value, confidence ?? 0);
-            }
-            job.Confidence = confidence;
-        }
-        catch (Exception ex)
-        {
-            _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "warn", Message = $"Failed to extract verdict: {ex.Message}", TsUtc = DateTime.UtcNow });
-        }
+        // Extract verdict for quick display in lists.
+        var quickFields = ResultCompatibility.ExtractQuickFields(job.ResultJson);
+        job.VerdictLabel = quickFields.VerdictLabel;
+        job.TruthPercentage = quickFields.TruthPercentage;
+        job.Confidence = quickFields.Confidence;
 
         _db.JobEvents.Add(new JobEventEntity { JobId = jobId, Level = "info", Message = "Result stored", TsUtc = DateTime.UtcNow });
         await _db.SaveChangesAsync();
-    }
-
-    private static string MapPercentageToVerdict(int percentage, int confidence)
-    {
-        // Must match apps/web/src/lib/analyzer/truth-scale.ts
-        // (percentageToClaimVerdict + VERDICT_BANDS + mixed confidence threshold).
-        if (percentage >= 86) return "TRUE";
-        if (percentage >= 72) return "MOSTLY-TRUE";
-        if (percentage >= 58) return "LEANING-TRUE";
-        if (percentage >= 43) return confidence >= 45 ? "MIXED" : "UNVERIFIED";
-        if (percentage >= 29) return "LEANING-FALSE";
-        if (percentage >= 15) return "MOSTLY-FALSE";
-        return "FALSE";
     }
 
     public async Task<JobEntity?> CancelJobAsync(string jobId)

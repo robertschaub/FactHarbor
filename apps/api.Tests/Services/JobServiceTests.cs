@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using FactHarbor.Api.Tests;
 using FactHarbor.Api.Data;
 using FactHarbor.Api.Helpers;
 using FactHarbor.Api.Services;
@@ -84,6 +86,30 @@ public sealed class JobServiceTests
         Assert.Contains(
             await verifyDb.JobEvents.Where(e => e.JobId == job.JobId).Select(e => e.Message).ToListAsync(),
             message => message.Contains("Ignored result store after terminal status CANCELLED"));
+    }
+
+    [Fact]
+    public async Task StoreResultAsync_V2Result_StoresCanonicalQuickFields()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await using var db = database.CreateContext();
+        var job = SeedJob(db, status: "RUNNING", progress: 45);
+        await db.SaveChangesAsync();
+
+        var result = JsonNode.Parse(FixtureFiles.ReadAnalyzerV2Fixture("report-result-v2.fixture.json"))!.AsObject();
+        var verdict = result["verdict"]!.AsObject();
+        verdict["label"] = "FALSE";
+        verdict["truthPercentage"] = 93;
+        verdict["confidence"] = 91;
+
+        var service = CreateJobService(db);
+        await service.StoreResultAsync(job.JobId, result, "# V2 report");
+
+        await using var verifyDb = database.CreateContext();
+        var reloaded = await verifyDb.Jobs.SingleAsync(j => j.JobId == job.JobId);
+        Assert.Equal("FALSE", reloaded.VerdictLabel);
+        Assert.Equal(93, reloaded.TruthPercentage);
+        Assert.Equal(91, reloaded.Confidence);
     }
 
     private static JobService CreateJobService(FhDbContext db)

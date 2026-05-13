@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-12T23:12:14.568Z",
-  "count": 402,
+  "generatedAt": "2026-05-13T04:07:47.295Z",
+  "count": 403,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8486,6 +8486,30 @@
         "Docs/AGENTS/index/handoff-index.json"
       ],
       "summary": "Phase 1 context is captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md`. Phase 2 source boundaries are captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`; Stage 1 baseline is captured in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Stage1_Baseline.m"
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_2B_API_Compatibility.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "2b",
+        "api",
+        "compatibility"
+      ],
+      "files_touched": [
+        "apps/api/Services/ResultCompatibility.cs",
+        "apps/api/Services/JobService.cs",
+        "apps/api/Controllers/JobsController.cs",
+        "apps/api.Tests/FixtureFiles.cs",
+        "apps/api.Tests/Services/ResultCompatibilityTests.cs",
+        "apps/api.Tests/Services/JobServiceTests.cs"
+      ],
+      "summary": "Continue Slice 2 one consumer at a time. Recommended next surface is the web job/report UI read path using `apps/web/src/lib/analyzer-v2/compatibility-view.ts`, then markdown/static export. Preserve the existing V1 analyzer hot path and avoid prompt/config/model/live-validation changes unless explic"
     }
   ]
 }

@@ -56,7 +56,7 @@ public sealed class JobsController : ControllerBase
         {
             jobs = items.Select(j =>
             {
-                var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
+                var analysisIssue = ResultCompatibility.ExtractPrimaryAnalysisIssue(j.ResultJson);
                 var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
                 return new
                 {
@@ -72,8 +72,8 @@ public sealed class JobsController : ControllerBase
                 truthPercentage = j.TruthPercentage,
                 confidence = j.Confidence,
                 isHidden = j.IsHidden,
-                analysisIssueCode = analysisIssue.code,
-                analysisIssueMessage = analysisIssue.message,
+                analysisIssueCode = analysisIssue.Code,
+                analysisIssueMessage = analysisIssue.Message,
                 submissionPath = isAdmin ? j.SubmissionPath : null,
                 // Admin-only: execution-time commit hash when available, with legacy fallback.
                 gitCommitHash = isAdmin ? visibleGitCommitHash : null
@@ -106,7 +106,7 @@ public sealed class JobsController : ControllerBase
             try { resultObj = JsonSerializer.Deserialize<object>(j.ResultJson); } catch { }
         }
 
-        var analysisIssue = ExtractPrimaryAnalysisIssue(j.ResultJson);
+        var analysisIssue = ResultCompatibility.ExtractPrimaryAnalysisIssue(j.ResultJson);
         var visibleGitCommitHash = j.ExecutedWebGitCommitHash ?? j.GitCommitHash;
 
         return Ok(new
@@ -124,8 +124,8 @@ public sealed class JobsController : ControllerBase
             truthPercentage = j.TruthPercentage,
             confidence = j.Confidence,
             isHidden = j.IsHidden,
-            analysisIssueCode = analysisIssue.code,
-            analysisIssueMessage = analysisIssue.message,
+            analysisIssueCode = analysisIssue.Code,
+            analysisIssueMessage = analysisIssue.Message,
             submissionPath = isAdmin ? j.SubmissionPath : null,
             // Admin-only diagnostic field: execution-time commit hash when available, with legacy fallback.
             gitCommitHash = isAdmin ? visibleGitCommitHash : null,
@@ -371,50 +371,6 @@ public sealed class JobsController : ControllerBase
         }
 
         return (job, null, 200, null);
-    }
-
-    private static (string? code, string? message) ExtractPrimaryAnalysisIssue(string? resultJson)
-    {
-        if (string.IsNullOrWhiteSpace(resultJson))
-            return (null, null);
-
-        try
-        {
-            using var doc = JsonDocument.Parse(resultJson);
-            if (!doc.RootElement.TryGetProperty("analysisWarnings", out var warnings) ||
-                warnings.ValueKind != JsonValueKind.Array)
-            {
-                return (null, null);
-            }
-
-            foreach (var warning in warnings.EnumerateArray())
-            {
-                if (!warning.TryGetProperty("type", out var typeProp) ||
-                    typeProp.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
-
-                var type = typeProp.GetString();
-                if (!string.Equals(type, "analysis_generation_failed", StringComparison.Ordinal))
-                    continue;
-
-                string? message = null;
-                if (warning.TryGetProperty("message", out var messageProp) &&
-                    messageProp.ValueKind == JsonValueKind.String)
-                {
-                    message = messageProp.GetString();
-                }
-
-                return (type, message);
-            }
-        }
-        catch
-        {
-            // Keep list/detail responses resilient even when resultJson is malformed.
-        }
-
-        return (null, null);
     }
 
     private static string? NormalizeGitHashFilter(string? gitHash)
