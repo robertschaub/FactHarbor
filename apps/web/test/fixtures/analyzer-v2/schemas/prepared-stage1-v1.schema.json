@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/prepared-stage1-v1.schema.json",
+  "title": "ACS PreparedStage1Snapshot V1 Compatibility",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "resolvedInputText",
+    "preparedUnderstanding"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "resolvedInputText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolvedInputSource": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "url",
+        "contentType"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "contentType": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "preparedUnderstanding": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "detectedInputType",
+        "articleThesis",
+        "atomicClaims",
+        "preliminaryEvidence",
+        "gate1Stats"
+      ],
+      "properties": {
+        "detectedInputType": {
+          "enum": [
+            "text",
+            "url"
+          ]
+        },
+        "detectedLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "articleThesis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "atomicClaims": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "id",
+              "statement"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "statement": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "preliminaryEvidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "gate1Stats": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "totalClaims",
+            "filteredCount",
+            "overallPass"
+          ],
+          "properties": {
+            "totalClaims": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "filteredCount": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "overallPass": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "acquisitionTrace": {
+      "type": "object"
+    },
+    "preparationProvenance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "pipelineVariant",
+        "sourceInputType",
+        "resolvedInputSha256",
+        "pipelineConfigHash",
+        "searchConfigHash",
+        "calcConfigHash",
+        "selectionCap"
+      ],
+      "properties": {
+        "pipelineVariant": {
+          "const": "claimboundary"
+        },
+        "sourceInputType": {
+          "enum": [
+            "text",
+            "url"
+          ]
+        },
+        "resolvedInputSha256": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executedWebGitCommitHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "promptContentHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pipelineConfigHash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "searchConfigHash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "calcConfigHash": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selectionCap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "selectionAdmissionCap": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

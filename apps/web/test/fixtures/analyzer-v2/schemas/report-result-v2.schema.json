@@ -1,0 +1,643 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/report-result-v2.schema.json",
+  "title": "Analyzer V2 ReportResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "_schemaVersion",
+    "meta",
+    "input",
+    "claims",
+    "evidence",
+    "sources",
+    "boundaries",
+    "verdict",
+    "qualityGates",
+    "warnings",
+    "narrative"
+  ],
+  "properties": {
+    "_schemaVersion": {
+      "enum": [
+        "4.0.0-cb-shadow",
+        "4.0.0-cb"
+      ]
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "pipeline",
+        "resultContractVersion",
+        "runId",
+        "generatedUtc",
+        "currentDate"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "enum": [
+            "4.0.0-cb-shadow",
+            "4.0.0-cb"
+          ]
+        },
+        "pipeline": {
+          "const": "claimboundary-v2"
+        },
+        "resultContractVersion": {
+          "const": 1
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generatedUtc": {
+          "type": "string",
+          "minLength": 1
+        },
+        "currentDate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "executedWebGitCommitHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "promptContentHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pipelineConfigHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "searchConfigHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "calcConfigHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelPolicyHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inputType",
+        "inputValue",
+        "detectedLanguage",
+        "selectedAtomicClaimIds"
+      ],
+      "properties": {
+        "inputType": {
+          "enum": [
+            "text",
+            "url"
+          ]
+        },
+        "inputValue": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolvedInputText": {
+          "type": "string"
+        },
+        "detectedLanguage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selectedAtomicClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "atomicClaims"
+      ],
+      "properties": {
+        "atomicClaims": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/atomicClaim"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceItems"
+      ],
+      "properties": {
+        "evidenceItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidenceItem"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimAssessmentBoundaries",
+        "coverageMatrix"
+      ],
+      "properties": {
+        "claimAssessmentBoundaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/claimAssessmentBoundary"
+          }
+        },
+        "coverageMatrix": {
+          "type": "object"
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "label",
+        "truthPercentage",
+        "confidence",
+        "confidenceTier",
+        "gate4Status",
+        "sourceMarker"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "truthPercentage": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "confidenceTier": {
+          "enum": [
+            "high",
+            "medium",
+            "low",
+            "none"
+          ]
+        },
+        "gate4Status": {
+          "enum": [
+            "passed",
+            "warning",
+            "failed"
+          ]
+        },
+        "sourceMarker": {
+          "const": "canonical_v2"
+        }
+      }
+    },
+    "qualityGates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate1",
+        "sufficiency",
+        "gate4",
+        "reportIntegrity",
+        "warningIntegrity",
+        "damagedReport"
+      ],
+      "properties": {
+        "gate1": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "sufficiency": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "gate4": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "reportIntegrity": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "warningIntegrity": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "damagedReport": {
+          "type": "boolean"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warningEvent"
+      }
+    },
+    "narrative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "markdown",
+        "sections",
+        "evidenceReferenceIds",
+        "reportQualityStatus"
+      ],
+      "properties": {
+        "markdown": {
+          "type": "string"
+        },
+        "sections": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "headline",
+            "keyFinding",
+            "evidenceBaseSummary",
+            "limitations"
+          ],
+          "properties": {
+            "headline": {
+              "type": "string"
+            },
+            "keyFinding": {
+              "type": "string"
+            },
+            "evidenceBaseSummary": {
+              "type": "string"
+            },
+            "limitations": {
+              "type": "string"
+            }
+          }
+        },
+        "evidenceReferenceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reportQualityStatus": {
+          "enum": [
+            "valid",
+            "degraded",
+            "damaged"
+          ]
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "v1": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schemaVersion",
+            "adapterOnly",
+            "fallbackFields"
+          ],
+          "properties": {
+            "schemaVersion": {
+              "const": "3.2.0-cb"
+            },
+            "adapterOnly": {
+              "const": true
+            },
+            "fallbackFields": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "atomicClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "gate1Status",
+        "selected",
+        "claimBoundaryIds"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gate1Status": {
+          "$ref": "#/$defs/qualityGate"
+        },
+        "selected": {
+          "type": "boolean"
+        },
+        "claimBoundaryIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "statement",
+        "sourceId",
+        "claimDirection",
+        "evidenceScope",
+        "probativeValue",
+        "sourceType",
+        "claimBoundaryId",
+        "citationRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimDirection": {
+          "enum": [
+            "supports",
+            "contradicts",
+            "neutral"
+          ]
+        },
+        "evidenceScope": {
+          "type": "object"
+        },
+        "probativeValue": {
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "sourceType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claimBoundaryId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "citationRef": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "url",
+        "title",
+        "citationRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "citationRef": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceType": {
+          "type": "string"
+        }
+      }
+    },
+    "claimAssessmentBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "scopeSummary",
+        "coveredClaimIds",
+        "evidenceIds",
+        "coverageMatrixRef"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scopeSummary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coveredClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "coverageMatrixRef": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "qualityGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "summary"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "warning",
+            "failed"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "warningEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "category",
+        "severity",
+        "displaySeverity",
+        "visibility",
+        "stage",
+        "owner",
+        "affected",
+        "materialityRationale",
+        "recoveryState",
+        "primaryIssueEligible",
+        "damagedReportRelation"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "enum": [
+            "routine_operation",
+            "system_failure",
+            "analytical_reality",
+            "internal_diagnostic"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "displaySeverity": {
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "visibility": {
+          "enum": [
+            "silent",
+            "admin_only",
+            "user_visible",
+            "blocking"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "affected": {
+          "type": "object"
+        },
+        "materialityRationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recoveryState": {
+          "enum": [
+            "not_needed",
+            "recovered",
+            "partial",
+            "failed",
+            "not_recoverable"
+          ]
+        },
+        "primaryIssueEligible": {
+          "type": "boolean"
+        },
+        "damagedReportRelation": {
+          "enum": [
+            "none",
+            "contributes",
+            "primary",
+            "report_damaged"
+          ]
+        },
+        "details": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

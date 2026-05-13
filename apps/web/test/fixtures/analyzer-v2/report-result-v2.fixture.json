@@ -1,0 +1,181 @@
+{
+  "_schemaVersion": "4.0.0-cb-shadow",
+  "meta": {
+    "schemaVersion": "4.0.0-cb-shadow",
+    "pipeline": "claimboundary-v2",
+    "resultContractVersion": 1,
+    "runId": "fixture-run-v2",
+    "generatedUtc": "2026-05-13T00:00:00.000Z",
+    "currentDate": "2026-05-13",
+    "executedWebGitCommitHash": "fixture-commit",
+    "promptContentHash": "fixture-prompt-hash",
+    "pipelineConfigHash": "fixture-pipeline-config",
+    "searchConfigHash": "fixture-search-config",
+    "calcConfigHash": "fixture-calc-config",
+    "modelPolicyHash": "fixture-model-policy"
+  },
+  "input": {
+    "inputType": "text",
+    "inputValue": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "resolvedInputText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "detectedLanguage": "de",
+    "selectedAtomicClaimIds": [
+      "AC_01"
+    ]
+  },
+  "claims": {
+    "atomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+        "gate1Status": {
+          "status": "passed",
+          "summary": "Structural fixture: selected claim passed Gate 1."
+        },
+        "selected": true,
+        "claimBoundaryIds": [
+          "CB_01"
+        ]
+      }
+    ]
+  },
+  "evidence": {
+    "evidenceItems": [
+      {
+        "id": "EV_01",
+        "statement": "Structural fixture evidence item; not a live analysis output.",
+        "sourceId": "SRC_01",
+        "claimDirection": "neutral",
+        "evidenceScope": {
+          "summary": "Fixture scope"
+        },
+        "probativeValue": "medium",
+        "sourceType": "other",
+        "claimBoundaryId": "CB_01",
+        "citationRef": "CIT_01"
+      }
+    ]
+  },
+  "sources": {
+    "items": [
+      {
+        "id": "SRC_01",
+        "url": "https://example.test/fixture",
+        "title": "Structural fixture source",
+        "citationRef": "CIT_01",
+        "sourceType": "other"
+      }
+    ]
+  },
+  "boundaries": {
+    "claimAssessmentBoundaries": [
+      {
+        "id": "CB_01",
+        "label": "Fixture boundary",
+        "scopeSummary": "Structural ClaimAssessmentBoundary fixture.",
+        "coveredClaimIds": [
+          "AC_01"
+        ],
+        "evidenceIds": [
+          "EV_01"
+        ],
+        "coverageMatrixRef": "coverageMatrix"
+      }
+    ],
+    "coverageMatrix": {
+      "rows": [
+        "AC_01"
+      ],
+      "columns": [
+        "CB_01"
+      ],
+      "cells": [
+        {
+          "claimId": "AC_01",
+          "boundaryId": "CB_01",
+          "evidenceIds": [
+            "EV_01"
+          ]
+        }
+      ]
+    }
+  },
+  "verdict": {
+    "label": "UNVERIFIED",
+    "truthPercentage": 50,
+    "confidence": 0,
+    "confidenceTier": "none",
+    "gate4Status": "failed",
+    "sourceMarker": "canonical_v2"
+  },
+  "qualityGates": {
+    "gate1": {
+      "status": "passed",
+      "summary": "Structural fixture: Gate 1 contract is present."
+    },
+    "sufficiency": {
+      "status": "failed",
+      "summary": "Structural fixture: no quality claim is made."
+    },
+    "gate4": {
+      "status": "failed",
+      "summary": "Structural fixture: no publishable verdict is claimed."
+    },
+    "reportIntegrity": {
+      "status": "passed",
+      "summary": "Required result fields are present."
+    },
+    "warningIntegrity": {
+      "status": "passed",
+      "summary": "Warnings use the V2 WarningEvent contract."
+    },
+    "damagedReport": false
+  },
+  "warnings": [
+    {
+      "type": "source_fetch_degradation",
+      "category": "analytical_reality",
+      "severity": "info",
+      "displaySeverity": "info",
+      "visibility": "admin_only",
+      "stage": "evidence_lifecycle",
+      "owner": "source_acquisition",
+      "affected": {
+        "sourceIds": [
+          "SRC_01"
+        ]
+      },
+      "materialityRationale": "Structural fixture warning: source availability was reduced, but no verdict impact is claimed by this fixture.",
+      "recoveryState": "partial",
+      "primaryIssueEligible": false,
+      "damagedReportRelation": "none",
+      "details": {
+        "fixtureOnly": true
+      }
+    }
+  ],
+  "narrative": {
+    "markdown": "Structural fixture only. This is not a live analysis report.",
+    "sections": {
+      "headline": "Structural fixture only.",
+      "keyFinding": "Not a live analysis output.",
+      "evidenceBaseSummary": "Contract fixture contains one synthetic structural evidence reference.",
+      "limitations": "No analytical conclusion is asserted."
+    },
+    "evidenceReferenceIds": [
+      "EV_01"
+    ],
+    "reportQualityStatus": "valid"
+  },
+  "compatibility": {
+    "v1": {
+      "schemaVersion": "3.2.0-cb",
+      "adapterOnly": true,
+      "fallbackFields": {
+        "truthPercentage": 50,
+        "verdict": "UNVERIFIED",
+        "confidence": 0
+      }
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/report-result-v1-compat.schema.json",
+  "title": "ClaimBoundary V1 Result Compatibility",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "_schemaVersion",
+    "meta",
+    "truthPercentage",
+    "verdict",
+    "confidence",
+    "claimBoundaries",
+    "claimVerdicts",
+    "coverageMatrix",
+    "understanding",
+    "evidenceItems",
+    "sources",
+    "searchQueries",
+    "qualityGates"
+  ],
+  "properties": {
+    "_schemaVersion": {
+      "const": "3.2.0-cb"
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "schemaVersion",
+        "pipeline"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "3.2.0-cb"
+        },
+        "pipeline": {
+          "const": "claimboundary"
+        }
+      }
+    },
+    "truthPercentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "verdict": {
+      "type": "string",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "claimBoundaries": {
+      "type": "array"
+    },
+    "claimVerdicts": {
+      "type": "array"
+    },
+    "coverageMatrix": {
+      "type": "object"
+    },
+    "understanding": {
+      "type": "object"
+    },
+    "evidenceItems": {
+      "type": "array"
+    },
+    "sources": {
+      "type": "array"
+    },
+    "searchQueries": {
+      "type": "array"
+    },
+    "analysisWarnings": {
+      "type": "array"
+    },
+    "qualityGates": {
+      "type": "object"
+    }
+  }
+}

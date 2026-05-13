@@ -1,0 +1,109 @@
+{
+  "_schemaVersion": "3.2.0-cb",
+  "meta": {
+    "schemaVersion": "3.2.0-cb",
+    "generatedUtc": "2026-05-13T00:00:00.000Z",
+    "pipeline": "claimboundary",
+    "llmProvider": "fixture",
+    "llmModel": "fixture-model",
+    "inputType": "text",
+    "claimCount": 1,
+    "llmCalls": 0
+  },
+  "truthPercentage": 50,
+  "verdict": "UNVERIFIED",
+  "confidence": 0,
+  "truthPercentageRange": {
+    "min": 50,
+    "max": 50
+  },
+  "verdictNarrative": {
+    "headline": "Structural legacy fixture only.",
+    "evidenceBaseSummary": "Not a live analysis result.",
+    "keyFinding": "Not a live analysis result.",
+    "limitations": "This fixture exists only to preserve read compatibility."
+  },
+  "claimBoundaries": [
+    {
+      "id": "CB_01",
+      "name": "Fixture boundary",
+      "shortName": "Fixture",
+      "description": "Legacy compatibility fixture boundary.",
+      "constituentScopes": [],
+      "internalCoherence": 1,
+      "evidenceCount": 0
+    }
+  ],
+  "claimVerdicts": [
+    {
+      "claimId": "AC_01",
+      "claimText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "isCentral": true,
+      "verdict": 50,
+      "confidence": 0,
+      "truthPercentage": 50,
+      "riskTier": "B",
+      "reasoning": "Structural legacy fixture only.",
+      "supportingEvidenceIds": [],
+      "highlightColor": "yellow"
+    }
+  ],
+  "coverageMatrix": {
+    "rows": [],
+    "columns": []
+  },
+  "understanding": {
+    "detectedInputType": "text",
+    "articleThesis": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+    "atomicClaims": [
+      {
+        "id": "AC_01",
+        "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben"
+      }
+    ],
+    "preliminaryEvidence": [],
+    "gate1Stats": {
+      "totalClaims": 1,
+      "passedOpinion": 1,
+      "passedSpecificity": 1,
+      "filteredCount": 0,
+      "overallPass": true
+    }
+  },
+  "evidenceItems": [],
+  "sources": [],
+  "citedSources": [],
+  "searchQueries": [],
+  "claimAcquisitionLedger": {},
+  "qualityGates": {
+    "passed": false,
+    "gate1Stats": {
+      "total": 1,
+      "passed": 1,
+      "filtered": 0,
+      "centralKept": 1
+    },
+    "gate4Stats": {
+      "total": 1,
+      "publishable": 0,
+      "highConfidence": 0,
+      "mediumConfidence": 0,
+      "lowConfidence": 0,
+      "insufficient": 1,
+      "centralKept": 1
+    },
+    "summary": {
+      "totalEvidenceItems": 0,
+      "totalSources": 0,
+      "searchesPerformed": 0,
+      "contradictionSearchPerformed": false
+    }
+  },
+  "analysisWarnings": [
+    {
+      "type": "insufficient_evidence",
+      "severity": "warning",
+      "message": "Structural legacy fixture warning only."
+    }
+  ]
+}

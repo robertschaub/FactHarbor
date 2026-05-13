@@ -1,0 +1,94 @@
+{
+  "draftId": "fixture-draft-v1",
+  "jobId": "fixture-job-v1",
+  "status": "AWAITING_CLAIM_SELECTION",
+  "draftState": {
+    "version": 1,
+    "preparedStage1": {
+      "version": 1,
+      "resolvedInputText": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+      "preparedUnderstanding": {
+        "detectedInputType": "text",
+        "impliedClaim": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+        "backgroundDetails": "Structural compatibility fixture only.",
+        "articleThesis": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+        "atomicClaims": [
+          {
+            "id": "AC_01",
+            "statement": "Der Bundesrat unterschrieb den EU-Vertrag rechtskräftig bevor Volk und Parlament darüber entschieden haben",
+            "category": "factual",
+            "centrality": "high",
+            "harmPotential": "medium",
+            "isCentral": true,
+            "claimDirection": "supports_thesis",
+            "thesisRelevance": "direct",
+            "keyEntities": [],
+            "checkWorthiness": "high",
+            "specificityScore": 0.8,
+            "groundingQuality": "strong",
+            "expectedEvidenceProfile": {
+              "methodologies": [],
+              "expectedMetrics": [],
+              "expectedSourceTypes": []
+            }
+          }
+        ],
+        "distinctEvents": [],
+        "riskTier": "B",
+        "detectedLanguage": "de",
+        "inferredGeography": "CH",
+        "preliminaryEvidence": [],
+        "gate1Stats": {
+          "totalClaims": 1,
+          "passedOpinion": 1,
+          "passedSpecificity": 1,
+          "passedFidelity": 1,
+          "filteredCount": 0,
+          "overallPass": true
+        }
+      },
+      "preparationProvenance": {
+        "pipelineVariant": "claimboundary",
+        "sourceInputType": "text",
+        "resolvedInputSha256": "fixture-sha256",
+        "executedWebGitCommitHash": "fixture-commit",
+        "promptContentHash": "fixture-prompt-hash",
+        "pipelineConfigHash": "fixture-pipeline-config",
+        "searchConfigHash": "fixture-search-config",
+        "calcConfigHash": "fixture-calc-config",
+        "selectionCap": 5,
+        "selectionAdmissionCap": 5
+      }
+    },
+    "selectionCap": 5,
+    "selectionAdmissionCap": 5,
+    "rankedClaimIds": [
+      "AC_01"
+    ],
+    "recommendedClaimIds": [
+      "AC_01"
+    ],
+    "selectedClaimIds": [
+      "AC_01"
+    ],
+    "lastSelectionInteractionUtc": "2026-05-13T00:00:00.000Z",
+    "recommendationRationale": "Structural compatibility fixture only.",
+    "assessments": [
+      {
+        "claimId": "AC_01",
+        "triageLabel": "fact_check_worthy",
+        "thesisDirectness": "high",
+        "expectedEvidenceYield": "medium",
+        "coversDistinctRelevantDimension": true,
+        "redundancyWithClaimIds": [],
+        "recommendationRationale": "Structural compatibility fixture only."
+      }
+    ],
+    "observability": {
+      "phaseCode": "awaiting_claim_selection",
+      "phaseLabel": "Awaiting claim selection",
+      "branch": "awaiting_claim_selection",
+      "candidateClaimCount": 1
+    }
+  }
+}

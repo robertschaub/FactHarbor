@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/claim-selection-draft-v1.schema.json",
+  "title": "ACS ClaimSelectionDraft V1 Compatibility",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "draftId",
+    "jobId",
+    "status",
+    "draftState"
+  ],
+  "properties": {
+    "draftId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "jobId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "QUEUED",
+        "PREPARING",
+        "AWAITING_CLAIM_SELECTION",
+        "FAILED",
+        "COMPLETED",
+        "CANCELLED",
+        "EXPIRED"
+      ]
+    },
+    "draftState": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "version",
+        "preparedStage1",
+        "rankedClaimIds",
+        "recommendedClaimIds",
+        "selectedClaimIds",
+        "assessments"
+      ],
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "preparedStage1": {
+          "type": "object"
+        },
+        "selectionCap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "selectionAdmissionCap": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rankedClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "recommendedClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selectedClaimIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "lastSelectionInteractionUtc": {
+          "type": "string"
+        },
+        "assessments": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "observability": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

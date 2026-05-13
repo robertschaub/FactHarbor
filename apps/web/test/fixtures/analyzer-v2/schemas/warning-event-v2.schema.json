@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/warning-event-v2.schema.json",
+  "title": "Analyzer V2 WarningEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "category",
+    "severity",
+    "displaySeverity",
+    "visibility",
+    "stage",
+    "owner",
+    "affected",
+    "materialityRationale",
+    "recoveryState",
+    "primaryIssueEligible",
+    "damagedReportRelation"
+  ],
+  "properties": {
+    "type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "enum": [
+        "routine_operation",
+        "system_failure",
+        "analytical_reality",
+        "internal_diagnostic"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ]
+    },
+    "displaySeverity": {
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ]
+    },
+    "visibility": {
+      "enum": [
+        "silent",
+        "admin_only",
+        "user_visible",
+        "blocking"
+      ]
+    },
+    "stage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "affected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "claimIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "boundaryIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "materialityRationale": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recoveryState": {
+      "enum": [
+        "not_needed",
+        "recovered",
+        "partial",
+        "failed",
+        "not_recoverable"
+      ]
+    },
+    "primaryIssueEligible": {
+      "type": "boolean"
+    },
+    "damagedReportRelation": {
+      "enum": [
+        "none",
+        "contributes",
+        "primary",
+        "report_damaged"
+      ]
+    },
+    "details": {
+      "type": "object"
+    }
+  }
+}

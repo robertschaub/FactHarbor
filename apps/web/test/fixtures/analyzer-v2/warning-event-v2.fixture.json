@@ -1,0 +1,21 @@
+{
+  "type": "source_fetch_degradation",
+  "category": "analytical_reality",
+  "severity": "info",
+  "displaySeverity": "info",
+  "visibility": "admin_only",
+  "stage": "evidence_lifecycle",
+  "owner": "source_acquisition",
+  "affected": {
+    "sourceIds": [
+      "SRC_01"
+    ]
+  },
+  "materialityRationale": "Structural fixture warning: source availability was reduced, but no verdict impact is claimed by this fixture.",
+  "recoveryState": "partial",
+  "primaryIssueEligible": false,
+  "damagedReportRelation": "none",
+  "details": {
+    "fixtureOnly": true
+  }
+}
