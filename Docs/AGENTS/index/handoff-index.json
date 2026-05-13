@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T05:48:33.282Z",
-  "count": 411,
+  "generatedAt": "2026-05-13T05:57:20.467Z",
+  "count": 412,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8717,6 +8717,26 @@
         "apps/web/src/lib/analyzer-v2/run-context.ts"
       ],
       "summary": "Start from `runClaimBoundaryPipelineV2` in `apps/web/src/lib/analyzer-v2/orchestrator.ts`; it is the seam the prompt/config/model gateway should call into or wrap."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_5_Gateway_Governance_Skeleton.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "slice",
+        "5",
+        "gateway",
+        "governance",
+        "skeleton"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/gateway/types.ts"
+      ],
+      "summary": "Start in `apps/web/src/lib/analyzer-v2/gateway/policy.ts` and `cache-governance.ts` before adding any V2 stage that renders a prompt or calls a model."
     }
   ]
 }

@@ -2709,3 +2709,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 4 V2 Damaged Envelope -- [Standard] [open-items: yes]
 **For next agent:** `runClaimBoundaryV2Shell` now returns a schema-valid `4.0.0-cb-shadow` damaged envelope through `runClaimBoundaryPipelineV2`; the envelope is explicitly non-analytical (`UNVERIFIED`, confidence 0, `report_damaged`, `damagedReport: true`). Runner V2 metadata now stays schema-valid by avoiding V1-only `meta.pipelineVariant*`; prompt/config/model gateway remains the next slice. No live jobs used; budget remains 8.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_4_V2_Damaged_Envelope.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 5 Gateway Governance Skeleton -- [Standard] [open-items: yes]
+**For next agent:** Added V2-local gateway contracts under `apps/web/src/lib/analyzer-v2/gateway/`: static task policy, pure cache-key governance, and a surface ledger covering every current V1 stage plus quarantine/defer candidates (`CLAIM_GROUPING`, `orchestrated`, `model-tiering`, config knobs, hardcoded model params). Tests block unapproved executable tasks and enforce ledger exhaustiveness. No prompt/config/model/runtime/API/UI changes; no live jobs used; budget remains 8.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_5_Gateway_Governance_Skeleton.md
