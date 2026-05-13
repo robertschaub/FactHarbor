@@ -1,0 +1,17 @@
+= Academic Cooperation V2 Diagrams =
+
+{{info}}
+Diagram-only V2 appendix for the Academic Cooperation presentation. The original presentation remains unchanged; these diagrams show the target V2 research-platform architecture.
+{{/info}}
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Academic Cooperation Architecture.WebHome"/}}
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Overview.WebHome"/}}
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Entity Model ERD.WebHome"/}}
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Verdict Debate Pattern.WebHome"/}}
+
+----
+
+**Navigation:** [[Academic Cooperation>>FactHarbor.Product Development.Presentations.Academic Cooperation.WebHome]] | [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]

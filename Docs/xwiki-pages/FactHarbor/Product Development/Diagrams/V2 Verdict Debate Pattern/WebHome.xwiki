@@ -1,0 +1,35 @@
+= V2 Verdict Debate Pattern =
+
+{{info}}
+Target verdict adjudication pattern. V2 preserves structured adversarial adjudication while routing prompt/model mechanics through the shared gateway.
+{{/info}}
+
+{{mermaid}}
+flowchart LR
+    E["ClaimContract<br/>EvidenceCorpus<br/>BoundarySet"] --> ADV["Advocate<br/>evidence-backed baseline"]
+
+    ADV --> SC["Self-consistency / stability<br/>policy-owned repetitions"]
+    ADV --> CH["Challenger<br/>counter-evidence only"]
+    SC --> REC["Reconciliation<br/>evidence-weighted synthesis"]
+    CH --> REC
+    REC --> VAL["Validation<br/>citations, grounding, direction"]
+    VAL --> G4{{"Gate 4<br/>confidence integrity"}}
+    G4 --> VS["VerdictSet"]
+
+    LLM["Prompt / Model / LLM Gateway"] -.-> ADV
+    LLM -.-> SC
+    LLM -.-> CH
+    LLM -.-> REC
+    LLM -.-> VAL
+    WARN["Warning/Event Policy"] -.-> G4
+    WARN -.-> VS
+
+    classDef role fill:#e8f4ff,stroke:#2463a7,color:#08233d
+    classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+    classDef output fill:#edf7ed,stroke:#3d8b40,color:#102a12
+    classDef gateway fill:#f3e5f5,stroke:#7b1fa2,color:#2a103f
+    class ADV,SC,CH,REC,VAL role
+    class G4 gate
+    class E,VS output
+    class LLM,WARN gateway
+{{/mermaid}}

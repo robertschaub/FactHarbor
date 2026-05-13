@@ -1,0 +1,85 @@
+= Data Model V2 =
+
+{{info}}
+**Target Contract Reference** - V2 centres on a canonical ##ReportResult## built from typed stage handoff contracts.
+
+The current production data model remains the V1 ClaimAssessmentBoundary result until V2 cutover.
+{{/info}}
+
+== Entity Overview ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Entity Model ERD.WebHome"/}}
+
+== Contract Groups ==
+
+|= Contract |= Required content |= Notes
+| ##PipelineRunContext## | Run id, original input, current date, locale/language signal, config snapshot, prompt profile, model policy, ACS selected IDs when present | Created once and passed through all stages.
+| ##ClaimContract## | Original input, extracted AtomicClaims, selected AtomicClaims, validation result, repair/audit events, Gate 1 status | Claim fidelity authority.
+| ##EvidenceCorpus## | Sources, EvidenceItems, EvidenceScopes, acquisition trace, applicability results, source reliability signals, evidence warnings | Owns evidence lifecycle state.
+| ##SufficiencyAssessment## | Sufficiency status, missing evidence dimensions, continuation/refinement policy, user-facing scarcity warnings | Separate from retrieval implementation.
+| ##BoundarySet## | ClaimAssessmentBoundaries, normalized scopes, evidence assignments, coverage matrix, boundary warnings | Owns CAB product semantics.
+| ##VerdictSet## | Per-claim/per-boundary verdicts, debate artifacts, citation integrity results, direction/grounding repairs, Gate 4 status | Owns verdict integrity.
+| ##ReportResult## | Canonical truth, verdict, confidence, quality gates, warnings, evidence references, narrative, schema version, metadata | Sole source for public interpretation.
+| ##CompatibilityView## | API/UI/export/validation-specific projection of ##ReportResult## | Thin adapter with no independent verdict semantics.
+
+== ReportResult Authority ==
+
+##ReportResult## is the only V2 authority for public verdict meaning. It must include:
+
+|= Group |= Required fields or invariants
+| Schema | ##_schemaVersion##, ##meta.schemaVersion##, ##meta.pipeline##, ##meta.resultContractVersion##
+| Run metadata | Run id, current date, executed commit/hash when available, prompt/config/model hashes when available
+| Input | Original input reference, selected AtomicClaim IDs when ACS is used, language signal without forced translation
+| Claims | AtomicClaim id, statement, Gate 1 status, selected status, related ClaimAssessmentBoundary IDs
+| Evidence | EvidenceItem id, statement, source id, claim direction, EvidenceScope, probativeValue, sourceType, claimBoundaryId, citation reference
+| Boundaries | ClaimAssessmentBoundary id, label, scope summary, covered claim IDs, evidence IDs, coverage matrix link
+| Verdict | Canonical verdict label, truthPercentage, confidence, confidence tier, Gate 4 status, verdict source marker
+| Quality gates | Gate 1, sufficiency, Gate 4, report integrity, warning integrity, damaged-report flag where applicable
+| Warnings | Canonical ##WarningEvent## list, already classified by the shared warning policy
+| Narrative/report | Markdown, narrative sections, evidence references, report-quality status
+| Compatibility | Optional V1 projection fields, clearly marked as adapter material
+
+Adapters may expose legacy aliases, but they may not compute a different verdict authority when canonical fields are present.
+
+== WarningEvent Contract ==
+
+Every warning or visible event that can leave the pipeline carries:
+
+* stable ##type##
+* ##category##: routine operation, system failure, analytical reality, or internal diagnostic
+* raw severity
+* display severity from shared warning policy
+* visibility: silent, admin-only, user-visible, or blocking
+* affected stage/owner
+* affected claim/boundary/evidence/source IDs when applicable
+* materiality rationale
+* recovery state
+* primary-issue eligibility
+* damaged-report relation if applicable
+
+##severe## is represented as ##severity: "error"## plus a damaged-report flag. Internal diagnostics remain admin-only unless a separate damage event is emitted.
+
+== Schema Versions ==
+
+|= Schema |= Use
+| ##4.0.0-cb-shadow## | Internal shadow/non-public V2 result during guarded implementation.
+| ##4.0.0-cb## | Planned public V2 cutover schema.
+| ##3.2.0-cb## | V1 public compatibility schema; remains readable until an approved retirement.
+
+== Compatibility Boundary ==
+
+External adapters preserve behavior for API detail/list views, job UI, markdown, static HTML export, metrics, validation, calibration scripts, and legacy result reads. They consume canonical V2 fields when present and use legacy fallback only when canonical V2 fields are absent.
+
+== Relation To Current Data Model ==
+
+V2 preserves the core domain concepts: AtomicClaim, EvidenceItem, EvidenceScope, ClaimAssessmentBoundary, claim verdict, overall assessment, quality gates, and warnings. It changes the ownership model:
+
+* stage handoffs are explicit typed contracts;
+* canonical result interpretation is centralized;
+* warning display is centralized;
+* compatibility is isolated in adapters;
+* prepared ACS snapshots are consumed or migrated without dropping selected claim IDs.
+
+----
+
+**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current Data Model>>FactHarbor.Product Development.Specification.Architecture.Data Model.WebHome]]

@@ -1,0 +1,90 @@
+= V2 Pipeline Detail =
+
+{{info}}
+Detailed target flow for the V2 rebuild. Implemented state is partial: V2 is currently an isolated, disabled-by-default, non-analytical shadow path.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+  subgraph Entry["Entry and Run State"]
+    IN["PipelineRunContext<br/>input, current date, selected claims,<br/>config snapshot, prompt profile, model policy"]
+    LEDGER["Observability ledger<br/>events, warnings, usage, timings"]
+  end
+
+  subgraph Gateways["Shared Gateways"]
+    LLMG["Prompt / Model / LLM Gateway<br/>render section, validate variables,<br/>route model task, parse structured output"]
+    WARN["Warning and Event Policy<br/>materiality, visibility, primary issue,<br/>damaged-report relation"]
+    CACHE["Cache Governance<br/>prompt/model/config/input/schema dimensions"]
+  end
+
+  subgraph S1["Stage 1: Claim Understanding and Gate 1"]
+    ACS["ACS prepared snapshot migration<br/>selected-ID preservation"]
+    CU["LLM claim understanding<br/>requires Slice 6B approval"]
+    G1["Gate 1<br/>claim contract integrity"]
+    CC["ClaimContract"]
+  end
+
+  subgraph S2["Stage 2: Evidence Lifecycle"]
+    QP["Query plan"]
+    ACQ["Source acquisition and fetch"]
+    REL["Relevance and applicability"]
+    EXT["Evidence extraction<br/>EvidenceItem + EvidenceScope"]
+    EC["EvidenceCorpus"]
+  end
+
+  subgraph S25["Stage 2.5: Sufficiency Gate"]
+    SUFF["SufficiencyAssessment<br/>continue, refine, caveat, or damage"]
+  end
+
+  subgraph S3["Stage 3: Boundary Formation"]
+    BF["EvidenceScope congruence"]
+    COV["Coverage matrix"]
+    BS["BoundarySet"]
+  end
+
+  subgraph S4["Stage 4: Verdict Adjudication and Gate 4"]
+    ADV["Advocate"]
+    CHAL["Evidence-backed challenger"]
+    REC["Reconciliation"]
+    VAL["Grounding, direction, citation validation"]
+    G4["Gate 4 confidence integrity"]
+    VS["VerdictSet"]
+  end
+
+  subgraph S5["Stage 5: Aggregation and Result Writer"]
+    AGG["Aggregation policy"]
+    NAR["Narrative/report composition"]
+    RR["Canonical ReportResult"]
+    ADAPT["External CompatibilityView<br/>API, UI, markdown, HTML, metrics, validation"]
+  end
+
+  IN --> LEDGER
+  IN --> ACS --> CC
+  IN --> CU --> G1 --> CC
+  LLMG --> CU
+  LLMG --> QP
+  LLMG --> REL
+  LLMG --> EXT
+  LLMG --> BF
+  LLMG --> ADV
+  LLMG --> CHAL
+  LLMG --> REC
+  LLMG --> VAL
+  CACHE --> LLMG
+  WARN --> G1
+  WARN --> SUFF
+  WARN --> G4
+  WARN --> RR
+  CC --> QP --> ACQ --> REL --> EXT --> EC
+  EC --> SUFF --> BF --> COV --> BS
+  BS --> ADV --> CHAL --> REC --> VAL --> G4 --> VS
+  VS --> AGG --> NAR --> RR --> ADAPT
+  LEDGER -.-> RR
+
+  classDef gateway fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef stage fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef output fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  class LLMG,WARN,CACHE gateway
+  class IN,ACS,CU,G1,QP,ACQ,REL,EXT,SUFF,BF,COV,ADV,CHAL,REC,VAL,G4,AGG,NAR stage
+  class CC,EC,BS,VS,RR,ADAPT,LEDGER output
+{{/mermaid}}

@@ -65,6 +65,17 @@ flowchart LR
 | [[Quality and Trust>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust.WebHome]] | Quality gates, evidence filtering, source reliability, confidence calibration
 | [[Security and Operations>>FactHarbor.Product Development.Specification.Architecture.Security and Operations.WebHome]] | Security model, deployment topology, user roles, monitoring
 
+=== V2 Pipeline Replacement Target ===
+
+{{info}}
+V2 documentation is the target architecture for the pipeline rebuild. The current AKEL / ClaimAssessmentBoundary pipeline remains the production runtime until cutover approval.
+{{/info}}
+
+|= Page |= What You'll Learn
+| [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | Target V2 pipeline overview, stage sequence, simplification strategy, and current implementation status
+| [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]] | Detailed V2 stage contracts, request lifecycle, shared gateways, and implementation boundary
+| [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]] | Canonical V2 contracts: ClaimContract, EvidenceCorpus, BoundarySet, VerdictSet, ReportResult, WarningEvent, CompatibilityView
+
 === Deep Dives (for Developers and Testers) ===
 
 | [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | Role-based navigation to detailed implementation references

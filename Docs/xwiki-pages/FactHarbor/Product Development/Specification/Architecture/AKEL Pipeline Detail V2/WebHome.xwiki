@@ -1,0 +1,69 @@
+= AKEL Pipeline Detail V2 =
+
+{{info}}
+**Target Technical Reference** - Detailed V2 stage flow, run lifecycle, and ownership boundaries.
+
+This page is documentation for the target rebuild. It is not a claim that V2 already executes live analysis.
+{{/info}}
+
+== Detailed Pipeline Flow ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Detail.WebHome"/}}
+
+== Request Lifecycle ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
+
+== Stage Contracts ==
+
+|= Stage |= Inputs |= Semantic LLM tasks |= Structural tasks |= Outputs
+| **Claim Understanding + Gate 1** | ##PipelineRunContext##, raw input, optional ##InputGroundingSeed##, optional ACS prepared snapshot | Claim extraction, contract validation, repair, salience/atomicity judgment | ID generation, schema validation, selected-ID matching, ACS migration, ledger events | ##ClaimContract##, Gate 1 status
+| **Evidence Lifecycle** | ##PipelineRunContext##, ##ClaimContract##, optional seeded sources | Query planning, relevance, applicability, extraction, quality judgments | Provider calls, fetch retry, dedupe by structural source identity, budget accounting, trace events | ##EvidenceCorpus##
+| **Sufficiency Gate** | ##EvidenceCorpus##, ##ClaimContract##, config snapshot | Evidence adequacy judgment where semantic | Gate status construction, warning/event projection | ##SufficiencyAssessment##
+| **Boundary Formation** | ##EvidenceCorpus##, ##ClaimContract##, ##SufficiencyAssessment## | EvidenceScope normalization/equivalence, boundary clustering, low-coherence rationale | Boundary IDs, coverage matrix, evidence assignment by stable IDs | ##BoundarySet##
+| **Verdict Adjudication + Gate 4** | ##ClaimContract##, ##EvidenceCorpus##, ##BoundarySet##, prompt/model policy | Advocate, challenger, reconciliation, grounding, direction, confidence reasoning | Citation ID validation, parse/citation checks, repair ledger, Gate 4 status | ##VerdictSet##
+| **Aggregation + Result Writer** | ##ClaimContract##, ##EvidenceCorpus##, ##BoundarySet##, ##VerdictSet## | Article adjudication where configured, narrative generation, semantic explanation checks | Aggregation math, quality gate object, warning projection, schema serialization | ##ReportResult##
+| **External Adapters** | ##ReportResult## plus legacy fixtures when needed | None | API/UI/export/validation projection, legacy read fallback | ##CompatibilityView##
+
+== Shared Gateways ==
+
+=== Prompt / Model / LLM Gateway ===
+
+The gateway owns prompt section rendering, required variable validation, model task routing, provider retry/fallback, and structured output parsing. Stages request semantic tasks; they do not implement independent provider retry, credential fallback, parse recovery, or model routing.
+
+=== Warning and Event Policy ===
+
+All warning visibility uses one materiality policy for UI, API summaries, markdown, HTML export, metrics, and validation:
+
+> Would the verdict be materially different if this event had not occurred?
+
+Routine recovered operations are silent or admin-only. System failures, analytical scarcity, and internal diagnostics are surfaced according to verdict impact, not raw event severity.
+
+=== Cache Governance ===
+
+Analysis-affecting cache keys include every value that can change the semantic answer: prompt section and content hash, model task, provider, model, temperature profile, output schema version, config snapshot hash, result schema version, evidence/source identity when applicable, language/search context, current-date bucket, and adapter version when cached output feeds public projection.
+
+== Simplifications From V1 ==
+
+|= V1 complexity |= V2 simplification
+| Stage code owns too much retry, warning, prompt, and compatibility behavior | Move those policies into shared gateways and adapters.
+| Claim extraction contains multiple special repairs and refresh paths | Consolidate under one ##ClaimIntegrityPolicy## and ##ClaimContract##.
+| Research continuation is hidden inside loop logic | Make sufficiency a named gate with explicit continuation, caveat, or damage outcomes.
+| Boundary grouping can depend on deterministic semantic shortcuts | Use LLM-owned semantic equivalence or structural-only checks; no keyword or text-overlap meaning decisions.
+| Verdict confidence and warning decisions appear in multiple layers | Use one verdict confidence contract and one warning materiality authority.
+| UI/API/export readers can infer fallback meanings independently | Use ##ReportResult## as the authority and adapters as thin projections.
+
+== Implementation Boundary ==
+
+|= Boundary item |= V2 target
+| V2 code root | ##apps/web/src/lib/analyzer-v2/##
+| Public TypeScript entrypoint | ##runClaimBoundaryPipelineV2(context)##
+| Shadow schema | ##4.0.0-cb-shadow##
+| Public cutover schema | ##4.0.0-cb##
+| V1 compatibility schema | ##3.2.0-cb## remains readable
+| Default runtime | V1 ClaimAssessmentBoundary until cutover approval
+| Cutover prerequisite | Contract, adapter, quality, shadow comparison, and live validation gates passed
+
+----
+
+**Navigation:** [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | [[Current AKEL Pipeline Detail>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail.WebHome]]

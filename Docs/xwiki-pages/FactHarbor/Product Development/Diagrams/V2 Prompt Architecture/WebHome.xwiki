@@ -1,0 +1,45 @@
+= V2 Prompt Architecture =
+
+{{info}}
+Target prompt, model, config, and cache governance for V2. This diagram documents architecture only; it does not approve or change prompt text.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+  UCM["UCM prompt profiles<br/>section text, variables, output schemas"]
+  CFG["Config snapshot<br/>JSON defaults + active UCM values"]
+  MODEL["Model task registry<br/>provider, tier, temperature, tokens, timeout"]
+  CACHE["Cache policy<br/>prompt/model/config/input/schema dimensions"]
+
+  GATE["Prompt / Model / LLM Gateway"]
+
+  RENDER["Render prompt section<br/>fail required variable drift"]
+  ROUTE["Route model task<br/>provider fallback as structural resilience"]
+  CALL["LLM provider call"]
+  PARSE["Structured output parse<br/>typed LLMCallResult"]
+
+  STAGE["V2 stage<br/>semantic owner consumes typed result"]
+  LEDGER["Observability ledger<br/>usage, warnings, timings"]
+  TEST["Contract tests<br/>frontmatter, variables, schemas, cache keys"]
+
+  UCM --> GATE
+  CFG --> GATE
+  MODEL --> GATE
+  CACHE --> GATE
+  GATE --> RENDER --> ROUTE --> CALL --> PARSE --> STAGE
+  GATE --> LEDGER
+  PARSE --> LEDGER
+  UCM --> TEST
+  CFG --> TEST
+  MODEL --> TEST
+  CACHE --> TEST
+
+  classDef source fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef gateway fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef flow fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef verify fill:#f3e5f5,stroke:#7b1fa2,color:#2a103f
+  class UCM,CFG,MODEL,CACHE source
+  class GATE gateway
+  class RENDER,ROUTE,CALL,PARSE,STAGE flow
+  class LEDGER,TEST verify
+{{/mermaid}}

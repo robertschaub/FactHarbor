@@ -1,0 +1,88 @@
+= Prompt Architecture V2 =
+
+{{info}}
+**Target Governance Reference** - V2 treats prompts, model routing, config, cache keys, and structured outputs as first-class architecture.
+
+This page documents the target architecture only. It does not approve prompt text changes.
+{{/info}}
+
+== Overview ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Prompt Architecture.WebHome"/}}
+
+== Prompt Registry ==
+
+Every V2 analysis prompt section must have:
+
+* registered owner
+* semantic task
+* required variables
+* output schema
+* model task id
+* test coverage
+* prompt/content hash visibility where needed for reproducibility
+
+Prompt frontmatter variables must match rendered variables. Required-section render warnings should fail contract tests. Orphan sections remain quarantined until a real V2 caller is proven.
+
+== Model Policy ==
+
+One model task registry owns:
+
+* provider preference
+* model tier
+* temperature profile
+* token budget
+* timeout
+* retry and fallback policy
+* output schema version
+
+Provider fallback is structural resilience. It must not silently change prompt/task semantics.
+
+== Config Snapshot ==
+
+Analysis-affecting tunables belong in UCM/JSON defaults unless explicitly classified as structural constants. TypeScript schemas and JSON defaults must stay synchronized. Dead or weakly wired knobs should fail a config contract test.
+
+Hardcoded analysis-affecting temperatures, thresholds, token budgets, and timeouts are not allowed unless approved as fixed structural constants.
+
+== Cache Governance ==
+
+Any cache key that can affect analysis output must include:
+
+* prompt section name and prompt content hash
+* model task id, provider, model, temperature profile, and output schema version
+* config snapshot hash and result schema version
+* source/evidence identity when evidence is part of the task
+* language/search context where it affects retrieval or interpretation
+* current-date bucket when the task reasons about current facts
+* compatibility adapter version when cached output feeds public projection
+
+Cache reuse for structurally identical inputs is allowed. Cache reuse for semantically equivalent but textually different inputs is allowed only if equivalence is LLM-owned or structurally proven by stable IDs.
+
+== Prompt Genericity and Multilingual Gate ==
+
+Before any V2 prompt migration or cutover:
+
+* no analysis prompt may include Captain validation input terms as examples;
+* no prompt may steer by concrete date periods, regions, people, or topic vocabulary unless it is an input variable or provider-facing search query;
+* prompt variable rendering must be warning-free for every required section;
+* multilingual behavior must be source-language-first and must not force English analysis fallback;
+* LLM Expert review and explicit Captain approval are required for actual prompt text edits.
+
+== Quarantine Before Execution ==
+
+The implementation plan must classify these surfaces before prompt-backed V2 execution:
+
+|= Surface |= Required disposition
+| ##CLAIM_GROUPING## prompt section | Quarantine or assign real V2 caller with tests.
+| ##model-tiering.ts## vs active model resolver behavior | Decide one authority.
+| legacy model tier aliases and ##orchestrated## profile usage | Remove, quarantine, or map explicitly.
+| duplicate or weakly wired config knobs | Fail contract tests until resolved.
+| hardcoded call-site temperatures and budgets | Move to model policy or classify as structural constants.
+
+== Current Blocker ==
+
+Slice 6B, prompt-backed Claim Understanding execution, is blocked until Captain approval and LLM Expert review. Until then, V2 gateway policies remain static/non-executable and V2 analysis output remains a damaged shadow envelope.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]]

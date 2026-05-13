@@ -1,0 +1,98 @@
+= V2 Entity Model ERD =
+
+{{info}}
+Target V2 contract model. Names are logical contract names; implementation class names may differ if the same contract boundaries are preserved.
+{{/info}}
+
+{{mermaid}}
+erDiagram
+  PIPELINE_RUN_CONTEXT ||--|| CLAIM_CONTRACT : "creates"
+  PIPELINE_RUN_CONTEXT ||--|| CONFIG_SNAPSHOT : "uses"
+  PIPELINE_RUN_CONTEXT ||--|| OBSERVABILITY_LEDGER : "records"
+
+  CLAIM_CONTRACT ||--o{ ATOMIC_CLAIM : "selects"
+  CLAIM_CONTRACT ||--o{ WARNING_EVENT : "emits"
+  CLAIM_CONTRACT ||--o| ACS_MIGRATION : "may_use"
+
+  EVIDENCE_CORPUS ||--o{ SOURCE_RECORD : "contains"
+  EVIDENCE_CORPUS ||--o{ EVIDENCE_ITEM : "contains"
+  SOURCE_RECORD ||--o{ EVIDENCE_ITEM : "provides"
+  EVIDENCE_ITEM ||--|| EVIDENCE_SCOPE : "has"
+  EVIDENCE_ITEM }o--o{ ATOMIC_CLAIM : "relates_to"
+
+  SUFFICIENCY_ASSESSMENT ||--|| EVIDENCE_CORPUS : "assesses"
+  SUFFICIENCY_ASSESSMENT ||--o{ WARNING_EVENT : "emits"
+
+  BOUNDARY_SET ||--o{ CLAIM_ASSESSMENT_BOUNDARY : "contains"
+  CLAIM_ASSESSMENT_BOUNDARY ||--o{ EVIDENCE_SCOPE : "groups"
+  CLAIM_ASSESSMENT_BOUNDARY ||--o{ EVIDENCE_ITEM : "assigns"
+  BOUNDARY_SET ||--|| COVERAGE_MATRIX : "has"
+
+  VERDICT_SET ||--o{ CLAIM_VERDICT : "contains"
+  CLAIM_VERDICT }o--|| ATOMIC_CLAIM : "rates"
+  CLAIM_VERDICT }o--o{ EVIDENCE_ITEM : "cites"
+  CLAIM_VERDICT }o--o{ CLAIM_ASSESSMENT_BOUNDARY : "uses"
+  CLAIM_VERDICT ||--o{ VERDICT_CHALLENGE : "addresses"
+  VERDICT_SET ||--o{ WARNING_EVENT : "emits"
+
+  REPORT_RESULT ||--|| CLAIM_CONTRACT : "summarizes"
+  REPORT_RESULT ||--|| EVIDENCE_CORPUS : "references"
+  REPORT_RESULT ||--|| BOUNDARY_SET : "presents"
+  REPORT_RESULT ||--|| VERDICT_SET : "aggregates"
+  REPORT_RESULT ||--o{ WARNING_EVENT : "publishes"
+  REPORT_RESULT ||--|| COMPATIBILITY_VIEW : "projects"
+
+  PIPELINE_RUN_CONTEXT {
+    string runId
+    string currentDate
+    string originalInput
+    string promptProfile
+    string resultSchemaVersion
+  }
+  CLAIM_CONTRACT {
+    string schemaVersion
+    string gate1Status
+    json selectedAtomicClaimIds
+  }
+  ATOMIC_CLAIM {
+    string id
+    string statement
+    boolean selected
+  }
+  EVIDENCE_ITEM {
+    string id
+    string statement
+    string probativeValue
+    string claimDirection
+  }
+  EVIDENCE_SCOPE {
+    string methodology
+    string temporal
+    string boundaries
+    string geographic
+  }
+  CLAIM_ASSESSMENT_BOUNDARY {
+    string id
+    string label
+    string scopeSummary
+  }
+  CLAIM_VERDICT {
+    string claimId
+    float truthPercentage
+    float confidence
+    string gate4Status
+  }
+  WARNING_EVENT {
+    string type
+    string category
+    string displaySeverity
+    boolean primaryIssueEligible
+  }
+  REPORT_RESULT {
+    string schemaVersion
+    string verdictLabel
+    float truthPercentage
+    float confidence
+    boolean damagedReport
+  }
+{{/mermaid}}

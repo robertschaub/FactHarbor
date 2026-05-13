@@ -1,0 +1,38 @@
+= V2 Pipeline Overview =
+
+{{info}}
+Target V2 documentation diagram. V1 ClaimAssessmentBoundary remains the production runtime until explicit cutover approval.
+{{/info}}
+
+{{mermaid}}
+flowchart LR
+    INPUT["Article or Claim"] --> CTX["Run Context<br/>Config Snapshot"]
+    CTX --> S1["1. Claim<br/>Understanding"]
+    S1 --> G1{{"Gate 1"}}
+    G1 --> S2["2. Evidence<br/>Lifecycle"]
+    S2 --> SG{{"Sufficiency<br/>Gate"}}
+    SG --> S3["3. Boundary<br/>Formation"]
+    S3 --> S4["4. Verdict<br/>Adjudication"]
+    S4 --> G4{{"Gate 4"}}
+    G4 --> S5["5. Aggregation<br/>Report Writer"]
+    S5 --> ADAPT["Compatibility<br/>Adapters"]
+    ADAPT --> OUT["Verdict and<br/>Structured Report"]
+
+    LLM["Prompt / Model / LLM Gateway"] -.-> S1
+    LLM -.-> S2
+    LLM -.-> S3
+    LLM -.-> S4
+    WARN["Warning and Event Policy"] -.-> G1
+    WARN -.-> SG
+    WARN -.-> G4
+    WARN -.-> S5
+
+    classDef stage fill:#e8f4ff,stroke:#2463a7,color:#08233d
+    classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+    classDef gateway fill:#edf7ed,stroke:#3d8b40,color:#102a12
+    classDef output fill:#f3e5f5,stroke:#7b1fa2,color:#2a103f
+    class CTX,S1,S2,S3,S4,S5,ADAPT stage
+    class G1,SG,G4 gate
+    class LLM,WARN gateway
+    class INPUT,OUT output
+{{/mermaid}}

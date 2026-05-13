@@ -1,0 +1,77 @@
+= V2 Academic Cooperation Architecture =
+
+{{info}}
+Presentation-oriented V2 diagrams for academic cooperation. These diagrams describe the target research platform shape, not a current production cutover.
+{{/info}}
+
+== Research Platform Flow ==
+
+{{mermaid}}
+flowchart LR
+    INPUT["Claim or Article<br/>any language"] --> CONTRACT["ClaimContract<br/>selected AtomicClaims"]
+    CONTRACT --> CORPUS["EvidenceCorpus<br/>sources, evidence, scopes"]
+    CORPUS --> SUFF["SufficiencyAssessment"]
+    SUFF --> BOUNDARIES["BoundarySet<br/>evidence-emergent frames"]
+    BOUNDARIES --> VERDICTS["VerdictSet<br/>structured debate"]
+    VERDICTS --> RESULT["ReportResult<br/>verdict, confidence, warnings"]
+    RESULT --> ADAPTERS["CompatibilityView<br/>UI, API, export, validation"]
+
+    OBS["Observability Ledger<br/>events, timing, usage"] -.-> CONTRACT
+    OBS -.-> CORPUS
+    OBS -.-> VERDICTS
+    OBS -.-> RESULT
+
+    classDef contract fill:#e8f4ff,stroke:#2463a7,color:#08233d
+    classDef evidence fill:#edf7ed,stroke:#3d8b40,color:#102a12
+    classDef verdict fill:#f3e5f5,stroke:#7b1fa2,color:#2a103f
+    classDef gate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+    class INPUT,CONTRACT contract
+    class CORPUS,BOUNDARIES evidence
+    class SUFF gate
+    class VERDICTS,RESULT verdict
+    class ADAPTERS,OBS contract
+{{/mermaid}}
+
+== V2 Experiment Surfaces ==
+
+{{mermaid}}
+flowchart TB
+    subgraph Stable["Stable Product Contracts"]
+        RC["Run Context + Config Snapshot"]
+        RR["Canonical ReportResult"]
+        CV["CompatibilityView"]
+    end
+
+    subgraph Research["Research-Replaceable Components"]
+        CU["Claim understanding model task"]
+        RET["Retrieval / query policy"]
+        REL["Relevance and applicability model"]
+        CAB["Boundary formation model"]
+        DEB["Verdict debate policy"]
+        QUAL["Quality and sufficiency scoring"]
+    end
+
+    subgraph Measures["Measured Outputs"]
+        COST["Cost"]
+        LAT["Latency"]
+        STAB["Verdict stability"]
+        COV["Evidence coverage"]
+        NEUT["Input neutrality"]
+        MULTI["Multilingual robustness"]
+    end
+
+    RC --> CU --> RET --> REL --> CAB --> DEB --> QUAL --> RR --> CV
+    CU -.-> COST
+    RET -.-> LAT
+    REL -.-> COV
+    DEB -.-> STAB
+    QUAL -.-> NEUT
+    QUAL -.-> MULTI
+
+    classDef stable fill:#edf7ed,stroke:#3d8b40,color:#102a12
+    classDef research fill:#e8f4ff,stroke:#2463a7,color:#08233d
+    classDef measure fill:#fff4d6,stroke:#9a6700,color:#3a2600
+    class RC,RR,CV stable
+    class CU,RET,REL,CAB,DEB,QUAL research
+    class COST,LAT,STAB,COV,NEUT,MULTI measure
+{{/mermaid}}

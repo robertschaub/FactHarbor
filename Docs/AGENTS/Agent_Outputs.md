@@ -2739,3 +2739,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Plan Status Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Added execution-status addenda to `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md` and `Docs/WIP/2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md`. The plan now points to the target spec as operative, records Phases 1-5 complete and Phase 6 stable through Slice 6A, and preserves the Slice 6B approval boundary.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Plan_Status_Consolidation.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild V2 xWiki Documentation -- [Standard] [open-items: yes]
+**For next agent:** Created V2 sibling xWiki pages for AKEL Pipeline, AKEL Pipeline Detail, Data Model, Quality Gates, Verdict Debate Pattern, and Prompt Architecture, plus reusable V2 diagram pages and a diagram-only Academic Cooperation V2 appendix. The current V1 xWiki pages remain intact as production-runtime documentation; V2 pages document target architecture and current guarded status only. No source, prompt, config, API, UI, runtime, or live-job behavior changed.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_V2_xWiki_Documentation.md

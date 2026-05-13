@@ -1,0 +1,91 @@
+= AKEL Pipeline V2 =
+
+{{info}}
+**Target Architecture Reference** - This page describes the planned V2 replacement for the current AKEL / ClaimAssessmentBoundary pipeline.
+
+V1 remains the production runtime. V2 is currently isolated behind a disabled shadow path and is non-analytical until the next approved implementation slice.
+{{/info}}
+
+== Purpose ==
+
+V2 replaces the current pipeline with a cleaner architecture that keeps FactHarbor's trust safeguards while reducing control-flow complexity, scattered compatibility logic, and duplicate policy decisions.
+
+The governing intent is:
+
+> Replace the current analysis pipeline with a cleaner, maintainable architecture. Start from a reverse-engineered current-state specification, clean and redesign it, then implement only after review approval. The UI should remain unchanged unless a concrete product, trust, or compatibility need is approved.
+
+== Overview ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Pipeline Overview.WebHome"/}}
+
+The V2 pipeline keeps the required analytical sequence:
+
+1. Claim Understanding and Gate 1
+1. Evidence Lifecycle
+1. Sufficiency Gate
+1. Boundary Formation
+1. Verdict Adjudication and Gate 4
+1. Aggregation and Report Result Writer
+1. External Compatibility Adapters
+
+The simplification is architectural, not analytical. V2 does not remove claim decomposition, research, evidence-emergent ClaimAssessmentBoundaries, structured verdict adjudication, confidence gates, evidence citations, or warning visibility.
+
+== Key Design Shift ==
+
+V1 mixes stage behavior with prompt/model calls, retries, warning interpretation, result projection, and legacy compatibility in too many places. V2 separates these concerns:
+
+|= Boundary |= V2 owner
+| Prompt/model/provider mechanics | Prompt / Model / LLM Gateway
+| Warning severity, display, and primary issue selection | Warning and Event Policy
+| Run metadata, config, prompt profile, model policy | PipelineRunContext and ConfigSnapshot
+| Evidence retrieval and source acquisition | Evidence Lifecycle
+| Evidence adequacy decision | SufficiencyAssessment
+| Public interpretation | Canonical ReportResult
+| UI/API/export/validation shape | CompatibilityView adapters
+
+The orchestrator controls sequence and typed handoff only. It does not own prompt text, semantic decisions, warning display policy, result interpretation, or UI/export compatibility behavior.
+
+== Stage Summary ==
+
+|= Stage |= Purpose |= Primary output
+| **Claim Understanding + Gate 1** | Convert input or ACS prepared state into selected AtomicClaims with contract integrity. | ##ClaimContract##
+| **Evidence Lifecycle** | Build a source-backed corpus for selected claims. | ##EvidenceCorpus##
+| **Sufficiency Gate** | Decide whether evidence is adequate, needs refinement, needs caveat, or cannot support a trustworthy report. | ##SufficiencyAssessment##
+| **Boundary Formation** | Cluster compatible EvidenceScopes into ClaimAssessmentBoundaries and coverage views. | ##BoundarySet##
+| **Verdict Adjudication + Gate 4** | Produce evidence-cited verdicts with debate, citation integrity, grounding, direction, and confidence checks. | ##VerdictSet##
+| **Aggregation + Result Writer** | Create the one canonical public result. | ##ReportResult##
+| **External Adapters** | Preserve UI/API/export/validation behavior without reinterpreting verdicts. | ##CompatibilityView##
+
+== Current Implementation State ==
+
+|= Slice |= Status |= Notes
+| Target specification | Done | Deputy-approved architecture baseline.
+| Contract fixtures | Done | V1/V2 result, warning, ACS, and legacy fixtures plus schema tests.
+| Compatibility readers/adapters | Done | Public/read surfaces can consume V2 fixtures while V1 runtime remains default.
+| Disabled V2 shell | Done | V2 entry exists but is double-gated and disabled by default.
+| Damaged V2 envelope | Done | V2 shell returns schema-valid damaged/non-analytical result.
+| Gateway governance skeleton | Done | Prompt/model/cache governance is static and non-executable.
+| Claim Understanding contracts | Done | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter.
+| Claim Understanding prompt/model execution | Blocked | Requires explicit Captain approval and LLM Expert review.
+
+No live jobs have been used for the implemented V2 slices. The approved live-job budget remains reserved for later validation gates.
+
+== V1 Protection Rules ==
+
+* V1 ClaimAssessmentBoundary remains the default runtime until cutover approval.
+* V2 can run only through explicit shadow routing.
+* V2 must not replace public ##resultJson## or ##reportMarkdown## before cutover approval.
+* External adapters may read ##ReportResult## and compatibility fixtures, but they may not call V2 stage internals.
+* V1 cleanup happens only after V2 owns the equivalent contract and passes its verifier.
+
+== Deep Dives ==
+
+* [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
+* [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]]
+* [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]]
+
+----
+
+**Navigation:** [[Architecture>>FactHarbor.Product Development.Specification.Architecture.WebHome]] | [[Current AKEL Pipeline>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline.WebHome]]

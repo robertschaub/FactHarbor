@@ -1,0 +1,36 @@
+= V2 Request Lifecycle =
+
+{{info}}
+Target request lifecycle with V1 protected as the default runtime and V2 available only through an explicit shadow path until cutover.
+{{/info}}
+
+{{mermaid}}
+sequenceDiagram
+  participant User as User / UI
+  participant API as API service
+  participant Runner as Next.js runner
+  participant Select as Pipeline selector
+  participant V1 as V1 CB pipeline
+  participant V2 as V2 pipeline shell
+  participant Adapter as Compatibility adapters
+  participant Store as Job storage / events
+
+  User->>API: submit analysis input
+  API->>Store: create queued job
+  API->>Runner: POST internal run-job
+  Runner->>Select: choose persisted pipeline variant
+
+  alt default production path
+    Select->>V1: run current ClaimAssessmentBoundary pipeline
+    V1-->>Runner: V1 result JSON and report
+  else explicit gated V2 shadow path
+    Select->>V2: runClaimBoundaryPipelineV2(context)
+    V2-->>Runner: 4.0.0-cb-shadow damaged or future V2 result
+  end
+
+  Runner->>Adapter: project result for API/UI/export/readers
+  Adapter-->>Runner: compatible result surfaces
+  Runner->>API: PATCH job result and status
+  API->>Store: persist result JSON, events, quick fields
+  API-->>User: SSE / polling update
+{{/mermaid}}

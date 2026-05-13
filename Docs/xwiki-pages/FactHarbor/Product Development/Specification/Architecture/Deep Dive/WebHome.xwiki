@@ -13,11 +13,13 @@ This section contains detailed implementation references for developers and test
 |= Page |= Description |= Key Files
 | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Twin-path architecture (ClaimAssessmentBoundary + Monolithic Dynamic): invariants, shared primitives, result model, variant selection, configuration | ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##
 | [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] | Structured 5-step adversarial debate pattern: roles (Advocate, Challenger, Reconciler), model tiers, research rationale, and quality guards | ##verdict-stage.ts##, ##claimboundary.prompt.md##
+| [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]] | Target V2 verdict adjudication: advocate, challenger, reconciliation, validation, evidence-backed contestation, Gate 4 | ##analyzer-v2## target
 
 === Quality and Evidence ===
 
 |= Page |= Description |= Key Files
 | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] | Gate 1 (claim validation) and Gate 4 (confidence assessment) — criteria, examples, configuration | ##quality-gates.ts##
+| [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]] | Target V2 gates: Gate 1 claim contract integrity, sufficiency gate, Gate 4 verdict integrity, warning materiality | ##analyzer-v2## target
 | [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] | 7-layer defence strategy, filter rules, category-specific requirements, troubleshooting | ##evidence-filter.ts##, ##provenance-validation.ts##
 | [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] | ClaimAssessmentBoundary clustering methodology, multi-boundary scenarios | ##claimboundary-pipeline.ts## (Stage 3)
 | [[Direction Semantics>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Direction Semantics.WebHome]] | Multi-layer direction semantics, scope mismatch problem, LLM-code alignment, counter-claim handling | ##verdict-stage.ts##, ##types.ts##
@@ -33,6 +35,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] | Modular prompt composition, provider-specific variants, token optimisation | ##prompts/##
+| [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]] | Target V2 prompt/model/config/cache governance; documents the approval gate before prompt-backed execution | ##analyzer-v2## target
 | [[KeyFactors Design>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.KeyFactors Design.WebHome]] | KeyFactor classification and decomposition (Orchestrated-era design decision — superseded by ClaimAssessmentBoundary) | //historical//
 | [[Storage Technology>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Storage Technology.WebHome]] | Caching value analysis, Redis/PostgreSQL/Vector DB assessments, cost modelling | ##config-storage.ts##, ##source-reliability-cache.ts##
 | [[Schema Migration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Schema Migration.WebHome]] | Database schema evolution patterns | ##Data/##

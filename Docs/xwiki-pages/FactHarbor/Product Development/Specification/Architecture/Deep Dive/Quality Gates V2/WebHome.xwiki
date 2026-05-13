@@ -1,0 +1,88 @@
+= Quality Gates V2 =
+
+{{info}}
+**Target Trust Reference** - V2 keeps Gate 1 and Gate 4, adds an explicit sufficiency gate, and makes warning materiality a shared product policy.
+{{/info}}
+
+== Gate Flow ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome"/}}
+
+== Gate Summary ==
+
+|= Gate |= Purpose |= Output
+| **Gate 1: Claim Contract Integrity** | Ensure the pipeline has valid, selected, analyzable AtomicClaims and that ACS prepared-state selections remain intact. | Gate 1 status in ##ClaimContract##
+| **Sufficiency Gate** | Decide whether the evidence corpus is adequate to continue, should be refined, should proceed with caveat, or cannot support a trustworthy result. | ##SufficiencyAssessment##
+| **Gate 4: Verdict Integrity** | Ensure verdicts have citation integrity, grounding, direction consistency, and confidence status before publication. | Gate 4 status in ##VerdictSet##
+| **Report Integrity** | Ensure the canonical result can be serialized and projected without adapter reinterpretation. | ##ReportResult## integrity status
+| **Warning Integrity** | Ensure all warnings use the shared materiality policy. | Canonical ##WarningEvent## list
+
+== Gate 1: Claim Contract Integrity ==
+
+Gate 1 is the authority for claim fidelity, analyzability, selected-claim preservation, and prepared ACS snapshot compatibility.
+
+=== Inputs ===
+
+* ##PipelineRunContext##
+* raw user input or URL/PDF-derived text
+* optional ##InputGroundingSeed##
+* optional V1 ##PreparedStage1Snapshot##
+* optional selected AtomicClaim IDs
+
+=== Failure Modes ===
+
+|= Failure |= V2 behavior
+| No valid AtomicClaim | Damaged report.
+| Contract validation fails after allowed repair | Damaged report.
+| Selected claim missing from prepared snapshot | Damaged report or explicit ACS retry path.
+| Prompt/model unavailable | Provider failure warning or damaged report depending on recovery.
+
+V2 must preserve draft id, job association, selected AtomicClaim IDs, original selected claim statements, prepared evidence/source seed data when present, and runner reuse semantics.
+
+== Sufficiency Gate ==
+
+The sufficiency gate makes evidence adequacy explicit. It replaces hidden research-loop decisions with a typed outcome:
+
+|= Outcome |= Meaning
+| Continue | Evidence is adequate for boundary and verdict work.
+| Refine | Retrieval should perform a named refinement policy.
+| Caveat | Evidence is scarce but usable; warning materiality decides visibility.
+| Damage / low-confidence path | Corpus cannot support a trustworthy verdict.
+
+Evidence scarcity is normally an analytical reality, not a system error. Search provider collapse, budget exhaustion, or source acquisition failure is a system issue and must be surfaced according to verdict impact.
+
+== Gate 4: Verdict Integrity ==
+
+Gate 4 belongs to verdict adjudication. It checks:
+
+* citation ID existence and phantom citation stripping
+* grounding to provided evidence
+* direction consistency
+* confidence status from the canonical confidence policy
+* repair and safe-downgrade ledger
+* evidence-backed challenge handling
+
+Opinion-only or unsupported challenge material cannot reduce truth percentage or confidence. Only evidence-backed counter-arguments may affect verdicts.
+
+== Warning Materiality ==
+
+Before any warning becomes user-visible, V2 applies:
+
+> Would the verdict be materially different if this event had not occurred?
+
+|= Answer |= Display decision
+| No | silent or admin-only info
+| Maybe | user-visible warning at most
+| Yes | error or damaged report
+
+Adapters must use the same policy for UI, API summaries, markdown, static HTML export, metrics, and validation.
+
+== Deterministic Boundary ==
+
+Structural checks are allowed: schema validation, ID existence, citation ID matching, null/empty validation, serialization, and adapter field presence.
+
+Semantic decisions are LLM-owned or UCM-owned: claim analyzability, evidence relevance, scope compatibility, sufficiency, challenge substance, direction meaning, and confidence reasoning. V2 must not introduce keyword, regex, text-overlap, or language-specific rules that decide what text means.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
