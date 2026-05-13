@@ -10,7 +10,7 @@ The addendum records documentation parity, academic/research-platform validation
 
 Franklin and Lorentz both returned `MODIFY`.
 
-Captain also asked whether a Claude agent could review this slice. Tool discovery in this session did not expose a callable Claude/Anthropic review agent or connector, so no Claude review was performed and this handoff must not be read as Claude signoff.
+Captain also asked whether a Claude agent could review this slice. Initial tool discovery did not expose a callable Claude/Anthropic review agent or connector. A later retry found the local Claude Code CLI and Claude Opus reviewed commit `b6c9926c` after the initial commit. That review returned `APPROVE`, with no blockers, no required edits, and "commit should stand as-is."
 
 Consolidated requirements applied:
 
@@ -38,4 +38,14 @@ Consolidated requirements applied:
 
 - Section 1.4 is a guardrail delta, not a new architecture layer.
 - Slice 6B remains blocked until Captain approval and LLM Expert review.
-- Claude/Anthropic review was requested but unavailable in the current tool context.
+- Claude review happened as a post-commit review via local Claude Code CLI, not as part of the original Franklin/Lorentz pre-commit consolidation.
+
+## Claude Review Result
+
+Claude Opus review summary:
+
+- verdict: `APPROVE`;
+- blockers: none;
+- required edits: none;
+- compliance checks: no prompt/model/schema/API/DB/event-shape changes; terminology and LLM-ownership invariants intact; Slice 6B remains blocked;
+- recommendation: commit `b6c9926c` should stand as-is and optional clarifications can be batched with a future spec touch.
