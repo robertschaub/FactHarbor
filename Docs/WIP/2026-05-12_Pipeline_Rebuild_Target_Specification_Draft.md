@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation not started  
+**Status:** Deputy-approved target architecture; implementation in progress through Slice 6A
 **Owner role:** Lead Architect  
 
 ---
@@ -15,6 +15,107 @@ This document defines the target architecture for replacing the current ClaimAss
 The goal is replacement, not additive refactoring. The new pipeline should be built as an isolated V2 path, then verified and cut over only after the specification and validation gates approve it. The current hot path must remain runnable until V2 passes the approved structural, compatibility, warning/report, quality, cost, and performance gates.
 
 This draft intentionally does not edit source code, prompts, config, UI, or tests. It is the review package that should be challenged by Lead Architect, LLM Expert, Senior Developer, Code Reviewer, and Gemini/Challenger roles before implementation starts.
+
+---
+
+## 1.1 Implementation Progress Addendum - 2026-05-13
+
+Implementation has started in the new worktree after deputy approval of this target architecture. Current committed state:
+
+| Slice | Status | Commit | Notes |
+|---|---|---|---|
+| Target specification | done | `869b8861` | Deputy-approved architecture baseline |
+| Slice 1: contract fixtures | done | `80deeb6f` | V2/V1 result, warning, ACS, and legacy fixtures plus schema tests |
+| Slice 2A-2H: compatibility readers/adapters | done | slice commits through `041c0bd5` | Public/read surfaces can consume V2 fixtures while V1 runtime remains default |
+| Slice 3: disabled V2 shell | done | `ce42e058` | V2 entry exists but is double-gated and disabled by default |
+| Slice 4: damaged V2 envelope | done | `a654f125` | V2 shell returns schema-valid damaged/non-analytical result |
+| Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
+| Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
+| Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
+
+No live jobs have been used for these slices. Approved live-job budget remaining: 8.
+
+```mermaid
+flowchart LR
+  S0["Spec approved"]
+  S1["Contracts and fixtures"]
+  S2["Compatibility readers and adapters"]
+  S3["Disabled V2 shell"]
+  S4["Damaged V2 envelope"]
+  S5["Gateway governance"]
+  S6A["Claim Understanding contracts"]
+  S6B["Claim Understanding prompt/model execution"]
+  S7["Evidence lifecycle"]
+  S8["Boundary formation"]
+  S9["Verdict and Gate 4"]
+  S10["Aggregation and result writer"]
+  S11["Shadow comparison"]
+  S12["Live validation gate"]
+  S13["Cutover"]
+  S14["V1 cleanup"]
+
+  S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
+  S6A -->|"Captain approval + LLM Expert review required"| S6B
+  S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
+
+  classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
+  classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
+  classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
+  class S0,S1,S2,S3,S4,S5,S6A done
+  class S6B blocked
+  class S7,S8,S9,S10,S11,S12,S13,S14 future
+```
+
+Current architectural boundary:
+
+```mermaid
+flowchart TB
+  subgraph "V1 Runtime - still default"
+    V1["claimboundary-pipeline.ts"]
+    API["API / UI / reports / validation readers"]
+  end
+
+  subgraph "Compatibility Layer - implemented"
+    CV["V2 compatibility view"]
+    RR["legacy runner result readers"]
+    FX["V1/V2 fixtures and schemas"]
+  end
+
+  subgraph "V2 Offline Path - implemented but non-analytical"
+    ENTRY["runClaimBoundaryPipelineV2"]
+    ENV["damaged 4.0.0-cb-shadow envelope"]
+    GW["gateway policies blocked until approval"]
+    CU["ClaimContract + ACS migration"]
+  end
+
+  subgraph "Not Yet Implemented"
+    LLM["V2 prompt-backed claim understanding"]
+    EV["evidence lifecycle"]
+    CAB["boundary formation"]
+    VER["verdict adjudication and Gate 4"]
+    AGG["aggregation and canonical writer"]
+  end
+
+  API --> CV
+  CV --> FX
+  RR --> FX
+  ENTRY --> ENV
+  GW --> CU
+  CU -. "contracts only" .-> LLM
+  LLM --> EV --> CAB --> VER --> AGG
+  V1 --> API
+
+  classDef live fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef adapter fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef offline fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef future fill:#f1f1f1,stroke:#777,color:#222
+  class V1,API live
+  class CV,RR,FX adapter
+  class ENTRY,ENV,GW,CU offline
+  class LLM,EV,CAB,VER,AGG future
+```
+
+The next implementation step is Slice 6B only if the Captain approves prompt-change work. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
 
 ---
 

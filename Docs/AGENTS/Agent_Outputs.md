@@ -2719,3 +2719,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Slice 6A Claim Understanding Contracts -- [Standard] [open-items: yes]
 **For next agent:** Added V2 `ClaimContract` types/schema/fixture plus a pure ACS prepared-snapshot migration adapter in `apps/web/src/lib/analyzer-v2/claim-understanding/`. Gateway policy now declares Claim Understanding variables and cache dimensions while remaining non-executable. Franklin, Lorentz, and Claude Opus 4.6 approved the contracts-only boundary; no prompt/runtime/API/UI/live-job changes were made.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Slice_6A_Claim_Understanding_Contracts.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Progress Diagrams -- [Standard] [open-items: yes]
+**For next agent:** Updated `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md` with Section 1.1, including current Slice 6A status and Mermaid diagrams for implementation progression and architecture boundaries. Review consolidation status now reflects implementation in progress. No source/prompt/config/API/UI/live-job behavior changed.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Progress_Diagrams.md
