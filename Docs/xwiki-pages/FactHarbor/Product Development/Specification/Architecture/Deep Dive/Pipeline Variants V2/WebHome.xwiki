@@ -1,0 +1,94 @@
+= Pipeline Variants V2 =
+
+{{info}}
+**Target Variant And Cutover Reference** - This page defines how V2 coexists with the current V1 runtime during rebuild, shadow validation, cutover, and cleanup.
+
+It is not permission to expose V2 public results before the approved cutover gate.
+{{/info}}
+
+== Purpose ==
+
+The V2 rebuild uses a temporary dual-variant posture so the current product remains stable while the replacement pipeline is built from clean contracts. The target end state is not a permanent twin-path system. V1 is retained only until V2 has equivalent contracts, adapters, validation evidence, and Captain/deputy approval.
+
+== Variant Lifecycle ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
+
+|= State |= Runtime role |= Public result authority |= Exit condition
+| V1 default | Current ClaimAssessmentBoundary pipeline remains production runtime. | V1 result JSON and report remain public. | V2 contracts, adapters, and shadow checks are ready.
+| V2 shadow | V2 runs only when explicitly gated for internal comparison. | V1 remains public; V2 output is non-public shadow evidence. | Shadow comparator, warning, schema, quality, cost, and latency gates pass.
+| V2 cutover | V2 produces public ##4.0.0-cb## results through compatibility adapters. | ##ReportResult## becomes public verdict authority. | Stability window confirms no critical regressions.
+| V1 cleanup | V1 hot-path code is removed only where V2 owns the equivalent contract. | V2 remains public authority; legacy readers keep historical V1 readability. | Cleanup ledger is complete and tests pass.
+
+== Non-Negotiable Variant Rules ==
+
+* V1 remains the default runtime until cutover approval.
+* V2 starts isolated under ##apps/web/src/lib/analyzer-v2/##.
+* V2 shadow output must not replace public ##resultJson## or ##reportMarkdown## before approval.
+* V2 may not skip Understand -> Research -> Boundary formation -> Verdict -> Aggregation/report.
+* V2 adapters may project ##ReportResult##, but they may not reinterpret verdict, confidence, or warning meaning.
+* V1 cleanup must follow a ledger: each removed V1 mechanism needs a V2 owner, verifier, and rollback/reader decision.
+
+== Dispatch Model ==
+
+{{mermaid}}
+flowchart TB
+  REQ["Job execution request"] --> SEL["Pipeline selector"]
+  SEL -->|"default"| V1["V1 ClaimAssessmentBoundary"]
+  SEL -->|"explicit shadow flag + kill switch open"| V2["V2 pipeline"]
+  V1 --> A1["V1 result"]
+  V2 --> A2["4.0.0-cb-shadow result"]
+  A1 --> PUB["Public API/UI/report/export"]
+  A2 --> SHADOW["Shadow comparison artifacts"]
+  SHADOW -. "cutover approval only" .-> PUB2["Future public 4.0.0-cb"]
+
+  classDef live fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef shadow fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
+  class REQ,SEL,V1,A1,PUB live
+  class V2,A2,SHADOW shadow
+  class PUB2 future
+{{/mermaid}}
+
+== Compatibility Adapter Boundary ==
+
+Compatibility adapters exist so UI, API, export, validation, metrics, and historical reads can remain stable while the pipeline internals change. Their permitted responsibilities are:
+
+* read canonical V2 fields;
+* project fields into current external shapes;
+* preserve historical V1 result readability;
+* report missing canonical fields as adapter/report integrity failures;
+* remain fixture-tested against V1 and V2 examples.
+
+Their forbidden responsibilities are:
+
+* calculating a different verdict;
+* downgrading or hiding material warnings;
+* inferring missing evidence or boundaries;
+* performing semantic text decisions;
+* calling V2 stage internals from external readers.
+
+== Cutover Gate ==
+
+V2 public cutover requires:
+
+1. contract and schema fixtures for every canonical public field;
+1. adapter parity tests for list/detail/report/export/validation readers;
+1. quality-gate and warning-materiality tests;
+1. shadow comparison against approved Captain-defined inputs;
+1. comparator report review against Captain quality expectations;
+1. cost and latency review using measured baselines;
+1. explicit Captain or delegated deputy approval.
+
+== Cleanup Gate ==
+
+After cutover, V1 removal happens in small cleanup slices. A V1 mechanism can be removed only when:
+
+* the equivalent V2 owner is implemented and verified;
+* persisted historical reports remain readable;
+* fallback behavior is either unnecessary or explicitly retained in an adapter;
+* documentation and handoff notes identify the removal decision.
+
+----
+
+**Navigation:** [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]] | [[Current Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]]

@@ -2,6 +2,10 @@
 
 FactHarbor employs multiple quality mechanisms to ensure analysis results are trustworthy: quality gates validate input and output, a defence-in-depth system ensures evidence and verdict quality, source reliability scoring evaluates source credibility, and a confidence calibration pipeline prevents misleading confidence scores.
 
+{{info}}
+**V2 target note:** This page documents current/V1 runtime trust mechanisms. For the pipeline rebuild target, see [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]], [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]], [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]], and [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]].
+{{/info}}
+
 == Quality Gates ==
 
 Two quality gates are integrated into the ClaimAssessmentBoundary pipeline: Gate 1 validates extracted claims before research proceeds, and Gate 4 assesses verdict confidence and report trustworthiness after verdict generation.

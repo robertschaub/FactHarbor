@@ -2,6 +2,10 @@
 
 FactHarbor uses a three-database architecture with SQLite and a Unified Config Management (UCM) system for runtime configuration. This page covers the storage design, caching strategy, and evolution roadmap.
 
+{{info}}
+**V2 target note:** The rebuild keeps UCM and persistence separation, while V2 introduces explicit run context, config snapshot, cache governance, source-reliability signal, and ledger contracts. See [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]], [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]], and [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]].
+{{/info}}
+
 == Three-Database Architecture ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.Storage Architecture.WebHome"/}}

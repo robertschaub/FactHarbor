@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T10:25:16.826Z",
-  "count": 419,
+  "generatedAt": "2026-05-13T16:41:15.286Z",
+  "count": 420,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8792,6 +8792,32 @@
         "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts"
       ],
       "summary": "Start from `apps/web/src/lib/analyzer-v2/claim-understanding/types.ts`, `prepared-snapshot.ts`, and the gateway tests before adding any native claim-understanding implementation."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_V2_Documentation_Equivalents.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "v2",
+        "documentation",
+        "equivalents"
+      ],
+      "files_touched": [
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Quality and Trust V2/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Pipeline Variants V2/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts V2/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Evidence Lifecycle V2/WebHome.xwiki",
+        "Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Source Reliability V2/WebHome.xwiki",
+        "Docs/ARCHITECTURE/Calculations_V2.md",
+        "Docs/ARCHITECTURE/Evidence_Quality_Filtering_V2.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Use the V2 docs as reader-level specification companions to `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`. Franklin reviewed this slice and required one diagram correction in `Evidence Lifecycle V2` so the source-reliability signal is semantic/LLM-owned where semantic, not str"
     },
     {
       "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_V2_xWiki_Documentation.md",

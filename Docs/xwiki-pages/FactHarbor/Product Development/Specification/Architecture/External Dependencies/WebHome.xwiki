@@ -2,6 +2,10 @@
 
 FactHarbor depends on external LLM providers for AI analysis and search providers for evidence retrieval. This page documents the integration architecture, model tiering strategy, and provider health monitoring.
 
+{{info}}
+**V2 target note:** The rebuild keeps provider abstraction but centralizes prompt/model/cache governance in the V2 gateway. For target behavior, see [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]], [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]], and [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]].
+{{/info}}
+
 == Dependencies Map ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.External Dependencies Map.WebHome"/}}

@@ -75,6 +75,9 @@ V2 documentation is the target architecture for the pipeline rebuild. The curren
 | [[AKEL Pipeline V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline V2.WebHome]] | Target V2 pipeline overview, stage sequence, simplification strategy, and current implementation status
 | [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]] | Detailed V2 stage contracts, request lifecycle, shared gateways, and implementation boundary
 | [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]] | Canonical V2 contracts: ClaimContract, EvidenceCorpus, BoundarySet, VerdictSet, ReportResult, WarningEvent, CompatibilityView
+| [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]] | Target V2 trust architecture: gates, evidence quality boundary, source reliability posture, confidence, warning materiality, and cutover readiness
+
+Detailed V2 references are available from the [[Deep Dive Index>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.WebHome]], including pipeline variants, evidence lifecycle, calculations/verdicts, source reliability, quality gates, verdict debate, and prompt architecture.
 
 === Deep Dives (for Developers and Testers) ===
 

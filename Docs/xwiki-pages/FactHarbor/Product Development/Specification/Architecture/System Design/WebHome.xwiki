@@ -2,6 +2,10 @@
 
 FactHarbor uses a **two-service architecture**: a Next.js web application (UI + AKEL analysis engine) and a .NET API (job management + persistence). Both services run on a single host and communicate via HTTP.
 
+{{info}}
+**V2 target note:** The two-service lifecycle remains the architectural baseline for the rebuild. V2 changes the analysis pipeline internals and compatibility adapters, not the public UI/API lifecycle unless explicitly approved. See [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]] and [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]].
+{{/info}}
+
 == Two-Service Architecture ==
 
 {{include reference="FactHarbor.Product Development.Diagrams.System Architecture.WebHome"/}}

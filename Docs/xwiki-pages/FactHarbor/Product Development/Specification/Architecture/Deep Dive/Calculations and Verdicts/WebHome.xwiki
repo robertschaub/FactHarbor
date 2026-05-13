@@ -6,6 +6,10 @@
 **Key Files**: ##apps/web/src/lib/analyzer/aggregation.ts##, ##apps/web/src/lib/analyzer/truth-scale.ts##, ##apps/web/src/lib/analyzer/claimboundary-pipeline.ts##, ##apps/web/src/lib/analyzer/source-reliability.ts##
 {{/info}}
 
+{{info}}
+**V2 target note:** This page documents current/V1 calculation behavior. V2 keeps the public verdict semantics but centralizes verdict authority in ##ReportResult## and does not import direct source-reliability formulas by default. See [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]].
+{{/info}}
+
 **Version**: 2.11.0
 **Status**: Operational
 

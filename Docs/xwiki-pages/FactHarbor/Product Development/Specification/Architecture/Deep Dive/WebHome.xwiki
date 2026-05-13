@@ -12,6 +12,7 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] | Twin-path architecture (ClaimAssessmentBoundary + Monolithic Dynamic): invariants, shared primitives, result model, variant selection, configuration | ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##
+| [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]] | Target V2 coexistence, shadow routing, cutover, compatibility adapter boundaries, and V1 cleanup gates | ##analyzer-v2## target
 | [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] | Structured 5-step adversarial debate pattern: roles (Advocate, Challenger, Reconciler), model tiers, research rationale, and quality guards | ##verdict-stage.ts##, ##claimboundary.prompt.md##
 | [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]] | Target V2 verdict adjudication: advocate, challenger, reconciliation, validation, evidence-backed contestation, Gate 4 | ##analyzer-v2## target
 
@@ -21,6 +22,7 @@ This section contains detailed implementation references for developers and test
 | [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] | Gate 1 (claim validation) and Gate 4 (confidence assessment) — criteria, examples, configuration | ##quality-gates.ts##
 | [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]] | Target V2 gates: Gate 1 claim contract integrity, sufficiency gate, Gate 4 verdict integrity, warning materiality | ##analyzer-v2## target
 | [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] | 7-layer defence strategy, filter rules, category-specific requirements, troubleshooting | ##evidence-filter.ts##, ##provenance-validation.ts##
+| [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]] | Target V2 evidence lifecycle: query planning, acquisition, applicability, extraction, source signals, sufficiency, and evidence-quality boundary | ##analyzer-v2## target
 | [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] | ClaimAssessmentBoundary clustering methodology, multi-boundary scenarios | ##claimboundary-pipeline.ts## (Stage 3)
 | [[Direction Semantics>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Direction Semantics.WebHome]] | Multi-layer direction semantics, scope mismatch problem, LLM-code alignment, counter-claim handling | ##verdict-stage.ts##, ##types.ts##
 
@@ -28,8 +30,10 @@ This section contains detailed implementation references for developers and test
 
 |= Page |= Description |= Key Files
 | [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] | 7-point verdict scale, aggregation hierarchy, weighting formulas, counter-evidence handling | ##aggregation.ts##, ##truth-scale.ts##
+| [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]] | Target V2 verdict authority, aggregation boundary, confidence ownership, doubted/contested rule, and non-imported formulas | ##analyzer-v2## target
 | [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]] | 4-layer calibration system, graduated recency penalty, low-source penalty, configuration | ##confidence-calibration.ts##
 | [[Source Reliability>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] | LLM-based evaluation, 7-band credibility scale, multi-language support, caching, admin guide | ##source-reliability.ts##
+| [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]] | Target V2 source-trust signal contract, cache posture, evidence integration, and restriction on unapproved direct verdict weighting | ##analyzer-v2## target
 
 === Infrastructure ===
 
@@ -43,7 +47,9 @@ This section contains detailed implementation references for developers and test
 == By Role ==
 
 === Pipeline Developer ===
-Start with: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] → [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] → [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] → [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+Start with current runtime docs: [[Pipeline Variants>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants.WebHome]] → [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] → [[Calculations and Verdicts>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts.WebHome]] → [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]]
+
+For the rebuild target, start with: [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]] → [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]] → [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]] → [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
 
 === Prompt Engineer ===
 Start with: [[Prompt Architecture>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture.WebHome]] → [[Verdict Debate Pattern>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern.WebHome]] → [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]] → [[Confidence Calibration>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Confidence Calibration.WebHome]]
@@ -52,7 +58,9 @@ Start with: [[Prompt Architecture>>FactHarbor.Product Development.Specification.
 Start with: [[Quality Gates>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates.WebHome]] → [[Context Detection>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Context Detection.WebHome]] → [[Evidence Quality Filtering>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Quality Filtering.WebHome]]
 
 === Source Reliability Specialist ===
-Start with: [[Source Reliability>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] (5 sub-pages covering overview, architecture, configuration, refinement, and admin)
+Start with current runtime docs: [[Source Reliability>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability.WebHome]] (5 sub-pages covering overview, architecture, configuration, refinement, and admin)
+
+For the rebuild target, use: [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
 
 ----
 

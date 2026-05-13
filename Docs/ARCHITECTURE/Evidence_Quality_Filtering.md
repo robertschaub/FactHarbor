@@ -5,6 +5,8 @@
 **Status**: Implemented (Phase 1.5 + 7-Layer Defense documented)
 **Related**: [Schema Migration Strategy](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Schema%20Migration/WebHome.xwiki), [Terminology Migration Plan](../ARCHIVE/REVIEWS/Terminology_Migration_Plan_UPDATED.md)
 
+> **V2 target note**: For the pipeline rebuild target, see `Docs/ARCHITECTURE/Evidence_Quality_Filtering_V2.md` and `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Evidence Lifecycle V2/WebHome.xwiki`. This current file documents V1 deterministic filtering; V2 uses an evidence lifecycle, sufficiency gate, and LLM-owned semantic decisions.
+
 ---
 
 ## Table of Contents

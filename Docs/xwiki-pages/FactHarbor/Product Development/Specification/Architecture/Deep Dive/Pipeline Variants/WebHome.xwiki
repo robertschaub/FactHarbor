@@ -6,6 +6,10 @@
 **Key Files**: ##claimboundary-pipeline.ts##, ##verdict-stage.ts##, ##monolithic-dynamic.ts##, ##apps/web/prompts/claimboundary.prompt.md##, ##apps/web/prompts/monolithic-dynamic.prompt.md##
 {{/info}}
 
+{{info}}
+**V2 target note:** This page documents current runtime variants. For the rebuild coexistence, shadow, cutover, and cleanup plan, see [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]].
+{{/info}}
+
 == Architecture Overview ==
 
 FactHarbor supports two analysis pipeline variants. Both share the same infrastructure primitives but differ in orchestration approach and result flexibility.

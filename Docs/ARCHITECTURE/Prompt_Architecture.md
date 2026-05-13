@@ -5,6 +5,8 @@
 **Audience**: Developers, Prompt Engineers
 **Purpose**: Document the prompt management system used across all pipelines
 
+> **V2 target note**: For pipeline rebuild prompt/model/cache governance, see `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Prompt Architecture V2/WebHome.xwiki`. Prompt-backed V2 execution still requires Captain approval and LLM Expert review before implementation.
+
 ---
 
 ## Overview
@@ -288,3 +290,6 @@ function detectProvider(modelName: string): ProviderType {
 - [LLM Schema Mapping](../xwiki-pages/FactHarbor/Product Development/Specification/Reference/Data%20Models%20and%20Schemas/LLM%20Schema%20Mapping/WebHome.xwiki) - TypeScript to LLM output mapping
 - [Pipeline Architecture](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Pipeline%20Variants/WebHome.xwiki) - Overall pipeline design
 - [Calculations](./Calculations.md) - Verdict calculation methodology including multi-context averaging
+- [Prompt Architecture V2](../xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep%20Dive/Prompt%20Architecture%20V2/WebHome.xwiki) - Pipeline rebuild prompt/model/cache governance target
+- [Calculations V2](./Calculations_V2.md) - Pipeline rebuild verdict authority and calculation boundary
+- [Evidence Lifecycle V2](./Evidence_Quality_Filtering_V2.md) - Pipeline rebuild evidence lifecycle and evidence-quality boundary

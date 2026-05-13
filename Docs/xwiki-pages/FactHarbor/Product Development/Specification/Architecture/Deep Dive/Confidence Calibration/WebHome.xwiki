@@ -6,6 +6,10 @@
 **Key File**: ##apps/web/src/lib/analyzer/confidence-calibration.ts##
 {{/info}}
 
+{{info}}
+**V2 target note:** This page documents current confidence calibration. V2 centralizes confidence ownership in Gate 4 and ##ReportResult##, with warning materiality and quality gates projected from one canonical authority. See [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]] and [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]].
+{{/info}}
+
 == Overview ==
 
 Raw LLM confidence scores are unreliable — models tend to be overconfident or inconsistent across providers. FactHarbor applies a **4-layer calibration pipeline** that adjusts confidence based on evidence density, verdict band alignment, context consistency, and external penalties.

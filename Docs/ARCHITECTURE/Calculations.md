@@ -5,6 +5,8 @@
 
 > **Pipeline note**: This document describes the **ClaimAssessmentBoundary (CB) pipeline** — the current default production pipeline since v2.11.0. The **Monolithic Dynamic** pipeline is an alternative. The **Orchestrated pipeline was removed in v2.11.0**; any references to it here are legacy and should be ignored. Authoritative implementations: `aggregation.ts`, `truth-scale.ts`, `verdict-stage.ts`, `claimboundary-pipeline.ts`.
 
+> **V2 target note**: For the pipeline rebuild target, see `Docs/ARCHITECTURE/Calculations_V2.md` and `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/Deep Dive/Calculations and Verdicts V2/WebHome.xwiki`. This current file describes V1/CB runtime behavior; V2 keeps public verdict semantics but does not import direct source-reliability formulas or deterministic semantic guards by default.
+
 ---
 
 ## 1. Verdict Scale (7-Point System with MIXED/UNVERIFIED Distinction)

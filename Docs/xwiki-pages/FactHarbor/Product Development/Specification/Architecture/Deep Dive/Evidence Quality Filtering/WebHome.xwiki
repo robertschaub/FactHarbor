@@ -6,6 +6,10 @@
 **Key File**: ##apps/web/src/lib/analyzer/evidence-filter.ts##
 {{/info}}
 
+{{info}}
+**V2 target note:** This page documents current/V1 evidence filtering. The rebuild target replaces late deterministic semantic cleanup with an evidence lifecycle and sufficiency gate. See [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]].
+{{/info}}
+
 **Version**: 2.6.42
 **Date**: 2026-02-02
 

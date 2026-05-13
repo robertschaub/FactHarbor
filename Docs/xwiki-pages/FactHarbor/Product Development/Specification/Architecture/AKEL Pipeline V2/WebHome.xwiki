@@ -82,9 +82,14 @@ No live jobs have been used for the implemented V2 slices. The approved live-job
 
 * [[AKEL Pipeline Detail V2>>FactHarbor.Product Development.Specification.Architecture.AKEL Pipeline Detail V2.WebHome]]
 * [[Data Model V2>>FactHarbor.Product Development.Specification.Architecture.Data Model V2.WebHome]]
+* [[Quality and Trust V2>>FactHarbor.Product Development.Specification.Architecture.Quality and Trust V2.WebHome]]
+* [[Pipeline Variants V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Pipeline Variants V2.WebHome]]
 * [[Quality Gates V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Quality Gates V2.WebHome]]
+* [[Evidence Lifecycle V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Evidence Lifecycle V2.WebHome]]
 * [[Verdict Debate Pattern V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Verdict Debate Pattern V2.WebHome]]
+* [[Calculations and Verdicts V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Calculations and Verdicts V2.WebHome]]
 * [[Prompt Architecture V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Prompt Architecture V2.WebHome]]
+* [[Source Reliability V2>>FactHarbor.Product Development.Specification.Architecture.Deep Dive.Source Reliability V2.WebHome]]
 
 ----
 
