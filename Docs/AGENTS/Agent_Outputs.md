@@ -2734,3 +2734,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild xWiki Integration Debate -- [Standard] [open-items: yes]
 **For next agent:** Franklin, Lorentz, and Claude Opus 4.6 reconciled the question of whether to debate deeper xWiki integration. Verdict: `MODIFY`; no broad spec rewrite or contract mutation, but add a compact `Design Intent Mapping` table to Section 1.2 of `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Integration_Debate.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Plan Status Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Added execution-status addenda to `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md` and `Docs/WIP/2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md`. The plan now points to the target spec as operative, records Phases 1-5 complete and Phase 6 stable through Slice 6A, and preserves the Slice 6B approval boundary.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_Plan_Status_Consolidation.md

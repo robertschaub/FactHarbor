@@ -89,3 +89,23 @@ No reviewer requested Captain escalation. The notes were accepted and folded int
 - Structured-output schemas, multilingual mechanisms, cache structure, cost/latency baseline, prompt approval trail, reviewed-equivalent reviewer ownership, hot-path mechanism registry, and test-gap carry-forward were made explicit.
 
 **Decision:** Phase 1 is authorized under the Captain Deputy delegation rule.
+
+## Execution Status Update - 2026-05-13
+
+The plan has now executed through the specification and early isolated-rebuild slices:
+
+- Phases 1-5 are complete.
+- Phase 6 is in progress through stable Slice 6A.
+- Current stable pre-update commit: `085b714e` (`docs: record xwiki integration debate`).
+- V1 remains the default runtime.
+- V2 remains isolated and non-analytical for real reports.
+- Live jobs used: 0 of the approved 8.
+
+The operative continuation point is the target specification, not this review consolidation:
+
+- `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`
+- Section 1.1: implementation progress
+- Section 1.2: xWiki crosscheck and Design Intent Mapping
+- Section 1.3: reader-level V2 diagrams
+
+Next boundary: Slice 6B. Prompt/profile/model execution for V2 Claim Understanding is blocked until explicit Captain approval and LLM Expert review. The xWiki integration debate authorized documentation clarity only; it did not authorize prompt, stage-contract, runtime, API, UI, or implementation-order changes.

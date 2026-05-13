@@ -9,6 +9,40 @@
 
 ---
 
+## 0. Execution Status Addendum - 2026-05-13
+
+This plan has advanced beyond the specification-only phase. Keep this document as the original Plan V2 Baseline and use the target specification as the operative implementation reference:
+
+- Operative target spec: `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`
+- Deputy review consolidation: `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Review_Consolidation.md`
+- Current worktree status before this addendum: stable at `085b714e` (`docs: record xwiki integration debate`)
+
+Execution state:
+
+| Phase / slice | Status | Notes |
+|---|---|---|
+| Phase 0 | complete | Plan V2 Baseline approved by Captain Deputy team |
+| Phase 1 | complete | Governing context loaded; xWiki treated as design intent, not source truth |
+| Phase 2 | complete | Reverse-engineered current-state baselines and mechanism registry produced |
+| Phase 3 | complete | Complexity/mechanism diagnosis produced |
+| Phase 4 | complete | Target architecture drafted, reviewed, and deputy-approved |
+| Phase 5 | complete | Implementation approval granted for slice-based isolated rebuild |
+| Phase 6 / Slices 1-6A | in progress / stable | V2 contracts, compatibility readers, disabled shell, damaged envelope, gateway governance, and Claim Understanding contracts are committed |
+| Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires explicit Captain approval and LLM Expert review |
+
+Plan update from xWiki integration debate:
+
+- The `.xwiki` architecture set was reviewed after source reverse-engineering.
+- Debate verdict was `MODIFY`: no broad rewrite and no stage-contract mutation, but add a compact Design Intent Mapping table and reader-level diagrams.
+- That mapping now lives in Section 1.2 of the target spec. It is the guardrail for future xWiki-derived ideas.
+- Source reverse-engineering and V2 contract tests remain authoritative for implementation.
+
+Live jobs used so far: 0. Approved live-job budget remaining: 8.
+
+Next action, unless Captain redirects: stay at the Slice 6B approval boundary. Do not edit prompts, prompt profiles, model execution policy, or runtime LLM-backed Claim Understanding until Captain approval and LLM Expert review are recorded.
+
+---
+
 ## 1. Purpose
 
 Prepare FactHarbor for replacing the current ClaimAssessmentBoundary analysis pipeline by first producing a clean, reviewable specification. The specification must be reverse-engineered from the current implementation, then cleaned, simplified, re-architected, and redesigned before implementation starts.
