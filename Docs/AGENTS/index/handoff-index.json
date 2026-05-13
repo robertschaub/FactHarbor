@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T08:19:31.765Z",
-  "count": 418,
+  "generatedAt": "2026-05-13T10:25:16.826Z",
+  "count": 419,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8844,6 +8844,22 @@
         "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md"
       ],
       "summary": "Use the `Compact Design Intent Mapping` table in Section 1.2 of the target spec as the guardrail for future xWiki-derived ideas."
+    },
+    {
+      "file": "2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Spec_Refinements.md",
+      "date": "2026-05-13",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "pipeline",
+        "rebuild",
+        "xwiki",
+        "spec",
+        "refinements"
+      ],
+      "files_touched": [],
+      "summary": "2026-05-13 | Lead Architect | Pipeline Rebuild xWiki Spec Refinements"
     }
   ]
 }

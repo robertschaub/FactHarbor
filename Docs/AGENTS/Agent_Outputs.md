@@ -2744,3 +2744,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild V2 xWiki Documentation -- [Standard] [open-items: yes]
 **For next agent:** Created V2 sibling xWiki pages for AKEL Pipeline, AKEL Pipeline Detail, Data Model, Quality Gates, Verdict Debate Pattern, and Prompt Architecture, plus reusable V2 diagram pages and a diagram-only Academic Cooperation V2 appendix. The current V1 xWiki pages remain intact as production-runtime documentation; V2 pages document target architecture and current guarded status only. No source, prompt, config, API, UI, runtime, or live-job behavior changed.
 → Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_V2_xWiki_Documentation.md
+
+---
+### 2026-05-13 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild xWiki Spec Refinements -- [Standard] [open-items: yes]
+**For next agent:** Franklin and Lorentz reviewed the xWiki-derived spec update and both returned `MODIFY`; the consolidated outcome is a bounded Section 1.4 addendum in `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`. It adds documentation parity, research-platform validation lenses, report-quality visibility, ledger-to-audit mapping, ACS selected-claim integrity, V2 xWiki reader links, and a stale-mechanism non-import list while preserving source/tests/fixtures as implementation authority. Captain requested Claude review as well, but no callable Claude/Anthropic review agent was available in this session. No code, prompt, config, runtime, API, UI, or live-job behavior changed.
+→ Docs/AGENTS/Handoffs/2026-05-13_Lead_Architect_Pipeline_Rebuild_xWiki_Spec_Refinements.md

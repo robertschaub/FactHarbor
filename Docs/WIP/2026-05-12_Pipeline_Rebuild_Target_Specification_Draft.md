@@ -442,6 +442,33 @@ The old `.xwiki` diagrams showed the current CB pipeline as a dense single-path 
 
 ---
 
+## 1.4 xWiki-Derived V2 Specification Refinements - 2026-05-13
+
+This section is additive to Sections 1.2 and 1.3. The new V2 `.xwiki` pages are canonical reader-level design documentation, but they do not override source reverse-engineering, committed V2 schemas, fixtures, contract tests, or approved implementation slices.
+
+| Refinement | Spec expectation | Boundary / non-import rule |
+|---|---|---|
+| Documentation parity | V2 readiness and cutover review must keep reader-level xWiki parity for lifecycle, entity, gate, verdict-debate, prompt-architecture, and presentation diagrams. | This is a readiness and review expectation, not a blocker for every implementation commit and not authority over tests or code. |
+| Academic/research-platform view | Validation planning should treat cost, latency, verdict stability, evidence coverage, input neutrality, and multilingual robustness as research-platform observability lenses. | Concrete metrics, benchmark scope, live-job spend, or new validation batches still require the normal approval gate. These metrics must not become source-reliability verdict formulas or deterministic source-type scoring. |
+| Explanation/report quality | Before cutover, ReportResult and quality-gate contracts must keep explanation/report quality visible through narrative status, evidence references, report-quality status, warnings, and adapter parity tests. | This docs-only refinement does not introduce schema changes. Any schema expansion belongs to an explicit contract slice with fixtures and tests. |
+| Job lifecycle and audit trail | When V2 ledger implementation reaches persistence/adapters, ledger concepts must map cleanly to persisted job status/events, warnings, usage/timing metadata, and audit artifacts. | No API, database, or event-shape change is approved by this section. Implementation must use the relevant slice review. |
+| ACS selected-claim integrity | Selected AtomicClaim IDs and selected claim statements must not silently disappear during V2 ACS snapshot migration or claim understanding. Missing or invalid selected claims must produce a Gate 1 blocked/damaged status or an explicitly approved ACS retry path. | V2 may not silently reselect, drop, or redo selected Stage 1 claims to recover from migration failure. |
+| xWiki reader links | The V2 spec is accompanied by the xWiki pages for `AKEL Pipeline V2`, `AKEL Pipeline Detail V2`, `Data Model V2`, `Quality Gates V2`, `Verdict Debate Pattern V2`, `Prompt Architecture V2`, and `Academic Cooperation V2 Diagrams`. | Older V1 xWiki pages remain historical/runtime references for the current pipeline and must not be treated as V2 implementation proof. |
+
+Additional xWiki non-import list for V2:
+
+- prompt snippets or prompt examples without Captain approval and LLM Expert review;
+- V1 schema strings, route names, file names, or function names as target implementation truth;
+- deterministic semantic filters, keyword lists, text-overlap grouping, or language-specific meaning decisions;
+- direct source-reliability truth-percentage formulas without later quality validation approval;
+- provider-detection snippets or hardcoded model-tier assumptions from older docs;
+- old `AnalysisContext` framing or context-detection diagrams as replacements for ClaimAssessmentBoundary terminology;
+- polished diagrams as proof that a behavior is currently implemented.
+
+Deputy consolidation verdict: Franklin and Lorentz both returned `MODIFY` and approved this bounded addendum only with the authority, scope, and non-import guards above. No source, prompt, config, runtime, API, UI, or live-job change is included.
+
+---
+
 ## 2. Governing Intent
 
 Captain intent, restated in implementation-ready wording:
