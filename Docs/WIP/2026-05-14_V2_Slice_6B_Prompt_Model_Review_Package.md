@@ -1,11 +1,11 @@
 # V2 Slice 6B Prompt And Model Review Package
 
 **Date:** 2026-05-14
-**Status:** Slice 6B.3a foundation complete; Slice 6B.3b adapter plan tightened after review; 6B.3b/6B.3c code not started
+**Status:** Slice 6B.3b model adapter complete; Slice 6B.3c requires separate expert debate/review
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`; 6B.1b UCM/profile/model-policy plumbing `2f1b60a4`; 6B.2 prompt draft and contract tests `8a1ef8cd`; 6B.3a foundation `2d14c89a`
+**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`; 6B.1b UCM/profile/model-policy plumbing `2f1b60a4`; 6B.2 prompt draft and contract tests `8a1ef8cd`; 6B.3a foundation `2d14c89a`; 6B.3b model adapter `04742922`
 
 ---
 
@@ -51,7 +51,7 @@ Slice 6B should be split into reviewable sub-slices:
 | 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Complete at `2f1b60a4` |
 | 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Complete at `8a1ef8cd`; final Claude Opus LLM Expert review approved |
 | 6B.3a foundation | Add explicit V2 prompt loader, production runtime schemas, cache/provenance decision tests, policy tests, and boundary guards | No | Complete at `2d14c89a`; no file seeding, approval flips, runtime model call, orchestrator wiring, API/UI/report change, live job, or V1 analyzer import |
-| 6B.3b model adapter contract | Add only a V2-owned local adapter contract with dependency-injected mock dispatch, structural retry, production schema validation, and telemetry; no product execution path | No product execution; mocked dispatch only | Plan tightened after Claude Opus/Gemini `MODIFY`; code may start only under `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 6 |
+| 6B.3b model adapter contract | Add only a V2-owned local adapter contract with dependency-injected mock dispatch, structural retry, production schema validation, and telemetry; no product execution path | No product execution; mocked dispatch only | Complete at `04742922` under `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 6 |
 | 6B.3c gated model execution path | Wire approved adapter behind V2 pre-cutover gate; no public cutover | Yes, gated | Not approved; requires separate review after 6B.3b |
 | 6B.4 non-public structural smoke | Exercise the gated path on fixtures or explicitly approved jobs only | Yes, gated | Commit-first, runtime-refresh, and live-job spend approval if real jobs are used |
 
@@ -424,6 +424,6 @@ Verification for `8a1ef8cd`:
 
 Proceed with Slice 6B only as sub-slices. Slices 6B.1a, 6B.1b, 6B.2, and 6B.3a are complete at `24f55d4a`, `2f1b60a4`, `8a1ef8cd`, and `2d14c89a`. The completed 6B.3a slice is structural only.
 
-The first 6B.3b adapter review returned `MODIFY` from Claude Opus and Gemini. The operative 6B.3b contract now removes the neutral/shared adapter option and requires a V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected provider dispatch, mocked tests, production schema validation, policy fail-closed behavior, identical structural retry, no cache IO, no provider SDK callsite, no product-path imports, and typed telemetry without placeholders. Code has not started.
+The first 6B.3b adapter review returned `MODIFY` from Claude Opus and Gemini. The operative 6B.3b contract removed the neutral/shared adapter option and required a V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected provider dispatch, mocked tests, production schema validation, policy fail-closed behavior, identical structural retry, no cache IO, no provider SDK callsite, no product-path imports, and typed telemetry without placeholders. 6B.3b is complete at `04742922` under that contract.
 
-Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire runtime model execution, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded.
+Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire runtime model execution, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded for 6B.3c.

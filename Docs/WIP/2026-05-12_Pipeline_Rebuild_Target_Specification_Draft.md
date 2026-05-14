@@ -3,7 +3,7 @@
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3a; Slice 6B.3b adapter plan tightened after review and code not started
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3b; Slice 6B.3c requires expert debate/review before code
 **Owner role:** Lead Architect
 
 ---
@@ -41,7 +41,7 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.1b: UCM/profile/model-policy plumbing | done | `2f1b60a4` | `claimboundary-v2` profile/frontmatter support, V1/V2 profile separation, and blocked task model-policy metadata added without prompt text, file seeding, or execution |
 | Slice 6B.2: prompt draft + contract tests | done | `8a1ef8cd` | Clean-room non-executable `claimboundary-v2.prompt.md` with `V2_CLAIM_UNDERSTANDING_GATE1`, render/static-hygiene/schema/contract tests, and final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
 | Slice 6B.3a: Claim Understanding foundation | done | `2d14c89a` | Explicit V2 prompt loader, production runtime schemas, cache/provenance no-dispatch/no-store decisions, policy eligibility guard, and tests completed. No file seeding, approval flips, runtime model call, orchestrator wiring, API/UI/report change, live jobs, or V1 analyzer imports |
-| Slice 6B.3b: model adapter contract | plan tightened | `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` | Claude Opus and Gemini returned `MODIFY`; 6B.3b now requires a V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected mock dispatch, production schema validation, policy fail-closed behavior, identical structural retry, no cache IO, no provider SDK callsite, no product-path imports, and no neutral/shared adapter. Code has not started. |
+| Slice 6B.3b: model adapter contract | done | `04742922` | V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected mock dispatch, production schema validation, policy fail-closed behavior, identical structural retry, typed telemetry/provenance, no cache IO, no provider SDK callsite, no product-path imports, and no neutral/shared adapter. |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -72,7 +72,7 @@ flowchart LR
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
   S6A --> S6A5 --> S6B0 --> S6B1A --> S6B1B
   S6B1B -->|"Captain prompt approval recorded"| S6B2
-  S6B2 -->|"6B.3a complete; 6B.3b tightened plan/no code"| S6B
+  S6B2 -->|"6B.3b adapter complete; 6B.3c approval required"| S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
@@ -132,7 +132,7 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-Slice 6B.3a is complete at `2d14c89a`. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`; the pre-prompt blockers were closed by the `ClaimUnderstandingResult` envelope plus minimal UCM/profile/model-policy plumbing; the Captain-approved prompt-text slice added only a clean-room V2 prompt source plus contract/static-hygiene tests; and 6B.3a added only structural foundation code: explicit V2 prompt loader, production runtime schemas, cache/provenance no-dispatch/no-store decisions, policy eligibility guard, and tests. The first 6B.3b adapter review returned `MODIFY` from Claude Opus and Gemini, so the operative plan now removes the neutral/shared adapter option and requires a V2-owned local adapter with dependency-injected dispatch, production schema validation, policy fail-closed behavior, identical structural retry, no cache IO, no provider SDK callsite, and no product-path imports. V2 still remains non-executable for real analysis: `claimboundary-v2` is not file-seeded, prompt/model/cache approvals are not flipped, and no runtime LLM call or live job was added. Runtime dispatch and orchestration remain unapproved.
+Slice 6B.3b is complete at `04742922`. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`; the pre-prompt blockers were closed by the `ClaimUnderstandingResult` envelope plus minimal UCM/profile/model-policy plumbing; the Captain-approved prompt-text slice added only a clean-room V2 prompt source plus contract/static-hygiene tests; 6B.3a added structural foundation code; and 6B.3b added only the V2-owned local adapter contract with dependency-injected mock dispatch, production schema validation, policy fail-closed behavior, identical structural retry, typed telemetry/provenance, no cache IO, no provider SDK callsite, no product-path imports, and no neutral/shared adapter. V2 still remains non-executable for real analysis: `claimboundary-v2` is not file-seeded, prompt/model/cache approvals are not flipped, and no runtime LLM call or live job was added. Runtime dispatch and orchestration remain unapproved.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -998,7 +998,7 @@ Slice 6B.1b implemented the minimal UCM/profile/model-policy plumbing at `2f1b60
 - `claim_understanding_gate1` has a concrete, blocked model-policy metadata record covering tier, temperature, call budget, schema retry count, timeout, token budget, fallback, and escalation behavior;
 - gateway execution remains blocked until prompt, model, and cache approvals are all recorded.
 
-The next boundary is 6B.3b implementation under the tightened model-adapter contract in `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. The completed 6B.3a approval covered foundation only. The 6B.3b review removed the neutral/shared adapter option and requires a V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected provider dispatch, mocked tests, production schema validation, fail-closed gateway policy, identical structural retry, no cache IO, no provider SDK callsite, and no imports from product execution paths. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire the orchestrator, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
+The next boundary is 6B.3c gated gateway/orchestrator wiring review from `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. The completed 6B.3b approval covered only mock adapter mechanics. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire the orchestrator, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
 
 ---
 
@@ -1346,7 +1346,7 @@ The V2 prompt/model/config design should not keep expanding the overloaded V1 `p
 
 UCM deputy review refined this into a minimum path: do not add V2 prompt/model task policy into the old broad `pipeline` config as a long-term home. First support `claimboundary-v2` as a separate prompt profile and add a task-oriented model policy for `claim_understanding_gate1`; keep bespoke UI work minimal until the V2 task-policy model stabilizes.
 
-Post-6B.3a-completion status: the minimum path now includes a clean-room prompt source, contract tests, a reviewed 6B.3 execution approval package, a revised implementation plan, completed 6B.3a structural foundation, and a tightened 6B.3b adapter contract after Claude Opus/Gemini `MODIFY` findings. `claimboundary-v2` is valid/manageable for prompt-profile validation and import, and `apps/web/prompts/claimboundary-v2.prompt.md` exists for review, but it is intentionally not file-seeded or executable. `claim_understanding_gate1` has blocked task-oriented model-policy metadata and is only structurally eligible for future execution after separate approval. Before broad prompt/model execution or cutover, V2 still needs the task-oriented analysis-profile/admin-gate track: model task registry shape, stage policy shape, cache policy metadata, approval-state visibility, config snapshot provenance, and rollback targets.
+Post-6B.3b-completion status: the minimum path now includes a clean-room prompt source, contract tests, a reviewed 6B.3 execution approval package, a revised implementation plan, completed 6B.3a structural foundation, and completed 6B.3b mock adapter contract after Claude Opus/Gemini `MODIFY` findings. `claimboundary-v2` is valid/manageable for prompt-profile validation and import, and `apps/web/prompts/claimboundary-v2.prompt.md` exists for review, but it is intentionally not file-seeded or executable. `claim_understanding_gate1` has blocked task-oriented model-policy metadata and is only structurally eligible for future execution after separate approval. Before broad prompt/model execution or cutover, V2 still needs the task-oriented analysis-profile/admin-gate track: model task registry shape, stage policy shape, cache policy metadata, approval-state visibility, config snapshot provenance, and rollback targets.
 
 ---
 
@@ -1646,7 +1646,7 @@ This document is now the operative V2 target specification with implementation p
 - Slice 6B.2 prompt-source and contract-test changes were committed separately at `8a1ef8cd`.
 - This documentation status update changes no source, prompt, config, API, UI, runtime, or live-job behavior.
 - Slice 6B.3a implementation is committed at `2d14c89a`; it changes only structural Analyzer V2 foundation code and tests.
-- Slice 6B.3b documentation is tightened after Claude Opus and Gemini returned `MODIFY`; no 6B.3b code has started.
+- Slice 6B.3b implementation is committed at `04742922`; it adds only mock adapter contract code and tests.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 

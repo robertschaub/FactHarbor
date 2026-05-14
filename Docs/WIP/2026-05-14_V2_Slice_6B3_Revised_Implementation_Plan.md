@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b review returned `MODIFY`; 6B.3b plan tightened and code not started
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c not approved
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -120,7 +120,11 @@ Schema enum and key hygiene: status and reason values are structural contract ke
 
 ## 6. 6B.3b Model Adapter Contract Slice
 
-Purpose: add model adapter mechanics without public execution. The 6B.3b review returned `MODIFY`, so implementation may start only after the constraints below are treated as the operative contract.
+Purpose: add model adapter mechanics without public execution.
+
+Implementation status: 6B.3b is complete at `04742922` as a mock-only adapter contract slice. This completion does not approve 6B.3c, runtime execution, approval flips, file seeding, orchestrator wiring, API/UI/report changes, live jobs, provider SDK callsites, cache IO, or public cutover.
+
+The 6B.3b review returned `MODIFY`, so the implementation followed the constraints below as the operative contract.
 
 Allowed:
 
@@ -239,7 +243,7 @@ Captain escalation is not needed for 6B.3a because the approved slice excludes l
 
 6B.3a foundation code is complete and committed at `2d14c89a`.
 
-6B.3b review consolidation:
+6B.3b review and implementation consolidation:
 
 | Reviewer lens | Verdict | Required outcome |
 |---|---|---|
@@ -247,9 +251,19 @@ Captain escalation is not needed for 6B.3a because the approved slice excludes l
 | Claude Sonnet senior developer | APPROVE with optional clarifications | Prefer `claim-understanding/model-adapter.ts`, keep current temperature unless LLM Expert changes it, add no-export/no-orchestrator verifier, and require real typed telemetry fields in dispatch-capable paths. |
 | Gemini challenger | MODIFY | Remove neutral/shared adapter ambiguity; require the adapter to live exclusively under `apps/web/src/lib/analyzer-v2/` for 6B.3b before code starts. |
 
-Consolidated decision: 6B.3b code can only start under the tightened Section 6 contract above. No 6B.3b code has started in this documentation slice.
+Consolidated decision: 6B.3b code was implemented only under the tightened Section 6 contract above and committed at `04742922`.
 
-Until 6B.3b/6B.3c receive separate implementation approval under the tightened contract:
+6B.3b verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/model-adapter.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts test/unit/lib/analyzer-v2/gateway/policy.test.ts test/unit/lib/analyzer-v2/gateway/cache-governance.test.ts`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2`
+- Source import/provider scan for V1 analyzer imports, V1 prompt reuse, prompt-loader reuse, and provider SDK imports in Analyzer V2 plus the adapter test
+- `npm -w apps/web run build`; postbuild reseed reported `Prompts: 0 changed, 3 unchanged`
+- `git diff --check`
+
+Safe `npm test` did not complete cleanly as a full-suite run because three existing runner/admin tests timed out under concurrent full-suite execution. The failed tests passed when rerun directly: `test/unit/lib/internal-runner-v2-routing.test.ts`, `test/unit/lib/drain-runner-pause.integration.test.ts`, and `test/unit/app/api/admin/test-config/route.test.ts`. The failed-validation classification for 6B.3b is `keep`; no 6B.3b change was broadened or reverted.
+
+Until 6B.3c receives separate review and implementation approval:
 
 - `claimboundary-v2` remains not file-seeded;
 - `claim_understanding_gate1` remains non-executable;

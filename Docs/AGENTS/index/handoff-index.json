@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T13:23:08.065Z",
-  "count": 440,
+  "generatedAt": "2026-05-14T13:43:26.858Z",
+  "count": 441,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9397,6 +9397,27 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 6. Stop for review before 6B.3b code."
+    },
+    {
+      "file": "2026-05-14_Senior_Developer_V2_Slice_6B3b_Model_Adapter.md",
+      "date": "2026-05-14",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3b",
+        "model",
+        "adapter"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/model-adapter.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/model-adapter.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start 6B.3c with expert debate/review, not code. Scope pressure indicators: orchestrator import, executable gateway status, approval flip, cache read/write, provider SDK import, public/API/UI/report exposure, or live jobs."
     }
   ]
 }
