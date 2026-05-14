@@ -217,3 +217,79 @@ Still blocked after 3B2:
 ## 11. Short Reviewer Prompt
 
 Review the implemented 6B.3c-3B1 and 6B.3c-3B2 slices. Decide whether the remaining 3B3 prompt-rendering/adapter-invocation proposal is sufficiently specified to review. The implementation must still stop before product wiring, provider SDK imports, public surfaces, live jobs, direct URL dispatch, cache read/write, and V1 reuse.
+
+## 12. 3B3 Review Consolidation
+
+Deputy expert review after 3B2 returned `MODIFY/MODIFY`.
+
+Consolidated decision:
+
+- 3B3 may be specified as a narrowed internal direct-text owner slice.
+- 3B3 is not approved as a broad runtime-dispatch implementation.
+- 3B3 must not handle ACS, direct URLs, product wiring, public surfaces, real provider SDKs, cache IO, approval mutation, live jobs, prompt source changes, config defaults, or V1 reuse.
+- Source implementation should proceed only from the exact package below.
+
+Required 3B3 source envelope:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
+- docs/handoff files.
+
+Avoid unless a compile-level type need is proven:
+
+- `dispatch-readiness-contract.ts`;
+- `model-adapter.ts`;
+- `prompt-loader.ts`;
+- `cache-governance.ts`.
+
+Forbidden in 3B3:
+
+- product entry points, API/UI/report/export surfaces, prompt source, config defaults, provider SDKs, live jobs, approval flips, direct URL execution, ACS execution, cache read/write, cache IO, V1 analyzer imports, V1 prompt/profile/section/type reuse.
+
+Required 3B3 owner behavior:
+
+1. **Direct text only.** Runtime owner accepts only readiness with `inputSource = "direct_input"`, `submittedKind = "text"`, and `acsSnapshotHash = null`.
+2. **ACS/direct URL fail before work.** Blocked readiness, ACS, or direct URL paths must return before prompt rendering, cache decision construction, adapter call, or provider call.
+3. **Owned prompt variables.** `runtime-dispatch.ts` builds the prompt variables from the satisfied readiness frame and provenance:
+   - `currentDate = frame.currentDate`;
+   - `analysisInput = frame.analysisInput`;
+   - `acsSnapshotJson = "null"`;
+   - `inputGroundingSeedJson` is canonical owner-built JSON from frame/provenance, not caller-supplied text and not fabricated ACS data.
+4. **Owner-created post-render provenance.** Prompt rendering happens through `loadAndRenderClaimUnderstandingGate1Prompt(...)` after readiness. `promptContentHash` comes only from the loader result. Any `renderedPromptHash` must be computed inside the owner, never supplied by the caller.
+5. **Runtime no-store cache decision.** Cache decision is built after prompt render with `buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(...)`; it must have `canRead=false`, `canWrite=false`, and reason `no_store_runtime_dispatch_safety`.
+6. **Injected provider callback only.** Adapter invocation may use only an injected `providerCall`; `runtime-dispatch.ts` must not create provider callbacks or import provider SDKs.
+7. **Executable clone helper.** If the adapter requires an executable gateway task, the clone must be created only inside one named private helper in `runtime-dispatch.ts`. It must not mutate shipped gateway policy or approval state.
+8. **No public reachability.** Runtime dispatch remains unexported from the Analyzer V2 barrel and unreachable from product paths.
+
+Required 3B3 static guards:
+
+- product paths keep no direct or transitive reachability to `runtime-dispatch.ts`;
+- public app/report/export/result schemas expose no `ownerContract`, `sideEffects`, `providerTelemetry`, `cacheDecision`, `keyParts`, `renderedPrompt`, `renderedPromptHash`, `adapterCalled`, `providerCallbackCreated`, `cacheRead`, or `cacheWrite`;
+- `runtime-dispatch.ts` imports no provider SDK, cache IO, V1 analyzer, mocks, fixtures, public/UI modules, or nonliteral dynamic imports;
+- `runtime-dispatch.ts` may import only exact approved symbols from prompt-loader, model-adapter, and cache-governance;
+- `runtime-dispatch.ts` may import the runtime no-store cache builder but not `buildAnalyzerV2ClaimUnderstandingCacheDecision`;
+- Analyzer V2 production source still has no `executionApproved: true` except the one named private runtime-dispatch executable clone helper;
+- Analyzer V2 barrel still does not export `runtime-dispatch.ts`.
+
+Required 3B3 behavior tests:
+
+- direct text happy path with at least one Captain-defined non-English input;
+- blocked readiness returns blocked before prompt render, cache decision, adapter call, or provider call;
+- ACS and direct URL inputs block before prompt render, cache decision, adapter call, or provider call;
+- prompt variables contain exact frame-bound input and `acsSnapshotJson = "null"`;
+- no-store decision passed to adapter has `canRead=false`, `canWrite=false`, and reason `no_store_runtime_dispatch_safety`;
+- adapter receives rendered prompt, config hash, input frame, no-store cache decision, and injected provider callback;
+- provider callback is not created by runtime-dispatch;
+- provider throw, invalid provider telemetry, invalid schema, prompt-render failure, and blocked readiness all fail closed with no cache read/write.
+
+Required 3B3 verifiers:
+
+- focused runtime-dispatch and boundary tests;
+- full Analyzer V2 unit slice;
+- V2 internal runner routing test;
+- `npm -w apps/web run build`;
+- targeted clean-room scans for V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports, production `executionApproved: true`, public dispatch/cache leakage, and runtime-dispatch import exceptions;
+- `git diff --check`.
+
+Captain escalation is required only if 3B3 expands to real provider execution through built-in SDKs, product wiring, public exposure, ACS/direct URL execution, cache read/write, approval flips, prompt changes, config changes, or live jobs.
