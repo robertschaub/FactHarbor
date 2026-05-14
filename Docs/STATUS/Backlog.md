@@ -2,13 +2,15 @@
 
 **Purpose**: Single canonical task list for FactHarbor. Keep this list current; keep `Docs/STATUS/Current_Status.md` high-level and link here.
 
-**Last Updated**: 2026-04-25
+**Last Updated**: 2026-05-14
 
 **Ordering**: Sorted by **Urgency** (high → med → low), then **Importance** (high → med → low).
 
 **Phase note**: **POC is complete** (tagged `v1.0.0-poc`). FactHarbor is now in **Alpha phase**. Security/cost-control items remain **low urgency** during Alpha but are **high importance**. Reclassify to **high urgency** before any production/public exposure.
 
 **Pipeline direction note:** V2 is intended to replace the V1 ClaimAssessmentBoundary pipeline. This backlog’s V1 analyzer items should be treated as **maintenance-only** (correctness/safety/integrity/observability) until V2 cutover; do not treat them as a plan to “complete” V1.
+
+**Queue boundary note:** V2 6B.* Claim Understanding runtime/provider work is a parallel gated activation track documented in `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` and governed by `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96` in `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`. Do not sequence 6B.* work as part of the April 24 V1 monitor queue below, and do not use V1 monitor items as approval to expose V2 runtime behavior.
 
 **See Also**:
 - `Docs/STATUS/Current_Status.md` for the current high-level snapshot

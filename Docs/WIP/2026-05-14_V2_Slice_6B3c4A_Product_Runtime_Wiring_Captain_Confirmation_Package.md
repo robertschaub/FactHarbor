@@ -113,6 +113,14 @@ If not confirmed, continue only with guard/test hardening and source-package ref
 
 ## 8. Implementation Record
 
+Approval pointer:
+
+- Checklist version/hash: `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96` in `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`.
+- Source package: this file, Section 7, "Confirmation Request".
+- Captain confirmation: current Codex thread, 2026-05-14, Captain reply `Ok approved as reccomended` to the recommended 6B.3c-4A proposal.
+- Implementing handoff: `Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4A_Runtime_Wiring_Scaffold.md`.
+- Implementing commit: `1b0ff9c2` (`feat: wire v2 direct-text runtime scaffold`); follow-up guard hardening: `531a0ff6`.
+
 Captain approved the recommended wording on 2026-05-14. The implemented 6B.3c-4A source slice stays inside the reviewed scaffold envelope:
 
 - `runtime-stage.ts` is the only product stage that imports the dispatch owner path.

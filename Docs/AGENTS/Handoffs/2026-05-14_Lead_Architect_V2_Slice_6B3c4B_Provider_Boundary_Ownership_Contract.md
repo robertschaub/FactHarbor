@@ -30,6 +30,8 @@ After a diverse provider-boundary debate, the reconciled verdict was `MODIFY`: p
 
 Implemented only an inert ownership contract under `apps/web/src/lib/analyzer-v2-runtime/`. This makes the future provider factory reviewable without wiring any runtime path.
 
+Governance pointer: this slice follows `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96` in `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`. It did not require Captain approval because it was contract-only and added no runtime activation, public exposure, provider factory, cache IO, live jobs, approval flips, or V1 cleanup. The deputy-team decision source is the debate consolidation recorded in this handoff.
+
 ## Key Decisions
 
 - 6B.3c-4B is not provider wiring.
@@ -62,7 +64,7 @@ Implemented only an inert ownership contract under `apps/web/src/lib/analyzer-v2
 
 ## For Next Agent
 
-If continuing implementation, start with a reviewed source-wiring package for the real provider factory. Do not bypass this contract by adding a product caller exception or reusing `apps/web/src/lib/analyzer/llm.ts`; that would violate the clean-room boundary. Live jobs become meaningful only after a committed/refreshed source-wiring slice produces a real hidden V2 direct-text artifact without scaffold-only injection.
+If continuing implementation, start with a reviewed source-wiring package for the real provider factory and reference `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` or its successor. Do not bypass this contract by adding a product caller exception or reusing `apps/web/src/lib/analyzer/llm.ts`; that would violate the clean-room boundary. Live jobs become meaningful only after a committed/refreshed source-wiring slice produces a real hidden V2 direct-text artifact without scaffold-only injection.
 
 ## Learnings
 

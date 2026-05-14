@@ -1663,12 +1663,14 @@ Expected reviewer output:
 
 This document is now the operative V2 target specification with implementation progress addenda.
 
+6B.* implementation addenda are a parallel gated Claim Understanding runtime/provider activation track. They do not replace the main rebuild Slice 1+ sequence and do not belong to the V1 monitor backlog queue. Current 6B.* blocked/allowed constraints are centralized in `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96` in `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; future 6B.* slice plans and handoffs must reference that checklist version/hash or a newer superseding version/hash.
+
 - Analyzer source changes for Slice 6A.5 were committed separately at `724dd9aa`.
 - Slice 6B.2 prompt-source and contract-test changes were committed separately at `8a1ef8cd`.
 - This status update tracks the current source slice without prompt/config/API/UI/public runtime/live-job behavior changes.
 - Slice 6B.3a implementation is committed at `2d14c89a`; it changes only structural Analyzer V2 foundation code and tests.
 - Slice 6B.3b implementation is committed at `04742922`; it adds only mock adapter contract code and tests.
-- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; 6B.3c-1 dispatch-frame contract implementation is committed at `8a663d3f`; 6B.3c-4A scaffold implementation is committed at `1b0ff9c2` with guard hardening at `531a0ff6`; 6B.3c-4B adds only inert provider-boundary ownership contracts and guards; later dispatch-capable Claim Understanding integration remains unapproved.
+- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; 6B.3c-1 dispatch-frame contract implementation is committed at `8a663d3f`; 6B.3c-4A scaffold implementation is committed at `1b0ff9c2` with Captain approval pointer recorded in its confirmation package and handoff; 6B.3c-4A guard hardening is committed at `531a0ff6`; 6B.3c-4B adds only inert provider-boundary ownership contracts and guards; later dispatch-capable Claim Understanding integration remains unapproved.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 
