@@ -21,8 +21,13 @@ import {
   type ClaimUnderstandingProviderTelemetry,
 } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 import { buildAnalyzerV2ClaimUnderstandingCacheDecision } from "@/lib/analyzer-v2/gateway/cache-governance";
+import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { getAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
-import type { AnalyzerV2GatewayTask, AnalyzerV2PolicyApproval } from "@/lib/analyzer-v2/gateway/types";
+import type {
+  AnalyzerV2GatewayTask,
+  AnalyzerV2PolicyApproval,
+  AnalyzerV2TaskModelPolicy,
+} from "@/lib/analyzer-v2/gateway/types";
 
 const APPROVED: AnalyzerV2PolicyApproval = {
   status: "approved",
@@ -41,6 +46,19 @@ function executableClaimUnderstandingTask(): AnalyzerV2GatewayTask {
     promptPolicy: base.promptPolicy ? { ...base.promptPolicy, approval: APPROVED } : null,
     modelPolicy: base.modelPolicy ? { ...base.modelPolicy, approval: APPROVED } : null,
     cachePolicy: base.cachePolicy ? { ...base.cachePolicy, approval: APPROVED } : null,
+  };
+}
+
+function claimUnderstandingModelPolicy(
+  overrides: Partial<AnalyzerV2TaskModelPolicy> = {},
+): AnalyzerV2TaskModelPolicy {
+  const policy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
+  if (!policy) {
+    throw new Error("Expected claim_understanding_gate1 model policy in test.");
+  }
+  return {
+    ...policy,
+    ...overrides,
   };
 }
 
@@ -148,6 +166,7 @@ function noStoreCacheDecision() {
 function baseRequest(providerCall: () => Promise<ClaimUnderstandingProviderCallResponse>) {
   return {
     gatewayTask: executableClaimUnderstandingTask(),
+    modelPolicy: claimUnderstandingModelPolicy(),
     renderedPrompt: renderedPrompt(),
     inputFrame: inputFrame(),
     configSnapshotHash: "config-snapshot-hash-6b3b",
@@ -236,6 +255,29 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
     expect(calls[0].modelPolicy.maxCalls).toBe(2);
     expect(calls[0].inputFrame).toEqual(frame);
     expect(calls[1].inputFrame).toEqual(frame);
+  });
+
+  it("uses the supplied run-context model policy snapshot for structural retry budget", async () => {
+    const calls: ClaimUnderstandingProviderCallRequest[] = [];
+    const outcome = await executeClaimUnderstandingModelAdapter({
+      ...baseRequest(async (request) => {
+        calls.push(request);
+        return {
+          output: "not json",
+          telemetry: providerTelemetry(),
+        };
+      }),
+      modelPolicy: claimUnderstandingModelPolicy({
+        policyId: "v2.model.claim_understanding_gate1.single-call-test",
+        maxCalls: 1,
+        schemaRetryCount: 0,
+      }),
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].modelPolicy.policyId).toBe("v2.model.claim_understanding_gate1.single-call-test");
+    expect(outcome.telemetry.modelPolicyId).toBe("v2.model.claim_understanding_gate1.single-call-test");
+    expect(outcome.claimUnderstandingResult?.status).toBe("damaged");
   });
 
   it("returns damaged after malformed JSON output exhausts the schema retry with parse telemetry", async () => {

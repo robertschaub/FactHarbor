@@ -12,6 +12,16 @@ export type ClaimBoundaryV2Envelope = {
   reportMarkdown: string;
 };
 
+export type ClaimPreparationEnvelopeDiagnostic = {
+  inputSource: "acs_prepared_snapshot" | "direct_input";
+  preparationStatus: string;
+  eventType: string;
+  eventSeverity: "info" | "warning" | "error";
+  claimIds: string[];
+  acsMigrationStatus: "accepted" | null;
+  blockCategory: "none" | "input_contract" | "stage_scope" | "policy_gate_closed";
+};
+
 type QualityGateStatus = "passed" | "warning" | "failed";
 
 function qualityGate(status: QualityGateStatus, summary: string): { status: QualityGateStatus; summary: string } {
@@ -61,6 +71,43 @@ function buildDamagedWarning(context: ClaimBoundaryV2RunContext) {
   };
 }
 
+function claimPreparationDiagnostics(
+  context: ClaimBoundaryV2RunContext,
+  diagnostics: readonly ClaimPreparationEnvelopeDiagnostic[],
+) {
+  if (diagnostics.length === 0) {
+    return [];
+  }
+
+  return diagnostics.map((diagnostic) => ({
+    type: "claim_preparation_integrity_event",
+    category: "internal_diagnostic",
+    severity: "info",
+    displaySeverity: "info",
+    visibility: "admin_only",
+    stage: "claim_understanding",
+    owner: "claim_understanding",
+    affected: {
+      claimIds: diagnostic.claimIds.length > 0
+        ? diagnostic.claimIds
+        : shellOnlyClaimIds(context),
+    },
+    materialityRationale:
+      "Pre-cutover Analyzer V2 kept Claim Understanding preparation diagnostics internal; the public result remains damaged.",
+    recoveryState: diagnostic.blockCategory === "none" ? "recovered" : "failed",
+    primaryIssueEligible: false,
+    damagedReportRelation: diagnostic.blockCategory === "none" ? "none" : "contributes",
+    details: {
+      inputSource: diagnostic.inputSource,
+      preparationStatus: diagnostic.preparationStatus,
+      eventType: diagnostic.eventType,
+      eventSeverity: diagnostic.eventSeverity,
+      acsMigrationStatus: diagnostic.acsMigrationStatus,
+      blockCategory: diagnostic.blockCategory,
+    },
+  }));
+}
+
 function buildCompatibilityQualityGates(context: ClaimBoundaryV2RunContext) {
   const claimCount = shellOnlyClaimIds(context).length;
   return {
@@ -92,9 +139,11 @@ function buildCompatibilityQualityGates(context: ClaimBoundaryV2RunContext) {
 
 export function buildDamagedClaimBoundaryV2Envelope(
   context: ClaimBoundaryV2RunContext,
+  preparationDiagnostics: readonly ClaimPreparationEnvelopeDiagnostic[] = [],
 ): ClaimBoundaryV2Envelope {
   const placeholderClaims = buildPlaceholderClaims(context);
   const warning = buildDamagedWarning(context);
+  const diagnostics = claimPreparationDiagnostics(context, preparationDiagnostics);
   const compatibilityQualityGates = buildCompatibilityQualityGates(context);
   const shellClaimIds = shellOnlyClaimIds(context);
   const reportMarkdown = [
@@ -117,9 +166,9 @@ export function buildDamagedClaimBoundaryV2Envelope(
         currentDate: context.currentDate,
         executedWebGitCommitHash: null,
         promptContentHash: null,
-        pipelineConfigHash: null,
-        searchConfigHash: null,
-        calcConfigHash: null,
+        pipelineConfigHash: context.configSnapshot.pipelineConfigHash,
+        searchConfigHash: context.configSnapshot.searchConfigHash,
+        calcConfigHash: context.configSnapshot.calcConfigHash,
         modelPolicyHash: null,
       },
       input: {
@@ -162,7 +211,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
         warningIntegrity: qualityGate("passed", "Damaged-report warning is represented in the V2 warning contract."),
         damagedReport: true,
       },
-      warnings: [warning],
+      warnings: [warning, ...diagnostics],
       narrative: {
         markdown: reportMarkdown,
         sections: {
@@ -182,7 +231,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
         narrativePromptContentHash: null,
         modelTaskId: null,
         modelTaskVersion: null,
-        configSnapshotHash: null,
+        configSnapshotHash: context.configSnapshot.configSnapshotHash,
         rendererVersion: "v2.shell-markdown.0",
         exportAdapterVersion: "v2.compatibility-view.0",
         sourceCommit: null,

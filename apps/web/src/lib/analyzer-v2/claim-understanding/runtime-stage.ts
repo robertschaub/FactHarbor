@@ -22,16 +22,19 @@ import {
   type ClaimUnderstandingResult,
 } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
-import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 import {
   canExecuteAnalyzerV2GatewayTask,
-  getAnalyzerV2GatewayTask,
 } from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2GatewayTask,
   AnalyzerV2GatewayTaskStatus,
   AnalyzerV2PolicyApproval,
 } from "@/lib/analyzer-v2/gateway/types";
+import {
+  getPipelineRunGatewayTask,
+  getPipelineRunTaskModelPolicy,
+  type PipelineRunContext,
+} from "@/lib/analyzer-v2/run-context";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION = "v2.claim-understanding.runtime-stage.0";
 const CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_VERSION =
@@ -69,6 +72,7 @@ export type ClaimUnderstandingRuntimeSideEffects = {
 export type ClaimUnderstandingDirectInputRuntimeBlockedReason =
   | "gateway_policy_not_executable"
   | "runtime_dispatch_not_enabled"
+  | "runtime_dispatch_model_policy_missing"
   | "runtime_dispatch_provider_callback_missing"
   | "runtime_dispatch_preflight_blocked"
   | "runtime_dispatch_readiness_blocked"
@@ -198,7 +202,7 @@ function blockedAcsState(reason: string): ClaimUnderstandingRuntimeState {
 
 function evaluateAcsPreparedSnapshot(
   input: ClaimBoundaryV2Ingress,
-  context: ClaimBoundaryV2RunContext,
+  context: PipelineRunContext,
 ): ClaimUnderstandingRuntimeState {
   const acsSnapshot = input.preparedSeed?.acsSnapshot;
   const acsSnapshotHash = readRequiredCanonicalHash(input.preparedSeed?.acsSnapshotHash);
@@ -233,8 +237,8 @@ function evaluateAcsPreparedSnapshot(
   };
 }
 
-function evaluateDirectInput(): ClaimUnderstandingRuntimeState {
-  const gatewayTask = getAnalyzerV2GatewayTask("claim_understanding_gate1");
+function evaluateDirectInput(context: PipelineRunContext): ClaimUnderstandingRuntimeState {
+  const gatewayTask = getPipelineRunGatewayTask(context, "claim_understanding_gate1");
   const executable = canExecuteAnalyzerV2GatewayTask(gatewayTask);
 
   return {
@@ -385,13 +389,13 @@ function directRuntimeState(params: {
 
 async function evaluateDirectInputRuntimeDispatch(
   input: ClaimBoundaryV2Ingress,
-  context: ClaimBoundaryV2RunContext,
+  context: PipelineRunContext,
   options: ClaimUnderstandingRuntimeStageOptions,
 ): Promise<ClaimUnderstandingRuntimeState> {
-  const gatewayTask = getAnalyzerV2GatewayTask("claim_understanding_gate1");
+  const gatewayTask = getPipelineRunGatewayTask(context, "claim_understanding_gate1");
 
   if (options.directTextRuntimeDispatch?.enabled !== true) {
-    return evaluateDirectInput();
+    return evaluateDirectInput(context);
   }
 
   const frameResult = buildClaimUnderstandingDispatchFrame(input, context);
@@ -410,7 +414,7 @@ async function evaluateDirectInputRuntimeDispatch(
 
   const approvalSnapshot = buildRuntimeApprovalSnapshotFromGatewayTask(gatewayTask);
   if (!approvalSnapshot) {
-    return evaluateDirectInput();
+    return evaluateDirectInput(context);
   }
 
   const providerBoundary = options.directTextRuntimeDispatch.providerBoundary;
@@ -447,8 +451,24 @@ async function evaluateDirectInputRuntimeDispatch(
     });
   }
 
+  const modelPolicy = getPipelineRunTaskModelPolicy(context, "claim_understanding_gate1");
+  if (!modelPolicy) {
+    return directRuntimeState({
+      status: "runtime_dispatch_blocked",
+      result: null,
+      blockedReason: "runtime_dispatch_model_policy_missing",
+      gatewayTaskStatus: gatewayTask.status,
+      runtimeDispatchStatus: "not_attempted",
+      runtimeDispatchBlockedReason: "runtime_dispatch_model_policy_missing",
+      cacheEligibility: "not_evaluated",
+      sideEffects: noDispatchSideEffects(),
+    });
+  }
+
   const dispatchResult = await executeClaimUnderstandingRuntimeDispatch({
     readiness,
+    gatewayTask,
+    modelPolicy,
     providerCall: providerBoundary.providerCall,
   });
 
@@ -479,7 +499,7 @@ async function evaluateDirectInputRuntimeDispatch(
 
 export async function runClaimUnderstandingRuntimeStage(
   input: ClaimBoundaryV2Ingress,
-  context: ClaimBoundaryV2RunContext,
+  context: PipelineRunContext,
   options: ClaimUnderstandingRuntimeStageOptions = {},
 ): Promise<ClaimUnderstandingRuntimeState> {
   if (input.preparedSeed) {

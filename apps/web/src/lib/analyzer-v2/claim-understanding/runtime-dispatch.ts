@@ -13,12 +13,11 @@ import {
   type ClaimUnderstandingProviderCall,
 } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 import { buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision } from "@/lib/analyzer-v2/gateway/cache-governance";
-import {
-  canExecuteAnalyzerV2GatewayTask,
-  getAnalyzerV2GatewayTask,
-} from "@/lib/analyzer-v2/gateway/policy";
+import { canExecuteAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2CacheDecision,
+  AnalyzerV2GatewayTask,
+  AnalyzerV2TaskModelPolicy,
 } from "@/lib/analyzer-v2/gateway/types";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_DISPATCH_OWNER_CONTRACT_VERSION =
@@ -109,6 +108,8 @@ export type ClaimUnderstandingRuntimeDispatchBlockedReason =
 
 export type ClaimUnderstandingRuntimeDispatchRequest = {
   readiness: ClaimUnderstandingDispatchReadinessResult;
+  gatewayTask: AnalyzerV2GatewayTask;
+  modelPolicy: AnalyzerV2TaskModelPolicy;
   providerCall: ClaimUnderstandingProviderCall;
 };
 
@@ -365,8 +366,7 @@ export async function executeClaimUnderstandingRuntimeDispatch(
     );
   }
 
-  const gatewayTask = getAnalyzerV2GatewayTask("claim_understanding_gate1");
-  if (!canExecuteAnalyzerV2GatewayTask(gatewayTask)) {
+  if (!canExecuteAnalyzerV2GatewayTask(request.gatewayTask)) {
     return runtimeDispatchBlocked(
       request.readiness,
       "gateway_policy_not_executable",
@@ -417,7 +417,8 @@ export async function executeClaimUnderstandingRuntimeDispatch(
   }
 
   const adapterOutcome = await executeClaimUnderstandingModelAdapter({
-    gatewayTask,
+    gatewayTask: request.gatewayTask,
+    modelPolicy: request.modelPolicy,
     renderedPrompt,
     inputFrame: {
       analysisInput: request.readiness.frame.analysisInput,

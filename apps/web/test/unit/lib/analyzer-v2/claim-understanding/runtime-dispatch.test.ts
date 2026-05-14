@@ -16,7 +16,12 @@ import {
   type ClaimUnderstandingRuntimeDispatchOwnerContract,
   type ClaimUnderstandingRuntimeDispatchOwnerSideEffects,
 } from "@/lib/analyzer-v2/claim-understanding/runtime-dispatch";
-import type { ClaimUnderstandingProviderCallRequest } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
+import type {
+  ClaimUnderstandingProviderCall,
+  ClaimUnderstandingProviderCallRequest,
+} from "@/lib/analyzer-v2/claim-understanding/model-adapter";
+import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
+import { getAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import { buildClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
@@ -108,6 +113,23 @@ function readiness(frame: ClaimUnderstandingDispatchFrame): ClaimUnderstandingDi
     approvalSnapshot: runtimeApprovalSnapshot(),
     provenancePacket: provenancePacket(frame),
   });
+}
+
+function runtimeDispatchRequest(
+  ready: ClaimUnderstandingDispatchReadinessResult,
+  providerCall: ClaimUnderstandingProviderCall,
+) {
+  const modelPolicy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
+  if (!modelPolicy) {
+    throw new Error("Expected claim_understanding_gate1 model policy in test.");
+  }
+
+  return {
+    readiness: ready,
+    gatewayTask: getAnalyzerV2GatewayTask("claim_understanding_gate1"),
+    modelPolicy,
+    providerCall,
+  };
 }
 
 function ownerContract(
@@ -276,13 +298,13 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     const ready = readiness(frame);
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: ready,
-      providerCall: async (request) => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      ready,
+      async (request) => {
         providerCalls.push(request);
         throw new Error("should not be called");
       },
-    });
+    ));
 
     expect(ready.status).toBe("contract_satisfied");
     expect(result.status).toBe("blocked");
@@ -332,13 +354,13 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: blockedReadiness,
-      providerCall: async (request) => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      blockedReadiness,
+      async (request) => {
         providerCalls.push(request);
         throw new Error("should not be called");
       },
-    });
+    ));
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReason).toBe("readiness_contract_not_satisfied");
@@ -382,13 +404,13 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: blockedReadiness,
-      providerCall: async (request) => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      blockedReadiness,
+      async (request) => {
         providerCalls.push(request);
         throw new Error("should not be called");
       },
-    });
+    ));
 
     expect(blockedReadiness.status).toBe("blocked");
     expect(result.status).toBe("blocked");
@@ -416,13 +438,13 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: readyWithRejectedSection,
-      providerCall: async (request) => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      readyWithRejectedSection,
+      async (request) => {
         providerCalls.push(request);
         throw new Error("should not be called");
       },
-    });
+    ));
 
     expect(readyWithRejectedSection.status).toBe("contract_satisfied");
     expect(result.status).toBe("blocked");
@@ -452,12 +474,12 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
       selectedAtomicClaimIds: [],
     });
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: readiness(frame),
-      providerCall: async () => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      readiness(frame),
+      async () => {
         throw new Error("provider unavailable");
       },
-    });
+    ));
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReason).toBe("gateway_policy_not_executable");
@@ -488,9 +510,9 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
       selectedAtomicClaimIds: [],
     });
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: readiness(frame),
-      providerCall: async () => ({
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      readiness(frame),
+      async () => ({
         output: { status: "accepted", claimContract: null },
         telemetry: {
           providerId: "unknown",
@@ -501,7 +523,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
           durationMs: 345,
         },
       }),
-    });
+    ));
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReason).toBe("gateway_policy_not_executable");
@@ -527,9 +549,9 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     });
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
 
-    const result = await executeClaimUnderstandingRuntimeDispatch({
-      readiness: readiness(frame),
-      providerCall: async (request) => {
+    const result = await executeClaimUnderstandingRuntimeDispatch(runtimeDispatchRequest(
+      readiness(frame),
+      async (request) => {
         providerCalls.push(request);
         return {
           output: { status: "accepted", claimContract: { extra: true } },
@@ -543,7 +565,7 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
           },
         };
       },
-    });
+    ));
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReason).toBe("gateway_policy_not_executable");

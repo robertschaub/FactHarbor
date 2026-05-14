@@ -4,7 +4,6 @@ import {
   CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
   type ClaimUnderstandingResult,
 } from "@/lib/analyzer-v2/claim-understanding/types";
-import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { canExecuteAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2CacheDecision,
@@ -97,6 +96,7 @@ export type ClaimUnderstandingModelAdapterOutcome =
 
 export type ExecuteClaimUnderstandingModelAdapterRequest = {
   gatewayTask: AnalyzerV2GatewayTask;
+  modelPolicy: AnalyzerV2TaskModelPolicy;
   renderedPrompt: AnalyzerV2RenderedClaimUnderstandingPrompt;
   inputFrame: ClaimUnderstandingModelAdapterInputFrame;
   configSnapshotHash: string;
@@ -140,14 +140,6 @@ function validateProviderTelemetry(
   }
 
   return null;
-}
-
-function readModelPolicy(): AnalyzerV2TaskModelPolicy {
-  const policy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
-  if (!policy) {
-    throw new Error("Analyzer V2 Claim Understanding model policy is not registered.");
-  }
-  return policy;
 }
 
 function maxAttemptsFromPolicy(policy: AnalyzerV2TaskModelPolicy): number {
@@ -258,7 +250,7 @@ export async function executeClaimUnderstandingModelAdapter(
   assertRequiredTelemetryValue(request.renderedPrompt.promptContentHash, "promptContentHash");
   assertRequiredTelemetryValue(request.configSnapshotHash, "configSnapshotHash");
 
-  const modelPolicy = readModelPolicy();
+  const modelPolicy = request.modelPolicy;
   const attempts: ClaimUnderstandingModelAdapterAttempt[] = [];
 
   if (!canExecuteAnalyzerV2GatewayTask(request.gatewayTask)) {

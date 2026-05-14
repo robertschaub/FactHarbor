@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { runClaimBoundaryPipelineV2 } from "@/lib/analyzer-v2";
 import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
 
@@ -108,6 +109,72 @@ describe("analyzer-v2 shell", () => {
     expect(serialized).not.toContain("V2_CLAIM_UNDERSTANDING_GATE1");
     expect(serialized).not.toContain("v2.claim-understanding.runtime-stage.0");
     expect(serialized).not.toContain("gateway_policy_not_executable");
+  });
+
+  it("threads ACS preparation diagnostics into admin-only warnings without exposing internal state", async () => {
+    const result = await runClaimBoundaryPipelineV2({
+      runIdHint: "job-v2-shell-acs-diagnostics",
+      submitted: {
+        kind: "text",
+        value: "Submitted text",
+      },
+      preparedSeed: {
+        acsSnapshot: {
+          resolvedInputText: "Prepared resolved text",
+          preparedUnderstanding: {
+            detectedInputType: "text",
+            detectedLanguage: "de",
+            atomicClaims: [
+              {
+                id: "AC_01",
+                statement: "Vorbereitete Aussage",
+              },
+            ],
+          },
+        },
+        acsSnapshotHash: "v2-acs-hash",
+        inputGroundingSeedHash: "v2-input-grounding-hash",
+      },
+      selectedAtomicClaimIds: ["AC_01"],
+    });
+    const keys = collectKeys(result.resultJson);
+    const serialized = JSON.stringify(result.resultJson);
+
+    expect(result.resultJson).toMatchObject({
+      _schemaVersion: "4.0.0-cb-precutover",
+      qualityGates: {
+        damagedReport: true,
+      },
+    });
+    expect(result.resultJson.warnings).toEqual([
+      expect.objectContaining({
+        type: "report_damaged",
+      }),
+      expect.objectContaining({
+        type: "claim_preparation_integrity_event",
+        category: "internal_diagnostic",
+        severity: "info",
+        visibility: "admin_only",
+        primaryIssueEligible: false,
+        details: expect.objectContaining({
+          inputSource: "acs_prepared_snapshot",
+          preparationStatus: "accepted",
+          eventType: "acs_snapshot_consumed",
+          acsMigrationStatus: "accepted",
+        }),
+      }),
+    ]);
+    expect(keys).not.toEqual(expect.arrayContaining([
+      "claimUnderstanding",
+      "claimUnderstandingResult",
+      "claimUnderstandingState",
+      "claimContract",
+      "providerTelemetry",
+      "cacheDecision",
+      "sideEffects",
+    ]));
+    expect(serialized).not.toContain("V2_CLAIM_UNDERSTANDING_GATE1");
+    expect(serialized).not.toContain("v2.claim-understanding.runtime-stage.0");
   });
 
   it("does not pass direct-text runtime scaffold options from the product shell", async () => {

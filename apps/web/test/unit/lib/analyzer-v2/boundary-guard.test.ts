@@ -180,7 +180,7 @@ const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ],
   [
     "@/lib/analyzer-v2/gateway/types",
-    new Set(["AnalyzerV2CacheDecision"]),
+    new Set(["AnalyzerV2CacheDecision", "AnalyzerV2GatewayTask", "AnalyzerV2TaskModelPolicy"]),
   ],
 ]);
 const runtimeScaffoldOptionOwnerPaths = new Set([
@@ -234,7 +234,7 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
   ],
   [
     "@/lib/analyzer-v2/run-context",
-    new Set(["ClaimBoundaryV2RunContext"]),
+    new Set(["PipelineRunContext", "getPipelineRunGatewayTask", "getPipelineRunTaskModelPolicy"]),
   ],
   [
     "@/lib/analyzer-v2/gateway/policy",
