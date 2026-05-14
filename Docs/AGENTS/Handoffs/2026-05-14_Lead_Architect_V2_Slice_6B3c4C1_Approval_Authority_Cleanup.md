@@ -42,7 +42,7 @@ This did not add provider factory code, provider SDK imports, public API/UI/repo
 - Approval body/date: deputy-team review in the current Codex thread on 2026-05-14.
 - Approval outcome: LLM/runtime reviewer `APPROVE`, clean-room/security challenger `APPROVE`, implementation architect `MODIFY`; consolidated approval allowed 4C1 after expanding the source envelope to include `orchestrator.ts`, `pipeline-shell.ts`, and `pipeline-shell.test.ts` and requiring executable-clone removal/neutralization.
 - Captain policy context: continue if clear and low risk; use the deputy team at decision points unless high risk or no consent.
-- Implementing commit: `a3edff1c`.
+- Implementing commit: `0aa31d4`.
 
 ## Changes
 

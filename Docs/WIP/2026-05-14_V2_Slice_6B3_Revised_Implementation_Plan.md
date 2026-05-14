@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `a3edff1c`; provider factory wiring and public product runtime exposure remain blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; provider factory wiring and public product runtime exposure remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -380,7 +380,7 @@ Post-4B source-wiring debate returned `MODIFY/MODIFY/MODIFY`. The next approved 
 
 4C consolidated the next source path into two separate gates:
 
-- **6B.3c-4C1 approval-authority cleanup**: approved by deputy review after tightening the source envelope, then implemented at `a3edff1c`. It removes product/live reliance on the 4A scaffold approval snapshot and private executable gateway-task clone. It did not add a provider factory, provider SDK imports, public exposure, cache IO, ACS/direct URL execution, live jobs, approval flips, prompt/config edits, or V1 cleanup.
+- **6B.3c-4C1 approval-authority cleanup**: approved by deputy review after tightening the source envelope, then implemented at `0aa31d4`. It removes product/live reliance on the 4A scaffold approval snapshot and private executable gateway-task clone. It did not add a provider factory, provider SDK imports, public exposure, cache IO, ACS/direct URL execution, live jobs, approval flips, prompt/config edits, or V1 cleanup.
 - **6B.3c-4C2 provider factory gate**: later clean-room provider callback factory outside Analyzer V2, also pending separate review after 4C1.
 
 4C1 approval pointer:

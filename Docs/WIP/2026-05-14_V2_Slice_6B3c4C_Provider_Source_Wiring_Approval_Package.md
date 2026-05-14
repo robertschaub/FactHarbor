@@ -158,7 +158,7 @@ Missing approval pointer means not approved.
 
 ## 8. 4C1 Implementation Record
 
-Implementation status: complete at `a3edff1c`.
+Implementation status: complete at `0aa31d4`.
 
 Approval pointer:
 
