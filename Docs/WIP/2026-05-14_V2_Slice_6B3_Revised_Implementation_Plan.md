@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c not approved
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -183,15 +183,32 @@ Adapter design notes:
 
 Purpose: connect Claim Understanding to the existing V2 pre-cutover shell while preserving V1 default and internal-only state.
 
+Review status: expert debate returned `MODIFY`. Do not implement 6B.3c as a full runtime-dispatch/orchestrator slice from the earlier wording. Split it first.
+
+### 7.1 6B.3c-0 Structural Claim Understanding Orchestration
+
+Purpose: add the internal Claim Understanding orchestration boundary without provider dispatch.
+
 Allowed:
 
-- direct-input Claim Understanding through the approved gateway only when `canExecuteAnalyzerV2GatewayTask(...)` is true;
-- ACS valid migration path that avoids model dispatch;
+- add a V2-owned internal `ClaimUnderstandingRuntimeState` or equivalent object;
+- call a V2-owned Claim Understanding stage from the V2 orchestrator;
+- ACS valid migration path that avoids prompt rendering, model adapter dispatch, and provider callbacks;
 - blocked/damaged Claim Understanding mapped into a damaged structural V2 pre-cutover envelope;
 - internal V2 state only, no API/UI/report diagnostic field.
+- direct input may perform the gateway approval check and must fail closed while shipped `claim_understanding_gate1` remains non-executable;
+- shell-placeholder selected IDs must be detected from raw runner input before normalization can drop them;
+- ACS migration must occur at the V2 edge before orchestrator-stage logic consumes prepared snapshot data;
+- ACS snapshot hash and input-grounding seed hash must be canonical V2 hashes. Do not treat `resolvedInputSha256` as an ACS snapshot hash unless a later reviewed migration explicitly proves that equivalence;
+- blocked direct input must do no prompt loading/rendering, no cache read/write, no cache-decision construction that implies eligibility, no provider callback creation, and no model-adapter call.
 
 Forbidden:
 
+- no model adapter import from product execution paths in 6B.3c-0;
+- no prompt loading or rendering;
+- no provider SDK import or provider callback;
+- no cache read/write;
+- no production approval/status mutation or synthetic approved task in product code;
 - no public cutover;
 - no V1 default change;
 - no API/UI changes;
@@ -203,15 +220,31 @@ Minimum verifier:
 
 - V1 default routing tests;
 - V2 pre-cutover env-gate routing tests;
-- ACS migration avoids model call;
-- direct input cannot call the model unless gateway approval checks pass;
-- shell-placeholder ID fails before provider dispatch;
+- ACS migration avoids prompt load, adapter call, model call, and provider callback;
+- direct input performs the gateway check before prompt rendering, cache decision construction, provider callback creation, or adapter invocation;
+- shipped default `claim_understanding_gate1` remains blocked and cannot execute;
+- shell-placeholder ID in raw runner input fails before provider dispatch and cannot be hidden by normalization;
+- invalid/stale/mismatched ACS data fails closed with no cache eligibility;
 - multilingual and input-neutral direct-input tests;
-- API/UI/result compatibility guard proving no public field change;
+- API/UI/result compatibility guard proving no public field change and recursively rejecting public `claimUnderstanding`, adapter telemetry, prompt text, provider telemetry, and cache key material;
+- import-time side-effect guard proving V1-default runner imports do not load prompts, create provider callbacks, perform cache IO, or touch provider SDKs;
 - Analyzer V2 boundary guard;
 - focused Analyzer V2 test slice;
 - `npm -w apps/web run build`;
 - `git diff --check`.
+
+### 7.2 Later 6B.3c Dispatch Integration Slice
+
+Provider dispatch remains deferred until after 6B.3c-0 passes. A later reviewed slice may wire the existing model adapter only if it defines:
+
+- the approval source for execution without mutating shipped registry constants;
+- the exact runtime provider-dispatch boundary;
+- why an adapter import from a product path is now allowed and what guard replaces the 6B.3b no-import guard;
+- how mocks are excluded from product paths;
+- full prompt variable, config snapshot, cache/no-store, current-date bucket, input identity, ACS hash, and input-grounding seed hash construction;
+- URL-input handling without pretending an unresolved URL string is resolved body text.
+
+Captain escalation is required before any production approval flip, real provider SDK callsite, cache IO enablement, public/API/UI/report diagnostic exposure, file seeding, live job, or V1/V2 boundary weakening.
 
 ## 8. Approval Gate Before Code
 
@@ -271,6 +304,17 @@ Until 6B.3c receives separate review and implementation approval:
 - no runtime LLM call is added;
 - no live jobs are submitted;
 - V1 remains the default runtime.
+
+6B.3c review consolidation:
+
+| Reviewer lens | Verdict | Required outcome |
+|---|---|---|
+| LLM/runtime safety | MODIFY | Split 6B.3c; preserve shipped blocked state; define internal-only state, cache/no-store construction, prompt variables, hash provenance, URL handling, and provider-dispatch ownership before code. |
+| Senior Developer | MODIFY | Start only with a narrower 6B.3c-0 structural no-dispatch slice; ACS migration may be wired, direct input must remain gateway-blocked with no provider dispatch, and product adapter import needs a later guard change. |
+| Code Reviewer | MODIFY | Gateway approval must be checked before prompt rendering/cache/provider setup; approval source is undefined; ACS hash provenance is ambiguous; product-path import guards need a 6B.3c-appropriate side-effect/reachability replacement. |
+| Challenger | MODIFY | Shell-placeholder IDs can be hidden by current normalization; internal state could leak through persisted `resultJson`; provider dispatch ownership and ACS migration edge are under-specified. |
+
+Consolidated decision: 6B.3c code is not approved as originally written. The next low-risk step is the documentation tightening in this Section 7. Implementation may start only as 6B.3c-0 structural no-dispatch orchestration after this tightened plan is accepted by the deputy team.
 
 6B.3a verification:
 

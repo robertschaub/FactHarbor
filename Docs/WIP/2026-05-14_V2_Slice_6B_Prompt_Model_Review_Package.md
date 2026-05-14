@@ -1,7 +1,7 @@
 # V2 Slice 6B Prompt And Model Review Package
 
 **Date:** 2026-05-14
-**Status:** Slice 6B.3b model adapter complete; Slice 6B.3c requires separate expert debate/review
+**Status:** Slice 6B.3b model adapter complete; Slice 6B.3c debate returned MODIFY and requires 6B.3c-0 structural no-dispatch planning before code
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -426,4 +426,6 @@ Proceed with Slice 6B only as sub-slices. Slices 6B.1a, 6B.1b, 6B.2, and 6B.3a a
 
 The first 6B.3b adapter review returned `MODIFY` from Claude Opus and Gemini. The operative 6B.3b contract removed the neutral/shared adapter option and required a V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected provider dispatch, mocked tests, production schema validation, policy fail-closed behavior, identical structural retry, no cache IO, no provider SDK callsite, no product-path imports, and typed telemetry without placeholders. 6B.3b is complete at `04742922` under that contract.
 
-Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire runtime model execution, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded for 6B.3c.
+The 6B.3c expert debate returned `MODIFY`: full runtime-dispatch/orchestrator wiring is not approved. The next allowed planning shape is 6B.3c-0 structural no-dispatch orchestration: ACS migration at the V2 edge, internal-only runtime state, direct-input gateway blocking before prompt/cache/provider work, no model-adapter product-path import, no prompt rendering, no provider callback, no cache IO, no public/API/UI/report field, no approval/status mutation, and no live jobs.
+
+Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire runtime model execution, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded for a later dispatch-capable slice.
