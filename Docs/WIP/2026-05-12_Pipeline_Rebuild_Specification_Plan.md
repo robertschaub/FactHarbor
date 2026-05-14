@@ -61,6 +61,8 @@ This is not a request for maximum simplification. The new design must remain str
 
 Cost and latency targets are quality-constrained. Normal V2 analyses should target 6-10 minutes active runtime and $0.50-$1.25 cost; complex analyses should target 10-18 minutes and $1.25-$3.25. These targets must never justify weaker evidence, hidden budget exits, downgraded warning honesty, deterministic semantic shortcuts, or V1 prompt/code reuse. Any over-budget run requires an explicit quality-protection reason and deputy/Captain review at the documented threshold.
 
+Retries and repairs should be prevented by design. V2 should use contract-first prompts, structural preflight validation, stable IDs, valid uncertainty states, sufficiency-before-verdict gating, and the right model/evidence packet on the first attempt. Bounded provider/schema retries remain allowed as structural resilience, but hidden semantic repair and repeated "try again for a better answer" loops are not acceptable quality mechanisms.
+
 The UI should remain unchanged unless the specification identifies a concrete product, trust, or compatibility reason for changing it.
 
 The work must start from a clean specification, reverse-engineered from the current pipeline and then deliberately cleaned, re-architected, and redesigned. Only after that specification is reviewed and approved should implementation begin.
@@ -240,6 +242,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - Gate 1 and Gate 4 current contracts.
 - Input/output contracts per stage and cross-stage state ownership.
 - LLM calls, prompts, structured-output schemas, semantic tasks, model tiers, caching, retries, repairs, and failure behavior.
+- Prevention-first recovery taxonomy: what is prevented by preflight contracts, what can be retried structurally, what returns insufficiency/caveat/damaged state, and what hidden semantic repair is forbidden.
 - Multilingual handling mechanisms and input-neutrality mechanisms.
 - Evidence lifecycle: acquisition, extraction, filtering, deduplication, normalization, provenance, source reliability, warning/report integrity.
 - UCM/config dependencies and migration surfaces.
@@ -338,6 +341,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - Public report JSON and persisted historical reports remain compatible unless Captain approved a versioned migration.
 - Gate 1, Gate 4, evidence transparency, warning materiality, and report integrity are preserved.
 - Cost/latency targets are met or over-budget cases are accepted only with a documented quality-protection reason; cheaper/faster runs do not count as improvements if comparator quality, evidence coverage, warning honesty, multilingual/input-neutral behavior, or report clarity regresses.
+- Retry and repair rates are low, ledgered, and accepted by deputy review; high rates force contract/prompt/model/evidence-packet/gate improvement before cutover.
 - V1 analysis prompt files, prompt profiles, prompt sections, and active UCM prompt entries are removed from runtime selection once V2 owns and verifies the corresponding prompt-backed task.
 - Safe tests and build pass.
 - Approved quality, multilingual, input-neutrality, semantic drift, cost, and latency checks pass or have Captain-approved residual risk.

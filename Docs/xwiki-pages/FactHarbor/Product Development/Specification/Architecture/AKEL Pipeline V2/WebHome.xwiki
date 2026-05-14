@@ -86,6 +86,12 @@ Cost and latency are V2 design constraints, not permission to weaken analysis qu
 
 Budget exits must be visible through sufficiency, scarcity, warning, or damaged-report behavior. They must not produce fake confidence or hidden quality loss.
 
+== Prevention-First Recovery Policy ==
+
+V2 should prevent retries and repairs by design. The first attempt should have the right contract, prompt variables, stable IDs, evidence packet, schema, model tier, and quality gate. Quality remains the priority; V2 must not choose a cheap first pass when the likely result is later semantic repair.
+
+Allowed recovery is narrow and observable: bounded provider/network retry, bounded structured-output retry, explicit model escalation with a quality reason, or typed insufficiency/caveat/damaged output. Hidden semantic repair and repeated attempts to get a preferred answer are forbidden.
+
 == V1 Protection Rules ==
 
 * V1 ClaimAssessmentBoundary remains the default runtime until cutover approval.

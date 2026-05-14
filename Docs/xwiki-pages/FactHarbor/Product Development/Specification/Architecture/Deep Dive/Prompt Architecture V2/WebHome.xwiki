@@ -56,6 +56,12 @@ The registry is also the cost/latency governor for prompt-backed V2 execution. E
 
 Normal analysis targets 6-10 minutes active runtime and $0.50-$1.25 cost. Complex analysis targets 10-18 minutes and $1.25-$3.25. Stronger models, extra retrieval, fuller debate, or repair loops require a recorded quality-protection reason.
 
+== Prevention-First Prompt Contracts ==
+
+V2 prompts should make retries and repairs exceptional. Each prompt-backed task has one semantic responsibility, required variables, stable input IDs, allowed output states, output schema, model task, and contract tests. The prompt must support honest structured outcomes such as insufficient evidence, cannot determine, caveat, blocked, or damaged where appropriate.
+
+Prompt design must not rely on cheap-first semantic attempts followed by repair. For high-leverage tasks, the first model choice and evidence packet must be good enough for the quality bar. Any meaning-changing correction must be explicit, LLM-owned, typed, ledgered, and quality-gated.
+
 == Config Snapshot ==
 
 Analysis-affecting tunables belong in UCM/JSON defaults unless explicitly classified as structural constants. TypeScript schemas and JSON defaults must stay synchronized. Dead or weakly wired knobs should fail a config contract test.

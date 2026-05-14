@@ -87,6 +87,7 @@ V2 public cutover requires:
 1. comparator report review against Captain quality expectations;
 1. cost and latency review using measured baselines and the quality-constrained target envelope: normal 6-10 minutes / $0.50-$1.25, complex 10-18 minutes / $1.25-$3.25;
 1. documented quality-protection reason for any over-budget accepted run;
+1. retry and repair rates accepted as exceptional by deputy review, with no hidden semantic repair or answer-fishing loop;
 1. explicit Captain or delegated deputy approval.
 
 == Cleanup Gate ==

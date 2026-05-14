@@ -627,6 +627,35 @@ No cost/latency optimization may weaken the clean-room boundary, reuse V1 prompt
 
 ---
 
+## 4.4 Prevention-First Recovery Policy
+
+V2 should be designed so retries and repairs are rare. Prevention is preferred because repeated correction loops hide complexity, increase cost, create unstable behavior, and can become an accidental substitute for clean contracts. This is not a "zero retries ever" rule. Quality remains the priority: V2 must use the right model, evidence packet, schema, and gate design on the first attempt, even when that costs more than a cheap-first-then-repair loop.
+
+**Prevention mechanisms required before prompt-backed V2 execution**
+
+- Contract-first prompts: each task has one semantic responsibility, required variables, stable IDs, allowed output states, output schema, and tests.
+- Valid uncertainty states: `insufficient_evidence`, `cannot_determine`, `blocked`, `caveat`, and `damaged` are first-class outcomes where appropriate, not malformed partial answers.
+- Pre-call structural validation: validate run context, config snapshot, prompt variables, selected claim IDs, evidence IDs, source IDs, schema version, token budget, and evidence packet completeness before the LLM call.
+- Stable references: models reference claim, source, evidence, boundary, and citation IDs instead of recreating objects in prose.
+- Sufficiency before verdict: verdict adjudication must not compensate for weak evidence; weak evidence returns refine, caveat, low-confidence, insufficient, or damaged states through the sufficiency gate.
+- Right model first for high-leverage stages: Claim Understanding, Sufficiency, Verdict Adjudication, and Gate 4 must not rely on low-cost attempts that predictably need semantic repair.
+- No silent truncation of decisive material: evidence packets must be bounded intentionally and ledgered when material is excluded.
+
+**Allowed and forbidden recovery**
+
+| Recovery situation | V2 policy | Quality rule |
+|---|---|---|
+| Structural preflight failure | do not call the LLM; fail fast to a typed validation error, approved retry path, or damaged result | prevents wasting calls and avoids malformed downstream state |
+| Provider/network/transient failure | one bounded same-task retry or configured provider fallback through the gateway | retry is structural resilience, not semantic fishing |
+| Structured-output parse/schema failure | one bounded same-task/schema retry where the provider supports it; otherwise typed failure or damaged result | no hidden reinterpretation of malformed content |
+| Analytical insufficiency | return insufficiency/caveat/refine/damaged state; do not patch toward a desired verdict | uncertainty is honest output |
+| Meaning-changing correction | allowed only as explicit, LLM-owned, typed, observable recovery with gate status and ledger entry | no silent semantic repair |
+| "Try again for a better answer" | forbidden | quality must come from correct first-pass design, not stochastic sampling for preference |
+
+Every retry, fallback, escalation, semantic correction, safe downgrade, and damaged result records a recovery class, stage, model task, trigger, count, quality-protection reason, and final gate outcome in the observability ledger. A high retry or repair rate is a design defect and should block cutover until the responsible contract, prompt, model policy, evidence packet, or gate is improved.
+
+---
+
 ## 5. Logical Module Boundaries
 
 Exact file names can be refined by implementation, but the V2 root and public entrypoint in Section 4.2 are the default unless deputy review changes them before implementation.
@@ -1035,6 +1064,7 @@ V2 must treat prompts, config, and model routing as first-class architecture.
 - Semantic tasks should batch aggressively, cache identical/equivalent inputs, and use lower-cost models where fit.
 - Provider fallback is structural resilience; it must not silently change prompt/task semantics.
 - The model task registry is also the cost/latency governor. Each task records max calls, token budget, timeout, retry/fallback policy, cache policy, escalation policy, and the quality signal that justifies any stronger model, extra retrieval, fuller debate, or repair loop.
+- Retry/fallback policy follows the prevention-first recovery taxonomy in Section 4.4: provider and schema retries are bounded structural recovery; hidden semantic repair and stochastic answer fishing are forbidden.
 
 **Cache governance**
 
@@ -1204,6 +1234,7 @@ Run only after approval, with commit-first and runtime-refresh discipline. Use o
 - runtime/cost measured against current-stack baselines using separate buckets for preparation, interactive wait, queue, active final runtime, retrieval, verdict, and export;
 - cost/latency measured against the quality-constrained envelope in Section 4.3: normal runs target 6-10 minutes and $0.50-$1.25, complex runs target 10-18 minutes and $1.25-$3.25, and review is required above the documented thresholds;
 - any accepted over-budget run records the quality-protection reason, such as more than 3 selected AtomicClaims, evidence-backed contestation, source scarcity, provider degradation, citation/direction risk, or Captain/deputy-approved deep-review mode;
+- retry and repair rates are low, ledgered, and accepted by deputy review; high rates block cutover until the responsible contract, prompt, model policy, evidence packet, or gate is improved;
 - deputy signoff records exact comparators used, exact vs variant status, local vs deployed status, and any accepted residual risk.
 
 ---

@@ -70,6 +70,22 @@ V2 cost and latency targets are subordinate to quality gates. Normal analysis ta
 
 If a budget is exceeded, the run must record why: more than 3 selected AtomicClaims, evidence-backed contestation, source scarcity, provider degradation, citation/direction risk, or approved deep-review mode. If a budget limit prevents adequate analysis, the result must surface a sufficiency, scarcity, budget-exit, warning, or damaged-report outcome instead of hiding the limitation.
 
+== Prevention-First Recovery Gate ==
+
+Retries and repairs are not quality mechanisms. V2 should prevent them through contract-first prompts, structural preflight validation, stable IDs, right-model-first policy for high-leverage stages, and sufficiency-before-verdict gating.
+
+Allowed recovery is bounded and visible:
+
+|= Situation |= Allowed V2 behavior
+| Structural preflight failure | No LLM call; typed validation failure, approved retry path, or damaged result.
+| Provider/network failure | Bounded same-task retry or provider fallback through the gateway.
+| Structured-output parse/schema failure | Bounded same-task/schema retry; otherwise typed failure or damaged result.
+| Analytical insufficiency | Refine, caveat, low-confidence, insufficient, or damaged state.
+| Meaning-changing correction | Only explicit, LLM-owned, typed, ledgered recovery with gate status.
+| Trying again for a preferred answer | Forbidden.
+
+High retry or repair rates are design failures. They block cutover until the relevant contract, prompt, model policy, evidence packet, or quality gate is improved.
+
 == Warning Materiality ==
 
 Before any warning becomes user-visible, V2 applies:

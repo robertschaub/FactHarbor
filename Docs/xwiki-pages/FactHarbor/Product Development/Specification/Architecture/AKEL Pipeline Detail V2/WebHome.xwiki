@@ -33,6 +33,8 @@ The gateway owns prompt section rendering, required variable validation, model t
 
 The gateway is also the V2 cost/latency governor. Every prompt-backed task declares max calls, token budget, timeout, retry/fallback policy, cache policy, and escalation policy. Stronger models, extra retrieval, fuller debate, or repair loops run only when a V2-owned quality signal justifies the extra spend.
 
+V2 uses prevention-first recovery. The gateway validates prompt variables, schema version, token budget, selected IDs, evidence IDs, and source IDs before calls. Provider/network retry and structured-output retry are bounded structural recovery. Meaning-changing correction is allowed only as explicit, LLM-owned, typed, ledgered recovery; hidden semantic repair and answer fishing are forbidden.
+
 === Warning and Event Policy ===
 
 All warning visibility uses one materiality policy for UI, API summaries, markdown, HTML export, metrics, and validation:
