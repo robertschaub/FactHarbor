@@ -11,10 +11,18 @@ import {
 } from "@/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract";
 import {
   CLAIM_UNDERSTANDING_RUNTIME_DISPATCH_OWNER_CONTRACT_VERSION,
+  executeClaimUnderstandingRuntimeDispatch,
   validateClaimUnderstandingRuntimeDispatchOwnerContract,
   type ClaimUnderstandingRuntimeDispatchOwnerContract,
   type ClaimUnderstandingRuntimeDispatchOwnerSideEffects,
 } from "@/lib/analyzer-v2/claim-understanding/runtime-dispatch";
+import {
+  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+  type ClaimContract,
+  type ClaimUnderstandingResult,
+} from "@/lib/analyzer-v2/claim-understanding/types";
+import type { ClaimUnderstandingProviderCallRequest } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import { buildClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
@@ -132,6 +140,57 @@ function ownerContract(
     publicSurfaceState: "internal_only",
     directUrlDispatchState: "blocked_by_dispatch_frame",
     ...overrides,
+  };
+}
+
+function claimContract(input: string, language: string): ClaimContract {
+  return {
+    schemaVersion: CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+    input: {
+      inputType: "text",
+      inputValue: input,
+      resolvedInputText: input,
+      detectedLanguage: language,
+      selectedAtomicClaimIds: ["AC_DIRECT_01"],
+    },
+    inputGroundingSeed: {
+      source: "direct_input",
+      inputType: "text",
+      inputValue: input,
+      resolvedInputText: input,
+      detectedLanguage: language,
+      currentDate: "2026-05-14",
+      acsSnapshotHash: null,
+      inputGroundingSeedHash: `seed-hash-${language}`,
+    },
+    atomicClaims: [
+      {
+        id: "AC_DIRECT_01",
+        statement: input,
+        selected: true,
+        source: "v2_claim_understanding",
+        gate1Status: {
+          status: "passed",
+          source: "v2_claim_understanding",
+          summary: "Claim Understanding accepted the selected direct-input AtomicClaim.",
+          reasons: [],
+        },
+        integrityEvents: [],
+      },
+    ],
+    integrityEvents: [],
+    acsMigration: null,
+  };
+}
+
+function acceptedResult(input: string, language: string): ClaimUnderstandingResult {
+  return {
+    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+    status: "accepted",
+    claimContract: claimContract(input, language),
+    integrityEvents: [],
+    blockedReason: null,
+    damagedReason: null,
   };
 }
 
@@ -258,5 +317,317 @@ describe("Analyzer V2 Claim Understanding runtime dispatch owner contract", () =
     expect(result.status).toBe("blocked");
     expect(result.blockedReasons).toEqual(["readiness_contract_not_satisfied"]);
     expect(result.sideEffects).toEqual(noRuntimeDispatchSideEffects);
+  });
+
+  it("renders direct-text prompt and calls the adapter through the injected provider only", async () => {
+    const submittedText = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-direct-owner",
+      submitted: {
+        kind: "text",
+        value: submittedText,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+    const ready = readiness(frame);
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: ready,
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        return {
+          output: acceptedResult(submittedText, "und"),
+          telemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 120,
+            outputTokens: 80,
+            totalTokens: 200,
+            durationMs: 345,
+          },
+        };
+      },
+    });
+
+    expect(ready.status).toBe("contract_satisfied");
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error(`Expected completed runtime dispatch, got ${result.blockedReason}`);
+    }
+    expect(providerCalls).toHaveLength(1);
+    expect(providerCalls[0].renderedPrompt).toContain(submittedText);
+    expect(providerCalls[0].renderedPrompt).toContain("null");
+    expect(providerCalls[0].inputFrame).toEqual({
+      analysisInput: submittedText,
+      resolvedInputText: submittedText,
+      detectedLanguage: "und",
+    });
+    expect(result.cacheDecision).toMatchObject({
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_runtime_dispatch_safety",
+    });
+    expect(result.adapterOutcome.executionStatus).toBe("completed");
+    expect(result.adapterOutcome.claimUnderstandingResult?.status).toBe("accepted");
+    expect(result.promptProvenance.promptContentHash).toHaveLength(64);
+    expect(result.promptProvenance.renderedPromptHash).toHaveLength(64);
+    expect(result.sideEffects).toMatchObject({
+      promptRendered: true,
+      cacheDecisionConstructed: true,
+      adapterCalled: true,
+      modelCalled: true,
+      providerCallbackCreated: false,
+      cacheRead: false,
+      cacheWrite: false,
+      productDispatchWired: false,
+    });
+  });
+
+  it("blocks failed readiness before prompt rendering or provider calls", async () => {
+    const input: ClaimBoundaryV2Ingress = {
+      runIdHint: "job-runtime-dispatch-blocked-readiness",
+      submitted: {
+        kind: "url",
+        value: "https://example.test/article",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    };
+    const frameResult = buildClaimUnderstandingDispatchFrame(input, buildContext(input));
+    const blockedReadiness = validateClaimUnderstandingDispatchReadinessContract({
+      frame: frameResult.frame,
+      approvalSnapshot: runtimeApprovalSnapshot(),
+      provenancePacket: provenancePacket({
+        analysisInput: "https://example.test/article",
+        resolvedInputText: "https://example.test/article",
+        detectedLanguage: "und",
+        selectedAtomicClaimIds: [],
+        currentDate: "2026-05-14",
+        inputSource: "direct_input",
+      }, {
+        submittedKind: "url",
+      }),
+    });
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: blockedReadiness,
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        throw new Error("should not be called");
+      },
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReason).toBe("readiness_contract_not_satisfied");
+    expect(providerCalls).toEqual([]);
+    expect(result.sideEffects).toMatchObject({
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+      adapterCalled: false,
+      modelCalled: false,
+      cacheRead: false,
+      cacheWrite: false,
+    });
+  });
+
+  it("keeps ACS readiness deferred before prompt rendering or provider calls", async () => {
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-acs-deferred",
+      submitted: {
+        kind: "url",
+        value: "https://example.test/source",
+      },
+      preparedSeed: {
+        acsSnapshot: {
+          resolvedInputText: "Plastic recycling is pointless",
+          preparedUnderstanding: {
+            detectedInputType: "url",
+            detectedLanguage: "en",
+          },
+        },
+        acsSnapshotHash: "v2-acs-hash",
+        inputGroundingSeedHash: "input-grounding-seed-hash-6b3c2",
+      },
+      selectedAtomicClaimIds: ["AC_01"],
+    });
+    const blockedReadiness = validateClaimUnderstandingDispatchReadinessContract({
+      frame,
+      approvalSnapshot: runtimeApprovalSnapshot(),
+      provenancePacket: provenancePacket(frame, {
+        submittedKind: "url",
+      }),
+    });
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: blockedReadiness,
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        throw new Error("should not be called");
+      },
+    });
+
+    expect(blockedReadiness.status).toBe("blocked");
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReason).toBe("readiness_contract_not_satisfied");
+    expect(providerCalls).toEqual([]);
+    expect(result.sideEffects.promptRendered).toBe(false);
+  });
+
+  it("fails closed after prompt-render rejection without adapter or provider calls", async () => {
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-prompt-render-blocked",
+      submitted: {
+        kind: "text",
+        value: "Plastic recycling is pointless",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+    const readyWithRejectedSection = validateClaimUnderstandingDispatchReadinessContract({
+      frame,
+      approvalSnapshot: runtimeApprovalSnapshot(),
+      provenancePacket: provenancePacket(frame, {
+        promptSectionId: "V1_LEGACY_SECTION" as never,
+      }),
+    });
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: readyWithRejectedSection,
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        throw new Error("should not be called");
+      },
+    });
+
+    expect(readyWithRejectedSection.status).toBe("contract_satisfied");
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReason).toBe("prompt_render_failed");
+    expect(result.failureMessage).toContain("rejects prompt section");
+    expect(providerCalls).toEqual([]);
+    expect(result.sideEffects).toMatchObject({
+      promptRendered: false,
+      cacheDecisionConstructed: false,
+      adapterCalled: false,
+      cacheRead: false,
+      cacheWrite: false,
+    });
+  });
+
+  it("returns damaged adapter output for provider failure without cache IO", async () => {
+    const submittedText = "Plastic recycling is pointless";
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-provider-failure",
+      submitted: {
+        kind: "text",
+        value: submittedText,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: readiness(frame),
+      providerCall: async () => {
+        throw new Error("provider unavailable");
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error(`Expected completed runtime dispatch, got ${result.blockedReason}`);
+    }
+    expect(result.adapterOutcome.claimUnderstandingResult?.status).toBe("damaged");
+    expect(result.adapterOutcome.claimUnderstandingResult?.damagedReason).toBe("claim_understanding_unavailable");
+    expect(result.sideEffects).toMatchObject({
+      adapterCalled: true,
+      modelCalled: true,
+      cacheRead: false,
+      cacheWrite: false,
+      providerCallbackCreated: false,
+    });
+  });
+
+  it("returns damaged adapter output for invalid telemetry without cache IO", async () => {
+    const submittedText = "Plastic recycling is pointless";
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-invalid-telemetry",
+      submitted: {
+        kind: "text",
+        value: submittedText,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: readiness(frame),
+      providerCall: async () => ({
+        output: acceptedResult(submittedText, "und"),
+        telemetry: {
+          providerId: "unknown",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 120,
+          outputTokens: 80,
+          totalTokens: 200,
+          durationMs: 345,
+        },
+      }),
+    });
+
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error(`Expected completed runtime dispatch, got ${result.blockedReason}`);
+    }
+    expect(result.adapterOutcome.claimUnderstandingResult?.status).toBe("damaged");
+    expect(result.adapterOutcome.claimUnderstandingResult?.damagedReason).toBe("claim_understanding_unavailable");
+    expect(result.sideEffects.cacheRead).toBe(false);
+    expect(result.sideEffects.cacheWrite).toBe(false);
+  });
+
+  it("returns damaged adapter output after invalid schema retry without cache IO", async () => {
+    const submittedText = "Plastic recycling is pointless";
+    const frame = readyFrame({
+      runIdHint: "job-runtime-dispatch-invalid-schema",
+      submitted: {
+        kind: "text",
+        value: submittedText,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+
+    const result = await executeClaimUnderstandingRuntimeDispatch({
+      readiness: readiness(frame),
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        return {
+          output: { status: "accepted", claimContract: { extra: true } },
+          telemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 120,
+            outputTokens: 80,
+            totalTokens: 200,
+            durationMs: 345,
+          },
+        };
+      },
+    });
+
+    expect(result.status).toBe("completed");
+    if (result.status !== "completed") {
+      throw new Error(`Expected completed runtime dispatch, got ${result.blockedReason}`);
+    }
+    expect(providerCalls).toHaveLength(2);
+    expect(result.adapterOutcome.claimUnderstandingResult?.status).toBe("damaged");
+    expect(result.adapterOutcome.claimUnderstandingResult?.damagedReason).toBe("claim_contract_validation_failed");
+    expect(result.sideEffects.cacheRead).toBe(false);
+    expect(result.sideEffects.cacheWrite).toBe(false);
   });
 });

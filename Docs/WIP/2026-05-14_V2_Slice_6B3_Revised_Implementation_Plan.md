@@ -334,6 +334,8 @@ For 3B1, prompt rendering, cache-decision construction, provider callback accept
 
 Post-3B2 deputy review returned `MODIFY/MODIFY` for 6B.3c-3B3. 3B3 may be specified only as a narrowed internal direct-text owner slice in `runtime-dispatch.ts`: owner-built prompt variables, owner-created post-render provenance, runtime no-store cache decision, adapter call through injected provider callback only, and one private executable-clone helper if required by the adapter. Product wiring, provider SDKs, public surfaces, ACS/direct URL execution, cache read/write, approval flips, prompt/config changes, live jobs, and V1 reuse remain blocked.
 
+6B.3c-3B3 is complete as that narrowed internal direct-text owner slice. `runtime-dispatch.ts` now renders the V2 prompt after satisfied readiness, builds the runtime no-store cache decision, calls the adapter only through the injected provider callback, and confines executable gateway task state to the private runtime-dispatch clone helper. Product wiring, public surfaces, ACS/direct URL execution, built-in provider SDKs, cache read/write, prompt/config changes, live jobs, and V1 reuse remain blocked.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

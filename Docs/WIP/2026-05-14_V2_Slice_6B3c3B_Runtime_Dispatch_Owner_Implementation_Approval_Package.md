@@ -293,3 +293,39 @@ Required 3B3 verifiers:
 - `git diff --check`.
 
 Captain escalation is required only if 3B3 expands to real provider execution through built-in SDKs, product wiring, public exposure, ACS/direct URL execution, cache read/write, approval flips, prompt changes, config changes, or live jobs.
+
+## 13. 3B3 Implementation Outcome
+
+3B3 is implemented as the narrowed internal direct-text owner slice:
+
+- `runtime-dispatch.ts` now owns `executeClaimUnderstandingRuntimeDispatch(...)`;
+- direct text is the only runnable path;
+- blocked readiness, ACS, and direct URL return before prompt rendering, cache decision, adapter call, or provider call;
+- prompt variables are owner-built from the satisfied readiness frame and provenance, with `acsSnapshotJson = "null"`;
+- prompt rendering uses `loadAndRenderClaimUnderstandingGate1Prompt(...)` after readiness;
+- post-render provenance is owner-created: `promptContentHash` comes from the prompt loader, and `renderedPromptHash` is computed inside the owner;
+- runtime no-store cache decision uses `buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(...)` and must remain `canRead=false`, `canWrite=false`, reason `no_store_runtime_dispatch_safety`;
+- adapter invocation uses only the injected `providerCall`;
+- executable gateway task state is created only inside the private `buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask(...)` helper;
+- `runtime-dispatch.ts` remains unexported from the Analyzer V2 barrel and unreachable from product/public surfaces.
+
+Verification completed for 3B3:
+
+- focused runtime-dispatch and boundary guard tests;
+- full Analyzer V2 unit slice;
+- V2 internal runner routing test;
+- `npm -w apps/web run build`;
+- targeted clean-room scans for V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports, production `executionApproved: true`, public dispatch/cache leakage, and executable clone containment;
+- `git diff --check`.
+
+Still blocked after 3B3:
+
+- product execution path wiring;
+- API/UI/report/export/public diagnostics;
+- built-in provider SDK imports or provider callback factories;
+- cache read/write and cache IO;
+- ACS execution and direct URL execution;
+- approval/status mutation of shipped gateway policy;
+- prompt source or config default changes;
+- live jobs;
+- V1 code, prompt, profile, section, or type reuse.

@@ -79,7 +79,6 @@ const noDispatchRuntimePaths = [
   ...dispatchForbiddenProductPaths,
   claimUnderstandingDispatchFramePath,
   claimUnderstandingDispatchReadinessContractPath,
-  claimUnderstandingRuntimeDispatchPath,
 ];
 const publicAnalyzerV2SurfacePaths = [
   analyzerV2IndexPath,
@@ -128,6 +127,48 @@ const forbiddenProviderSdkSpecifiers = [
   "@google/generative-ai",
   "@mistralai/",
 ];
+const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
+  ["node:crypto", new Set(["createHash"])],
+  [
+    "@/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract",
+    new Set([
+      "ClaimUnderstandingDispatchReadinessResult",
+      "ClaimUnderstandingDispatchReadinessSideEffects",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/prompt-loader",
+    new Set([
+      "ClaimUnderstandingPromptVariable",
+      "loadAndRenderClaimUnderstandingGate1Prompt",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/model-adapter",
+    new Set([
+      "ClaimUnderstandingModelAdapterOutcome",
+      "ClaimUnderstandingProviderCall",
+      "executeClaimUnderstandingModelAdapter",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/cache-governance",
+    new Set(["buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/policy",
+    new Set(["getAnalyzerV2GatewayTask"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set([
+      "AnalyzerV2CacheDecision",
+      "AnalyzerV2GatewayTask",
+      "AnalyzerV2PolicyApproval",
+    ]),
+  ],
+]);
+const runtimeDispatchExecutableCloneHelperName = "buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask";
 
 function toPosix(value: string): string {
   return value.replace(/\\/g, "/");
@@ -197,6 +238,42 @@ function collectModuleSpecifiers(sourceFile: ts.SourceFile): string[] {
 
   visit(sourceFile);
   return specifiers;
+}
+
+function collectImportBindings(sourceFile: ts.SourceFile): Array<{ specifier: string; names: string[] }> {
+  const imports: Array<{ specifier: string; names: string[] }> = [];
+
+  for (const statement of sourceFile.statements) {
+    if (
+      !ts.isImportDeclaration(statement)
+      || !statement.moduleSpecifier
+      || !ts.isStringLiteral(statement.moduleSpecifier)
+    ) {
+      continue;
+    }
+
+    const names: string[] = [];
+    const importClause = statement.importClause;
+    if (importClause?.name) {
+      names.push(importClause.name.text);
+    }
+
+    const namedBindings = importClause?.namedBindings;
+    if (namedBindings && ts.isNamespaceImport(namedBindings)) {
+      names.push("*");
+    } else if (namedBindings && ts.isNamedImports(namedBindings)) {
+      for (const element of namedBindings.elements) {
+        names.push(element.name.text);
+      }
+    }
+
+    imports.push({
+      specifier: statement.moduleSpecifier.text,
+      names,
+    });
+  }
+
+  return imports;
 }
 
 function propertyNameText(name: ts.PropertyName): string | null {
@@ -493,8 +570,31 @@ function collectExecutionApprovedTrueLiterals(sourceFile: ts.SourceFile): string
   return locations;
 }
 
-function hasExecutableStatusMutation(sourceFile: ts.SourceFile): boolean {
-  let found = false;
+function isInsideFunctionNamed(node: ts.Node, functionName: string): boolean {
+  let current: ts.Node | undefined = node;
+  while (current) {
+    if (
+      ts.isFunctionDeclaration(current)
+      && current.name?.text === functionName
+    ) {
+      return true;
+    }
+    current = current.parent;
+  }
+  return false;
+}
+
+function collectForbiddenExecutableStatusMutations(sourceFile: ts.SourceFile): string[] {
+  const locations: string[] = [];
+
+  function recordIfForbidden(node: ts.Node): void {
+    const allowed = toPosix(sourceFile.fileName) === toPosix(claimUnderstandingRuntimeDispatchPath)
+      && isInsideFunctionNamed(node, runtimeDispatchExecutableCloneHelperName);
+    if (!allowed) {
+      const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
+    }
+  }
 
   function visit(node: ts.Node): void {
     if (
@@ -503,7 +603,7 @@ function hasExecutableStatusMutation(sourceFile: ts.SourceFile): boolean {
       && ts.isStringLiteral(node.initializer)
       && node.initializer.text === "executable"
     ) {
-      found = true;
+      recordIfForbidden(node);
     }
 
     if (
@@ -523,14 +623,14 @@ function hasExecutableStatusMutation(sourceFile: ts.SourceFile): boolean {
         )
       )
     ) {
-      found = true;
+      recordIfForbidden(node);
     }
 
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
-  return found;
+  return locations;
 }
 
 function isProviderSdkImport(specifier: string): boolean {
@@ -847,25 +947,30 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps the 6B.3c-3 runtime-dispatch owner contract free of dispatch side-effect imports", () => {
+  it("keeps the 6B.3c-3B3 runtime-dispatch owner imports limited to approved symbols", () => {
     const sourceFile = parseSource(claimUnderstandingRuntimeDispatchPath);
     const violations: string[] = [];
 
-    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = runtimeDispatchApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`runtime dispatch imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`runtime dispatch imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
       if (isV1AnalyzerImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
         violations.push(`runtime dispatch imports V1 analyzer ${specifier}`);
       }
-      if (isClaimUnderstandingModelAdapterImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
-        violations.push(`runtime dispatch imports model adapter ${specifier}`);
-      }
-      if (isClaimUnderstandingPromptLoaderImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
-        violations.push(`runtime dispatch imports prompt loader ${specifier}`);
-      }
-      if (isAnalyzerV2CacheGovernanceImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
-        violations.push(`runtime dispatch imports cache governance ${specifier}`);
-      }
-      if (isAnalyzerV2GatewayPolicyImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
-        violations.push(`runtime dispatch imports gateway policy ${specifier}`);
+      if (isCacheIoImport(specifier)) {
+        violations.push(`runtime dispatch imports IO/storage dependency ${specifier}`);
       }
       if (isProviderSdkImport(specifier)) {
         violations.push(`runtime dispatch imports provider SDK ${specifier}`);
@@ -927,8 +1032,8 @@ describe("analyzer-v2 boundary guard", () => {
     const violations: string[] = [];
 
     for (const sourcePath of v2SourceFiles) {
-      if (hasExecutableStatusMutation(parseSource(sourcePath))) {
-        violations.push(`${toPosix(path.relative(webRoot, sourcePath))} constructs executable gateway task state`);
+      for (const location of collectForbiddenExecutableStatusMutations(parseSource(sourcePath))) {
+        violations.push(`${toPosix(path.relative(webRoot, location))} constructs executable gateway task state`);
       }
     }
 

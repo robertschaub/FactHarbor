@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T16:20:09.251Z",
-  "count": 454,
+  "generatedAt": "2026-05-14T16:30:01.439Z",
+  "count": 455,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9467,6 +9467,50 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start from `Docs/WIP/2026-05-14_V2_Slice_6B3c3B_Runtime_Dispatch_Owner_Implementation_Approval_Package.md` Section 12. If implementation begins, use `/debt-guard`, keep the file envelope to `runtime-dispatch.ts`, `runtime-dispatch.test.ts`, `boundary-guard.test.ts`, and docs, and run focused/full An"
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c3B3_Runtime_Dispatch_Owner.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c3b3",
+        "runtime",
+        "dispatch",
+        "owner"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3c3B_Runtime_Dispatch_Owner_Implementation_Approval_Package.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c3B3_Runtime_Dispatch_Owner.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The next low-risk step is not product wiring; review the next integration gate first. If proposing product wiring, require a deputy debate covering runtime approval authority, public/report schema boundaries, UI/API behavior, live-job discipline, rollback criteria, and V1 removal timing.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "missing-capability contained inside the reviewed runtime-dispatch owner.",
+            "chosen_option": "add direct-text owner behavior inside the existing `runtime-dispatch.ts` owner module and keep product reachability forbidden.",
+            "rejected_path_and_why": "product wiring, built-in provider callbacks, provider SDK imports, cache IO/read/write, ACS/direct URL handling, prompt/config edits, and public diagnostics were rejected because the 3B3 review explicitly blocked them.",
+            "what_was_removed_simplified": "none; existing contract-only validation remains and the new owner behavior is additive but confined.",
+            "what_was_added": "`executeClaimUnderstandingRuntimeDispatch(...)`, owner prompt-variable construction, owner post-render provenance, runtime no-store cache decision consumption, private executable gateway clone helper, focused behavior tests, and symbol-level boundary guards.",
+            "net_mechanism_count": "increases by one internal owner execution path, with product reachability mechanically blocked.",
+            "budget_reconciliation": "actual diff stayed within `runtime-dispatch.ts`, runtime-dispatch tests, boundary guard tests, and docs/handoff; no product/API/UI/report/export/prompt/config/live-job files changed.",
+            "verification": "focused runtime-dispatch/boundary tests passed; full Analyzer V2 unit slice passed; V2 routing test passed; build passed; targeted clean-room scans passed; git diff --check passed.",
+            "debt_accepted_and_removal_trigger": "runtime owner is unexported/test-invokable only until a reviewed product-wiring gate approves public execution.",
+            "residual_debt": "product wiring and live validation remain unimplemented and blocked."
+          }
+        }
+      }
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c3B_Package_Consolidation.md",
