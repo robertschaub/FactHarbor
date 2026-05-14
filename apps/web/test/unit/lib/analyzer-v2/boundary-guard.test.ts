@@ -11,6 +11,9 @@ const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
 const claimUnderstandingModelAdapterPath = path.resolve(v2AnalyzerRoot, "claim-understanding/model-adapter.ts");
 const claimUnderstandingPromptLoaderPath = path.resolve(v2AnalyzerRoot, "claim-understanding/prompt-loader.ts");
 const claimUnderstandingRuntimeStagePath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-stage.ts");
+const claimUnderstandingDispatchFramePath = path.resolve(v2AnalyzerRoot, "claim-understanding/dispatch-frame.ts");
+const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cache-governance.ts");
+const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -61,6 +64,7 @@ const adapterForbiddenProductPaths = [
 const noDispatchRuntimePaths = [
   ...adapterForbiddenProductPaths,
   claimUnderstandingRuntimeStagePath,
+  claimUnderstandingDispatchFramePath,
 ];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
@@ -268,10 +272,47 @@ function isClaimUnderstandingPromptLoaderImport(filePath: string, specifier: str
   return resolved === promptLoaderPath || resolved === `${promptLoaderPath}.ts`;
 }
 
+function isAnalyzerV2CacheGovernanceImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/gateway/cache-governance") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const cacheGovernancePath = toPosix(analyzerV2CacheGovernancePath).replace(/\.ts$/, "");
+  return resolved === cacheGovernancePath || resolved === `${cacheGovernancePath}.ts`;
+}
+
+function isAnalyzerV2GatewayPolicyImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/gateway/policy") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const gatewayPolicyPath = toPosix(analyzerV2GatewayPolicyPath).replace(/\.ts$/, "");
+  return resolved === gatewayPolicyPath || resolved === `${gatewayPolicyPath}.ts`;
+}
+
 function isProviderSdkImport(specifier: string): boolean {
   return forbiddenProviderSdkSpecifiers.some((forbidden) =>
     specifier === forbidden || specifier.startsWith(forbidden)
   );
+}
+
+function isTestOrMockImport(specifier: string): boolean {
+  const normalized = toPosix(specifier).toLowerCase();
+  return normalized.includes("/test/")
+    || normalized.includes("/tests/")
+    || normalized.includes("/fixtures/")
+    || normalized.includes("fixture")
+    || normalized.includes("mock");
 }
 
 function isV2OwnedPromptFile(filePath: string): boolean {
@@ -407,6 +448,37 @@ describe("analyzer-v2 boundary guard", () => {
         if (isProviderSdkImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3c-1 dispatch frame free of dispatch side-effect imports", () => {
+    const sourceFile = parseSource(claimUnderstandingDispatchFramePath);
+    const violations: string[] = [];
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isV1AnalyzerImport(claimUnderstandingDispatchFramePath, specifier)) {
+        violations.push(`dispatch frame imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(claimUnderstandingDispatchFramePath, specifier)) {
+        violations.push(`dispatch frame imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(claimUnderstandingDispatchFramePath, specifier)) {
+        violations.push(`dispatch frame imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(claimUnderstandingDispatchFramePath, specifier)) {
+        violations.push(`dispatch frame imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(claimUnderstandingDispatchFramePath, specifier)) {
+        violations.push(`dispatch frame imports gateway policy ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`dispatch frame imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`dispatch frame imports test/mock/fixture module ${specifier}`);
       }
     }
 
