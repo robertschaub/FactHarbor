@@ -407,6 +407,15 @@ Post-4B source-wiring debate returned `MODIFY/MODIFY/MODIFY`. The next approved 
 - static scans found no scaffold approval id, no private executable clone helper, no `status: "executable"` construction in runtime dispatch/stage, and no scaffold option pass-through in product callers;
 - `git diff --check` passed.
 
+Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-risk action is the docs-only **6B.3c-4C2 Provider Factory Approval Package** at `Docs/WIP/2026-05-14_V2_Slice_6B3c4C2_Provider_Factory_Approval_Package.md`.
+
+4C2 package status:
+
+- source code is not approved by the package itself;
+- proposed 4C2a is an inert provider runtime config/provenance contract with no SDK import, product wiring, cache IO, prompt/config edits, approval flips, live jobs, ACS/direct URL execution, or public exposure;
+- proposed 4C2b is a later clean-room provider factory under `apps/web/src/lib/analyzer-v2-runtime/`, with any provider SDK import allowed only in an explicitly approved factory file;
+- 4C3 remains the first possible hidden direct-text runtime artifact and live-smoke gate after source commit, runtime refresh, real approval authority, and public-surface leak guards.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.
