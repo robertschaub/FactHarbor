@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6A.5; Slice 6B.0 review returned MODIFY
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.1a; Slice 6B.1b UCM/profile plumbing required next
 **Owner role:** Lead Architect  
 
 ---
@@ -36,7 +36,9 @@ Implementation has started in the new worktree after deputy approval of this tar
 | Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
 | Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
 | Slice 6A.5: pre-6B contract/wiring hardening | done | `724dd9aa` | Full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment tests completed without prompt/model execution |
-| Slice 6B.0: Claim Understanding prompt/model review package | modify | `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` | Deputy reviews require 6B.1a result-envelope contract and 6B.1b UCM/profile/model-policy plumbing before prompt text or execution |
+| Slice 6B.0: Claim Understanding prompt/model review package | modify | `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` | Deputy reviews required 6B.1a result-envelope contract and still require 6B.1b UCM/profile/model-policy plumbing before prompt text or execution |
+| Slice 6B.1a: Claim Understanding result envelope | done | `24f55d4a` | Non-executable `ClaimUnderstandingResult` envelope added; accepted outputs carry `ClaimContract`, blocked/damaged outputs carry typed reasons without fabricating a contract |
+| Slice 6B.1b: UCM/profile/model-policy plumbing | required next | not started | Add minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata without enabling execution |
 | Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
@@ -72,9 +74,9 @@ flowchart LR
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S0,S1,S2,S3,S4,S5,S6A,S6A5 done
+  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A done
   class S6B blocked
-  class S6B0,S6B1A,S6B1B,S7,S8,S9,S10,S11,S12,S13,S14 future
+  class S6B1B,S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
 
 Current architectural boundary:
@@ -126,7 +128,7 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-Slice 6A.5 is complete. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`. The next non-executable implementation boundary is 6B.1a Claim Understanding result-envelope contract, followed by 6B.1b UCM/profile/model-policy plumbing. Executable Slice 6B Claim Understanding can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+Slice 6B.1a is complete. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`, and the first blocker is now closed by the `ClaimUnderstandingResult` envelope. The next non-executable implementation boundary is 6B.1b UCM/profile/model-policy plumbing. Executable Slice 6B Claim Understanding can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -153,6 +155,13 @@ Implementation verification after Slice 6A.5:
 - `npm -w apps/web run test -- test/unit/lib/internal-runner-v2-routing.test.ts` passed 1 file / 4 tests.
 - `npm -w apps/web run build` passed, including postbuild prompt/config reseed check with 0 changes.
 - Clean-room scan found no V1 analyzer imports, V1 prompt reuse, or prompt/model execution in Analyzer V2 code or focused tests.
+- `git diff --check` passed before commit.
+
+Implementation verification after Slice 6B.1a:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 12 files / 58 tests.
+- Focused Claim Understanding/gateway tests, boundary guard, and web build passed before commit.
+- Clean-room scan again found no V1 analyzer imports, V1 prompt reuse, or prompt/model execution in Analyzer V2 code or focused tests.
 - `git diff --check` passed before commit.
 
 This is not public cutover readiness. Public cutover still requires the remaining analytical slices, Analysis Session UX checks, comparator/Q-code quality validation, cost/latency measurement, report-generation regression controls, rollback readiness, and audited V1 cleanup/naming-normalization gates.
@@ -955,17 +964,19 @@ Before any prompt-backed Claim Understanding execution is enabled:
 
 - V2 ingress must carry the full ACS prepared snapshot or a typed equivalent sufficient for `ClaimContract` migration, including selected claim ids, selected claim statements, detected language/input type, and Gate 1 summary fields.
 - Shell-only fallback ids, including `AC_V2_SHELL_01`, are allowed only inside the damaged pre-cutover envelope. Real Claim Understanding must fail closed or produce a damaged Gate 1 result when no valid selected/direct-input claim contract can be produced.
-- The 6B prompt-output schema and `ClaimContract` schema boundary must be explicit. If `v2.claim_understanding_gate1.0` remains the prompt-output schema, tests must prove how it maps into `v2.claim_contract.0`; if not, the gateway policy must point directly at `v2.claim_contract.0`.
+- The 6B gateway output schema must be the `ClaimUnderstandingResult` envelope (`v2.claim_understanding_result.0`). Accepted results carry a `ClaimContract` validated against `v2.claim_contract.0`; blocked/damaged results must not fabricate one.
 - Cache-policy tests must cover ACS-prepared input and direct input so equivalent prompt-backed decisions have stable keys without requiring an ACS hash where no ACS snapshot exists.
 
 **Post-6B.0 review update**
 
-LLM Expert review found that a direct `ClaimContract` prompt output cannot honestly represent direct-input failure, no-valid-claim states, or non-ACS runs without fabricating fields such as V1 ACS migration metadata. Before prompt text, add a `ClaimUnderstandingResult` envelope or equivalent contract:
+LLM Expert review found that a direct `ClaimContract` prompt output cannot honestly represent direct-input failure, no-valid-claim states, or non-ACS runs without fabricating fields such as V1 ACS migration metadata. Slice 6B.1a implemented the required `ClaimUnderstandingResult` envelope at `24f55d4a`:
 
 - accepted branch contains a valid `ClaimContract`;
 - blocked/damaged branches contain no fabricated claim contract and carry typed integrity events and damaged/blocked reasons;
 - structural fields such as hashes, current date, profile ids, and ACS migration facts are copied by gateway/migration code, not invented by the LLM;
 - direct-input success does not require or fabricate `prepared-stage1-v1` migration metadata.
+
+The remaining pre-prompt blocker is 6B.1b: minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata for `claim_understanding_gate1`, still with execution blocked.
 
 ---
 

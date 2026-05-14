@@ -2817,3 +2817,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6B.1a Claim Understanding Result Envelope -- [Standard] [open-items: yes]
 **For next agent:** Added non-executable `ClaimUnderstandingResult` contract/schema and moved the Claim Understanding gateway output schema to `v2.claim_understanding_result.0`; accepted results carry a success-only `ClaimContract`, while blocked/damaged results keep `claimContract: null` with typed reasons/events. Direct-input success now uses `acsMigration: null`; ACS success still preserves accepted migration metadata. No prompt text, UCM/profile activation, runtime LLM call, API/UI change, live job, or expensive test was added.
 -> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6B1a_Claim_Understanding_Result_Envelope.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.1a Status Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Plan/spec/guardrail docs now mark Slice 6B.1a complete at `24f55d4a`. The next boundary is 6B.1b / UCM-0: minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata for `claim_understanding_gate1`, still non-executable. Do not draft prompt text, activate profiles, or add runtime model execution before LLM Expert review and Captain approval.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B1a_Status_Consolidation.md

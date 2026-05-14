@@ -1,0 +1,9 @@
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.1a Status Consolidation
+**Task:** Record the completed Slice 6B.1a result-envelope implementation in the operative plan/spec/guardrail documents and preserve the next implementation boundary.
+**Files touched:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`; `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`; `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
+**Key decisions:** Slice 6B.1a is recorded complete at `24f55d4a`. `ClaimUnderstandingResult` is now the V2 Claim Understanding gateway output envelope; accepted results carry `ClaimContract`, while blocked/damaged results must not fabricate a contract. The next boundary is 6B.1b / UCM-0: minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata for `claim_understanding_gate1`, still non-executable.
+**Open items:** Do not draft `V2_CLAIM_UNDERSTANDING_GATE1`, activate a V2 prompt profile, or add runtime model execution until 6B.1b is complete and LLM Expert review plus Captain approval are recorded.
+**Warnings:** The UCM structure should be redesigned as a staged V2 task-policy layer over existing versioned storage, not by continuing to overload V1-era `pipeline.default.json` as the long-term home. Admin UI work should start as a minimal read-only V2 task-policy/provenance gate before broader edit/activation flows.
+**For next agent:** Implement only 6B.1b if continuing: prompt-profile validation for `claimboundary-v2`, profile separation from V1, non-executable task-oriented model-policy contract for `claim_understanding_gate1`, and tests proving execution remains blocked.
+**Learnings:** Not appended; this is a status consolidation of existing review decisions.

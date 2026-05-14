@@ -5,7 +5,7 @@
 **Owner role:** Lead Architect / Captain deputy
 **Worktree:** `C:\DEV\FactHarbor`
 **Branch:** `codex/pipeline-rebuild-spec`
-**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`
+**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`
 
 ---
 
@@ -19,14 +19,14 @@ Captain authorization on 2026-05-14 is interpreted as approval to proceed with t
 
 ## 2. Current Stable Baseline
 
-Slice 6A.5 is complete at `724dd9aa`:
+Slice 6A.5 is complete at `724dd9aa`; 6B.1a is complete at `24f55d4a`:
 
 - V2 runner ingress carries the full ACS prepared snapshot.
 - `PipelineRunContext` no longer injects shell-only placeholder claim IDs.
 - Shell placeholder IDs are isolated to the damaged pre-cutover envelope.
 - ACS prepared-snapshot migration fails closed on shell-only placeholders and missing selected claims.
 - Claim Understanding cache governance supports ACS-backed and direct-input key paths.
-- Gateway Claim Understanding output schema maps directly to `v2.claim_contract.0`.
+- Gateway Claim Understanding output schema now maps to `v2.claim_understanding_result.0`; accepted results carry `v2.claim_contract.0`.
 
 Verified before this package:
 
@@ -45,7 +45,7 @@ Slice 6B should be split into reviewable sub-slices:
 | Sub-slice | Purpose | Executable model call? | Approval required before start |
 |---|---|---:|---|
 | 6B.0 review package | This document plus reviewer prompts and UCM proposal | No | Captain authorization to prepare package |
-| 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | LLM Expert/deputy approval of contract shape |
+| 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | Complete at `24f55d4a` |
 | 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Deputy review; LLM Expert checks prompt governance boundary |
 | 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Explicit Captain prompt-text approval + LLM Expert review |
 | 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Deputy approval after 6B.2 tests pass |
@@ -71,8 +71,8 @@ flowchart LR
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef review fill:#fff4d6,stroke:#9a6700,color:#3a2600
   classDef gated fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S6A5 done
-  class R,C,U review
+  class S6A5,R,C done
+  class U review
   class P,E,T gated
 ```
 
@@ -87,7 +87,7 @@ Gateway task:
 | Prompt profile | `claimboundary-v2` |
 | Prompt section | `V2_CLAIM_UNDERSTANDING_GATE1` |
 | Model task | `understand` |
-| Output schema | `v2.claim_contract.0` |
+| Output schema | `v2.claim_understanding_result.0`; accepted results carry `v2.claim_contract.0` |
 | Cache policy | `v2.semantic.claim-understanding` |
 | Current status | `blockedUntilPromptApproved` |
 
@@ -100,10 +100,10 @@ Required prompt variables already declared in the gateway policy:
 | `acsSnapshotJson` | Full ACS prepared snapshot or `null` | If complete and selected claims are valid, preserve selected claim wording/finality; do not reselect silently |
 | `inputGroundingSeedJson` | Typed seed for resolved text/URL body/current-date/language/hash metadata | May ground claim understanding, but must not make Claim Understanding own full research |
 
-Recommended output contract adjustment after LLM Expert review:
+Implemented output contract adjustment after LLM Expert review:
 
 - Keep `ClaimContract` as the successful, usable claim contract only.
-- Add a `ClaimUnderstandingResult` envelope before prompt text:
+- Slice 6B.1a added a `ClaimUnderstandingResult` envelope before prompt text:
   - `status: "accepted"` contains a valid `claimContract`;
   - `status: "blocked"` or `status: "damaged"` contains no `claimContract`;
   - blocked/damaged branches carry typed `ClaimIntegrityEvent` entries, reason codes, and damaged-report guidance;
@@ -181,7 +181,7 @@ Cache requirements:
 
 Reviewers should answer:
 
-1. Is `v2.claim_contract.0` acceptable as the direct prompt output schema for Claim Understanding, or is an intermediate prompt-output schema required?
+1. Does the settled `v2.claim_understanding_result.0` envelope sufficiently separate accepted `ClaimContract` results from blocked/damaged outcomes?
 2. Are the four gateway variables sufficient and not overly broad?
 3. Does the ACS rule correctly reduce cost/time without compromising claim fidelity?
 4. Does the direct-input rule keep research out of Claim Understanding while still allowing enough grounding?
@@ -218,7 +218,7 @@ UCM/Senior Developer review:
 Consolidated decision:
 
 - **MODIFY before implementation.**
-- Insert 6B.1a for `ClaimUnderstandingResult`/failure-contract design and tests.
+- Insert 6B.1a for `ClaimUnderstandingResult`/failure-contract design and tests. Implemented at `24f55d4a`.
 - Insert 6B.1b for minimal V2 UCM/profile/model-policy plumbing.
 - Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text until both pre-prompt blockers are resolved and LLM Expert review is updated.
 
@@ -344,7 +344,7 @@ Minimum verifier set:
 - Prompt variable/render test for `V2_CLAIM_UNDERSTANDING_GATE1`.
 - Prompt genericity/static hygiene test that forbids Captain validation terms and concrete examples.
 - `ClaimContract` schema validation test for direct-input and ACS-backed outputs.
-- `ClaimUnderstandingResult` envelope tests for accepted, blocked, damaged, ACS success, direct-input success, selected-claim-missing damage, no-valid-claim damage, and shell-placeholder failure.
+- `ClaimUnderstandingResult` envelope tests for accepted, blocked, damaged, ACS success, direct-input success, selected-claim-missing failure, no-valid-claim failure, and shell-placeholder failure.
 - ACS prepared-snapshot migration tests remain passing.
 - Cache governance tests for ACS/direct input remain passing.
 - Gateway policy test proves task cannot execute until prompt, model, and cache approvals are recorded.
@@ -357,4 +357,4 @@ No live jobs are required for 6B.1 or 6B.2. Any 6B.4 real job must follow commit
 
 Recommended decision: **modify then proceed**.
 
-Proceed with Slice 6B only as sub-slices. The immediate next implementation slice should be 6B.1a Claim Understanding result-envelope contract, followed by UCM-0 / 6B.1b prompt-profile and task-policy plumbing. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text until those blockers are closed and LLM Expert review is updated.
+Proceed with Slice 6B only as sub-slices. Slice 6B.1a is complete at `24f55d4a`; the immediate next implementation slice is UCM-0 / 6B.1b prompt-profile and task-policy plumbing. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text until 6B.1b is closed and LLM Expert review is updated.
