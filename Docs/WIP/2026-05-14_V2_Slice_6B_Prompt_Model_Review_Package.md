@@ -1,11 +1,11 @@
 # V2 Slice 6B Prompt And Model Review Package
 
 **Date:** 2026-05-14
-**Status:** Review package prepared and deputy-reviewed; `MODIFY` before prompt text or execution
+**Status:** Updated LLM Expert review approves requesting Captain prompt-text approval; Captain approval still required before prompt text or execution
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`
+**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`; 6B.1b UCM/profile/model-policy plumbing `2f1b60a4`
 
 ---
 
@@ -47,7 +47,7 @@ Slice 6B should be split into reviewable sub-slices:
 | 6B.0 review package | This document plus reviewer prompts and UCM proposal | No | Captain authorization to prepare package |
 | 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | Complete at `24f55d4a` |
 | 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Complete at `2f1b60a4` |
-| 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Explicit Captain prompt-text approval + LLM Expert review |
+| 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Explicit Captain prompt-text approval; updated LLM Expert review approved requesting this |
 | 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Deputy approval after 6B.2 tests pass |
 | 6B.4 non-public structural smoke | Exercise the gated path on fixtures or explicitly approved jobs only | Yes, gated | Commit-first, runtime-refresh, and live-job spend approval if real jobs are used |
 
@@ -352,8 +352,45 @@ Minimum verifier set:
 
 No live jobs are required for 6B.1 or 6B.2. Any 6B.4 real job must follow commit-first, runtime-refresh, Captain-defined input, and live-budget discipline.
 
-## 11. Current Decision
+## 11. Updated LLM Expert Review - 2026-05-14
 
-Recommended decision: **modify then proceed**.
+Claude Opus performed a read-only LLM Expert review after Slice 6B.1a and 6B.1b completed.
 
-Proceed with Slice 6B only as sub-slices. Slices 6B.1a and 6B.1b are complete at `24f55d4a` and `2f1b60a4`. The immediate next boundary is 6B.2 prompt draft and contract tests, requiring updated LLM Expert review and explicit Captain prompt-text approval. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, create prompt source files, or add runtime model execution before that approval gate is recorded.
+Verdict: **APPROVE** proceeding to a Captain prompt-text approval request for Slice 6B.2.
+
+The review found no hard blocker to the approval request:
+
+- `ClaimUnderstandingResult` now separates `accepted`, `blocked`, and `damaged` results; only `accepted` carries a usable `ClaimContract`.
+- Direct-input `ClaimContract` currently uses `acsMigration: null`; ACS-backed success still records migration metadata.
+- `claim_understanding_gate1` now has concrete blocked model-policy metadata.
+- Cache governance separates ACS-backed and direct-input key dimensions.
+- Gateway execution remains blocked unless prompt, model, and cache approvals are all approved and the gateway task is executable.
+- `claimboundary-v2` is valid/manageable but not file-seeded, preventing accidental V1 prompt-file reuse before an approved V2 prompt source exists.
+
+Required disclosures before Captain approval:
+
+- Prompt/model approvals are still missing and the cache approval state is still pending. This is behaviorally blocked by the gateway guard, but it must not be interpreted as partial runtime approval.
+- `acsMigration: null` is the current direct-input contract shape for 6B.2 unless Captain explicitly asks to move migration metadata entirely outside `ClaimContract` before prompt drafting.
+
+Conditions for Captain approval request:
+
+- Slice 6B.2 is non-executable only: prompt source/section text plus render, schema, contract, static hygiene, and boundary tests.
+- No gateway task status changes to executable, no approval-status flips, no runtime LLM call, and no live jobs.
+- The prompt artifact must be a clean-room V2 source/profile for `claimboundary-v2`, exposing `V2_CLAIM_UNDERSTANDING_GATE1` with the four declared variables: `currentDate`, `analysisInput`, `acsSnapshotJson`, and `inputGroundingSeedJson`.
+- No V1 prompt text, prompt section structure, examples, profile content, or V1 analyzer-owned contracts may be copied or aliased.
+- Static hygiene tests must reject Captain validation inputs, topic-specific examples, English-only assumptions, provider/model-specific wording, and missing or unstable structured-output requirements.
+- Tests must pin `v2.claim_understanding_result.0`, embedded `v2.claim_contract.0`, ACS success, direct-input success, selected-claim-missing failure, no-valid-claim failure, and shell-placeholder failure.
+- File seeding for `claimboundary-v2` must be explicitly decided when the V2 prompt source is added; if enabled, guards must still forbid V1 sections and V1 prompt-file reuse.
+- The drafted prompt text must receive another LLM Expert review before any Slice 6B.3 executable model path.
+
+Residual risks:
+
+- Static hygiene cannot prove multilingual semantic quality before execution; 6B.2 approval is wording/contract approval, not analysis-quality approval.
+- The prompt-surface registry and boundary guard must be extended when the new section is added, otherwise section-id drift could bypass the intended guard.
+- Embedding nullable ACS migration metadata in `ClaimContract` may require a later schema bump if Captain chooses to move migration metadata outside the contract.
+
+## 12. Current Decision
+
+Recommended decision: **Captain approval required to proceed**.
+
+Proceed with Slice 6B only as sub-slices. Slices 6B.1a and 6B.1b are complete at `24f55d4a` and `2f1b60a4`. Updated LLM Expert review now approves requesting Captain prompt-text approval for 6B.2. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, create prompt source files, activate `claimboundary-v2` file seeding, or add runtime model execution until explicit Captain prompt-text approval is recorded.

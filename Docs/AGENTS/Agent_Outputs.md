@@ -2847,3 +2847,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Plan UCM Alignment -- [Standard] [open-items: yes]
 **For next agent:** Updated the operative V2 plan, target spec, and guardrails to reflect the recent main-branch cleanup, V1 baseline tag, and Slice 6B.1b UCM/profile/model-policy completion. Minimal non-executable UCM support is enough for 6B.2 prompt draft and contract tests after approval; broader task-oriented analysis-profile/Admin UI redesign remains a later track before broad V2 prompt/model execution or cutover. 6B.2 still requires updated LLM Expert review and explicit Captain prompt-text approval.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Plan_UCM_Alignment.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 LLM Expert Approval Request -- [Standard] [open-items: yes]
+**For next agent:** Claude Opus LLM Expert returned `APPROVE` for asking Captain to approve Slice 6B.2 prompt-text work after 6B.1a/6B.1b. Captain approval is still required before adding `V2_CLAIM_UNDERSTANDING_GATE1`, prompt source files, file seeding, approval flips, runtime model calls, or live jobs.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B2_LLM_Expert_Approval_Request.md

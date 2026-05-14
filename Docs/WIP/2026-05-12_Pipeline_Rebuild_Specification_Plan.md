@@ -33,7 +33,7 @@ Execution state:
 | Phase 6 / Slice 6B.0 | modify | Prompt/model review package prepared at `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy reviews require result-envelope contract and UCM/profile/model-policy plumbing before prompt text |
 | Phase 6 / Slice 6B.1a | complete | Committed at `24f55d4a`: `ClaimUnderstandingResult` envelope prevents failed/no-claim/direct-input states from corrupting `ClaimContract` |
 | Phase 6 / Slice 6B.1b | complete | Committed at `2f1b60a4`: `claimboundary-v2` prompt-profile/frontmatter support and blocked task-oriented model policy metadata for `claim_understanding_gate1` |
-| Phase 6 / Slice 6B.2 | approval required next | Prompt draft and contract tests require updated LLM Expert review plus explicit Captain prompt-text approval |
+| Phase 6 / Slice 6B.2 | Captain approval required next | Updated Claude Opus LLM Expert review approved requesting Captain prompt-text approval; prompt draft and contract tests may start only after explicit Captain approval |
 | Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires explicit Captain approval and LLM Expert review |
 
 Plan update from xWiki integration debate:
@@ -45,7 +45,7 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: run updated LLM Expert/Captain review for Slice 6B.2 prompt draft and contract tests. Do not edit prompt text, create prompt source files, activate executable prompt profiles, or add runtime LLM-backed Claim Understanding until Captain approval plus LLM Expert review are recorded.
+Next action, unless Captain redirects: request explicit Captain prompt-text approval for Slice 6B.2 prompt draft and contract tests under the conditions recorded in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`. Updated LLM Expert review is complete and approved the request. Do not edit prompt text, create prompt source files, activate executable prompt profiles, or add runtime LLM-backed Claim Understanding until Captain approval is recorded.
 
 Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
@@ -55,7 +55,7 @@ Main/UCM alignment note from 2026-05-14:
 - V1-before-V2-specification comparison anchor is tag `v1-before-v2-pipeline-specification` at `92b5a5f3`; create a comparison branch from that tag only when a concrete V1/V2 comparison task requires it.
 - Slice 6B.1b completed only minimal non-executable UCM/profile/model-policy plumbing: `claimboundary-v2` is a manageable prompt profile, and `claim_understanding_gate1` has blocked task-oriented model-policy metadata.
 - Broader UCM redesign is not a prerequisite for 6B.2 prompt drafting. It remains a later task-oriented analysis-profile/admin-gate track: keep existing UCM storage, avoid growing V2 policy into the broad V1 `pipeline.default.json` shape as the long-term home, and add task-oriented Admin UI/approval-state visibility only after the V2 content model stabilizes.
-- No prompt text, prompt source file, prompt activation, model execution, or broad UCM UI work starts before the documented LLM Expert/Captain approval gates.
+- No prompt text, prompt source file, prompt activation, model execution, or broad UCM UI work starts before the documented Captain approval gate. Updated LLM Expert review has approved asking for that gate; it has not approved final prompt text or 6B.3 execution.
 
 ---
 

@@ -1,0 +1,9 @@
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 LLM Expert Approval Request
+**Task:** Continue V2 pipeline rebuild at the Slice 6B.2 gate by obtaining updated LLM Expert review after 6B.1a/6B.1b.
+**Files touched:** `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
+**Key decisions:** Claude Opus performed a read-only LLM Expert review and returned `APPROVE` for asking Captain to approve Slice 6B.2 prompt-text work. The review found no code-side blockers after `ClaimUnderstandingResult`, nullable direct-input `acsMigration`, blocked model-policy metadata, ACS/direct cache separation, and gateway approval guards.
+**Open items:** Captain must explicitly approve Slice 6B.2 prompt-text work before any prompt source/section is created. The approval request must state that 6B.2 is non-executable only and that prompt/model approvals remain missing while cache approval remains pending.
+**Warnings:** Do not treat this approval as approval of final prompt text or 6B.3 execution. The drafted prompt text still needs LLM Expert review before runtime model execution. Decide during 6B.2 whether `claimboundary-v2` becomes file-seeded; if it does, extend boundary guards to prevent V1 section/file reuse.
+**For next agent:** Next step is a Captain approval request for clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt source/section plus render/schema/contract/static-hygiene tests only. Do not add prompt text, activate file seeding, flip approval states, make the gateway executable, or run live jobs until approval is explicit.
+**Learnings:** Not appended; no new durable role lesson beyond existing prompt-approval guardrails.
