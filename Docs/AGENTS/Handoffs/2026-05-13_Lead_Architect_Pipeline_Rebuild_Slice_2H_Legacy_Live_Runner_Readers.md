@@ -46,7 +46,7 @@ files_touched:
 **Warnings:**
 - Do not run `npm run test:baseline` or `apps/web/test/scripts/regression-test.js` casually; both submit live jobs and contain stale/non-Captain-defined test inputs.
 - The new reader is intentionally structural. Do not extend it with verdict interpretation, content classification, keyword matching, or language-dependent logic.
-- While applying this slice, an initial patch landed in the original checkout because the patch tool has no working-directory argument. That accidental edit was removed, and `C:\DEV\FactHarbor` was verified clean before continuing in `C:\DEV\FactHarbor-pipeline-rebuild-spec`.
+- While applying this slice, an initial patch landed in the original checkout because the patch tool has no working-directory argument. That accidental edit was removed before continuing from the canonical V2 workspace.
 
 **For next agent:** Start Slice 3 with the live-job budget still at 8. Add only a disabled V2 shell/routing seam first, keep V1 default/hot path protected, and use live jobs only after there is a runtime-relevant V2 or V1 smoke target. Do not make legacy live runners official validation gates.
 

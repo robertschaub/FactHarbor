@@ -1,10 +1,10 @@
 # Pipeline Rebuild Target Specification Draft
 
-**Date:** 2026-05-12  
-**Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
-**Branch:** `codex/pipeline-rebuild-spec`  
+**Date:** 2026-05-12
+**Workspace:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor` on 2026-05-14)
+**Git branch:** `codex/v2-pipeline-rebuild`
 **Status:** Deputy-approved target architecture; implementation stable through Slice 6B.1b; Slice 6B.2 prompt-text approval gate required next
-**Owner role:** Lead Architect  
+**Owner role:** Lead Architect
 
 ---
 

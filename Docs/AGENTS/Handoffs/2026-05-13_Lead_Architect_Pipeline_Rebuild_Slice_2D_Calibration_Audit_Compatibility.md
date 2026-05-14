@@ -29,7 +29,7 @@
 - Keep import direction one-way: calibration/audit may import `analyzer-v2/compatibility-view`; the adapter must remain pure and free of analyzer runtime, config storage, API clients, prompt loaders, or calibration imports.
 
 **For next agent:**
-- Worktree: `C:\DEV\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`.
+- Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`.
 - This slice is ready to commit after staging. Verification passed:
   - `npm -w apps/web test -- --run test/unit/lib/analyzer-v2/compatibility-view.test.ts test/unit/lib/calibration-runner-failures.test.ts test/unit/lib/paired-job-audit.test.ts` (27 tests)
   - `npm -w apps/web run build`

@@ -1,9 +1,9 @@
 # Pipeline Rebuild Phase 1 Context Summary
 
-**Date:** 2026-05-12  
-**Status:** Phase 1 complete enough to start Phase 2 inventory/reverse-engineering  
-**Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
-**Branch:** `codex/pipeline-rebuild-spec`
+**Date:** 2026-05-12
+**Status:** Phase 1 complete enough to start Phase 2 inventory/reverse-engineering
+**Workspace:** `C:\DEV\FactHarbor`
+**Git branch:** `codex/v2-pipeline-rebuild`
 
 ---
 

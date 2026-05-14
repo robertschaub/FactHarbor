@@ -1,10 +1,10 @@
 # Pipeline Rebuild Phase 2 - Mechanism Registry and Complexity Diagnosis
 
-**Date:** 2026-05-12  
-**Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
-**Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Phase 2 synthesis complete; implementation not started  
-**Owner role:** Lead Architect  
+**Date:** 2026-05-12
+**Workspace:** `C:\DEV\FactHarbor`
+**Git branch:** `codex/v2-pipeline-rebuild`
+**Status:** Phase 2 synthesis complete; implementation not started
+**Owner role:** Lead Architect
 
 ---
 

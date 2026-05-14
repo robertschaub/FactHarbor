@@ -1,10 +1,10 @@
 # Pipeline Rebuild Phase 2 External Compatibility Baseline
 
-**Date:** 2026-05-12  
-**Status:** Phase 2 factual baseline checkpoint, read-only  
-**Owner role:** Lead Architect  
-**Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
-**Branch:** `codex/pipeline-rebuild-spec`
+**Date:** 2026-05-12
+**Status:** Phase 2 factual baseline checkpoint, read-only
+**Owner role:** Lead Architect
+**Workspace:** `C:\DEV\FactHarbor`
+**Git branch:** `codex/v2-pipeline-rebuild`
 
 ---
 

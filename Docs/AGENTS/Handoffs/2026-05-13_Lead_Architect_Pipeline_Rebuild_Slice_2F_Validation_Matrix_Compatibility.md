@@ -23,7 +23,7 @@
 - If V2 later adds explicit per-source acquisition status, revisit the `fetchedSources` mapping instead of inferring all included canonical sources as fetched.
 
 **For next agent:**
-- Worktree: `C:\DEV\FactHarbor-pipeline-rebuild-spec`, branch `codex/pipeline-rebuild-spec`.
+- Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`.
 - Verification passed:
   - `npm -w apps/web test -- --run test/unit/scripts/validation-matrix.test.ts` (3 tests)
   - `node --check scripts/run-validation-matrix.js`
