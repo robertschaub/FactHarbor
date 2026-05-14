@@ -1,0 +1,9 @@
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-3B Package Consolidation
+**Task:** Review and consolidate the proposed 6B.3c-3B runtime dispatch owner implementation package after commit `a79cba3f`.
+**Files touched:** `Docs/WIP/2026-05-14_V2_Slice_6B3c3B_Runtime_Dispatch_Owner_Implementation_Approval_Package.md`, `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`, `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`, `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`, `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Expert review returned `BLOCK/MODIFY/MODIFY/MODIFY` for the broader 3B owner implementation. The package is revised to 6B.3c-3B1 preflight/provenance binding and guard hardening only. Prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
+**Open items:** 3B1 may proceed only as preflight/provenance and guard hardening. Cache no-store semantics move to 3B2. Prompt rendering and adapter invocation move to 3B3 after 3B1/3B2 pass review.
+**Warnings:** Do not implement the original 3B package. In particular, do not let caller-supplied runtime approval snapshots, externally supplied rendered prompt hashes, ACS JSON gaps, or coarse import exceptions become executable behavior.
+**For next agent:** Use `Docs/WIP/2026-05-14_V2_Slice_6B3c3B_Runtime_Dispatch_Owner_Implementation_Approval_Package.md` as the active package. The next possible source slice is 3B1 only: split pre-render readiness from post-render provenance, bind direct-text frame identity, defer ACS, add guard hardening, and stop before rendering/cache/provider/adapter work.
+**Learnings:** No new role learning added.

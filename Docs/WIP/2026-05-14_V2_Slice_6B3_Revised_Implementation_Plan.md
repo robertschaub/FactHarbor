@@ -322,6 +322,14 @@ Required 6B.3c-3A verifier additions:
 - prompt rendering, provider callback/SDK, adapter call, product wiring, public exposure, and direct URL dispatch remain blocked;
 - boundary guard proves protected product paths have no direct or transitive reachability to dispatch-capable internals.
 
+6B.3c-3A is complete at `a79cba3f`. The follow-up 6B.3c-3B owner-implementation package initially proposed prompt rendering, no-store cache-decision construction, and adapter invocation inside a non-product-wired owner. Expert review returned `BLOCK/MODIFY/MODIFY/MODIFY`; the revised package now splits the work:
+
+- **6B.3c-3B1:** preflight/provenance binding and guard hardening only;
+- **6B.3c-3B2:** explicit runtime no-store cache decision contract;
+- **6B.3c-3B3:** prompt rendering and adapter invocation owner, still non-product-wired, only after 3B1/3B2 pass.
+
+For 3B1, prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

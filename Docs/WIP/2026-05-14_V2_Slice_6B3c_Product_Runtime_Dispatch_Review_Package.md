@@ -115,7 +115,7 @@ flowchart TB
   class D,E,F blocked
 ```
 
-6B.3c-2B is complete as an inert contract. 6B.3c-3A may proceed only inside the non-executable source envelope below; product dispatch remains blocked.
+6B.3c-2B is complete as an inert contract, and 6B.3c-3A is complete at `a79cba3f` as an inert runtime owner/activation contract. The broader 6B.3c-3B owner-implementation package was reviewed and narrowed to 6B.3c-3B1 preflight/provenance binding and guard hardening only. Product dispatch remains blocked.
 
 ## 5. Candidate 6B.3c-2B Contract-Only Envelope For Later Review
 
