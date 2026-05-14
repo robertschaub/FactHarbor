@@ -2903,3 +2903,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6B.3c-0 Runtime Stage -- [Standard] [open-items: yes]
 **For next agent:** Slice 6B.3c-0 is complete at `3223d99f`. Added internal-only no-dispatch Claim Understanding orchestration: raw shell-placeholder selected IDs fail at runner ingress, `resolvedInputSha256` is no longer reused as ACS snapshot hash, run context no longer hides shell placeholders, ACS migration requires canonical V2 hashes, direct input blocks at shipped gateway policy, and public result/leak/boundary guards prevent prompt/cache/provider/adapter/runtime-state exposure. Later provider dispatch remains unapproved.
 -> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6B3c0_Runtime_Stage.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c Dispatch Review Package -- [Standard] [open-items: yes]
+**For next agent:** Expert debate after 6B.3c-0 returned `MODIFY`: do not start dispatch code. New review package `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md` defines the next gate: owner-by-input contract, side-effect ordering before adapter dispatch, mock exclusion, URL blocking until resolved-body ownership exists, no-store/no-read default, public leak guards, and mandatory tests. Review this package before any product-path model-adapter import or runtime provider dispatch.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c_Dispatch_Review_Package.md

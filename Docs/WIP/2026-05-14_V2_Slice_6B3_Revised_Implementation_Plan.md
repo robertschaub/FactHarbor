@@ -264,6 +264,10 @@ Do not expand this slice to solve URL resolution, provider dispatch, prompt vari
 
 Provider dispatch remains deferred until after 6B.3c-0 passes. A later reviewed slice may wire the existing model adapter only if it defines:
 
+Current review package: `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md`.
+
+Follow-up debate after 6B.3c-0 returned `MODIFY`: the next safe step is the docs-only dispatch-integration contract package, not source code. The package must define owner-by-input, side-effect ordering, mock exclusion, cache posture, URL handling, public-leak guards, and a test matrix before implementation. Product runtime dispatch remains blocked.
+
 - the approval source for execution without mutating shipped registry constants;
 - the exact runtime provider-dispatch boundary;
 - why an adapter import from a product path is now allowed and what guard replaces the 6B.3b no-import guard;

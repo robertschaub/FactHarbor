@@ -1,0 +1,9 @@
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c Dispatch Review Package
+**Task:** Decide the next step after 6B.3c-0 and prepare the dispatch-integration review gate before any executable Claim Understanding code.
+**Files touched:** `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md`; `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
+**Decision:** Expert debate returned `MODIFY`: no dispatch-capable source code now. The next safe step is a docs-only dispatch-integration contract package with ownership, side-effect ordering, mock exclusion, URL handling, cache posture, and test matrix before implementation.
+**Package summary:** The package proposes a contract/test-first next slice, keeps shipped `claim_understanding_gate1` blocked, keeps first dispatch no-store/no-read unless reviewed otherwise, blocks direct URL dispatch until a resolver exists, and requires explicit approval source/provider boundary/adapter-import guard replacement before product dispatch.
+**Warnings:** Stop before product-path adapter import, prompt rendering, provider callback/SDK, cache IO/eligibility, approval/status mutation, public/API/UI/report diagnostics, file seeding, live jobs, or V1/V2 boundary weakening.
+**For next agent:** Review `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md` with LLM Expert, Senior Developer, Code Reviewer, and Challenger lenses. Do not write dispatch code until that review approves an exact next slice.
+**Learnings:** After a no-dispatch stage lands, the next risk is not just "provider call"; it is the construction path before the adapter sees the gateway check: prompt bytes, config hashes, cache decisions, provider callback creation, and URL body identity.
