@@ -2970,3 +2970,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-4 Cache Policy Metadata Split -- [Standard] [open-items: yes]
 **For next agent:** Implemented a guard-hardening slice only, not product wiring. Added `gateway/cache-policy-registry.ts` for cache policy metadata, changed `gateway/policy.ts` to import metadata from it, kept `cache-governance.ts` as the behavior owner with compatibility re-exports, and tightened `boundary-guard.test.ts` so product paths cannot transitively reach `cache-governance.ts`. Product wiring, provider callback factories, API/UI/report/export changes, ACS/direct URL, cache IO, approval flips, live jobs, and V1 cleanup require separate approval. Captain clarified risky but meaningful progress should be escalated for confirmation, not postponed indefinitely.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4_Cache_Policy_Metadata_Split.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-4A Captain Confirmation Package -- [Standard] [open-items: yes]
+**For next agent:** Prepared docs-only confirmation package `Docs/WIP/2026-05-14_V2_Slice_6B3c4A_Product_Runtime_Wiring_Captain_Confirmation_Package.md`. It asks Captain whether to proceed with risky source wiring despite deputy split review. No source wiring was done. Implement only after explicit Captain confirmation: env-gated, direct-text-only, fail-closed without provider callback, no public result exposure, no provider SDKs, no cache IO, no ACS/direct URL, no live jobs, and no V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4A_Captain_Confirmation_Package.md
