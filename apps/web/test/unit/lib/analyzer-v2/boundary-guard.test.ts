@@ -33,6 +33,10 @@ const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-boundary.contract.ts",
 );
+const analyzerV2RuntimeProviderConfigContractPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-provider-runtime-config.contract.ts",
+);
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -242,6 +246,17 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
   ],
 ]);
 const analyzerV2RuntimeProviderContractApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set([
+      "AnalyzerV2GatewayTaskId",
+      "AnalyzerV2ModelTask",
+      "AnalyzerV2ModelTier",
+      "AnalyzerV2PolicyApproval",
+    ]),
+  ],
+]);
+const analyzerV2RuntimeProviderConfigContractApprovedImports = new Map<string, Set<string>>([
   [
     "@/lib/analyzer-v2/gateway/types",
     new Set([
@@ -1058,11 +1073,63 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the 6B.3c-4C2a provider runtime config contract imports inert and limited", () => {
+    expect(existsSync(analyzerV2RuntimeProviderConfigContractPath)).toBe(true);
+    const sourceFile = parseSource(analyzerV2RuntimeProviderConfigContractPath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeProviderConfigContractApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`provider runtime config contract imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`provider runtime config contract imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports gateway policy ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2RuntimeProviderConfigContractPath, specifier)) {
+        violations.push(`provider runtime config contract imports runtime dispatch ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`provider runtime config contract imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`provider runtime config contract imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
     expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
       "src/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.ts",
+    );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.ts",
     );
 
     for (const sourcePath of analyzerV2RuntimeSourceFiles) {

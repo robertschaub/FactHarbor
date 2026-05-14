@@ -4,6 +4,10 @@ import {
   validateClaimUnderstandingProviderBoundaryOwnershipContract,
   type ClaimUnderstandingProviderBoundaryOwnershipContract,
 } from "@/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract";
+import {
+  validateClaimUnderstandingProviderRuntimeConfigSnapshot,
+  type ClaimUnderstandingProviderRuntimeConfigSnapshot,
+} from "@/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import type { AnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/types";
 
@@ -71,6 +75,57 @@ function baseContract(
   };
 }
 
+function runtimeConfigSnapshot(
+  policy: AnalyzerV2TaskModelPolicy = currentClaimUnderstandingPolicy(),
+): ClaimUnderstandingProviderRuntimeConfigSnapshot {
+  return {
+    source: "v2_task_policy_snapshot",
+    gatewayTaskId: policy.gatewayTaskId,
+    modelTask: policy.modelTask,
+    modelPolicyId: policy.policyId,
+    modelTier: policy.modelTier,
+    providerPolicy: policy.providerPolicy,
+    providerId: "anthropic",
+    modelId: "claude-haiku-4-5-20251001",
+    configSnapshotHash: "provider-boundary-runtime-config-hash",
+    temperature: policy.temperature,
+    maxCalls: policy.maxCalls,
+    schemaRetryCount: policy.schemaRetryCount,
+    timeoutMs: policy.timeoutMs,
+    maxOutputTokens: policy.maxOutputTokens,
+    outputSchemaVersion: "v2.claim_understanding_result.0",
+    approval: policy.approval,
+    executionState: "not_executable_contract_only",
+    providerConstruction: {
+      sdkImportState: "not_imported",
+      callbackCreationState: "not_created",
+    },
+    retrySemantics: {
+      owner: "model_adapter_structural_schema_retry",
+      promptMutation: "forbidden",
+      semanticRepair: "forbidden",
+      modelEscalation: "forbidden",
+      fallbackProvider: "forbidden",
+    },
+    inputScope: {
+      directText: "allowed_future",
+      acsPreparedSnapshot: "blocked",
+      directUrl: "blocked",
+    },
+    outputContract: {
+      cacheIo: "forbidden",
+      publicSurface: "internal_only",
+      telemetry: {
+        providerId: "required",
+        modelId: "required",
+        tokenUsage: "required",
+        durationMs: "required",
+        configSnapshotHash: "required",
+      },
+    },
+  };
+}
+
 describe("Analyzer V2 runtime Claim Understanding provider ownership contract", () => {
   it("accepts only an inert direct-text ownership contract before provider factory wiring", () => {
     const contract = baseContract();
@@ -89,6 +144,28 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
       temperature: 0.15,
       maxCalls: 2,
       schemaRetryCount: 1,
+    });
+  });
+
+  it("aligns policy inputs with the inert provider runtime config contract", () => {
+    const policy = currentClaimUnderstandingPolicy();
+    const ownership = validateClaimUnderstandingProviderBoundaryOwnershipContract(baseContract());
+    const runtimeConfig = validateClaimUnderstandingProviderRuntimeConfigSnapshot(runtimeConfigSnapshot(policy));
+
+    expect(ownership.status).toBe("contract_satisfied");
+    expect(runtimeConfig.status).toBe("contract_satisfied");
+    expect(runtimeConfig.snapshot).toMatchObject({
+      gatewayTaskId: ownership.contract.policyInput.gatewayTaskId,
+      modelTask: ownership.contract.policyInput.modelTask,
+      modelPolicyId: ownership.contract.policyInput.modelPolicyId,
+      modelTier: ownership.contract.policyInput.modelTier,
+      temperature: ownership.contract.policyInput.temperature,
+      maxCalls: ownership.contract.policyInput.maxCalls,
+      schemaRetryCount: ownership.contract.policyInput.schemaRetryCount,
+      timeoutMs: ownership.contract.policyInput.timeoutMs,
+      maxOutputTokens: ownership.contract.policyInput.maxOutputTokens,
+      approval: policy.approval,
+      executionState: "not_executable_contract_only",
     });
   });
 

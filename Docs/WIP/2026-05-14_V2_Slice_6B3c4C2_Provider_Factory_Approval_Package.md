@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C2 Provider Factory Approval Package
 
 **Date:** 2026-05-14
-**Status:** Docs-only package ready for deputy review; no provider factory source approved by this document
+**Status:** 4C2a implemented after deputy approval; 4C2b provider factory remains unapproved
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `0aa31d4` (`feat: clean up v2 runtime approval authority`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -24,9 +24,9 @@ This package defines the next proposed gate after 6B.3c-4C1. It does not approve
 
 Consolidated decision:
 
-- The next low-risk action is this docs-only 4C2 package.
-- Source code must not start until deputy review approves this package or a tightened replacement.
-- If approved, 4C2 should be split into **4C2a provider runtime config/provenance contract** and **4C2b clean-room provider factory**.
+- The first low-risk action was this docs-only 4C2 package.
+- Deputy review of this package approved **4C2a provider runtime config/provenance contract** only.
+- 4C2b clean-room provider factory remains unapproved until a later deputy review approves it.
 - Product injection and hidden direct-text runtime artifact testing belong to later **4C3**, not 4C2.
 
 ## 3. Proposed Slice Split
@@ -53,7 +53,7 @@ flowchart TB
 
 Purpose: define the V2-owned runtime provider/config snapshot contract before any provider SDK import exists.
 
-Allowed source envelope, pending deputy approval:
+Allowed source envelope, approved for 4C2a by deputy review:
 
 - `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.ts`
 - `apps/web/test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.test.ts`
@@ -102,6 +102,34 @@ Required ownership rules:
 - real telemetry is required: provider id, model id, input/output/total tokens, duration, attempt identity, output schema id, prompt hashes, and config snapshot hash.
 
 Provider factory code is not approved until 4C2 receives separate deputy review and approval.
+
+## 5.1 6B.3c-4C2a Implementation Record
+
+Implementation status: complete; implementing commit pending at time of this source commit and recorded by follow-up traceability update.
+
+Approval pointer:
+
+- package path and section: this document, Section 4;
+- checklist version/hash: `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`;
+- approval body/date: deputy-team review of this package in the current Codex thread on 2026-05-14;
+- approval outcome: LLM/runtime reviewer `APPROVE for 4C2a only`, clean-room/security challenger `APPROVE`, implementation architect `APPROVE for 4C2a only`;
+- source envelope: `claim-understanding-provider-runtime-config.contract.ts`, matching test, provider-boundary contract test update, boundary guard update, docs and handoff updates.
+
+Implemented behavior:
+
+- adds an inert `ClaimUnderstandingProviderRuntimeConfigSnapshot` contract under `apps/web/src/lib/analyzer-v2-runtime/`;
+- validates that provider/model/config provenance comes from a V2 task-policy/config snapshot, not ad hoc caller strings or legacy pipeline config;
+- records approval metadata as provenance only and blocks any contract that attempts to become execution authority;
+- rejects provider SDK/callback construction, semantic repair, prompt mutation, model escalation, fallback providers, ACS/direct URL scope, cache IO, public exposure, incomplete telemetry, missing/placeholder provider/model/config identity, wrong task ownership, and invalid retry/call budgets;
+- keeps product paths, runtime dispatch, Analyzer V2, prompt/config sources, approval state, and live jobs unchanged.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.test.ts test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed 3 files / 45 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 20 files / 164 tests.
+- `npm -w apps/web run build` passed; postbuild reseed reported `Configs: 0 changed, 4 unchanged | Prompts: 0 changed, 3 unchanged`.
+- Production static scans found no provider SDK imports, no V1 analyzer/`llm.ts` imports, no cache/config IO, no executable status construction, no `executionApproved: true`, and no scaffold option pass-through in product callers.
+- `git diff --check` passed.
 
 ## 6. Guard Requirements
 

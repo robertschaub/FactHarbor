@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T21:12:55.156Z",
-  "count": 466,
+  "generatedAt": "2026-05-14T21:23:49.992Z",
+  "count": 467,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9816,6 +9816,33 @@
         "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4C2_Provider_Factory_Approval_Package.md"
       ],
       "summary": "V2 Slice 6B.3c-4C2 Provider Factory Approval Package"
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4C2a_Runtime_Config_Contract.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c4c2a",
+        "runtime",
+        "config",
+        "contract"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3c4C2_Provider_Factory_Approval_Package.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4C2a_Runtime_Config_Contract.md"
+      ],
+      "summary": "V2 Slice 6B.3c-4C2a Provider Runtime Config Contract"
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4C_Source_Wiring_Approval_Package.md",

@@ -411,10 +411,17 @@ Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-r
 
 4C2 package status:
 
-- source code is not approved by the package itself;
-- proposed 4C2a is an inert provider runtime config/provenance contract with no SDK import, product wiring, cache IO, prompt/config edits, approval flips, live jobs, ACS/direct URL execution, or public exposure;
+- 4C2a source was approved by deputy-team review of the package and implemented as an inert provider runtime config/provenance contract;
+- 4C2a adds no SDK import, product wiring, cache IO, prompt/config edits, approval flips, live jobs, ACS/direct URL execution, or public exposure;
 - proposed 4C2b is a later clean-room provider factory under `apps/web/src/lib/analyzer-v2-runtime/`, with any provider SDK import allowed only in an explicitly approved factory file;
 - 4C3 remains the first possible hidden direct-text runtime artifact and live-smoke gate after source commit, runtime refresh, real approval authority, and public-surface leak guards.
+
+6B.3c-4C2a verification:
+
+- focused 4C2a verifier passed 3 files / 45 tests;
+- full Analyzer V2 unit slice passed 20 files / 164 tests;
+- web build passed with prompt/config reseed unchanged;
+- production static scans found no provider SDK imports, V1 analyzer/`llm.ts` imports, cache/config IO, executable status construction, `executionApproved: true`, or product caller scaffold option pass-through.
 
 ## 8. Approval Gate Before Code
 

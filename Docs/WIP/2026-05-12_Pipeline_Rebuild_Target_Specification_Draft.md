@@ -49,6 +49,7 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.3c-4C: provider source-wiring approval package | done | `ad01740f` | Docs-only gate package; approved 4C1 approval-authority cleanup after deputy review tightened the source envelope; did not approve provider factory wiring, public exposure, live jobs, approval flips, cache IO, ACS/direct URL execution, or V1 cleanup. |
 | Slice 6B.3c-4C1: approval-authority cleanup | done | `0aa31d4` | Product/orchestrator callers can no longer pass scaffold provider options, runtime dispatch no longer creates a private executable gateway-task clone, and direct-text runtime dispatch fails closed unless the real shipped gateway task becomes executable through real prompt/model/cache policy. |
 | Slice 6B.3c-4C2: provider factory approval package | review | docs package | Docs-only package proposes 4C2a inert provider runtime config/provenance contract and later 4C2b clean-room provider factory; source remains unapproved until deputy review accepts the package. |
+| Slice 6B.3c-4C2a: provider runtime config contract | done | pending traceability update | Inert `analyzer-v2-runtime` contract validates supplied V2 task-policy/config snapshot provenance without SDK imports, callbacks, product wiring, cache IO, approval flips, live jobs, ACS/direct URL execution, or public exposure. |
 
 No live jobs have been used for these slices. Current Captain allowance: up to 4 live jobs without explicit confirmation when a committed/refreshed runtime slice makes them meaningful.
 
