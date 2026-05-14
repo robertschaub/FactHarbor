@@ -7,6 +7,7 @@ import {
   type BuildClaimBoundaryV2RunContextOptions,
 } from "@/lib/analyzer-v2/run-context";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
+import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -17,7 +18,7 @@ async function emit(input: ClaimBoundaryV2Ingress, message: string, progress: nu
 export async function runClaimBoundaryPipelineV2(
   input: ClaimBoundaryV2Ingress,
   options: RunClaimBoundaryPipelineV2Options = {},
-): Promise<{ resultJson: any; reportMarkdown: string }> {
+): Promise<ClaimBoundaryV2Envelope> {
   await emit(input, "Analyzer V2 orchestrator initialized.", 8);
 
   const context = buildClaimBoundaryV2RunContext(input, options);

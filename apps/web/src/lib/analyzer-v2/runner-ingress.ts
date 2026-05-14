@@ -3,14 +3,7 @@ import type {
   ClaimBoundaryV2Ingress,
   ClaimBoundaryV2SubmittedInput,
 } from "@/lib/analyzer-v2/pipeline-input";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readOptionalString(value: unknown): string | null {
-  return typeof value === "string" && value.trim().length > 0 ? value : null;
-}
+import { isRecord, readOptionalString } from "@/lib/analyzer-v2/util";
 
 function readInputKind(value: unknown): ClaimBoundaryV2SubmittedInput["kind"] {
   if (value === "text" || value === "url") {
@@ -32,20 +25,29 @@ function readSelectedAtomicClaimIds(value: unknown): string[] {
     return [];
   }
 
-  const shellOnlyClaimIds = value
-    .filter((claimId): claimId is string => typeof claimId === "string")
-    .map((claimId) => claimId.trim())
-    .filter((claimId) => claimId.length > 0 && isShellOnlyPlaceholderClaimId(claimId));
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const candidate of value) {
+    if (typeof candidate !== "string") {
+      continue;
+    }
 
-  if (shellOnlyClaimIds.length > 0) {
-    throw new Error("Analyzer V2 runner boundary rejects shell-only placeholder selected claim IDs.");
+    const claimId = candidate.trim();
+    if (claimId.length === 0) {
+      continue;
+    }
+
+    if (isShellOnlyPlaceholderClaimId(claimId)) {
+      throw new Error("Analyzer V2 runner boundary rejects shell-only placeholder selected claim IDs.");
+    }
+
+    if (!seen.has(claimId)) {
+      normalized.push(claimId);
+      seen.add(claimId);
+    }
   }
 
-  const normalized = value
-    .filter((claimId): claimId is string => typeof claimId === "string")
-    .map((claimId) => claimId.trim())
-    .filter((claimId) => claimId.length > 0);
-  return Array.from(new Set(normalized));
+  return normalized;
 }
 
 function readPreparedSeed(input: Record<string, unknown>): ClaimBoundaryV2Ingress["preparedSeed"] {

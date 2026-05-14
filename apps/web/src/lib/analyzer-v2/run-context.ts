@@ -1,4 +1,5 @@
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
+import { isRecord, readAcsResolvedInputText } from "@/lib/analyzer-v2/util";
 
 export type ClaimBoundaryV2RunContext = {
   runId: string;
@@ -22,25 +23,12 @@ function normalizeSelectedClaimIds(selectedClaimIds: string[] | undefined): stri
   return Array.from(new Set(normalized));
 }
 
-function firstNonBlank(...values: Array<string | undefined>): string {
+function firstNonBlank(...values: Array<string | null | undefined>): string {
   const value = values.find((candidate) => typeof candidate === "string" && candidate.trim().length > 0);
   if (!value) {
     throw new Error("Analyzer V2 run context requires a non-empty input value.");
   }
   return value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readAcsResolvedInputText(input: ClaimBoundaryV2Ingress): string | undefined {
-  const snapshot = input.preparedSeed?.acsSnapshot;
-  if (!isRecord(snapshot)) {
-    return undefined;
-  }
-
-  return typeof snapshot.resolvedInputText === "string" ? snapshot.resolvedInputText : undefined;
 }
 
 function readAcsDetectedLanguage(input: ClaimBoundaryV2Ingress): string {

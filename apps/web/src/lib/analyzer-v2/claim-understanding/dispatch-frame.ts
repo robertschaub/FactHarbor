@@ -1,6 +1,7 @@
 import { isShellOnlyPlaceholderClaimId } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
+import { isNonBlankString, readAcsResolvedInputText } from "@/lib/analyzer-v2/util";
 
 export type ClaimUnderstandingDispatchFrameInputSource =
   | "direct_input"
@@ -84,23 +85,6 @@ function ready(frame: ClaimUnderstandingDispatchFrame): ClaimUnderstandingDispat
     blockedReason: null,
     sideEffects: noDispatchFrameSideEffects(),
   };
-}
-
-function isNonBlankString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readAcsResolvedInputText(input: ClaimBoundaryV2Ingress): string | null {
-  const snapshot = input.preparedSeed?.acsSnapshot;
-  if (!isRecord(snapshot)) {
-    return null;
-  }
-
-  return isNonBlankString(snapshot.resolvedInputText) ? snapshot.resolvedInputText : null;
 }
 
 function hasInvalidSelectedClaimIds(selectedAtomicClaimIds: string[]): boolean {
