@@ -2807,3 +2807,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6A.5 Status Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Plan/spec/guardrail docs now mark Slice 6A.5 complete at `724dd9aa`; Slice 6B remains blocked until Captain prompt-change approval plus LLM Expert review. Prepare the Slice 6B review package before any prompt/profile/model execution change.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6A5_Status_Consolidation.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.0 Prompt Model Review -- [Standard] [open-items: yes]
+**For next agent:** Slice 6B.0 review package is at `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy review returned `MODIFY`. Implement 6B.1a result-envelope contract before UCM/profile plumbing, prompt text, or model execution.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B0_Prompt_Model_Review.md

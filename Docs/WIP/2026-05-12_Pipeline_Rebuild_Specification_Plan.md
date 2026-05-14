@@ -29,6 +29,9 @@ Execution state:
 | Phase 5 | complete | Implementation approval granted for slice-based isolated rebuild |
 | Phase 6 / Slices 1-6A | stable | V2 contracts, compatibility readers, disabled shell, damaged envelope, gateway governance, and Claim Understanding contracts are committed |
 | Phase 6 / Slice 6A.5 | complete | Committed at `724dd9aa`: full ACS ingress, shell-placeholder isolation, claim-understanding cache-policy alignment, and 6B schema alignment tests completed without prompt/model execution |
+| Phase 6 / Slice 6B.0 | modify | Prompt/model review package prepared at `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy reviews require result-envelope contract and UCM/profile/model-policy plumbing before prompt text |
+| Phase 6 / Slice 6B.1a | required next | Define `ClaimUnderstandingResult` or equivalent success/failure envelope so failed/no-claim/direct-input states do not corrupt `ClaimContract` |
+| Phase 6 / Slice 6B.1b | required after 6B.1a | Add minimal `claimboundary-v2` prompt-profile support and task-oriented model policy plumbing for `claim_understanding_gate1`, still non-executable |
 | Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires explicit Captain approval and LLM Expert review |
 
 Plan update from xWiki integration debate:
@@ -40,9 +43,9 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: prepare the Slice 6B prompt/model review package and approval record. Do not edit prompts, prompt profiles, model execution policy, or runtime LLM-backed Claim Understanding until Captain approval plus LLM Expert review are recorded.
+Next action, unless Captain redirects: implement only Slice 6B.1a result-envelope contract, then Slice 6B.1b minimal UCM/profile/model-policy plumbing after review. Do not edit prompt text, activate executable prompt profiles, or add runtime LLM-backed Claim Understanding until Captain approval plus LLM Expert review are recorded.
 
-Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
+Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
 ---
 

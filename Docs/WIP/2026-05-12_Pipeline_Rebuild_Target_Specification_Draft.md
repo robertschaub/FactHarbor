@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6A.5; Slice 6B blocked pending approval
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6A.5; Slice 6B.0 review returned MODIFY
 **Owner role:** Lead Architect  
 
 ---
@@ -36,6 +36,7 @@ Implementation has started in the new worktree after deputy approval of this tar
 | Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
 | Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
 | Slice 6A.5: pre-6B contract/wiring hardening | done | `724dd9aa` | Full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment tests completed without prompt/model execution |
+| Slice 6B.0: Claim Understanding prompt/model review package | modify | `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` | Deputy reviews require 6B.1a result-envelope contract and 6B.1b UCM/profile/model-policy plumbing before prompt text or execution |
 | Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
@@ -50,6 +51,9 @@ flowchart LR
   S5["Gateway governance"]
   S6A["Claim Understanding contracts"]
   S6A5["Pre-6B contract/wiring hardening"]
+  S6B0["6B review package"]
+  S6B1A["6B.1a result envelope"]
+  S6B1B["6B.1b UCM/profile plumbing"]
   S6B["Claim Understanding prompt/model execution"]
   S7["Evidence lifecycle"]
   S8["Boundary formation"]
@@ -61,8 +65,8 @@ flowchart LR
   S14["V1 cleanup"]
 
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
-  S6A --> S6A5
-  S6A5 -->|"Captain approval + LLM Expert review required"| S6B
+  S6A --> S6A5 --> S6B0 --> S6B1A --> S6B1B
+  S6B1B -->|"Captain approval + LLM Expert review required"| S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
@@ -70,7 +74,7 @@ flowchart LR
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
   class S0,S1,S2,S3,S4,S5,S6A,S6A5 done
   class S6B blocked
-  class S7,S8,S9,S10,S11,S12,S13,S14 future
+  class S6B0,S6B1A,S6B1B,S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
 
 Current architectural boundary:
@@ -122,7 +126,7 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-Slice 6A.5 is complete. The next implementation boundary is Slice 6B Claim Understanding prompt/model execution, but it can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+Slice 6A.5 is complete. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`. The next non-executable implementation boundary is 6B.1a Claim Understanding result-envelope contract, followed by 6B.1b UCM/profile/model-policy plumbing. Executable Slice 6B Claim Understanding can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -954,6 +958,15 @@ Before any prompt-backed Claim Understanding execution is enabled:
 - The 6B prompt-output schema and `ClaimContract` schema boundary must be explicit. If `v2.claim_understanding_gate1.0` remains the prompt-output schema, tests must prove how it maps into `v2.claim_contract.0`; if not, the gateway policy must point directly at `v2.claim_contract.0`.
 - Cache-policy tests must cover ACS-prepared input and direct input so equivalent prompt-backed decisions have stable keys without requiring an ACS hash where no ACS snapshot exists.
 
+**Post-6B.0 review update**
+
+LLM Expert review found that a direct `ClaimContract` prompt output cannot honestly represent direct-input failure, no-valid-claim states, or non-ACS runs without fabricating fields such as V1 ACS migration metadata. Before prompt text, add a `ClaimUnderstandingResult` envelope or equivalent contract:
+
+- accepted branch contains a valid `ClaimContract`;
+- blocked/damaged branches contain no fabricated claim contract and carry typed integrity events and damaged/blocked reasons;
+- structural fields such as hashes, current date, profile ids, and ACS migration facts are copied by gateway/migration code, not invented by the LLM;
+- direct-input success does not require or fabricate `prepared-stage1-v1` migration metadata.
+
 ---
 
 ## 8. Stage Contract: Evidence Lifecycle
@@ -1287,6 +1300,18 @@ The implementation plan must classify these prompt/config/model surfaces before 
 - legacy model tier aliases and `orchestrated` profile usage;
 - duplicate or weakly wired config knobs, including timeout/token/temperature fields identified in the baseline;
 - hardcoded call-site temperatures and budgets.
+
+**V2 UCM structure follow-up**
+
+The V2 prompt/model/config design should not keep expanding the overloaded V1 `pipeline.default.json` shape. The staged proposal in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` is the current working direction:
+
+- keep the existing versioned UCM storage backend (`config_blobs`, `config_active`, `config_usage`);
+- add V2 prompt-profile plumbing for `claimboundary-v2` before Claim Understanding prompt text;
+- define model task registry, stage policy, cache policy metadata, and report-generation profile as task-oriented V2 configuration concepts;
+- defer broad UCM UI changes until the V2 content model is reviewed, then add a task-oriented admin view over the existing raw config editor;
+- ensure every V2 prompt/model/config activation records approval state, verifier, active hash, and rollback target.
+
+UCM deputy review refined this into a minimum path: do not add V2 prompt/model task policy into the old broad `pipeline` config as a long-term home. First support `claimboundary-v2` as a separate prompt profile and add a task-oriented model policy for `claim_understanding_gate1`; keep bespoke UI work minimal until the V2 task-policy model stabilizes.
 
 ---
 
