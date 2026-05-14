@@ -2787,3 +2787,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Implementation Guardrails -- [Standard] [open-items: yes]
 **For next agent:** Added the durable guardrail layer requested after Sonnet/Gemini debate: `apps/web/src/lib/analyzer-v2/AGENTS.md`, canonical `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`, and stronger `boundary-guard.test.ts` checks for local/canonical guardrail discoverability, expanded V1 pipeline-owned type bans, and mandatory V2 report-generation provenance. The V2 ReportResult schema, fixture, and damaged shell envelope now carry `reportGeneration` provenance so future report-generation rollback controls are mechanically visible.
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Worktree Rehome -- [Standard] [open-items: yes]
+**For next agent:** Active V2 pipeline rebuild work is now in `C:\DEV\FactHarbor` on `codex/pipeline-rebuild-spec`. The prior canonical workspace state was preserved in `C:\DEV\FactHarbor-main-before-v2-rehome` on `codex/main-before-v2-rehome` at `31b3ea90`; the old `C:\DEV\FactHarbor-pipeline-rebuild-spec` path is no longer a Git worktree and is only an empty locked directory to remove after Windows releases it.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Worktree_Rehome.md
