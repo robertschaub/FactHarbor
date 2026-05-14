@@ -434,6 +434,12 @@ Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-r
 - static scans found provider SDK imports only in `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`, and no V1 analyzer/prompt reuse, config/cache IO, runtime-dispatch import, prompt-loader import, `process.env`, or executable gateway construction in the factory source;
 - `git diff --check` passed.
 
+Post-4C2b product-activation consolidation:
+
+- the next low-risk action is the docs-only **6B.3c-4C3 Product Activation Approval Package** at `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md`;
+- deputy review returned `APPROVE for 4C3a only` / `MODIFY` / `MODIFY`, consolidated as approval for 4C3a activation-authority/hidden-artifact contract source only after the package modifications are applied;
+- 4C3a source must not dispatch or import the provider factory. Product dispatch, provider callback construction, prompt rendering, model call, cache IO, public exposure, ACS/direct URL execution, live jobs, approval flips, executable gateway construction, prompt/config changes, and V1 cleanup remain blocked.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.
