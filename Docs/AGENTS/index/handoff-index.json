@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T13:05:40.494Z",
-  "count": 439,
+  "generatedAt": "2026-05-14T13:23:08.065Z",
+  "count": 440,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9195,6 +9195,30 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Start code only if staying inside 6B.3a. If scope pressure reaches model adapter, runtime dispatch, orchestrator wiring, or public surfaces, stop and run a fresh review."
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3b_Model_Adapter_Review.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3b",
+        "model",
+        "adapter",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "If the next step is code, start with tests around `apps/web/src/lib/analyzer-v2/claim-understanding/model-adapter.ts` and boundary guards. Stop for review if implementation pressure reaches real provider SDK calls, cache IO, approval/status flips, orchestration, public surfaces, or live jobs."
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Workspace_Naming_Cleanup.md",
