@@ -122,6 +122,7 @@ Captain approved the recommended wording on 2026-05-14. The implemented 6B.3c-4A
 - Missing provider boundary, direct URL, and ACS/prepared input fail or defer before prompt/cache/adapter/provider work.
 - Public `resultJson`, report markdown, API/UI/report/export schemas, and V1 default routing remain unchanged.
 - No provider SDK, cache storage IO, prompt/config source change, live job, direct URL execution, ACS execution, or V1 cleanup was introduced.
+- A review follow-up added a boundary guard that forbids production callers outside the approved owner files from referencing scaffold option keys such as `claimUnderstandingRuntime`, keeping the executable override confined to tests/controlled harnesses until a later provider-boundary gate.
 
 Verification completed for this package:
 

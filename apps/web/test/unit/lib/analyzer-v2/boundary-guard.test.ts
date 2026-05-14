@@ -179,6 +179,17 @@ const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ],
 ]);
 const runtimeDispatchExecutableCloneHelperName = "buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask";
+const runtimeScaffoldOptionOwnerPaths = new Set([
+  analyzerV2OrchestratorPath,
+  analyzerV2PipelineShellPath,
+  claimUnderstandingRuntimeStagePath,
+  claimUnderstandingRuntimeDispatchPath,
+].map(toPosix));
+const runtimeScaffoldOptionTerms = [
+  "claimUnderstandingRuntime",
+  "directTextRuntimeDispatch",
+  "providerBoundary",
+];
 const runtimeStageApprovedImports = new Map<string, Set<string>>([
   ["node:crypto", new Set(["createHash"])],
   [
@@ -958,6 +969,27 @@ describe("analyzer-v2 boundary guard", () => {
       }
       if (isTestOrMockImport(specifier)) {
         violations.push(`runtime stage imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps 6B.3c-4A scaffold runtime options out of production callers", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    )) {
+      if (runtimeScaffoldOptionOwnerPaths.has(toPosix(sourcePath))) {
+        continue;
+      }
+
+      const content = readFileSync(sourcePath, "utf8");
+      for (const term of runtimeScaffoldOptionTerms) {
+        if (content.includes(term)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references runtime scaffold option ${term}`);
+        }
       }
     }
 
