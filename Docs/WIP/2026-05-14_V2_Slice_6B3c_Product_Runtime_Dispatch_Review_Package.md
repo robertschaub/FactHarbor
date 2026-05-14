@@ -3,7 +3,7 @@
 **Date:** 2026-05-14
 **Status:** Deputy review returned `MODIFY`; revised as docs-only gate with no source code approved
 **Owner role:** Lead Architect / Captain deputy
-**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; docs current through `b02fe12f`
+**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; package tightened through `09ca7c4e`
 
 ---
 
@@ -32,7 +32,7 @@ Review of the first draft returned `MODIFY`.
 
 | Reviewer lens | Verdict | Required revision |
 |---|---|---|
-| Claude Opus-style LLM/runtime safety | MODIFY | Keep the package docs-only; make `runtime-dispatch.ts` a candidate boundary only; add multilingual/input-neutral preservation; defer cache-decision construction unless complete provenance and no-read/no-write behavior are proven. |
+| Claude Opus-style LLM/runtime safety | MODIFY | Keep the package docs-only; make any source candidate contract-only; add multilingual/input-neutral preservation; defer cache-decision construction unless complete provenance and no-read/no-write behavior are proven. |
 | Senior Developer | MODIFY | A later source slice may be feasible only as non-executable and test-only; product paths must not import it, URL stays blocked by the frame, and provider calls must remain injected. |
 | Code Reviewer / clean-room | MODIFY | Add mechanical guard requirements for adapter-import replacement, mock/fixture leakage, approval mutation, provider/cache side effects, and public-surface leakage. |
 | Gemini-style Challenger | MODIFY | The first draft's mock-dispatch candidate was too permissive; next source must be contract-only, not prompt rendering, cache-decision construction, adapter call, or provider callback. |
@@ -103,9 +103,11 @@ A later package may propose this source envelope. This package does not approve 
 
 Candidate source envelope for later review:
 
-- `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`
-- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`
+- `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.ts`
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+
+This candidate file is not a runtime owner. It may contain only inert types, pure structural guards, and negative reachability contract checks.
 
 Candidate allowed behavior:
 
@@ -138,11 +140,11 @@ Candidate forbidden behavior:
 
 Until a later reviewed gate replaces these rules:
 
-- `apps/web/src/lib/analyzer-v2/orchestrator.ts` must not import prompt loader, model adapter, cache-governance builders, provider SDKs, or runtime-dispatch code capable of model calls.
+- `apps/web/src/lib/analyzer-v2/orchestrator.ts` must not import or export `dispatch-readiness-contract.ts`, `runtime-dispatch.ts`, prompt loader, model adapter, cache-governance builders, provider SDKs, or any dispatch-capable path.
 - `apps/web/src/lib/analyzer-v2/pipeline-shell.ts` must not import prompt/model/cache/provider code.
 - `apps/web/src/lib/analyzer-v2/runner-ingress.ts` must stay a one-way structural adapter and must not construct prompt/cache/provider state.
 - `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts` must remain no-dispatch unless a later gate explicitly replaces it.
-- `apps/web/src/lib/analyzer-v2/index.ts` must not export dispatch-capable internals.
+- `apps/web/src/lib/analyzer-v2/index.ts` must not export `dispatch-readiness-contract.ts`, `runtime-dispatch.ts`, or dispatch-capable internals.
 
 ## 7. Approval Source Proposal For Review
 
@@ -221,7 +223,7 @@ Before any source beyond this docs package is accepted, reviewers should require
 
 ## 12. Reviewer Questions
 
-1. Is a contract-only `runtime-dispatch.ts` boundary useful now, or should dispatch ownership remain outside source until UCM approval snapshots are defined?
+1. Is a contract-only `dispatch-readiness-contract.ts` boundary useful now, or should dispatch ownership remain outside source until UCM approval snapshots are defined?
 2. What exact guard replaces the current product-path model-adapter import ban?
 3. Should the next source slice define only approval/provenance packet types and negative reachability guards?
 4. Should cache-decision construction remain deferred until complete dimensions and no-read/no-write semantics are enforceable?
