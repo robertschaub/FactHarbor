@@ -13,11 +13,12 @@ import {
   type ClaimUnderstandingProviderCall,
 } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 import { buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision } from "@/lib/analyzer-v2/gateway/cache-governance";
-import { getAnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/policy";
+import {
+  canExecuteAnalyzerV2GatewayTask,
+  getAnalyzerV2GatewayTask,
+} from "@/lib/analyzer-v2/gateway/policy";
 import type {
   AnalyzerV2CacheDecision,
-  AnalyzerV2GatewayTask,
-  AnalyzerV2PolicyApproval,
 } from "@/lib/analyzer-v2/gateway/types";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_DISPATCH_OWNER_CONTRACT_VERSION =
@@ -101,6 +102,7 @@ export type ClaimUnderstandingRuntimeDispatchExecutionSideEffects = {
 
 export type ClaimUnderstandingRuntimeDispatchBlockedReason =
   | "readiness_contract_not_satisfied"
+  | "gateway_policy_not_executable"
   | "direct_text_readiness_required"
   | "prompt_render_failed"
   | "cache_contract_not_no_store";
@@ -318,38 +320,6 @@ function buildClaimUnderstandingRuntimeDispatchCacheDecision(
   });
 }
 
-function buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask(
-  readiness: Extract<ClaimUnderstandingDispatchReadinessResult, { status: "contract_satisfied" }>,
-): AnalyzerV2GatewayTask {
-  const base = getAnalyzerV2GatewayTask("claim_understanding_gate1");
-  const approval: AnalyzerV2PolicyApproval = {
-    status: "approved",
-    reviewer: readiness.approvalSnapshot.approvedBy,
-    approvedAt: readiness.approvalSnapshot.approvedAt,
-  };
-
-  if (!base.promptPolicy || !base.modelPolicy || !base.cachePolicy) {
-    throw new Error("Analyzer V2 runtime dispatch requires prompt, model, and cache policy metadata.");
-  }
-
-  return {
-    ...base,
-    status: "executable",
-    promptPolicy: {
-      ...base.promptPolicy,
-      approval,
-    },
-    modelPolicy: {
-      ...base.modelPolicy,
-      approval,
-    },
-    cachePolicy: {
-      ...base.cachePolicy,
-      approval,
-    },
-  };
-}
-
 export function validateClaimUnderstandingRuntimeDispatchOwnerContract(
   ownerContract: ClaimUnderstandingRuntimeDispatchOwnerContract,
 ): ClaimUnderstandingRuntimeDispatchOwnerResult {
@@ -390,6 +360,16 @@ export async function executeClaimUnderstandingRuntimeDispatch(
     return runtimeDispatchBlocked(
       request.readiness,
       "direct_text_readiness_required",
+      null,
+      noRuntimeDispatchExecutionSideEffects(),
+    );
+  }
+
+  const gatewayTask = getAnalyzerV2GatewayTask("claim_understanding_gate1");
+  if (!canExecuteAnalyzerV2GatewayTask(gatewayTask)) {
+    return runtimeDispatchBlocked(
+      request.readiness,
+      "gateway_policy_not_executable",
       null,
       noRuntimeDispatchExecutionSideEffects(),
     );
@@ -437,7 +417,7 @@ export async function executeClaimUnderstandingRuntimeDispatch(
   }
 
   const adapterOutcome = await executeClaimUnderstandingModelAdapter({
-    gatewayTask: buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask(request.readiness),
+    gatewayTask,
     renderedPrompt,
     inputFrame: {
       analysisInput: request.readiness.frame.analysisInput,

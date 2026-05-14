@@ -27,15 +27,15 @@ import {
   canExecuteAnalyzerV2GatewayTask,
   getAnalyzerV2GatewayTask,
 } from "@/lib/analyzer-v2/gateway/policy";
-import type { AnalyzerV2GatewayTaskStatus } from "@/lib/analyzer-v2/gateway/types";
+import type {
+  AnalyzerV2GatewayTask,
+  AnalyzerV2GatewayTaskStatus,
+  AnalyzerV2PolicyApproval,
+} from "@/lib/analyzer-v2/gateway/types";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION = "v2.claim-understanding.runtime-stage.0";
-const CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_ID =
-  "captain-approved-6b3c4a-direct-text-runtime-scaffold";
 const CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_VERSION =
-  "v2.claim-understanding.runtime-approval-snapshot.6b3c4a";
-const CLAIM_UNDERSTANDING_RUNTIME_APPROVED_BY = "Captain approval for 6B.3c-4A";
-const CLAIM_UNDERSTANDING_RUNTIME_APPROVED_AT = "2026-05-14T00:00:00.000Z";
+  "v2.claim-understanding.runtime-approval-snapshot.gateway-policy.0";
 const CLAIMBOUNDARY_V2_PRECUTOVER_RESULT_SCHEMA_VERSION = "4.0.0-cb-precutover";
 
 export type ClaimUnderstandingRuntimeProviderBoundary = {
@@ -269,7 +269,33 @@ function hasRuntimeProviderBoundary(
     && Number.isFinite(value.temperature);
 }
 
-function buildCaptainConfirmedRuntimeApprovalSnapshot(): ClaimUnderstandingDispatchReadinessApprovalSnapshot {
+function hasApprovedPolicyIdentity(
+  approval: AnalyzerV2PolicyApproval | null | undefined,
+): approval is AnalyzerV2PolicyApproval & { status: "approved"; reviewer: string; approvedAt: string } {
+  return approval?.status === "approved"
+    && isRealString(approval.reviewer)
+    && isRealString(approval.approvedAt);
+}
+
+function buildRuntimeApprovalSnapshotFromGatewayTask(
+  gatewayTask: AnalyzerV2GatewayTask,
+): ClaimUnderstandingDispatchReadinessApprovalSnapshot | null {
+  if (
+    !canExecuteAnalyzerV2GatewayTask(gatewayTask)
+    || !hasApprovedPolicyIdentity(gatewayTask.promptPolicy?.approval)
+    || !hasApprovedPolicyIdentity(gatewayTask.modelPolicy?.approval)
+    || !hasApprovedPolicyIdentity(gatewayTask.cachePolicy?.approval)
+  ) {
+    return null;
+  }
+
+  const approvalSnapshotId = sha256Json({
+    gatewayTaskId: gatewayTask.id,
+    promptApproval: gatewayTask.promptPolicy.approval,
+    modelApproval: gatewayTask.modelPolicy.approval,
+    cacheApproval: gatewayTask.cachePolicy.approval,
+  });
+
   return {
     gatewayTaskId: "claim_understanding_gate1",
     gatewayTaskStatus: "executable",
@@ -277,10 +303,18 @@ function buildCaptainConfirmedRuntimeApprovalSnapshot(): ClaimUnderstandingDispa
     modelApprovalStatus: "approved",
     cacheApprovalStatus: "approved",
     approvalSource: "runtime_approval_snapshot",
-    approvalSnapshotId: CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_ID,
+    approvalSnapshotId,
     approvalSnapshotVersion: CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_VERSION,
-    approvedBy: CLAIM_UNDERSTANDING_RUNTIME_APPROVED_BY,
-    approvedAt: CLAIM_UNDERSTANDING_RUNTIME_APPROVED_AT,
+    approvedBy: [
+      `prompt:${gatewayTask.promptPolicy.approval.reviewer}`,
+      `model:${gatewayTask.modelPolicy.approval.reviewer}`,
+      `cache:${gatewayTask.cachePolicy.approval.reviewer}`,
+    ].join(";"),
+    approvedAt: [
+      gatewayTask.promptPolicy.approval.approvedAt,
+      gatewayTask.modelPolicy.approval.approvedAt,
+      gatewayTask.cachePolicy.approval.approvedAt,
+    ].sort().at(-1) ?? gatewayTask.promptPolicy.approval.approvedAt,
   };
 }
 
@@ -374,6 +408,11 @@ async function evaluateDirectInputRuntimeDispatch(
     });
   }
 
+  const approvalSnapshot = buildRuntimeApprovalSnapshotFromGatewayTask(gatewayTask);
+  if (!approvalSnapshot) {
+    return evaluateDirectInput();
+  }
+
   const providerBoundary = options.directTextRuntimeDispatch.providerBoundary;
   if (!hasRuntimeProviderBoundary(providerBoundary)) {
     return directRuntimeState({
@@ -391,7 +430,7 @@ async function evaluateDirectInputRuntimeDispatch(
   const readiness: ClaimUnderstandingDispatchReadinessResult =
     validateClaimUnderstandingDispatchReadinessContract({
       frame: frameResult.frame,
-      approvalSnapshot: buildCaptainConfirmedRuntimeApprovalSnapshot(),
+      approvalSnapshot,
       provenancePacket: buildDirectTextRuntimeProvenancePacket(frameResult.frame, providerBoundary),
     });
 

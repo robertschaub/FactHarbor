@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4 product wiring gate is docs-only and product wiring remains blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `a3edff1c`; provider factory wiring and public product runtime exposure remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -378,12 +378,34 @@ Live jobs remain not meaningful for 6B.3c-4B because the slice intentionally add
 
 Post-4B source-wiring debate returned `MODIFY/MODIFY/MODIFY`. The next approved action is the docs-only **6B.3c-4C Provider Source Wiring Approval Package** at `Docs/WIP/2026-05-14_V2_Slice_6B3c4C_Provider_Source_Wiring_Approval_Package.md`.
 
-4C consolidates the next source path into two separate later gates:
+4C consolidated the next source path into two separate gates:
 
-- **6B.3c-4C1 approval-authority cleanup**: proposed source work only, pending review. It would remove product/live reliance on the 4A scaffold approval snapshot and private executable gateway-task clone. It would not add a provider factory, provider SDK imports, public exposure, cache IO, ACS/direct URL execution, live jobs, or V1 cleanup.
+- **6B.3c-4C1 approval-authority cleanup**: approved by deputy review after tightening the source envelope, then implemented at `a3edff1c`. It removes product/live reliance on the 4A scaffold approval snapshot and private executable gateway-task clone. It did not add a provider factory, provider SDK imports, public exposure, cache IO, ACS/direct URL execution, live jobs, approval flips, prompt/config edits, or V1 cleanup.
 - **6B.3c-4C2 provider factory gate**: later clean-room provider callback factory outside Analyzer V2, also pending separate review after 4C1.
 
-No source code is approved by 4C until deputy review accepts the package and records a concrete approval pointer.
+4C1 approval pointer:
+
+- package: `Docs/WIP/2026-05-14_V2_Slice_6B3c4C_Provider_Source_Wiring_Approval_Package.md` Section 4;
+- checklist: `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`;
+- approver body: deputy-team review in current Codex thread on 2026-05-14;
+- approval basis: LLM/runtime reviewer `APPROVE`, clean-room/security challenger `APPROVE`, implementation architect `MODIFY`; consolidated outcome allowed 4C1 after expanding the source envelope to `orchestrator.ts`, `pipeline-shell.ts`, and `pipeline-shell.test.ts` and requiring executable-clone removal/neutralization;
+- Captain policy context: continue if clear and low risk; use the deputy team for decision points unless high risk or no consent.
+
+6B.3c-4C1 implementation:
+
+- `runtime-stage.ts` derives runtime approval snapshots only from the real gateway task's approved prompt/model/cache policy metadata;
+- `runtime-dispatch.ts` now checks `canExecuteAnalyzerV2GatewayTask(getAnalyzerV2GatewayTask("claim_understanding_gate1"))` and blocks before prompt rendering, cache-decision construction, adapter invocation, or provider callback use while the shipped task is not executable;
+- `runtime-dispatch.ts` no longer builds a private `status: "executable"` gateway-task clone;
+- `orchestrator.ts` and `pipeline-shell.ts` no longer expose `claimUnderstandingRuntime` scaffold option pass-through as a product activation path;
+- boundary guards now reject product caller scaffold option references and any production construction of executable gateway task state.
+
+6B.3c-4C1 verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed 4 files / 55 tests;
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 19 files / 156 tests;
+- `npm -w apps/web run build` passed; postbuild reseed reported `Configs: 0 changed, 4 unchanged | Prompts: 0 changed, 3 unchanged`;
+- static scans found no scaffold approval id, no private executable clone helper, no `status: "executable"` construction in runtime dispatch/stage, and no scaffold option pass-through in product callers;
+- `git diff --check` passed.
 
 ## 8. Approval Gate Before Code
 

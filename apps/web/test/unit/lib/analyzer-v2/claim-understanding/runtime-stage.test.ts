@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
-import {
-  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
-  CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
-  type ClaimContract,
-  type ClaimUnderstandingResult,
-} from "@/lib/analyzer-v2/claim-understanding/types";
 import type {
   ClaimUnderstandingProviderCall,
   ClaimUnderstandingProviderCallRequest,
@@ -28,57 +22,6 @@ function buildContext(input: ClaimBoundaryV2Ingress) {
   return buildClaimBoundaryV2RunContext(input, {
     now: () => new Date("2026-05-14T12:00:00.000Z"),
   });
-}
-
-function claimContract(input: string, language: string): ClaimContract {
-  return {
-    schemaVersion: CLAIM_CONTRACT_V2_SCHEMA_VERSION,
-    input: {
-      inputType: "text",
-      inputValue: input,
-      resolvedInputText: input,
-      detectedLanguage: language,
-      selectedAtomicClaimIds: ["AC_DIRECT_01"],
-    },
-    inputGroundingSeed: {
-      source: "direct_input",
-      inputType: "text",
-      inputValue: input,
-      resolvedInputText: input,
-      detectedLanguage: language,
-      currentDate: "2026-05-14",
-      acsSnapshotHash: null,
-      inputGroundingSeedHash: "direct-text-seed-hash",
-    },
-    atomicClaims: [
-      {
-        id: "AC_DIRECT_01",
-        statement: input,
-        selected: true,
-        source: "v2_claim_understanding",
-        gate1Status: {
-          status: "passed",
-          source: "v2_claim_understanding",
-          summary: "Claim Understanding accepted the selected direct-input AtomicClaim.",
-          reasons: [],
-        },
-        integrityEvents: [],
-      },
-    ],
-    integrityEvents: [],
-    acsMigration: null,
-  };
-}
-
-function acceptedResult(input: string, language: string): ClaimUnderstandingResult {
-  return {
-    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
-    status: "accepted",
-    claimContract: claimContract(input, language),
-    integrityEvents: [],
-    blockedReason: null,
-    damagedReason: null,
-  };
 }
 
 function directTextRuntimeOptions(providerCall: ClaimUnderstandingProviderCall) {
@@ -259,7 +202,7 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     });
   });
 
-  it("runs direct text through the injected provider only when the scaffold option is enabled", async () => {
+  it("blocks direct text at the real gateway even when scaffold options are enabled", async () => {
     const submittedText = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
     const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
     const input: ClaimBoundaryV2Ingress = {
@@ -277,53 +220,26 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
       buildContext(input),
       directTextRuntimeOptions(async (request) => {
         providerCalls.push(request);
-        return {
-          output: acceptedResult(submittedText, "und"),
-          telemetry: {
-            providerId: "anthropic",
-            modelId: "claude-haiku-4-5-20251001",
-            inputTokens: 120,
-            outputTokens: 80,
-            totalTokens: 200,
-            durationMs: 345,
-          },
-        };
+        throw new Error("should not be called");
       }),
     );
 
-    expect(state).toMatchObject({
+    expect(state).toEqual({
+      stageVersion: "v2.claim-understanding.runtime-stage.0",
       visibility: "internal_only",
       inputSource: "direct_input",
-      status: "runtime_dispatch_completed",
-      result: {
-        status: "accepted",
-      },
-      blockedReason: null,
+      status: "blocked_by_gateway",
+      result: null,
+      blockedReason: "gateway_policy_not_executable",
+      gatewayTaskId: "claim_understanding_gate1",
       gatewayTaskStatus: "blockedUntilPromptApproved",
-      runtimeDispatchStatus: "completed",
-      runtimeDispatchBlockedReason: null,
-      cacheEligibility: "runtime_no_store",
-      sideEffects: {
-        promptLoaded: true,
-        promptRendered: true,
-        adapterCalled: true,
-        modelCalled: true,
-        cacheDecisionConstructed: true,
-        cacheRead: false,
-        cacheWrite: false,
-        providerCallbackCreated: false,
-      },
+      cacheEligibility: "not_evaluated",
+      sideEffects: noDispatchSideEffects,
     });
-    expect(providerCalls).toHaveLength(1);
-    expect(providerCalls[0].renderedPrompt).toContain(submittedText);
-    expect(providerCalls[0].inputFrame).toEqual({
-      analysisInput: submittedText,
-      resolvedInputText: submittedText,
-      detectedLanguage: "und",
-    });
+    expect(providerCalls).toEqual([]);
   });
 
-  it("fails direct text closed before prompt rendering when the provider callback is missing", async () => {
+  it("does not let missing-provider scaffold state bypass the blocked gateway", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-direct-missing-provider",
       submitted: {
@@ -342,11 +258,9 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
 
     expect(state).toMatchObject({
       inputSource: "direct_input",
-      status: "blocked_by_missing_provider_callback",
+      status: "blocked_by_gateway",
       result: null,
-      blockedReason: "runtime_dispatch_provider_callback_missing",
-      runtimeDispatchStatus: "not_attempted",
-      runtimeDispatchBlockedReason: "runtime_dispatch_provider_callback_missing",
+      blockedReason: "gateway_policy_not_executable",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });
@@ -431,7 +345,7 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
     expect(providerCalls).toEqual([]);
   });
 
-  it("contains provider failure as an internal damaged Claim Understanding result without cache IO", async () => {
+  it("blocks provider failure paths before prompt rendering while gateway approval is missing", async () => {
     const input: ClaimBoundaryV2Ingress = {
       runIdHint: "job-runtime-direct-provider-failure",
       submitted: {
@@ -452,22 +366,11 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
 
     expect(state).toMatchObject({
       inputSource: "direct_input",
-      status: "runtime_dispatch_completed",
-      result: {
-        status: "damaged",
-        damagedReason: "claim_understanding_unavailable",
-      },
-      cacheEligibility: "runtime_no_store",
-      sideEffects: {
-        promptLoaded: true,
-        promptRendered: true,
-        adapterCalled: true,
-        modelCalled: true,
-        cacheDecisionConstructed: true,
-        cacheRead: false,
-        cacheWrite: false,
-        providerCallbackCreated: false,
-      },
+      status: "blocked_by_gateway",
+      result: null,
+      blockedReason: "gateway_policy_not_executable",
+      cacheEligibility: "not_evaluated",
+      sideEffects: noDispatchSideEffects,
     });
   });
 });

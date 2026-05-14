@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C Provider Source Wiring Approval Package
 
 **Date:** 2026-05-14
-**Status:** Docs-only package ready for deputy review; no source wiring approved by this document
+**Status:** 4C1 implemented after deputy-reviewed package tightening; no provider factory or product exposure approved
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `65f640d6` (`docs: clarify v2 runtime gate governance`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -21,12 +21,14 @@ The immediate problem is not the provider SDK call itself. The immediate problem
 | Implementation advocate | MODIFY | Create a docs-only source-wiring package now. Split later source into approval-authority cleanup first, provider factory wiring second. |
 | Clean-room challenger | MODIFY | Do not code yet. Explicitly block V1 provider/model helper reuse, public exposure, cache/provider/prompt approval bypass, and missing approval traceability. |
 | LLM/runtime quality and cost reviewer | MODIFY | No live jobs yet. Product/live path must use real approval/config provenance and must not rely on the 4A scaffold snapshot or private executable clone. |
+| Implementation architect follow-up | MODIFY | 4C1 is feasible, but the source envelope must include product shell cleanup because `orchestrator.ts` and `pipeline-shell.ts` currently expose scaffold options. |
 
 Consolidated decision:
 
 - The next low-risk action is this docs-only approval package.
 - The next possible source work is **6B.3c-4C1 approval-authority cleanup**, not provider factory implementation.
 - Provider factory implementation belongs to a later **6B.3c-4C2** gate after 4C1 proves product/live execution cannot use scaffold-only approval.
+- Deputy review permits 4C1 source work after this package is tightened to include product shell cleanup and removal/neutralization of the private executable gateway-task clone path.
 
 ## 3. Proposed Slice Split
 
@@ -58,14 +60,19 @@ Allowed source envelope, pending deputy approval:
 
 - `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts`
 - `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`
+- `apps/web/src/lib/analyzer-v2/orchestrator.ts`
+- `apps/web/src/lib/analyzer-v2/pipeline-shell.ts`
 - `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2/pipeline-shell.test.ts`
 - `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
 - documentation and handoff updates
 
 Allowed behavior:
 
 - replace product-path use of the 4A hardcoded approval snapshot with a real gateway-policy approval check;
+- remove product shell/orchestrator ability to pass test-only scaffold provider options as the production activation path;
+- remove or neutralize private executable gateway-task clone behavior in `runtime-dispatch.ts`;
 - require real prompt/model/cache approval metadata before product/live runtime dispatch can execute;
 - keep normal V2 shell calls damaged/pre-cutover while the shipped gateway task remains blocked;
 - preserve direct-text-only scope;
@@ -89,10 +96,11 @@ Required 4C1 verifier:
 
 - focused runtime-stage and runtime-dispatch tests proving the shipped blocked gateway task cannot execute even with scaffold options and injected provider boundary;
 - tests proving any test-only approved fixture is confined to direct owner tests and cannot be passed through product shell/orchestrator paths;
+- pipeline-shell tests proving product shell callers cannot pass runtime scaffold options into the orchestrator;
 - direct URL and ACS/prepared inputs still fail or defer before prompt/cache/adapter/provider work;
 - boundary guard proving product callers cannot reference scaffold option keys or source a synthetic approval snapshot;
-- static scan for `captain-approved-6b3c4a-direct-text-runtime-scaffold`, `status: "executable"`, V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports in Analyzer V2, cache IO, and public owner-field leakage;
-- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
+- static scan proving no product caller scaffold option pass-through, no private executable gateway-task clone, no `status: "executable"` construction in runtime-dispatch, no V1 analyzer imports, no V1 prompt/profile reuse, no provider SDK imports in Analyzer V2, no cache IO, and no public owner-field leakage;
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
 - `npm -w apps/web run test -- test/unit/lib/analyzer-v2`;
 - `npm -w apps/web run build`;
 - `git diff --check`.
@@ -148,7 +156,37 @@ Any implementing handoff for 4C1, 4C2, or later source slices must record:
 
 Missing approval pointer means not approved.
 
-## 8. Recommended Review Request
+## 8. 4C1 Implementation Record
+
+Implementation status: complete at `a3edff1c`.
+
+Approval pointer:
+
+- package path and section: this document, Section 4;
+- checklist version/hash: `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`;
+- approval body/date: deputy-team review in the current Codex thread on 2026-05-14;
+- approval outcome: LLM/runtime reviewer `APPROVE`, clean-room/security challenger `APPROVE`, implementation architect `MODIFY`; consolidated approval allowed 4C1 only after adding `orchestrator.ts`, `pipeline-shell.ts`, and `pipeline-shell.test.ts` to the envelope and requiring removal/neutralization of the private executable gateway-task clone;
+- Captain policy context: continue if clear and low risk; use deputy-team decision making for decision points unless high risk or no consent.
+
+Implemented behavior:
+
+- `runtime-stage.ts` no longer contains a hardcoded Captain/scaffold approval snapshot; it derives a runtime approval snapshot only from real approved prompt/model/cache gateway-policy metadata.
+- `runtime-dispatch.ts` blocks on the real shipped gateway task before prompt rendering, no-store cache-decision construction, adapter invocation, or provider callback use.
+- `runtime-dispatch.ts` no longer creates a private `status: "executable"` gateway-task clone.
+- `orchestrator.ts` and `pipeline-shell.ts` no longer expose scaffold provider option pass-through as a product activation path.
+- The public V2 shell still returns the damaged pre-cutover envelope; no API/UI/report/export surface changed.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed 4 files / 55 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 19 files / 156 tests.
+- `npm -w apps/web run build` passed; postbuild reseed reported `Configs: 0 changed, 4 unchanged | Prompts: 0 changed, 3 unchanged`.
+- Static scans found no scaffold approval id, no private executable clone helper, no `status: "executable"` construction in runtime dispatch/stage, and no scaffold option pass-through in product callers.
+- `git diff --check` passed.
+
+4C2 remains the next gate if provider factory work is proposed. It still requires separate deputy review and approval.
+
+## 9. Recommended Review Request
 
 Recommended deputy-review prompt:
 

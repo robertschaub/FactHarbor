@@ -1,6 +1,5 @@
 import {
   runClaimUnderstandingRuntimeStage,
-  type ClaimUnderstandingRuntimeStageOptions,
 } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import {
@@ -9,9 +8,7 @@ import {
 } from "@/lib/analyzer-v2/run-context";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
-export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions & {
-  claimUnderstandingRuntime?: ClaimUnderstandingRuntimeStageOptions;
-};
+export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
 async function emit(input: ClaimBoundaryV2Ingress, message: string, progress: number): Promise<void> {
   await Promise.resolve(input.emitProgress?.({ message, progress }));
@@ -27,7 +24,6 @@ export async function runClaimBoundaryPipelineV2(
   const claimUnderstandingState = await runClaimUnderstandingRuntimeStage(
     input,
     context,
-    options.claimUnderstandingRuntime,
   );
   void claimUnderstandingState;
   const envelope = buildDamagedClaimBoundaryV2Envelope(context);

@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
-import {
-  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
-  CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
-  type ClaimUnderstandingResult,
-} from "@/lib/analyzer-v2/claim-understanding/types";
-import type { ClaimUnderstandingProviderCallRequest } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
 
 function collectKeys(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -16,53 +10,6 @@ function collectKeys(value: unknown): string[] {
     return Object.entries(value).flatMap(([key, child]) => [key, ...collectKeys(child)]);
   }
   return [];
-}
-
-function acceptedClaimUnderstandingResult(input: string): ClaimUnderstandingResult {
-  return {
-    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
-    status: "accepted",
-    claimContract: {
-      schemaVersion: CLAIM_CONTRACT_V2_SCHEMA_VERSION,
-      input: {
-        inputType: "text",
-        inputValue: input,
-        resolvedInputText: input,
-        detectedLanguage: "und",
-        selectedAtomicClaimIds: ["AC_DIRECT_01"],
-      },
-      inputGroundingSeed: {
-        source: "direct_input",
-        inputType: "text",
-        inputValue: input,
-        resolvedInputText: input,
-        detectedLanguage: "und",
-        currentDate: "2026-05-14",
-        acsSnapshotHash: null,
-        inputGroundingSeedHash: "direct-shell-seed-hash",
-      },
-      atomicClaims: [
-        {
-          id: "AC_DIRECT_01",
-          statement: input,
-          selected: true,
-          source: "v2_claim_understanding",
-          gate1Status: {
-            status: "passed",
-            source: "v2_claim_understanding",
-            summary: "Claim Understanding accepted the selected direct-input AtomicClaim.",
-            reasons: [],
-          },
-          integrityEvents: [],
-        },
-      ],
-      integrityEvents: [],
-      acsMigration: null,
-    },
-    integrityEvents: [],
-    blockedReason: null,
-    damagedReason: null,
-  };
 }
 
 describe("analyzer-v2 shell", () => {
@@ -163,9 +110,9 @@ describe("analyzer-v2 shell", () => {
     expect(serialized).not.toContain("gateway_policy_not_executable");
   });
 
-  it("keeps the public result damaged and free of runtime internals even when the direct-text scaffold runs", async () => {
+  it("does not pass direct-text runtime scaffold options from the product shell", async () => {
     const inputValue = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
-    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+    let providerCalls = 0;
 
     const result = await runClaimBoundaryV2Shell(
       {
@@ -183,30 +130,20 @@ describe("analyzer-v2 shell", () => {
               modelName: "claude-haiku-4-5-20251001",
               configSnapshotHash: "config-snapshot-hash-6b3c4a",
               temperature: 0.15,
-              providerCall: async (request) => {
-                providerCalls.push(request);
-                return {
-                  output: acceptedClaimUnderstandingResult(inputValue),
-                  telemetry: {
-                    providerId: "anthropic",
-                    modelId: "claude-haiku-4-5-20251001",
-                    inputTokens: 120,
-                    outputTokens: 80,
-                    totalTokens: 200,
-                    durationMs: 345,
-                  },
-                };
+              providerCall: async () => {
+                providerCalls += 1;
+                throw new Error("product shell must not pass scaffold options");
               },
             },
           },
         },
-      },
+      } as any,
     );
 
     const keys = collectKeys(result.resultJson);
     const serialized = JSON.stringify(result.resultJson);
 
-    expect(providerCalls).toHaveLength(1);
+    expect(providerCalls).toBe(0);
     expect(result.resultJson).toMatchObject({
       _schemaVersion: "4.0.0-cb-precutover",
       qualityGates: {

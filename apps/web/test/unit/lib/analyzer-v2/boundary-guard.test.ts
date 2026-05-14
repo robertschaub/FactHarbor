@@ -172,21 +172,14 @@ const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ],
   [
     "@/lib/analyzer-v2/gateway/policy",
-    new Set(["getAnalyzerV2GatewayTask"]),
+    new Set(["canExecuteAnalyzerV2GatewayTask", "getAnalyzerV2GatewayTask"]),
   ],
   [
     "@/lib/analyzer-v2/gateway/types",
-    new Set([
-      "AnalyzerV2CacheDecision",
-      "AnalyzerV2GatewayTask",
-      "AnalyzerV2PolicyApproval",
-    ]),
+    new Set(["AnalyzerV2CacheDecision"]),
   ],
 ]);
-const runtimeDispatchExecutableCloneHelperName = "buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask";
 const runtimeScaffoldOptionOwnerPaths = new Set([
-  analyzerV2OrchestratorPath,
-  analyzerV2PipelineShellPath,
   claimUnderstandingRuntimeStagePath,
   claimUnderstandingRuntimeDispatchPath,
 ].map(toPosix));
@@ -245,7 +238,7 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
   ],
   [
     "@/lib/analyzer-v2/gateway/types",
-    new Set(["AnalyzerV2GatewayTaskStatus"]),
+    new Set(["AnalyzerV2GatewayTask", "AnalyzerV2GatewayTaskStatus", "AnalyzerV2PolicyApproval"]),
   ],
 ]);
 const analyzerV2RuntimeProviderContractApprovedImports = new Map<string, Set<string>>([
@@ -679,30 +672,12 @@ function collectExecutionApprovedTrueLiterals(sourceFile: ts.SourceFile): string
   return locations;
 }
 
-function isInsideFunctionNamed(node: ts.Node, functionName: string): boolean {
-  let current: ts.Node | undefined = node;
-  while (current) {
-    if (
-      ts.isFunctionDeclaration(current)
-      && current.name?.text === functionName
-    ) {
-      return true;
-    }
-    current = current.parent;
-  }
-  return false;
-}
-
 function collectForbiddenExecutableStatusMutations(sourceFile: ts.SourceFile): string[] {
   const locations: string[] = [];
 
-  function recordIfForbidden(node: ts.Node): void {
-    const allowed = toPosix(sourceFile.fileName) === toPosix(claimUnderstandingRuntimeDispatchPath)
-      && isInsideFunctionNamed(node, runtimeDispatchExecutableCloneHelperName);
-    if (!allowed) {
-      const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-      locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
-    }
+  function record(node: ts.Node): void {
+    const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
   }
 
   function visit(node: ts.Node): void {
@@ -712,7 +687,7 @@ function collectForbiddenExecutableStatusMutations(sourceFile: ts.SourceFile): s
       && ts.isStringLiteral(node.initializer)
       && node.initializer.text === "executable"
     ) {
-      recordIfForbidden(node);
+      record(node);
     }
 
     if (
@@ -732,7 +707,7 @@ function collectForbiddenExecutableStatusMutations(sourceFile: ts.SourceFile): s
         )
       )
     ) {
-      recordIfForbidden(node);
+      record(node);
     }
 
     ts.forEachChild(node, visit);

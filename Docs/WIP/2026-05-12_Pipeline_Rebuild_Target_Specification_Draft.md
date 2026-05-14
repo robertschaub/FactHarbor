@@ -3,7 +3,7 @@
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3c-4B; real provider factory wiring remains blocked pending separate review
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3c-4C1 approval-authority cleanup; real provider factory wiring remains blocked pending separate review
 **Owner role:** Lead Architect
 
 ---
@@ -45,7 +45,9 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.3c-0: structural no-dispatch orchestration | done | `3223d99f` | Internal-only Claim Understanding runtime stage, ACS migration only with canonical V2 hashes, direct input blocked by shipped gateway policy, raw shell-placeholder rejection, no prompt/cache/provider/model dispatch, and public leak guards. |
 | Slice 6B.3c-1: dispatch-frame contract | done | `8a663d3f` | Pure internal frame builder for direct-text exact pass-through, direct-URL fail-closed handling, ACS resolved-text/hash requirements, and static guards against prompt/model/cache/provider/V1 imports. |
 | Slice 6B.3c-4A: internal runtime scaffold | done | `1b0ff9c2` / `531a0ff6` | Captain-approved direct-text scaffold plus guard hardening. Execution remains internal/controlled, requires explicit injected provider callback, keeps public V2 output damaged, and does not approve real provider factory ownership, cache IO, public exposure, live jobs, ACS/direct URL execution, or V1 cleanup. |
-| Slice 6B.3c-4B: provider-boundary ownership contract | done | this commit | Inert `analyzer-v2-runtime` ownership contract and guards only. It defines the future provider factory review shape without creating callbacks, importing provider SDKs, wiring product callers, flipping approvals, exposing public results, or running live jobs. |
+| Slice 6B.3c-4B: provider-boundary ownership contract | done | `d1f99b8a` | Inert `analyzer-v2-runtime` ownership contract and guards only. It defines the future provider factory review shape without creating callbacks, importing provider SDKs, wiring product callers, flipping approvals, exposing public results, or running live jobs. |
+| Slice 6B.3c-4C: provider source-wiring approval package | done | `ad01740f` | Docs-only gate package; approved 4C1 approval-authority cleanup after deputy review tightened the source envelope; did not approve provider factory wiring, public exposure, live jobs, approval flips, cache IO, ACS/direct URL execution, or V1 cleanup. |
+| Slice 6B.3c-4C1: approval-authority cleanup | done | `a3edff1c` | Product/orchestrator callers can no longer pass scaffold provider options, runtime dispatch no longer creates a private executable gateway-task clone, and direct-text runtime dispatch fails closed unless the real shipped gateway task becomes executable through real prompt/model/cache policy. |
 
 No live jobs have been used for these slices. Current Captain allowance: up to 4 live jobs without explicit confirmation when a committed/refreshed runtime slice makes them meaningful.
 
@@ -69,6 +71,7 @@ flowchart LR
   S6B3C1["6B.3c-1 dispatch frame"]
   S6B3C4A["6B.3c-4A internal scaffold"]
   S6B3C4B["6B.3c-4B provider ownership contract"]
+  S6B3C4C1["6B.3c-4C1 approval authority cleanup"]
   S6B["Claim Understanding prompt/model execution"]
   S7["Evidence lifecycle"]
   S8["Boundary formation"]
@@ -82,14 +85,14 @@ flowchart LR
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
   S6A --> S6A5 --> S6B0 --> S6B1A --> S6B1B
   S6B1B -->|"Captain prompt approval recorded"| S6B2
-  S6B2 --> S6B3A --> S6B3B --> S6B3C0 --> S6B3C1 --> S6B3C4A --> S6B3C4B
-  S6B3C4B -->|"later provider wiring approval required"| S6B
+  S6B2 --> S6B3A --> S6B3B --> S6B3C0 --> S6B3C1 --> S6B3C4A --> S6B3C4B --> S6B3C4C1
+  S6B3C4C1 -->|"later provider wiring approval required"| S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A,S6B1B,S6B2,S6B3A,S6B3B,S6B3C0,S6B3C1,S6B3C4A,S6B3C4B done
+  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A,S6B1B,S6B2,S6B3A,S6B3B,S6B3C0,S6B3C1,S6B3C4A,S6B3C4B,S6B3C4C1 done
   class S6B blocked
   class S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
@@ -153,7 +156,7 @@ Follow-up 6B.3c-0 acceptance debate also returned `MODIFY`: source work could st
 
 Deputy review of the dispatch integration package returned `MODIFY`: only a narrower 6B.3c-1 dispatch-frame contract was approved before product runtime dispatch. Slice 6B.3c-1 is complete at `8a663d3f`: it added a pure internal frame builder, direct-text exact pass-through, unresolved direct-URL fail-closed handling, ACS resolved-text/hash requirements, and static guards against prompt/model/cache/provider/V1 imports. Product runtime dispatch remains blocked. The active follow-up gate package is `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`; first review returned `MODIFY`, and the revised package approves no source code while asking reviewers to resolve executable approval source, provider boundary, prompt/config/cache hash construction, cache posture, URL-resolution prerequisite, and product-path model-adapter import guard.
 
-Subsequent 6B.3c-4 work remains pre-cutover and non-public. 6B.3c-4A added only the Captain-approved internal direct-text scaffold with injected provider callbacks and then hardened it so production callers cannot reference scaffold option keys outside the approved owner files. 6B.3c-4B adds only an inert provider-boundary ownership contract under `apps/web/src/lib/analyzer-v2-runtime/` plus guards. Real product-owned provider factory wiring, AI SDK imports, approval flips, public result exposure, cache IO, ACS/direct URL execution, live jobs, and V1 cleanup remain blocked until a later reviewed source-wiring gate.
+Subsequent 6B.3c-4 work remains pre-cutover and non-public. 6B.3c-4A added only the Captain-approved internal direct-text scaffold with injected provider callbacks and then hardened it so production callers cannot reference scaffold option keys outside the approved owner files. 6B.3c-4B adds only an inert provider-boundary ownership contract under `apps/web/src/lib/analyzer-v2-runtime/` plus guards. 6B.3c-4C1 removes scaffold approval as product/live authority: product/orchestrator callers cannot pass scaffold provider options, runtime dispatch cannot create a private executable gateway-task clone, and execution requires the real shipped gateway task to be executable through real prompt/model/cache policy. Real product-owned provider factory wiring, AI SDK imports, approval flips, public result exposure, cache IO, ACS/direct URL execution, live jobs, and V1 cleanup remain blocked until a later reviewed source-wiring gate.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -1670,7 +1673,7 @@ This document is now the operative V2 target specification with implementation p
 - This status update tracks the current source slice without prompt/config/API/UI/public runtime/live-job behavior changes.
 - Slice 6B.3a implementation is committed at `2d14c89a`; it changes only structural Analyzer V2 foundation code and tests.
 - Slice 6B.3b implementation is committed at `04742922`; it adds only mock adapter contract code and tests.
-- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; 6B.3c-1 dispatch-frame contract implementation is committed at `8a663d3f`; 6B.3c-4A scaffold implementation is committed at `1b0ff9c2` with Captain approval pointer recorded in its confirmation package and handoff; 6B.3c-4A guard hardening is committed at `531a0ff6`; 6B.3c-4B adds only inert provider-boundary ownership contracts and guards; 6B.3c-4C is a docs-only source-wiring approval package for approval-authority cleanup before provider factory wiring; later dispatch-capable Claim Understanding integration remains unapproved.
+- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; 6B.3c-1 dispatch-frame contract implementation is committed at `8a663d3f`; 6B.3c-4A scaffold implementation is committed at `1b0ff9c2` with Captain approval pointer recorded in its confirmation package and handoff; 6B.3c-4A guard hardening is committed at `531a0ff6`; 6B.3c-4B adds only inert provider-boundary ownership contracts and guards at `d1f99b8a`; 6B.3c-4C is a docs-only source-wiring approval package at `ad01740f`; 6B.3c-4C1 approval-authority cleanup is committed at `a3edff1c`; provider factory wiring and broader dispatch-capable Claim Understanding integration remain unapproved.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 
