@@ -19,6 +19,10 @@ export type AnalyzerV2ClaimUnderstandingCacheDecisionOptions = {
   expectedAcsSnapshotHash?: string | null;
 };
 
+export type AnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecisionOptions = {
+  expectedAcsSnapshotHash?: string | null;
+};
+
 const PENDING_APPROVAL: AnalyzerV2PolicyApproval = {
   status: "pending",
   reviewer: null,
@@ -103,6 +107,18 @@ function readClaimUnderstandingInputSource(
   return source === "acs_prepared_snapshot" || source === "direct_input" ? source : null;
 }
 
+function hasAcsSnapshotHashMismatch(
+  input: AnalyzerV2CacheKeyInput,
+  inputSource: AnalyzerV2ClaimUnderstandingCacheSource | null,
+  expectedAcsSnapshotHash: string | null | undefined,
+): boolean {
+  const suppliedAcsHash = typeof input.acsSnapshotHash === "string" ? input.acsSnapshotHash : null;
+  return inputSource === "acs_prepared_snapshot"
+    && !!expectedAcsSnapshotHash
+    && !!suppliedAcsHash
+    && suppliedAcsHash !== expectedAcsSnapshotHash;
+}
+
 export function validateAnalyzerV2CacheKeyInput(
   policy: AnalyzerV2CachePolicy,
   input: AnalyzerV2CacheKeyInput,
@@ -175,14 +191,8 @@ export function buildAnalyzerV2ClaimUnderstandingCacheDecision(
 ): AnalyzerV2CacheDecision {
   const validation = validateAnalyzerV2ClaimUnderstandingCacheKeyInput(input);
   const inputSource = readClaimUnderstandingInputSource(input);
-  const suppliedAcsHash = typeof input.acsSnapshotHash === "string" ? input.acsSnapshotHash : null;
 
-  if (
-    inputSource === "acs_prepared_snapshot"
-    && options.expectedAcsSnapshotHash
-    && suppliedAcsHash
-    && suppliedAcsHash !== options.expectedAcsSnapshotHash
-  ) {
+  if (hasAcsSnapshotHashMismatch(input, inputSource, options.expectedAcsSnapshotHash)) {
     return {
       namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
       canRead: false,
@@ -223,6 +233,45 @@ export function buildAnalyzerV2ClaimUnderstandingCacheDecision(
     reason: "dimensions_complete_and_execution_approved",
     missingDimensions: [],
     keyParts,
+  };
+}
+
+export function buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(
+  input: AnalyzerV2CacheKeyInput,
+  options: AnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecisionOptions = {},
+): AnalyzerV2CacheDecision {
+  const validation = validateAnalyzerV2ClaimUnderstandingCacheKeyInput(input);
+  const inputSource = readClaimUnderstandingInputSource(input);
+
+  if (hasAcsSnapshotHashMismatch(input, inputSource, options.expectedAcsSnapshotHash)) {
+    return {
+      namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_acs_snapshot_hash_mismatch",
+      missingDimensions: [],
+      keyParts: [],
+    };
+  }
+
+  if (!validation.valid) {
+    return {
+      namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_incomplete_dimensions",
+      missingDimensions: validation.missingDimensions,
+      keyParts: [],
+    };
+  }
+
+  return {
+    namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
+    canRead: false,
+    canWrite: false,
+    reason: "no_store_runtime_dispatch_safety",
+    missingDimensions: [],
+    keyParts: buildAnalyzerV2ClaimUnderstandingCacheKeyParts(input),
   };
 }
 

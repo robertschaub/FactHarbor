@@ -99,6 +99,27 @@ const ownerOnlyResultSurfaceTerms = [
   "cacheRead",
   "cacheWrite",
 ];
+const forbiddenCacheIoSpecifiers = [
+  "fs",
+  "node:fs",
+  "sqlite",
+  "sqlite3",
+  "better-sqlite3",
+  "@/lib/config-storage",
+  "@/lib/config-loader",
+  "@/lib/search-cache",
+  "@/lib/source-reliability-cache",
+];
+const forbiddenCacheIoSpecifierFragments = [
+  "/config-storage",
+  "/config-loader",
+  "/search-cache",
+  "/source-reliability-cache",
+  "/db",
+  "/database",
+  "/persistence",
+  "/storage",
+];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
   "openai",
@@ -333,6 +354,14 @@ function isAnalyzerV2GatewayPolicyImport(filePath: string, specifier: string): b
   return resolved === gatewayPolicyPath || resolved === `${gatewayPolicyPath}.ts`;
 }
 
+function isCacheIoImport(specifier: string): boolean {
+  const normalized = toPosix(specifier).toLowerCase();
+  return forbiddenCacheIoSpecifiers.some((forbidden) =>
+    normalized === forbidden || normalized.startsWith(`${forbidden}/`)
+  )
+    || forbiddenCacheIoSpecifierFragments.some((fragment) => normalized.includes(fragment));
+}
+
 function isClaimUnderstandingDispatchReadinessContractImport(filePath: string, specifier: string): boolean {
   if (specifier === "@/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract") {
     return true;
@@ -432,6 +461,26 @@ function collectNonLiteralDynamicImports(sourceFile: ts.SourceFile): string[] {
       ts.isCallExpression(node)
       && node.expression.kind === ts.SyntaxKind.ImportKeyword
       && (node.arguments.length !== 1 || !ts.isStringLiteral(node.arguments[0]))
+    ) {
+      const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return locations;
+}
+
+function collectExecutionApprovedTrueLiterals(sourceFile: ts.SourceFile): string[] {
+  const locations: string[] = [];
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isPropertyAssignment(node)
+      && propertyNameText(node.name) === "executionApproved"
+      && node.initializer.kind === ts.SyntaxKind.TrueKeyword
     ) {
       const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
       locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
@@ -862,12 +911,58 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps Analyzer V2 production source from enabling cache IO through executionApproved", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of v2SourceFiles) {
+      for (const location of collectExecutionApprovedTrueLiterals(parseSource(sourcePath))) {
+        violations.push(`executionApproved true literal at ${toPosix(path.relative(webRoot, location))}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps production source from constructing executable gateway task state", () => {
     const violations: string[] = [];
 
     for (const sourcePath of v2SourceFiles) {
       if (hasExecutableStatusMutation(parseSource(sourcePath))) {
         violations.push(`${toPosix(path.relative(webRoot, sourcePath))} constructs executable gateway task state`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps analyzer-v2 cache governance free of IO and dispatch dependencies", () => {
+    const sourceFile = parseSource(analyzerV2CacheGovernancePath);
+    const violations: string[] = [];
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isV1AnalyzerImport(analyzerV2CacheGovernancePath, specifier)) {
+        violations.push(`cache governance imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`cache governance imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`cache governance imports provider SDK ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2CacheGovernancePath, specifier)) {
+        violations.push(`cache governance imports prompt loader ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(analyzerV2CacheGovernancePath, specifier)) {
+        violations.push(`cache governance imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2CacheGovernancePath, specifier)) {
+        violations.push(`cache governance imports runtime dispatch ${specifier}`);
+      }
+      if (isClaimUnderstandingDispatchReadinessContractImport(analyzerV2CacheGovernancePath, specifier)) {
+        violations.push(`cache governance imports dispatch readiness ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`cache governance imports test/mock/fixture module ${specifier}`);
       }
     }
 

@@ -104,6 +104,7 @@ export type AnalyzerV2CacheDecisionReason =
   | "dimensions_complete_and_execution_approved"
   | "no_store_due_to_acs_snapshot_hash_mismatch"
   | "no_store_due_to_incomplete_dimensions"
+  | "no_store_runtime_dispatch_safety"
   | "no_store_until_execution_approved";
 
 export type AnalyzerV2CacheDecision = {

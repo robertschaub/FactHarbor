@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-3B Runtime Dispatch Owner Implementation Approval Package
 
 **Date:** 2026-05-14
-**Status:** 6B.3c-3B1 implemented as preflight/provenance binding and guard hardening only; 3B2/3B3 remain blocked pending review
+**Status:** 6B.3c-3B1 and 6B.3c-3B2 implemented as inert contracts only; 3B3 remains blocked pending review
 **Owner role:** Lead Architect / Captain deputy
 **Pre-3B1 baseline:** `a53564f0` (`docs: narrow v2 runtime dispatch owner package`)
 
@@ -104,16 +104,19 @@ Forbidden in 3B1:
 6. Executable gateway task clones remain forbidden outside one future named owner helper; in 3B1 no such helper is executable.
 7. Public V2 result schema and result surfaces remain free of owner-only fields: `ownerContract`, `sideEffects`, `providerTelemetry`, `cacheDecision`, `keyParts`, `renderedPrompt`, `renderedPromptHash`, `adapterCalled`, `providerCallbackCreated`, `cacheRead`, and `cacheWrite`.
 
-## 6. Deferred Slice 6B.3c-3B2
+## 6. Slice 6B.3c-3B2
 
-3B2 may propose the explicit runtime no-store cache decision contract after 3B1 passes.
+3B2 defines the explicit runtime no-store cache decision contract after 3B1.
 
-Expected additions:
+Implemented additions:
 
-- add cache decision reason such as `no_store_runtime_dispatch_safety`;
-- update `gateway/types.ts` and `gateway/cache-governance.ts`;
-- return `canRead=false`, `canWrite=false`, complete key parts, and no cache IO;
-- keep product paths, prompt rendering, adapter calls, provider callbacks, public surfaces, and live jobs blocked.
+- added cache decision reason `no_store_runtime_dispatch_safety`;
+- added `buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(...)` in `gateway/cache-governance.ts`;
+- the runtime no-store builder returns `canRead=false`, `canWrite=false`, complete key parts only when dimensions are complete, and no cache IO;
+- incomplete dimensions still return `no_store_due_to_incomplete_dimensions` with no key parts;
+- ACS hash mismatch still overrides runtime no-store and returns `no_store_due_to_acs_snapshot_hash_mismatch`;
+- product paths, prompt rendering, adapter calls, provider callbacks, public surfaces, and live jobs remain blocked;
+- `runtime-dispatch.ts` does not import or consume this cache contract in 3B2.
 
 ## 7. Deferred Slice 6B.3c-3B3
 
@@ -179,6 +182,38 @@ Still blocked after 3B1:
 - live jobs;
 - V1 code, prompt, profile, section, or type reuse.
 
-## 10. Short Reviewer Prompt
+## 10. 3B2 Implementation Outcome
 
-Review the implemented 6B.3c-3B1 slice. Decide whether the preflight/provenance binding and guard hardening are sufficient to move next to a separate 3B2 no-store cache decision review. The implementation must still stop before prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, live jobs, direct URL dispatch, and V1 reuse.
+3B2 is implemented as a pure gateway cache-contract slice:
+
+- source changed only under `apps/web/src/lib/analyzer-v2/gateway/`;
+- focused tests prove direct-input runtime no-store cannot enable read/write, incomplete dimensions fail closed, and ACS mismatch takes precedence;
+- static guards prove Analyzer V2 production source does not pass `executionApproved: true`, cache governance imports no IO/storage/provider/prompt/model/runtime/readiness/test/V1 dependencies, public surfaces and Analyzer V2 barrel remain clean, and owner-only result fields remain private;
+- the existing `buildAnalyzerV2ClaimUnderstandingCacheDecision(...)` execution-approved behavior remains unchanged for synthetic cache-eligibility tests;
+- no runtime-dispatch, readiness, frame, prompt, model-adapter, gateway-policy, product, API, UI, report, export, prompt, config, or live-job behavior changed.
+
+Verification completed for 3B2:
+
+- focused gateway cache-governance and boundary guard tests;
+- full Analyzer V2 unit slice;
+- V2 internal runner routing test;
+- `npm -w apps/web run build`;
+- targeted clean-room scans for V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports, production `executionApproved: true`, and public dispatch/cache leakage;
+- `git diff --check`.
+
+Still blocked after 3B2:
+
+- product execution path wiring;
+- executable shipped gateway status or approval flips;
+- prompt rendering;
+- provider callback acceptance or provider SDK imports;
+- cache read/write and cache IO;
+- runtime-dispatch consumption of the no-store cache decision;
+- API/UI/report/export/public diagnostics;
+- direct unresolved URL dispatch;
+- live jobs;
+- V1 code, prompt, profile, section, or type reuse.
+
+## 11. Short Reviewer Prompt
+
+Review the implemented 6B.3c-3B1 and 6B.3c-3B2 slices. Decide whether the remaining 3B3 prompt-rendering/adapter-invocation proposal is sufficiently specified to review. The implementation must still stop before product wiring, provider SDK imports, public surfaces, live jobs, direct URL dispatch, cache read/write, and V1 reuse.

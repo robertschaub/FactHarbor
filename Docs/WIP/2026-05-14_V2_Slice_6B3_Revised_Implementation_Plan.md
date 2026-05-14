@@ -330,6 +330,8 @@ Required 6B.3c-3A verifier additions:
 
 For 3B1, prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
 
+6B.3c-3B1 is complete as pre-render readiness/provenance binding and guard hardening. 6B.3c-3B2 is complete as a pure gateway cache-contract slice: `gateway/types.ts` adds `no_store_runtime_dispatch_safety`, `gateway/cache-governance.ts` adds `buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(...)`, and tests/guards prove the runtime no-store decision cannot enable cache read/write or leak to runtime/product/public surfaces. `runtime-dispatch.ts` still does not consume cache governance. 6B.3c-3B3 remains blocked pending review.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

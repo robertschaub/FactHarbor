@@ -6,6 +6,7 @@ import {
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
   buildAnalyzerV2ClaimUnderstandingCacheDecision,
   buildAnalyzerV2ClaimUnderstandingCacheKeyParts,
+  buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision,
   buildAnalyzerV2CacheKeyParts,
   validateAnalyzerV2ClaimUnderstandingCacheKeyInput,
   validateAnalyzerV2CacheKeyInput,
@@ -170,8 +171,63 @@ describe("analyzer-v2 cache governance", () => {
     expect(decision.keyParts).not.toContainEqual(expect.objectContaining({ dimension: "acsSnapshotHash" }));
   });
 
+  it("builds a runtime-dispatch no-store decision without enabling cache IO", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision({
+      ...completeBaseInput,
+      claimUnderstandingInputSource: "direct_input",
+      inputGroundingSeedHash: "seed-hash",
+    });
+
+    expect(decision).toMatchObject({
+      namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_runtime_dispatch_safety",
+      missingDimensions: [],
+    });
+    expect(decision.keyParts.map((part) => part.dimension)).toEqual([
+      ...ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY.requiredDimensions,
+    ]);
+    expect(decision.keyParts).not.toContainEqual(expect.objectContaining({ dimension: "acsSnapshotHash" }));
+  });
+
+  it("keeps runtime-dispatch no-store fail-closed when dimensions are incomplete", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(completeBaseInput);
+
+    expect(decision).toMatchObject({
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_incomplete_dimensions",
+      keyParts: [],
+    });
+    expect(decision.missingDimensions).toEqual([
+      "claimUnderstandingInputSource",
+      "inputGroundingSeedHash",
+    ]);
+  });
+
   it("fails closed when an ACS cache decision receives a mismatched snapshot hash", () => {
     const decision = buildAnalyzerV2ClaimUnderstandingCacheDecision(
+      {
+        ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
+        acsSnapshotHash: "actual-acs-hash",
+        inputGroundingSeedHash: "seed-hash",
+      },
+      { expectedAcsSnapshotHash: "expected-acs-hash" },
+    );
+
+    expect(decision).toMatchObject({
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_acs_snapshot_hash_mismatch",
+      missingDimensions: [],
+      keyParts: [],
+    });
+  });
+
+  it("lets ACS snapshot mismatch override runtime-dispatch no-store safety", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingRuntimeNoStoreCacheDecision(
       {
         ...completeBaseInput,
         claimUnderstandingInputSource: "acs_prepared_snapshot",
