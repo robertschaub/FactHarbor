@@ -146,6 +146,12 @@ Still forbidden until a later approved source gate:
 - live jobs;
 - V1 analyzer, prompt, helper, model resolver, or provider helper reuse.
 
+Second reviewer confirmation:
+
+- 4C2b provider factory remains blocked; the next action is this docs/contract addendum path (`4C2b-0`) before provider SDK imports, callback creation, or factory source.
+- The authoritative V2 runtime config snapshot source is unresolved. The current contract validates a supplied shape only; later factory/product wiring depends on this decision.
+- V2 product wiring remains gated. No runtime-stage, orchestrator, product injection, approval flip, cache IO, public exposure, or live job is allowed until a later reviewed 4C3 gate.
+
 ## 5.2 6B.3c-4C2a Implementation Record
 
 Implementation status: complete at `dc65268b`.

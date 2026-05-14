@@ -57,7 +57,12 @@ Docs-only consolidation. No source verifier was required. Current local baseline
 
 - 4C2b-0 addendum/contract update remains next.
 - Provider factory source remains unapproved.
+- Authoritative V2 runtime config snapshot source remains unresolved; current contracts validate supplied shape only.
 - Live jobs remain not meaningful until 4C3 hidden direct-text runtime artifact wiring exists, is committed, and runtime is refreshed.
+
+## Second Reviewer Confirmation
+
+The second reviewer confirmed the consolidated gate state: 4C2b remains blocked until a docs/contract addendum is reviewed, V2 runtime config snapshot authority is unresolved, and product wiring remains gated until a later reviewed 4C3 gate.
 
 ## For Next Agent
 
