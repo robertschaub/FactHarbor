@@ -662,7 +662,7 @@ Placeholder body.`;
     expect(v2IntoV1.errors[0]).toContain('expected "claimboundary"');
   });
 
-  it("rejects file seeding for the promptless V2 profile", async () => {
+  it("rejects file seeding for the non-executable V2 profile", async () => {
     const result = await seedPromptFromFile("claimboundary-v2");
 
     expect(result.seeded).toBe(false);

@@ -160,6 +160,102 @@ describe("analyzer-v2 claim understanding result envelope", () => {
     expect(blocked.claimContract).toBeNull();
   });
 
+  it("validates blocked prepared-snapshot-invalid without a ClaimContract", () => {
+    const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
+    const blocked: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "prepared_snapshot_invalid",
+          severity: "error",
+          message: "Prepared snapshot is structurally invalid for Claim Understanding.",
+          claimIds: [],
+        },
+      ],
+      blockedReason: "prepared_snapshot_invalid",
+      damagedReason: null,
+    };
+    const ajv = ajvWithClaimContractSchema();
+    const validate = ajv.compile(schema);
+
+    expect(validate(blocked), JSON.stringify(validate.errors, null, 2)).toBe(true);
+    expect(blocked.claimContract).toBeNull();
+  });
+
+  it("validates blocked selected-claim-missing without silently reselecting", () => {
+    const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
+    const blocked: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "selected_claim_missing",
+          severity: "error",
+          message: "Prepared snapshot selected claim is missing from the supplied claim list.",
+          claimIds: ["AC_PREPARED_MISSING"],
+        },
+      ],
+      blockedReason: "selected_claim_missing",
+      damagedReason: null,
+    };
+    const ajv = ajvWithClaimContractSchema();
+    const validate = ajv.compile(schema);
+
+    expect(validate(blocked), JSON.stringify(validate.errors, null, 2)).toBe(true);
+    expect(blocked.claimContract).toBeNull();
+  });
+
+  it("validates blocked duplicate selected claim IDs without a ClaimContract", () => {
+    const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
+    const blocked: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "duplicate_selected_claim_id",
+          severity: "error",
+          message: "Prepared snapshot contains duplicate selected claim IDs.",
+          claimIds: ["AC_PREPARED_01"],
+        },
+      ],
+      blockedReason: "duplicate_selected_claim_id",
+      damagedReason: null,
+    };
+    const ajv = ajvWithClaimContractSchema();
+    const validate = ajv.compile(schema);
+
+    expect(validate(blocked), JSON.stringify(validate.errors, null, 2)).toBe(true);
+    expect(blocked.claimContract).toBeNull();
+  });
+
+  it("validates blocked shell-placeholder leakage without a ClaimContract", () => {
+    const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
+    const blocked: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "shell_placeholder_claim_id",
+          severity: "error",
+          message: "Shell-only placeholder claim ID reached Claim Understanding.",
+          claimIds: ["AC_V2_SHELL_01"],
+        },
+      ],
+      blockedReason: "shell_placeholder_claim_id",
+      damagedReason: null,
+    };
+    const ajv = ajvWithClaimContractSchema();
+    const validate = ajv.compile(schema);
+
+    expect(validate(blocked), JSON.stringify(validate.errors, null, 2)).toBe(true);
+    expect(blocked.claimContract).toBeNull();
+  });
+
   it("validates damaged contract-validation failure without a ClaimContract", () => {
     const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
     const damaged: ClaimUnderstandingResult = {
@@ -176,6 +272,30 @@ describe("analyzer-v2 claim understanding result envelope", () => {
       ],
       blockedReason: null,
       damagedReason: "claim_contract_validation_failed",
+    };
+    const ajv = ajvWithClaimContractSchema();
+    const validate = ajv.compile(schema);
+
+    expect(validate(damaged), JSON.stringify(validate.errors, null, 2)).toBe(true);
+    expect(damaged.claimContract).toBeNull();
+  });
+
+  it("validates damaged claim-understanding-unavailable without a ClaimContract", () => {
+    const schema = readFixture<Record<string, unknown>>("schemas/claim-understanding-result-v2.schema.json");
+    const damaged: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "damaged",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "claim_contract_validation_failed",
+          severity: "error",
+          message: "Claim Understanding provider was unavailable before a valid contract could be produced.",
+          claimIds: [],
+        },
+      ],
+      blockedReason: null,
+      damagedReason: "claim_understanding_unavailable",
     };
     const ajv = ajvWithClaimContractSchema();
     const validate = ajv.compile(schema);

@@ -43,6 +43,7 @@ describe("prompt surface registry", () => {
       adminEditable: true,
       reseedSupported: false,
       ucmProfile: "claimboundary-v2",
+      sourcePaths: ["apps/web/prompts/claimboundary-v2.prompt.md"],
     });
     expect(getPromptSurfaceRegistryEntry("input-policy-gate")).toMatchObject({
       management: "ucm",
@@ -87,11 +88,11 @@ describe("prompt surface registry", () => {
   it("records ownership paths without embedding prompt text", () => {
     for (const entry of listPromptSurfaceRegistry()) {
       expect(entry.runtimeOwners.length).toBeGreaterThan(0);
-      if (entry.management !== "db_only_legacy" && entry.id !== "claimboundary-v2") {
+      if (entry.management !== "db_only_legacy") {
         expect(entry.sourcePaths.length).toBeGreaterThan(0);
       }
       if (entry.id === "claimboundary-v2") {
-        expect(entry.sourcePaths).toEqual([]);
+        expect(entry.sourcePaths).toEqual(["apps/web/prompts/claimboundary-v2.prompt.md"]);
         expect(entry.reseedSupported).toBe(false);
       }
       expect(JSON.stringify(entry)).not.toContain("You are ");

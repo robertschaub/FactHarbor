@@ -48,9 +48,9 @@ export const PROMPT_SURFACE_REGISTRY: PromptSurfaceRegistryEntry[] = [
       "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
       "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
     ],
-    sourcePaths: [],
+    sourcePaths: ["apps/web/prompts/claimboundary-v2.prompt.md"],
     notes:
-      "V2 prompt profile is registered for UCM validation/import/export only; prompt text, source file, and file seeding remain blocked until approval.",
+      "V2 prompt source exists for contract review, but file seeding and runtime execution remain blocked until post-draft review and approvals.",
   },
   {
     id: "source-reliability-enrichment",

@@ -1294,7 +1294,7 @@ export const VALID_PROMPT_PROFILES = [
   "source-reliability",
   // ClaimBoundary pipeline prompts (all stages)
   "claimboundary",
-  // V2 prompt profile is importable/manageable but not file-seeded until its prompt file exists.
+  // V2 prompt profile is importable/manageable; file seeding remains disabled until post-draft review approves activation.
   "claimboundary-v2",
   // Pre-pipeline gates
   "input-policy-gate",

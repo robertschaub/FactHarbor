@@ -287,6 +287,9 @@ describe("analyzer-v2 boundary guard", () => {
   const v2SourceFiles = collectFiles(v2AnalyzerRoot, (filePath) =>
     [".ts", ".tsx"].includes(path.extname(filePath))
   );
+  const v2PromptFiles = collectFiles(promptRoot, (filePath) =>
+    filePath.endsWith(".prompt.md") && isV2OwnedPromptFile(filePath)
+  );
 
   it("keeps local and canonical V2 implementation guardrails discoverable", () => {
     expect(existsSync(v2AgentsPath)).toBe(true);
@@ -334,6 +337,36 @@ describe("analyzer-v2 boundary guard", () => {
         const violation = findPromptFileReuseViolation(literal, forbidden);
         if (violation) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references ${violation}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps V2 prompt source files clean-room and V2-owned", () => {
+    const forbidden = collectLegacyPromptProfilesAndFiles();
+    const violations: string[] = [];
+
+    expect(v2PromptFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "prompts/claimboundary-v2.prompt.md",
+    );
+
+    for (const promptFile of v2PromptFiles) {
+      const rel = toPosix(path.relative(webRoot, promptFile));
+      const content = readFileSync(promptFile, "utf8");
+
+      for (const fileRef of forbidden.fileRefs) {
+        if (content.includes(fileRef)) {
+          violations.push(`${rel} references legacy prompt file "${fileRef}"`);
+        }
+      }
+
+      for (const profile of forbidden.profiles) {
+        const escapedProfile = profile.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const profilePattern = new RegExp(`(^|[\\s:"'\`])${escapedProfile}([\\s:"'\`]|$)`);
+        if (profilePattern.test(content)) {
+          violations.push(`${rel} references legacy prompt profile "${profile}"`);
         }
       }
     }
