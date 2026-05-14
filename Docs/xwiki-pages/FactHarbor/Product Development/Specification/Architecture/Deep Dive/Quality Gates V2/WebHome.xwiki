@@ -64,6 +64,12 @@ Gate 4 belongs to verdict adjudication. It checks:
 
 Opinion-only or unsupported challenge material cannot reduce truth percentage or confidence. Only evidence-backed counter-arguments may affect verdicts.
 
+== Quality-Constrained Budget Gate ==
+
+V2 cost and latency targets are subordinate to quality gates. Normal analysis targets 6-10 minutes active runtime and $0.50-$1.25 cost; complex analysis targets 10-18 minutes and $1.25-$3.25. These targets are accepted only when Gate 1, sufficiency, Gate 4, warning integrity, report clarity, multilingual/input-neutral behavior, and approved comparator expectations remain preserved or improved.
+
+If a budget is exceeded, the run must record why: more than 3 selected AtomicClaims, evidence-backed contestation, source scarcity, provider degradation, citation/direction risk, or approved deep-review mode. If a budget limit prevents adequate analysis, the result must surface a sufficiency, scarcity, budget-exit, warning, or damaged-report outcome instead of hiding the limitation.
+
 == Warning Materiality ==
 
 Before any warning becomes user-visible, V2 applies:

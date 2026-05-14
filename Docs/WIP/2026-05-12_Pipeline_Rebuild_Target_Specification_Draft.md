@@ -599,6 +599,34 @@ After V2 cutover stabilizes and V1 analysis code is deleted, a mandatory naming-
 
 ---
 
+## 4.3 Quality-Constrained Cost And Latency Envelope
+
+Cost and latency are design constraints, not quality tradeoffs. A faster or cheaper V2 run is acceptable only when it preserves or improves the approved quality floor: Gate 1 fidelity, Gate 4 integrity, evidence transparency, warning honesty, report clarity, multilingual/input-neutral behavior, and comparator/Q-code expectations. If a run hits a cost or time budget, V2 must surface the effect through sufficiency, scarcity, budget-exit, warning, or damaged-report behavior; it must not manufacture confidence to stay inside the envelope.
+
+Initial V2 targets before measurement:
+
+| Analysis class | Structural/LLM-owned classification signals | Active runtime target | Cost target | Review threshold |
+|---|---|---:|---:|---:|
+| Simple | short input, 1-2 selected AtomicClaims, adequate evidence, no significant evidence-backed contestation | 2-5 min | $0.10-$0.75 | unchanged unless quality regresses |
+| Normal | typical public fact-check, up to 3 selected AtomicClaims, ordinary retrieval, sufficient evidence | 6-10 min | $0.50-$1.25 | above 12 min or above $1.75 |
+| Complex | more than 3 selected AtomicClaims, evidence-backed contestation, difficult retrieval, legal/technical reasoning, or sufficiency caveats | 10-18 min | $1.25-$3.25 | above 22 min or above $4.00 |
+| Deep-review exception | Captain/deputy-approved quality need beyond normal/complex envelope | explicit per-run budget | explicit per-run budget | explicit approval required |
+
+Classification may use structural facts and LLM-owned semantic assessments only. It must not use topic keywords, entity names, language-specific regexes, or V1 prompt/code behavior.
+
+Budget-control mechanisms required before prompt-backed V2 execution:
+
+- every model task declares provider/model tier, max calls, token budget, timeout, retry/fallback policy, cache policy, and escalation policy;
+- the normal path batches semantic work aggressively instead of multiplying per-source or per-claim calls without a contract reason;
+- independent structural work such as search, fetch, parsing, and adapter projection is parallelized with explicit concurrency caps and cancellation;
+- stronger models, extra retrieval, fuller verdict debate, repair loops, or extra validation run only when V2-owned gates show insufficiency, evidence-backed contestation, low confidence, citation/direction risk, provider failure, or report-integrity risk;
+- the observability ledger records stage wall time, active LLM time, input/output tokens, estimated cost, cache hits/misses, retries, provider/model, escalation reason, and budget-exit reason;
+- cutover validation reports cost and latency by preparation, queue, active final runtime, retrieval, verdict, export, and total user-visible wait.
+
+No cost/latency optimization may weaken the clean-room boundary, reuse V1 prompts/code/types, hide warnings, skip Understand -> Research -> Verdict, or replace LLM-owned semantic decisions with deterministic shortcuts.
+
+---
+
 ## 5. Logical Module Boundaries
 
 Exact file names can be refined by implementation, but the V2 root and public entrypoint in Section 4.2 are the default unless deputy review changes them before implementation.
@@ -1006,6 +1034,7 @@ V2 must treat prompts, config, and model routing as first-class architecture.
 - One model task registry owns model tier, provider preferences, temperature, token budget, timeout, retry, and fallback policy.
 - Semantic tasks should batch aggressively, cache identical/equivalent inputs, and use lower-cost models where fit.
 - Provider fallback is structural resilience; it must not silently change prompt/task semantics.
+- The model task registry is also the cost/latency governor. Each task records max calls, token budget, timeout, retry/fallback policy, cache policy, escalation policy, and the quality signal that justifies any stronger model, extra retrieval, fuller debate, or repair loop.
 
 **Cache governance**
 
@@ -1173,7 +1202,8 @@ Run only after approval, with commit-first and runtime-refresh discipline. Use o
 - no deterministic semantic hotspot introduced without a verifier or deputy-approved waiver;
 - no material multilingual/input-neutrality regression on Captain-defined inputs and approved comparator families;
 - runtime/cost measured against current-stack baselines using separate buckets for preparation, interactive wait, queue, active final runtime, retrieval, verdict, and export;
-- final-report active runtime target is approximately 15 minutes average where applicable, with longer runs requiring evidence that extra cost protects quality or handles more than 3 selected AtomicClaims;
+- cost/latency measured against the quality-constrained envelope in Section 4.3: normal runs target 6-10 minutes and $0.50-$1.25, complex runs target 10-18 minutes and $1.25-$3.25, and review is required above the documented thresholds;
+- any accepted over-budget run records the quality-protection reason, such as more than 3 selected AtomicClaims, evidence-backed contestation, source scarcity, provider degradation, citation/direction risk, or Captain/deputy-approved deep-review mode;
 - deputy signoff records exact comparators used, exact vs variant status, local vs deployed status, and any accepted residual risk.
 
 ---

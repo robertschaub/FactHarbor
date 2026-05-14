@@ -74,6 +74,18 @@ The orchestrator controls sequence and typed handoff only. It does not own promp
 
 No live jobs have been used for the implemented V2 slices. The approved live-job budget remains reserved for later validation gates.
 
+== Quality-Constrained Cost And Latency Targets ==
+
+Cost and latency are V2 design constraints, not permission to weaken analysis quality. Faster or cheaper output is acceptable only when Gate 1, Gate 4, evidence transparency, warning honesty, report clarity, multilingual/input-neutral behavior, and approved comparator expectations remain preserved or improved.
+
+|= Class |= Active runtime target |= Cost target |= Review threshold
+| Simple | 2-5 min | $0.10-$0.75 | unchanged unless quality regresses
+| Normal | 6-10 min | $0.50-$1.25 | above 12 min or above $1.75
+| Complex | 10-18 min | $1.25-$3.25 | above 22 min or above $4.00
+| Deep-review exception | explicit per-run budget | explicit per-run budget | Captain/deputy approval required
+
+Budget exits must be visible through sufficiency, scarcity, warning, or damaged-report behavior. They must not produce fake confidence or hidden quality loss.
+
 == V1 Protection Rules ==
 
 * V1 ClaimAssessmentBoundary remains the default runtime until cutover approval.

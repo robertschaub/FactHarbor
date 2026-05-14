@@ -59,6 +59,8 @@ The new pipeline should be materially easier to understand, maintain, test, and 
 
 This is not a request for maximum simplification. The new design must remain strong enough for FactHarbor's quality bar: generic topic handling, multilingual robustness, input neutrality, evidence transparency, mandatory quality gates, and LLM-powered semantic judgment. The goal is a well-balanced architecture: clearly less complicated than today, but not naive or under-specified.
 
+Cost and latency targets are quality-constrained. Normal V2 analyses should target 6-10 minutes active runtime and $0.50-$1.25 cost; complex analyses should target 10-18 minutes and $1.25-$3.25. These targets must never justify weaker evidence, hidden budget exits, downgraded warning honesty, deterministic semantic shortcuts, or V1 prompt/code reuse. Any over-budget run requires an explicit quality-protection reason and deputy/Captain review at the documented threshold.
+
 The UI should remain unchanged unless the specification identifies a concrete product, trust, or compatibility reason for changing it.
 
 The work must start from a clean specification, reverse-engineered from the current pipeline and then deliberately cleaned, re-architected, and redesigned. Only after that specification is reviewed and approved should implementation begin.
@@ -245,6 +247,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - Test coverage map and gaps.
 - Hot-path mechanism registry naming each protective mechanism, current purpose, downstream dependency, replacement candidate placeholder, verifier, and removal condition placeholder.
 - Current cost/latency profile by task class where available.
+- Target cost/latency envelope and quality floor: simple, normal, complex, and deep-review exception classes; per-stage call/token/time budgets; instrumentation fields; review thresholds.
 - Known drift between code and docs.
 
 **Exit criteria**
@@ -334,6 +337,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 - V2 replaces V1 without UI regression unless an approved UI change exists.
 - Public report JSON and persisted historical reports remain compatible unless Captain approved a versioned migration.
 - Gate 1, Gate 4, evidence transparency, warning materiality, and report integrity are preserved.
+- Cost/latency targets are met or over-budget cases are accepted only with a documented quality-protection reason; cheaper/faster runs do not count as improvements if comparator quality, evidence coverage, warning honesty, multilingual/input-neutral behavior, or report clarity regresses.
 - V1 analysis prompt files, prompt profiles, prompt sections, and active UCM prompt entries are removed from runtime selection once V2 owns and verifies the corresponding prompt-backed task.
 - Safe tests and build pass.
 - Approved quality, multilingual, input-neutrality, semantic drift, cost, and latency checks pass or have Captain-approved residual risk.

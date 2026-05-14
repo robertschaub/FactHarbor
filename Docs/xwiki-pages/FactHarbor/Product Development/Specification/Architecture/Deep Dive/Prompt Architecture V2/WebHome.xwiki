@@ -52,6 +52,10 @@ One model task registry owns:
 
 Provider fallback is structural resilience. It must not silently change prompt/task semantics.
 
+The registry is also the cost/latency governor for prompt-backed V2 execution. Each task must declare max calls, token budget, timeout, retry/fallback policy, cache policy, and escalation policy. Lower-cost models may be used where fit, but not when they reduce Gate 1 fidelity, Gate 4 integrity, evidence transparency, warning honesty, multilingual robustness, or comparator quality.
+
+Normal analysis targets 6-10 minutes active runtime and $0.50-$1.25 cost. Complex analysis targets 10-18 minutes and $1.25-$3.25. Stronger models, extra retrieval, fuller debate, or repair loops require a recorded quality-protection reason.
+
 == Config Snapshot ==
 
 Analysis-affecting tunables belong in UCM/JSON defaults unless explicitly classified as structural constants. TypeScript schemas and JSON defaults must stay synchronized. Dead or weakly wired knobs should fail a config contract test.

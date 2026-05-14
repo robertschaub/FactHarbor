@@ -31,6 +31,8 @@ This page is documentation for the target rebuild. It is not a claim that V2 alr
 
 The gateway owns prompt section rendering, required variable validation, model task routing, provider retry/fallback, and structured output parsing. Stages request semantic tasks; they do not implement independent provider retry, credential fallback, parse recovery, or model routing.
 
+The gateway is also the V2 cost/latency governor. Every prompt-backed task declares max calls, token budget, timeout, retry/fallback policy, cache policy, and escalation policy. Stronger models, extra retrieval, fuller debate, or repair loops run only when a V2-owned quality signal justifies the extra spend.
+
 === Warning and Event Policy ===
 
 All warning visibility uses one materiality policy for UI, API summaries, markdown, HTML export, metrics, and validation:
