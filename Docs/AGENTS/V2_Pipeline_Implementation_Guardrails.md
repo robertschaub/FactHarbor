@@ -8,6 +8,11 @@ Authoritative specification:
 - `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline V2/WebHome.xwiki`
 - `Docs/xwiki-pages/FactHarbor/Product Development/Specification/Architecture/AKEL Pipeline Detail V2/WebHome.xwiki`
 
+Baseline anchors:
+
+- V1-before-V2-specification tag: `v1-before-v2-pipeline-specification` at commit `92b5a5f3`.
+- Use this tag when a future comparison branch or V1/V2 archaeology workspace is needed. Do not create or keep a V1 comparison branch until there is a concrete comparison task.
+
 ## Mandatory Startup
 
 Before non-trivial V2 implementation work:

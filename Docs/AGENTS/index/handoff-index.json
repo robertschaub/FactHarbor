@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T09:44:50.656Z",
-  "count": 431,
+  "generatedAt": "2026-05-14T10:05:00.032Z",
+  "count": 432,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8927,6 +8927,25 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V1_Baseline_Tag.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v1",
+        "baseline",
+        "tag"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md",
+        "Docs/AGENTS/Agent_Outputs.md",
+        "Docs/AGENTS/index/handoff-index.json"
+      ],
+      "summary": "Current work continues from workspace `C:\\DEV\\FactHarbor` on Git branch `main`. For V1 archaeology or comparison, start from tag `v1-before-v2-pipeline-specification`."
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Final_Implementation_Readiness_Review.md",

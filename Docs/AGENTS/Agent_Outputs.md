@@ -2837,3 +2837,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Workspace Naming Cleanup -- [Standard] [open-items: no]
 **For next agent:** Cleaned active planning and handoff documents so they state the current V2 workspace and Git branch separately. Workspace: `C:\DEV\FactHarbor`. Git branch: `main`. Rebuilt the generated handoff index. No source, prompt, config, runtime, API, UI, or live-job behavior changed.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Workspace_Naming_Cleanup.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V1 Baseline Tag -- [Standard] [open-items: no]
+**For next agent:** Created annotated tag `v1-before-v2-pipeline-specification` at `92b5a5f3` as the exact main commit before V2 pipeline specification/rebuild work started. No comparison branch was created; create one from the tag only when there is a concrete V1/V2 comparison task. Current work remains in `C:\DEV\FactHarbor` on Git branch `main`.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V1_Baseline_Tag.md

@@ -6,6 +6,7 @@
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
 **Base commit:** `92b5a5f3`
+**V1 baseline tag:** `v1-before-v2-pipeline-specification`
 
 ---
 
