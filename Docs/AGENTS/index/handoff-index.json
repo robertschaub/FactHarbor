@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T16:36:15.875Z",
-  "count": 456,
+  "generatedAt": "2026-05-14T19:05:26.230Z",
+  "count": 457,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9580,6 +9580,33 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4_Cache_Policy_Metadata_Split.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c4",
+        "cache",
+        "policy",
+        "metadata",
+        "split"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-governance.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "The next clear low-risk work is additional guard/test hardening that does not narrow the no-product-reach boundary. Any source wiring attempt needs another deputy review package and explicit Captain confirmation first. Captain clarified that risky but meaningful changes should be escalated, not post"
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md",

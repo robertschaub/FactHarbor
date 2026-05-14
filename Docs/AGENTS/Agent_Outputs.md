@@ -2965,3 +2965,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md
 
 Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOCK`). The safe intersection is guard/test hardening only while preserving current no-product-reach topology. A future source package must resolve approval authority, provider callback ownership, API acceptance, partial-result behavior, and product-path transitive reach into gateway policy/cache-governance metadata before any product path calls runtime dispatch.
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-4 Cache Policy Metadata Split -- [Standard] [open-items: yes]
+**For next agent:** Implemented a guard-hardening slice only, not product wiring. Added `gateway/cache-policy-registry.ts` for cache policy metadata, changed `gateway/policy.ts` to import metadata from it, kept `cache-governance.ts` as the behavior owner with compatibility re-exports, and tightened `boundary-guard.test.ts` so product paths cannot transitively reach `cache-governance.ts`. Product wiring, provider callback factories, API/UI/report/export changes, ACS/direct URL, cache IO, approval flips, live jobs, and V1 cleanup require separate approval. Captain clarified risky but meaningful progress should be escalated for confirmation, not postponed indefinitely.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4_Cache_Policy_Metadata_Split.md

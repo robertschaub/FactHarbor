@@ -6,7 +6,7 @@ import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
-} from "@/lib/analyzer-v2/gateway/cache-governance";
+} from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import type {
   AnalyzerV2GatewayTask,

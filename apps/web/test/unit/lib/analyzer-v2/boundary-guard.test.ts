@@ -22,6 +22,7 @@ const claimUnderstandingDispatchReadinessContractPath = path.resolve(
   "claim-understanding/dispatch-readiness-contract.ts",
 );
 const claimUnderstandingRuntimeDispatchPath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-dispatch.ts");
+const analyzerV2CachePolicyRegistryPath = path.resolve(v2AnalyzerRoot, "gateway/cache-policy-registry.ts");
 const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cache-governance.ts");
 const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
@@ -820,6 +821,7 @@ describe("analyzer-v2 boundary guard", () => {
     const forbiddenTransitiveTargets = new Set([
       claimUnderstandingModelAdapterPath,
       claimUnderstandingPromptLoaderPath,
+      analyzerV2CacheGovernancePath,
       claimUnderstandingDispatchReadinessContractPath,
       claimUnderstandingRuntimeDispatchPath,
     ].map(toPosix));
@@ -1068,6 +1070,43 @@ describe("analyzer-v2 boundary guard", () => {
       }
       if (isTestOrMockImport(specifier)) {
         violations.push(`cache governance imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps analyzer-v2 cache policy metadata free of IO and dispatch dependencies", () => {
+    const sourceFile = parseSource(analyzerV2CachePolicyRegistryPath);
+    const violations: string[] = [];
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isV1AnalyzerImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`cache policy registry imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`cache policy registry imports provider SDK ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports prompt loader ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports runtime dispatch ${specifier}`);
+      }
+      if (isClaimUnderstandingDispatchReadinessContractImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports dispatch readiness ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(analyzerV2CachePolicyRegistryPath, specifier)) {
+        violations.push(`cache policy registry imports cache governance ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`cache policy registry imports test/mock/fixture module ${specifier}`);
       }
     }
 

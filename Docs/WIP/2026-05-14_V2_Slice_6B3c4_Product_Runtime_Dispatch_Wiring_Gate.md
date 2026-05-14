@@ -154,6 +154,7 @@ Consolidated decision:
 - Do not wire product paths to `executeClaimUnderstandingRuntimeDispatch(...)`.
 - Do not narrow the product reachability guards yet.
 - The only low-risk implementation work before a new source package is guard/test hardening that preserves the current blocked topology.
+- Captain clarification: risky but meaningful progress should not be postponed indefinitely. If product wiring is the meaningful next step, prepare the exact source package and request explicit Captain confirmation before making the risky source changes.
 
 Additional blockers surfaced by review:
 
@@ -161,7 +162,40 @@ Additional blockers surfaced by review:
 - Provider callback factory ownership is still undefined; Analyzer V2 must still import no provider SDK.
 - API acceptance mode for `claimboundary-v2` is still not approved beyond the existing hidden/env-gated shell.
 - Partial Claim Understanding cannot be exposed as a product result.
-- The current product runtime path reaches gateway policy, and gateway policy imports cache-governance metadata. Any future "no transitive cache-governance reachability" requirement must either split policy metadata from cache-governance or receive an explicit reviewed exception. Do not add a failing guard without resolving this architecture point.
 - Live jobs remain blocked.
 
 Next approved action: write or review a separate source package, or add guard/test hardening only if it preserves the current no-product-reach state.
+
+## 9. Guard-Hardening Outcome
+
+The first low-risk follow-up was implemented as a guard-hardening slice, not product wiring.
+
+Outcome:
+
+- cache policy metadata moved to `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts`;
+- `gateway/policy.ts` imports only metadata from that registry, not cache-governance behavior;
+- `gateway/cache-governance.ts` still owns validation, key building, and cache-decision behavior, and re-exports the existing policy constants for compatibility;
+- boundary guards now include `gateway/cache-governance.ts` in the forbidden product-path transitive target set;
+- a new guard proves `cache-policy-registry.ts` imports no IO/storage, provider SDK, dispatch, prompt-loader, model-adapter, cache-governance, V1 analyzer, test, mock, or fixture modules.
+
+Verification completed:
+
+- focused gateway and boundary tests: 43 tests passed;
+- full Analyzer V2 unit slice: 18 files, 138 tests passed;
+- V2 runner routing: 4 tests passed;
+- `npm -w apps/web run build` passed with `Configs: 0 changed, 4 unchanged | Prompts: 0 changed, 3 unchanged`;
+- clean-room scan for V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports, and production `executionApproved: true` returned no matches;
+- `git diff --check` passed.
+
+Still blocked:
+
+- product runtime wiring;
+- API/UI/report/export/public diagnostics;
+- provider callback factory ownership;
+- ACS/direct URL execution;
+- cache read/write and cache IO;
+- approval/status flips;
+- live jobs;
+- V1 cleanup.
+
+"Blocked" means "requires explicit approval before source changes", not "abandoned".
