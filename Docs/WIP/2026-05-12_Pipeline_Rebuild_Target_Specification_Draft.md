@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6A; Slice 6A.5 required next
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6A.5; Slice 6B blocked pending approval
 **Owner role:** Lead Architect  
 
 ---
@@ -35,8 +35,8 @@ Implementation has started in the new worktree after deputy approval of this tar
 | Slice 4: damaged V2 envelope | done | `a654f125` | V2 shell returns schema-valid damaged/non-analytical result |
 | Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
 | Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
-| Slice 6A.5: pre-6B contract/wiring hardening | required next | not started | Final readiness review required full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment before prompt/model execution |
-| Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires completed Slice 6A.5 plus explicit Captain prompt-change approval and LLM Expert review |
+| Slice 6A.5: pre-6B contract/wiring hardening | done | `724dd9aa` | Full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment tests completed without prompt/model execution |
+| Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -68,9 +68,9 @@ flowchart LR
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S0,S1,S2,S3,S4,S5,S6A done
+  class S0,S1,S2,S3,S4,S5,S6A,S6A5 done
   class S6B blocked
-  class S6A5,S7,S8,S9,S10,S11,S12,S13,S14 future
+  class S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
 
 Current architectural boundary:
@@ -122,11 +122,11 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-The next implementation step is Slice 6A.5, a narrow non-prompt hardening slice. Slice 6B can start only after Slice 6A.5 completes and the Captain approves prompt-change work with LLM Expert review. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+Slice 6A.5 is complete. The next implementation boundary is Slice 6B Claim Understanding prompt/model execution, but it can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
-Final readiness review verdict: **approve with required changes**. Do not redo or quarantine Slices 1-6A; keep the current foundation and insert Slice 6A.5 before prompt/model execution.
+Final readiness review verdict: **approve with required changes**. Do not redo or quarantine Slices 1-6A; keep the current foundation. The required inserted Slice 6A.5 is now complete, and prompt/model execution remains blocked until the Slice 6B approval gate.
 
 Review inputs:
 
@@ -136,12 +136,20 @@ Review inputs:
 - Deputy implementation reviewer: KEEP Slices 1-6A; require ACS ingress, cache-policy, and schema-alignment prep before Slice 6B.
 - Local verification: `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 10 files / 48 tests; no live jobs were run.
 
-Slice 6A.5 required scope:
+Slice 6A.5 scope completed by `724dd9aa`:
 
 1. Carry the full ACS prepared snapshot through V2 ingress when available, not only `resolvedInputText`, so the existing migration can consume selected claim statements and integrity fields.
 2. Add fail-closed isolation so shell-only placeholder claim ids such as `AC_V2_SHELL_01` cannot enter real prompt-backed Claim Understanding.
 3. Align claim-understanding cache policy for ACS-backed and direct-input runs, including key requirements and tests for both paths.
 4. Define and test the 6B schema relationship: either the prompt task output schema is the `ClaimContract` schema, or `v2.claim_understanding_gate1.0` is an explicit intermediate prompt-output schema that maps into `v2.claim_contract.0`. No prompt text or model execution starts until this is documented and verified.
+
+Implementation verification after Slice 6A.5:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 12 files / 53 tests.
+- `npm -w apps/web run test -- test/unit/lib/internal-runner-v2-routing.test.ts` passed 1 file / 4 tests.
+- `npm -w apps/web run build` passed, including postbuild prompt/config reseed check with 0 changes.
+- Clean-room scan found no V1 analyzer imports, V1 prompt reuse, or prompt/model execution in Analyzer V2 code or focused tests.
+- `git diff --check` passed before commit.
 
 This is not public cutover readiness. Public cutover still requires the remaining analytical slices, Analysis Session UX checks, comparator/Q-code quality validation, cost/latency measurement, report-generation regression controls, rollback readiness, and audited V1 cleanup/naming-normalization gates.
 
@@ -1572,13 +1580,11 @@ Expected reviewer output:
 
 ## 23. Verification State
 
-This is a draft specification only.
+This document is now the operative V2 target specification with implementation progress addenda.
 
-- No analyzer source files changed.
-- No prompt files changed.
-- No config files changed.
-- No UI files changed.
-- No tests were run for this document.
+- Analyzer source changes for Slice 6A.5 were committed separately at `724dd9aa`.
+- This documentation status update changes no source, prompt, config, API, UI, runtime, or live-job behavior.
+- Slice 6A.5 implementation verification passed: focused Analyzer V2 tests, internal-runner V2 routing tests, web build, clean-room scan, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 
 Run `npm run index` and `git diff --check` after this file and tracking docs are updated.

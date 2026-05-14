@@ -2802,3 +2802,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6A.5 Pre-6B Contract Hardening -- [Standard] [open-items: yes]
 **For next agent:** Implemented only non-prompt Slice 6A.5. V2 runner ingress carries the full ACS snapshot seed; run context no longer injects shell-only placeholder IDs; the damaged shell envelope may still display `AC_V2_SHELL_01`; ACS migration fails closed on shell-placeholder IDs; cache governance supports ACS-backed and direct-input key paths; gateway Claim Understanding output schema now points directly to `v2.claim_contract.0`. Slice 6B remains blocked pending Captain approval and LLM Expert review.
 -> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6A5_Pre_6B_Contract_Hardening.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6A.5 Status Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Plan/spec/guardrail docs now mark Slice 6A.5 complete at `724dd9aa`; Slice 6B remains blocked until Captain prompt-change approval plus LLM Expert review. Prepare the Slice 6B review package before any prompt/profile/model execution change.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6A5_Status_Consolidation.md
