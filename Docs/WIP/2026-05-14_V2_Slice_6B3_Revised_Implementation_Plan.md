@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 acceptance addendum added after deputy debate
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -233,6 +233,31 @@ Minimum verifier:
 - `npm -w apps/web run build`;
 - `git diff --check`.
 
+#### 7.1.1 6B.3c-0 Acceptance Addendum
+
+Follow-up deputy debate verdict: `MODIFY`. The narrowed Section 7.1 direction is acceptable only after this addendum constrains the exact source and verifier envelope. Source edits may start under the rules below; any pressure to exceed them reopens review.
+
+Exact source envelope:
+
+- `apps/web/src/lib/analyzer-v2/runner-ingress.ts`: detect shell-only placeholder selected IDs from the raw runner input before any normalization can drop or hide them; stop mapping `preparedStage1.preparationProvenance.resolvedInputSha256` to `acsSnapshotHash` unless a reviewed V2 canonical ACS hash is provided by the caller.
+- `apps/web/src/lib/analyzer-v2/run-context.ts`: keep run context structural and stop treating shell-placeholder removal as the protection mechanism for Claim Understanding; the guard belongs at ingress/stage boundaries, not silent normalization.
+- `apps/web/src/lib/analyzer-v2/claim-understanding/`: add a V2-owned structural stage/runtime-state boundary for no-dispatch Claim Understanding orchestration. The stage may call `migrateAcsPreparedSnapshotToClaimContract(...)` for ACS-backed runs and may perform the gateway blocked check for direct input, but it must not import the model adapter, prompt loader, provider SDK, cache store, or V1 analyzer code.
+- `apps/web/src/lib/analyzer-v2/orchestrator.ts`: call the structural Claim Understanding stage and keep the returned state internal to the orchestrator. It must not place Claim Understanding result, telemetry, prompt text, cache key material, or provider/model fields into public `resultJson`.
+- `apps/web/src/lib/analyzer-v2/result-envelope.ts`: remain the public damaged pre-cutover envelope. It may use existing run-context fields, but it must not expose internal Claim Understanding state in 6B.3c-0.
+
+Required tests before code is accepted:
+
+- `runner-ingress.test.ts`: raw shell-placeholder selected IDs fail before they can be normalized away; ACS snapshot hash is not derived from `resolvedInputSha256`.
+- `run-context.test.ts`: run context no longer acts as the only shell-placeholder protection.
+- new/focused Claim Understanding orchestration test: valid ACS migration reaches accepted internal state without prompt loading, adapter call, model call, cache decision construction, provider callback, or provider SDK.
+- direct-input orchestration test: shipped `claim_understanding_gate1` remains blocked, returns internal blocked/damaged state, and performs no prompt/cache/provider/adapter work.
+- invalid/stale/mismatched ACS tests: fail closed with no cache eligibility.
+- recursive public-result compatibility guard: result JSON must not contain `claimUnderstanding`, adapter telemetry, prompt text, provider telemetry, cache key material, or internal runtime-state fields.
+- import-time side-effect guard: importing V1-default runner/V2 shell paths must not load prompts, create provider callbacks, perform cache IO, or touch provider SDK modules.
+- boundary guard remains active: no V1 analyzer imports and no product-path model-adapter import.
+
+Do not expand this slice to solve URL resolution, provider dispatch, prompt variable construction, cache key materialization, approval source mutation, API/UI/report diagnostics, or live jobs. Those stay in later reviewed slices.
+
 ### 7.2 Later 6B.3c Dispatch Integration Slice
 
 Provider dispatch remains deferred until after 6B.3c-0 passes. A later reviewed slice may wire the existing model adapter only if it defines:
@@ -315,6 +340,15 @@ Until 6B.3c receives separate review and implementation approval:
 | Challenger | MODIFY | Shell-placeholder IDs can be hidden by current normalization; internal state could leak through persisted `resultJson`; provider dispatch ownership and ACS migration edge are under-specified. |
 
 Consolidated decision: 6B.3c code is not approved as originally written. The next low-risk step is the documentation tightening in this Section 7. Implementation may start only as 6B.3c-0 structural no-dispatch orchestration after this tightened plan is accepted by the deputy team.
+
+6B.3c-0 acceptance addendum:
+
+| Reviewer lens | Verdict | Required outcome |
+|---|---|---|
+| LLM/runtime advocate | APPROVE within boundaries | Code may start only inside Section 7.1: internal state, ACS-at-edge migration, direct-input fail-closed gateway check, no prompt/cache/provider/adapter dispatch, no public leakage, and V1 default preserved. |
+| Senior implementation challenger | MODIFY | Before source edits, name the exact file/test envelope and close the currently visible ambiguities: raw shell-placeholder hiding, `resolvedInputSha256` misuse as ACS hash, internal-state leak boundary, side-effect guards, and public-result recursive guards. |
+
+Consolidated decision: Section 7.1.1 is the accepted implementation envelope for 6B.3c-0. Source work may proceed only within those files/tests and must stop for review if it reaches adapter import, prompt rendering, provider callback/SDK, cache IO/eligibility, approval/status mutation, public result/API/UI/report exposure, live jobs, or V1/V2 boundary weakening.
 
 6B.3a verification:
 

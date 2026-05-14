@@ -2893,3 +2893,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c Debate -- [Standard] [open-items: yes]
 **For next agent:** Four expert reviewers returned `MODIFY` for 6B.3c. Do not implement full runtime-dispatch/orchestrator wiring as previously written. Tightened Section 7 into 6B.3c-0 structural no-dispatch orchestration: internal-only runtime state, ACS migration at the V2 edge, direct-input gateway blocking before prompt/cache/provider work, raw shell-placeholder ID failure before normalization can hide it, no model-adapter import from product execution paths, no prompt rendering, no provider callback, no cache IO, no public/API/UI/report field, no approval/status mutation, and no live jobs. Next step is deputy acceptance of 6B.3c-0 before code.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c_Debate.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-0 Acceptance Addendum -- [Standard] [open-items: yes]
+**For next agent:** Follow-up expert debate returned consolidated `MODIFY`: proceed to source only under the new Section 7.1.1 file/test envelope. Implement raw runner shell-placeholder rejection, stop treating `resolvedInputSha256` as ACS snapshot hash, add V2-owned no-dispatch Claim Understanding stage/runtime state, keep orchestrator state internal, and add recursive public-result and import-time side-effect guards. Do not import the model adapter, render prompts, construct provider callbacks, perform cache IO/eligibility, expose API/UI/report diagnostics, flip approvals, run live jobs, or weaken V1/V2 boundaries.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c0_Acceptance_Addendum.md
