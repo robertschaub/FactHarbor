@@ -1,4 +1,7 @@
-import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
+import {
+  runClaimUnderstandingRuntimeStage,
+  type ClaimUnderstandingRuntimeStageOptions,
+} from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import {
   buildClaimBoundaryV2RunContext,
@@ -6,7 +9,9 @@ import {
 } from "@/lib/analyzer-v2/run-context";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
-export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
+export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions & {
+  claimUnderstandingRuntime?: ClaimUnderstandingRuntimeStageOptions;
+};
 
 async function emit(input: ClaimBoundaryV2Ingress, message: string, progress: number): Promise<void> {
   await Promise.resolve(input.emitProgress?.({ message, progress }));
@@ -19,7 +24,11 @@ export async function runClaimBoundaryPipelineV2(
   await emit(input, "Analyzer V2 orchestrator initialized.", 8);
 
   const context = buildClaimBoundaryV2RunContext(input, options);
-  const claimUnderstandingState = runClaimUnderstandingRuntimeStage(input, context);
+  const claimUnderstandingState = await runClaimUnderstandingRuntimeStage(
+    input,
+    context,
+    options.claimUnderstandingRuntime,
+  );
   void claimUnderstandingState;
   const envelope = buildDamagedClaimBoundaryV2Envelope(context);
 

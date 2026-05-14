@@ -2975,3 +2975,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-4A Captain Confirmation Package -- [Standard] [open-items: yes]
 **For next agent:** Prepared docs-only confirmation package `Docs/WIP/2026-05-14_V2_Slice_6B3c4A_Product_Runtime_Wiring_Captain_Confirmation_Package.md`. It asks Captain whether to proceed with risky source wiring despite deputy split review. No source wiring was done. Implement only after explicit Captain confirmation: env-gated, direct-text-only, fail-closed without provider callback, no public result exposure, no provider SDKs, no cache IO, no ACS/direct URL, no live jobs, and no V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4A_Captain_Confirmation_Package.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-4A Runtime Wiring Scaffold -- [Significant] [open-items: yes]
+**For next agent:** 6B.3c-4A is implemented as the Captain-approved internal direct-text scaffold. `runClaimUnderstandingRuntimeStage(...)` is the only product-stage bridge to `executeClaimUnderstandingRuntimeDispatch(...)`; execution requires explicit scaffold options plus an injected provider boundary. `runClaimBoundaryPipelineV2(...)` still returns the damaged pre-cutover envelope and V1 remains default. Do not add public API/UI/report/export exposure, provider SDK/factory ownership, cache read/write, ACS/direct URL execution, live jobs, or V1 cleanup without a new reviewed gate.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4A_Runtime_Wiring_Scaffold.md

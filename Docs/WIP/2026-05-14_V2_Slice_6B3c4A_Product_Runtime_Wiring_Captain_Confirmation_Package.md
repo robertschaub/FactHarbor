@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4A Product Runtime Wiring Captain Confirmation Package
 
 **Date:** 2026-05-14
-**Status:** Requires explicit Captain confirmation before source changes
+**Status:** Captain approved; implemented as an internal direct-text runtime scaffold
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `48472b69` (`refactor: split v2 cache policy metadata`)
 
@@ -110,3 +110,24 @@ Recommended confirmation wording:
 > Captain confirms that 6B.3c-4A may proceed despite deputy split review, under the exact source envelope and behavioral contract in this package. The implementation must remain env-gated, direct-text-only, fail-closed without provider callback, public-result-safe, no cache IO, no provider SDK, no ACS/direct URL execution, no live jobs, and no V1 cleanup.
 
 If not confirmed, continue only with guard/test hardening and source-package refinement.
+
+## 8. Implementation Record
+
+Captain approved the recommended wording on 2026-05-14. The implemented 6B.3c-4A source slice stays inside the reviewed scaffold envelope:
+
+- `runtime-stage.ts` is the only product stage that imports the dispatch owner path.
+- `orchestrator.ts` awaits the runtime stage and keeps Claim Understanding state internal.
+- `pipeline-shell.ts` accepts internal scaffold options for tests and controlled callers, while normal shell calls remain unchanged.
+- Direct text can run only when the scaffold option is explicitly enabled and an injected provider boundary is present.
+- Missing provider boundary, direct URL, and ACS/prepared input fail or defer before prompt/cache/adapter/provider work.
+- Public `resultJson`, report markdown, API/UI/report/export schemas, and V1 default routing remain unchanged.
+- No provider SDK, cache storage IO, prompt/config source change, live job, direct URL execution, ACS execution, or V1 cleanup was introduced.
+
+Verification completed for this package:
+
+- focused runtime-stage, pipeline-shell, and boundary guard tests;
+- full Analyzer V2 unit slice;
+- V2 runner routing test;
+- `npm -w apps/web run build`;
+- clean-room scans for V1 analyzer imports, V1 prompt reuse in touched runtime paths, provider SDK imports, cache storage IO, public runtime leakage, and production `executionApproved: true`;
+- `git diff --check`.

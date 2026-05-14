@@ -10,6 +10,9 @@ const componentsRoot = path.resolve(srcRoot, "components");
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2IndexPath = path.resolve(v2AnalyzerRoot, "index.ts");
+const analyzerV2OrchestratorPath = path.resolve(v2AnalyzerRoot, "orchestrator.ts");
+const analyzerV2PipelineShellPath = path.resolve(v2AnalyzerRoot, "pipeline-shell.ts");
+const analyzerV2RunnerIngressPath = path.resolve(v2AnalyzerRoot, "runner-ingress.ts");
 const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
 const analyzerV2CompatibilityViewPath = path.resolve(v2AnalyzerRoot, "compatibility-view.ts");
 const analyzerV2ResultEnvelopePath = path.resolve(v2AnalyzerRoot, "result-envelope.ts");
@@ -67,17 +70,23 @@ const runnerBoundaryFieldNames = [
   "onEvent",
 ];
 const adapterForbiddenProductPaths = [
-  "index.ts",
-  "orchestrator.ts",
-  "pipeline-shell.ts",
-  "runner-ingress.ts",
-].map((fileName) => path.resolve(v2AnalyzerRoot, fileName));
-const dispatchForbiddenProductPaths = [
-  ...adapterForbiddenProductPaths,
+  analyzerV2IndexPath,
+  analyzerV2OrchestratorPath,
+  analyzerV2PipelineShellPath,
+  analyzerV2RunnerIngressPath,
+];
+const dispatchForbiddenDirectProductPaths = adapterForbiddenProductPaths;
+const dispatchForbiddenTransitiveProductPaths = [
+  analyzerV2RunnerIngressPath,
+];
+const dispatchScaffoldTransitiveProductPaths = [
+  analyzerV2IndexPath,
+  analyzerV2OrchestratorPath,
+  analyzerV2PipelineShellPath,
   claimUnderstandingRuntimeStagePath,
 ];
 const noDispatchRuntimePaths = [
-  ...dispatchForbiddenProductPaths,
+  ...adapterForbiddenProductPaths,
   claimUnderstandingDispatchFramePath,
   claimUnderstandingDispatchReadinessContractPath,
 ];
@@ -170,6 +179,59 @@ const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ],
 ]);
 const runtimeDispatchExecutableCloneHelperName = "buildClaimUnderstandingRuntimeDispatchExecutableGatewayTask";
+const runtimeStageApprovedImports = new Map<string, Set<string>>([
+  ["node:crypto", new Set(["createHash"])],
+  [
+    "@/lib/analyzer-v2/claim-understanding/dispatch-frame",
+    new Set(["ClaimUnderstandingDispatchFrame", "buildClaimUnderstandingDispatchFrame"]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract",
+    new Set([
+      "ClaimUnderstandingDispatchReadinessApprovalSnapshot",
+      "ClaimUnderstandingDispatchReadinessProvenancePacket",
+      "ClaimUnderstandingDispatchReadinessResult",
+      "validateClaimUnderstandingDispatchReadinessContract",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/prepared-snapshot",
+    new Set(["migrateAcsPreparedSnapshotToClaimContract"]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/runtime-dispatch",
+    new Set([
+      "ClaimUnderstandingRuntimeDispatchRequest",
+      "ClaimUnderstandingRuntimeDispatchResult",
+      "executeClaimUnderstandingRuntimeDispatch",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/types",
+    new Set([
+      "CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION",
+      "ClaimIntegrityEvent",
+      "ClaimUnderstandingBlockedReason",
+      "ClaimUnderstandingResult",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2/pipeline-input",
+    new Set(["ClaimBoundaryV2Ingress"]),
+  ],
+  [
+    "@/lib/analyzer-v2/run-context",
+    new Set(["ClaimBoundaryV2RunContext"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/policy",
+    new Set(["canExecuteAnalyzerV2GatewayTask", "getAnalyzerV2GatewayTask"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set(["AnalyzerV2GatewayTaskStatus"]),
+  ],
+]);
 
 function toPosix(value: string): string {
   return value.replace(/\\/g, "/");
@@ -772,7 +834,7 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps 6B.3c-0 no-dispatch runtime paths free of dispatch-capable imports", () => {
+  it("keeps non-scaffold runtime paths free of dispatch-capable imports", () => {
     const violations: string[] = [];
 
     for (const sourcePath of noDispatchRuntimePaths) {
@@ -799,10 +861,10 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps product execution paths from reaching dispatch-readiness or runtime-dispatch internals", () => {
+  it("keeps product execution paths from directly reaching dispatch-readiness or runtime-dispatch internals except runtime-stage", () => {
     const violations: string[] = [];
 
-    for (const sourcePath of dispatchForbiddenProductPaths) {
+    for (const sourcePath of dispatchForbiddenDirectProductPaths) {
       const sourceFile = parseSource(sourcePath);
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isClaimUnderstandingDispatchReadinessContractImport(sourcePath, specifier)) {
@@ -817,7 +879,7 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps product execution paths without transitive reachability to dispatch-capable internals", () => {
+  it("keeps non-scaffold product execution paths without transitive reachability to dispatch-capable internals", () => {
     const forbiddenTransitiveTargets = new Set([
       claimUnderstandingModelAdapterPath,
       claimUnderstandingPromptLoaderPath,
@@ -827,12 +889,75 @@ describe("analyzer-v2 boundary guard", () => {
     ].map(toPosix));
     const violations: string[] = [];
 
-    for (const sourcePath of dispatchForbiddenProductPaths) {
+    for (const sourcePath of dispatchForbiddenTransitiveProductPaths) {
       const transitiveImports = collectTransitiveAnalyzerV2Imports(sourcePath);
       for (const importedPath of transitiveImports) {
         if (forbiddenTransitiveTargets.has(toPosix(importedPath))) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches ${toPosix(path.relative(webRoot, importedPath))}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("limits scaffold transitive dispatch reachability to the approved runtime-stage chain", () => {
+    const expectedScaffoldTargets = [
+      claimUnderstandingDispatchFramePath,
+      claimUnderstandingDispatchReadinessContractPath,
+      claimUnderstandingRuntimeDispatchPath,
+      claimUnderstandingPromptLoaderPath,
+      claimUnderstandingModelAdapterPath,
+      analyzerV2CacheGovernancePath,
+    ].map(toPosix).sort();
+    const scaffoldTargets = new Set(expectedScaffoldTargets);
+
+    for (const sourcePath of dispatchScaffoldTransitiveProductPaths) {
+      const transitiveImports = collectTransitiveAnalyzerV2Imports(sourcePath);
+      const reachedScaffoldTargets = Array.from(new Set(transitiveImports
+        .map(toPosix)
+        .filter((importedPath) => scaffoldTargets.has(importedPath)))).sort();
+
+      expect(reachedScaffoldTargets).toEqual(expectedScaffoldTargets);
+    }
+  });
+
+  it("keeps the 6B.3c-4A runtime-stage scaffold imports limited to approved symbols", () => {
+    const sourceFile = parseSource(claimUnderstandingRuntimeStagePath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = runtimeStageApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`runtime stage imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`runtime stage imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(claimUnderstandingRuntimeStagePath, specifier)) {
+        violations.push(`runtime stage imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(claimUnderstandingRuntimeStagePath, specifier)) {
+        violations.push(`runtime stage imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(claimUnderstandingRuntimeStagePath, specifier)) {
+        violations.push(`runtime stage imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(claimUnderstandingRuntimeStagePath, specifier)) {
+        violations.push(`runtime stage imports cache governance ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`runtime stage imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`runtime stage imports test/mock/fixture module ${specifier}`);
       }
     }
 
