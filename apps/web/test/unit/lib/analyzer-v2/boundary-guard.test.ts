@@ -150,6 +150,10 @@ const forbiddenProviderSdkSpecifiers = [
   "@google/generative-ai",
   "@mistralai/",
 ];
+const approvedProviderFactorySdkSpecifiers = new Set([
+  "ai",
+  "@ai-sdk/anthropic",
+]);
 const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ["node:crypto", new Set(["createHash"])],
   [
@@ -745,6 +749,11 @@ function isProviderSdkImport(specifier: string): boolean {
   );
 }
 
+function isApprovedProviderFactorySdkImport(filePath: string, specifier: string): boolean {
+  return toPosix(path.resolve(filePath)) === toPosix(analyzerV2RuntimeProviderFactoryPath)
+    && approvedProviderFactorySdkSpecifiers.has(specifier);
+}
+
 function isTestOrMockImport(specifier: string): boolean {
   const normalized = toPosix(specifier).toLowerCase();
   return normalized.includes("/test/")
@@ -895,7 +904,7 @@ describe("analyzer-v2 boundary guard", () => {
         if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports cache governance ${specifier}`);
         }
-        if (isProviderSdkImport(specifier)) {
+        if (isProviderSdkImport(specifier) && !isApprovedProviderFactorySdkImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
         if (isTestOrMockImport(specifier)) {
@@ -1145,7 +1154,7 @@ describe("analyzer-v2 boundary guard", () => {
         if (isV1AnalyzerImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
         }
-        if (isProviderSdkImport(specifier)) {
+        if (isProviderSdkImport(specifier) && !isApprovedProviderFactorySdkImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
         if (isCacheIoImport(specifier)) {
@@ -1173,8 +1182,32 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
-  it("keeps the 4C2b provider factory source absent until the source gate is approved", () => {
-    expect(existsSync(analyzerV2RuntimeProviderFactoryPath)).toBe(false);
+  it("keeps the 4C2b provider factory as the only runtime provider SDK import location", () => {
+    const violations: string[] = [];
+    const providerSdkImports: Array<{ filePath: string; specifier: string }> = [];
+
+    expect(existsSync(analyzerV2RuntimeProviderFactoryPath)).toBe(true);
+
+    for (const sourcePath of analyzerV2RuntimeSourceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (!isProviderSdkImport(specifier)) {
+          continue;
+        }
+        providerSdkImports.push({ filePath: sourcePath, specifier });
+        if (!isApprovedProviderFactorySdkImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports unapproved provider SDK ${specifier}`);
+        }
+      }
+    }
+
+    const factorySdkImports = providerSdkImports
+      .filter((entry) => toPosix(path.resolve(entry.filePath)) === toPosix(analyzerV2RuntimeProviderFactoryPath))
+      .map((entry) => entry.specifier)
+      .sort();
+
+    expect(violations).toEqual([]);
+    expect(factorySdkImports).toEqual(["@ai-sdk/anthropic", "ai"]);
   });
 
   it("keeps provider ownership contracts out of production callers until the next wiring gate", () => {
