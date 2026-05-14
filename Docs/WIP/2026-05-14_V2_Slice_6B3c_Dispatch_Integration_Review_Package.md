@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c Dispatch Integration Review Package
 
 **Date:** 2026-05-14
-**Status:** Draft for deputy review; dispatch-capable source code remains blocked
+**Status:** Deputy review returned `MODIFY`; next approved implementation is 6B.3c-1 dispatch-frame boundary contract only
 **Owner role:** Lead Architect / Captain deputy
 **Current stable implementation:** 6B.3c-0 complete at `3223d99f`
 
@@ -14,130 +14,170 @@ Follow-up expert debate after 6B.3c-0 returned `MODIFY`.
 Consensus:
 
 - Do not start dispatch-capable source code now.
-- The next safe step is this docs-only dispatch-integration contract package.
-- This package must be stronger than narrative review: it must define ownership, side-effect ordering, mock exclusion, prompt/config/cache/hash construction, URL handling, and tests before implementation.
-- The next executable slice after review should be contract/test-first unless Captain separately approves product runtime dispatch.
+- The package is directionally sound, but the next implementation must be narrower than generic builders.
+- The approved next slice is **6B.3c-1 Dispatch Frame Boundary Contract** only.
+- Runtime dispatch, adapter product import, prompt rendering, cache decision construction, provider callbacks, approval flips, public diagnostics, and live jobs remain blocked.
 
 Reasoning:
 
 - 6B.3c-0 deliberately records prompt/model/cache/provider side effects as `false` and keeps Claim Understanding state internal.
-- The 6B.3b adapter already requires a rendered prompt, config snapshot hash, cache decision, and provider callback before its internal gateway check. Product integration therefore needs a pre-adapter gateway/order guard, not a direct call from the orchestrator.
-- `claim_understanding_gate1` remains blocked by shipped policy and missing prompt/model/cache approvals.
-- Premature code risks accidental prompt rendering, cache materialization, mock/provider leakage, public diagnostics, URL misanalysis, or approval-state confusion.
+- The 6B.3b adapter already requires a rendered prompt, config snapshot hash, cache decision, and provider callback before its internal gateway check. Product integration therefore needs a pre-adapter contract boundary before any adapter reachability is allowed.
+- Reviewers agreed that "pure builders" is still too broad because hash/cache builders can become dispatch scaffolding.
+- Direct URL input is dangerous until resolved-body ownership exists.
 
-## 2. Non-Goals For This Package
+## 2. Review Outcome
 
-This package does not approve:
-
-- product-path import of the model adapter;
-- prompt loading or rendering;
-- provider callback creation or provider SDK import;
-- cache read/write or cache eligibility;
-- prompt/model/cache approval flips;
-- executable shipped gateway status;
-- API/UI/report diagnostics;
-- file seeding;
-- live jobs or validation batches;
-- V1 analyzer imports or V1 prompt reuse.
-
-## 3. Proposed Review Decision
-
-Default proposal for deputy review:
-
-1. Keep shipped `claim_understanding_gate1` blocked.
-2. Add one contract-first dispatch-construction slice before product dispatch.
-3. That slice may define pure builders and tests for dispatch frames, hashes, no-store decisions, and side-effect ordering.
-4. It still must not call a provider, import provider SDKs, perform cache IO, flip approvals, or expose public diagnostics.
-5. Product runtime dispatch requires a later Captain/deputy decision after the construction slice proves all contracts.
-
-Captain escalation is required if reviewers propose product runtime dispatch, approval flips, cache IO, public diagnostics, live jobs, or any weakening of clean-room boundaries.
-
-## 4. Owner-By-Input Contract
-
-| Adapter or dispatch input | Future owner | Required rule before code |
+| Reviewer lens | Verdict | Required outcome |
 |---|---|---|
-| `analysisInput` | Claim Understanding dispatch-frame builder | Use Captain/user submitted text exactly for text input; do not normalize, translate, lowercase, or rewrite. |
-| `resolvedInputText` | V2 ingress/run-context plus ACS migration | For direct text, equals submitted text. For ACS, comes from prepared snapshot. For URL, dispatch is blocked unless a reviewed resolver supplies body text. |
-| `detectedLanguage` | ACS migration or future LLM/prompt result | Preserve ACS language when present; direct input may use `"und"` until model result exists. No deterministic language-specific semantic routing. |
-| `selectedAtomicClaimIds` | Runner ingress and Claim Understanding stage | Raw shell placeholders fail before normalization; selected IDs must remain visible to Claim Understanding gates. |
-| `acsSnapshotHash` | Future canonical V2 ACS-hash builder | Do not reuse `resolvedInputSha256`. Missing or mismatched hash means no dispatch/cache eligibility. |
-| `inputGroundingSeedHash` | Future input-grounding seed builder | Required before ACS-backed dispatch/cache eligibility. Missing hash fails closed. |
-| `currentDate` / bucket | Run context | Use the generated run date; cache bucket policy must be explicit. |
-| `promptContentHash` | V2 prompt loader | Construct only after gateway execution is approved for this task. |
-| `configSnapshotHash` | Future V2 config snapshot owner | Must include model policy and analysis-affecting UCM defaults. Placeholder values are forbidden. |
-| `cacheDecision` | V2 gateway/cache governance | First dispatch proposal is no-read/no-write until complete dimensions and cache approval are reviewed. |
-| `providerCall` | Future provider-dispatch boundary | Product provider callsite is not approved. Test mocks must stay in test files only. |
+| LLM/runtime expert | APPROVE for gate | Package is fit only as a contract/test gate. Preserve structural retry rules from 6B.3b and multilingual/input-neutral pass-through. |
+| Senior Developer | MODIFY | Narrow 6B.3c-1 to dispatch-frame construction only: no prompt/config/cache hashes, no cache decision, no adapter import, no provider callback, no approval mutation, no public surface. |
+| Code Reviewer / clean-room | MODIFY | Add import-time side-effect, approval-state, mock-exclusion, public-leak, URL identity, and cache guards. Product-path adapter import remains forbidden. |
+| Challenger | MODIFY | Name exact files/exports and keep cache decision/materialization out of the next slice. |
 
-## 5. Required Side-Effect Ordering
+No Captain escalation is needed for the narrowed 6B.3c-1 slice because it remains non-executable, internal, non-public, and test/contract-only.
+
+## 3. Approved 6B.3c-1 Scope
+
+Allowed source envelope:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-frame.ts` or equivalent V2-owned path under `claim-understanding/`;
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-frame.test.ts`;
+- existing Analyzer V2 boundary/static guard tests.
+
+Allowed exports:
+
+- a pure dispatch-frame result type;
+- a pure function that derives or rejects a dispatch frame from `ClaimBoundaryV2Ingress` plus `ClaimBoundaryV2RunContext`;
+- fail-closed structural reason values.
+
+Allowed successful frame fields:
+
+- `analysisInput`;
+- `resolvedInputText`;
+- `detectedLanguage`;
+- `selectedAtomicClaimIds`;
+- `currentDate`;
+- `inputSource`.
+
+Allowed fail-closed reasons:
+
+- direct URL has no reviewed resolved body;
+- ACS snapshot/input-grounding hashes are missing;
+- selected IDs or resolved text are structurally invalid.
+
+Forbidden in 6B.3c-1:
+
+- prompt loader import or prompt rendering;
+- prompt hash, config hash, input identity hash, cache hash, or cache decision construction;
+- cache eligibility, cache read, or cache write;
+- model adapter import or adapter call;
+- provider callback or provider SDK;
+- approval/status mutation or executable shipped registry state;
+- public/API/UI/report exposure;
+- direct URL dispatch without resolved body ownership;
+- live jobs.
+
+## 4. Dispatch-Frame Rules
+
+Direct text:
+
+- succeeds as a frame;
+- preserves submitted text exactly as both `analysisInput` and `resolvedInputText`;
+- preserves `selectedAtomicClaimIds` from the run context;
+- does not normalize, translate, lowercase, or rewrite text;
+- uses the run context `detectedLanguage` as structural metadata only.
+
+Direct URL:
+
+- fails closed before prompt/cache/provider/adapter work;
+- must not treat the URL string as article/body text;
+- must not create an input identity hash or cache decision.
+
+ACS-backed text or URL:
+
+- may produce a frame only when the ACS snapshot provides resolved body text through the run context;
+- requires canonical V2 `acsSnapshotHash` and `inputGroundingSeedHash` on the ingress seed;
+- preserves selected claim IDs and detected language from the migrated state/run context;
+- fails closed when required hashes are missing.
+
+Shell placeholders:
+
+- remain blocked by ingress/stage guards;
+- must not be hidden by dispatch-frame construction.
+
+## 5. Side-Effect Ordering
 
 Future dispatch-capable code must preserve this ordering:
 
 1. Normalize runner input through the one-way V2 ingress boundary.
 2. Reject raw shell-only selected IDs before run-context normalization can hide them.
 3. Build structural run context.
-4. Resolve the gateway task and approval source.
-5. If shipped or runtime policy is not executable, stop before prompt loading, cache decision construction, provider callback creation, model-adapter import/reachability, or provider SDK import.
-6. For ACS-backed runs, prefer accepted ACS migration; do not dispatch unless a later review explicitly approves re-understanding selected ACS claims.
-7. For direct text only, construct prompt variables after executable approval.
-8. Compute prompt/config/input/cache hash material only after executable approval and with non-placeholder values.
-9. Keep first dispatch no-store/no-read unless cache policy approval and complete dimensions are explicitly reviewed.
-10. Create provider callback only after all previous gates pass.
-11. Call the adapter only from the reviewed dispatch boundary.
-12. Keep internal Claim Understanding state out of public `resultJson`, API, UI, report, and export surfaces.
+4. Build or reject the 6B.3c-1 dispatch frame.
+5. Resolve the gateway task and approval source.
+6. If shipped or runtime policy is not executable, stop before prompt loading, cache decision construction, provider callback creation, adapter reachability, or provider SDK import.
+7. Only a later approved dispatch slice may construct prompt variables, hashes, cache decisions, provider callback, or adapter call.
+8. Keep internal Claim Understanding state out of public `resultJson`, API, UI, report, and export surfaces.
 
-## 6. Mock And Provider Boundary
+For 6B.3c-1, execution stops at step 4.
+
+## 6. Mock, Adapter, And Provider Boundary
 
 Mocks are allowed only in tests.
 
-Product code must not import a mock provider, synthetic approved gateway task, or test fixture. If a future slice adds a provider-dispatch boundary, it must define:
+6B.3c-1 product/source code must not import:
 
-- exact file path and owner;
-- supported provider abstraction;
-- provider SDK import location;
-- timeout and cancellation behavior;
-- telemetry owner;
-- failure mapping into `ClaimUnderstandingResult` or damaged internal state;
-- verifier proving V1-default imports do not load provider modules or create callbacks.
+- model adapter;
+- prompt loader;
+- cache-governance runtime builders;
+- provider SDKs;
+- mock providers;
+- synthetic approved gateway tasks;
+- test fixtures;
+- V1 analyzer modules.
 
-## 7. URL Handling
+Product-path adapter import remains forbidden until a later reviewed dispatch boundary replaces the no-import guard.
 
-Dispatch is not approved for unresolved URL input.
+## 7. Cache And Approval Decisions
 
-Allowed before a reviewed URL resolver exists:
+Resolved for 6B.3c-1:
 
-- ACS-backed URL snapshots may be consumed if they carry `resolvedInputText`, selected claims, and canonical V2 hashes.
-- Direct URL input must fail closed before prompt rendering and provider callback creation.
+- shipped `claim_understanding_gate1` remains blocked;
+- blocked paths construct no cache decision;
+- 6B.3c-1 constructs no prompt/config/cache hashes;
+- executable state may exist only in future isolated test fixtures, not product constants;
+- no-store/no-read decision construction is deferred.
 
-Forbidden:
+Deferred to later dispatch review:
 
-- treating the URL string itself as article/body text;
-- caching direct URL input under a body-text identity hash;
-- model dispatch without a reviewed retrieval/resolution boundary.
+- exact approval source for executable Claim Understanding;
+- provider dispatch boundary and provider SDK ownership;
+- prompt/config/cache hash construction;
+- cache no-read/no-write decision construction;
+- whether URL resolution is prerequisite before direct dispatch.
 
-## 8. Minimum Test Matrix Before Dispatch Code
+## 8. Mandatory Tests For 6B.3c-1
 
 | Test area | Required proof |
 |---|---|
-| Gateway ordering | blocked shipped policy performs no prompt load, no cache decision construction, no provider callback, no adapter call |
-| Adapter reachability | product paths cannot reach adapter/provider unless explicit executable test fixture enables the reviewed boundary |
-| Prompt variables | direct text variables are exact and input-neutral; ACS variables come from canonical migrated state |
-| Hash provenance | prompt/config/input/ACS/input-grounding hashes are non-placeholder and source-owned |
-| Cache policy | first dispatch no-read/no-write or explicitly reviewed cache IO with complete dimensions |
-| Mock exclusion | mocks and synthetic approved tasks are test-only and absent from product paths |
-| URL handling | direct URL dispatch fails closed; ACS URL snapshot succeeds only with resolved text and hashes |
-| Public leakage | no `claimUnderstanding`, prompt text, provider telemetry, cache key material, adapter telemetry, or internal state in public result/API/UI/report |
+| Direct text frame | non-English submitted text is preserved exactly in `analysisInput` and `resolvedInputText` |
+| Direct URL frame | direct URL fails closed before prompt/provider/cache/adapter work |
+| ACS frame | ACS-backed frame succeeds only with resolved text plus canonical ACS and input-grounding hashes |
+| Missing hashes | ACS frame fails closed when either canonical hash is missing |
+| No side effects | frame module imports no prompt loader, model adapter, cache-governance builder, provider SDK, mock provider, or V1 analyzer |
+| Public leakage | existing V2 shell result remains free of Claim Understanding frame/state, prompt text, provider telemetry, cache material, and diagnostics |
+| Approval state | shipped gateway registry remains blocked and is not mutated |
+| URL identity | no input/cache identity is produced for unresolved direct URL |
 | Clean-room | no V1 analyzer import, no V1 prompt/profile/section reuse, no shared adapter that weakens V1/V2 boundary |
-| Multilingual/input-neutrality | non-English direct text remains unmodified through dispatch-frame construction |
 
-## 9. Reviewer Questions
+## 9. Later Dispatch Review Questions
 
-1. Is a contract-first dispatch-construction slice sufficient before product runtime dispatch?
-2. Is no-store/no-read the right first dispatch cache posture?
-3. Should product-path adapter import remain forbidden until the provider boundary exists, or can a dedicated dispatch boundary import it under static guards?
-4. Is direct URL input blocked until a resolver exists, or should URL resolution be a prerequisite slice before any direct dispatch?
-5. What exact approval source should make `claim_understanding_gate1` executable without mutating shipped registry constants?
+1. What exact approval source makes `claim_understanding_gate1` executable without mutating shipped registry constants?
+2. Can a dedicated dispatch boundary import the model adapter, and what guard replaces the current no-import guard?
+3. Which file owns provider dispatch and provider SDK imports?
+4. How are prompt/config/cache hashes and no-store/no-read decisions constructed?
+5. Is URL resolution a prerequisite before direct dispatch?
 6. Which tests are mandatory before Captain is asked to approve real dispatch or live jobs?
 
 ## 10. Short Reviewer Prompt
 
-Review `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md` as the dispatch-integration contract gate after 6B.3c-0. Decide whether the next implementation slice should be contract/test-only, whether any source code may import the model adapter, and what must be true before real provider dispatch. Treat prompt rendering, provider callbacks, cache IO, approval flips, public diagnostics, live jobs, V1 imports, and URL-body assumptions as blockers unless explicitly justified and approved.
+Review this package as the narrowed 6B.3c-1 dispatch-frame contract gate after 6B.3c-0. Confirm whether the next implementation may add only a pure dispatch-frame module and tests, with no prompt rendering, adapter import, provider callback, cache decision, approval flip, public diagnostics, live jobs, V1 imports, or URL-body assumptions.

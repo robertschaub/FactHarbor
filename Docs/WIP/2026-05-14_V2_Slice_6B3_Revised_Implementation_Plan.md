@@ -266,7 +266,7 @@ Provider dispatch remains deferred until after 6B.3c-0 passes. A later reviewed 
 
 Current review package: `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md`.
 
-Follow-up debate after 6B.3c-0 returned `MODIFY`: the next safe step is the docs-only dispatch-integration contract package, not source code. The package must define owner-by-input, side-effect ordering, mock exclusion, cache posture, URL handling, public-leak guards, and a test matrix before implementation. Product runtime dispatch remains blocked.
+Follow-up debate after 6B.3c-0 returned `MODIFY`: product runtime dispatch remains blocked. Deputy review of the dispatch package also returned `MODIFY`, with consent for a narrower 6B.3c-1 dispatch-frame boundary contract only. The next approved implementation must stop at frame construction/rejection and must not import the model adapter, prompt loader, cache-governance builders, provider SDKs, mocks, test fixtures, or V1 analyzer code.
 
 - the approval source for execution without mutating shipped registry constants;
 - the exact runtime provider-dispatch boundary;

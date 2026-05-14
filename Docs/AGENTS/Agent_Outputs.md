@@ -2908,3 +2908,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c Dispatch Review Package -- [Standard] [open-items: yes]
 **For next agent:** Expert debate after 6B.3c-0 returned `MODIFY`: do not start dispatch code. New review package `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md` defines the next gate: owner-by-input contract, side-effect ordering before adapter dispatch, mock exclusion, URL blocking until resolved-body ownership exists, no-store/no-read default, public leak guards, and mandatory tests. Review this package before any product-path model-adapter import or runtime provider dispatch.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c_Dispatch_Review_Package.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-1 Dispatch Frame Gate -- [Standard] [open-items: yes]
+**For next agent:** Deputy-team review of the 6B.3c dispatch package returned `MODIFY`; the only approved next source work is a pure internal `claim-understanding/dispatch-frame.ts` contract plus tests/static guards. Product dispatch, prompt rendering, model-adapter imports, cache decisions or hash construction, provider callbacks, approval flips, public diagnostics, live jobs, V1 imports, and direct URL body assumptions remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame_Gate.md
