@@ -37,6 +37,10 @@ const analyzerV2RuntimeProviderConfigContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-runtime-config.contract.ts",
 );
+const analyzerV2RuntimeActivationContractPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-runtime-activation.contract.ts",
+);
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-factory.ts",
@@ -274,6 +278,16 @@ const analyzerV2RuntimeProviderConfigContractApprovedImports = new Map<string, S
       "AnalyzerV2GatewayTaskId",
       "AnalyzerV2ModelTask",
       "AnalyzerV2ModelTier",
+      "AnalyzerV2PolicyApproval",
+    ]),
+  ],
+]);
+const analyzerV2RuntimeActivationContractApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set([
+      "AnalyzerV2GatewayTaskId",
+      "AnalyzerV2ModelTask",
       "AnalyzerV2PolicyApproval",
     ]),
   ],
@@ -754,6 +768,20 @@ function isApprovedProviderFactorySdkImport(filePath: string, specifier: string)
     && approvedProviderFactorySdkSpecifiers.has(specifier);
 }
 
+function isAnalyzerV2RuntimeProviderFactoryImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2-runtime/claim-understanding-provider-factory") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const factoryPath = toPosix(analyzerV2RuntimeProviderFactoryPath).replace(/\.ts$/, "");
+  return resolved === factoryPath || resolved === `${factoryPath}.ts`;
+}
+
 function isTestOrMockImport(specifier: string): boolean {
   const normalized = toPosix(specifier).toLowerCase();
   return normalized.includes("/test/")
@@ -1138,6 +1166,70 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the 6B.3c-4C3a runtime activation contract inert and limited", () => {
+    expect(existsSync(analyzerV2RuntimeActivationContractPath)).toBe(true);
+    const sourceFile = parseSource(analyzerV2RuntimeActivationContractPath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeActivationContractApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`runtime activation contract imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`runtime activation contract imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports gateway policy ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports runtime dispatch ${specifier}`);
+      }
+      if (isAnalyzerV2RuntimeProviderFactoryImport(analyzerV2RuntimeActivationContractPath, specifier)) {
+        violations.push(`runtime activation contract imports provider factory ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`runtime activation contract imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`runtime activation contract imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    const content = readFileSync(analyzerV2RuntimeActivationContractPath, "utf8");
+    for (const forbiddenText of [
+      "buildClaimUnderstandingProviderFactory",
+      "executeClaimUnderstandingRuntimeDispatch",
+      "status: \"executable\"",
+      "execution_approved",
+    ]) {
+      if (content.includes(forbiddenText)) {
+        violations.push(`runtime activation contract references forbidden activation text ${forbiddenText}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -1146,6 +1238,9 @@ describe("analyzer-v2 boundary guard", () => {
     );
     expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
       "src/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.ts",
+    );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.ts",
     );
 
     for (const sourcePath of analyzerV2RuntimeSourceFiles) {

@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; public product runtime exposure remains blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; 6B.3c-4C3a activation-authority contract complete; public product runtime exposure remains blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -439,6 +439,14 @@ Post-4C2b product-activation consolidation:
 - the next low-risk action is the docs-only **6B.3c-4C3 Product Activation Approval Package** at `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md`;
 - deputy review returned `APPROVE for 4C3a only` / `MODIFY` / `MODIFY`, consolidated as approval for 4C3a activation-authority/hidden-artifact contract source only after the package modifications are applied;
 - 4C3a source must not dispatch or import the provider factory. Product dispatch, provider callback construction, prompt rendering, model call, cache IO, public exposure, ACS/direct URL execution, live jobs, approval flips, executable gateway construction, prompt/config changes, and V1 cleanup remain blocked.
+- 4C3a source is complete as an inert contract-only slice under `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.ts` plus focused tests and boundary guards. It records product-owned activation snapshot requirements, run-context freeze authority, approval/config/rollback traceability, hidden-artifact non-public inspectability, fail-closed kill-switch behavior, direct-text-only scope, and unchanged public-surface constraints. It does not wire product dispatch, import or invoke the provider factory, render prompts, call models, use cache IO, flip approvals, construct executable gateway state, expose public output, run live jobs, execute ACS/direct URL input, or clean V1.
+
+6B.3c-4C3a verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed 2 files / 44 tests;
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime` passed 22 files / 187 tests;
+- `npm -w apps/web run build` passed with prompt/config reseed unchanged;
+- static scan found no V1 analyzer import, V1 prompt reference, config/cache IO, runtime dispatch, prompt loader, provider factory import, provider SDK import, `process.env`, executable gateway construction, or approved execution marker in the 4C3a contract source.
 
 ## 8. Approval Gate Before Code
 

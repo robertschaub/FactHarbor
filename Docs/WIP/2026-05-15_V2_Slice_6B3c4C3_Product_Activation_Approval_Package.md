@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C3 Product Activation Approval Package
 
 **Date:** 2026-05-15
-**Status:** docs-only package reviewed by deputy team; 4C3a may proceed only as inert activation-authority/hidden-artifact contract source after the modifications in Section 13; product activation source, live jobs, approval flips, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
+**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b hidden direct-text wiring, 4C3c live smoke, product activation source, approval flips, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `88787787` (`docs: record v2 provider factory source`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -57,7 +57,7 @@ Do not jump directly from 4C2b to live execution. The recommended split is:
 | Slice | Purpose | Source approval in this package |
 |---|---|---|
 | 4C3-0 | This docs-only product activation package | yes, docs only |
-| 4C3a | Activation authority contract: define product-owned runtime activation snapshot, approval source, hidden artifact sink, and rollback model without provider dispatch | not yet |
+| 4C3a | Activation authority contract: define product-owned runtime activation snapshot, approval source, hidden artifact sink, and rollback model without provider dispatch | yes, implemented as inert contract source |
 | 4C3b | Hidden direct-text runtime wiring using the 4C2b factory after 4C3a is reviewed | not yet |
 | 4C3c | First live smoke, one Captain-defined direct-text input, commit-first and runtime-refreshed | not yet |
 
@@ -299,3 +299,23 @@ Captain confirmation:
 
 - not needed for 4C3a if it remains contract-only under the consolidated envelope;
 - required before 4C3b if it enables real prompt/model/cache approval, executable gateway state, real hidden runtime wiring, selected artifact sink implementation, or any live job.
+
+## 14. 4C3a Implementation Result
+
+4C3a was implemented only within the approved contract-only source envelope:
+
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.ts`;
+- `apps/web/test/unit/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.test.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
+- documentation and handoff updates.
+
+The contract validates product-owned activation authority, `PipelineRunContext` freeze location, approval/config/rollback traceability, direct-text-only scope, non-public hidden artifact sink requirements, fail-closed kill-switch behavior, and unchanged public surfaces.
+
+4C3a still forbids provider factory import/invocation, runtime dispatch import, prompt rendering, model calls, approval mutation, executable gateway construction, cache IO, ACS/direct URL execution, public exposure, live jobs, and V1 cleanup.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` passed 2 files / 44 tests;
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime` passed 22 files / 187 tests;
+- `npm -w apps/web run build` passed, with prompt/config reseed unchanged;
+- static scan found no V1 analyzer import, V1 prompt reference, config/cache IO, runtime dispatch, prompt loader, provider factory import, provider SDK import, `process.env`, executable gateway construction, or approved execution marker in the 4C3a contract source.
