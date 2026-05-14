@@ -1,7 +1,9 @@
+import { CLAIM_UNDERSTANDING_SHELL_ONLY_PLACEHOLDER_CLAIM_IDS } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
 export const CLAIMBOUNDARY_V2_PRECUTOVER_SCHEMA_VERSION = "4.0.0-cb-precutover";
 export const CLAIMBOUNDARY_V2_PIPELINE = "claimboundary-v2";
+export const CLAIMBOUNDARY_V2_SHELL_PLACEHOLDER_CLAIM_ID = CLAIM_UNDERSTANDING_SHELL_ONLY_PLACEHOLDER_CLAIM_IDS[0];
 
 export type ClaimBoundaryV2Result = Record<string, unknown>;
 
@@ -16,8 +18,14 @@ function qualityGate(status: QualityGateStatus, summary: string): { status: Qual
   return { status, summary };
 }
 
+function shellOnlyClaimIds(context: ClaimBoundaryV2RunContext): string[] {
+  return context.selectedAtomicClaimIds.length > 0
+    ? context.selectedAtomicClaimIds
+    : [CLAIMBOUNDARY_V2_SHELL_PLACEHOLDER_CLAIM_ID];
+}
+
 function buildPlaceholderClaims(context: ClaimBoundaryV2RunContext) {
-  return context.selectedAtomicClaimIds.map((claimId) => ({
+  return shellOnlyClaimIds(context).map((claimId) => ({
     id: claimId,
     statement: context.resolvedInputText,
     gate1Status: qualityGate("failed", "V2 shell has not run Gate 1."),
@@ -27,6 +35,8 @@ function buildPlaceholderClaims(context: ClaimBoundaryV2RunContext) {
 }
 
 function buildDamagedWarning(context: ClaimBoundaryV2RunContext) {
+  const affectedClaimIds = shellOnlyClaimIds(context);
+
   return {
     type: "report_damaged",
     category: "system_failure",
@@ -37,7 +47,7 @@ function buildDamagedWarning(context: ClaimBoundaryV2RunContext) {
     owner: "analyzer-v2",
     affected: {
       runId: context.runId,
-      selectedAtomicClaimIds: context.selectedAtomicClaimIds,
+      selectedAtomicClaimIds: affectedClaimIds,
     },
     materialityRationale:
       "Analyzer V2 is only a structural pre-cutover envelope in this slice; no valid analysis stages or verdict generation ran.",
@@ -52,7 +62,7 @@ function buildDamagedWarning(context: ClaimBoundaryV2RunContext) {
 }
 
 function buildCompatibilityQualityGates(context: ClaimBoundaryV2RunContext) {
-  const claimCount = context.selectedAtomicClaimIds.length;
+  const claimCount = shellOnlyClaimIds(context).length;
   return {
     passed: false,
     gate1Stats: {
@@ -86,6 +96,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
   const placeholderClaims = buildPlaceholderClaims(context);
   const warning = buildDamagedWarning(context);
   const compatibilityQualityGates = buildCompatibilityQualityGates(context);
+  const shellClaimIds = shellOnlyClaimIds(context);
   const reportMarkdown = [
     "# V2 Pre-Cutover Pipeline Not Implemented",
     "",
@@ -116,7 +127,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
         inputValue: context.inputValue,
         resolvedInputText: context.resolvedInputText,
         detectedLanguage: context.detectedLanguage,
-        selectedAtomicClaimIds: context.selectedAtomicClaimIds,
+        selectedAtomicClaimIds: shellClaimIds,
       },
       claims: {
         atomicClaims: placeholderClaims,
@@ -130,7 +141,7 @@ export function buildDamagedClaimBoundaryV2Envelope(
       boundaries: {
         claimAssessmentBoundaries: [],
         coverageMatrix: {
-          rows: context.selectedAtomicClaimIds,
+          rows: shellClaimIds,
           columns: [],
           cells: [],
         },

@@ -4,7 +4,9 @@ export type ClaimBoundaryV2SubmittedInput = {
 };
 
 export type ClaimBoundaryV2PreparedSeed = {
-  resolvedText?: unknown;
+  acsSnapshot: unknown;
+  acsSnapshotHash?: unknown;
+  inputGroundingSeedHash?: unknown;
 };
 
 export type ClaimBoundaryV2ProgressEvent = {

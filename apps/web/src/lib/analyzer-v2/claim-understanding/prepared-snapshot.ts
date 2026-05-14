@@ -1,5 +1,6 @@
 import {
   CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  isShellOnlyPlaceholderClaimId,
   type ClaimContract,
   type ClaimIntegrityEvent,
   type PreparedSnapshotClaimContractMigration,
@@ -84,6 +85,22 @@ export function migrateAcsPreparedSnapshotToClaimContract(
       claimContract: null,
       integrityEvents: [
         event("duplicate_selected_claim_id", "error", "Prepared snapshot migration received duplicate selected claim IDs.", normalizedSelectedClaimIds),
+      ],
+    };
+  }
+
+  const shellOnlyClaimIds = normalizedSelectedClaimIds.filter(isShellOnlyPlaceholderClaimId);
+  if (shellOnlyClaimIds.length > 0) {
+    return {
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        event(
+          "shell_placeholder_claim_id",
+          "error",
+          "Shell-only placeholder claim IDs cannot enter Claim Understanding.",
+          shellOnlyClaimIds,
+        ),
       ],
     };
   }

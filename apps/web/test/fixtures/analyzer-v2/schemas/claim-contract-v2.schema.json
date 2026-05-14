@@ -235,7 +235,8 @@
             "acs_snapshot_consumed",
             "duplicate_selected_claim_id",
             "prepared_snapshot_invalid",
-            "selected_claim_missing"
+            "selected_claim_missing",
+            "shell_placeholder_claim_id"
           ]
         },
         "severity": {

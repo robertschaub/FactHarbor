@@ -69,6 +69,24 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
     });
   });
 
+  it("blocks shell-only placeholder IDs before real Claim Understanding migration", () => {
+    const result = migrateAcsPreparedSnapshotToClaimContract(prepared, ["AC_V2_SHELL_01"], {
+      currentDate: "2026-05-13",
+    });
+
+    expect(result).toMatchObject({
+      status: "blocked",
+      claimContract: null,
+      integrityEvents: [
+        {
+          type: "shell_placeholder_claim_id",
+          severity: "error",
+          claimIds: ["AC_V2_SHELL_01"],
+        },
+      ],
+    });
+  });
+
   it("does not import V1 analyzer stage modules", () => {
     const sourcePath = path.resolve(
       process.cwd(),

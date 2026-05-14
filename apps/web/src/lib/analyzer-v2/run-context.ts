@@ -1,3 +1,4 @@
+import { isShellOnlyPlaceholderClaimId } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
 export type ClaimBoundaryV2RunContext = {
@@ -5,7 +6,7 @@ export type ClaimBoundaryV2RunContext = {
   inputType: ClaimBoundaryV2Ingress["submitted"]["kind"];
   inputValue: string;
   resolvedInputText: string;
-  detectedLanguage: "und";
+  detectedLanguage: string;
   selectedAtomicClaimIds: string[];
   generatedUtc: string;
   currentDate: string;
@@ -18,7 +19,8 @@ export type BuildClaimBoundaryV2RunContextOptions = {
 function normalizeSelectedClaimIds(selectedClaimIds: string[] | undefined): string[] {
   const normalized = (selectedClaimIds ?? [])
     .map((claimId) => claimId.trim())
-    .filter((claimId) => claimId.length > 0);
+    .filter((claimId) => claimId.length > 0)
+    .filter((claimId) => !isShellOnlyPlaceholderClaimId(claimId));
   return Array.from(new Set(normalized));
 }
 
@@ -30,6 +32,32 @@ function firstNonBlank(...values: Array<string | undefined>): string {
   return value;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readAcsResolvedInputText(input: ClaimBoundaryV2Ingress): string | undefined {
+  const snapshot = input.preparedSeed?.acsSnapshot;
+  if (!isRecord(snapshot)) {
+    return undefined;
+  }
+
+  return typeof snapshot.resolvedInputText === "string" ? snapshot.resolvedInputText : undefined;
+}
+
+function readAcsDetectedLanguage(input: ClaimBoundaryV2Ingress): string {
+  const snapshot = input.preparedSeed?.acsSnapshot;
+  const preparedUnderstanding = isRecord(snapshot)
+    && isRecord(snapshot.preparedUnderstanding)
+    ? snapshot.preparedUnderstanding
+    : null;
+  const detectedLanguage = preparedUnderstanding?.detectedLanguage;
+
+  return typeof detectedLanguage === "string" && detectedLanguage.trim().length > 0
+    ? detectedLanguage
+    : "und";
+}
+
 export function buildClaimBoundaryV2RunContext(
   input: ClaimBoundaryV2Ingress,
   options: BuildClaimBoundaryV2RunContextOptions = {},
@@ -37,10 +65,9 @@ export function buildClaimBoundaryV2RunContext(
   const now = options.now?.() ?? new Date();
   const generatedUtc = now.toISOString();
   const selectedAtomicClaimIds = normalizeSelectedClaimIds(input.selectedAtomicClaimIds);
-  const fallbackClaimId = "AC_V2_SHELL_01";
   const inputValue = firstNonBlank(input.submitted.value);
   const resolvedInputText = firstNonBlank(
-    typeof input.preparedSeed?.resolvedText === "string" ? input.preparedSeed.resolvedText : undefined,
+    readAcsResolvedInputText(input),
     inputValue,
   );
 
@@ -49,10 +76,8 @@ export function buildClaimBoundaryV2RunContext(
     inputType: input.submitted.kind,
     inputValue,
     resolvedInputText,
-    detectedLanguage: "und",
-    selectedAtomicClaimIds: selectedAtomicClaimIds.length > 0
-      ? selectedAtomicClaimIds
-      : [fallbackClaimId],
+    detectedLanguage: readAcsDetectedLanguage(input),
+    selectedAtomicClaimIds,
     generatedUtc,
     currentDate: generatedUtc.slice(0, 10),
   };

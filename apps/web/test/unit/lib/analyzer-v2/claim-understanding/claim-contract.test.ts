@@ -2,6 +2,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import Ajv2020 from "ajv/dist/2020";
 import { describe, expect, it } from "vitest";
+import {
+  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION,
+} from "@/lib/analyzer-v2/claim-understanding/types";
 
 const fixturesDir = path.resolve(process.cwd(), "test/fixtures/analyzer-v2");
 
@@ -28,5 +32,10 @@ describe("analyzer-v2 claim contract fixture", () => {
 
     expect(selectedClaims).toEqual(selectedIds);
     expect(fixture.acsMigration.selectedClaimFinalityPreserved).toBe(true);
+  });
+
+  it("defines Claim Understanding gateway output as the ClaimContract schema", () => {
+    expect(CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION).toBe(CLAIM_CONTRACT_V2_SCHEMA_VERSION);
+    expect(CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION).toBe("v2.claim_contract.0");
   });
 });

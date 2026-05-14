@@ -1,4 +1,8 @@
 import {
+  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION,
+} from "@/lib/analyzer-v2/claim-understanding/types";
+import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
@@ -82,7 +86,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
     owner: "claim_understanding",
     modelTask: "understand",
     promptSectionId: "V2_CLAIM_UNDERSTANDING_GATE1",
-    outputSchemaVersion: "v2.claim_understanding_gate1.0",
+    outputSchemaVersion: CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION,
     requiredVariables: [
       "currentDate",
       "analysisInput",
@@ -90,7 +94,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "inputGroundingSeedJson",
     ],
     claimUnderstandingCache: true,
-    notes: "Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval.",
+    notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval; gateway output schema maps directly to ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
   }),
   task({
     id: "research_query_planning",

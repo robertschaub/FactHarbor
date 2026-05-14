@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T06:53:11.355Z",
-  "count": 423,
+  "generatedAt": "2026-05-14T07:15:38.882Z",
+  "count": 424,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -8966,6 +8966,50 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Active V2 pipeline rebuild work is in `C:\\DEV\\FactHarbor` on branch `codex/pipeline-rebuild-spec`. Prior main-state work is preserved at `C:\\DEV\\FactHarbor-main-before-v2-rehome` on branch `codex/main-before-v2-rehome` at `31b3ea90`. The old duplicate path `C:\\DEV\\FactHarbor-pipeline-rebuild-spec` h"
+    },
+    {
+      "file": "2026-05-14_Senior_Developer_V2_Slice_6A5_Pre_6B_Contract_Hardening.md",
+      "date": "2026-05-14",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6a5",
+        "pre",
+        "6b",
+        "contract",
+        "hardening"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/pipeline-input.ts",
+        "apps/web/src/lib/analyzer-v2/runner-ingress.ts",
+        "apps/web/src/lib/analyzer-v2/run-context.ts",
+        "apps/web/src/lib/analyzer-v2/result-envelope.ts",
+        "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts",
+        "apps/web/src/lib/analyzer-v2/claim-understanding/prepared-snapshot.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/types.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/cache-governance.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/test/fixtures/analyzer-v2/schemas/claim-contract-v2.schema.json",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Continue to Slice 6B only after Captain approval and LLM Expert review. Keep `npm -w apps/web run test -- test/unit/lib/analyzer-v2`, `npm -w apps/web run test -- test/unit/lib/internal-runner-v2-routing.test.ts`, `npm -w apps/web run build`, and `git diff --check` in the verifier set.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "full_result",
+          "block_header": "DEBT-GUARD RESULT",
+          "fields": {
+            "classification": "missing pre-6B contract hardening capability, with one amended shell-isolation mechanism.",
+            "chosen_option": "amend existing V2 ingress/gateway contracts and add focused contract tests.",
+            "rejected_path": "no revert of Slices 1-6A, no prompt/model execution, no parallel Claim Understanding path.",
+            "net_mechanism_count": "small increase for contract guards/tests only.",
+            "verification": "focused V2 tests, internal-runner V2 routing test, build, and diff check passed."
+          }
+        }
+      }
     }
   ]
 }

@@ -3,7 +3,9 @@ import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
+  buildAnalyzerV2ClaimUnderstandingCacheKeyParts,
   buildAnalyzerV2CacheKeyParts,
+  validateAnalyzerV2ClaimUnderstandingCacheKeyInput,
   validateAnalyzerV2CacheKeyInput,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
 
@@ -15,7 +17,7 @@ const completeBaseInput = {
   provider: "anthropic",
   modelName: "claude-haiku",
   temperature: 0.2,
-  outputSchemaVersion: "v2.claim_understanding_gate1.0",
+  outputSchemaVersion: "v2.claim_contract.0",
   configSnapshotHash: "config-hash",
   resultSchemaVersion: "4.0.0-cb-precutover",
   inputIdentityHash: "input-hash",
@@ -71,7 +73,7 @@ describe("analyzer-v2 cache governance", () => {
     expect(completeSourceAware.valid).toBe(true);
   });
 
-  it("requires ACS and input-grounding dimensions for claim-understanding cache policy", () => {
+  it("validates ACS-backed claim-understanding cache keys with ACS and input-grounding dimensions", () => {
     const missingClaimUnderstandingDimensions = validateAnalyzerV2CacheKeyInput(
       ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
       completeBaseInput,
@@ -79,18 +81,59 @@ describe("analyzer-v2 cache governance", () => {
 
     expect(missingClaimUnderstandingDimensions.valid).toBe(false);
     expect(missingClaimUnderstandingDimensions.missingDimensions).toEqual([
-      "acsSnapshotHash",
+      "claimUnderstandingInputSource",
       "inputGroundingSeedHash",
     ]);
 
-    const completeClaimUnderstanding = validateAnalyzerV2CacheKeyInput(
+    const missingAcsSnapshot = validateAnalyzerV2ClaimUnderstandingCacheKeyInput(
+      {
+        ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
+        inputGroundingSeedHash: "seed-hash",
+      },
+    );
+    expect(missingAcsSnapshot.valid).toBe(false);
+    expect(missingAcsSnapshot.missingDimensions).toEqual(["acsSnapshotHash"]);
+    expect(() => buildAnalyzerV2ClaimUnderstandingCacheKeyParts({
+      ...completeBaseInput,
+      claimUnderstandingInputSource: "acs_prepared_snapshot",
+      inputGroundingSeedHash: "seed-hash",
+    })).toThrow("acsSnapshotHash");
+    expect(() => buildAnalyzerV2CacheKeyParts(
       ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
       {
         ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
+        inputGroundingSeedHash: "seed-hash",
+      },
+    )).toThrow("acsSnapshotHash");
+
+    const completeClaimUnderstanding = validateAnalyzerV2ClaimUnderstandingCacheKeyInput(
+      {
+        ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
         acsSnapshotHash: "acs-hash",
         inputGroundingSeedHash: "seed-hash",
       },
     );
     expect(completeClaimUnderstanding.valid).toBe(true);
+  });
+
+  it("validates direct-input claim-understanding cache keys without requiring an ACS snapshot hash", () => {
+    const directInput = validateAnalyzerV2ClaimUnderstandingCacheKeyInput({
+      ...completeBaseInput,
+      claimUnderstandingInputSource: "direct_input",
+      inputGroundingSeedHash: "seed-hash",
+    });
+
+    expect(directInput.valid).toBe(true);
+
+    const parts = buildAnalyzerV2ClaimUnderstandingCacheKeyParts({
+      ...completeBaseInput,
+      claimUnderstandingInputSource: "direct_input",
+      inputGroundingSeedHash: "seed-hash",
+    });
+    expect(parts).toContainEqual({ dimension: "claimUnderstandingInputSource", value: "direct_input" });
+    expect(parts.map((part) => part.dimension)).not.toContain("acsSnapshotHash");
   });
 });

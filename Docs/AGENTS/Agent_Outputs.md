@@ -2797,3 +2797,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Final Implementation Readiness Review -- [Standard] [open-items: yes]
 **For next agent:** Final review by Gemini, Claude Opus, and two deputy reviewers kept Slices 1-6A and rejected redo/quarantine. Continue with Slice 6A.5 only: full ACS snapshot ingress, shell-placeholder claim-id isolation, ACS/direct-input cache-policy alignment, and 6B prompt-output-to-`ClaimContract` schema mapping tests. Slice 6B remains blocked until 6A.5 completes plus Captain approval and LLM Expert review.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Final_Implementation_Readiness_Review.md
+
+---
+### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6A.5 Pre-6B Contract Hardening -- [Standard] [open-items: yes]
+**For next agent:** Implemented only non-prompt Slice 6A.5. V2 runner ingress carries the full ACS snapshot seed; run context no longer injects shell-only placeholder IDs; the damaged shell envelope may still display `AC_V2_SHELL_01`; ACS migration fails closed on shell-placeholder IDs; cache governance supports ACS-backed and direct-input key paths; gateway Claim Understanding output schema now points directly to `v2.claim_contract.0`. Slice 6B remains blocked pending Captain approval and LLM Expert review.
+-> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6A5_Pre_6B_Contract_Hardening.md

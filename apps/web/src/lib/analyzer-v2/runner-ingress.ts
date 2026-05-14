@@ -44,7 +44,12 @@ export function normalizeClaimBoundaryV2IngressFromRunner(input: unknown): Claim
   }
 
   const preparedSeed = isRecord(input.preparedStage1)
-    ? { resolvedText: input.preparedStage1.resolvedInputText }
+    ? {
+      acsSnapshot: input.preparedStage1,
+      acsSnapshotHash: isRecord(input.preparedStage1.preparationProvenance)
+        ? input.preparedStage1.preparationProvenance.resolvedInputSha256
+        : undefined,
+    }
     : null;
   const runnerEventSink = input.onEvent;
 
