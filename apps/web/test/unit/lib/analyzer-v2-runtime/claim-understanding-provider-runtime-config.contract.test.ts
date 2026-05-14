@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_CONFIG_CONTRACT_VERSION,
+  CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS,
+  CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH,
   validateClaimUnderstandingProviderRuntimeConfigSnapshot,
   type ClaimUnderstandingProviderRuntimeConfigSnapshot,
 } from "@/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract";
@@ -41,6 +43,11 @@ function baseSnapshot(
     providerConstruction: {
       sdkImportState: "not_imported",
       callbackCreationState: "not_created",
+      factorySource: {
+        filePath: "none_contract_only",
+        allowedSdkSpecifiers: [],
+        configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+      },
     },
     retrySemantics: {
       owner: "model_adapter_structural_schema_retry",
@@ -63,6 +70,14 @@ function baseSnapshot(
         tokenUsage: "required",
         durationMs: "required",
         configSnapshotHash: "required",
+        attemptIdentity: "required",
+        outputSchemaVersion: "required",
+        promptHashes: "required",
+      },
+      failureMapping: {
+        providerFailure: "sanitized_error_to_model_adapter",
+        rawSdkResponseExposure: "forbidden",
+        secretExposure: "forbidden",
       },
     },
     ...overrides,
@@ -87,6 +102,31 @@ describe("Analyzer V2 runtime Claim Understanding provider config contract", () 
       providerPolicy: "from_config_snapshot",
       executionState: "not_executable_contract_only",
     });
+  });
+
+  it("accepts a supplied config snapshot for a factory-only non-product-wired state", () => {
+    const snapshot = baseSnapshot({
+      executionState: "factory_only_not_product_wired",
+      providerConstruction: {
+        sdkImportState: "imported",
+        callbackCreationState: "created",
+        factorySource: {
+          filePath: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH,
+          allowedSdkSpecifiers: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS,
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
+      },
+    });
+
+    const result = validateClaimUnderstandingProviderRuntimeConfigSnapshot(snapshot);
+
+    expect(result).toEqual({
+      status: "contract_satisfied",
+      contractVersion: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_CONFIG_CONTRACT_VERSION,
+      snapshot,
+      blockedReasons: [],
+    });
+    expect(result.snapshot.executionState).toBe("factory_only_not_product_wired");
   });
 
   it("rejects ad hoc or legacy config authority and missing identity values", () => {
@@ -131,6 +171,11 @@ describe("Analyzer V2 runtime Claim Understanding provider config contract", () 
       providerConstruction: {
         sdkImportState: "imported",
         callbackCreationState: "created",
+        factorySource: {
+          filePath: "none_contract_only",
+          allowedSdkSpecifiers: [],
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
       },
     }));
 
@@ -172,6 +217,14 @@ describe("Analyzer V2 runtime Claim Understanding provider config contract", () 
           tokenUsage: "required",
           durationMs: "required",
           configSnapshotHash: "optional" as never,
+          attemptIdentity: "required",
+          outputSchemaVersion: "required",
+          promptHashes: "required",
+        },
+        failureMapping: {
+          providerFailure: "sanitized_error_to_model_adapter",
+          rawSdkResponseExposure: "forbidden",
+          secretExposure: "forbidden",
         },
       },
     }));
@@ -182,6 +235,47 @@ describe("Analyzer V2 runtime Claim Understanding provider config contract", () 
       "cache_io_enabled",
       "public_surface_exposed",
       "telemetry_contract_incomplete",
+    ]));
+  });
+
+  it("rejects factory-only state with wrong SDK set, config authority, or failure mapping", () => {
+    const result = validateClaimUnderstandingProviderRuntimeConfigSnapshot(baseSnapshot({
+      executionState: "factory_only_not_product_wired",
+      providerConstruction: {
+        sdkImportState: "imported",
+        callbackCreationState: "created",
+        factorySource: {
+          filePath: "none_contract_only",
+          allowedSdkSpecifiers: ["ai"],
+          configSnapshotAuthority: "caller_ad_hoc",
+        },
+      },
+      outputContract: {
+        cacheIo: "forbidden",
+        publicSurface: "internal_only",
+        telemetry: {
+          providerId: "required",
+          modelId: "required",
+          tokenUsage: "required",
+          durationMs: "required",
+          configSnapshotHash: "required",
+          attemptIdentity: "required",
+          outputSchemaVersion: "required",
+          promptHashes: "required",
+        },
+        failureMapping: {
+          providerFailure: "raw_sdk_error_exposed",
+          rawSdkResponseExposure: "allowed",
+          secretExposure: "allowed",
+        },
+      },
+    }));
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReasons).toEqual(expect.arrayContaining([
+      "provider_construction_enabled",
+      "config_snapshot_authority_invalid",
+      "provider_failure_mapping_invalid",
     ]));
   });
 });

@@ -37,6 +37,10 @@ const analyzerV2RuntimeProviderConfigContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-runtime-config.contract.ts",
 );
+const analyzerV2RuntimeProviderFactoryPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-provider-factory.ts",
+);
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -1167,6 +1171,10 @@ describe("analyzer-v2 boundary guard", () => {
     }
 
     expect(violations).toEqual([]);
+  });
+
+  it("keeps the 4C2b provider factory source absent until the source gate is approved", () => {
+    expect(existsSync(analyzerV2RuntimeProviderFactoryPath)).toBe(false);
   });
 
   it("keeps provider ownership contracts out of production callers until the next wiring gate", () => {

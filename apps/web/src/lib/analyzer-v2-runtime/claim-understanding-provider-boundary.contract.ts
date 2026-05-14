@@ -7,6 +7,15 @@ import type {
 
 export const CLAIM_UNDERSTANDING_PROVIDER_BOUNDARY_CONTRACT_VERSION =
   "v2.claim-understanding.provider-boundary-ownership.0";
+export const CLAIM_UNDERSTANDING_PROVIDER_FACTORY_SOURCE_PATH =
+  "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts";
+export const CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS = [
+  "ai",
+  "@ai-sdk/anthropic",
+] as const;
+
+export type ClaimUnderstandingProviderFactoryAllowedSdkImport =
+  typeof CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS[number];
 
 export type ClaimUnderstandingProviderBoundaryPolicyInput = {
   gatewayTaskId: AnalyzerV2GatewayTaskId;
@@ -25,14 +34,23 @@ export type ClaimUnderstandingProviderBoundaryPolicyInput = {
 export type ClaimUnderstandingProviderBoundaryOwnershipContract = {
   ownerId: "claim_understanding_provider_boundary_owner";
   ownerModule: "analyzer_v2_runtime_claim_understanding_provider_boundary";
-  runtimeMode: "contract_only";
+  runtimeMode: "contract_only" | "factory_only_not_product_wired";
   productReachability: "not_wired_to_product" | "wired_to_product";
   activationApprovalState: "not_requested" | "approved_for_wiring";
   providerConstruction: {
-    allowedSdkImportLocation: "outside_analyzer_v2_only";
+    allowedSdkImportLocation: "outside_analyzer_v2_only" | "claim_understanding_provider_factory_only";
     sdkImportState: "not_imported" | "imported";
     callbackCreationState: "not_created" | "created";
     sourceReuse: "clean_room_contract_only" | "v1_or_legacy_reuse";
+    factorySource: {
+      filePath: "none_contract_only" | typeof CLAIM_UNDERSTANDING_PROVIDER_FACTORY_SOURCE_PATH;
+      allowedSdkSpecifiers: readonly ClaimUnderstandingProviderFactoryAllowedSdkImport[];
+      providerMode: "none_contract_only" | "single_provider_anthropic_initial";
+      configSnapshotAuthority:
+        | "supplied_validated_runtime_config_snapshot_only"
+        | "factory_reads_config_storage"
+        | "caller_ad_hoc";
+    };
   };
   policyInput: ClaimUnderstandingProviderBoundaryPolicyInput;
   configSnapshotContract: {
@@ -53,21 +71,30 @@ export type ClaimUnderstandingProviderBoundaryOwnershipContract = {
       modelId: "required";
       tokenUsage: "required";
       durationMs: "required";
+      configSnapshotHash: "required";
+      attemptIdentity: "required";
+      outputSchemaVersion: "required";
+      promptHashes: "required";
     };
     cacheIo: "forbidden";
     publicSurface: "internal_only";
+    failureMapping: {
+      providerFailure: "sanitized_error_to_model_adapter" | "raw_sdk_error_exposed";
+      rawSdkResponseExposure: "forbidden" | "allowed";
+      secretExposure: "forbidden" | "allowed";
+    };
   };
 };
 
 export type ClaimUnderstandingProviderBoundaryBlockedReason =
   | "owner_identity_invalid"
-  | "runtime_mode_not_contract_only"
   | "product_reachability_enabled"
   | "activation_approval_already_granted"
   | "provider_sdk_imported"
   | "provider_callback_created"
-  | "provider_sdk_location_invalid"
   | "legacy_provider_reuse_allowed"
+  | "factory_source_invalid"
+  | "config_snapshot_authority_invalid"
   | "policy_input_not_claim_understanding"
   | "policy_values_invalid"
   | "config_snapshot_source_not_v2"
@@ -75,7 +102,8 @@ export type ClaimUnderstandingProviderBoundaryBlockedReason =
   | "output_not_raw_provider_response"
   | "telemetry_contract_incomplete"
   | "cache_io_enabled"
-  | "public_surface_exposed";
+  | "public_surface_exposed"
+  | "provider_failure_mapping_invalid";
 
 export type ClaimUnderstandingProviderBoundaryOwnershipResult =
   | {
@@ -117,7 +145,51 @@ function hasCompleteTelemetryContract(
   return telemetry.providerId === "required"
     && telemetry.modelId === "required"
     && telemetry.tokenUsage === "required"
-    && telemetry.durationMs === "required";
+    && telemetry.durationMs === "required"
+    && telemetry.configSnapshotHash === "required"
+    && telemetry.attemptIdentity === "required"
+    && telemetry.outputSchemaVersion === "required"
+    && telemetry.promptHashes === "required";
+}
+
+function hasExactFactorySdkSpecifiers(
+  specifiers: readonly ClaimUnderstandingProviderFactoryAllowedSdkImport[],
+): boolean {
+  return specifiers.length === CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS.length
+    && CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS.every((specifier) =>
+      specifiers.includes(specifier)
+    );
+}
+
+function hasValidFactorySource(
+  contract: ClaimUnderstandingProviderBoundaryOwnershipContract,
+): boolean {
+  const factorySource = contract.providerConstruction.factorySource;
+  if (contract.runtimeMode === "contract_only") {
+    return contract.providerConstruction.allowedSdkImportLocation === "outside_analyzer_v2_only"
+      && contract.providerConstruction.sdkImportState === "not_imported"
+      && contract.providerConstruction.callbackCreationState === "not_created"
+      && factorySource.filePath === "none_contract_only"
+      && factorySource.allowedSdkSpecifiers.length === 0
+      && factorySource.providerMode === "none_contract_only"
+      && factorySource.configSnapshotAuthority === "supplied_validated_runtime_config_snapshot_only";
+  }
+
+  return contract.providerConstruction.allowedSdkImportLocation === "claim_understanding_provider_factory_only"
+    && contract.providerConstruction.sdkImportState === "imported"
+    && contract.providerConstruction.callbackCreationState === "created"
+    && factorySource.filePath === CLAIM_UNDERSTANDING_PROVIDER_FACTORY_SOURCE_PATH
+    && hasExactFactorySdkSpecifiers(factorySource.allowedSdkSpecifiers)
+    && factorySource.providerMode === "single_provider_anthropic_initial"
+    && factorySource.configSnapshotAuthority === "supplied_validated_runtime_config_snapshot_only";
+}
+
+function hasValidFailureMapping(
+  mapping: ClaimUnderstandingProviderBoundaryOwnershipContract["outputContract"]["failureMapping"],
+): boolean {
+  return mapping.providerFailure === "sanitized_error_to_model_adapter"
+    && mapping.rawSdkResponseExposure === "forbidden"
+    && mapping.secretExposure === "forbidden";
 }
 
 function collectBlockedReasons(
@@ -132,10 +204,6 @@ function collectBlockedReasons(
     addReason(reasons, "owner_identity_invalid");
   }
 
-  if (contract.runtimeMode !== "contract_only") {
-    addReason(reasons, "runtime_mode_not_contract_only");
-  }
-
   if (contract.productReachability !== "not_wired_to_product") {
     addReason(reasons, "product_reachability_enabled");
   }
@@ -144,20 +212,33 @@ function collectBlockedReasons(
     addReason(reasons, "activation_approval_already_granted");
   }
 
-  if (contract.providerConstruction.allowedSdkImportLocation !== "outside_analyzer_v2_only") {
-    addReason(reasons, "provider_sdk_location_invalid");
-  }
-
-  if (contract.providerConstruction.sdkImportState !== "not_imported") {
+  if (
+    contract.runtimeMode === "contract_only"
+    && contract.providerConstruction.sdkImportState !== "not_imported"
+  ) {
     addReason(reasons, "provider_sdk_imported");
   }
 
-  if (contract.providerConstruction.callbackCreationState !== "not_created") {
+  if (
+    contract.runtimeMode === "contract_only"
+    && contract.providerConstruction.callbackCreationState !== "not_created"
+  ) {
     addReason(reasons, "provider_callback_created");
   }
 
   if (contract.providerConstruction.sourceReuse !== "clean_room_contract_only") {
     addReason(reasons, "legacy_provider_reuse_allowed");
+  }
+
+  if (!hasValidFactorySource(contract)) {
+    addReason(reasons, "factory_source_invalid");
+  }
+
+  if (
+    contract.providerConstruction.factorySource.configSnapshotAuthority
+    !== "supplied_validated_runtime_config_snapshot_only"
+  ) {
+    addReason(reasons, "config_snapshot_authority_invalid");
   }
 
   if (
@@ -198,6 +279,10 @@ function collectBlockedReasons(
 
   if (contract.outputContract.publicSurface !== "internal_only") {
     addReason(reasons, "public_surface_exposed");
+  }
+
+  if (!hasValidFailureMapping(contract.outputContract.failureMapping)) {
+    addReason(reasons, "provider_failure_mapping_invalid");
   }
 
   return reasons;

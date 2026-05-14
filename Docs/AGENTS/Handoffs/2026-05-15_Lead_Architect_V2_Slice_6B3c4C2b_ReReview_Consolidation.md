@@ -53,11 +53,24 @@ Docs-only consolidation. No source verifier was required. Current local baseline
 - `npm -w apps/web run build` passed with no config or prompt reseed changes;
 - `git diff --check` passed.
 
+## 4C2b-0 Contract Addendum
+
+Status: implemented as a contract/docs addendum after the re-review.
+
+The addendum defines:
+
+- `factory_only_not_product_wired` as distinct from `contract_only` and execution-approved/product-wired states;
+- future factory source path `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`;
+- future SDK specifiers `ai` and `@ai-sdk/anthropic`;
+- factory-side config authority as supplied validated runtime config snapshot only;
+- sanitized provider failure mapping and forbidden raw SDK/secret exposure;
+- required telemetry ownership for provider id, model id, tokens, duration, config snapshot hash, attempt identity, output schema version, and prompt hashes;
+- a boundary guard that keeps the factory source file absent until a later source gate.
+
 ## Open Items
 
-- 4C2b-0 addendum/contract update remains next.
 - Provider factory source remains unapproved.
-- Authoritative V2 runtime config snapshot source remains unresolved; current contracts validate supplied shape only.
+- Authoritative V2 runtime config snapshot storage/retrieval remains unresolved for product wiring; current contracts validate supplied shape only.
 - Live jobs remain not meaningful until 4C3 hidden direct-text runtime artifact wiring exists, is committed, and runtime is refreshed.
 
 ## Second Reviewer Confirmation

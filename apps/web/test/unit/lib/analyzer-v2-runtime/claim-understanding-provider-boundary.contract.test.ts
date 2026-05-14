@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CLAIM_UNDERSTANDING_PROVIDER_BOUNDARY_CONTRACT_VERSION,
+  CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS,
+  CLAIM_UNDERSTANDING_PROVIDER_FACTORY_SOURCE_PATH,
   validateClaimUnderstandingProviderBoundaryOwnershipContract,
   type ClaimUnderstandingProviderBoundaryOwnershipContract,
 } from "@/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract";
@@ -35,6 +37,12 @@ function baseContract(
       sdkImportState: "not_imported",
       callbackCreationState: "not_created",
       sourceReuse: "clean_room_contract_only",
+      factorySource: {
+        filePath: "none_contract_only",
+        allowedSdkSpecifiers: [],
+        providerMode: "none_contract_only",
+        configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+      },
     },
     policyInput: {
       gatewayTaskId: policy.gatewayTaskId,
@@ -67,9 +75,18 @@ function baseContract(
         modelId: "required",
         tokenUsage: "required",
         durationMs: "required",
+        configSnapshotHash: "required",
+        attemptIdentity: "required",
+        outputSchemaVersion: "required",
+        promptHashes: "required",
       },
       cacheIo: "forbidden",
       publicSurface: "internal_only",
+      failureMapping: {
+        providerFailure: "sanitized_error_to_model_adapter",
+        rawSdkResponseExposure: "forbidden",
+        secretExposure: "forbidden",
+      },
     },
     ...overrides,
   };
@@ -99,6 +116,11 @@ function runtimeConfigSnapshot(
     providerConstruction: {
       sdkImportState: "not_imported",
       callbackCreationState: "not_created",
+      factorySource: {
+        filePath: "none_contract_only",
+        allowedSdkSpecifiers: [],
+        configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+      },
     },
     retrySemantics: {
       owner: "model_adapter_structural_schema_retry",
@@ -121,6 +143,14 @@ function runtimeConfigSnapshot(
         tokenUsage: "required",
         durationMs: "required",
         configSnapshotHash: "required",
+        attemptIdentity: "required",
+        outputSchemaVersion: "required",
+        promptHashes: "required",
+      },
+      failureMapping: {
+        providerFailure: "sanitized_error_to_model_adapter",
+        rawSdkResponseExposure: "forbidden",
+        secretExposure: "forbidden",
       },
     },
   };
@@ -169,6 +199,38 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
     });
   });
 
+  it("accepts a reviewed factory-only state without product wiring or execution authority", () => {
+    const contract = baseContract({
+      runtimeMode: "factory_only_not_product_wired",
+      providerConstruction: {
+        allowedSdkImportLocation: "claim_understanding_provider_factory_only",
+        sdkImportState: "imported",
+        callbackCreationState: "created",
+        sourceReuse: "clean_room_contract_only",
+        factorySource: {
+          filePath: CLAIM_UNDERSTANDING_PROVIDER_FACTORY_SOURCE_PATH,
+          allowedSdkSpecifiers: CLAIM_UNDERSTANDING_PROVIDER_FACTORY_ALLOWED_SDK_IMPORTS,
+          providerMode: "single_provider_anthropic_initial",
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
+      },
+    });
+
+    const result = validateClaimUnderstandingProviderBoundaryOwnershipContract(contract);
+
+    expect(result).toEqual({
+      status: "contract_satisfied",
+      contractVersion: CLAIM_UNDERSTANDING_PROVIDER_BOUNDARY_CONTRACT_VERSION,
+      contract,
+      blockedReasons: [],
+    });
+    expect(result.contract).toMatchObject({
+      runtimeMode: "factory_only_not_product_wired",
+      productReachability: "not_wired_to_product",
+      activationApprovalState: "not_requested",
+    });
+  });
+
   it("blocks product reachability, approval, SDK import, and callback creation", () => {
     const result = validateClaimUnderstandingProviderBoundaryOwnershipContract(baseContract({
       productReachability: "wired_to_product",
@@ -178,6 +240,12 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
         sdkImportState: "imported",
         callbackCreationState: "created",
         sourceReuse: "clean_room_contract_only",
+        factorySource: {
+          filePath: "none_contract_only",
+          allowedSdkSpecifiers: [],
+          providerMode: "none_contract_only",
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
       },
     }));
 
@@ -197,6 +265,12 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
         sdkImportState: "not_imported",
         callbackCreationState: "not_created",
         sourceReuse: "v1_or_legacy_reuse",
+        factorySource: {
+          filePath: "none_contract_only",
+          allowedSdkSpecifiers: [],
+          providerMode: "none_contract_only",
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
       },
       configSnapshotContract: {
         source: "legacy_pipeline_config",
@@ -227,9 +301,18 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
           modelId: "required",
           tokenUsage: "required",
           durationMs: "required",
+          configSnapshotHash: "required",
+          attemptIdentity: "required",
+          outputSchemaVersion: "required",
+          promptHashes: "required",
         },
         cacheIo: "allowed" as never,
         publicSurface: "public_exposed" as never,
+        failureMapping: {
+          providerFailure: "sanitized_error_to_model_adapter",
+          rawSdkResponseExposure: "forbidden",
+          secretExposure: "forbidden",
+        },
       },
     }));
 
@@ -268,13 +351,67 @@ describe("Analyzer V2 runtime Claim Understanding provider ownership contract", 
           modelId: "required",
           tokenUsage: "optional" as never,
           durationMs: "required",
+          configSnapshotHash: "required",
+          attemptIdentity: "required",
+          outputSchemaVersion: "required",
+          promptHashes: "required",
         },
         cacheIo: "forbidden",
         publicSurface: "internal_only",
+        failureMapping: {
+          providerFailure: "sanitized_error_to_model_adapter",
+          rawSdkResponseExposure: "forbidden",
+          secretExposure: "forbidden",
+        },
       },
     }));
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReasons).toEqual(["telemetry_contract_incomplete"]);
+  });
+
+  it("blocks factory-only state with the wrong source, SDK set, config authority, or failure mapping", () => {
+    const result = validateClaimUnderstandingProviderBoundaryOwnershipContract(baseContract({
+      runtimeMode: "factory_only_not_product_wired",
+      providerConstruction: {
+        allowedSdkImportLocation: "outside_analyzer_v2_only",
+        sdkImportState: "imported",
+        callbackCreationState: "created",
+        sourceReuse: "clean_room_contract_only",
+        factorySource: {
+          filePath: "none_contract_only",
+          allowedSdkSpecifiers: ["ai"],
+          providerMode: "single_provider_anthropic_initial",
+          configSnapshotAuthority: "caller_ad_hoc",
+        },
+      },
+      outputContract: {
+        providerCallResponse: "raw_output_plus_adapter_telemetry",
+        telemetry: {
+          providerId: "required",
+          modelId: "required",
+          tokenUsage: "required",
+          durationMs: "required",
+          configSnapshotHash: "required",
+          attemptIdentity: "required",
+          outputSchemaVersion: "required",
+          promptHashes: "required",
+        },
+        cacheIo: "forbidden",
+        publicSurface: "internal_only",
+        failureMapping: {
+          providerFailure: "raw_sdk_error_exposed",
+          rawSdkResponseExposure: "allowed",
+          secretExposure: "allowed",
+        },
+      },
+    }));
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReasons).toEqual(expect.arrayContaining([
+      "factory_source_invalid",
+      "config_snapshot_authority_invalid",
+      "provider_failure_mapping_invalid",
+    ]));
   });
 });

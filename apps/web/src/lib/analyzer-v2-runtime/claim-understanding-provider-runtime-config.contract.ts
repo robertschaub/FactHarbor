@@ -7,6 +7,15 @@ import type {
 
 export const CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_CONFIG_CONTRACT_VERSION =
   "v2.claim-understanding.provider-runtime-config.0";
+export const CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH =
+  "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts";
+export const CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS = [
+  "ai",
+  "@ai-sdk/anthropic",
+] as const;
+
+export type ClaimUnderstandingProviderRuntimeFactoryAllowedSdkImport =
+  typeof CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS[number];
 
 export type ClaimUnderstandingProviderRuntimeConfigSnapshot = {
   source: "v2_task_policy_snapshot" | "caller_supplied_ad_hoc" | "legacy_pipeline_config" | "missing";
@@ -25,10 +34,21 @@ export type ClaimUnderstandingProviderRuntimeConfigSnapshot = {
   maxOutputTokens: number;
   outputSchemaVersion: "v2.claim_understanding_result.0";
   approval: AnalyzerV2PolicyApproval;
-  executionState: "not_executable_contract_only" | "execution_approved";
+  executionState:
+    | "not_executable_contract_only"
+    | "factory_only_not_product_wired"
+    | "execution_approved";
   providerConstruction: {
     sdkImportState: "not_imported" | "imported";
     callbackCreationState: "not_created" | "created";
+    factorySource: {
+      filePath: "none_contract_only" | typeof CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH;
+      allowedSdkSpecifiers: readonly ClaimUnderstandingProviderRuntimeFactoryAllowedSdkImport[];
+      configSnapshotAuthority:
+        | "supplied_validated_runtime_config_snapshot_only"
+        | "factory_reads_config_storage"
+        | "caller_ad_hoc";
+    };
   };
   retrySemantics: {
     owner: "model_adapter_structural_schema_retry";
@@ -51,6 +71,14 @@ export type ClaimUnderstandingProviderRuntimeConfigSnapshot = {
       tokenUsage: "required";
       durationMs: "required";
       configSnapshotHash: "required";
+      attemptIdentity: "required";
+      outputSchemaVersion: "required";
+      promptHashes: "required";
+    };
+    failureMapping: {
+      providerFailure: "sanitized_error_to_model_adapter" | "raw_sdk_error_exposed";
+      rawSdkResponseExposure: "forbidden" | "allowed";
+      secretExposure: "forbidden" | "allowed";
     };
   };
 };
@@ -63,11 +91,14 @@ export type ClaimUnderstandingProviderRuntimeConfigBlockedReason =
   | "policy_values_invalid"
   | "execution_authority_enabled"
   | "provider_construction_enabled"
+  | "factory_source_invalid"
+  | "config_snapshot_authority_invalid"
   | "retry_semantics_not_structural_only"
   | "input_scope_not_direct_text_only"
   | "cache_io_enabled"
   | "public_surface_exposed"
-  | "telemetry_contract_incomplete";
+  | "telemetry_contract_incomplete"
+  | "provider_failure_mapping_invalid";
 
 export type ClaimUnderstandingProviderRuntimeConfigValidationResult =
   | {
@@ -125,7 +156,48 @@ function hasCompleteTelemetryContract(
     && telemetry.modelId === "required"
     && telemetry.tokenUsage === "required"
     && telemetry.durationMs === "required"
-    && telemetry.configSnapshotHash === "required";
+    && telemetry.configSnapshotHash === "required"
+    && telemetry.attemptIdentity === "required"
+    && telemetry.outputSchemaVersion === "required"
+    && telemetry.promptHashes === "required";
+}
+
+function hasExactFactorySdkSpecifiers(
+  specifiers: readonly ClaimUnderstandingProviderRuntimeFactoryAllowedSdkImport[],
+): boolean {
+  return specifiers.length === CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS.length
+    && CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS.every((specifier) =>
+      specifiers.includes(specifier)
+    );
+}
+
+function hasValidProviderConstruction(snapshot: ClaimUnderstandingProviderRuntimeConfigSnapshot): boolean {
+  const factorySource = snapshot.providerConstruction.factorySource;
+  if (snapshot.executionState === "not_executable_contract_only") {
+    return snapshot.providerConstruction.sdkImportState === "not_imported"
+      && snapshot.providerConstruction.callbackCreationState === "not_created"
+      && factorySource.filePath === "none_contract_only"
+      && factorySource.allowedSdkSpecifiers.length === 0
+      && factorySource.configSnapshotAuthority === "supplied_validated_runtime_config_snapshot_only";
+  }
+
+  if (snapshot.executionState === "factory_only_not_product_wired") {
+    return snapshot.providerConstruction.sdkImportState === "imported"
+      && snapshot.providerConstruction.callbackCreationState === "created"
+      && factorySource.filePath === CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH
+      && hasExactFactorySdkSpecifiers(factorySource.allowedSdkSpecifiers)
+      && factorySource.configSnapshotAuthority === "supplied_validated_runtime_config_snapshot_only";
+  }
+
+  return false;
+}
+
+function hasValidFailureMapping(
+  mapping: ClaimUnderstandingProviderRuntimeConfigSnapshot["outputContract"]["failureMapping"],
+): boolean {
+  return mapping.providerFailure === "sanitized_error_to_model_adapter"
+    && mapping.rawSdkResponseExposure === "forbidden"
+    && mapping.secretExposure === "forbidden";
 }
 
 function collectBlockedReasons(
@@ -158,15 +230,25 @@ function collectBlockedReasons(
     addReason(reasons, "policy_values_invalid");
   }
 
-  if (snapshot.executionState !== "not_executable_contract_only") {
+  if (snapshot.executionState === "execution_approved") {
     addReason(reasons, "execution_authority_enabled");
   }
 
-  if (
-    snapshot.providerConstruction.sdkImportState !== "not_imported"
-    || snapshot.providerConstruction.callbackCreationState !== "not_created"
-  ) {
+  if (!hasValidProviderConstruction(snapshot)) {
     addReason(reasons, "provider_construction_enabled");
+  }
+
+  if (snapshot.providerConstruction.factorySource.filePath !== "none_contract_only"
+    && snapshot.providerConstruction.factorySource.filePath
+      !== CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH) {
+    addReason(reasons, "factory_source_invalid");
+  }
+
+  if (
+    snapshot.providerConstruction.factorySource.configSnapshotAuthority
+    !== "supplied_validated_runtime_config_snapshot_only"
+  ) {
+    addReason(reasons, "config_snapshot_authority_invalid");
   }
 
   if (!hasStructuralRetrySemantics(snapshot)) {
@@ -191,6 +273,10 @@ function collectBlockedReasons(
 
   if (!hasCompleteTelemetryContract(snapshot.outputContract.telemetry)) {
     addReason(reasons, "telemetry_contract_incomplete");
+  }
+
+  if (!hasValidFailureMapping(snapshot.outputContract.failureMapping)) {
+    addReason(reasons, "provider_failure_mapping_invalid");
   }
 
   return reasons;

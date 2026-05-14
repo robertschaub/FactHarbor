@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C2 Provider Factory Approval Package
 
 **Date:** 2026-05-14
-**Status:** 4C2a implemented after deputy approval; 4C2b provider factory source remains unapproved after 2026-05-15 deputy re-review
+**Status:** 4C2a implemented after deputy approval; 4C2b-0 contract addendum implemented; 4C2b provider factory source remains unapproved
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `0aa31d4` (`feat: clean up v2 runtime approval authority`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -152,6 +152,36 @@ Second reviewer confirmation:
 - The authoritative V2 runtime config snapshot source is unresolved. The current contract validates a supplied shape only; later factory/product wiring depends on this decision.
 - V2 product wiring remains gated. No runtime-stage, orchestrator, product injection, approval flip, cache IO, public exposure, or live job is allowed until a later reviewed 4C3 gate.
 
+#### 5.1.1 4C2b-0 Contract Addendum
+
+Implementation status: complete as the 4C2b-0 contract addendum slice.
+
+4C2b-0 resolves the contract vocabulary needed before source can be reviewed, without approving provider factory source.
+
+Resolved for a later 4C2b source package:
+
+- future provider factory source file: `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`;
+- future provider SDK import specifiers: exactly `ai` and `@ai-sdk/anthropic`;
+- first provider mode: `single_provider_anthropic_initial`;
+- factory config authority: accept a validated `ClaimUnderstandingProviderRuntimeConfigSnapshot` supplied by a reviewed caller; the factory must not read config storage, environment, UCM, or ad hoc caller strings directly;
+- factory state: `factory_only_not_product_wired`, separate from 4C2a `contract_only` and separate from any execution-approved/product-wired state;
+- failure mapping: provider failures become sanitized model-adapter provider failures; raw SDK response exposure and secret exposure remain forbidden;
+- telemetry ownership: provider id, model id, token usage, duration, config snapshot hash, attempt identity, output schema version, and prompt hashes are required.
+
+Implemented contract/guard behavior:
+
+- 4C2a `contract_only` still requires no SDK import and no callback creation.
+- `factory_only_not_product_wired` can be represented only with the exact factory source path, exact SDK specifier set, supplied validated runtime config snapshot authority, and sanitized failure mapping.
+- `execution_approved`, product reachability, cache IO, public exposure, ACS/direct URL scope, legacy source reuse, wrong task ownership, invalid retry budgets, incomplete telemetry, and raw failure exposure remain blocked.
+- The boundary guard asserts that provider factory source is absent until a later source gate approves it.
+
+Still unresolved for 4C3/product wiring:
+
+- authoritative storage/retrieval source for the V2 runtime config snapshot;
+- product-owned approval authority and activation UI/admin gate;
+- hidden direct-text artifact routing and rollback behavior;
+- live smoke plan after commit and runtime refresh.
+
 ## 5.2 6B.3c-4C2a Implementation Record
 
 Implementation status: complete at `dc65268b`.
@@ -222,14 +252,21 @@ Minimum verifier for approved 4C2b:
 - `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/model-adapter.test.ts`
 - static scan proving provider SDK imports exist only in the approved factory file and do not become reachable from Analyzer V2 product/public paths.
 
+Minimum verifier for 4C2b-0 contract addendum:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.test.ts test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime`
+- `npm -w apps/web run build`
+- `git diff --check`
+
 ## 9. Open Questions For Deputy Review
 
-- What is the authoritative V2 runtime config snapshot source for provider and model name before formal task-policy storage exists?
+- What is the authoritative V2 runtime config snapshot storage/retrieval source for product wiring before formal task-policy storage exists? 4C2b-0 resolves only the factory-side rule: accept a supplied validated snapshot, do not read storage or ad hoc config inside the factory.
 - Should 4C2a define only a contract, or also a pure builder that validates a supplied snapshot without IO?
 - Which provider SDK is allowed first, if any, and where should its import live?
 - Should 4C3 use a temporary internal admin/env gate, or wait until formal task-policy approval storage exists?
 
-2026-05-15 status: these questions remain open for source approval. They are now blockers for 4C2b provider factory source, not implementation details to decide during coding.
+2026-05-15 status: storage/retrieval authority and 4C3 activation remain open for product wiring. Factory source remains blocked until a reviewed 4C2b source package consumes the 4C2b-0 contract constraints.
 
 ## 10. Recommended Review Request
 
