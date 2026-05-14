@@ -25,7 +25,7 @@
 - If V2 canonical `EvidenceItem` changes source identity or source type placement, update this script's fixture tests with the result contract.
 
 **For next agent:**
-- Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`.
+- Workspace: `C:\DEV\FactHarbor`. Git branch: `main`.
 - Verification passed:
   - `npm -w apps/web test -- --run test/unit/scripts/measure-evidence-quality.test.ts`
   - `npx tsx scripts/measure-evidence-quality.ts --help`

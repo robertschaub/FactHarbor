@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor` on 2026-05-14)
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 **Status:** Deputy-approved target architecture; implementation stable through Slice 6B.1b; Slice 6B.2 prompt-text approval gate required next
 **Owner role:** Lead Architect
 

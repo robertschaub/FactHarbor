@@ -25,7 +25,7 @@
 - If the validation summary format changes later, update both V2 fallback expectations and comparison scripts together.
 
 **For next agent:**
-- Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`.
+- Workspace: `C:\DEV\FactHarbor`. Git branch: `main`.
 - Verification passed:
   - `npm -w apps/web test -- --run test/unit/scripts/validation-summary.test.ts` (4 tests)
   - `node --check scripts/validation/extract-validation-summary.js`

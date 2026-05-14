@@ -4,7 +4,7 @@
 **Status:** Revised draft after Claude/Gemini review and consolidation debate
 **Owner role:** Lead Architect
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 **Base commit:** `92b5a5f3`
 
 ---
@@ -88,7 +88,7 @@ Specialized Claude role reviews and a Gemini adversarial review all requested ch
 
 ## 4. Non-Negotiable Constraints
 
-- Current implementation workspace: `C:\DEV\FactHarbor`. Current Git branch: `codex/v2-pipeline-rebuild`. The previous main-state workspace is preserved separately at `C:\DEV\FactHarbor-main-before-v2-rehome`.
+- Current implementation workspace: `C:\DEV\FactHarbor`. Current Git branch: `main`. The previous main-state workspace is preserved separately at `C:\DEV\FactHarbor-main-before-v2-rehome`.
 - No source-code implementation starts until the specification is finished and approved.
 - UI does not change unless the approved specification identifies a concrete product, trust, or compatibility reason.
 - Stable external contracts are locked by default: job API shape, public report JSON, persisted report rendering, event semantics, warning semantics, and historical-job behavior.

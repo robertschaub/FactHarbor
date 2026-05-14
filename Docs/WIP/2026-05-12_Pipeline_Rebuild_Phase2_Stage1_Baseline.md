@@ -4,7 +4,7 @@
 **Status:** Phase 2 factual baseline checkpoint, read-only
 **Owner role:** Lead Architect
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 
 ---
 

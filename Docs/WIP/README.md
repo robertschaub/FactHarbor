@@ -64,7 +64,7 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 - [2026-04-21_Additive_Repair_Drift_Problem_Statement.md](2026-04-21_Additive_Repair_Drift_Problem_Statement.md) — problem framing for additive repair drift in agent workflows; explains why agents keep stacking failed changes and why bounded backtracking is preferred over blanket rollback
 
 ### Other partially-done tracks
-- [2026-05-12_Pipeline_Rebuild_Specification_Plan.md](2026-05-12_Pipeline_Rebuild_Specification_Plan.md) — Plan V2 Baseline for reverse-engineering, simplifying, and rebuilding the current ClaimAssessmentBoundary pipeline. Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`.
+- [2026-05-12_Pipeline_Rebuild_Specification_Plan.md](2026-05-12_Pipeline_Rebuild_Specification_Plan.md) — Plan V2 Baseline for reverse-engineering, simplifying, and rebuilding the current ClaimAssessmentBoundary pipeline. Workspace: `C:\DEV\FactHarbor`. Git branch: `main`.
 - [2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md](2026-05-12_Pipeline_Rebuild_Plan_Review_Consolidation.md) — consolidated Claude/Gemini review and debate result behind the Plan V2 Baseline
 - [2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md](2026-05-12_Pipeline_Rebuild_Phase1_Context_Summary.md) — governing constraints, quality baselines, handoff anchors, and Phase 2 entry rules after deputy-approved Phase 0
 - [2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md](2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md) — read-only Phase 2 inventory of analyzer, prompt/config/model, API/runner/ACS/report, warning/event, quality, and test surfaces for reverse-engineering

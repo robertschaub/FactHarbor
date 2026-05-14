@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 **Status:** Phase 2 synthesis complete; implementation not started
 **Owner role:** Lead Architect
 

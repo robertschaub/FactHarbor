@@ -3,7 +3,7 @@
 **Date:** 2026-05-12
 **Status:** Phase 1 complete enough to start Phase 2 inventory/reverse-engineering
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 
 ---
 

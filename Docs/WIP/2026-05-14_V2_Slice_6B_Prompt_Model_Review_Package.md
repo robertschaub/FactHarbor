@@ -4,7 +4,7 @@
 **Status:** Review package prepared and deputy-reviewed; `MODIFY` before prompt text or execution
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 **Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`
 
 ---

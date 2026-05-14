@@ -2595,7 +2595,7 @@ Grander draft triage: Captain pasted draft `b3a175bdd5be404f90efc058e3284dae` fo
 
 ---
 ### 2026-05-12 | Lead Architect | Codex (GPT-5) | Pipeline Rebuild Phase 2 Source Inventory -- [Standard] [open-items: yes]
-**For next agent:** Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`. Completed the read-only Phase 2 source-inventory checkpoint for the pipeline rebuild specification track. Created `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`, covering analyzer hot-path files, prompt/config/model/LLM surfaces, API/runner/persistence, ACS prepared-stage contracts, report/export, warnings/events, quality baseline docs, and relevant test surfaces. No analyzer source, prompt, config, UI, tests, live jobs, or validation behavior was changed or run. The inventory says no surfaces are intentionally excluded yet, but it does not classify mechanisms as removable.
+**For next agent:** Workspace: `C:\DEV\FactHarbor`. Git branch: `main`. Completed the read-only Phase 2 source-inventory checkpoint for the pipeline rebuild specification track. Created `Docs/WIP/2026-05-12_Pipeline_Rebuild_Phase2_Source_Inventory.md`, covering analyzer hot-path files, prompt/config/model/LLM surfaces, API/runner/persistence, ACS prepared-stage contracts, report/export, warnings/events, quality baseline docs, and relevant test surfaces. No analyzer source, prompt, config, UI, tests, live jobs, or validation behavior was changed or run. The inventory says no surfaces are intentionally excluded yet, but it does not classify mechanisms as removable.
 
 Continue Phase 2 by producing factual baseline specs, not target architecture: Stage 1 contract/mechanism registry first, then Stage 2 evidence lifecycle, Stage 3 boundary formation, Stage 4/Gate 4, Stage 5/report compatibility, prompt/config/model baseline, and test/quality coverage. Preserve the deputy-team escalation rule from the plan; escalate to Captain only for high risk, no consent, validation spend, or material product/UI/API/report/persisted-data changes.
 
@@ -2790,7 +2790,7 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Workspace Rehome -- [Standard] [open-items: no]
-**For next agent:** Active V2 pipeline rebuild workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`. Preserved prior workspace: `C:\DEV\FactHarbor-main-before-v2-rehome`. Preserved Git branch: `codex/main-before-v2-rehome` at `31b3ea90`. The retired duplicate V2 workspace has been removed.
+**For next agent:** Active V2 pipeline rebuild workspace: `C:\DEV\FactHarbor`. Git branch: `main`. Preserved prior workspace: `C:\DEV\FactHarbor-main-before-v2-rehome`. Preserved Git branch: `codex/main-before-v2-rehome` at `31b3ea90`. The retired duplicate V2 workspace has been removed.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Workspace_Rehome.md
 
 ---
@@ -2835,5 +2835,5 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Workspace Naming Cleanup -- [Standard] [open-items: no]
-**For next agent:** Cleaned active planning and handoff documents so they state the current V2 workspace and Git branch separately. Workspace: `C:\DEV\FactHarbor`. Git branch: `codex/v2-pipeline-rebuild`. Rebuilt the generated handoff index. No source, prompt, config, runtime, API, UI, or live-job behavior changed.
+**For next agent:** Cleaned active planning and handoff documents so they state the current V2 workspace and Git branch separately. Workspace: `C:\DEV\FactHarbor`. Git branch: `main`. Rebuilt the generated handoff index. No source, prompt, config, runtime, API, UI, or live-job behavior changed.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Workspace_Naming_Cleanup.md

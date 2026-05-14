@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
-**Git branch:** `codex/v2-pipeline-rebuild`
+**Git branch:** `main`
 **Status:** Deputy review complete; target architecture approved; implementation in progress through Slice 6A
 **Reviewed spec:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`
 
