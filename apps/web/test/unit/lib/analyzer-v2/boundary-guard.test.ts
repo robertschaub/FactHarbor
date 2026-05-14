@@ -12,6 +12,11 @@ const claimUnderstandingModelAdapterPath = path.resolve(v2AnalyzerRoot, "claim-u
 const claimUnderstandingPromptLoaderPath = path.resolve(v2AnalyzerRoot, "claim-understanding/prompt-loader.ts");
 const claimUnderstandingRuntimeStagePath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-stage.ts");
 const claimUnderstandingDispatchFramePath = path.resolve(v2AnalyzerRoot, "claim-understanding/dispatch-frame.ts");
+const claimUnderstandingDispatchReadinessContractPath = path.resolve(
+  v2AnalyzerRoot,
+  "claim-understanding/dispatch-readiness-contract.ts",
+);
+const claimUnderstandingRuntimeDispatchPath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-dispatch.ts");
 const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cache-governance.ts");
 const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
@@ -61,10 +66,14 @@ const adapterForbiddenProductPaths = [
   "pipeline-shell.ts",
   "runner-ingress.ts",
 ].map((fileName) => path.resolve(v2AnalyzerRoot, fileName));
-const noDispatchRuntimePaths = [
+const dispatchForbiddenProductPaths = [
   ...adapterForbiddenProductPaths,
   claimUnderstandingRuntimeStagePath,
+];
+const noDispatchRuntimePaths = [
+  ...dispatchForbiddenProductPaths,
   claimUnderstandingDispatchFramePath,
+  claimUnderstandingDispatchReadinessContractPath,
 ];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
@@ -300,6 +309,34 @@ function isAnalyzerV2GatewayPolicyImport(filePath: string, specifier: string): b
   return resolved === gatewayPolicyPath || resolved === `${gatewayPolicyPath}.ts`;
 }
 
+function isClaimUnderstandingDispatchReadinessContractImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const contractPath = toPosix(claimUnderstandingDispatchReadinessContractPath).replace(/\.ts$/, "");
+  return resolved === contractPath || resolved === `${contractPath}.ts`;
+}
+
+function isClaimUnderstandingRuntimeDispatchImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/claim-understanding/runtime-dispatch") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const runtimeDispatchPath = toPosix(claimUnderstandingRuntimeDispatchPath).replace(/\.ts$/, "");
+  return resolved === runtimeDispatchPath || resolved === `${runtimeDispatchPath}.ts`;
+}
+
 function isProviderSdkImport(specifier: string): boolean {
   return forbiddenProviderSdkSpecifiers.some((forbidden) =>
     specifier === forbidden || specifier.startsWith(forbidden)
@@ -454,6 +491,24 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps product execution paths from reaching dispatch-readiness or runtime-dispatch internals", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of dispatchForbiddenProductPaths) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isClaimUnderstandingDispatchReadinessContractImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports dispatch readiness ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports runtime dispatch ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps the 6B.3c-1 dispatch frame free of dispatch side-effect imports", () => {
     const sourceFile = parseSource(claimUnderstandingDispatchFramePath);
     const violations: string[] = [];
@@ -479,6 +534,52 @@ describe("analyzer-v2 boundary guard", () => {
       }
       if (isTestOrMockImport(specifier)) {
         violations.push(`dispatch frame imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3c-2 readiness contract free of dispatch side-effect imports", () => {
+    const sourceFile = parseSource(claimUnderstandingDispatchReadinessContractPath);
+    const violations: string[] = [];
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isV1AnalyzerImport(claimUnderstandingDispatchReadinessContractPath, specifier)) {
+        violations.push(`dispatch readiness imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(claimUnderstandingDispatchReadinessContractPath, specifier)) {
+        violations.push(`dispatch readiness imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(claimUnderstandingDispatchReadinessContractPath, specifier)) {
+        violations.push(`dispatch readiness imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(claimUnderstandingDispatchReadinessContractPath, specifier)) {
+        violations.push(`dispatch readiness imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(claimUnderstandingDispatchReadinessContractPath, specifier)) {
+        violations.push(`dispatch readiness imports gateway policy ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`dispatch readiness imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`dispatch readiness imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Analyzer V2 product source free of test, mock, and fixture imports", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of v2SourceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
       }
     }
 

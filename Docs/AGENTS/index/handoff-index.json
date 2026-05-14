@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T14:55:24.590Z",
-  "count": 448,
+  "generatedAt": "2026-05-14T15:21:31.110Z",
+  "count": 449,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9308,6 +9308,29 @@
         "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame_Gate.md"
       ],
       "summary": "Use `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md` as the active gate. Safe next source work is `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-frame.ts` and `apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-frame.test.ts`, with static boundary g"
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c2_Dispatch_Readiness_Contract.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c2",
+        "dispatch",
+        "readiness",
+        "contract"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c2_Dispatch_Readiness_Contract.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from `dispatch-readiness-contract.ts` and the active gate package before proposing any runtime owner. Verification passed: focused readiness + boundary tests (2 files, 20 tests), full Analyzer V2 unit slice (17 files, 111 tests), `npm -w apps/web run build`, targeted clean-room scans for the n"
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c2_Runtime_Dispatch_Gate.md",
