@@ -51,7 +51,7 @@ export type ClaimUnderstandingProviderCall = (
 export type ClaimUnderstandingModelAdapterAttempt = {
   attemptNumber: number;
   promptContentHash: string;
-  status: "accepted" | "invalid_schema" | "provider_failure";
+  status: "accepted" | "invalid_schema" | "parse_failure" | "provider_failure";
   providerTelemetry: ClaimUnderstandingProviderTelemetry | null;
   failureMessage: string | null;
 };
@@ -154,12 +154,25 @@ function maxAttemptsFromPolicy(policy: AnalyzerV2TaskModelPolicy): number {
   return Math.max(1, Math.min(policy.maxCalls, policy.schemaRetryCount + 1));
 }
 
-function coerceProviderOutput(output: unknown): unknown {
+function coerceProviderOutput(output: unknown): { status: "parsed"; value: unknown } | { status: "parse_failure"; message: string } {
   if (typeof output !== "string") {
-    return output;
+    return {
+      status: "parsed",
+      value: output,
+    };
   }
 
-  return JSON.parse(output);
+  try {
+    return {
+      status: "parsed",
+      value: JSON.parse(output),
+    };
+  } catch (error) {
+    return {
+      status: "parse_failure",
+      message: error instanceof Error ? `JSON parse error: ${error.message}` : "JSON parse error",
+    };
+  }
 }
 
 function damagedResult(reason: "claim_contract_validation_failed" | "claim_understanding_unavailable"): ClaimUnderstandingResult {
@@ -300,9 +313,20 @@ export async function executeClaimUnderstandingModelAdapter(
       return completedOutcome(request, modelPolicy, attempts, damagedResult("claim_understanding_unavailable"));
     }
 
+    const parsedOutput = coerceProviderOutput(providerResponse.output);
+    if (parsedOutput.status === "parse_failure") {
+      attempts.push({
+        attemptNumber,
+        promptContentHash: request.renderedPrompt.promptContentHash,
+        status: "parse_failure",
+        providerTelemetry: providerResponse.telemetry,
+        failureMessage: parsedOutput.message,
+      });
+      continue;
+    }
+
     try {
-      const parsedOutput = coerceProviderOutput(providerResponse.output);
-      const parsedResult = ClaimUnderstandingResultSchema.parse(parsedOutput) as ClaimUnderstandingResult;
+      const parsedResult = ClaimUnderstandingResultSchema.parse(parsedOutput.value) as ClaimUnderstandingResult;
       attempts.push({
         attemptNumber,
         promptContentHash: request.renderedPrompt.promptContentHash,

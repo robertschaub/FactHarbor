@@ -238,7 +238,7 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
     expect(calls[1].inputFrame).toEqual(frame);
   });
 
-  it("returns damaged after malformed plain-text output exhausts the schema retry", async () => {
+  it("returns damaged after malformed JSON output exhausts the schema retry with parse telemetry", async () => {
     const calls: ClaimUnderstandingProviderCallRequest[] = [];
     const outcome = await executeClaimUnderstandingModelAdapter(baseRequest(async (request) => {
       calls.push(request);
@@ -252,7 +252,11 @@ describe("Analyzer V2 Claim Understanding model adapter", () => {
     expect(outcome.executionStatus).toBe("completed");
     expect(outcome.claimUnderstandingResult?.status).toBe("damaged");
     expect(outcome.claimUnderstandingResult?.damagedReason).toBe("claim_contract_validation_failed");
-    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["invalid_schema", "invalid_schema"]);
+    expect(outcome.attempts.map((attempt) => attempt.status)).toEqual(["parse_failure", "parse_failure"]);
+    expect(outcome.attempts.map((attempt) => attempt.failureMessage)).toEqual([
+      expect.stringContaining("JSON parse error"),
+      expect.stringContaining("JSON parse error"),
+    ]);
   });
 
   it("rejects malformed enums and extra keys through the production schema before returning accepted output", async () => {
