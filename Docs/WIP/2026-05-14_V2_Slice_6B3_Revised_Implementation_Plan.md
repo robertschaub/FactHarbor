@@ -376,6 +376,15 @@ Minimum verifier:
 
 Live jobs remain not meaningful for 6B.3c-4B because the slice intentionally adds no runtime behavior. They become meaningful only after a committed/refreshed source-wiring slice produces a real hidden V2 direct-text artifact without scaffold-only injection.
 
+Post-4B source-wiring debate returned `MODIFY/MODIFY/MODIFY`. The next approved action is the docs-only **6B.3c-4C Provider Source Wiring Approval Package** at `Docs/WIP/2026-05-14_V2_Slice_6B3c4C_Provider_Source_Wiring_Approval_Package.md`.
+
+4C consolidates the next source path into two separate later gates:
+
+- **6B.3c-4C1 approval-authority cleanup**: proposed source work only, pending review. It would remove product/live reliance on the 4A scaffold approval snapshot and private executable gateway-task clone. It would not add a provider factory, provider SDK imports, public exposure, cache IO, ACS/direct URL execution, live jobs, or V1 cleanup.
+- **6B.3c-4C2 provider factory gate**: later clean-room provider callback factory outside Analyzer V2, also pending separate review after 4C1.
+
+No source code is approved by 4C until deputy review accepts the package and records a concrete approval pointer.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

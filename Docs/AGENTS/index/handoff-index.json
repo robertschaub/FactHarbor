@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T20:33:21.971Z",
-  "count": 463,
+  "generatedAt": "2026-05-14T20:42:34.792Z",
+  "count": 464,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9762,6 +9762,30 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "V2 Slice 6B.3c-4B Provider Boundary Ownership Contract"
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4C_Source_Wiring_Approval_Package.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c4c",
+        "source",
+        "wiring",
+        "approval",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-14_V2_Slice_6B3c4C_Provider_Source_Wiring_Approval_Package.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c4C_Source_Wiring_Approval_Package.md"
+      ],
+      "summary": "V2 Slice 6B.3c-4C Provider Source Wiring Approval Package"
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c4_Cache_Policy_Metadata_Split.md",
