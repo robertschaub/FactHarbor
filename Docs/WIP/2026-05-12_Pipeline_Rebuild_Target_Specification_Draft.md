@@ -40,7 +40,7 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.1a: Claim Understanding result envelope | done | `24f55d4a` | Non-executable `ClaimUnderstandingResult` envelope added; accepted outputs carry `ClaimContract`, blocked/damaged outputs carry typed reasons without fabricating a contract |
 | Slice 6B.1b: UCM/profile/model-policy plumbing | done | `2f1b60a4` | `claimboundary-v2` profile/frontmatter support, V1/V2 profile separation, and blocked task model-policy metadata added without prompt text, file seeding, or execution |
 | Slice 6B.2: prompt draft + contract tests | done | `8a1ef8cd` | Clean-room non-executable `claimboundary-v2.prompt.md` with `V2_CLAIM_UNDERSTANDING_GATE1`, render/static-hygiene/schema/contract tests, and final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
-| Slice 6B.3: gated Claim Understanding model execution | approval required next | not started | Requires separate Captain/deputy approval, prompt/model/cache approval records, file-seeding decision, runtime gateway tests, and no live jobs until commit-first/runtime-refresh/spend approval |
+| Slice 6B.3: gated Claim Understanding model execution | review package ready | `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md` | Approval package prepared; implementation not started. Requires separate Captain/deputy approval, prompt/model/cache approval records, file-seeding decision, runtime gateway tests, and no live jobs until commit-first/runtime-refresh/spend approval |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -131,7 +131,7 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-Slice 6B.2 is complete at `8a1ef8cd`. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`; the pre-prompt blockers were closed by the `ClaimUnderstandingResult` envelope plus minimal UCM/profile/model-policy plumbing; and the Captain-approved prompt-text slice added only a clean-room V2 prompt source plus contract/static-hygiene tests. V2 still remains non-executable for real analysis: `claimboundary-v2` is not file-seeded, prompt/model/cache approvals are not flipped, and no runtime LLM call or live job was added. The next implementation boundary is Slice 6B.3 gated model execution, which requires a separate Captain/deputy approval gate and a fresh runtime execution verifier before any executable Claim Understanding path exists.
+Slice 6B.2 is complete at `8a1ef8cd`. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`; the pre-prompt blockers were closed by the `ClaimUnderstandingResult` envelope plus minimal UCM/profile/model-policy plumbing; and the Captain-approved prompt-text slice added only a clean-room V2 prompt source plus contract/static-hygiene tests. The low-risk 6B.3 approval package is prepared at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`, but implementation is not started. V2 still remains non-executable for real analysis: `claimboundary-v2` is not file-seeded, prompt/model/cache approvals are not flipped, and no runtime LLM call or live job was added. The next implementation boundary is Slice 6B.3 gated model execution, which requires a separate Captain/deputy approval gate and a fresh runtime execution verifier before any executable Claim Understanding path exists.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -997,7 +997,7 @@ Slice 6B.1b implemented the minimal UCM/profile/model-policy plumbing at `2f1b60
 - `claim_understanding_gate1` has a concrete, blocked model-policy metadata record covering tier, temperature, call budget, schema retry count, timeout, token budget, fallback, and escalation behavior;
 - gateway execution remains blocked until prompt, model, and cache approvals are all recorded.
 
-The next boundary is 6B.3 gated model execution. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
+The next boundary is 6B.3 gated model execution. The approval package is prepared, but not approved. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
 
 ---
 
@@ -1345,7 +1345,7 @@ The V2 prompt/model/config design should not keep expanding the overloaded V1 `p
 
 UCM deputy review refined this into a minimum path: do not add V2 prompt/model task policy into the old broad `pipeline` config as a long-term home. First support `claimboundary-v2` as a separate prompt profile and add a task-oriented model policy for `claim_understanding_gate1`; keep bespoke UI work minimal until the V2 task-policy model stabilizes.
 
-Post-6B.2 status: the minimum path now includes a clean-room prompt source and contract tests. `claimboundary-v2` is valid/manageable for prompt-profile validation and import, and `apps/web/prompts/claimboundary-v2.prompt.md` exists for review, but it is intentionally not file-seeded or executable. `claim_understanding_gate1` has blocked task-oriented model-policy metadata only. This is enough to plan 6B.3; it is not enough for broad V2 cutover. Before broad prompt/model execution or cutover, V2 still needs the task-oriented analysis-profile/admin-gate track: model task registry shape, stage policy shape, cache policy metadata, approval-state visibility, config snapshot provenance, and rollback targets.
+Post-6B.3-package status: the minimum path now includes a clean-room prompt source, contract tests, and a reviewable 6B.3 execution approval package. `claimboundary-v2` is valid/manageable for prompt-profile validation and import, and `apps/web/prompts/claimboundary-v2.prompt.md` exists for review, but it is intentionally not file-seeded or executable. `claim_understanding_gate1` has blocked task-oriented model-policy metadata only. This is enough for deputy review of 6B.3; it is not enough for broad V2 cutover. Before broad prompt/model execution or cutover, V2 still needs the task-oriented analysis-profile/admin-gate track: model task registry shape, stage policy shape, cache policy metadata, approval-state visibility, config snapshot provenance, and rollback targets.
 
 ---
 
@@ -1644,6 +1644,7 @@ This document is now the operative V2 target specification with implementation p
 - Analyzer source changes for Slice 6A.5 were committed separately at `724dd9aa`.
 - Slice 6B.2 prompt-source and contract-test changes were committed separately at `8a1ef8cd`.
 - This documentation status update changes no source, prompt, config, API, UI, runtime, or live-job behavior.
+- Slice 6B.3 approval-package preparation changes no implementation behavior and requires only documentation/index verification.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 

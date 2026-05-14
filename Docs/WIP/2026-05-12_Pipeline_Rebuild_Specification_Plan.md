@@ -34,7 +34,7 @@ Execution state:
 | Phase 6 / Slice 6B.1a | complete | Committed at `24f55d4a`: `ClaimUnderstandingResult` envelope prevents failed/no-claim/direct-input states from corrupting `ClaimContract` |
 | Phase 6 / Slice 6B.1b | complete | Committed at `2f1b60a4`: `claimboundary-v2` prompt-profile/frontmatter support and blocked task-oriented model policy metadata for `claim_understanding_gate1` |
 | Phase 6 / Slice 6B.2 | complete | Committed at `8a1ef8cd`: clean-room non-executable `claimboundary-v2` prompt source and contract/static-hygiene tests; final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
-| Phase 6 / Slice 6B.3 | approval required next | Gated Claim Understanding model execution requires separate Captain/deputy approval, prompt/model/cache approval records, file-seeding decision, runtime gateway tests, and commit-first/runtime-refresh/spend approval before any live jobs |
+| Phase 6 / Slice 6B.3 | review package ready | Approval package prepared at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`; implementation not started; gated Claim Understanding model execution still requires deputy/Captain approval, prompt/model/cache approval records, file-seeding decision, runtime gateway tests, and commit-first/runtime-refresh/spend approval before any live jobs |
 
 Plan update from xWiki integration debate:
 
@@ -45,7 +45,7 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: prepare Slice 6B.3 gated Claim Understanding model execution for deputy/Captain approval under the conditions recorded in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`. Slice 6B.2 prompt text and contract tests are complete at `8a1ef8cd`, but V2 remains non-executable: do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make the gateway executable, or add runtime LLM-backed Claim Understanding until the separate 6B.3 gate is recorded.
+Next action, unless Captain redirects: send the Slice 6B.3 approval package at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md` to the deputy review team. Slice 6B.2 prompt text and contract tests are complete at `8a1ef8cd`, but V2 remains non-executable: do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make the gateway executable, or add runtime LLM-backed Claim Understanding until the separate 6B.3 approval gate is recorded.
 
 Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
