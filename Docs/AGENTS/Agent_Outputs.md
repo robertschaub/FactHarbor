@@ -2783,3 +2783,7 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Report Generation Regression Control -- [Standard] [open-items: yes]
 **For next agent:** Captain asked whether future report-generation improvements need built-in regression prevention and rollback. Documented this as mandatory for Stage 5/report surfaces: versioned report-generation profiles, ReportResult provenance, golden corpus using Captain-defined inputs and pinned deployed comparators, stored-canonical-packet replay where upstream contracts are unchanged, candidate-vs-approved comparison with improvement/neutral/accepted_tradeoff/regression classification, promotion gates, deputy signoff for accepted tradeoffs, and rollback/quarantine for regressing profiles.
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Implementation Guardrails -- [Standard] [open-items: yes]
+**For next agent:** Added the durable guardrail layer requested after Sonnet/Gemini debate: `apps/web/src/lib/analyzer-v2/AGENTS.md`, canonical `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`, and stronger `boundary-guard.test.ts` checks for local/canonical guardrail discoverability, expanded V1 pipeline-owned type bans, and mandatory V2 report-generation provenance. The V2 ReportResult schema, fixture, and damaged shell envelope now carry `reportGeneration` provenance so future report-generation rollback controls are mechanically visible.

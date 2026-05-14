@@ -163,6 +163,21 @@ export function buildDamagedClaimBoundaryV2Envelope(
         evidenceReferenceIds: [],
         reportQualityStatus: "damaged",
       },
+      reportGeneration: {
+        profileId: "claimboundary-v2-precutover-damaged",
+        profileVersion: "0",
+        reportWriterVersion: "v2.shell.0",
+        narrativePromptSectionId: null,
+        narrativePromptContentHash: null,
+        modelTaskId: null,
+        modelTaskVersion: null,
+        configSnapshotHash: null,
+        rendererVersion: "v2.shell-markdown.0",
+        exportAdapterVersion: "v2.compatibility-view.0",
+        sourceCommit: null,
+        evidencePacketHash: null,
+        replayFixtureId: null,
+      },
       compatibility: {
         v1: {
           schemaVersion: "3.2.0-cb",

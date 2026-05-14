@@ -15,7 +15,8 @@
     "verdict",
     "qualityGates",
     "warnings",
-    "narrative"
+    "narrative",
+    "reportGeneration"
   ],
   "properties": {
     "_schemaVersion": {
@@ -331,6 +332,95 @@
             "valid",
             "degraded",
             "damaged"
+          ]
+        }
+      }
+    },
+    "reportGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profileId",
+        "profileVersion",
+        "reportWriterVersion",
+        "narrativePromptSectionId",
+        "narrativePromptContentHash",
+        "modelTaskId",
+        "modelTaskVersion",
+        "configSnapshotHash",
+        "rendererVersion",
+        "exportAdapterVersion",
+        "sourceCommit",
+        "evidencePacketHash",
+        "replayFixtureId"
+      ],
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "profileVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reportWriterVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "narrativePromptSectionId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "narrativePromptContentHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelTaskId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "modelTaskVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "configSnapshotHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rendererVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exportAdapterVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceCommit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidencePacketHash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "replayFixtureId": {
+          "type": [
+            "string",
+            "null"
           ]
         }
       }

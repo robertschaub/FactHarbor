@@ -167,6 +167,21 @@
     ],
     "reportQualityStatus": "valid"
   },
+  "reportGeneration": {
+    "profileId": "claimboundary-v2-precutover-fixture",
+    "profileVersion": "0",
+    "reportWriterVersion": "v2.fixture.0",
+    "narrativePromptSectionId": null,
+    "narrativePromptContentHash": null,
+    "modelTaskId": null,
+    "modelTaskVersion": null,
+    "configSnapshotHash": "fixture-pipeline-config",
+    "rendererVersion": "v2.fixture-renderer.0",
+    "exportAdapterVersion": "v2.compatibility-view.0",
+    "sourceCommit": "fixture-commit",
+    "evidencePacketHash": "fixture-evidence-packet",
+    "replayFixtureId": "report-result-v2.fixture"
+  },
   "compatibility": {
     "v1": {
       "schemaVersion": "3.2.0-cb",

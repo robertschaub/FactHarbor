@@ -10,12 +10,35 @@ const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
+const repoRoot = path.resolve(webRoot, "../..");
+const v2AgentsPath = path.resolve(v2AnalyzerRoot, "AGENTS.md");
+const canonicalGuardrailsPath = path.resolve(repoRoot, "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md");
+const reportResultV2SchemaPath = path.resolve(analyzerV2FixtureRoot, "schemas/report-result-v2.schema.json");
 
 const fixtureDataExtensions = new Set([".json", ".md", ".txt"]);
 const forbiddenV1ContractIdentifiers = new Set([
   "AnalysisInput",
-  "PreparedStage1Snapshot",
+  "AnalysisObservability",
+  "AnalysisWarning",
+  "ArticleAdjudication",
+  "ArticleAnalysis",
   "CBClaimUnderstanding",
+  "CBClaimVerdict",
+  "CBResearchState",
+  "ClaimSelectionDraftState",
+  "ClaimSelectionMetadata",
+  "ClaimSelectionRecommendation",
+  "ClaimUnderstanding",
+  "ClaimVerdict",
+  "LegacySelectedClaimResearchSummary",
+  "OverallAssessment",
+  "PreparedStage1Snapshot",
+  "PseudoscienceAnalysis",
+  "ResearchDecision",
+  "ResearchIteration",
+  "ResearchState",
+  "VerdictDirectionMismatch",
+  "VerdictNarrative",
 ]);
 const runnerBoundaryFieldNames = [
   "jobId",
@@ -265,6 +288,21 @@ describe("analyzer-v2 boundary guard", () => {
     [".ts", ".tsx"].includes(path.extname(filePath))
   );
 
+  it("keeps local and canonical V2 implementation guardrails discoverable", () => {
+    expect(existsSync(v2AgentsPath)).toBe(true);
+    expect(existsSync(canonicalGuardrailsPath)).toBe(true);
+
+    const localInstructions = readFileSync(v2AgentsPath, "utf8");
+    const canonicalInstructions = readFileSync(canonicalGuardrailsPath, "utf8");
+
+    expect(localInstructions).toContain("Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md");
+    expect(localInstructions).toContain("fhAgentKnowledge.preflight_task");
+    expect(localInstructions).toContain("Do not import, copy, alias, extend, or clone V1 analyzer code");
+    expect(canonicalInstructions).toContain("Clean-Room Boundary");
+    expect(canonicalInstructions).toContain("Report generation");
+    expect(canonicalInstructions).toContain("Analysis Session");
+  });
+
   it("does not import V1 analyzer pipeline modules", () => {
     const violations: string[] = [];
 
@@ -330,5 +368,23 @@ describe("analyzer-v2 boundary guard", () => {
     const executableFiles = files.filter((filePath) => !fixtureDataExtensions.has(path.extname(filePath)));
 
     expect(executableFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toEqual([]);
+  });
+
+  it("requires report-generation provenance in the V2 report schema", () => {
+    const schema = JSON.parse(readFileSync(reportResultV2SchemaPath, "utf8")) as {
+      required?: string[];
+      properties?: Record<string, { required?: string[] }>;
+    };
+    const reportGeneration = schema.properties?.reportGeneration;
+
+    expect(schema.required).toContain("reportGeneration");
+    expect(reportGeneration?.required).toEqual(expect.arrayContaining([
+      "profileId",
+      "profileVersion",
+      "reportWriterVersion",
+      "rendererVersion",
+      "exportAdapterVersion",
+      "sourceCommit",
+    ]));
   });
 });

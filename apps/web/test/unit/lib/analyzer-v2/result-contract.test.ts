@@ -167,6 +167,12 @@ describe("analyzer-v2 JSON contract fixtures", () => {
     expect(reportV2._schemaVersion).toBe("4.0.0-cb-precutover");
     expect((reportV2.meta as Record<string, JsonValue>).schemaVersion).toBe(reportV2._schemaVersion);
     expect((reportV2.meta as Record<string, JsonValue>).pipeline).toBe("claimboundary-v2");
+    expect(reportV2.reportGeneration).toEqual(expect.objectContaining({
+      profileId: "claimboundary-v2-precutover-fixture",
+      reportWriterVersion: "v2.fixture.0",
+      exportAdapterVersion: "v2.compatibility-view.0",
+      sourceCommit: "fixture-commit",
+    }));
   });
 
   it("validates the V2 damaged shell envelope against the JSON schema", async () => {
@@ -191,6 +197,11 @@ describe("analyzer-v2 JSON contract fixtures", () => {
     expect((resultJson.meta as Record<string, JsonValue>).generatedUtc).toBe("2026-05-13T12:34:56.000Z");
     expect((resultJson.qualityGates as Record<string, JsonValue>).damagedReport).toBe(true);
     expect((resultJson.narrative as Record<string, JsonValue>).reportQualityStatus).toBe("damaged");
+    expect(resultJson.reportGeneration).toEqual(expect.objectContaining({
+      profileId: "claimboundary-v2-precutover-damaged",
+      reportWriterVersion: "v2.shell.0",
+      sourceCommit: null,
+    }));
     expect(resultJson.warnings).toEqual([
       expect.objectContaining({
         type: "report_damaged",
