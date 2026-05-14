@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 4C2b provider factory source and public product runtime exposure remain blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; public product runtime exposure remains blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -413,9 +413,9 @@ Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-r
 
 - 4C2a source was approved by deputy-team review of the package and implemented as an inert provider runtime config/provenance contract;
 - 4C2a adds no SDK import, product wiring, cache IO, prompt/config edits, approval flips, live jobs, ACS/direct URL execution, or public exposure;
-- proposed 4C2b is a later clean-room provider factory under `apps/web/src/lib/analyzer-v2-runtime/`, with any provider SDK import allowed only in an explicitly approved factory file;
-- 2026-05-15 4C2b re-review returned `MODIFY`: provider factory source must not start from the current package; 4C2b-0 is now complete as a docs/contract update defining factory-only state, exact SDK import specifiers, supplied-validated-snapshot-only factory authority, sanitized failure mapping, telemetry ownership, and static guard expectations;
-- 4C2b source remains blocked until a separate reviewed source package adds `claim-understanding-provider-factory.ts`; the boundary guard currently asserts that file is absent;
+- 2026-05-15 4C2b re-review returned `MODIFY`: provider factory source could not start until 4C2b-0 defined factory-only state, exact SDK import specifiers, supplied-validated-snapshot-only factory authority, sanitized failure mapping, telemetry ownership, and static guard expectations;
+- 4C2b-0 is complete as that docs/contract update;
+- 4C2b source is complete at `7f6f310a` after deputy-team source approval. It adds the clean-room provider factory under `apps/web/src/lib/analyzer-v2-runtime/`; boundary guards now allow provider SDK imports only in `claim-understanding-provider-factory.ts` and keep Analyzer V2, product/public paths, cache IO, approval mutation, live jobs, and V1 reuse blocked;
 - 4C3 remains the first possible hidden direct-text runtime artifact and live-smoke gate after source commit, runtime refresh, real approval authority, and public-surface leak guards.
 
 6B.3c-4C2a verification:
@@ -424,6 +424,15 @@ Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-r
 - full Analyzer V2 unit slice passed 20 files / 164 tests;
 - web build passed with prompt/config reseed unchanged;
 - production static scans found no provider SDK imports, V1 analyzer/`llm.ts` imports, cache/config IO, executable status construction, `executionApproved: true`, or product caller scaffold option pass-through.
+
+6B.3c-4C2b verification:
+
+- focused 4C2b verifier passed 4 files / 55 tests;
+- model-adapter regression verifier passed 1 file / 7 tests;
+- full Analyzer V2 plus runtime unit slice passed 21 files / 176 tests;
+- web build passed with prompt/config reseed unchanged;
+- static scans found provider SDK imports only in `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`, and no V1 analyzer/prompt reuse, config/cache IO, runtime-dispatch import, prompt-loader import, `process.env`, or executable gateway construction in the factory source;
+- `git diff --check` passed.
 
 ## 8. Approval Gate Before Code
 

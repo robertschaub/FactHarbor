@@ -23,11 +23,11 @@ files_touched:
 
 ## Summary
 
-Deputy re-review of 4C2b returned `MODIFY`. Do not implement provider factory source from the current 4C2 package. The package is directionally correct, but it still leaves gate-significant details open: exact SDK import specifiers, factory-only contract state, authoritative config snapshot source, sanitized failure mapping, telemetry ownership, and static guard exceptions.
+Deputy re-review of 4C2b returned `MODIFY` before the 4C2b-0 addendum. At that point, provider factory source was not approved from the current 4C2 package because it still left gate-significant details open: exact SDK import specifiers, factory-only contract state, authoritative config snapshot source, sanitized failure mapping, telemetry ownership, and static guard exceptions.
 
 ## Consolidated Decision
 
-Next allowed low-risk step: prepare a 4C2b-0 docs/contract addendum. Provider SDK imports and concrete callback construction remain blocked until that addendum is reviewed and approved.
+The next allowed low-risk step was a 4C2b-0 docs/contract addendum. Provider SDK imports and concrete callback construction remained blocked until that addendum was reviewed and approved.
 
 The current 4C2a contracts intentionally block `sdkImportState: "imported"` and `callbackCreationState: "created"`. A real factory therefore needs a separate reviewed `factory_only_not_product_wired` state before source begins.
 
@@ -67,16 +67,22 @@ The addendum defines:
 - required telemetry ownership for provider id, model id, tokens, duration, config snapshot hash, attempt identity, output schema version, and prompt hashes;
 - a boundary guard that keeps the factory source file absent until a later source gate.
 
+## Follow-Up Source Implementation
+
+Resolved by source commit `7f6f310a` and the follow-up handoff `Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_6B3c4C2b_Provider_Factory_Source.md`.
+
+The 4C2b provider factory source is now implemented under the narrow factory-only envelope approved after the 4C2b-0 addendum. Product wiring, live jobs, public exposure, cache IO, approval flips, ACS/direct URL execution, and V1 cleanup remain blocked until later reviewed gates.
+
 ## Open Items
 
-- Provider factory source remains unapproved.
+- Product wiring remains unapproved after the provider factory source commit.
 - Authoritative V2 runtime config snapshot storage/retrieval remains unresolved for product wiring; current contracts validate supplied shape only.
 - Live jobs remain not meaningful until 4C3 hidden direct-text runtime artifact wiring exists, is committed, and runtime is refreshed.
 
 ## Second Reviewer Confirmation
 
-The second reviewer confirmed the consolidated gate state: 4C2b remains blocked until a docs/contract addendum is reviewed, V2 runtime config snapshot authority is unresolved, and product wiring remains gated until a later reviewed 4C3 gate.
+The second reviewer confirmed the then-current gate state: 4C2b remained blocked until a docs/contract addendum was reviewed, V2 runtime config snapshot authority was unresolved, and product wiring remained gated until a later reviewed 4C3 gate.
 
 ## For Next Agent
 
-If continuing, do not write `claim-understanding-provider-factory.ts` yet. First define and review the 4C2b-0 addendum/contract update. Stop for Captain confirmation if the proposal includes product activation, gateway/prompt/model/cache approval flips, public output changes, live jobs, or V1 cleanup.
+If continuing, start from the follow-up source handoff. Do not product-wire the provider factory or run live jobs yet. The next gate is 4C3: product-owned activation, hidden direct-text artifact routing, public leak guards, rollback behavior, and live-smoke discipline. Stop for Captain confirmation if the proposal includes product activation without deputy consensus, gateway/prompt/model/cache approval flips, public output changes, live jobs outside the approved gate, or V1 cleanup.
