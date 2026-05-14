@@ -8,6 +8,8 @@ const srcRoot = path.resolve(webRoot, "src");
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
+const claimUnderstandingModelAdapterPath = path.resolve(v2AnalyzerRoot, "claim-understanding/model-adapter.ts");
+const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
 const repoRoot = path.resolve(webRoot, "../..");
@@ -47,6 +49,20 @@ const runnerBoundaryFieldNames = [
   "preparedStage1",
   "selectedClaimIds",
   "onEvent",
+];
+const adapterForbiddenProductPaths = [
+  "index.ts",
+  "orchestrator.ts",
+  "pipeline-shell.ts",
+  "runner-ingress.ts",
+].map((fileName) => path.resolve(v2AnalyzerRoot, fileName));
+const forbiddenProviderSdkSpecifiers = [
+  "ai",
+  "openai",
+  "@ai-sdk/",
+  "@anthropic-ai/",
+  "@google/generative-ai",
+  "@mistralai/",
 ];
 
 function toPosix(value: string): string {
@@ -218,6 +234,26 @@ function isV1AnalyzerImport(filePath: string, specifier: string): boolean {
   return resolved === analyzerRoot || resolved.startsWith(`${analyzerRoot}/`);
 }
 
+function isClaimUnderstandingModelAdapterImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/claim-understanding/model-adapter") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const adapterPath = toPosix(claimUnderstandingModelAdapterPath).replace(/\.ts$/, "");
+  return resolved === adapterPath || resolved === `${adapterPath}.ts`;
+}
+
+function isProviderSdkImport(specifier: string): boolean {
+  return forbiddenProviderSdkSpecifiers.some((forbidden) =>
+    specifier === forbidden || specifier.startsWith(forbidden)
+  );
+}
+
 function isV2OwnedPromptFile(filePath: string): boolean {
   const rel = toPosix(path.relative(promptRoot, filePath));
   return rel.includes("-v2.") || rel.startsWith("v2/");
@@ -314,6 +350,40 @@ describe("analyzer-v2 boundary guard", () => {
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isV1AnalyzerImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3b model adapter out of product execution paths", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of adapterForbiddenProductPaths) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3b model adapter and tests free of provider SDK imports", () => {
+    const adapterTestFiles = collectFiles(analyzerV2UnitTestRoot, (filePath) =>
+      toPosix(filePath).endsWith("/claim-understanding/model-adapter.test.ts")
+    );
+    const filesToScan = [claimUnderstandingModelAdapterPath, ...adapterTestFiles];
+    const violations: string[] = [];
+
+    for (const sourcePath of filesToScan) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
       }
     }
