@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C2 Provider Factory Approval Package
 
 **Date:** 2026-05-14
-**Status:** 4C2a implemented after deputy approval; 4C2b provider factory remains unapproved
+**Status:** 4C2a implemented after deputy approval; 4C2b provider factory source remains unapproved after 2026-05-15 deputy re-review
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `0aa31d4` (`feat: clean up v2 runtime approval authority`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -103,7 +103,50 @@ Required ownership rules:
 
 Provider factory code is not approved until 4C2 receives separate deputy review and approval.
 
-## 5.1 6B.3c-4C2a Implementation Record
+### 5.1 2026-05-15 4C2b Re-Review Consolidation
+
+Deputy re-review verdict: **MODIFY**.
+
+Consolidated decision:
+
+- Do not implement `claim-understanding-provider-factory.ts` from the current package as-is.
+- The next allowed low-risk action is a 4C2b-0 approval addendum and, if needed, inert contract updates that define a `factory_only_not_product_wired` state before any provider SDK code exists.
+- The current 4C2a contracts intentionally treat `sdkImportState: "imported"` and `callbackCreationState: "created"` as blocked. A real factory would violate the satisfied 4C2a state unless a separate factory-only state is reviewed first.
+- No Captain confirmation is needed for a docs/contract-only addendum. Captain confirmation is required if the slice proposes product activation, gateway/prompt/model/cache approval flips, public output changes, live jobs, or V1 cleanup.
+
+Required decisions before provider factory source can start:
+
+- exact first provider SDK specifiers and the single allowed import file;
+- whether the first factory is provider-specific or provider-dispatching;
+- authoritative V2 runtime config snapshot source, without config-storage IO inside the factory;
+- factory-only contract state and tests distinct from 4C2a `contract_only`;
+- sanitized provider failure mapping and telemetry fields;
+- static guard exception proving SDK imports are allowed only in the reviewed factory file.
+
+Allowed 4C2b-0 addendum envelope:
+
+- this package;
+- `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`;
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.ts`;
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract.ts`;
+- matching contract tests;
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
+- handoff documentation.
+
+Still forbidden until a later approved source gate:
+
+- provider SDK imports;
+- concrete provider callback creation;
+- product/orchestrator/runtime-stage/runtime-dispatch wiring changes;
+- prompt/config source changes or file seeding;
+- cache read/write/storage IO;
+- approval/status flips or executable gateway construction;
+- public API/UI/report/export exposure;
+- ACS/direct URL execution;
+- live jobs;
+- V1 analyzer, prompt, helper, model resolver, or provider helper reuse.
+
+## 5.2 6B.3c-4C2a Implementation Record
 
 Implementation status: complete at `dc65268b`.
 
@@ -180,6 +223,8 @@ Minimum verifier for approved 4C2b:
 - Which provider SDK is allowed first, if any, and where should its import live?
 - Should 4C3 use a temporary internal admin/env gate, or wait until formal task-policy approval storage exists?
 
+2026-05-15 status: these questions remain open for source approval. They are now blockers for 4C2b provider factory source, not implementation details to decide during coding.
+
 ## 10. Recommended Review Request
 
 Recommended deputy-review prompt:
@@ -194,3 +239,7 @@ Expected reviewer output:
 - whether 4C2b can be reviewed from this package or needs a separate package;
 - whether Captain confirmation is required;
 - whether any live job is meaningful before 4C3.
+
+Updated 4C2b-0 review request:
+
+> Review the 2026-05-15 4C2b re-review consolidation in this package. Decide whether a docs/contract-only 4C2b-0 addendum may proceed to define factory-only state, exact SDK import specifiers, config snapshot authority, sanitized failure mapping, telemetry ownership, and static guard exceptions. Do not approve provider SDK imports, provider callback construction, product wiring, public exposure, cache IO, approval flips, ACS/direct URL execution, live jobs, prompt/config changes, or V1 cleanup unless the reviewed source package explicitly names and constrains them.

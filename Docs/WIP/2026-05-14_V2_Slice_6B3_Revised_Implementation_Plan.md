@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; provider factory wiring and public product runtime exposure remain blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 4C2b provider factory source and public product runtime exposure remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -414,6 +414,7 @@ Post-4C1 provider-factory debate returned `MODIFY/MODIFY/MODIFY`. The next low-r
 - 4C2a source was approved by deputy-team review of the package and implemented as an inert provider runtime config/provenance contract;
 - 4C2a adds no SDK import, product wiring, cache IO, prompt/config edits, approval flips, live jobs, ACS/direct URL execution, or public exposure;
 - proposed 4C2b is a later clean-room provider factory under `apps/web/src/lib/analyzer-v2-runtime/`, with any provider SDK import allowed only in an explicitly approved factory file;
+- 2026-05-15 4C2b re-review returned `MODIFY`: provider factory source must not start from the current package; first prepare a 4C2b-0 addendum/contract update that defines factory-only state, exact SDK import specifiers, config snapshot authority, sanitized failure mapping, telemetry ownership, and static guard exceptions;
 - 4C3 remains the first possible hidden direct-text runtime artifact and live-smoke gate after source commit, runtime refresh, real approval authority, and public-surface leak guards.
 
 6B.3c-4C2a verification:
