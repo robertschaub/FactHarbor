@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 acceptance addendum added after deputy debate
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -189,6 +189,8 @@ Review status: expert debate returned `MODIFY`. Do not implement 6B.3c as a full
 
 Purpose: add the internal Claim Understanding orchestration boundary without provider dispatch.
 
+Implementation status: 6B.3c-0 is complete at `3223d99f` as a structural no-dispatch orchestration slice. It does not approve provider dispatch, prompt rendering, cache IO/eligibility, approval flips, API/UI/report exposure, public cutover, live jobs, or V1 cleanup.
+
 Allowed:
 
 - add a V2-owned internal `ClaimUnderstandingRuntimeState` or equivalent object;
@@ -349,6 +351,25 @@ Consolidated decision: 6B.3c code is not approved as originally written. The nex
 | Senior implementation challenger | MODIFY | Before source edits, name the exact file/test envelope and close the currently visible ambiguities: raw shell-placeholder hiding, `resolvedInputSha256` misuse as ACS hash, internal-state leak boundary, side-effect guards, and public-result recursive guards. |
 
 Consolidated decision: Section 7.1.1 is the accepted implementation envelope for 6B.3c-0. Source work may proceed only within those files/tests and must stop for review if it reaches adapter import, prompt rendering, provider callback/SDK, cache IO/eligibility, approval/status mutation, public result/API/UI/report exposure, live jobs, or V1/V2 boundary weakening.
+
+6B.3c-0 implementation consolidation:
+
+- commit: `3223d99f`;
+- raw runner selected IDs now reject `AC_V2_SHELL_01` before normalization;
+- runner ingress no longer maps `preparedStage1.preparationProvenance.resolvedInputSha256` to `acsSnapshotHash`;
+- run context no longer silently removes shell-placeholder IDs;
+- `claim-understanding/runtime-stage.ts` adds an internal-only no-dispatch stage that accepts ACS migration only with canonical V2 ACS/input-grounding hashes and blocks direct input while the shipped gateway task is non-executable;
+- the V2 orchestrator calls the runtime stage but keeps the state out of public `resultJson`;
+- boundary/public-leak tests guard against model-adapter imports, prompt-loader/provider SDK imports, public Claim Understanding state, prompt text, provider telemetry, and cache material.
+
+6B.3c-0 verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/runtime-stage.test.ts test/unit/lib/analyzer-v2/runner-ingress.test.ts test/unit/lib/analyzer-v2/run-context.test.ts test/unit/lib/analyzer-v2/pipeline-shell.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2`
+- `npm -w apps/web run test -- test/unit/lib/internal-runner-v2-routing.test.ts`
+- clean-room scan for V1 analyzer imports, V1 prompt reuse, V1 prompt-loader reuse, provider SDK imports, model-adapter product imports, and prompt-loader product imports
+- `npm -w apps/web run build`; postbuild reseed reported `Configs: 0 changed, 4 unchanged | Prompts: 0 changed, 3 unchanged`
+- `git diff --check`
 
 6B.3a verification:
 

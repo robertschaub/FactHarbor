@@ -3,7 +3,7 @@
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3b; Slice 6B.3c debate returned MODIFY; 6B.3c-0 structural no-dispatch acceptance addendum is the current implementation envelope
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3c-0; later Claim Understanding dispatch integration remains blocked pending separate review
 **Owner role:** Lead Architect
 
 ---
@@ -42,6 +42,7 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.2: prompt draft + contract tests | done | `8a1ef8cd` | Clean-room non-executable `claimboundary-v2.prompt.md` with `V2_CLAIM_UNDERSTANDING_GATE1`, render/static-hygiene/schema/contract tests, and final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
 | Slice 6B.3a: Claim Understanding foundation | done | `2d14c89a` | Explicit V2 prompt loader, production runtime schemas, cache/provenance no-dispatch/no-store decisions, policy eligibility guard, and tests completed. No file seeding, approval flips, runtime model call, orchestrator wiring, API/UI/report change, live jobs, or V1 analyzer imports |
 | Slice 6B.3b: model adapter contract | done | `04742922` | V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected mock dispatch, production schema validation, policy fail-closed behavior, identical structural retry, typed telemetry/provenance, no cache IO, no provider SDK callsite, no product-path imports, and no neutral/shared adapter. |
+| Slice 6B.3c-0: structural no-dispatch orchestration | done | `3223d99f` | Internal-only Claim Understanding runtime stage, ACS migration only with canonical V2 hashes, direct input blocked by shipped gateway policy, raw shell-placeholder rejection, no prompt/cache/provider/model dispatch, and public leak guards. |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -136,7 +137,7 @@ Slice 6B.3b is complete at `04742922`. Slice 6B.0 prepared the prompt/model revi
 
 6B.3c expert debate returned `MODIFY`: do not implement full runtime-dispatch/orchestrator wiring as originally written. The next boundary is 6B.3c-0 structural Claim Understanding orchestration only: internal runtime state, ACS migration at the V2 edge, direct-input gateway blocking before prompt/cache/provider work, shell-placeholder raw-ID failure before normalization can hide it, no model-adapter import from product execution paths, no prompt rendering, no provider callback, no cache IO, no public/API/UI/report field, no approval/status mutation, and no live jobs.
 
-Follow-up 6B.3c-0 acceptance debate also returned `MODIFY`: source work may start only under `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 7.1.1. That addendum names the exact file/test envelope: raw runner placeholder detection, no `resolvedInputSha256` reuse as ACS snapshot hash, V2-owned no-dispatch Claim Understanding stage/runtime state, internal-only orchestrator state, recursive public-result leak guard, import-time side-effect guard, no product-path model-adapter import, and no prompt/cache/provider side effects.
+Follow-up 6B.3c-0 acceptance debate also returned `MODIFY`: source work could start only under `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 7.1.1. That addendum named the exact file/test envelope: raw runner placeholder detection, no `resolvedInputSha256` reuse as ACS snapshot hash, V2-owned no-dispatch Claim Understanding stage/runtime state, internal-only orchestrator state, recursive public-result leak guard, import-time side-effect guard, no product-path model-adapter import, and no prompt/cache/provider side effects. Slice 6B.3c-0 is now complete at `3223d99f`.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -1651,7 +1652,7 @@ This document is now the operative V2 target specification with implementation p
 - This documentation status update changes no source, prompt, config, API, UI, runtime, or live-job behavior.
 - Slice 6B.3a implementation is committed at `2d14c89a`; it changes only structural Analyzer V2 foundation code and tests.
 - Slice 6B.3b implementation is committed at `04742922`; it adds only mock adapter contract code and tests.
-- Slice 6B.3c debate returned `MODIFY`; follow-up 6B.3c-0 acceptance addendum is documented; no 6B.3c source code has started.
+- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; later dispatch-capable Claim Understanding integration remains unapproved.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 
