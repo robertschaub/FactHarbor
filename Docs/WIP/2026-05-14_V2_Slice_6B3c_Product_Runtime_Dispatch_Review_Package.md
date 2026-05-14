@@ -1,9 +1,9 @@
 # V2 Slice 6B.3c-2 Product Runtime Dispatch Review Package
 
 **Date:** 2026-05-14
-**Status:** Deputy review returned `MODIFY`; revised as docs-only gate with no source code approved
+**Status:** Product runtime dispatch remains blocked; post-readiness review permits only another non-executable owner/activation contract slice
 **Owner role:** Lead Architect / Captain deputy
-**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; package tightened through `09ca7c4e`
+**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`
 
 ---
 
@@ -43,6 +43,25 @@ Revised decision:
 - A later package may propose a **contract-only** source slice.
 - Prompt rendering, cache-decision construction, model-adapter calls, provider callbacks, and provider SDKs remain deferred until that contract passes review.
 
+## 1.2 Post-Readiness Contract Review Consolidation
+
+After `6a9d7143`, the deputy team reviewed whether product runtime dispatch could start.
+
+| Reviewer lens | Verdict | Consolidated finding |
+|---|---|---|
+| LLM/runtime safety | BLOCK | The readiness contract is inert but does not define a real runtime approval source, prompt rendering owner, cache no-read/no-write construction, or provider boundary. |
+| Senior Developer / implementability | MODIFY | Product dispatch is not the next low-risk slice. A smaller non-executable runtime-dispatch owner/activation contract is feasible. |
+| Code Reviewer / clean-room | BLOCK | Direct-import guards are not enough for runtime dispatch. Add transitive reachability and production-source guard coverage before product wiring. |
+| Challenger | BLOCK | Product dispatch would remove the current safety guard before a replacement guard and public-leak contract are proven. |
+
+Consolidated decision:
+
+- Do not implement product runtime dispatch after 6B.3c-2B.
+- Tighten readiness so review-package snapshots cannot satisfy runtime readiness.
+- Add only a non-executable `runtime-dispatch.ts` owner/activation contract.
+- Strengthen static guards for transitive dispatch reachability, provider SDK imports, nonliteral dynamic imports, and executable gateway-status construction.
+- Continue to block prompt rendering, cache-decision construction, model-adapter calls, provider callbacks/SDKs, approval flips, public surfaces, live jobs, direct URL dispatch, and V1 reuse.
+
 ## 2. Non-Goals
 
 This package does not approve:
@@ -78,24 +97,25 @@ Product dispatch remains blocked until a reviewed package resolves all of these:
 flowchart TB
   A["6B.3c-1 complete\npure dispatch-frame contract"]
   B["6B.3c-2A\nthis docs-only dispatch gate package"]
-  C["6B.3c-2B candidate\ncontract-only dispatch readiness boundary"]
-  D["6B.3c-3 candidate\nproduct dispatch approval package"]
-  E["6B.4 candidate\ncommit-first structural smoke / live budget gate"]
+  C["6B.3c-2B complete\ndispatch readiness contract"]
+  D["6B.3c-3A candidate\nruntime owner activation contract"]
+  E["6B.3c-3B candidate\nproduct dispatch approval package"]
+  F["6B.4 candidate\ncommit-first structural smoke / live budget gate"]
 
-  A --> B
-  B -->|"deputy review required"| C
-  C -->|"expert review required"| D
-  D -->|"Captain/deputy approval required"| E
+  A --> B --> C
+  C -->|"post-readiness review permits contract only"| D
+  D -->|"expert review required"| E
+  E -->|"Captain/deputy approval required"| F
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef docs fill:#fff4d6,stroke:#9a6700,color:#3a2600
   classDef blocked fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class A done
+  class A,C done
   class B docs
-  class C,D,E blocked
+  class D,E,F blocked
 ```
 
-Only 6B.3c-2A is in scope for this commit. 6B.3c-2B and later slices are candidates for review, not approval.
+6B.3c-2B is complete as an inert contract. 6B.3c-3A may proceed only inside the non-executable source envelope below; product dispatch remains blocked.
 
 ## 5. Candidate 6B.3c-2B Contract-Only Envelope For Later Review
 
@@ -134,6 +154,40 @@ Candidate forbidden behavior:
 - no public/API/UI/report/export surface;
 - no live jobs;
 - no direct URL dispatch without resolved body ownership;
+- no V1 analyzer, prompt, profile, section, type, mock, or fixture reuse.
+
+## 5.1 6B.3c-3A Runtime Owner / Activation Contract Envelope
+
+The post-readiness review permits this next source envelope only:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`
+- `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.ts`
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+
+Allowed behavior:
+
+- define a single future runtime owner identity without making it reachable from product paths;
+- require `runtime_approval_snapshot` as the approval source for satisfied readiness;
+- block `review_packet_snapshot` from satisfying runtime readiness;
+- require approval snapshot identity metadata;
+- define no-read/no-write cache posture as an inert activation contract, without constructing a cache decision or importing cache IO;
+- require prompt rendering, provider callback creation, provider SDK imports, adapter calls, product wiring, public surfaces, and direct URL dispatch to remain deferred;
+- add static guards for transitive dispatch reachability, provider SDK imports, nonliteral dynamic imports, executable gateway-status construction, and runtime-owner side-effect imports.
+
+Forbidden behavior:
+
+- no `orchestrator.ts`, `runtime-stage.ts`, `pipeline-shell.ts`, `runner-ingress.ts`, or `index.ts` product wiring;
+- no prompt rendering;
+- no prompt/config/input/cache hash construction beyond validating externally supplied non-placeholder fields;
+- no cache-decision construction or cache IO;
+- no model-adapter import or adapter call;
+- no provider callback or provider SDK import;
+- no production approval/status mutation;
+- no public/API/UI/report/export surface;
+- no live jobs;
+- no direct URL dispatch;
 - no V1 analyzer, prompt, profile, section, type, mock, or fixture reuse.
 
 ## 6. Protected Product Paths

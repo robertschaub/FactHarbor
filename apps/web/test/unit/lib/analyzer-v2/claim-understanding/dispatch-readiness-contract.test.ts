@@ -55,7 +55,11 @@ function approvalSnapshot(
     promptApprovalStatus: "approved",
     modelApprovalStatus: "approved",
     cacheApprovalStatus: "approved",
-    approvalSource: "review_packet_snapshot",
+    approvalSource: "runtime_approval_snapshot",
+    approvalSnapshotId: "runtime-approval-snapshot-6b3c3a",
+    approvalSnapshotVersion: "v2.runtime-approval-snapshot.0",
+    approvedBy: "Captain deputy review",
+    approvedAt: "2026-05-14T15:30:00.000Z",
     ...overrides,
   };
 }
@@ -142,6 +146,34 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
     expect(result.blockedReasons).toEqual(expect.arrayContaining([
       "approval_snapshot_incomplete",
       "approval_snapshot_not_executable",
+    ]));
+    expect(result.sideEffects).toEqual(noReadinessSideEffects);
+  });
+
+  it("blocks review-package snapshots from satisfying runtime readiness", () => {
+    const frame = readyFrame({
+      runIdHint: "job-readiness-review-packet-blocked",
+      submitted: {
+        kind: "text",
+        value: "Plastic recycling is pointless",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+
+    const result = validateClaimUnderstandingDispatchReadinessContract({
+      frame,
+      approvalSnapshot: approvalSnapshot({
+        approvalSource: "review_packet_snapshot",
+        approvalSnapshotId: "",
+      }),
+      provenancePacket: provenancePacket(frame),
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReasons).toEqual(expect.arrayContaining([
+      "approval_snapshot_source_not_runtime",
+      "approval_snapshot_identity_missing",
     ]));
     expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });

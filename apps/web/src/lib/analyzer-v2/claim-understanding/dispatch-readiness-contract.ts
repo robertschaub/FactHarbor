@@ -23,7 +23,11 @@ export type ClaimUnderstandingDispatchReadinessApprovalSnapshot = {
   promptApprovalStatus: ClaimUnderstandingDispatchReadinessApprovalStatus;
   modelApprovalStatus: ClaimUnderstandingDispatchReadinessApprovalStatus;
   cacheApprovalStatus: ClaimUnderstandingDispatchReadinessApprovalStatus;
-  approvalSource: "review_packet_snapshot" | "future_runtime_approval_snapshot";
+  approvalSource: "review_packet_snapshot" | "runtime_approval_snapshot";
+  approvalSnapshotId: string;
+  approvalSnapshotVersion: string;
+  approvedBy: string;
+  approvedAt: string;
 };
 
 export type ClaimUnderstandingDispatchReadinessCacheDecisionState =
@@ -74,6 +78,8 @@ export type ClaimUnderstandingDispatchReadinessBlockedReason =
   | "dispatch_frame_incomplete"
   | "approval_snapshot_incomplete"
   | "approval_snapshot_not_executable"
+  | "approval_snapshot_source_not_runtime"
+  | "approval_snapshot_identity_missing"
   | "provenance_packet_incomplete"
   | "provenance_frame_mismatch"
   | "acs_provenance_missing"
@@ -176,6 +182,19 @@ function collectApprovalReasons(
     || approvalSnapshot.cacheApprovalStatus !== "approved"
   ) {
     addReason(reasons, "approval_snapshot_incomplete");
+  }
+
+  if (approvalSnapshot.approvalSource !== "runtime_approval_snapshot") {
+    addReason(reasons, "approval_snapshot_source_not_runtime");
+  }
+
+  if (
+    !isRealContractString(approvalSnapshot.approvalSnapshotId)
+    || !isRealContractString(approvalSnapshot.approvalSnapshotVersion)
+    || !isRealContractString(approvalSnapshot.approvedBy)
+    || !isRealContractString(approvalSnapshot.approvedAt)
+  ) {
+    addReason(reasons, "approval_snapshot_identity_missing");
   }
 
   if (approvalSnapshot.gatewayTaskStatus !== "executable") {

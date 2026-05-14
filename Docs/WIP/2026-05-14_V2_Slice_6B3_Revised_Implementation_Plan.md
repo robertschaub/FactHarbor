@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -303,6 +303,24 @@ Post-6B.3c-1 deputy debate:
 Consolidated decision: no product runtime dispatch source code is approved after 6B.3c-1. The next low-risk step is the docs-only gate package `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`. That package does not approve prompt rendering, model-adapter product imports, provider callbacks, provider SDKs, cache IO, approval flips, public diagnostics, direct URL body assumptions, live jobs, or V1 reuse.
 
 Review of the first 6B.3c-2 gate package returned `MODIFY`. The revised package keeps 6B.3c-2A docs-only and changes any later 6B.3c-2B source candidate to contract-only, preferably `dispatch-readiness-contract.ts` rather than a runtime owner: approval snapshot shape, dispatch-owner boundaries, replacement import guards, URL fail-closed rules, provenance packet types/tests, and negative reachability guards. Prompt rendering, cache-decision construction, model-adapter calls, provider callbacks, provider SDK imports, approval enablement, cache IO, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
+
+6B.3c-2B is complete at `6a9d7143` as an inert dispatch-readiness contract. Post-readiness expert review returned `BLOCK/BLOCK/BLOCK/MODIFY` for product runtime dispatch. The only accepted next source envelope is 6B.3c-3A: a non-executable `runtime-dispatch.ts` owner/activation contract, readiness approval-source tightening, and stronger boundary guards. Product wiring, prompt rendering, cache-decision construction, adapter calls, provider callbacks/SDKs, approval flips, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
+
+6B.3c-3A source envelope:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`;
+- `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-readiness-contract.test.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`.
+
+Required 6B.3c-3A verifier additions:
+
+- readiness contract blocks review-package snapshots and requires runtime approval snapshot identity metadata;
+- runtime owner contract remains `contract_only`, not product-reachable, and records false side-effect flags;
+- cache posture stays no-read/no-write and does not construct a cache decision;
+- prompt rendering, provider callback/SDK, adapter call, product wiring, public exposure, and direct URL dispatch remain blocked;
+- boundary guard proves protected product paths have no direct or transitive reachability to dispatch-capable internals.
 
 ## 8. Approval Gate Before Code
 

@@ -74,6 +74,7 @@ const noDispatchRuntimePaths = [
   ...dispatchForbiddenProductPaths,
   claimUnderstandingDispatchFramePath,
   claimUnderstandingDispatchReadinessContractPath,
+  claimUnderstandingRuntimeDispatchPath,
 ];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
@@ -337,6 +338,112 @@ function isClaimUnderstandingRuntimeDispatchImport(filePath: string, specifier: 
   return resolved === runtimeDispatchPath || resolved === `${runtimeDispatchPath}.ts`;
 }
 
+function resolveExistingTypeScriptFile(candidatePath: string): string | null {
+  const candidates = [
+    candidatePath,
+    `${candidatePath}.ts`,
+    `${candidatePath}.tsx`,
+    path.join(candidatePath, "index.ts"),
+    path.join(candidatePath, "index.tsx"),
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate) && statSync(candidate).isFile()) ?? null;
+}
+
+function resolveAnalyzerV2SourceImport(filePath: string, specifier: string): string | null {
+  if (specifier.startsWith("@/lib/analyzer-v2/")) {
+    return resolveExistingTypeScriptFile(
+      path.resolve(v2AnalyzerRoot, specifier.slice("@/lib/analyzer-v2/".length)),
+    );
+  }
+
+  if (!specifier.startsWith(".")) {
+    return null;
+  }
+
+  const resolved = resolveExistingTypeScriptFile(path.resolve(path.dirname(filePath), specifier));
+  if (!resolved) {
+    return null;
+  }
+
+  const normalizedRoot = toPosix(v2AnalyzerRoot);
+  const normalizedResolved = toPosix(resolved);
+  return normalizedResolved === normalizedRoot || normalizedResolved.startsWith(`${normalizedRoot}/`)
+    ? resolved
+    : null;
+}
+
+function collectTransitiveAnalyzerV2Imports(sourcePath: string, seen = new Set<string>()): string[] {
+  const normalizedSourcePath = toPosix(sourcePath);
+  if (seen.has(normalizedSourcePath)) {
+    return [];
+  }
+  seen.add(normalizedSourcePath);
+
+  const imports: string[] = [];
+  for (const specifier of collectModuleSpecifiers(parseSource(sourcePath))) {
+    const resolved = resolveAnalyzerV2SourceImport(sourcePath, specifier);
+    if (!resolved) {
+      continue;
+    }
+    imports.push(resolved);
+    imports.push(...collectTransitiveAnalyzerV2Imports(resolved, seen));
+  }
+
+  return imports;
+}
+
+function collectNonLiteralDynamicImports(sourceFile: ts.SourceFile): string[] {
+  const locations: string[] = [];
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isCallExpression(node)
+      && node.expression.kind === ts.SyntaxKind.ImportKeyword
+      && (node.arguments.length !== 1 || !ts.isStringLiteral(node.arguments[0]))
+    ) {
+      const position = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      locations.push(`${sourceFile.fileName}:${position.line + 1}:${position.character + 1}`);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return locations;
+}
+
+function hasExecutableStatusMutation(sourceFile: ts.SourceFile): boolean {
+  let found = false;
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isPropertyAssignment(node)
+      && propertyNameText(node.name) === "status"
+      && ts.isStringLiteral(node.initializer)
+      && node.initializer.text === "executable"
+    ) {
+      found = true;
+    }
+
+    if (
+      ts.isBinaryExpression(node)
+      && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isStringLiteral(node.right)
+      && node.right.text === "executable"
+      && ts.isPropertyAccessExpression(node.left)
+      && node.left.name.text === "status"
+    ) {
+      found = true;
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return found;
+}
+
 function isProviderSdkImport(specifier: string): boolean {
   return forbiddenProviderSdkSpecifiers.some((forbidden) =>
     specifier === forbidden || specifier.startsWith(forbidden)
@@ -509,6 +616,27 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps product execution paths without transitive reachability to dispatch-capable internals", () => {
+    const forbiddenTransitiveTargets = new Set([
+      claimUnderstandingModelAdapterPath,
+      claimUnderstandingPromptLoaderPath,
+      claimUnderstandingDispatchReadinessContractPath,
+      claimUnderstandingRuntimeDispatchPath,
+    ].map(toPosix));
+    const violations: string[] = [];
+
+    for (const sourcePath of dispatchForbiddenProductPaths) {
+      const transitiveImports = collectTransitiveAnalyzerV2Imports(sourcePath);
+      for (const importedPath of transitiveImports) {
+        if (forbiddenTransitiveTargets.has(toPosix(importedPath))) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches ${toPosix(path.relative(webRoot, importedPath))}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps the 6B.3c-1 dispatch frame free of dispatch side-effect imports", () => {
     const sourceFile = parseSource(claimUnderstandingDispatchFramePath);
     const violations: string[] = [];
@@ -571,6 +699,37 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the 6B.3c-3 runtime-dispatch owner contract free of dispatch side-effect imports", () => {
+    const sourceFile = parseSource(claimUnderstandingRuntimeDispatchPath);
+    const violations: string[] = [];
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isV1AnalyzerImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
+        violations.push(`runtime dispatch imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
+        violations.push(`runtime dispatch imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
+        violations.push(`runtime dispatch imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
+        violations.push(`runtime dispatch imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(claimUnderstandingRuntimeDispatchPath, specifier)) {
+        violations.push(`runtime dispatch imports gateway policy ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`runtime dispatch imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`runtime dispatch imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps Analyzer V2 product source free of test, mock, and fixture imports", () => {
     const violations: string[] = [];
 
@@ -580,6 +739,36 @@ describe("analyzer-v2 boundary guard", () => {
         if (isTestOrMockImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Analyzer V2 product source free of provider SDK and nonliteral dynamic imports", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of v2SourceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+      }
+      for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+        violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps production source from constructing executable gateway task state", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of v2SourceFiles) {
+      if (hasExecutableStatusMutation(parseSource(sourcePath))) {
+        violations.push(`${toPosix(path.relative(webRoot, sourcePath))} constructs executable gateway task state`);
       }
     }
 
