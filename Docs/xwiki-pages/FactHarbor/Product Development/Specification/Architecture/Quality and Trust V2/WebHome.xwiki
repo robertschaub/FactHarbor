@@ -23,6 +23,16 @@ This is a simplification of ownership, not a reduction of analytical rigor.
 
 {{include reference="FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome"/}}
 
+== Report Regression Control ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+
+V2 treats report generation as a quality-bearing surface. Narrative, markdown, HTML/export, article adjudication, warning presentation, and report writer profile changes require candidate-vs-approved comparison before promotion.
+
+The baseline is the approved golden corpus: Captain-defined benchmark inputs, pinned deployed comparator reports, stored fixtures, and report-quality expectation files. Current master V1 is not a quality oracle.
+
+Promotion requires automated schema/citation/render/Q-code checks, stored-evidence replay where valid, semantic LLM/deputy review for meaning and explanation quality, measured cost/latency impact, and no unresolved regression. Accepted tradeoffs need an explicit deputy/Captain approval record.
+
 == Trust Model ==
 
 |= Trust concern |= V2 owner |= Required outcome
@@ -82,6 +92,7 @@ Before V2 can replace V1, quality and trust review must verify:
 * User-visible warnings are classified by one shared policy.
 * Evidence citations are complete enough for every verdict that depends on evidence.
 * Report-quality status, narrative completeness, and evidence references are present in public artifacts.
+* Report-generation profiles are versioned, replayable where upstream contracts are unchanged, and rollback-ready.
 * Source reliability is observable without unapproved direct verdict weighting.
 * V2 and V1 comparator reports are reviewed for the Captain-defined benchmark inputs.
 

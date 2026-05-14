@@ -819,6 +819,7 @@ The exact string can still be changed by deputy review before implementation, bu
 | Quality gates | Gate 1, sufficiency, Gate 4, report integrity, warning integrity, damaged-report flag when applicable |
 | Warnings | list of canonical `WarningEvent` objects, already classified for display by the shared warning policy |
 | Narrative/report | markdown, narrative sections, evidence references, report-quality status |
+| Report generation provenance | report-generation profile id/version, report writer version, narrative prompt section/version/hash when applicable, model task ids/versions, config snapshot hash, evidence packet or replay fixture id/hash when applicable, renderer/export adapter version |
 | Compatibility | optional V1 compatibility projection fields, clearly marked as fallback/adapter material |
 
 Adapters must read this canonical schema. They may expose legacy aliases, but they may not compute a different verdict authority when canonical fields are present.
@@ -1122,9 +1123,52 @@ V2 should replace a tangled loop with named retrieval policies:
 - Article adjudication should have an explicit model task, UCM-owned temperature/budget, and observable failure behavior.
 - Narrative/report-quality failures should be visible to admins and user-visible only when material under warning policy.
 
+### 12.1 Report Generation Regression Control And Rollback
+
+Report generation is a quality-bearing surface. Future improvements to narrative generation, article adjudication, report structure, markdown/HTML rendering, warning presentation, or explanation style must be regression-controlled before they become the default.
+
+**Baseline and replay assets**
+
+- The baseline is pinned deployed comparator reports, Captain-defined benchmark inputs, stored fixtures, and `Docs/AGENTS/*quality-expectations*.json`; current master V1 is not a quality oracle.
+- Where possible, report-generation candidates should replay from stored canonical packets (`ClaimContract`, `EvidenceCorpus`, `BoundarySet`, `VerdictSet`, warnings, and quality gates) so narrative/result-writer changes can be evaluated without paying for full research.
+- Stored-evidence replay is valid only when the upstream evidence/verdict contracts are unchanged. If a change alters claim understanding, evidence lifecycle, boundary formation, verdict adjudication, or warning materiality, full pipeline validation is required at the approved gate.
+
+**Versioning and rollback unit**
+
+Every public report must carry enough provenance to identify the active report-generation path: report-generation profile id/version, report writer version, narrative prompt section/version/hash when applicable, model task ids/versions, model/provider, config snapshot hash, result schema version, renderer/export adapter version, source commit, and replay/evidence-packet id/hash when used.
+
+The primary rollback unit is the approved report-generation profile. Prompt sections, model task routing, report-generation config, renderer/export profile, and narrative rubric should be UCM/profile-versioned where they affect output. If a candidate regresses, the default profile can be switched back to the previous approved profile without code rollback. Code-level result-writer regressions still require normal source rollback or a guarded fix.
+
+**Candidate comparison**
+
+Candidate report-generation changes must be compared against the current approved profile on the same stored inputs/evidence packets where possible. Each material difference is classified as:
+
+| Classification | Meaning | Promotion effect |
+|---|---|---|
+| `improvement` | better fidelity, clarity, evidence transparency, warning honesty, or user usefulness without quality loss | may support promotion |
+| `neutral` | wording/layout changes with no material quality or trust change | acceptable if tests pass |
+| `accepted_tradeoff` | a known downside accepted for a larger quality/product reason | requires deputy/Captain approval record |
+| `regression` | weaker evidence transparency, misleading narrative, wrong emphasis, hidden caveat, broken citation, verdict drift, or poorer comparator/Q-code result | blocks promotion and triggers rollback/quarantine |
+
+Semantic comparison must use an LLM-owned rubric or deputy review, not keyword, regex, or surface-similarity scoring. Structural checks may verify schema validity, citation id existence, markdown/HTML renderability, link integrity, and adapter field presence.
+
+**Promotion gate**
+
+A report-generation candidate can become default only after:
+
+- schema, adapter, markdown/static HTML, and render smoke tests pass;
+- report-quality/Q-code checks pass against `Docs/AGENTS/report-quality-expectations.json`;
+- candidate-vs-current comparison is completed for the approved golden corpus and stored replay packets;
+- warning materiality, evidence citations, analysis focus provenance, and damaged-report behavior remain visible and consistent;
+- multilingual/input-neutral and Captain-defined comparator expectations do not regress;
+- cost/latency impact is measured and any increase has a quality-protection reason;
+- deputy review signs off on all `accepted_tradeoff` items and no unresolved `regression` remains.
+
+Failed report-generation candidates are classified as `keep`, `quarantine`, or `revert` before further broadening, following the failed-attempt recovery rule. A regressing profile must not remain selectable as default; if kept for diagnosis, it is marked experimental/internal and excluded from normal runtime selection.
+
 ---
 
-## 12.1 Stage Failure, Event, And Gate Matrix
+## 12.2 Stage Failure, Event, And Gate Matrix
 
 Each stage contract includes this matrix. Implementers may add more events, but they may not remove the listed failure/gate behavior without review.
 
@@ -1306,7 +1350,7 @@ Pre-implementation tests are grouped by slice to avoid one oversized first chang
 | Evidence lifecycle | retrieval policy tests, seed reuse, source-language-first behavior, source classification boundary, acquisition warning policy |
 | Sufficiency/boundary | sufficiency warning tests, boundary equivalence, fallback boundary, coverage matrix |
 | Verdict/Gate 4 | citation integrity, direction repair, baseless challenge, safe downgrade, canonical confidence policy |
-| Aggregation/result writer | canonical verdict/truth/confidence, quality gates, warning event schema, article adjudication fallback |
+| Aggregation/result writer | canonical verdict/truth/confidence, quality gates, warning event schema, article adjudication fallback, report-generation regression-control fixtures |
 | UI/export/render | fixture-driven UI adapter test, markdown output test, static HTML render smoke check whenever adapters change |
 | Hotspot gate | one verifier or deputy-approved waiver for every hotspot in Section 16 |
 
@@ -1333,6 +1377,7 @@ Run only after approval, with commit-first and runtime-refresh discipline. Use o
 - no warning materiality regression across UI, markdown, HTML export, API summaries, metrics, and validation;
 - no UI/API/report/export compatibility regression unless explicitly approved;
 - Analysis Session UX checks pass: Unattended is the normal default, mode selection is visible before submission, server-side mode/cap enforcement is authoritative, forced-review conditions are honored, and no job is created before finalized focus selection;
+- report-generation regression controls pass for any narrative/result-writer change: versioned provenance, stored-evidence replay where valid, candidate-vs-current comparison, rollback-ready profile, and deputy signoff for accepted tradeoffs;
 - no deterministic semantic hotspot introduced without a verifier or deputy-approved waiver;
 - no material multilingual/input-neutrality regression on Captain-defined inputs and approved comparator families;
 - runtime/cost measured against current-stack baselines using separate buckets for preparation, interactive wait, queue, active final runtime, retrieval, verdict, and export;
@@ -1355,7 +1400,7 @@ This is not approval to implement. It is the proposed order once the target spec
 6. Evidence lifecycle and sufficiency gate, with retrieval policies and source-language-first behavior.
 7. Boundary formation.
 8. Verdict adjudication and Gate 4.
-9. Aggregation and canonical result writer.
+9. Aggregation and canonical result writer, including report-generation provenance and regression-control harness.
 10. Analysis Session UI shell over existing preparation/job endpoints, preserving backend draft/job separation.
 11. Formal `AnalysisSession` API facade only if the shell needs a stable facade before cutover; do not merge draft and job persistence.
 12. Pre-cutover verification path that can compare V1/V2 without replacing public output.
@@ -1375,6 +1420,7 @@ Failed-validation recovery during implementation must classify the prior attempt
 - API list/detail parity verified.
 - UI fixture render and smoke check pass.
 - Analysis Session shell checks pass: visible mode selector, Unattended default, Attended review path, forced-review path, selection-only focus editing, revise-input escape hatch, and report focus provenance.
+- Report-generation promotion/rollback checks pass: golden corpus comparison, stored-evidence replay where applicable, rollback profile pointer, and no unresolved report-quality regression.
 - Markdown and static HTML export parity pass.
 - ACS draft reuse and selected-ID behavior pass.
 - Warning parity and primary issue selection pass.
@@ -1410,6 +1456,7 @@ V1 prompt cleanup condition: V1 analysis prompt files, prompt profiles, prompt s
 | Scope normalization and boundaries | Boundary formation | preserve CAB semantics and coverage matrix; remove exact text semantic equivalence | boundary equivalence and coverage tests |
 | Verdict debate and repair | Verdict adjudication | preserve debate roles, citation integrity, baseless challenge policy, direction repair, safe downgrade; remove duplicate provider retry/parse handling from stage code | Gate 4 and citation/direction tests |
 | Article adjudication | Aggregation/result writer | preserve only as explicit, observable, UCM/model-task-owned mechanism; default behavior-preserving until quality validation approves changes | adjudication fallback and quality tests |
+| Report generation profile and narrative rendering | Aggregation/result writer plus external adapters | preserve output quality through versioned profiles, stored-evidence replay, candidate-vs-current comparison, and rollback-ready defaults; no default promotion with unresolved regression | report-generation regression harness, Q-code checks, render smoke tests, deputy signoff |
 | Warning display | Warning/event policy | preserve materiality policy; remove raw-severity-only public filtering | cross-surface warning parity tests |
 | Result adapters | External adapters | preserve behavior through field-level mapping; remove independent verdict derivation when canonical fields exist | API/UI/export/metrics/validation fixture tests |
 | V1 analysis prompt files/profiles/sections | Prompt/model/LLM gateway and config snapshot | no reuse, copy, alias, or active runtime loading; remove from runtime after V2-owned prompt task is approved and verified; archive only if historical reading value remains | prompt-boundary static guard, prompt/config/model contract tests, UCM active-profile check, deputy signoff |

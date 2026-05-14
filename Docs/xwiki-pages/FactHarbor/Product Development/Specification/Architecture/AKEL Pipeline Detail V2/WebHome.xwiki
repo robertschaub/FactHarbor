@@ -55,6 +55,16 @@ Routine recovered operations are silent or admin-only. System failures, analytic
 
 Analysis-affecting cache keys include every value that can change the semantic answer: prompt section and content hash, model task, provider, model, temperature profile, output schema version, config snapshot hash, result schema version, evidence/source identity when applicable, language/search context, current-date bucket, and adapter version when cached output feeds public projection.
 
+== Report Generation Regression Control ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+
+Stage 5 report-generation changes are promoted through versioned profiles, not ad hoc edits. Every public report records report-generation profile id/version, report writer version, prompt section/hash where applicable, model task version, config snapshot hash, source commit, renderer/export adapter version, and stored evidence/replay packet id/hash when used.
+
+Candidate changes should replay from stored canonical packets when upstream contracts are unchanged. If the change alters claim understanding, evidence lifecycle, boundary formation, verdict adjudication, or warning materiality, stored replay is insufficient and full pipeline validation is required at the approved gate.
+
+The previous approved report-generation profile is the normal rollback target. A candidate with unresolved report-quality regression must not become the default.
+
 == Simplifications From V1 ==
 
 |= V1 complexity |= V2 simplification

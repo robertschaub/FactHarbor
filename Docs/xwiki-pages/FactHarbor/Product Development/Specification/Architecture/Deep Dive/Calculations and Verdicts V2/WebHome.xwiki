@@ -67,6 +67,20 @@ V2 aggregation is responsible for structural and mathematical composition only a
 | Project quality-gate and warning states into ##ReportResult##. | Hide material warnings or downgrade damaged reports.
 | Compute public summary fields from ##VerdictSet## and ##BoundarySet##. | Re-run source reliability as a direct truth formula without approval.
 
+== Report Generation Regression Control ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Report Regression Control.WebHome"/}}
+
+Report generation and narrative improvements must be rollback-safe:
+
+* every candidate uses a versioned report-generation profile;
+* comparison uses the same stored canonical packets where upstream evidence/verdict contracts are unchanged;
+* differences are classified as ##improvement##, ##neutral##, ##accepted_tradeoff##, or ##regression##;
+* semantic quality comparison uses an LLM-owned rubric or deputy review, not keyword or surface-similarity scoring;
+* unresolved regressions block promotion and restore the previous approved profile.
+
+##ReportResult## must carry profile, prompt/model/config, schema, renderer/export adapter, source commit, and replay/evidence-packet provenance so a future report-quality issue can be traced and rolled back.
+
 == Doubted vs Contested ==
 
 V2 keeps the evidence-backed contestation rule:
@@ -118,6 +132,7 @@ Before V2 verdict calculations can be public:
 * V2 fixture reports must cover TRUE/FALSE/MIXED/UNVERIFIED and damaged-result states.
 * Compatibility adapters must expose the same public verdict semantics as ##ReportResult##.
 * Warning severity must match materiality policy.
+* Report-generation regression control must pass for narrative/result-writer changes, including golden-corpus comparison and rollback profile readiness.
 * Comparator review must include Captain-defined benchmark inputs and best available historical reports.
 * Live validation spend must happen only after commit, runtime refresh, and approved gate.
 

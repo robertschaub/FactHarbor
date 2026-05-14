@@ -1,0 +1,44 @@
+= V2 Report Regression Control =
+
+{{info}}
+Target promotion and rollback loop for V2 report-generation changes. This applies to narrative generation, article adjudication, markdown/HTML rendering, warning presentation, and result-writer profile changes.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+  CHANGE["Candidate report-generation change"] --> PROFILE["Versioned candidate profile"]
+  PROFILE --> REPLAY["Replay on stored canonical packets"]
+  GOLDEN["Golden corpus\nCaptain inputs + pinned deployed reports"] --> COMPARE["Candidate vs approved profile comparison"]
+  REPLAY --> COMPARE
+  COMPARE --> CLASSIFY{{"Difference classification"}}
+  CLASSIFY -->|"improvement or neutral"| AUTO["Automated gates\nschema, citations, Q-code, render"]
+  CLASSIFY -->|"accepted tradeoff"| REVIEW["Deputy/Captain approval"]
+  CLASSIFY -->|"regression"| BLOCK["Block promotion\nrollback or quarantine"]
+  REVIEW --> AUTO
+  AUTO --> PROMOTE["Promote profile as default"]
+  BLOCK --> ROLLBACK["Restore previous approved profile"]
+  PROMOTE --> META["ReportResult provenance\nprofile, prompt, model, config, commit"]
+
+  classDef candidate fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef gate fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef ok fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  classDef stop fill:#fde7e9,stroke:#b3261e,color:#4a1111
+  class CHANGE,PROFILE,REPLAY candidate
+  class COMPARE,CLASSIFY,AUTO,REVIEW gate
+  class PROMOTE,META ok
+  class BLOCK,ROLLBACK stop
+{{/mermaid}}
+
+== Required Controls ==
+
+|= Control |= Purpose
+| Versioned profile | Roll back prompt/model/config/rendering defaults without source-code rollback when possible.
+| Golden corpus | Compare against Captain-defined inputs and pinned deployed comparator reports, not current master V1.
+| Stored-packet replay | Test report-generation changes without paying for full research when upstream contracts are unchanged.
+| Difference classification | Separate improvement, neutral change, accepted tradeoff, and regression.
+| Promotion gate | Prevent default rollout until automated checks and deputy review pass.
+| Provenance metadata | Make every public report traceable to profile, prompt/model/config, source commit, and evidence packet.
+
+----
+
+**Navigation:** [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]
