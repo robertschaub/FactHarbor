@@ -19,6 +19,7 @@ import {
   saveConfigBlob,
   activateConfig,
   updateConfigBlobMetadata,
+  isFileSeededPromptProfile,
   VALID_PROMPT_PROFILES,
   type ConfigType,
 } from "@/lib/config-storage";
@@ -81,6 +82,13 @@ async function reseedPrompt(profile: string, force: boolean, req: Request) {
   if (!VALID_PROMPT_PROFILES.includes(profile as any)) {
     return NextResponse.json(
       { error: `Invalid profile: ${profile}. Valid profiles: ${VALID_PROMPT_PROFILES.join(", ")}` },
+      { status: 400 },
+    );
+  }
+
+  if (!isFileSeededPromptProfile(profile)) {
+    return NextResponse.json(
+      { error: `File reseed is not supported for prompt profile: ${profile}` },
       { status: 400 },
     );
   }

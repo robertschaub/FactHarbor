@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T08:42:59.457Z",
-  "count": 428,
+  "generatedAt": "2026-05-14T09:11:32.042Z",
+  "count": 429,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9118,6 +9118,37 @@
           }
         }
       }
+    },
+    {
+      "file": "2026-05-14_Senior_Developer_V2_Slice_6B1b_UCM_Profile_Model_Policy.md",
+      "date": "2026-05-14",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b1b",
+        "ucm",
+        "profile",
+        "model",
+        "policy"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/config-schemas.ts",
+        "apps/web/src/lib/config-storage.ts",
+        "apps/web/scripts/reseed-all-prompts.ts",
+        "apps/web/src/app/api/admin/config/[type]/[profile]/reseed/route.ts",
+        "apps/web/src/lib/prompt-surface-registry.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/types.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+        "apps/web/test/unit/lib/analyzer-v2/gateway/",
+        "apps/web/test/unit/lib/config-schemas.test.ts",
+        "apps/web/test/unit/lib/config-storage.test.ts",
+        "apps/web/test/unit/lib/prompt-surface-registry.test.ts"
+      ],
+      "summary": "Continue to Slice 6B.2 only after updated LLM Expert review and Captain prompt-text approval. Keep `ClaimUnderstandingResult` as the gateway output envelope and verify that `claim_understanding_gate1` remains non-executable until all three approvals are recorded."
     }
   ]
 }

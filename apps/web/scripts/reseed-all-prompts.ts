@@ -27,7 +27,7 @@ import {
   saveConfigBlob,
   activateConfig,
   loadDefaultConfigFromFile,
-  VALID_PROMPT_PROFILES,
+  FILE_SEEDED_PROMPT_PROFILES,
   type ConfigType,
 } from "../src/lib/config-storage";
 import {
@@ -251,7 +251,7 @@ async function main() {
       console.log("--- Prompts ---");
     }
 
-    for (const profile of VALID_PROMPT_PROFILES) {
+    for (const profile of FILE_SEEDED_PROMPT_PROFILES) {
       if (!quietMode) {
         process.stdout.write(`Processing: ${profile.padEnd(30)}`);
       }

@@ -10,6 +10,15 @@
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
+import {
+  FILE_SEEDED_PROMPT_PROFILES,
+  VALID_PROMPT_PROFILES,
+  getExpectedPromptFrontmatterPipeline,
+  isFileSeededPromptProfile,
+  isValidPromptProfile,
+  seedPromptFromFile,
+  validatePromptProfileFrontmatter,
+} from "@/lib/config-storage";
 
 // Test utilities - create isolated in-memory database
 async function createTestDb(): Promise<Database> {
@@ -612,6 +621,53 @@ describe("Profile Management", () => {
     expect(searchConfigs.length).toBe(1);
     expect(calcConfigs.length).toBe(1);
     expect(promptConfigs.length).toBe(1);
+  });
+});
+
+describe("Prompt Profile Validation", () => {
+  it("accepts claimboundary-v2 as a manageable prompt profile without file seeding it", () => {
+    expect(VALID_PROMPT_PROFILES).toContain("claimboundary");
+    expect(VALID_PROMPT_PROFILES).toContain("claimboundary-v2");
+    expect(FILE_SEEDED_PROMPT_PROFILES).toContain("claimboundary");
+    expect(FILE_SEEDED_PROMPT_PROFILES).not.toContain("claimboundary-v2");
+    expect(isValidPromptProfile("claimboundary-v2")).toBe(true);
+    expect(isFileSeededPromptProfile("claimboundary-v2")).toBe(false);
+  });
+
+  it("keeps V1 and V2 claimboundary frontmatter profiles separate", () => {
+    const v1Content = `---
+pipeline: claimboundary
+version: 1.0.0
+---
+## SYSTEM
+Placeholder body.`;
+    const v2Content = `---
+pipeline: claimboundary-v2
+version: 0.1.0
+---
+## V2_CLAIM_UNDERSTANDING_GATE1
+Placeholder body.`;
+
+    expect(getExpectedPromptFrontmatterPipeline("claimboundary")).toBe("claimboundary");
+    expect(getExpectedPromptFrontmatterPipeline("claimboundary-v2")).toBe("claimboundary-v2");
+    expect(validatePromptProfileFrontmatter("claimboundary-v2", v2Content).valid).toBe(true);
+    expect(validatePromptProfileFrontmatter("claimboundary", v1Content).valid).toBe(true);
+
+    const v1IntoV2 = validatePromptProfileFrontmatter("claimboundary-v2", v1Content);
+    expect(v1IntoV2.valid).toBe(false);
+    expect(v1IntoV2.errors[0]).toContain('expected "claimboundary-v2"');
+
+    const v2IntoV1 = validatePromptProfileFrontmatter("claimboundary", v2Content);
+    expect(v2IntoV1.valid).toBe(false);
+    expect(v2IntoV1.errors[0]).toContain('expected "claimboundary"');
+  });
+
+  it("rejects file seeding for the promptless V2 profile", async () => {
+    const result = await seedPromptFromFile("claimboundary-v2");
+
+    expect(result.seeded).toBe(false);
+    expect(result.contentHash).toBeNull();
+    expect(result.error).toContain("File seeding is not supported");
   });
 });
 

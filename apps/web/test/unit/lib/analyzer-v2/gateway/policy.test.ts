@@ -4,6 +4,7 @@ import {
   canExecuteAnalyzerV2GatewayTask,
   getAnalyzerV2GatewayTask,
 } from "@/lib/analyzer-v2/gateway/policy";
+import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 
@@ -45,8 +46,34 @@ describe("analyzer-v2 gateway policy registry", () => {
     ]);
     expect(task.promptPolicy?.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
     expect(task.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
+    expect(task.modelPolicy?.registryPolicyId).toBe("v2.model.claim_understanding_gate1.0");
     expect(task.cachePolicy?.policyId).toBe("v2.semantic.claim-understanding");
     expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+  });
+
+  it("declares concrete blocked model-policy metadata for claim understanding", () => {
+    const policy = getAnalyzerV2TaskModelPolicy("claim_understanding_gate1");
+
+    expect(policy).toMatchObject({
+      policyId: "v2.model.claim_understanding_gate1.0",
+      gatewayTaskId: "claim_understanding_gate1",
+      modelTask: "understand",
+      modelTier: "standard",
+      providerPolicy: "from_config_snapshot",
+      temperature: 0.15,
+      maxCalls: 2,
+      schemaRetryCount: 1,
+      timeoutMs: 120000,
+      maxOutputTokens: 6000,
+      fallbackBehavior: "none_fail_closed",
+      escalationBehavior: "surface_damaged_claim_understanding",
+      execution: "blocked_until_prompt_model_cache_approval",
+      approval: {
+        status: "missing",
+        reviewer: null,
+        approvedAt: null,
+      },
+    });
   });
 
   it("does not allow executable status without approved prompt, model, and cache policies", () => {

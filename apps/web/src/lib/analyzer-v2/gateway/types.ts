@@ -20,6 +20,16 @@ export type AnalyzerV2ModelTask =
   | "verdict"
   | "report";
 
+export type AnalyzerV2ModelTier = "budget" | "standard" | "premium";
+
+export type AnalyzerV2ModelFallbackBehavior =
+  | "none_fail_closed"
+  | "provider_unavailable_damaged_result";
+
+export type AnalyzerV2ModelEscalationBehavior =
+  | "surface_provider_failure"
+  | "surface_damaged_claim_understanding";
+
 export type AnalyzerV2PolicyApproval = {
   status: "missing" | "pending" | "approved";
   reviewer: string | null;
@@ -36,11 +46,29 @@ export type AnalyzerV2PromptPolicy = {
 
 export type AnalyzerV2ModelPolicy = {
   task: AnalyzerV2ModelTask;
+  registryPolicyId: string;
   providerPolicy: "from_config_snapshot";
   temperaturePolicy: "from_model_task_registry";
   tokenBudgetPolicy: "from_model_task_registry";
   timeoutPolicy: "from_model_task_registry";
   retryPolicy: "from_model_task_registry";
+  approval: AnalyzerV2PolicyApproval;
+};
+
+export type AnalyzerV2TaskModelPolicy = {
+  policyId: string;
+  gatewayTaskId: AnalyzerV2GatewayTaskId;
+  modelTask: AnalyzerV2ModelTask;
+  modelTier: AnalyzerV2ModelTier;
+  providerPolicy: "from_config_snapshot";
+  temperature: number;
+  maxCalls: number;
+  schemaRetryCount: number;
+  timeoutMs: number;
+  maxOutputTokens: number;
+  fallbackBehavior: AnalyzerV2ModelFallbackBehavior;
+  escalationBehavior: AnalyzerV2ModelEscalationBehavior;
+  execution: "blocked_until_prompt_model_cache_approval";
   approval: AnalyzerV2PolicyApproval;
 };
 

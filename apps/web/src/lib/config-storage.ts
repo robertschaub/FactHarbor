@@ -1294,14 +1294,74 @@ export const VALID_PROMPT_PROFILES = [
   "source-reliability",
   // ClaimBoundary pipeline prompts (all stages)
   "claimboundary",
+  // V2 prompt profile is importable/manageable but not file-seeded until its prompt file exists.
+  "claimboundary-v2",
   // Pre-pipeline gates
   "input-policy-gate",
 ] as const;
 
 export type PromptProfile = (typeof VALID_PROMPT_PROFILES)[number];
 
+export const FILE_SEEDED_PROMPT_PROFILES = [
+  "source-reliability",
+  "claimboundary",
+  "input-policy-gate",
+] as const satisfies readonly PromptProfile[];
+
 export function isValidPromptProfile(profile: string): profile is PromptProfile {
   return VALID_PROMPT_PROFILES.includes(profile as PromptProfile);
+}
+
+export function isFileSeededPromptProfile(
+  profile: string,
+): profile is typeof FILE_SEEDED_PROMPT_PROFILES[number] {
+  return FILE_SEEDED_PROMPT_PROFILES.includes(
+    profile as typeof FILE_SEEDED_PROMPT_PROFILES[number],
+  );
+}
+
+function promptFileSeedingUnsupportedError(profile: string): string {
+  return `File seeding is not supported for prompt profile: ${profile}`;
+}
+
+export function getExpectedPromptFrontmatterPipeline(profile: string): string | null {
+  if (!isValidPromptProfile(profile)) {
+    return null;
+  }
+
+  return profile.startsWith("text-analysis") ? "text-analysis" : profile;
+}
+
+export function validatePromptProfileFrontmatter(
+  profile: string,
+  content: string,
+): ValidationResult {
+  if (!isValidPromptProfile(profile)) {
+    return {
+      valid: false,
+      errors: [`Invalid profile: ${profile}. Valid profiles: ${VALID_PROMPT_PROFILES.join(", ")}`],
+      warnings: [],
+    };
+  }
+
+  const pipelineMatch = content.match(/^pipeline:\s*["']?([^"'\n]+)/m);
+  if (!pipelineMatch) {
+    return { valid: true, errors: [], warnings: [] };
+  }
+
+  const contentPipeline = pipelineMatch[1].trim();
+  const expectedPipeline = getExpectedPromptFrontmatterPipeline(profile);
+  if (contentPipeline !== expectedPipeline) {
+    return {
+      valid: false,
+      errors: [
+        `Frontmatter pipeline "${contentPipeline}" does not match expected "${expectedPipeline}" for profile "${profile}"`,
+      ],
+      warnings: [],
+    };
+  }
+
+  return { valid: true, errors: [], warnings: [] };
 }
 
 /**
@@ -1336,6 +1396,9 @@ export async function refreshPromptFromFileIfSystemSeed(
 
   const active = await getActiveConfig("prompt", profile);
   if (!active) {
+    if (!isFileSeededPromptProfile(profile)) {
+      return { refreshed: false, contentHash: null, error: promptFileSeedingUnsupportedError(profile) };
+    }
     // No active config - seed as normal
     const seeded = await seedPromptFromFile(profile);
     return { refreshed: seeded.seeded, contentHash: seeded.contentHash, error: seeded.error };
@@ -1348,6 +1411,10 @@ export async function refreshPromptFromFileIfSystemSeed(
 
   if (!isSystemSeed) {
     return { refreshed: false, contentHash: active.contentHash };
+  }
+
+  if (!isFileSeededPromptProfile(profile)) {
+    return { refreshed: false, contentHash: active.contentHash, error: promptFileSeedingUnsupportedError(profile) };
   }
 
   const filePath = getPromptFilePath(profile);
@@ -1404,6 +1471,10 @@ export async function seedPromptFromFile(
 ): Promise<{ seeded: boolean; contentHash: string | null; error?: string }> {
   if (!isValidPromptProfile(profile)) {
     return { seeded: false, contentHash: null, error: `Invalid profile: ${profile}` };
+  }
+
+  if (!isFileSeededPromptProfile(profile)) {
+    return { seeded: false, contentHash: null, error: promptFileSeedingUnsupportedError(profile) };
   }
 
   // Check if already has active config (unless forcing)
@@ -1464,13 +1535,13 @@ export async function seedAllPromptsFromFiles(): Promise<{
 }> {
   const results: Array<{ profile: string; seeded: boolean; error?: string }> = [];
 
-  for (const profile of VALID_PROMPT_PROFILES) {
+  for (const profile of FILE_SEEDED_PROMPT_PROFILES) {
     const result = await seedPromptFromFile(profile);
     results.push({ profile, seeded: result.seeded, error: result.error });
   }
 
   const seededCount = results.filter((r) => r.seeded).length;
-  console.log(`[Config-Storage] Seeded ${seededCount}/${VALID_PROMPT_PROFILES.length} prompts from files`);
+  console.log(`[Config-Storage] Seeded ${seededCount}/${FILE_SEEDED_PROMPT_PROFILES.length} prompts from files`);
 
   return { results };
 }
@@ -1538,22 +1609,17 @@ export async function importPromptContent(
   }
 
   // 3. Validate frontmatter pipeline matches profile
-  const pipelineMatch = content.match(/^pipeline:\s*["']?([^"'\n]+)/m);
-  if (pipelineMatch) {
-    const contentPipeline = pipelineMatch[1].trim();
-    // Map text-analysis-* profiles to "text-analysis" pipeline
-    const expectedPipeline = profile.startsWith("text-analysis") ? "text-analysis" : profile;
-    if (contentPipeline !== expectedPipeline) {
-      return {
-        success: false,
-        validation: {
-          valid: false,
-          errors: [`Frontmatter pipeline "${contentPipeline}" does not match expected "${expectedPipeline}" for profile "${profile}"`],
-          warnings: validation.warnings,
-        },
-        error: `Pipeline mismatch: file has "${contentPipeline}", expected "${expectedPipeline}"`,
-      };
-    }
+  const frontmatterValidation = validatePromptProfileFrontmatter(profile, content);
+  if (!frontmatterValidation.valid) {
+    return {
+      success: false,
+      validation: {
+        valid: false,
+        errors: frontmatterValidation.errors,
+        warnings: validation.warnings,
+      },
+      error: frontmatterValidation.errors.join("; "),
+    };
   }
 
   // 4. Save blob

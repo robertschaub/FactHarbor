@@ -26,6 +26,7 @@ import {
   DEFAULT_PIPELINE_CONFIG,
   DEFAULT_SR_CONFIG,
   DEFAULT_CALC_CONFIG,
+  VALID_PROMPT_FRONTMATTER_PIPELINES,
   canonicalizeContent,
   computeContentHash,
 } from "../../../src/lib/config-schemas";
@@ -534,6 +535,35 @@ You are a helpful assistant.
 Analyze this claim.`;
     const result = validateConfig("prompt", content, "prompt.v1");
     expect(result.valid).toBe(true);
+  });
+
+  it("accepts claimboundary-v2 prompt frontmatter without activating prompt execution", () => {
+    expect(VALID_PROMPT_FRONTMATTER_PIPELINES).toContain("claimboundary");
+    expect(VALID_PROMPT_FRONTMATTER_PIPELINES).toContain("claimboundary-v2");
+
+    const content = `---
+pipeline: claimboundary-v2
+version: 0.1.0
+variables: [currentDate, analysisInput]
+---
+## V2_CLAIM_UNDERSTANDING_GATE1
+Non-executable fixture body.`;
+
+    const result = validateConfig("prompt", content, "prompt.v1");
+    expect(result.valid).toBe(true);
+  });
+
+  it("keeps unsupported prompt frontmatter profiles rejected", () => {
+    const content = `---
+pipeline: claimboundary-v3
+version: 0.1.0
+---
+## SYSTEM
+Non-executable fixture body.`;
+
+    const result = validateConfig("prompt", content, "prompt.v1");
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toContain("Invalid pipeline: claimboundary-v3");
   });
 
   it("rejects invalid JSON for non-prompt types", () => {

@@ -37,6 +37,22 @@ export const PROMPT_SURFACE_REGISTRY: PromptSurfaceRegistryEntry[] = [
     notes: "Primary ClaimBoundary runtime prompt profile loaded through UCM.",
   },
   {
+    id: "claimboundary-v2",
+    label: "ClaimBoundary V2 prompt profile",
+    management: "ucm",
+    stability: "runtime_contract",
+    adminEditable: true,
+    reseedSupported: false,
+    ucmProfile: "claimboundary-v2",
+    runtimeOwners: [
+      "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+      "apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts",
+    ],
+    sourcePaths: [],
+    notes:
+      "V2 prompt profile is registered for UCM validation/import/export only; prompt text, source file, and file seeding remain blocked until approval.",
+  },
+  {
     id: "source-reliability-enrichment",
     label: "Source reliability evidence-quality enrichment",
     management: "ucm",

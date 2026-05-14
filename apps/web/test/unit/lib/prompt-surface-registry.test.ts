@@ -10,6 +10,7 @@ describe("prompt surface registry", () => {
   it("locks the known prompt surfaces and current exceptions", () => {
     expect(listPromptSurfaceRegistry().map((entry) => entry.id)).toEqual([
       "claimboundary",
+      "claimboundary-v2",
       "source-reliability-enrichment",
       "source-reliability-core",
       "input-policy-gate",
@@ -35,6 +36,13 @@ describe("prompt surface registry", () => {
       adminEditable: true,
       reseedSupported: true,
       ucmProfile: "claimboundary",
+    });
+    expect(getPromptSurfaceRegistryEntry("claimboundary-v2")).toMatchObject({
+      management: "ucm",
+      stability: "runtime_contract",
+      adminEditable: true,
+      reseedSupported: false,
+      ucmProfile: "claimboundary-v2",
     });
     expect(getPromptSurfaceRegistryEntry("input-policy-gate")).toMatchObject({
       management: "ucm",
@@ -79,8 +87,12 @@ describe("prompt surface registry", () => {
   it("records ownership paths without embedding prompt text", () => {
     for (const entry of listPromptSurfaceRegistry()) {
       expect(entry.runtimeOwners.length).toBeGreaterThan(0);
-      if (entry.management !== "db_only_legacy") {
+      if (entry.management !== "db_only_legacy" && entry.id !== "claimboundary-v2") {
         expect(entry.sourcePaths.length).toBeGreaterThan(0);
+      }
+      if (entry.id === "claimboundary-v2") {
+        expect(entry.sourcePaths).toEqual([]);
+        expect(entry.reseedSupported).toBe(false);
       }
       expect(JSON.stringify(entry)).not.toContain("You are ");
       expect(JSON.stringify(entry)).not.toContain("Return only valid JSON");

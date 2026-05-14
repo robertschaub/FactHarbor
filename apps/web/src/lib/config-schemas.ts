@@ -2120,15 +2120,19 @@ export const DEFAULT_CALC_CONFIG: CalcConfig = {
 // PROMPT CONFIG SCHEMA (prompt.v1)
 // ============================================================================
 
+export const VALID_PROMPT_FRONTMATTER_PIPELINES = [
+  "orchestrated", // Legacy prompt profile (shared prompts still stored under this key)
+  "source-reliability",
+  "text-analysis", // LLM text analysis prompts (input, evidence, context, verdict)
+  "claimboundary", // ClaimBoundary pipeline prompts (extraction, clustering, verdict, narrative)
+  "claimboundary-v2", // V2 prompt profile; non-executable until gateway approvals are recorded
+  "input-policy-gate",
+] as const;
+
 // Prompt frontmatter schema
 const PromptFrontmatterSchema = z.object({
   version: z.string().regex(/^\d+\.\d+(\.\d+)?(-[\w]+)?$/),
-  pipeline: z.enum([
-    "orchestrated",     // Legacy prompt profile (shared prompts still stored under this key)
-    "source-reliability",
-    "text-analysis",  // LLM text analysis prompts (input, evidence, context, verdict)
-    "claimboundary",  // ClaimBoundary pipeline prompts (extraction, clustering, verdict, narrative)
-  ]),
+  pipeline: z.enum(VALID_PROMPT_FRONTMATTER_PIPELINES),
   description: z.string().optional(),
   lastModified: z.string().optional(),
   variables: z
@@ -2228,9 +2232,12 @@ export function validatePromptContent(content: string): ValidationResult {
     // Validate pipeline value if we got it
     const pipeline = frontmatter.pipeline;
     if (pipeline && typeof pipeline === "string") {
-      const validPipelines = ["orchestrated", "source-reliability", "text-analysis", "claimboundary", "input-policy-gate"];
-      if (!validPipelines.includes(pipeline)) {
-        errors.push(`Invalid pipeline: ${pipeline}. Valid: ${validPipelines.join(", ")}`);
+      if (!VALID_PROMPT_FRONTMATTER_PIPELINES.includes(
+        pipeline as typeof VALID_PROMPT_FRONTMATTER_PIPELINES[number],
+      )) {
+        errors.push(
+          `Invalid pipeline: ${pipeline}. Valid: ${VALID_PROMPT_FRONTMATTER_PIPELINES.join(", ")}`,
+        );
       }
     }
 

@@ -7,6 +7,7 @@ import {
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
+import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import type {
   AnalyzerV2GatewayTask,
   AnalyzerV2GatewayTaskId,
@@ -36,9 +37,15 @@ function blockedPrompt(
   };
 }
 
-function blockedModel(task: AnalyzerV2ModelTask): AnalyzerV2ModelPolicy {
+function blockedModel(
+  gatewayTaskId: AnalyzerV2GatewayTaskId,
+  task: AnalyzerV2ModelTask,
+): AnalyzerV2ModelPolicy {
+  const taskModelPolicy = getAnalyzerV2TaskModelPolicy(gatewayTaskId);
+
   return {
     task,
+    registryPolicyId: taskModelPolicy?.policyId ?? "unregistered",
     providerPolicy: "from_config_snapshot",
     temperaturePolicy: "from_model_task_registry",
     tokenBudgetPolicy: "from_model_task_registry",
@@ -68,7 +75,7 @@ function task(params: {
       params.outputSchemaVersion,
       params.requiredVariables,
     ),
-    modelPolicy: blockedModel(params.modelTask),
+    modelPolicy: blockedModel(params.id, params.modelTask),
     cachePolicy: params.claimUnderstandingCache
       ? ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY
       : params.sourceAware
@@ -94,7 +101,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "inputGroundingSeedJson",
     ],
     claimUnderstandingCache: true,
-    notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval; accepted results carry ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
+    notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt/model approval; accepted results carry ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
   }),
   task({
     id: "research_query_planning",
