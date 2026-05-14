@@ -2842,3 +2842,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V1 Baseline Tag -- [Standard] [open-items: no]
 **For next agent:** Created annotated tag `v1-before-v2-pipeline-specification` at `92b5a5f3` as the exact main commit before V2 pipeline specification/rebuild work started. No comparison branch was created; create one from the tag only when there is a concrete V1/V2 comparison task. Current work remains in `C:\DEV\FactHarbor` on Git branch `main`.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V1_Baseline_Tag.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Plan UCM Alignment -- [Standard] [open-items: yes]
+**For next agent:** Updated the operative V2 plan, target spec, and guardrails to reflect the recent main-branch cleanup, V1 baseline tag, and Slice 6B.1b UCM/profile/model-policy completion. Minimal non-executable UCM support is enough for 6B.2 prompt draft and contract tests after approval; broader task-oriented analysis-profile/Admin UI redesign remains a later track before broad V2 prompt/model execution or cutover. 6B.2 still requires updated LLM Expert review and explicit Captain prompt-text approval.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Plan_UCM_Alignment.md

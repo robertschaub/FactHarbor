@@ -1336,6 +1336,8 @@ The V2 prompt/model/config design should not keep expanding the overloaded V1 `p
 
 UCM deputy review refined this into a minimum path: do not add V2 prompt/model task policy into the old broad `pipeline` config as a long-term home. First support `claimboundary-v2` as a separate prompt profile and add a task-oriented model policy for `claim_understanding_gate1`; keep bespoke UI work minimal until the V2 task-policy model stabilizes.
 
+Post-6B.1b status: the minimum path is now partially implemented. `claimboundary-v2` is valid/manageable for prompt-profile validation and import, but is intentionally not file-seeded. `claim_understanding_gate1` has blocked task-oriented model-policy metadata. This is enough for 6B.2 prompt draft and contract tests after approval; it is not enough for broad V2 cutover. Before broad prompt/model execution or cutover, V2 still needs the task-oriented analysis-profile/admin-gate track: model task registry shape, stage policy shape, cache policy metadata, approval-state visibility, config snapshot provenance, and rollback targets.
+
 ---
 
 ## 14. Warning And Event Policy

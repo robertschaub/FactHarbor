@@ -49,6 +49,14 @@ Next action, unless Captain redirects: run updated LLM Expert/Captain review for
 
 Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
+Main/UCM alignment note from 2026-05-14:
+
+- Current implementation continues in workspace `C:\DEV\FactHarbor` on Git branch `main`.
+- V1-before-V2-specification comparison anchor is tag `v1-before-v2-pipeline-specification` at `92b5a5f3`; create a comparison branch from that tag only when a concrete V1/V2 comparison task requires it.
+- Slice 6B.1b completed only minimal non-executable UCM/profile/model-policy plumbing: `claimboundary-v2` is a manageable prompt profile, and `claim_understanding_gate1` has blocked task-oriented model-policy metadata.
+- Broader UCM redesign is not a prerequisite for 6B.2 prompt drafting. It remains a later task-oriented analysis-profile/admin-gate track: keep existing UCM storage, avoid growing V2 policy into the broad V1 `pipeline.default.json` shape as the long-term home, and add task-oriented Admin UI/approval-state visibility only after the V2 content model stabilizes.
+- No prompt text, prompt source file, prompt activation, model execution, or broad UCM UI work starts before the documented LLM Expert/Captain approval gates.
+
 ---
 
 ## 1. Purpose
@@ -372,11 +380,13 @@ Reviewers should answer these questions before approving Phase 0:
 
 ## 9. Explicit Non-Goals For This Plan
 
+These were the Phase 0/specification-phase non-goals. Later execution addenda supersede them only where explicitly stated, such as the approved V2 Analysis Session UX direction and the staged UCM track.
+
 - No analyzer code cleanup yet.
 - No prompt editing yet.
 - No validation jobs yet.
 - No benchmark reruns yet.
-- No UI redesign.
+- No broad UI redesign during the initial specification phase.
 - No schema migration proposal until current contracts are reverse-engineered.
 - No target architecture chosen before the current pipeline baseline is documented.
 
@@ -387,6 +397,7 @@ Best timing:
 - **Now / Phase 0:** Claude Lead Architect or Senior Developer reviews Plan V2 for inventory, external contracts, and cutover safety. Claude LLM Expert reviews prompt/config/model and semantic drift gates. Gemini acts as independent Challenger for broken-intermediate risk and additive-refactoring drift.
 - **After Phase 2:** Claude Senior Developer reviews factual completeness of the reverse-engineered baseline. Claude LLM Expert reviews LLM/prompt/model completeness. Gemini challenges whether the baseline missed hidden coupling or external contracts.
 - **After Phase 4:** Run a short Claude/Gemini debate before implementation approval. Claude should argue architecture and LLM quality from role expertise; Gemini should challenge over-complexity, compatibility assumptions, and whether the design still honors replacement rather than layering.
+- **During Phase 6 UCM/prompt/model work:** use LLM Expert review before prompt text or model execution, Senior Developer review for UCM/schema/API/admin-surface changes, and Gemini/Challenger only when a UCM decision could increase legacy coupling, create confusing runtime controls, or affect cutover safety.
 
 ## 11. Short Reviewer Prompt
 
