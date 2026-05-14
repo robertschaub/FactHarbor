@@ -302,6 +302,8 @@ Post-6B.3c-1 deputy debate:
 
 Consolidated decision: no product runtime dispatch source code is approved after 6B.3c-1. The next low-risk step is the docs-only gate package `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`. That package does not approve prompt rendering, model-adapter product imports, provider callbacks, provider SDKs, cache IO, approval flips, public diagnostics, direct URL body assumptions, live jobs, or V1 reuse.
 
+Review of the first 6B.3c-2 gate package returned `MODIFY`. The revised package keeps 6B.3c-2A docs-only and changes any later 6B.3c-2B source candidate to contract-only: approval snapshot shape, dispatch-owner boundaries, replacement import guards, URL fail-closed rules, provenance packet types/tests, and negative reachability guards. Prompt rendering, cache-decision construction, model-adapter calls, provider callbacks, provider SDK imports, approval enablement, cache IO, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-2 Product Runtime Dispatch Review Package
 
 **Date:** 2026-05-14
-**Status:** Draft for deputy review; no source code approved
+**Status:** Deputy review returned `MODIFY`; revised as docs-only gate with no source code approved
 **Owner role:** Lead Architect / Captain deputy
 **Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; docs current through `b02fe12f`
 
@@ -14,7 +14,7 @@ After 6B.3c-1, the deputy team reviewed whether the next step could be product r
 | Reviewer lens | Verdict | Consolidated finding |
 |---|---|---|
 | Claude Opus-style LLM/runtime safety | BLOCK | Product runtime dispatch would cross unresolved prompt rendering, adapter reachability, cache/provenance, approval source, provider boundary, and URL-resolution ownership. |
-| Senior Developer | MODIFY | Source code is not low risk yet. Draft a runtime-dispatch gate package first; if later approved, the smallest code slice should be mock-only and non-executable. |
+| Senior Developer | MODIFY | Source code is not low risk yet. Draft a runtime-dispatch gate package first; first package review narrowed any later source candidate to contract-only. |
 | Code Reviewer / clean-room | MODIFY | Source is acceptable only for another non-executable/internal contract or guard slice; product dispatch needs review/debate first. |
 | Gemini-style Challenger | BLOCK | 6B.3c-1 proves frame readiness, not dispatch readiness. Removing the product-path adapter-import ban before a replacement guard is a sequencing error. |
 
@@ -25,6 +25,23 @@ Consolidated decision:
 - Do not render prompts, create provider callbacks, import provider SDKs, construct cache IO, flip approvals, expose public diagnostics, run live jobs, or treat URL strings as body text.
 - The next low-risk action is this docs-only gate package.
 - No Captain escalation is needed because the deputy team reached consent on a safer path.
+
+## 1.1 Package Review Consolidation
+
+Review of the first draft returned `MODIFY`.
+
+| Reviewer lens | Verdict | Required revision |
+|---|---|---|
+| Claude Opus-style LLM/runtime safety | MODIFY | Keep the package docs-only; make `runtime-dispatch.ts` a candidate boundary only; add multilingual/input-neutral preservation; defer cache-decision construction unless complete provenance and no-read/no-write behavior are proven. |
+| Senior Developer | MODIFY | A later source slice may be feasible only as non-executable and test-only; product paths must not import it, URL stays blocked by the frame, and provider calls must remain injected. |
+| Code Reviewer / clean-room | MODIFY | Add mechanical guard requirements for adapter-import replacement, mock/fixture leakage, approval mutation, provider/cache side effects, and public-surface leakage. |
+| Gemini-style Challenger | MODIFY | The first draft's mock-dispatch candidate was too permissive; next source must be contract-only, not prompt rendering, cache-decision construction, adapter call, or provider callback. |
+
+Revised decision:
+
+- This package approves no source code.
+- A later package may propose a **contract-only** source slice.
+- Prompt rendering, cache-decision construction, model-adapter calls, provider callbacks, and provider SDKs remain deferred until that contract passes review.
 
 ## 2. Non-Goals
 
@@ -61,7 +78,7 @@ Product dispatch remains blocked until a reviewed package resolves all of these:
 flowchart TB
   A["6B.3c-1 complete\npure dispatch-frame contract"]
   B["6B.3c-2A\nthis docs-only dispatch gate package"]
-  C["6B.3c-2B candidate\nnon-executable mock dispatch owner contract"]
+  C["6B.3c-2B candidate\ncontract-only dispatch readiness boundary"]
   D["6B.3c-3 candidate\nproduct dispatch approval package"]
   E["6B.4 candidate\ncommit-first structural smoke / live budget gate"]
 
@@ -80,11 +97,11 @@ flowchart TB
 
 Only 6B.3c-2A is in scope for this commit. 6B.3c-2B and later slices are candidates for review, not approval.
 
-## 5. Candidate 6B.3c-2B Source Envelope For Review
+## 5. Candidate 6B.3c-2B Contract-Only Envelope For Later Review
 
-If deputies approve code after reviewing this package, the smallest candidate implementation is a non-executable mock dispatch owner contract.
+A later package may propose this source envelope. This package does not approve it.
 
-Candidate source envelope:
+Candidate source envelope for later review:
 
 - `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-dispatch.ts`
 - `apps/web/test/unit/lib/analyzer-v2/claim-understanding/runtime-dispatch.test.ts`
@@ -92,17 +109,21 @@ Candidate source envelope:
 
 Candidate allowed behavior:
 
-- own the future dispatch sequence in one V2-owned file;
-- accept a `ClaimUnderstandingDispatchFrame` produced by 6B.3c-1;
-- require an explicit injected/synthetic executable task in tests only;
-- render the already approved V2 prompt only under synthetic test approval;
-- build a no-read/no-write cache decision only under synthetic test approval and with complete non-placeholder dimensions;
-- call the existing V2 model adapter only with an injected mock provider callback in tests;
-- return internal-only accepted/blocked/damaged Claim Understanding results;
-- prove product paths still cannot dispatch.
+- define contract types for the future dispatch owner in one V2-owned file;
+- accept only a ready `ClaimUnderstandingDispatchFrame` produced by 6B.3c-1;
+- define an approval-snapshot shape without making shipped tasks executable;
+- define provenance packet types with complete non-placeholder fields;
+- define fail-closed reason types for blocked approval, unresolved URL, incomplete provenance, and forbidden side-effect reachability;
+- prove product paths still cannot reach dispatch-capable code;
+- prove direct URL remains blocked at the dispatch-frame boundary.
 
 Candidate forbidden behavior:
 
+- no prompt rendering;
+- no prompt/config/input/cache hash construction;
+- no cache-decision construction;
+- no model-adapter import or adapter call;
+- no provider callback;
 - no provider SDK import or built-in provider callsite;
 - no production approval/status mutation;
 - no product orchestrator dispatch wiring;
@@ -130,16 +151,16 @@ Preferred direction:
 - Keep shipped `ANALYZER_V2_GATEWAY_TASKS` blocked.
 - Do not mutate shipped registry constants at runtime.
 - Future executable status should be derived from a runtime approval snapshot that combines prompt, model, and cache approvals.
-- Tests may use cloned synthetic executable task objects; product code must not import synthetic approved tasks.
+- Tests may use cloned synthetic executable task objects only after the production approval-snapshot contract is structurally defined enough that tests cannot normalize the wrong design.
 - Production activation requires separate Captain/deputy approval and UCM/admin visibility before any source path can execute real model calls.
 
-Open review question:
+Deferred decision:
 
-- Should the runtime approval snapshot be UCM-backed in 6B.3c-2B, or deferred until the product-dispatch approval package?
+- UCM-backed runtime approval snapshots are deferred before any executable path. A later package must decide whether the approval snapshot belongs in the contract-only slice or the product-dispatch approval package.
 
 ## 8. Prompt, Config, And Cache Provenance Packet
 
-Future dispatch must not use placeholders. A candidate dispatch packet must define ownership and verifier coverage for:
+Future dispatch must not use placeholders. A candidate contract must define ownership and verifier coverage for these fields before any prompt rendering, cache-decision construction, adapter call, or provider callback:
 
 | Field | Required owner before dispatch |
 |---|---|
@@ -160,6 +181,8 @@ Future dispatch must not use placeholders. A candidate dispatch packet must defi
 | `currentDateBucket` | run-context owner |
 | `cacheDecision` | V2 cache-governance owner; first reviewed dispatch should be no-read/no-write |
 
+Cache-decision construction remains deferred unless a later package proves complete non-placeholder provenance and enforceable no-read/no-write behavior.
+
 ## 9. URL Rule
 
 Direct URL input remains blocked for Claim Understanding dispatch.
@@ -173,31 +196,38 @@ Allowed later only after separate review:
 
 ACS-backed URL snapshots may continue only when they carry resolved text plus canonical V2 ACS and input-grounding hashes.
 
-## 10. Candidate Verifier Matrix
+## 10. Multilingual And Input-Neutral Guard
+
+Future dispatch contracts must preserve the original user/submitted text exactly. They must not translate, normalize, lowercase, rewrite, strip diacritics, or language-detect in any way that changes the analysis input semantics.
+
+`analysisInput` and `resolvedInputText` from the 6B.3c-1 frame are the only allowed text inputs for later Claim Understanding dispatch contracts.
+
+## 11. Candidate Verifier Matrix
 
 Before any source beyond this docs package is accepted, reviewers should require:
 
 | Area | Required verifier |
 |---|---|
-| Product reachability | `orchestrator.ts`, `pipeline-shell.ts`, `runner-ingress.ts`, and `index.ts` cannot import dispatch-capable prompt/model/cache/provider code |
-| Dispatch ownership | only the reviewed owner module may import prompt loader, model adapter, and cache-governance builders |
+| Product reachability | `orchestrator.ts`, `pipeline-shell.ts`, `runner-ingress.ts`, `runtime-stage.ts`, and `index.ts` cannot import or export dispatch-capable prompt/model/cache/provider code |
+| Dispatch ownership | only a later-reviewed owner module may import prompt loader, model adapter, and cache-governance builders; this package approves no such import |
 | Provider boundary | no provider SDK import anywhere in Analyzer V2 product source |
-| Approval state | shipped gateway task remains blocked; synthetic executable tasks are test-only |
-| Cache posture | no cache IO; no-store/no-read decision only with complete dimensions |
-| URL safety | direct unresolved URL fails before prompt rendering and before input/cache identity construction |
-| Public leakage | public result/API/UI/report/export surfaces remain free of Claim Understanding internals, prompt text, provider telemetry, and cache key material |
-| Clean-room | no V1 analyzer imports, V1 prompt/profile/section reuse, V1 type reuse, mocks, or fixtures in product paths |
+| Mock/fixture leakage | product source under `apps/web/src/lib/analyzer-v2/**` cannot import `/test/`, `/fixtures/`, `*.test.*`, mock helpers, or synthetic approved task fixtures |
+| Approval state | shipped gateway task remains blocked; product code cannot assign or mutate task status; synthetic executable tasks are cloned test data only |
+| Cache posture | no cache IO; no cache-decision construction until complete dimensions and no-read/no-write semantics are specified as an enforceable contract |
+| URL safety | direct unresolved URL fails before prompt rendering, input identity construction, cache-decision construction, or provider callback creation |
+| Public leakage | `resultJson`, API/internal runner output, UI/report/export compatibility surfaces, and report schema fixtures remain free of Claim Understanding internals, prompt text, provider telemetry, cache material, side-effect fields, and diagnostics |
+| Clean-room | no V1 analyzer imports, V1 prompt/profile/section reuse, V1 type reuse, mocks, or fixtures in product paths; any new candidate path is included in V1 import, legacy prompt literal, V1 identifier, mock/fixture, provider SDK, and public-export scans |
 | Regression | full Analyzer V2 unit slice and `npm -w apps/web run build` |
 
-## 11. Reviewer Questions
+## 12. Reviewer Questions
 
-1. Is the proposed `runtime-dispatch.ts` owner the right boundary, or should dispatch ownership remain outside source until UCM approval snapshots are defined?
-2. Is mock-only dispatch integration safe before UCM-backed runtime approvals exist?
-3. What exact guard replaces the current product-path model-adapter import ban?
-4. Should first runtime dispatch build a no-store/no-read cache decision, or should cache decision construction remain deferred?
+1. Is a contract-only `runtime-dispatch.ts` boundary useful now, or should dispatch ownership remain outside source until UCM approval snapshots are defined?
+2. What exact guard replaces the current product-path model-adapter import ban?
+3. Should the next source slice define only approval/provenance packet types and negative reachability guards?
+4. Should cache-decision construction remain deferred until complete dimensions and no-read/no-write semantics are enforceable?
 5. Is direct URL resolution a prerequisite before any direct-input dispatch, or can text-only dispatch proceed while URL stays blocked?
 6. What minimum proof is required before asking Captain to approve a real model call or live job?
 
-## 12. Short Reviewer Prompt
+## 13. Short Reviewer Prompt
 
-Review `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md` after 6B.3c-1. Decide whether any 6B.3c-2 source code is safe, and if so whether it is limited to a non-executable mock dispatch owner contract. Treat product runtime dispatch, prompt/model/cache approval flips, provider SDK imports, cache IO, public diagnostics, direct URL body assumptions, live jobs, and V1 reuse as blockers unless explicitly justified.
+Review `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md` after 6B.3c-1. Decide whether a later 6B.3c-2 source slice may be contract-only, with no prompt rendering, no cache-decision construction, no model-adapter call, no provider callback, no provider SDK, no cache IO, no approval flip, no public surface, no direct URL body assumption, no live job, and no V1 reuse.
