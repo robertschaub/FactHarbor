@@ -1,7 +1,7 @@
 # V2 Slice 6B Prompt And Model Review Package
 
 **Date:** 2026-05-14
-**Status:** Slice 6B.2 prompt draft and contract tests complete; Slice 6B.3 gated model execution approval required next
+**Status:** Slice 6B.2 prompt draft and contract tests complete; Slice 6B.3 revised implementation plan ready for review
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -50,7 +50,7 @@ Slice 6B should be split into reviewable sub-slices:
 | 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | Complete at `24f55d4a` |
 | 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Complete at `2f1b60a4` |
 | 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Complete at `8a1ef8cd`; final Claude Opus LLM Expert review approved |
-| 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Approval package reviewed at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`; verdict `MODIFY`, implementation not approved |
+| 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Approval package reviewed at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`; revised plan drafted at `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`; implementation not approved |
 | 6B.4 non-public structural smoke | Exercise the gated path on fixtures or explicitly approved jobs only | Yes, gated | Commit-first, runtime-refresh, and live-job spend approval if real jobs are used |
 
 The split prevents profile/schema plumbing from smuggling in prompt text or runtime analysis behavior.
@@ -420,4 +420,4 @@ Verification for `8a1ef8cd`:
 
 ## 13. Current Decision
 
-Proceed with Slice 6B only as sub-slices. Slices 6B.1a, 6B.1b, and 6B.2 are complete at `24f55d4a`, `2f1b60a4`, and `8a1ef8cd`. The 6B.3 approval package at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md` returned `MODIFY`; implementation is not approved or started. Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded.
+Proceed with Slice 6B only as sub-slices. Slices 6B.1a, 6B.1b, and 6B.2 are complete at `24f55d4a`, `2f1b60a4`, and `8a1ef8cd`. The 6B.3 approval package at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md` returned `MODIFY`; follow-up debate produced `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` as the next no-code review artifact. Implementation is not approved or started. Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded.

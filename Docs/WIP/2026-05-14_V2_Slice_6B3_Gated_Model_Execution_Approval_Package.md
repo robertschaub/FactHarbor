@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Gated Model Execution Approval Package
 
 **Date:** 2026-05-14
-**Status:** Reviewed; MODIFY; implementation not approved
+**Status:** Reviewed; MODIFY; revised plan drafted; implementation not approved
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -213,7 +213,9 @@ Review `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.
 
 Current decision after review: **MODIFY**. Do not implement 6B.3 yet.
 
-Recommended next low-risk action: prepare or review a revised 6B.3 implementation plan that incorporates the consolidated required changes above. The next code slice, if approved, should start with the V2 prompt loader, V2/neutral model adapter boundary, runtime schemas, and cache/provenance construction tests before any live model call.
+Follow-up status: the diverse-agent debate after this package kept the no-code decision and produced `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`.
+
+Recommended next low-risk action: review that revised 6B.3 implementation plan with the deputy team. The next code slice, if approved, should start with the V2 prompt loader, V2/neutral model adapter boundary, runtime schemas, and cache/provenance construction tests before any live model call.
 
 Until that review is complete, keep the repository behavior unchanged:
 
