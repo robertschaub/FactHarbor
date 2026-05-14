@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T14:37:04.592Z",
-  "count": 446,
+  "generatedAt": "2026-05-14T14:47:20.555Z",
+  "count": 447,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9241,6 +9241,50 @@
         "Docs/AGENTS/Agent_Outputs.md"
       ],
       "summary": "Implement 6B.3c-0 only from `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 7.1.1. Do not implement full dispatch-capable 6B.3c."
+    },
+    {
+      "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame.md",
+      "date": "2026-05-14",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b3c1",
+        "dispatch",
+        "frame"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-frame.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/dispatch-frame.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md",
+        "Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md",
+        "Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md",
+        "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Current stable source commit is `8a663d3f`. Verification passed: focused dispatch-frame + boundary tests (2 files, 18 tests), full Analyzer V2 unit slice (16 files, 103 tests), `npm -w apps/web run build`, targeted clean-room source scan, and `git diff --check`. Continue only with docs/debate for pr",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "path": "Compact",
+            "symptom": "focused dispatch-frame test failed because it asserted serialized blocked output must not contain `inputIdentityHash`, while the side-effect contract intentionally recorded `inputIdentityHashConstructed: false`.",
+            "existing_mechanism": "dispatch-frame side-effect object records forbidden work as explicit false flags.",
+            "prior_attempt": "keep",
+            "lowest_complexity_fix": "amend the over-broad test-only string assertions and keep full side-effect equality as the behavior proof.",
+            "rejected_path": "removing side-effect fields would weaken the contract; adding helpers would add mechanism for a test-only issue.",
+            "verifier": "focused dispatch-frame + boundary tests passed.",
+            "net_mechanisms": "unchanged",
+            "residual_risk": "low"
+          }
+        }
+      }
     },
     {
       "file": "2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame_Gate.md",
