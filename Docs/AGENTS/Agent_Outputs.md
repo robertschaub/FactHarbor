@@ -2918,3 +2918,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-1 Dispatch Frame -- [Standard] [open-items: yes]
 **For next agent:** Slice 6B.3c-1 is complete at `8a663d3f`: pure internal `buildClaimUnderstandingDispatchFrame(...)`, direct-text exact pass-through, direct URL fail-closed behavior, ACS resolved-text/hash requirements, and boundary guards against prompt/model/cache/provider/V1 imports. Product runtime dispatch remains unapproved and requires a later review gate.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-2 Runtime Dispatch Gate -- [Standard] [open-items: yes]
+**For next agent:** Post-6B.3c-1 deputy debate returned `BLOCK/BLOCK/MODIFY/MODIFY` for product runtime dispatch. Drafted `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`; it approves no source code and keeps prompt rendering, product adapter imports, provider callbacks/SDKs, cache IO, approval flips, public diagnostics, direct URL body assumptions, live jobs, and V1 reuse blocked.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c2_Runtime_Dispatch_Gate.md

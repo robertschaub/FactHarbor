@@ -293,6 +293,15 @@ Follow-up debate after 6B.3c-0 returned `MODIFY`: product runtime dispatch remai
 
 Captain escalation is required before any production approval flip, real provider SDK callsite, cache IO enablement, public/API/UI/report diagnostic exposure, file seeding, live job, or V1/V2 boundary weakening.
 
+Post-6B.3c-1 deputy debate:
+
+- Claude Opus-style LLM/runtime safety: `BLOCK` product-runtime source code now.
+- Senior Developer: `MODIFY`; draft a docs-only runtime-dispatch gate package first.
+- Code Reviewer / clean-room: `MODIFY`; source code is safe only if it is another non-executable/internal contract or guard slice.
+- Gemini-style Challenger: `BLOCK` product runtime dispatch and require a dispatch-readiness contract before replacing the adapter-import ban.
+
+Consolidated decision: no product runtime dispatch source code is approved after 6B.3c-1. The next low-risk step is the docs-only gate package `Docs/WIP/2026-05-14_V2_Slice_6B3c_Product_Runtime_Dispatch_Review_Package.md`. That package does not approve prompt rendering, model-adapter product imports, provider callbacks, provider SDKs, cache IO, approval flips, public diagnostics, direct URL body assumptions, live jobs, or V1 reuse.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.
