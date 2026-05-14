@@ -5,9 +5,14 @@ import { describe, expect, it } from "vitest";
 
 const webRoot = process.cwd();
 const srcRoot = path.resolve(webRoot, "src");
+const appRoot = path.resolve(srcRoot, "app");
+const componentsRoot = path.resolve(srcRoot, "components");
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
+const analyzerV2IndexPath = path.resolve(v2AnalyzerRoot, "index.ts");
 const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
+const analyzerV2CompatibilityViewPath = path.resolve(v2AnalyzerRoot, "compatibility-view.ts");
+const analyzerV2ResultEnvelopePath = path.resolve(v2AnalyzerRoot, "result-envelope.ts");
 const claimUnderstandingModelAdapterPath = path.resolve(v2AnalyzerRoot, "claim-understanding/model-adapter.ts");
 const claimUnderstandingPromptLoaderPath = path.resolve(v2AnalyzerRoot, "claim-understanding/prompt-loader.ts");
 const claimUnderstandingRuntimeStagePath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-stage.ts");
@@ -75,6 +80,24 @@ const noDispatchRuntimePaths = [
   claimUnderstandingDispatchFramePath,
   claimUnderstandingDispatchReadinessContractPath,
   claimUnderstandingRuntimeDispatchPath,
+];
+const publicAnalyzerV2SurfacePaths = [
+  analyzerV2IndexPath,
+  analyzerV2CompatibilityViewPath,
+  analyzerV2ResultEnvelopePath,
+];
+const ownerOnlyResultSurfaceTerms = [
+  "ownerContract",
+  "sideEffects",
+  "providerTelemetry",
+  "cacheDecision",
+  "keyParts",
+  "renderedPrompt",
+  "renderedPromptHash",
+  "adapterCalled",
+  "providerCallbackCreated",
+  "cacheRead",
+  "cacheWrite",
 ];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
@@ -338,6 +361,14 @@ function isClaimUnderstandingRuntimeDispatchImport(filePath: string, specifier: 
   return resolved === runtimeDispatchPath || resolved === `${runtimeDispatchPath}.ts`;
 }
 
+function isDispatchCapableInternalImport(filePath: string, specifier: string): boolean {
+  return isClaimUnderstandingModelAdapterImport(filePath, specifier)
+    || isClaimUnderstandingPromptLoaderImport(filePath, specifier)
+    || isAnalyzerV2CacheGovernanceImport(filePath, specifier)
+    || isClaimUnderstandingDispatchReadinessContractImport(filePath, specifier)
+    || isClaimUnderstandingRuntimeDispatchImport(filePath, specifier);
+}
+
 function resolveExistingTypeScriptFile(candidatePath: string): string | null {
   const candidates = [
     candidatePath,
@@ -431,8 +462,17 @@ function hasExecutableStatusMutation(sourceFile: ts.SourceFile): boolean {
       && node.operatorToken.kind === ts.SyntaxKind.EqualsToken
       && ts.isStringLiteral(node.right)
       && node.right.text === "executable"
-      && ts.isPropertyAccessExpression(node.left)
-      && node.left.name.text === "status"
+      && (
+        (
+          ts.isPropertyAccessExpression(node.left)
+          && node.left.name.text === "status"
+        )
+        || (
+          ts.isElementAccessExpression(node.left)
+          && ts.isStringLiteral(node.left.argumentExpression)
+          && node.left.argumentExpression.text === "status"
+        )
+      )
     ) {
       found = true;
     }
@@ -528,6 +568,11 @@ describe("analyzer-v2 boundary guard", () => {
   const v2SourceFiles = collectFiles(v2AnalyzerRoot, (filePath) =>
     [".ts", ".tsx"].includes(path.extname(filePath))
   );
+  const publicSurfaceFiles = Array.from(new Set([
+    ...collectFiles(appRoot, (filePath) => [".ts", ".tsx"].includes(path.extname(filePath))),
+    ...collectFiles(componentsRoot, (filePath) => [".ts", ".tsx"].includes(path.extname(filePath))),
+    ...publicAnalyzerV2SurfacePaths.filter((filePath) => existsSync(filePath)),
+  ])).sort();
   const v2PromptFiles = collectFiles(promptRoot, (filePath) =>
     filePath.endsWith(".prompt.md") && isV2OwnedPromptFile(filePath)
   );
@@ -589,8 +634,14 @@ describe("analyzer-v2 boundary guard", () => {
         if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
         }
+        if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports cache governance ${specifier}`);
+        }
         if (isProviderSdkImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
         }
       }
     }
@@ -630,6 +681,54 @@ describe("analyzer-v2 boundary guard", () => {
       for (const importedPath of transitiveImports) {
         if (forbiddenTransitiveTargets.has(toPosix(importedPath))) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches ${toPosix(path.relative(webRoot, importedPath))}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps public app, report, and export surfaces from importing dispatch-capable internals", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of publicSurfaceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isDispatchCapableInternalImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports dispatch-capable internal ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the Analyzer V2 barrel free of dispatch-capable internals", () => {
+    const violations: string[] = [];
+    const sourceFile = parseSource(analyzerV2IndexPath);
+
+    for (const specifier of collectModuleSpecifiers(sourceFile)) {
+      if (isDispatchCapableInternalImport(analyzerV2IndexPath, specifier)) {
+        violations.push(`analyzer-v2 barrel exports dispatch-capable internal ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps public V2 result schemas and result surfaces free of runtime-owner internals", () => {
+    const filesToScan = [
+      reportResultV2SchemaPath,
+      analyzerV2CompatibilityViewPath,
+      analyzerV2ResultEnvelopePath,
+    ].filter((filePath) => existsSync(filePath));
+    const violations: string[] = [];
+
+    for (const sourcePath of filesToScan) {
+      const content = readFileSync(sourcePath, "utf8");
+      for (const term of ownerOnlyResultSurfaceTerms) {
+        if (content.includes(term)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} exposes owner-only term ${term}`);
         }
       }
     }

@@ -69,10 +69,15 @@ function provenancePacket(
   overrides: Partial<ClaimUnderstandingDispatchReadinessProvenancePacket> = {},
 ): ClaimUnderstandingDispatchReadinessProvenancePacket {
   return {
+    provenancePhase: "pre_render",
+    submittedKind: "text",
+    analysisInput: frame.analysisInput,
+    resolvedInputText: frame.resolvedInputText,
+    selectedAtomicClaimIds: [...frame.selectedAtomicClaimIds],
     promptProfile: "claimboundary-v2",
     promptSectionId: "V2_CLAIM_UNDERSTANDING_GATE1",
-    promptContentHash: "prompt-content-hash-6b3c2",
-    renderedPromptHash: "rendered-prompt-hash-6b3c2",
+    promptContentHash: null,
+    renderedPromptHash: null,
     configSnapshotHash: "config-snapshot-hash-6b3c2",
     modelTask: "understand",
     provider: "anthropic",
@@ -91,7 +96,7 @@ function provenancePacket(
 }
 
 describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
-  it("accepts only an externally supplied complete direct-text contract without side effects", () => {
+  it("accepts only an externally supplied complete direct-text pre-render contract without side effects", () => {
     const submittedText = "Der Bundesrat unterschrieb den EU-Vertrag bevor Volk und Parlament darüber entschieden haben";
     const frame = readyFrame({
       runIdHint: "job-readiness-direct-text",
@@ -120,6 +125,31 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
     });
     expect(result.frame.analysisInput).toBe(submittedText);
     expect(result.frame.resolvedInputText).toBe(submittedText);
+  });
+
+  it("blocks fake post-render prompt hashes before rendering is owned", () => {
+    const frame = readyFrame({
+      runIdHint: "job-readiness-fake-render-hash",
+      submitted: {
+        kind: "text",
+        value: "Plastic recycling is pointless",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+
+    const result = validateClaimUnderstandingDispatchReadinessContract({
+      frame,
+      approvalSnapshot: approvalSnapshot(),
+      provenancePacket: provenancePacket(frame, {
+        promptContentHash: "externally-supplied-prompt-hash" as never,
+        renderedPromptHash: "externally-supplied-rendered-hash" as never,
+      }),
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReasons).toContain("pre_render_prompt_hash_forbidden");
+    expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });
 
   it("blocks when the approval snapshot is not executable and approved", () => {
@@ -178,7 +208,7 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
     expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });
 
-  it("blocks incomplete provenance and constructed cache decisions", () => {
+  it("blocks frame identity mismatches and constructed cache decisions", () => {
     const frame = readyFrame({
       runIdHint: "job-readiness-provenance-blocked",
       submitted: {
@@ -193,20 +223,20 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
       frame,
       approvalSnapshot: approvalSnapshot(),
       provenancePacket: provenancePacket(frame, {
-        promptContentHash: "",
+        resolvedInputText: "Changed text",
         cacheDecisionState: "constructed",
       }),
     });
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReasons).toEqual(expect.arrayContaining([
-      "provenance_packet_incomplete",
+      "provenance_frame_mismatch",
       "cache_decision_must_not_be_constructed",
     ]));
     expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });
 
-  it("requires ACS provenance when the frame came from a prepared snapshot", () => {
+  it("defers ACS pre-render readiness until ACS JSON ownership is defined", () => {
     const frame = readyFrame({
       runIdHint: "job-readiness-acs-provenance",
       submitted: {
@@ -231,12 +261,12 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
       frame,
       approvalSnapshot: approvalSnapshot(),
       provenancePacket: provenancePacket(frame, {
-        acsSnapshotHash: null,
+        submittedKind: "url",
       }),
     });
 
     expect(result.status).toBe("blocked");
-    expect(result.blockedReasons).toEqual(["acs_provenance_missing"]);
+    expect(result.blockedReasons).toContain("acs_preflight_deferred");
     expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });
 
@@ -268,11 +298,36 @@ describe("Analyzer V2 Claim Understanding dispatch readiness contract", () => {
         selectedAtomicClaimIds: [],
         currentDate: "2026-05-14",
         inputSource: "direct_input",
+      }, {
+        submittedKind: "url",
       }),
     });
 
     expect(result.status).toBe("blocked");
     expect(result.blockedReasons).toContain("dispatch_frame_missing");
+    expect(result.sideEffects).toEqual(noReadinessSideEffects);
+  });
+
+  it("blocks a forged direct URL frame even when the frame is structurally complete", () => {
+    const forgedFrame: ClaimUnderstandingDispatchFrame = {
+      analysisInput: "https://example.test/article",
+      resolvedInputText: "https://example.test/article",
+      detectedLanguage: "und",
+      selectedAtomicClaimIds: [],
+      currentDate: "2026-05-14",
+      inputSource: "direct_input",
+    };
+
+    const result = validateClaimUnderstandingDispatchReadinessContract({
+      frame: forgedFrame,
+      approvalSnapshot: approvalSnapshot(),
+      provenancePacket: provenancePacket(forgedFrame, {
+        submittedKind: "url",
+      }),
+    });
+
+    expect(result.status).toBe("blocked");
+    expect(result.blockedReasons).toEqual(["direct_url_preflight_forbidden"]);
     expect(result.sideEffects).toEqual(noReadinessSideEffects);
   });
 });

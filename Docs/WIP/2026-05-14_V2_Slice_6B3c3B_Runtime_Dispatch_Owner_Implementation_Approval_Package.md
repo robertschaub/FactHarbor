@@ -1,9 +1,9 @@
 # V2 Slice 6B.3c-3B Runtime Dispatch Owner Implementation Approval Package
 
 **Date:** 2026-05-14
-**Status:** Expert review returned `BLOCK/MODIFY/MODIFY/MODIFY`; revised to 6B.3c-3B1 preflight/provenance and guard hardening only
+**Status:** 6B.3c-3B1 implemented as preflight/provenance binding and guard hardening only; 3B2/3B3 remain blocked pending review
 **Owner role:** Lead Architect / Captain deputy
-**Current stable implementation:** `a79cba3f` (`feat: add v2 runtime dispatch owner contract`)
+**Pre-3B1 baseline:** `a53564f0` (`docs: narrow v2 runtime dispatch owner package`)
 
 ---
 
@@ -146,6 +146,39 @@ Required before 3B1 acceptance:
 | Clean-room | no V1 analyzer/prompt/profile/section/type reuse; no mocks/fixtures in production source |
 | Regression | focused runtime-dispatch/readiness/boundary tests, full Analyzer V2 unit slice, V2 routing test, build, `git diff --check` |
 
-## 9. Short Reviewer Prompt
+## 9. Implementation Outcome
 
-Review this revised package. Decide whether 6B.3c-3B1 may proceed as a preflight/provenance and guard-hardening slice only. It must stop before prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, live jobs, direct URL dispatch, and V1 reuse.
+3B1 is now implemented as an inert contract/test hardening slice:
+
+- readiness provenance is explicitly `pre_render`;
+- `promptContentHash` and `renderedPromptHash` must be absent before prompt rendering is owned;
+- direct-text readiness is bound to the exact dispatch frame `analysisInput`, `resolvedInputText`, `inputSource`, `selectedAtomicClaimIds`, and `currentDate`;
+- direct URL readiness fails closed for both null unresolved frames and structurally complete forged URL frames;
+- ACS readiness is deferred until exact ACS JSON ownership and hash verification are defined;
+- runtime-dispatch tests use the same pre-render readiness packet and remain contract-only;
+- boundary guards now cover public app/report/export imports, Analyzer V2 barrel exports, owner-only result-surface fields, cache-governance imports in no-dispatch contracts, test/mock imports in no-dispatch contracts, and element-access `status = "executable"` assignments.
+
+Verification completed for the 3B1 implementation:
+
+- focused readiness/runtime-dispatch/boundary guard tests;
+- full Analyzer V2 unit slice;
+- V2 internal runner routing test;
+- `npm -w apps/web run build`;
+- targeted clean-room scans for V1 analyzer imports, V1 prompt/profile reuse, provider SDK imports, and public dispatch-capable internals;
+- `git diff --check`.
+
+Still blocked after 3B1:
+
+- product execution path wiring;
+- executable shipped gateway status or approval flips;
+- prompt rendering;
+- provider callback acceptance or provider SDK imports;
+- cache-decision construction and cache read/write;
+- API/UI/report/export/public diagnostics;
+- direct unresolved URL dispatch;
+- live jobs;
+- V1 code, prompt, profile, section, or type reuse.
+
+## 10. Short Reviewer Prompt
+
+Review the implemented 6B.3c-3B1 slice. Decide whether the preflight/provenance binding and guard hardening are sufficient to move next to a separate 3B2 no-store cache decision review. The implementation must still stop before prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, live jobs, direct URL dispatch, and V1 reuse.

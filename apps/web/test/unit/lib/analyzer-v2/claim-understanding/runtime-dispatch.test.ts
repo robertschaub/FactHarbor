@@ -74,10 +74,15 @@ function provenancePacket(
   overrides: Partial<ClaimUnderstandingDispatchReadinessProvenancePacket> = {},
 ): ClaimUnderstandingDispatchReadinessProvenancePacket {
   return {
+    provenancePhase: "pre_render",
+    submittedKind: "text",
+    analysisInput: frame.analysisInput,
+    resolvedInputText: frame.resolvedInputText,
+    selectedAtomicClaimIds: [...frame.selectedAtomicClaimIds],
     promptProfile: "claimboundary-v2",
     promptSectionId: "V2_CLAIM_UNDERSTANDING_GATE1",
-    promptContentHash: "prompt-content-hash-6b3c3a",
-    renderedPromptHash: "rendered-prompt-hash-6b3c3a",
+    promptContentHash: null,
+    renderedPromptHash: null,
     configSnapshotHash: "config-snapshot-hash-6b3c3a",
     modelTask: "understand",
     provider: "anthropic",

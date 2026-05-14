@@ -36,10 +36,15 @@ export type ClaimUnderstandingDispatchReadinessCacheDecisionState =
   | "read_or_write_enabled";
 
 export type ClaimUnderstandingDispatchReadinessProvenancePacket = {
+  provenancePhase: "pre_render";
+  submittedKind: "text" | "url";
+  analysisInput: string;
+  resolvedInputText: string;
+  selectedAtomicClaimIds: string[];
   promptProfile: string;
   promptSectionId: string;
-  promptContentHash: string;
-  renderedPromptHash: string;
+  promptContentHash: null;
+  renderedPromptHash: null;
   configSnapshotHash: string;
   modelTask: string;
   provider: string;
@@ -82,6 +87,9 @@ export type ClaimUnderstandingDispatchReadinessBlockedReason =
   | "approval_snapshot_identity_missing"
   | "provenance_packet_incomplete"
   | "provenance_frame_mismatch"
+  | "pre_render_prompt_hash_forbidden"
+  | "direct_url_preflight_forbidden"
+  | "acs_preflight_deferred"
   | "acs_provenance_missing"
   | "direct_input_acs_provenance_forbidden"
   | "cache_decision_must_not_be_constructed";
@@ -210,10 +218,10 @@ function collectProvenanceReasons(
 ): ClaimUnderstandingDispatchReadinessBlockedReason[] {
   const reasons: ClaimUnderstandingDispatchReadinessBlockedReason[] = [];
   const requiredStrings = [
+    provenancePacket.analysisInput,
+    provenancePacket.resolvedInputText,
     provenancePacket.promptProfile,
     provenancePacket.promptSectionId,
-    provenancePacket.promptContentHash,
-    provenancePacket.renderedPromptHash,
     provenancePacket.configSnapshotHash,
     provenancePacket.modelTask,
     provenancePacket.provider,
@@ -227,9 +235,18 @@ function collectProvenanceReasons(
 
   if (
     requiredStrings.some((value) => !isRealContractString(value))
+    || provenancePacket.selectedAtomicClaimIds.some((claimId) => !isRealContractString(claimId))
     || !Number.isFinite(provenancePacket.temperature)
   ) {
     addReason(reasons, "provenance_packet_incomplete");
+  }
+
+  if (
+    provenancePacket.provenancePhase !== "pre_render"
+    || provenancePacket.promptContentHash !== null
+    || provenancePacket.renderedPromptHash !== null
+  ) {
+    addReason(reasons, "pre_render_prompt_hash_forbidden");
   }
 
   if (provenancePacket.cacheDecisionState !== "not_constructed") {
@@ -243,11 +260,22 @@ function collectProvenanceReasons(
   if (
     provenancePacket.inputSource !== frame.inputSource
     || provenancePacket.currentDateBucket !== frame.currentDate
+    || provenancePacket.analysisInput !== frame.analysisInput
+    || provenancePacket.resolvedInputText !== frame.resolvedInputText
+    || provenancePacket.selectedAtomicClaimIds.length !== frame.selectedAtomicClaimIds.length
+    || provenancePacket.selectedAtomicClaimIds.some(
+      (claimId, index) => claimId !== frame.selectedAtomicClaimIds[index],
+    )
   ) {
     addReason(reasons, "provenance_frame_mismatch");
   }
 
+  if (frame.inputSource === "direct_input" && provenancePacket.submittedKind !== "text") {
+    addReason(reasons, "direct_url_preflight_forbidden");
+  }
+
   if (frame.inputSource === "acs_prepared_snapshot") {
+    addReason(reasons, "acs_preflight_deferred");
     if (!isRealContractString(provenancePacket.acsSnapshotHash)) {
       addReason(reasons, "acs_provenance_missing");
     }

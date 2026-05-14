@@ -2938,3 +2938,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-3B Package Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Expert review of the broader 3B owner implementation package returned `BLOCK/MODIFY/MODIFY/MODIFY`. Revised `Docs/WIP/2026-05-14_V2_Slice_6B3c3B_Runtime_Dispatch_Owner_Implementation_Approval_Package.md` to 3B1 preflight/provenance binding and guard hardening only. Prompt rendering, cache-decision construction, provider callback acceptance, adapter invocation, product wiring, public surfaces, direct URL dispatch, live jobs, and V1 reuse remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c3B_Package_Consolidation.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-3B1 Preflight Provenance Binding -- [Standard] [open-items: yes]
+**For next agent:** 3B1 is implemented as inert readiness/provenance and guard hardening only. `ClaimUnderstandingDispatchReadinessProvenancePacket` is now explicitly `pre_render`; `promptContentHash` and `renderedPromptHash` must be `null`; direct-text readiness binds exact frame fields; ACS is deferred; direct URL preflight fails closed, including forged complete URL frames. Public/report/export leak guards and Analyzer V2 barrel guards are in `boundary-guard.test.ts`. Product dispatch, prompt rendering, cache construction/IO, provider callbacks/SDKs, live jobs, public diagnostics, and V1 reuse remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c3B1_Preflight_Provenance_Binding.md
