@@ -36,7 +36,7 @@ Implemented the approved 4C2a inert provider runtime config/provenance contract.
 - Checklist: `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`.
 - Approval body/date: deputy-team review of the 4C2 package in the current Codex thread on 2026-05-14.
 - Approval outcome: LLM/runtime reviewer `APPROVE for 4C2a only`, clean-room/security challenger `APPROVE`, implementation architect `APPROVE for 4C2a only`.
-- Implementing commit: pending until source commit is created; record with a follow-up traceability update.
+- Implementing commit: `dc65268b`.
 
 ## Changes
 

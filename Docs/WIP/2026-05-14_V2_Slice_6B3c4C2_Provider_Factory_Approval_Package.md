@@ -105,7 +105,7 @@ Provider factory code is not approved until 4C2 receives separate deputy review 
 
 ## 5.1 6B.3c-4C2a Implementation Record
 
-Implementation status: complete; implementing commit pending at time of this source commit and recorded by follow-up traceability update.
+Implementation status: complete at `dc65268b`.
 
 Approval pointer:
 
