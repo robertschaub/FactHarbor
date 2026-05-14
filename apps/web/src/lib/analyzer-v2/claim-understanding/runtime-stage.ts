@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   buildClaimUnderstandingDispatchFrame,
   type ClaimUnderstandingDispatchFrame,
@@ -35,6 +34,7 @@ import {
   getPipelineRunTaskModelPolicy,
   type PipelineRunContext,
 } from "@/lib/analyzer-v2/run-context";
+import { sha256Json } from "@/lib/analyzer-v2/util";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION = "v2.claim-understanding.runtime-stage.0";
 const CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_VERSION =
@@ -253,10 +253,6 @@ function evaluateDirectInput(context: PipelineRunContext): ClaimUnderstandingRun
     cacheEligibility: "not_evaluated",
     sideEffects: noDispatchSideEffects(),
   };
-}
-
-function sha256Json(value: unknown): string {
-  return createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
 }
 
 function isRealString(value: unknown): value is string {

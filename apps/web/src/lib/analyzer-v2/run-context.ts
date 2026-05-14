@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { ANALYZER_V2_TASK_MODEL_POLICIES } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { ANALYZER_V2_GATEWAY_TASKS } from "@/lib/analyzer-v2/gateway/policy";
 import type {
@@ -7,7 +6,7 @@ import type {
   AnalyzerV2TaskModelPolicy,
 } from "@/lib/analyzer-v2/gateway/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
-import { isRecord, readAcsResolvedInputText } from "@/lib/analyzer-v2/util";
+import { isRecord, readAcsResolvedInputText, sha256Json } from "@/lib/analyzer-v2/util";
 
 export type PipelineRunConfigSnapshot = {
   source: "not_loaded_pre_provider_wiring_gate";
@@ -55,10 +54,6 @@ export type ClaimBoundaryV2RunContext = PipelineRunContext;
 export type BuildClaimBoundaryV2RunContextOptions = {
   now?: () => Date;
 };
-
-function sha256Json(value: unknown): string {
-  return createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
-}
 
 function cloneJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;

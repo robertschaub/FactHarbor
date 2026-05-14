@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -19,4 +20,8 @@ export function readAcsResolvedInputText(input: ClaimBoundaryV2Ingress): string 
   }
 
   return isNonBlankString(snapshot.resolvedInputText) ? snapshot.resolvedInputText : null;
+}
+
+export function sha256Json(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value), "utf8").digest("hex");
 }

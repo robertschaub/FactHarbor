@@ -193,7 +193,6 @@ const runtimeScaffoldOptionTerms = [
   "providerBoundary",
 ];
 const runtimeStageApprovedImports = new Map<string, Set<string>>([
-  ["node:crypto", new Set(["createHash"])],
   [
     "@/lib/analyzer-v2/claim-understanding/dispatch-frame",
     new Set(["ClaimUnderstandingDispatchFrame", "buildClaimUnderstandingDispatchFrame"]),
@@ -243,6 +242,10 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
   [
     "@/lib/analyzer-v2/gateway/types",
     new Set(["AnalyzerV2GatewayTask", "AnalyzerV2GatewayTaskStatus", "AnalyzerV2PolicyApproval"]),
+  ],
+  [
+    "@/lib/analyzer-v2/util",
+    new Set(["sha256Json"]),
   ],
 ]);
 const analyzerV2RuntimeProviderContractApprovedImports = new Map<string, Set<string>>([
