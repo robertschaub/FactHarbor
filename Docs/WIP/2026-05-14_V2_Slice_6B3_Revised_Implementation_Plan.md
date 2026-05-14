@@ -351,6 +351,29 @@ Post-3B3 product wiring review returned `MODIFY/BLOCK`. Product runtime wiring i
 
 6B.3c-4A is implemented after explicit Captain approval as an internal direct-text runtime wiring scaffold. `runtime-stage.ts` is now the only product-stage bridge to `runtime-dispatch.ts`; `orchestrator.ts` awaits that internal state and `pipeline-shell.ts` can pass scaffold options for controlled tests. Normal V2 shell calls remain damaged/pre-cutover, V1 remains default, and no public API/UI/report/export schema changed. Direct text can execute only with explicit scaffold enablement plus an injected provider boundary; missing provider boundary, direct URL, and ACS/prepared input fail or defer before prompt/cache/adapter/provider work. Cache remains runtime no-store only, provider SDK imports remain absent, prompt/config source files were not changed, live jobs were not run, and V1 cleanup remains a later cutover/stabilization task. Review follow-up added a boundary guard that forbids production callers outside the approved owner files from referencing the scaffold option keys, keeping the executable override confined to tests/controlled harnesses until a later provider-boundary gate.
 
+Post-4A provider-boundary debate returned `MODIFY`. The provider boundary is the correct next architectural problem, but real product-owned provider callback construction is still one step too early because the current runtime path still uses scaffolded approval/executable state and existing provider/model helpers are V1-contaminated or scattered. The accepted next slice is **6B.3c-4B Provider Boundary Ownership Contract**:
+
+- add only an inert ownership contract under `apps/web/src/lib/analyzer-v2-runtime/`;
+- define the future factory's owner identity, policy inputs, V2 config snapshot requirements, direct-text-only input scope, raw-output-plus-telemetry output contract, and forbidden states;
+- add tests and static guards proving the contract is not imported by product callers, does not import provider SDKs, V1 analyzer code, prompt/runtime dispatch owners, cache IO, or scaffold option keys;
+- do not create a concrete provider callback, do not import AI SDKs, do not wire product callers, do not flip prompt/model/cache approvals, do not expose public results, do not enable ACS/direct URL execution, do not run live jobs, and do not clean V1.
+
+6B.3c-4B source envelope:
+
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.ts`;
+- `apps/web/test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.test.ts`;
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`;
+- documentation and handoff updates.
+
+Minimum verifier:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/boundary-guard.test.ts test/unit/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.test.ts`;
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2`;
+- `npm -w apps/web run build`;
+- `git diff --check`.
+
+Live jobs remain not meaningful for 6B.3c-4B because the slice intentionally adds no runtime behavior. They become meaningful only after a committed/refreshed source-wiring slice produces a real hidden V2 direct-text artifact without scaffold-only injection.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

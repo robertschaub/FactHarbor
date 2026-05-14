@@ -9,6 +9,7 @@ const appRoot = path.resolve(srcRoot, "app");
 const componentsRoot = path.resolve(srcRoot, "components");
 const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
+const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
 const analyzerV2IndexPath = path.resolve(v2AnalyzerRoot, "index.ts");
 const analyzerV2OrchestratorPath = path.resolve(v2AnalyzerRoot, "orchestrator.ts");
 const analyzerV2PipelineShellPath = path.resolve(v2AnalyzerRoot, "pipeline-shell.ts");
@@ -28,6 +29,10 @@ const claimUnderstandingRuntimeDispatchPath = path.resolve(v2AnalyzerRoot, "clai
 const analyzerV2CachePolicyRegistryPath = path.resolve(v2AnalyzerRoot, "gateway/cache-policy-registry.ts");
 const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cache-governance.ts");
 const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
+const analyzerV2RuntimeProviderContractPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-provider-boundary.contract.ts",
+);
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -241,6 +246,17 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
   [
     "@/lib/analyzer-v2/gateway/types",
     new Set(["AnalyzerV2GatewayTaskStatus"]),
+  ],
+]);
+const analyzerV2RuntimeProviderContractApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set([
+      "AnalyzerV2GatewayTaskId",
+      "AnalyzerV2ModelTask",
+      "AnalyzerV2ModelTier",
+      "AnalyzerV2PolicyApproval",
+    ]),
   ],
 ]);
 
@@ -541,6 +557,25 @@ function isClaimUnderstandingRuntimeDispatchImport(filePath: string, specifier: 
   return resolved === runtimeDispatchPath || resolved === `${runtimeDispatchPath}.ts`;
 }
 
+function isAnalyzerV2RuntimeImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2-runtime" || specifier.startsWith("@/lib/analyzer-v2-runtime/")) {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = resolveExistingTypeScriptFile(path.resolve(path.dirname(filePath), specifier));
+  if (!resolved) {
+    return false;
+  }
+
+  const runtimeRoot = toPosix(analyzerV2RuntimeRoot);
+  const normalizedResolved = toPosix(resolved);
+  return normalizedResolved === runtimeRoot || normalizedResolved.startsWith(`${runtimeRoot}/`);
+}
+
 function isDispatchCapableInternalImport(filePath: string, specifier: string): boolean {
   return isClaimUnderstandingModelAdapterImport(filePath, specifier)
     || isClaimUnderstandingPromptLoaderImport(filePath, specifier)
@@ -791,6 +826,9 @@ describe("analyzer-v2 boundary guard", () => {
   const v2SourceFiles = collectFiles(v2AnalyzerRoot, (filePath) =>
     [".ts", ".tsx"].includes(path.extname(filePath))
   );
+  const analyzerV2RuntimeSourceFiles = collectFiles(analyzerV2RuntimeRoot, (filePath) =>
+    [".ts", ".tsx"].includes(path.extname(filePath))
+  );
   const publicSurfaceFiles = Array.from(new Set([
     ...collectFiles(appRoot, (filePath) => [".ts", ".tsx"].includes(path.extname(filePath))),
     ...collectFiles(componentsRoot, (filePath) => [".ts", ".tsx"].includes(path.extname(filePath))),
@@ -989,6 +1027,117 @@ describe("analyzer-v2 boundary guard", () => {
       for (const term of runtimeScaffoldOptionTerms) {
         if (content.includes(term)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references runtime scaffold option ${term}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3c-4B provider ownership contract imports inert and limited", () => {
+    expect(existsSync(analyzerV2RuntimeProviderContractPath)).toBe(true);
+    const sourceFile = parseSource(analyzerV2RuntimeProviderContractPath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeProviderContractApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`provider ownership contract imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`provider ownership contract imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports V1 analyzer ${specifier}`);
+      }
+      if (isClaimUnderstandingModelAdapterImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports model adapter ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports prompt loader ${specifier}`);
+      }
+      if (isAnalyzerV2CacheGovernanceImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports cache governance ${specifier}`);
+      }
+      if (isAnalyzerV2GatewayPolicyImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports gateway policy ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2RuntimeProviderContractPath, specifier)) {
+        violations.push(`provider ownership contract imports runtime dispatch ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`provider ownership contract imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`provider ownership contract imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
+    const violations: string[] = [];
+
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/claim-understanding-provider-boundary.contract.ts",
+    );
+
+    for (const sourcePath of analyzerV2RuntimeSourceFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports runtime dispatch ${specifier}`);
+        }
+      }
+      for (const location of collectNonLiteralDynamicImports(sourceFile)) {
+        violations.push(`nonliteral dynamic import at ${toPosix(path.relative(webRoot, location))}`);
+      }
+
+      const content = readFileSync(sourcePath, "utf8");
+      for (const term of runtimeScaffoldOptionTerms) {
+        if (content.includes(term)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references runtime scaffold option ${term}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps provider ownership contracts out of production callers until the next wiring gate", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    )) {
+      if (toPosix(sourcePath).startsWith(`${toPosix(analyzerV2RuntimeRoot)}/`)) {
+        continue;
+      }
+
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime contract ${specifier}`);
         }
       }
     }
