@@ -19,7 +19,10 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
       inputGroundingSeedHash: "fixture-input-grounding-seed-hash",
     });
 
+    expect(result.schemaVersion).toBe("v2.claim_understanding_result.0");
     expect(result.status).toBe("accepted");
+    expect(result.blockedReason).toBeNull();
+    expect(result.damagedReason).toBeNull();
     expect(result.claimContract?.input.selectedAtomicClaimIds).toEqual(["AC_01"]);
     expect(result.claimContract?.atomicClaims).toEqual([
       expect.objectContaining({
@@ -46,6 +49,8 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
     expect(result).toMatchObject({
       status: "blocked",
       claimContract: null,
+      blockedReason: "selected_claim_missing",
+      damagedReason: null,
       integrityEvents: [
         {
           type: "selected_claim_missing",
@@ -62,6 +67,8 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
     });
 
     expect(result.status).toBe("blocked");
+    expect(result.blockedReason).toBe("duplicate_selected_claim_id");
+    expect(result.damagedReason).toBeNull();
     expect(result.integrityEvents[0]).toMatchObject({
       type: "duplicate_selected_claim_id",
       severity: "error",
@@ -77,6 +84,8 @@ describe("analyzer-v2 prepared snapshot claim-contract migration", () => {
     expect(result).toMatchObject({
       status: "blocked",
       claimContract: null,
+      blockedReason: "shell_placeholder_claim_id",
+      damagedReason: null,
       integrityEvents: [
         {
           type: "shell_placeholder_claim_id",

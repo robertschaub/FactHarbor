@@ -4,7 +4,7 @@ import {
   canExecuteAnalyzerV2GatewayTask,
   getAnalyzerV2GatewayTask,
 } from "@/lib/analyzer-v2/gateway/policy";
-import { CLAIM_CONTRACT_V2_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
+import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 
 describe("analyzer-v2 gateway policy registry", () => {
@@ -43,8 +43,8 @@ describe("analyzer-v2 gateway policy registry", () => {
       "acsSnapshotJson",
       "inputGroundingSeedJson",
     ]);
-    expect(task.promptPolicy?.outputSchemaVersion).toBe(CLAIM_CONTRACT_V2_SCHEMA_VERSION);
-    expect(task.outputSchemaVersion).toBe(CLAIM_CONTRACT_V2_SCHEMA_VERSION);
+    expect(task.promptPolicy?.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
+    expect(task.outputSchemaVersion).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
     expect(task.cachePolicy?.policyId).toBe("v2.semantic.claim-understanding");
     expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
   });

@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://factharbor.local/schemas/analyzer-v2/claim-understanding-result-v2.schema.json",
+  "title": "Analyzer V2 ClaimUnderstandingResult",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "status",
+        "claimContract",
+        "integrityEvents",
+        "blockedReason",
+        "damagedReason"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "v2.claim_understanding_result.0"
+        },
+        "status": {
+          "const": "accepted"
+        },
+        "claimContract": {
+          "$ref": "https://factharbor.local/schemas/analyzer-v2/claim-contract-v2.schema.json"
+        },
+        "integrityEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "https://factharbor.local/schemas/analyzer-v2/claim-contract-v2.schema.json#/$defs/integrityEvent"
+          }
+        },
+        "blockedReason": {
+          "type": "null"
+        },
+        "damagedReason": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "status",
+        "claimContract",
+        "integrityEvents",
+        "blockedReason",
+        "damagedReason"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "v2.claim_understanding_result.0"
+        },
+        "status": {
+          "const": "blocked"
+        },
+        "claimContract": {
+          "type": "null"
+        },
+        "integrityEvents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "https://factharbor.local/schemas/analyzer-v2/claim-contract-v2.schema.json#/$defs/integrityEvent"
+          }
+        },
+        "blockedReason": {
+          "enum": [
+            "duplicate_selected_claim_id",
+            "no_valid_claim",
+            "prepared_snapshot_invalid",
+            "selected_claim_missing",
+            "shell_placeholder_claim_id"
+          ]
+        },
+        "damagedReason": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "status",
+        "claimContract",
+        "integrityEvents",
+        "blockedReason",
+        "damagedReason"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": "v2.claim_understanding_result.0"
+        },
+        "status": {
+          "const": "damaged"
+        },
+        "claimContract": {
+          "type": "null"
+        },
+        "integrityEvents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "https://factharbor.local/schemas/analyzer-v2/claim-contract-v2.schema.json#/$defs/integrityEvent"
+          }
+        },
+        "blockedReason": {
+          "type": "null"
+        },
+        "damagedReason": {
+          "enum": [
+            "claim_contract_validation_failed",
+            "claim_understanding_unavailable"
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -11,6 +11,9 @@ not live analysis results and must not be used as quality baselines.
   invariants that carry selected, ranked, and recommended claim IDs.
 - `schemas/claim-contract-v2.schema.json` locks the V2 ClaimContract shape for
   claim understanding and Gate 1 migration work.
+- `schemas/claim-understanding-result-v2.schema.json` locks the
+  ClaimUnderstandingResult envelope so accepted outcomes carry a ClaimContract
+  and blocked/damaged outcomes do not fabricate one.
 - `schemas/report-result-v1-compat.schema.json` preserves historical
   `3.2.0-cb` read compatibility.
 

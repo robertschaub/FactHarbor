@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-14T08:24:49.014Z",
-  "count": 426,
+  "generatedAt": "2026-05-14T08:39:18.703Z",
+  "count": 427,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -9051,6 +9051,48 @@
             "rejected_path": "no revert of Slices 1-6A, no prompt/model execution, no parallel Claim Understanding path.",
             "net_mechanism_count": "small increase for contract guards/tests only.",
             "verification": "focused V2 tests, internal-runner V2 routing test, build, and diff check passed."
+          }
+        }
+      }
+    },
+    {
+      "file": "2026-05-14_Senior_Developer_V2_Slice_6B1a_Claim_Understanding_Result_Envelope.md",
+      "date": "2026-05-14",
+      "roles": [
+        "senior_developer"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "6b1a",
+        "claim",
+        "understanding",
+        "result",
+        "envelope"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/claim-understanding/types.ts",
+        "apps/web/src/lib/analyzer-v2/claim-understanding/prepared-snapshot.ts",
+        "apps/web/src/lib/analyzer-v2/gateway/policy.ts",
+        "apps/web/test/fixtures/analyzer-v2/README.md",
+        "apps/web/test/fixtures/analyzer-v2/schemas/claim-contract-v2.schema.json",
+        "apps/web/test/fixtures/analyzer-v2/schemas/claim-understanding-result-v2.schema.json",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/claim-contract.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/claim-understanding/prepared-snapshot.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/gateway/cache-governance.test.ts",
+        "apps/web/test/unit/lib/analyzer-v2/gateway/policy.test.ts"
+      ],
+      "summary": "Continue with 6B.1b only if asked: keep `ClaimUnderstandingResult` as the gateway output envelope, keep `ClaimContract` success-only, and preserve the focused verifier set used here.",
+      "governance": {
+        "debt_guard": {
+          "present": true,
+          "result_type": "compact_result",
+          "block_header": "DEBT-GUARD COMPACT RESULT",
+          "fields": {
+            "chosen_option": "amend the existing V2 claim-understanding contract/schema and tests; no runtime mechanism was added.",
+            "net_mechanism_count": "runtime unchanged; one pre-execution contract envelope added as the reviewed missing contract surface.",
+            "verification": "`npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding test/unit/lib/analyzer-v2/gateway/policy.test.ts test/unit/lib/analyzer-v2/gateway/cache-governance.test.ts`; `npm -w apps/web run test -- test/unit/lib/analyzer-v2/boundary-guard.test.ts`; `npm -w apps/web run build`; `git diff --check`.",
+            "residual_debt": "prompt/profile/model-policy approval and executable prompt-output mapping remain blocked follow-up work."
           }
         }
       }

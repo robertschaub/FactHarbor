@@ -1,7 +1,9 @@
 import {
   CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
   isShellOnlyPlaceholderClaimId,
   type ClaimContract,
+  type ClaimUnderstandingBlockedReason,
   type ClaimIntegrityEvent,
   type PreparedSnapshotClaimContractMigration,
 } from "@/lib/analyzer-v2/claim-understanding/types";
@@ -39,6 +41,20 @@ function event(
   return { type, severity, message, claimIds };
 }
 
+function blockedResult(
+  blockedReason: ClaimUnderstandingBlockedReason,
+  integrityEvents: ClaimIntegrityEvent[],
+): PreparedSnapshotClaimContractMigration {
+  return {
+    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+    status: "blocked",
+    claimContract: null,
+    integrityEvents,
+    blockedReason,
+    damagedReason: null,
+  };
+}
+
 function asNonBlankString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
@@ -70,31 +86,28 @@ export function migrateAcsPreparedSnapshotToClaimContract(
   );
 
   if (normalizedSelectedClaimIds.length === 0) {
-    return {
-      status: "blocked",
-      claimContract: null,
-      integrityEvents: [
+    return blockedResult(
+      "prepared_snapshot_invalid",
+      [
         event("prepared_snapshot_invalid", "error", "Prepared snapshot migration requires selected claim IDs."),
       ],
-    };
+    );
   }
 
   if (hasDuplicate(normalizedSelectedClaimIds)) {
-    return {
-      status: "blocked",
-      claimContract: null,
-      integrityEvents: [
+    return blockedResult(
+      "duplicate_selected_claim_id",
+      [
         event("duplicate_selected_claim_id", "error", "Prepared snapshot migration received duplicate selected claim IDs.", normalizedSelectedClaimIds),
       ],
-    };
+    );
   }
 
   const shellOnlyClaimIds = normalizedSelectedClaimIds.filter(isShellOnlyPlaceholderClaimId);
   if (shellOnlyClaimIds.length > 0) {
-    return {
-      status: "blocked",
-      claimContract: null,
-      integrityEvents: [
+    return blockedResult(
+      "shell_placeholder_claim_id",
+      [
         event(
           "shell_placeholder_claim_id",
           "error",
@@ -102,30 +115,28 @@ export function migrateAcsPreparedSnapshotToClaimContract(
           shellOnlyClaimIds,
         ),
       ],
-    };
+    );
   }
 
   const missingClaimIds = normalizedSelectedClaimIds.filter((claimId) => !preparedClaimById.has(claimId));
   if (missingClaimIds.length > 0) {
-    return {
-      status: "blocked",
-      claimContract: null,
-      integrityEvents: [
+    return blockedResult(
+      "selected_claim_missing",
+      [
         event("selected_claim_missing", "error", "Selected claim IDs must exist in the prepared snapshot.", missingClaimIds),
       ],
-    };
+    );
   }
 
   const resolvedInputText = asNonBlankString(snapshot.resolvedInputText);
   const inputType = snapshot.preparedUnderstanding?.detectedInputType;
   if (!resolvedInputText || (inputType !== "text" && inputType !== "url")) {
-    return {
-      status: "blocked",
-      claimContract: null,
-      integrityEvents: [
+    return blockedResult(
+      "prepared_snapshot_invalid",
+      [
         event("prepared_snapshot_invalid", "error", "Prepared snapshot is missing structural input fields."),
       ],
-    };
+    );
   }
 
   const detectedLanguage = asNonBlankString(snapshot.preparedUnderstanding?.detectedLanguage) ?? "und";
@@ -180,8 +191,11 @@ export function migrateAcsPreparedSnapshotToClaimContract(
   };
 
   return {
+    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
     status: "accepted",
     claimContract,
     integrityEvents: [acceptedEvent],
+    blockedReason: null,
+    damagedReason: null,
   };
 }

@@ -8,6 +8,7 @@ import {
   validateAnalyzerV2ClaimUnderstandingCacheKeyInput,
   validateAnalyzerV2CacheKeyInput,
 } from "@/lib/analyzer-v2/gateway/cache-governance";
+import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
 
 const completeBaseInput = {
   promptProfile: "claimboundary-v2",
@@ -17,7 +18,7 @@ const completeBaseInput = {
   provider: "anthropic",
   modelName: "claude-haiku",
   temperature: 0.2,
-  outputSchemaVersion: "v2.claim_contract.0",
+  outputSchemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
   configSnapshotHash: "config-hash",
   resultSchemaVersion: "4.0.0-cb-precutover",
   inputIdentityHash: "input-hash",

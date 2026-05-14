@@ -94,7 +94,7 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
       "inputGroundingSeedJson",
     ],
     claimUnderstandingCache: true,
-    notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval; gateway output schema maps directly to ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
+    notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt approval; accepted results carry ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
   }),
   task({
     id: "research_query_planning",

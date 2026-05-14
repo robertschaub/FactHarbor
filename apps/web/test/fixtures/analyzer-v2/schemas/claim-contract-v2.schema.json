@@ -125,27 +125,31 @@
       }
     },
     "acsMigration": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "sourceSchemaVersion",
-        "status",
-        "selectedClaimFinalityPreserved"
-      ],
-      "properties": {
-        "sourceSchemaVersion": {
-          "const": "prepared-stage1-v1"
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sourceSchemaVersion",
+            "status",
+            "selectedClaimFinalityPreserved"
+          ],
+          "properties": {
+            "sourceSchemaVersion": {
+              "const": "prepared-stage1-v1"
+            },
+            "status": {
+              "const": "accepted"
+            },
+            "selectedClaimFinalityPreserved": {
+              "type": "boolean"
+            }
+          }
         },
-        "status": {
-          "enum": [
-            "accepted",
-            "blocked"
-          ]
-        },
-        "selectedClaimFinalityPreserved": {
-          "type": "boolean"
+        {
+          "type": "null"
         }
-      }
+      ]
     }
   },
   "$defs": {
@@ -234,6 +238,8 @@
           "enum": [
             "acs_snapshot_consumed",
             "duplicate_selected_claim_id",
+            "claim_contract_validation_failed",
+            "no_valid_claim",
             "prepared_snapshot_invalid",
             "selected_claim_missing",
             "shell_placeholder_claim_id"

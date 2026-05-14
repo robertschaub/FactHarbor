@@ -2812,3 +2812,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.0 Prompt Model Review -- [Standard] [open-items: yes]
 **For next agent:** Slice 6B.0 review package is at `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy review returned `MODIFY`. Implement 6B.1a result-envelope contract before UCM/profile plumbing, prompt text, or model execution.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B0_Prompt_Model_Review.md
+
+---
+### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6B.1a Claim Understanding Result Envelope -- [Standard] [open-items: yes]
+**For next agent:** Added non-executable `ClaimUnderstandingResult` contract/schema and moved the Claim Understanding gateway output schema to `v2.claim_understanding_result.0`; accepted results carry a success-only `ClaimContract`, while blocked/damaged results keep `claimContract: null` with typed reasons/events. Direct-input success now uses `acsMigration: null`; ACS success still preserves accepted migration metadata. No prompt text, UCM/profile activation, runtime LLM call, API/UI change, live job, or expensive test was added.
+-> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6B1a_Claim_Understanding_Result_Envelope.md
