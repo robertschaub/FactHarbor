@@ -9,6 +9,7 @@
 
 ## Current Focus (2026-04-24 Monitor Session)
 
+- **Strategic direction:** V2 pipeline is intended to replace the V1 ClaimAssessmentBoundary pipeline. There is no longer a plan to “complete” V1; V1 work is maintenance-only (correctness, safety, integrity, and observability) until V2 reaches cutover readiness.
 - **Quality and integrity remain first.** The next slice should improve evidence/provenance invariants, citation integrity, warning materiality, and Stage 1 diagnostics before broad optimization.
 - **Stage 1 time-to-selection is still open.** Heavy URL/PDF/article inputs still spend roughly 60-122 seconds in preparation before Atomic Claim Selection becomes available. The current diagnosis is full evidence-seeded Stage 1 latency, not the recommendation call alone.
 - **Stage 1 quality remains a targeted investigation track.** The Bundesrat one-claim collapse now has a validator-context fix, and a follow-up prompt fix separates independently verifiable status/finality/binding-effect qualifiers from branch chronology/procedure when needed. First live validation of that split showed the contract validator still forced a retry via a self-contradictory status-carrier assessment; a validator-prompt repair is now pending live validation. Broad URL/PDF inputs such as the SVP packet remain open. Fix from concrete failing packets only; do not weaken contract validation or introduce deterministic semantic branch detection.

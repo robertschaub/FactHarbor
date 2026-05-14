@@ -8,9 +8,11 @@
 
 **Phase note**: **POC is complete** (tagged `v1.0.0-poc`). FactHarbor is now in **Alpha phase**. Security/cost-control items remain **low urgency** during Alpha but are **high importance**. Reclassify to **high urgency** before any production/public exposure.
 
+**Pipeline direction note:** V2 is intended to replace the V1 ClaimAssessmentBoundary pipeline. This backlog’s V1 analyzer items should be treated as **maintenance-only** (correctness/safety/integrity/observability) until V2 cutover; do not treat them as a plan to “complete” V1.
+
 **See Also**:
 - `Docs/STATUS/Current_Status.md` for the current high-level snapshot
-- `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` for the current root-cause summary and next-step plan
+- `Docs/ARCHIVE/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` for a historical pre-QLT-2 root-cause baseline (active state lives in Current_Status + this Backlog)
 - `Docs/AGENTS/Handoffs/2026-04-24_Senior_Developer_LLM_Expert_Monitor_Pipeline_Debug_Consolidation.md` for the 2026-04-24 monitor/pipeline-debug consolidation
 
 ---

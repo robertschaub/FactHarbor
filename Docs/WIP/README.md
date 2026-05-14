@@ -28,7 +28,9 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 
 ## Active Engineering / Quality Tracks
 
-### Currently active (Phase 7 / Report Quality Restoration)
+### Phase 7 / Report Quality Restoration (context docs; not the daily execution queue)
+**Note:** The current execution order and “ACTIVE/MONITOR/OPEN” statuses are tracked in `Docs/STATUS/Backlog.md` (see “Immediate Priorities (2026-04-24 Monitor Session)”).
+**Additional note:** These tracks document V1 (current) pipeline issues and learnings. V2 is intended to replace V1; treat V1-facing work as maintenance-only unless an explicit decision reopens a V1 improvement wave.
 - [2026-04-16_Benchmark_Report_Quality_Status_Matrix.md](2026-04-16_Benchmark_Report_Quality_Status_Matrix.md) — current benchmark-family status matrix after the April 16 fix wave
 - [2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md](2026-04-15_Phase7b_Prompt_Blocker_Implementation_Charter.md) — current bounded Phase 7b execution charter (Fix A/C landed, Fix B residual gap)
 - [2026-04-14_Phase7_Step1_Pains_Issues_Needs.md](2026-04-14_Phase7_Step1_Pains_Issues_Needs.md) — current Phase 7 problem framing, implementation plan, and verification checklist

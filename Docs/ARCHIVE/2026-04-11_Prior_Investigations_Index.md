@@ -21,7 +21,7 @@ Ranked by usefulness to the Master Plan's subsequent phases, not by chronology.
 6. **`Docs/AGENTS/Handoffs/2026-04-10_Report_Quality_Consolidated_Review_Plan.md`** — The most recent consolidated diagnosis with minimal fix set and proof gates defined.
 7. **`Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md`** — 100-job cross-family analysis covering 8 code/prompt waves. Cross-linguistic neutrality identified as largest remaining gap.
 8. **`Docs/ARCHIVE/Report_Quality_Restoration_Plan_2026-03-14.md`** — Identified `quality_window_start` commit (`9cdc8889`) as historical best baseline. Phase 2 starts here.
-9. **`Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`** — Post-QLT-1 root-cause framing. Distinguishes *correctable instability* from *genuine topic contestability*.
+9. **`Docs/ARCHIVE/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`** — Post-QLT-1 root-cause framing. Distinguishes *correctable instability* from *genuine topic contestability*.
 10. **`Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md`** — 200+-run cross-family inventory. Catalogues 6 named quality issues with statistical evidence.
 
 ## Full inventory (chronological)
@@ -50,7 +50,7 @@ Docs are listed oldest → newest. Importance: H = high (criteria / baselines / 
 | 2026-03-24 | `Docs/WIP/2026-03-24_Generic_Report_Quality_Signals_Scorecard.md` | criteria/scorecard | **Topic-neutral scorecard: HF/S1/EV/V/ST/PT signal families** | **H** |
 | 2026-03-24 | `Docs/ARCHIVE/2026-03-24_Quality_Scorecard_Review.md` | validation-run | Post-VAL-1 confirmation of direction + matrix fixes working | H |
 | 2026-03-24 | `Docs/AGENTS/Handoffs/2026-03-24_Lead_Architect_Quality_Regression_Investigation.md` | regression-investigation | Stage-4 reliability fixed; Plastik residual | M |
-| 2026-03-25 | `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` | root-cause | **Distinguished correctable instability from topic contestability** | **H** |
+| 2026-03-25 | `Docs/ARCHIVE/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md` | root-cause | **Distinguished correctable instability from topic contestability** | **H** |
 | 2026-03-30 | `Docs/WIP/2026-03-30_Report_Quality_Evolution_Deep_Analysis.md` | regression-investigation | **100 jobs × 8 code/prompt waves; cross-linguistic neutrality biggest gap** | **H** |
 | 2026-03-31 | `Docs/ARCHIVE/2026-03-31_696d_Boundary_Grounding_Regression_Review.md` | regression-investigation | Ghost boundaries; grounding validator false positives | M |
 | 2026-04-05 | `Docs/WIP/2026-04-05_Bolsonaro_Plastik_Local_Quality_Investigation.md` | root-cause | Grounding validator false positives on long timestamp IDs | M |

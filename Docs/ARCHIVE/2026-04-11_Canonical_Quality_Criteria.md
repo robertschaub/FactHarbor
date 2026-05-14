@@ -15,7 +15,7 @@ status: Draft — awaiting Gate G1 (user priority ranking)
 - `Docs/ARCHIVE/Report_Quality_Criteria_Scorecard_2026-03-12_arch.md` (13-run Bolsonaro scorecard — G1–G6, B1–B7)
 - `Docs/WIP/Report_Quality_Criteria_Scorecard_2026-03-12.md` (generic version of the above — G1–G6)
 - `Docs/WIP/2026-03-24_Generic_Report_Quality_Signals_Scorecard.md` (**spine of this catalogue** — HF/S1/EV/V/ST/PT families)
-- `Docs/WIP/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`
+- `Docs/ARCHIVE/2026-03-25_Report_Quality_Root_Causes_and_Stabilization_Plan.md`
 - `Docs/WIP/2026-04-06_Upstream_Report_Quality_Workstream_Proposal.md`
 - `Docs/WIP/2026-04-08_Complete_Quality_Assessment_and_Plan.md` (six named issues)
 - `Docs/xwiki-pages/FactHarbor/Product Development/Requirements/Quality-Standards.xwiki`
