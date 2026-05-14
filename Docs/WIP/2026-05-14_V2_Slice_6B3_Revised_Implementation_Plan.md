@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** Approved for 6B.3a foundation only; implementation not started
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b/6B.3c not approved
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -80,7 +80,7 @@ flowchart TB
 
 Purpose: prepare V2 runtime prerequisites without model dispatch or runtime activation.
 
-Review consolidation after Claude Opus, Claude Sonnet, Gemini, and Senior Developer review: 6B.3a may start, but only as a structural foundation slice. This approval does not approve 6B.3b, 6B.3c, runtime execution, model calls, approval flips, file seeding, or live jobs.
+Implementation status: 6B.3a is complete at `2d14c89a` as a structural foundation slice. This completion does not approve 6B.3b, 6B.3c, runtime execution, model calls, approval flips, file seeding, orchestrator wiring, API/UI/report changes, or live jobs.
 
 Allowed:
 
@@ -208,9 +208,9 @@ Captain escalation is not needed for 6B.3a because the approved slice excludes l
 
 ## 10. Current Decision
 
-This plan approves starting 6B.3a foundation code only.
+6B.3a foundation code is complete and committed at `2d14c89a`.
 
-Until 6B.3a is implemented, reviewed, and committed:
+Until 6B.3b/6B.3c receive separate review and approval:
 
 - `claimboundary-v2` remains not file-seeded;
 - `claim_understanding_gate1` remains non-executable;
@@ -218,3 +218,12 @@ Until 6B.3a is implemented, reviewed, and committed:
 - no runtime LLM call is added;
 - no live jobs are submitted;
 - V1 remains the default runtime.
+
+6B.3a verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/claim-contract.test.ts test/unit/lib/analyzer-v2/claim-understanding/prompt-contract.test.ts test/unit/lib/analyzer-v2/gateway/cache-governance.test.ts test/unit/lib/analyzer-v2/gateway/policy.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2`
+- Source import scan for V1 analyzer imports/prompt-loader reuse in `apps/web/src/lib/analyzer-v2`
+- `npm -w apps/web run build`; postbuild reseed reported `Prompts: 0 changed, 3 unchanged`
+- `npm test`
+- `git diff --check`
