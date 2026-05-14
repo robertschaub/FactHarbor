@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Gated Model Execution Approval Package
 
 **Date:** 2026-05-14
-**Status:** Reviewed; MODIFY; revised plan drafted; implementation not approved
+**Status:** Reviewed; MODIFY; superseded by revised plan approval for 6B.3a only
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`

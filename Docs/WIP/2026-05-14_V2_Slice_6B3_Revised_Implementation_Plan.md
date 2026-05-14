@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** Draft after debate; ready for deputy review; implementation not started
+**Status:** Approved for 6B.3a foundation only; implementation not started
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -80,33 +80,43 @@ flowchart TB
 
 Purpose: prepare V2 runtime prerequisites without model dispatch or runtime activation.
 
+Review consolidation after Claude Opus, Claude Sonnet, Gemini, and Senior Developer review: 6B.3a may start, but only as a structural foundation slice. This approval does not approve 6B.3b, 6B.3c, runtime execution, model calls, approval flips, file seeding, or live jobs.
+
 Allowed:
 
 - add explicit V2 prompt-loader abstraction for `claimboundary-v2.prompt.md`;
 - validate frontmatter, required variables, and section id;
+- validate that only the approved V2 Claim Understanding variables are accepted;
 - reject V1 prompt files, V1 profile names, and V1 section names;
-- add runtime schemas for `ClaimUnderstandingResult` and embedded `ClaimContract`;
+- add production V2 runtime schemas for `ClaimUnderstandingResult` and embedded `ClaimContract`; fixture JSON schemas alone are insufficient;
 - add provenance/cache-decision data structures and tests, with cache reads/writes disabled unless full dimensions are available;
-- update policy tests so only `claim_understanding_gate1` can ever become executable.
+- record explicit no-dispatch/no-store cache/provenance decisions in 6B.3a; provider, token, timing, and retry telemetry belongs only to later dispatch-capable slices;
+- update policy tests so only `claim_understanding_gate1` is structurally eligible to become executable in a future approved slice.
 
 Forbidden:
 
 - no model calls;
-- no provider imports from V1 analyzer modules;
+- no imports from `apps/web/src/lib/analyzer/` anywhere in 6B.3a, including prompt-loader, provider, type, schema, and helper imports;
 - no orchestrator wiring;
 - no file seeding;
+- no addition of `claimboundary-v2` to `FILE_SEEDED_PROMPT_PROFILES`;
 - no approval flips;
+- no production registry/status change that makes `claim_understanding_gate1` executable; policy tests may use synthetic cloned entries only;
 - no live jobs.
 
 Minimum verifier:
 
 - V2 prompt-loader tests;
+- deterministic render byte-equality test for identical prompt source hash, profile, section, and variables;
 - runtime schema tests;
+- schema id/version pinning tests for `v2.claim_understanding_result.0` and `v2.claim_contract.0`;
 - cache/provenance decision tests;
 - gateway policy tests;
-- Analyzer V2 boundary guard;
+- Analyzer V2 boundary guard, including prompt-loader import paths and zero imports from `apps/web/src/lib/analyzer/`;
 - `git diff --check`;
-- `npm -w apps/web run build` if TypeScript/schema surfaces change.
+- `npm -w apps/web run build`.
+
+Schema enum and key hygiene: status and reason values are structural contract keys, not analysis-language decisions. Unknown enum/key values must fail schema validation as gateway-owned validation failures, never as model-authored truth.
 
 ## 6. 6B.3b Model Adapter Contract Slice
 
@@ -172,7 +182,7 @@ Minimum verifier:
 
 ## 8. Approval Gate Before Code
 
-Before 6B.3a code starts, reviewers must approve this revised plan.
+Reviewers have approved this revised plan for 6B.3a foundation only.
 
 Required review lenses:
 
@@ -183,11 +193,24 @@ Required review lenses:
 
 Captain escalation is required only if the plan changes to include legacy file seeding, public/API/UI diagnostic exposure, live jobs before a committed/refreshed implementation, or a shared adapter that weakens the V1/V2 boundary.
 
-## 9. Current Decision
+## 9. Review Approval Consolidation
 
-This plan is the next low-risk output after debate. It does not approve implementation.
+Reviewer outcome for the revised plan:
 
-Until the revised plan is approved:
+| Reviewer lens | Verdict | Notes |
+|---|---|---|
+| Claude Opus LLM/runtime safety | APPROVE for 6B.3a only | No blockers. Recommended render determinism, schema version pinning, explicit no-file-seeding restatement, and structural enum/key hygiene. |
+| Claude Sonnet code/regression review | APPROVE | No blockers. Recommended clarifying that policy tests preserve shipped blocked state and that the build is unconditional for 6B.3a. |
+| Gemini challenger | APPROVE | No blockers. Recommended strict approved-variable validation and zero V1 analyzer imports in runtime schemas. |
+| Senior Developer | APPROVE with required clarifications | Required all V1 analyzer imports to be forbidden, production status flips to stay out of scope, runtime schemas to live in production V2 code, and 6B.3a cache/provenance to avoid placeholder provider telemetry. |
+
+Captain escalation is not needed for 6B.3a because the approved slice excludes legacy file seeding, public/API/UI diagnostic exposure, live jobs, shared adapters, runtime model calls, and approval flips.
+
+## 10. Current Decision
+
+This plan approves starting 6B.3a foundation code only.
+
+Until 6B.3a is implemented, reviewed, and committed:
 
 - `claimboundary-v2` remains not file-seeded;
 - `claim_understanding_gate1` remains non-executable;

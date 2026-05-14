@@ -34,7 +34,7 @@ Execution state:
 | Phase 6 / Slice 6B.1a | complete | Committed at `24f55d4a`: `ClaimUnderstandingResult` envelope prevents failed/no-claim/direct-input states from corrupting `ClaimContract` |
 | Phase 6 / Slice 6B.1b | complete | Committed at `2f1b60a4`: `claimboundary-v2` prompt-profile/frontmatter support and blocked task-oriented model policy metadata for `claim_understanding_gate1` |
 | Phase 6 / Slice 6B.2 | complete | Committed at `8a1ef8cd`: clean-room non-executable `claimboundary-v2` prompt source and contract/static-hygiene tests; final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
-| Phase 6 / Slice 6B.3 | revised plan drafted | Approval package reviewed at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`; follow-up plan drafted at `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. Implementation is still not approved. Required before code: deputy approval of the revised plan, explicit V2 prompt loader by default, V2-owned/neutral model adapter, runtime schemas, structural-only retry, full provenance/cache decision, internal-only diagnostics, multilingual/input-neutral runtime tests |
+| Phase 6 / Slice 6B.3a | approved to start | Approval package reviewed at `Docs/WIP/2026-05-14_V2_Slice_6B3_Gated_Model_Execution_Approval_Package.md`; revised plan at `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` is approved for 6B.3a foundation code only. 6B.3b/6B.3c remain unapproved. 6B.3a may add explicit V2 prompt loader, production runtime schemas, cache/provenance decision tests, and policy tests only; no file seeding, approval flips, runtime model call, orchestrator wiring, API/UI/report change, live job, or V1 analyzer import |
 
 Plan update from xWiki integration debate:
 
@@ -45,7 +45,7 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: send `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` to the deputy review team. The approval package and follow-up debate returned a no-code consensus, so implementation is not approved. Slice 6B.2 prompt text and contract tests are complete at `8a1ef8cd`, but V2 remains non-executable: do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make the gateway executable, or add runtime LLM-backed Claim Understanding until the revised 6B.3 plan is approved.
+Next action, unless Captain redirects: implement 6B.3a foundation only from `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. Slice 6B.2 prompt text and contract tests are complete at `8a1ef8cd`, but V2 remains non-executable: do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make the gateway executable, or add runtime LLM-backed Claim Understanding during 6B.3a.
 
 Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
@@ -55,7 +55,7 @@ Main/UCM alignment note from 2026-05-14:
 - V1-before-V2-specification comparison anchor is tag `v1-before-v2-pipeline-specification` at `92b5a5f3`; create a comparison branch from that tag only when a concrete V1/V2 comparison task requires it.
 - Slice 6B.2 completed only non-executable prompt drafting and contract tests: `claimboundary-v2` now has a clean-room prompt source for review, and `claim_understanding_gate1` remains blocked by gateway policy.
 - Broader UCM redesign is not a prerequisite for 6B.3 planning. It remains a later task-oriented analysis-profile/admin-gate track: keep existing UCM storage, avoid growing V2 policy into the broad V1 `pipeline.default.json` shape as the long-term home, and add task-oriented Admin UI/approval-state visibility only after the V2 content model stabilizes.
-- The 6B.3 approval package returned `MODIFY`; a diverse-agent debate then produced the revised plan at `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. No prompt file seeding, prompt/model/cache approval flip, model execution, live job, or broad UCM UI work starts before that revised plan is approved. Final prompt-text LLM Expert review approved 6B.2 as non-executable only; it did not approve runtime execution.
+- The 6B.3 approval package returned `MODIFY`; a diverse-agent debate then produced the revised plan at `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`; follow-up review approved 6B.3a foundation only. No prompt file seeding, prompt/model/cache approval flip, model execution, live job, orchestrator wiring, API/UI/report change, or broad UCM UI work starts during 6B.3a. Final prompt-text LLM Expert review approved 6B.2 as non-executable only; it did not approve runtime execution.
 
 ---
 
