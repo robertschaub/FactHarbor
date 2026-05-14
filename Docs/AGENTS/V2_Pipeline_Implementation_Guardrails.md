@@ -45,6 +45,7 @@ Prompt/model execution:
 
 - New or changed prompt-backed V2 tasks require Captain approval and LLM Expert review.
 - Prompt/model/cache tasks remain blocked until approval is recorded in the gateway policy.
+- Before Slice 6B Claim Understanding prompt/model execution, complete Slice 6A.5 hardening: full ACS prepared-snapshot ingress, shell-placeholder claim-id isolation, ACS/direct-input cache-policy alignment, and explicit prompt-output-to-`ClaimContract` schema mapping tests.
 
 Report generation:
 

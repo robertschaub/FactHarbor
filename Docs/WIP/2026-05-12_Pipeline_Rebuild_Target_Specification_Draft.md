@@ -1,9 +1,9 @@
 # Pipeline Rebuild Target Specification Draft
 
 **Date:** 2026-05-12  
-**Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
+**Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation in progress through Slice 6A
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6A; Slice 6A.5 required next
 **Owner role:** Lead Architect  
 
 ---
@@ -35,7 +35,8 @@ Implementation has started in the new worktree after deputy approval of this tar
 | Slice 4: damaged V2 envelope | done | `a654f125` | V2 shell returns schema-valid damaged/non-analytical result |
 | Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
 | Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
-| Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
+| Slice 6A.5: pre-6B contract/wiring hardening | required next | not started | Final readiness review required full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment before prompt/model execution |
+| Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires completed Slice 6A.5 plus explicit Captain prompt-change approval and LLM Expert review |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -48,6 +49,7 @@ flowchart LR
   S4["Damaged V2 envelope"]
   S5["Gateway governance"]
   S6A["Claim Understanding contracts"]
+  S6A5["Pre-6B contract/wiring hardening"]
   S6B["Claim Understanding prompt/model execution"]
   S7["Evidence lifecycle"]
   S8["Boundary formation"]
@@ -59,7 +61,8 @@ flowchart LR
   S14["V1 cleanup"]
 
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
-  S6A -->|"Captain approval + LLM Expert review required"| S6B
+  S6A --> S6A5
+  S6A5 -->|"Captain approval + LLM Expert review required"| S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
@@ -67,7 +70,7 @@ flowchart LR
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
   class S0,S1,S2,S3,S4,S5,S6A done
   class S6B blocked
-  class S7,S8,S9,S10,S11,S12,S13,S14 future
+  class S6A5,S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
 
 Current architectural boundary:
@@ -119,7 +122,28 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-The next implementation step is Slice 6B only if the Captain approves prompt-change work. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+The next implementation step is Slice 6A.5, a narrow non-prompt hardening slice. Slice 6B can start only after Slice 6A.5 completes and the Captain approves prompt-change work with LLM Expert review. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+
+### 1.1.1 Final Implementation Readiness Review - 2026-05-14
+
+Final readiness review verdict: **approve with required changes**. Do not redo or quarantine Slices 1-6A; keep the current foundation and insert Slice 6A.5 before prompt/model execution.
+
+Review inputs:
+
+- Gemini adversarial architecture review: approve continuing implementation; no blocker before non-prompt implementation work; Slice 6B remains blocked by Captain approval and LLM Expert review.
+- Claude Opus bounded senior-architect/LLM review: approve with required changes; no broader redesign; required narrow 6A.5 hardening before Slice 6B.
+- Deputy architecture reviewer: KEEP Slices 1-6A; ensure the shell-only fallback claim id cannot reach real prompt-backed claim understanding.
+- Deputy implementation reviewer: KEEP Slices 1-6A; require ACS ingress, cache-policy, and schema-alignment prep before Slice 6B.
+- Local verification: `npm -w apps/web run test -- test/unit/lib/analyzer-v2` passed 10 files / 48 tests; no live jobs were run.
+
+Slice 6A.5 required scope:
+
+1. Carry the full ACS prepared snapshot through V2 ingress when available, not only `resolvedInputText`, so the existing migration can consume selected claim statements and integrity fields.
+2. Add fail-closed isolation so shell-only placeholder claim ids such as `AC_V2_SHELL_01` cannot enter real prompt-backed Claim Understanding.
+3. Align claim-understanding cache policy for ACS-backed and direct-input runs, including key requirements and tests for both paths.
+4. Define and test the 6B schema relationship: either the prompt task output schema is the `ClaimContract` schema, or `v2.claim_understanding_gate1.0` is an explicit intermediate prompt-output schema that maps into `v2.claim_contract.0`. No prompt text or model execution starts until this is documented and verified.
+
+This is not public cutover readiness. Public cutover still requires the remaining analytical slices, Analysis Session UX checks, comparator/Q-code quality validation, cost/latency measurement, report-generation regression controls, rollback readiness, and audited V1 cleanup/naming-normalization gates.
 
 ---
 
@@ -913,6 +937,15 @@ V2 must consume V1 `PreparedStage1Snapshot` by default. Migration may normalize 
 
 Invalidating existing snapshots, dropping selected IDs, changing active draft behavior, or forcing users to reselect claims requires deputy/Captain approval and an explicit user/admin behavior plan.
 
+**Pre-6B hardening requirements**
+
+Before any prompt-backed Claim Understanding execution is enabled:
+
+- V2 ingress must carry the full ACS prepared snapshot or a typed equivalent sufficient for `ClaimContract` migration, including selected claim ids, selected claim statements, detected language/input type, and Gate 1 summary fields.
+- Shell-only fallback ids, including `AC_V2_SHELL_01`, are allowed only inside the damaged pre-cutover envelope. Real Claim Understanding must fail closed or produce a damaged Gate 1 result when no valid selected/direct-input claim contract can be produced.
+- The 6B prompt-output schema and `ClaimContract` schema boundary must be explicit. If `v2.claim_understanding_gate1.0` remains the prompt-output schema, tests must prove how it maps into `v2.claim_contract.0`; if not, the gateway policy must point directly at `v2.claim_contract.0`.
+- Cache-policy tests must cover ACS-prepared input and direct input so equivalent prompt-backed decisions have stable keys without requiring an ACS hash where no ACS snapshot exists.
+
 ---
 
 ## 8. Stage Contract: Evidence Lifecycle
@@ -1397,19 +1430,20 @@ This is not approval to implement. It is the proposed order once the target spec
 3. Isolated V2 shell returning a fixture/stub result, disabled by default behind the pre-cutover gate.
 4. Prompt/config/model gateway skeleton, cache governance, and dead-knob detection.
 5. Claim understanding and Gate 1, including ACS snapshot consumption/migration, `InputGroundingSeed`, focus recommendation metadata, and mode-cap contract tests.
-6. Evidence lifecycle and sufficiency gate, with retrieval policies and source-language-first behavior.
-7. Boundary formation.
-8. Verdict adjudication and Gate 4.
-9. Aggregation and canonical result writer, including report-generation provenance and regression-control harness.
-10. Analysis Session UI shell over existing preparation/job endpoints, preserving backend draft/job separation.
-11. Formal `AnalysisSession` API facade only if the shell needs a stable facade before cutover; do not merge draft and job persistence.
-12. Pre-cutover verification path that can compare V1/V2 without replacing public output.
-13. Comparator-based quality review and approved live validation only at the named gate.
-14. Controlled cutover with rollback plan.
-15. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
-16. Mandatory naming-normalization cleanup after V1 deletion: surviving package, entrypoint, schema, and documentation names become the final clean names, with a guard against leftover rebuild labels in runtime code.
+6. Slice 6A.5 pre-6B contract/wiring hardening: full ACS snapshot ingress, shell-placeholder isolation, claim-understanding cache-policy alignment, and 6B prompt-output-to-ClaimContract schema alignment.
+7. Evidence lifecycle and sufficiency gate, with retrieval policies and source-language-first behavior.
+8. Boundary formation.
+9. Verdict adjudication and Gate 4.
+10. Aggregation and canonical result writer, including report-generation provenance and regression-control harness.
+11. Analysis Session UI shell over existing preparation/job endpoints, preserving backend draft/job separation.
+12. Formal `AnalysisSession` API facade only if the shell needs a stable facade before cutover; do not merge draft and job persistence.
+13. Pre-cutover verification path that can compare V1/V2 without replacing public output.
+14. Comparator-based quality review and approved live validation only at the named gate.
+15. Controlled cutover with rollback plan.
+16. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
+17. Mandatory naming-normalization cleanup after V1 deletion: surviving package, entrypoint, schema, and documentation names become the final clean names, with a guard against leftover rebuild labels in runtime code.
 
-No expensive validation or live jobs are part of slices 1 through 10 unless Captain explicitly approves the spend.
+No expensive validation or live jobs are part of slices 1 through 11 unless Captain explicitly approves the spend.
 
 Failed-validation recovery during implementation must classify the prior attempt as `keep`, `quarantine`, or `revert` before broadening scope.
 

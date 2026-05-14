@@ -2792,3 +2792,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Worktree Rehome -- [Standard] [open-items: no]
 **For next agent:** Active V2 pipeline rebuild work is now in `C:\DEV\FactHarbor` on `codex/pipeline-rebuild-spec`. The prior canonical workspace state was preserved in `C:\DEV\FactHarbor-main-before-v2-rehome` on `codex/main-before-v2-rehome` at `31b3ea90`; the old `C:\DEV\FactHarbor-pipeline-rebuild-spec` path has been removed.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Worktree_Rehome.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Final Implementation Readiness Review -- [Standard] [open-items: yes]
+**For next agent:** Final review by Gemini, Claude Opus, and two deputy reviewers kept Slices 1-6A and rejected redo/quarantine. Continue with Slice 6A.5 only: full ACS snapshot ingress, shell-placeholder claim-id isolation, ACS/direct-input cache-policy alignment, and 6B prompt-output-to-`ClaimContract` schema mapping tests. Slice 6B remains blocked until 6A.5 completes plus Captain approval and LLM Expert review.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Final_Implementation_Readiness_Review.md

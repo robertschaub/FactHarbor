@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Status:** Revised draft after Claude/Gemini review and consolidation debate  
 **Owner role:** Lead Architect  
-**Worktree:** `C:\DEV\FactHarbor-pipeline-rebuild-spec`  
+**Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
 **Base commit:** `92b5a5f3`
 
@@ -28,7 +28,8 @@ Execution state:
 | Phase 4 | complete | Target architecture drafted, reviewed, and deputy-approved |
 | Phase 5 | complete | Implementation approval granted for slice-based isolated rebuild |
 | Phase 6 / Slices 1-6A | in progress / stable | V2 contracts, compatibility readers, disabled shell, damaged envelope, gateway governance, and Claim Understanding contracts are committed |
-| Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires explicit Captain approval and LLM Expert review |
+| Phase 6 / Slice 6A.5 | required next | Final readiness review kept Slices 1-6A and required narrow pre-6B hardening: full ACS ingress, shell-placeholder isolation, claim-understanding cache-policy alignment, and 6B schema alignment |
+| Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires completed Slice 6A.5 plus explicit Captain approval and LLM Expert review |
 
 Plan update from xWiki integration debate:
 
@@ -39,9 +40,9 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: stay at the Slice 6B approval boundary. Do not edit prompts, prompt profiles, model execution policy, or runtime LLM-backed Claim Understanding until Captain approval and LLM Expert review are recorded.
+Next action, unless Captain redirects: implement Slice 6A.5 only. Do not edit prompts, prompt profiles, model execution policy, or runtime LLM-backed Claim Understanding until Slice 6A.5 is complete and Captain approval plus LLM Expert review are recorded.
 
-Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. The remaining pre-Slice-6B gate is explicit prompt/model execution approval plus LLM Expert review; exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
+Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. The next required slice is 6A.5 contract/wiring hardening; Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
 ---
 
