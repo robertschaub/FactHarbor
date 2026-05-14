@@ -41,6 +41,8 @@ Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
 Next action, unless Captain redirects: stay at the Slice 6B approval boundary. Do not edit prompts, prompt profiles, model execution policy, or runtime LLM-backed Claim Understanding until Captain approval and LLM Expert review are recorded.
 
+Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. The remaining pre-Slice-6B gate is explicit prompt/model execution approval plus LLM Expert review; exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
+
 ---
 
 ## 1. Purpose
@@ -63,7 +65,9 @@ Cost and latency targets are quality-constrained. Normal V2 analyses should targ
 
 Retries and repairs should be prevented by design. V2 should use contract-first prompts, structural preflight validation, stable IDs, valid uncertainty states, sufficiency-before-verdict gating, and the right model/evidence packet on the first attempt. Bounded provider/schema retries remain allowed as structural resilience, but hidden semantic repair and repeated "try again for a better answer" loops are not acceptable quality mechanisms.
 
-The UI should remain unchanged unless the specification identifies a concrete product, trust, or compatibility reason for changing it.
+The UI should remain unchanged unless the specification identifies a concrete product, trust, or compatibility reason for changing it. The V2 Analysis Session flow is now such an approved reason: the current Atomic Claim preparation, claim selection, and analysis execution split remains an internal lifecycle, but users should experience one continuous session with a visible mode choice before submission.
+
+For now, the default mode is Unattended for normal users. It selects a small recommended analysis focus and continues automatically when safe. Attended mode is for advanced users who want to review/select a broader focus before execution. Deep review remains admin/internal or explicitly approved. Future logged-in access control may restrict modes, but until then the mode selector is visible before each submission and server-side mode/cap enforcement is authoritative.
 
 The work must start from a clean specification, reverse-engineered from the current pipeline and then deliberately cleaned, re-architected, and redesigned. Only after that specification is reviewed and approved should implementation begin.
 
@@ -338,6 +342,7 @@ Current xWiki architecture docs are reference material, not factual source of im
 
 **Final exit criteria**
 - V2 replaces V1 without UI regression unless an approved UI change exists.
+- Approved V2 UI change is implemented without exposing internal pipeline mechanics: one Analysis Session flow, visible pre-submission mode selection, Unattended default, Attended review path, forced-review safeguards, selection-only focus changes, and report focus provenance.
 - Public report JSON and persisted historical reports remain compatible unless Captain approved a versioned migration.
 - Gate 1, Gate 4, evidence transparency, warning materiality, and report integrity are preserved.
 - Cost/latency targets are met or over-budget cases are accepted only with a documented quality-protection reason; cheaper/faster runs do not count as improvements if comparator quality, evidence coverage, warning honesty, multilingual/input-neutral behavior, or report clarity regresses.

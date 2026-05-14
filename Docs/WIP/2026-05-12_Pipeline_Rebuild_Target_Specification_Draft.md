@@ -656,6 +656,109 @@ Every retry, fallback, escalation, semantic correction, safe downgrade, and dama
 
 ---
 
+## 4.5 Analysis Session UX And Focus Mode Policy
+
+Today's UX decision is an approved product reason to change the current UI flow in V2. The current separation between Atomic Claim preparation, claim selection, and analysis execution is architecturally useful, but it should not be exposed as separate products. V2 presents one continuous **Analysis Session** experience while preserving the internal draft/preparation and job/execution boundary.
+
+```mermaid
+flowchart TB
+  INPUT["Submit input\nchoose mode before submission"] --> PREP["Preparing analysis focus"]
+  PREP --> DECIDE{{"Can V2 safely auto-continue?"}}
+  DECIDE -->|"yes: unattended cap satisfied"| RUN["Running fact-check"]
+  DECIDE -->|"no: review required or attended mode"| REVIEW["Confirm focus\nor revise input"]
+  REVIEW -->|"continue analysis"| RUN
+  REVIEW -->|"revise input"| INPUT
+  RUN --> REPORT["Report ready\nanalysis focus provenance shown"]
+
+  classDef user fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef internal fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef output fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  class INPUT,REVIEW user
+  class PREP,DECIDE,RUN internal
+  class REPORT output
+```
+
+**User-facing terminology contract**
+
+| Internal concept | User-facing wording |
+|---|---|
+| AtomicClaim / selected AtomicClaim | analysis focus, what FactHarbor will check |
+| ACS preparation / draft | preparing analysis focus |
+| Claim selection | confirm focus |
+| Start final job | continue analysis |
+| Restart claim wording | revise input |
+
+`AtomicClaim`, `draft`, `Stage 1`, prepared snapshot, and "real job" remain implementation language. Normal users should see one session lifecycle: submit input -> preparing analysis focus -> confirm focus only when needed -> running fact-check -> report ready.
+
+**Mode policy**
+
+The mode choice is visible before each job submission for now. The browser may remember the last choice as a convenience, but the server is authoritative for allowed modes, caps, forced-review rules, and future user/profile restrictions.
+
+| Mode | Target user | Default? | Behavior | Initial cap guidance |
+|---|---|---:|---|---|
+| Unattended | normal users | yes | V2 selects a small recommended focus set and continues automatically when safe | target 1-3 selected claims |
+| Attended | advanced users | no | user reviews and selects the analysis focus before execution | configured higher cap, target 3-5 selected claims |
+| Deep review | admin/internal/expert | no | explicit higher budget/cap for quality-justified cases | explicit per-run budget and approval |
+
+Future logged-in product policy may restrict modes by entitlement, role, risk profile, or admin configuration. Until that exists, the mode selector is shown before each submission and defaults to Unattended.
+
+**Auto-continue and forced-review rules**
+
+Unattended mode should reduce unnecessary review, cost, timing, and report sprawl. It may auto-continue when Claim Understanding finds a coherent recommended focus set inside the unattended cap and the recommendation confidence is high enough.
+
+V2 must pause for focus confirmation when:
+
+- the user selected Attended or Deep review mode;
+- recommendation confidence is low;
+- the input contains competing or incoherent focus candidates;
+- clearly separate high-value claims cannot be fairly reduced under the unattended cap;
+- policy/config marks the input or mode as high-risk or ambiguous;
+- automatic reduction would materially affect trust, evidence coverage, or report usefulness.
+
+The user may select/reject claims in the focus set, but may not edit claim wording in V2's first implementation. "Revise input" is the supported escape hatch when wording is wrong.
+
+**API and persistence boundary**
+
+The first implementation step should be a unified UI shell over the existing draft/job endpoints. A later V2 slice may introduce a formal `AnalysisSession` API facade that returns normalized UI state while internally mapping to preparation/draft and execution/job records.
+
+Do not create a persisted `JobEntity` before the selected focus is finalized just to simplify the UI. Pre-job preparation and job execution stay separate in persistence because final jobs should represent executable analysis requests, not unfinished focus negotiation.
+
+**Atomic-claim preprocessing cost policy**
+
+The ZHAW-inspired atomic-claim preprocessing remains valuable for focus quality, but V2 must avoid unnecessary extra LLM rounds. Where Claim Understanding/Gate 1 already yields a small coherent set inside the selected mode cap, V2 should continue with that set and not run a separate recommendation call. Deeper focus recommendation runs only when selection materially matters: many candidate claims, ambiguity, redundancy, competing focuses, or high-risk reduction.
+
+V2 should fold focus recommendation metadata into the Claim Understanding contract where possible. Logical fields remain separate, but the normal path should avoid a second LLM round for simple cases. Preparation results should be cached/reused by prompt/config/model/schema/input/current-date bucket where safe under the clean-room and prompt-governance rules.
+
+Reports should show the analysis focus used for the report as provenance. For attended or forced-review sessions, the report may also show that unselected candidate claims existed, without implying they were analyzed.
+
+---
+
+## 4.6 Implementation Readiness Checkpoint - 2026-05-14
+
+No further architecture-wide redesign is needed before continuing implementation. The target direction is now stable enough for the next slice sequence, with these remaining gates:
+
+| Readiness item | Status | Required before |
+|---|---|---|
+| Captain intent and V1 cleanup policy | documented | continue slice implementation |
+| Clean-room no V1 code/prompt/type reuse boundary | documented and guarded by current tests | any new V2 implementation code |
+| Quality-constrained cost/latency envelope | documented | prompt-backed runtime work and live validation |
+| Prevention-first recovery policy | documented | prompt-backed runtime work |
+| Analysis Session UX and mode policy | documented | public V2 UX/cutover |
+| Prompt/model execution approval | blocked by explicit approval requirement | Slice 6B Claim Understanding prompt/model execution |
+| LLM Expert review of new/changed prompt/model behavior | required | Slice 6B Claim Understanding prompt/model execution |
+| Exact UCM defaults for mode caps and forced-review thresholds | implementation-slice decision; deputy team may decide unless risk escalates | public mode enforcement |
+| Live validation plan | approved budget exists, but no run until commit-first/runtime-refresh gate | comparator-quality gate |
+
+Risk mitigation before Slice 6B:
+
+- write or update contract tests before enabling any prompt-backed execution;
+- make mode caps, forced-review thresholds, model task routing, cache policy, and token/call budgets UCM/model-task governed where they affect analysis behavior;
+- keep the first UI implementation as a shell over existing preparation/job endpoints; introduce a formal `AnalysisSession` facade only if the shell needs stable normalized state;
+- do not submit live jobs until the relevant changes are committed and the runtime/prompt/config state is refreshed;
+- run the Captain Deputy review/debate path for any contested prompt, model, UX, or cutover decision.
+
+---
+
 ## 5. Logical Module Boundaries
 
 Exact file names can be refined by implementation, but the V2 root and public entrypoint in Section 4.2 are the default unless deputy review changes them before implementation.
@@ -1229,6 +1332,7 @@ Run only after approval, with commit-first and runtime-refresh discipline. Use o
 - no evidence transparency regression: every verdict has traceable supporting/opposing evidence references where applicable;
 - no warning materiality regression across UI, markdown, HTML export, API summaries, metrics, and validation;
 - no UI/API/report/export compatibility regression unless explicitly approved;
+- Analysis Session UX checks pass: Unattended is the normal default, mode selection is visible before submission, server-side mode/cap enforcement is authoritative, forced-review conditions are honored, and no job is created before finalized focus selection;
 - no deterministic semantic hotspot introduced without a verifier or deputy-approved waiver;
 - no material multilingual/input-neutrality regression on Captain-defined inputs and approved comparator families;
 - runtime/cost measured against current-stack baselines using separate buckets for preparation, interactive wait, queue, active final runtime, retrieval, verdict, and export;
@@ -1247,16 +1351,18 @@ This is not approval to implement. It is the proposed order once the target spec
 2. Compatibility adapters for V1 fixture, V2 fixture, API list/detail, job UI, markdown, static HTML, metrics, validation, calibration, and historical reports.
 3. Isolated V2 shell returning a fixture/stub result, disabled by default behind the pre-cutover gate.
 4. Prompt/config/model gateway skeleton, cache governance, and dead-knob detection.
-5. Claim understanding and Gate 1, including ACS snapshot consumption/migration and `InputGroundingSeed`.
+5. Claim understanding and Gate 1, including ACS snapshot consumption/migration, `InputGroundingSeed`, focus recommendation metadata, and mode-cap contract tests.
 6. Evidence lifecycle and sufficiency gate, with retrieval policies and source-language-first behavior.
 7. Boundary formation.
 8. Verdict adjudication and Gate 4.
 9. Aggregation and canonical result writer.
-10. Pre-cutover verification path that can compare V1/V2 without replacing public output.
-11. Comparator-based quality review and approved live validation only at the named gate.
-12. Controlled cutover with rollback plan.
-13. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
-14. Mandatory naming-normalization cleanup after V1 deletion: surviving package, entrypoint, schema, and documentation names become the final clean names, with a guard against leftover rebuild labels in runtime code.
+10. Analysis Session UI shell over existing preparation/job endpoints, preserving backend draft/job separation.
+11. Formal `AnalysisSession` API facade only if the shell needs a stable facade before cutover; do not merge draft and job persistence.
+12. Pre-cutover verification path that can compare V1/V2 without replacing public output.
+13. Comparator-based quality review and approved live validation only at the named gate.
+14. Controlled cutover with rollback plan.
+15. Mandatory V1 pipeline cleanup after V2 gates pass and cutover stabilizes.
+16. Mandatory naming-normalization cleanup after V1 deletion: surviving package, entrypoint, schema, and documentation names become the final clean names, with a guard against leftover rebuild labels in runtime code.
 
 No expensive validation or live jobs are part of slices 1 through 10 unless Captain explicitly approves the spend.
 
@@ -1268,6 +1374,7 @@ Failed-validation recovery during implementation must classify the prior attempt
 - Pre-cutover gate and kill switch verified.
 - API list/detail parity verified.
 - UI fixture render and smoke check pass.
+- Analysis Session shell checks pass: visible mode selector, Unattended default, Attended review path, forced-review path, selection-only focus editing, revise-input escape hatch, and report focus provenance.
 - Markdown and static HTML export parity pass.
 - ACS draft reuse and selected-ID behavior pass.
 - Warning parity and primary issue selection pass.
@@ -1360,6 +1467,7 @@ These decisions are no longer all equally open. Some are implementation-entry de
 | V2 namespace/path | `apps/web/src/lib/analyzer-v2/` with `runClaimBoundaryPipelineV2(context)` | Slice 3 V2 shell | repo organization outside analyzer scope changes |
 | ACS V1 snapshot handling | consume/migrate by default and preserve selected IDs | Slice 1 fixtures and Slice 5 claim understanding | invalidation or user-visible draft loss is proposed |
 | Static HTML export | preserve through adapter | Slice 2 adapters | retirement is proposed |
+| Analysis Session UX | one continuous user-facing session; internal draft/job persistence remains separate; mode choice visible before each submission, default Unattended | before public V2 UX/cutover | proposal hides mode, removes forced-review safeguards, creates jobs before finalized focus, or changes caps without server enforcement |
 | Source reliability | behavior-preserving source-trust policy until reviewed quality validation approves verdict-math changes | before Stage 4/5 implementation | verdict math changes materially |
 | Article adjudication | keep explicit, observable, UCM/model-task-owned; default behavior-preserving | before aggregation/result writer implementation | cost/latency increase is material |
 | Prompt migration | defer actual prompt edits until approved implementation slice | before gateway or stage prompt edits | any prompt text edit is proposed |

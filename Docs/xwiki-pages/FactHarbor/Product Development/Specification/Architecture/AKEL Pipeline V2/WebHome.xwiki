@@ -34,6 +34,23 @@ The V2 pipeline keeps the required analytical sequence:
 
 The simplification is architectural, not analytical. V2 does not remove claim decomposition, research, evidence-emergent ClaimAssessmentBoundaries, structured verdict adjudication, confidence gates, evidence citations, or warning visibility.
 
+== Analysis Session UX ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome"/}}
+
+The approved V2 product model is one continuous Analysis Session. The current preparation/selection/job split remains an internal lifecycle, but users should not experience separate products for Atomic Claim preparation, claim selection, and analysis execution.
+
+User-facing wording is "analysis focus", "preparing analysis focus", "confirm focus", "continue analysis", and "revise input". ##AtomicClaim##, draft, prepared snapshot, Stage 1, and "real job" remain implementation language.
+
+For now, users choose mode before each submission:
+
+|= Mode |= Default |= Behavior
+| Unattended | Yes | Select a small recommended focus and continue automatically when safe.
+| Attended | No | Pause for user focus selection and allow a broader configured focus.
+| Deep review | No | Explicit admin/internal or approved expert mode with explicit cap and budget.
+
+Server-side policy is authoritative for allowed modes, caps, and forced-review conditions. Future logged-in product policy may restrict modes by entitlement or profile. V2's first implementation supports selection only; users revise the input instead of editing generated claim wording.
+
 == Key Design Shift ==
 
 V1 mixes stage behavior with prompt/model calls, retries, warning interpretation, result projection, and legacy compatibility in too many places. V2 separates these concerns:

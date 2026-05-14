@@ -37,6 +37,7 @@ Non-trivial diagrams live in dedicated pages here and are **{{include}}d** into 
 * [[V2 Pipeline Overview>>FactHarbor.Product Development.Diagrams.V2 Pipeline Overview.WebHome]] — Target V2 stage flow with shared gateways
 * [[V2 Pipeline Detail>>FactHarbor.Product Development.Diagrams.V2 Pipeline Detail.WebHome]] — Detailed V2 target flow and stage handoffs
 * [[V2 Request Lifecycle>>FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome]] — V1 default path plus explicit V2 pre-cutover path
+* [[V2 Analysis Session UX>>FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome]] — User-facing V2 mode and focus-confirmation flow
 * [[V2 Entity Model ERD>>FactHarbor.Product Development.Diagrams.V2 Entity Model ERD.WebHome]] — V2 contract/entity model
 * [[V2 Quality Gates Flow>>FactHarbor.Product Development.Diagrams.V2 Quality Gates Flow.WebHome]] — Gate 1, sufficiency, Gate 4, warning materiality
 * [[V2 Verdict Debate Pattern>>FactHarbor.Product Development.Diagrams.V2 Verdict Debate Pattern.WebHome]] — Target verdict adjudication pattern

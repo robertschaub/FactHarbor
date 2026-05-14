@@ -1,0 +1,36 @@
+= V2 Analysis Session UX =
+
+{{info}}
+Target product flow for V2 focus preparation, mode selection, analysis execution, and report provenance. This is a UI/product lifecycle diagram, not a new persistence model.
+{{/info}}
+
+{{mermaid}}
+flowchart TB
+  INPUT["Submit input\nchoose mode before submission"] --> PREP["Preparing analysis focus"]
+  PREP --> DECIDE{{"Can V2 safely auto-continue?"}}
+  DECIDE -->|"yes: unattended cap satisfied"| RUN["Running fact-check"]
+  DECIDE -->|"no: review required or attended mode"| REVIEW["Confirm focus\nor revise input"]
+  REVIEW -->|"continue analysis"| RUN
+  REVIEW -->|"revise input"| INPUT
+  RUN --> REPORT["Report ready\nanalysis focus provenance shown"]
+
+  classDef user fill:#e8f4ff,stroke:#2463a7,color:#08233d
+  classDef internal fill:#fff4d6,stroke:#9a6700,color:#3a2600
+  classDef output fill:#edf7ed,stroke:#3d8b40,color:#102a12
+  class INPUT,REVIEW user
+  class PREP,DECIDE,RUN internal
+  class REPORT output
+{{/mermaid}}
+
+== Mode Summary ==
+
+|= Mode |= Target user |= Default |= Product behavior
+| Unattended | Normal users | Yes | Selects a small recommended analysis focus and continues automatically when safe.
+| Attended | Advanced users | No | Pauses for focus confirmation and allows a broader configured focus.
+| Deep review | Admin/internal/expert | No | Uses an explicit per-run cap and budget with approval.
+
+The mode selector remains visible before each submission for now. The server, not the browser, is authoritative for allowed modes, caps, and forced-review conditions.
+
+----
+
+**Navigation:** [[Diagrams>>FactHarbor.Product Development.Diagrams.WebHome]]

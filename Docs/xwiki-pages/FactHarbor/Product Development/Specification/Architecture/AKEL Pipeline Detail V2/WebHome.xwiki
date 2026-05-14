@@ -14,6 +14,14 @@ This page is documentation for the target rebuild. It is not a claim that V2 alr
 
 {{include reference="FactHarbor.Product Development.Diagrams.V2 Request Lifecycle.WebHome"/}}
 
+== Analysis Session Product Lifecycle ==
+
+{{include reference="FactHarbor.Product Development.Diagrams.V2 Analysis Session UX.WebHome"/}}
+
+The product lifecycle is intentionally smoother than the persistence lifecycle. V2 may use existing draft/preparation endpoints and existing job execution endpoints behind a unified UI shell. A later formal ##AnalysisSession## API facade may normalize UI state, but it must internally map to preparation/draft and execution/job records rather than merging them.
+
+Do not create a persisted ##JobEntity## before selected focus is finalized just to simplify UI state. Jobs represent executable analysis requests. Focus preparation represents pre-job negotiation and cacheable understanding work.
+
 == Stage Contracts ==
 
 |= Stage |= Inputs |= Semantic LLM tasks |= Structural tasks |= Outputs
@@ -56,6 +64,7 @@ Analysis-affecting cache keys include every value that can change the semantic a
 | Boundary grouping can depend on deterministic semantic shortcuts | Use LLM-owned semantic equivalence or structural-only checks; no keyword or text-overlap meaning decisions.
 | Verdict confidence and warning decisions appear in multiple layers | Use one verdict confidence contract and one warning materiality authority.
 | UI/API/export readers can infer fallback meanings independently | Use ##ReportResult## as the authority and adapters as thin projections.
+| Preparation, selection, and execution appear as separate user journeys | Present one Analysis Session while preserving internal draft/job separation.
 
 == Implementation Boundary ==
 
@@ -69,6 +78,7 @@ Analysis-affecting cache keys include every value that can change the semantic a
 | Cutover prerequisite | Contract, adapter, quality, pre-cutover verification, and live validation gates passed
 | Final redesign state | V1 analysis pipeline implementation removed; historical V1 reports remain readable through adapters/fixtures
 | Old behavior investigation | Use old commits/worktrees, not retained V1 code in the forward architecture
+| Product session model | unified Analysis Session shell over preparation/job endpoints first; formal ##AnalysisSession## facade only if needed
 
 == Clean-Room Boundary ==
 

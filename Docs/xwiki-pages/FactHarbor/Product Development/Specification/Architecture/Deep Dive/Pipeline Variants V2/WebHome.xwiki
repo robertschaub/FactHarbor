@@ -82,6 +82,7 @@ V2 public cutover requires:
 
 1. contract and schema fixtures for every canonical public field;
 1. adapter parity tests for list/detail/report/export/validation readers;
+1. Analysis Session UX verification: visible mode selector before submission, Unattended default, Attended review path, forced-review conditions, selection-only focus changes, revise-input escape hatch, no job before finalized focus, and report focus provenance;
 1. quality-gate and warning-materiality tests;
 1. pre-cutover verification against approved Captain-defined inputs;
 1. comparator report review against Captain quality expectations;
