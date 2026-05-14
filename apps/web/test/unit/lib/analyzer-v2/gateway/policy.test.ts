@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS,
   ANALYZER_V2_GATEWAY_TASKS,
   canExecuteAnalyzerV2GatewayTask,
   getAnalyzerV2GatewayTask,
+  isAnalyzerV2GatewayTaskEligibleForExecutableStatus,
 } from "@/lib/analyzer-v2/gateway/policy";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
@@ -106,5 +108,38 @@ describe("analyzer-v2 gateway policy registry", () => {
       cachePolicy: base.cachePolicy ? { ...base.cachePolicy, approval: approved } : null,
     };
     expect(canExecuteAnalyzerV2GatewayTask(executable)).toBe(true);
+  });
+
+  it("keeps only claim_understanding_gate1 structurally eligible for future execution", () => {
+    const approved = {
+      status: "approved" as const,
+      reviewer: "LLM Expert",
+      approvedAt: "2026-05-14T00:00:00.000Z",
+    };
+
+    expect(ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS).toEqual(["claim_understanding_gate1"]);
+
+    for (const task of ANALYZER_V2_GATEWAY_TASKS) {
+      expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(
+        task.id === "claim_understanding_gate1",
+      );
+    }
+
+    const laterPromptBackedTask = getAnalyzerV2GatewayTask("research_query_planning");
+    expect(canExecuteAnalyzerV2GatewayTask({
+      ...laterPromptBackedTask,
+      status: "executable",
+      promptPolicy: laterPromptBackedTask.promptPolicy
+        ? { ...laterPromptBackedTask.promptPolicy, approval: approved }
+        : null,
+      modelPolicy: laterPromptBackedTask.modelPolicy
+        ? { ...laterPromptBackedTask.modelPolicy, approval: approved }
+        : null,
+      cachePolicy: laterPromptBackedTask.cachePolicy
+        ? { ...laterPromptBackedTask.cachePolicy, approval: approved }
+        : null,
+    })).toBe(false);
+
+    expect(getAnalyzerV2GatewayTask("claim_understanding_gate1").status).toBe("blockedUntilPromptApproved");
   });
 });

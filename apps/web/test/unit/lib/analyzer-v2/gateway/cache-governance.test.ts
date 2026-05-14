@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   ANALYZER_V2_BASE_SEMANTIC_CACHE_POLICY,
+  ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
   ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_POLICY,
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
+  buildAnalyzerV2ClaimUnderstandingCacheDecision,
   buildAnalyzerV2ClaimUnderstandingCacheKeyParts,
   buildAnalyzerV2CacheKeyParts,
   validateAnalyzerV2ClaimUnderstandingCacheKeyInput,
@@ -136,5 +138,75 @@ describe("analyzer-v2 cache governance", () => {
     });
     expect(parts).toContainEqual({ dimension: "claimUnderstandingInputSource", value: "direct_input" });
     expect(parts.map((part) => part.dimension)).not.toContain("acsSnapshotHash");
+  });
+
+  it("records no-store decisions when dimensions are incomplete", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingCacheDecision(completeBaseInput);
+
+    expect(decision).toMatchObject({
+      namespace: ANALYZER_V2_CLAIM_UNDERSTANDING_CACHE_NAMESPACE,
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_incomplete_dimensions",
+    });
+    expect(decision.missingDimensions).toEqual([
+      "claimUnderstandingInputSource",
+      "inputGroundingSeedHash",
+    ]);
+    expect(decision.keyParts).toEqual([]);
+  });
+
+  it("keeps complete claim-understanding dimensions no-store until execution is approved", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingCacheDecision({
+      ...completeBaseInput,
+      claimUnderstandingInputSource: "direct_input",
+      inputGroundingSeedHash: "seed-hash",
+    });
+
+    expect(decision.canRead).toBe(false);
+    expect(decision.canWrite).toBe(false);
+    expect(decision.reason).toBe("no_store_until_execution_approved");
+    expect(decision.keyParts).toContainEqual({ dimension: "promptProfile", value: "claimboundary-v2" });
+    expect(decision.keyParts).not.toContainEqual(expect.objectContaining({ dimension: "acsSnapshotHash" }));
+  });
+
+  it("fails closed when an ACS cache decision receives a mismatched snapshot hash", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingCacheDecision(
+      {
+        ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
+        acsSnapshotHash: "actual-acs-hash",
+        inputGroundingSeedHash: "seed-hash",
+      },
+      { expectedAcsSnapshotHash: "expected-acs-hash" },
+    );
+
+    expect(decision).toMatchObject({
+      canRead: false,
+      canWrite: false,
+      reason: "no_store_due_to_acs_snapshot_hash_mismatch",
+      missingDimensions: [],
+      keyParts: [],
+    });
+  });
+
+  it("allows synthetic cache eligibility only when dimensions and execution approval are explicit", () => {
+    const decision = buildAnalyzerV2ClaimUnderstandingCacheDecision(
+      {
+        ...completeBaseInput,
+        claimUnderstandingInputSource: "acs_prepared_snapshot",
+        acsSnapshotHash: "acs-hash",
+        inputGroundingSeedHash: "seed-hash",
+      },
+      {
+        executionApproved: true,
+        expectedAcsSnapshotHash: "acs-hash",
+      },
+    );
+
+    expect(decision.canRead).toBe(true);
+    expect(decision.canWrite).toBe(true);
+    expect(decision.reason).toBe("dimensions_complete_and_execution_approved");
+    expect(decision.keyParts).toContainEqual({ dimension: "acsSnapshotHash", value: "acs-hash" });
   });
 });

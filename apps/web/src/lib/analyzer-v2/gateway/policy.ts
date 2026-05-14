@@ -23,6 +23,10 @@ const MISSING_APPROVAL: AnalyzerV2PolicyApproval = {
   approvedAt: null,
 };
 
+export const ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS = [
+  "claim_understanding_gate1",
+] as const satisfies readonly AnalyzerV2GatewayTaskId[];
+
 function blockedPrompt(
   sectionId: string,
   outputSchemaVersion: string,
@@ -173,6 +177,12 @@ function policyApproved(policy: { approval: AnalyzerV2PolicyApproval } | null): 
   return policy?.approval.status === "approved";
 }
 
+export function isAnalyzerV2GatewayTaskEligibleForExecutableStatus(
+  taskEntry: AnalyzerV2GatewayTask,
+): boolean {
+  return ANALYZER_V2_EXECUTION_ELIGIBLE_GATEWAY_TASK_IDS.some((id) => id === taskEntry.id);
+}
+
 export function getAnalyzerV2GatewayTask(id: AnalyzerV2GatewayTaskId): AnalyzerV2GatewayTask {
   const found = ANALYZER_V2_GATEWAY_TASKS.find((entry) => entry.id === id);
   if (!found) {
@@ -182,7 +192,8 @@ export function getAnalyzerV2GatewayTask(id: AnalyzerV2GatewayTaskId): AnalyzerV
 }
 
 export function canExecuteAnalyzerV2GatewayTask(taskEntry: AnalyzerV2GatewayTask): boolean {
-  return taskEntry.status === "executable"
+  return isAnalyzerV2GatewayTaskEligibleForExecutableStatus(taskEntry)
+    && taskEntry.status === "executable"
     && policyApproved(taskEntry.promptPolicy)
     && policyApproved(taskEntry.modelPolicy)
     && policyApproved(taskEntry.cachePolicy);

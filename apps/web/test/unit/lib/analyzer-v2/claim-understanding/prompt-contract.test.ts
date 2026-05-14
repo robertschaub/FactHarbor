@@ -7,6 +7,13 @@ import {
   CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
 } from "@/lib/analyzer-v2/claim-understanding/types";
 import {
+  CLAIMBOUNDARY_V2_PROMPT_FILE,
+  CLAIMBOUNDARY_V2_PROMPT_PROFILE,
+  CLAIM_UNDERSTANDING_GATE1_SECTION_ID,
+  CLAIM_UNDERSTANDING_GATE1_VARIABLES,
+  loadAndRenderClaimUnderstandingGate1Prompt,
+} from "@/lib/analyzer-v2/claim-understanding/prompt-loader";
+import {
   canExecuteAnalyzerV2GatewayTask,
   getAnalyzerV2GatewayTask,
 } from "@/lib/analyzer-v2/gateway/policy";
@@ -32,6 +39,22 @@ const expectedVariables = [
   "acsSnapshotJson",
   "inputGroundingSeedJson",
 ] as const;
+
+const renderVariables = {
+  currentDate: "2026-05-14",
+  analysisInput: JSON.stringify({ inputType: "text", inputValue: "INPUT_VALUE_PLACEHOLDER" }),
+  acsSnapshotJson: "null",
+  inputGroundingSeedJson: JSON.stringify({
+    source: "direct_input",
+    inputType: "text",
+    inputValue: "INPUT_VALUE_PLACEHOLDER",
+    resolvedInputText: "RESOLVED_INPUT_TEXT_PLACEHOLDER",
+    detectedLanguage: "und",
+    currentDate: "2026-05-14",
+    acsSnapshotHash: null,
+    inputGroundingSeedHash: "seed-hash-placeholder",
+  }),
+};
 
 function readPrompt(): string {
   return readFileSync(promptPath, "utf8").replace(/\r\n/g, "\n");
@@ -121,24 +144,56 @@ describe("V2 Claim Understanding prompt contract", () => {
     expect(section).toContain(CLAIM_CONTRACT_V2_SCHEMA_VERSION);
   });
 
+  it("loads only the explicit V2 prompt profile, file, section, and approved variables", async () => {
+    const rendered = await loadAndRenderClaimUnderstandingGate1Prompt({
+      variables: renderVariables,
+    });
+
+    expect(rendered.profile).toBe(CLAIMBOUNDARY_V2_PROMPT_PROFILE);
+    expect(path.basename(rendered.promptFilePath)).toBe(CLAIMBOUNDARY_V2_PROMPT_FILE);
+    expect(rendered.sectionId).toBe(CLAIM_UNDERSTANDING_GATE1_SECTION_ID);
+    expect(rendered.requiredVariables).toEqual([...CLAIM_UNDERSTANDING_GATE1_VARIABLES]);
+    expect(rendered.promptContentHash).toHaveLength(64);
+    expect(rendered.renderedPrompt).toContain("INPUT_VALUE_PLACEHOLDER");
+    expect(rendered.renderedPrompt).not.toMatch(/\$\{\w+\}/);
+  });
+
+  it("renders deterministic prompt bytes for identical V2 prompt inputs", async () => {
+    const first = await loadAndRenderClaimUnderstandingGate1Prompt({ variables: renderVariables });
+    const second = await loadAndRenderClaimUnderstandingGate1Prompt({ variables: renderVariables });
+
+    expect(second.promptContentHash).toBe(first.promptContentHash);
+    expect(second.renderedPrompt).toBe(first.renderedPrompt);
+  });
+
+  it("rejects V1 profile, V1 file, V1 section, and unapproved variables", async () => {
+    await expect(loadAndRenderClaimUnderstandingGate1Prompt({
+      profile: "claimboundary",
+      variables: renderVariables,
+    })).rejects.toThrow("rejects prompt profile");
+
+    await expect(loadAndRenderClaimUnderstandingGate1Prompt({
+      promptFilePath: path.resolve(webRoot, "prompts/claimboundary.prompt.md"),
+      variables: renderVariables,
+    })).rejects.toThrow("rejects prompt file");
+
+    await expect(loadAndRenderClaimUnderstandingGate1Prompt({
+      sectionId: "CLAIM_EXTRACTION",
+      variables: renderVariables,
+    })).rejects.toThrow("rejects prompt section");
+
+    await expect(loadAndRenderClaimUnderstandingGate1Prompt({
+      variables: {
+        ...renderVariables,
+        legacyContext: "{}",
+      } as typeof renderVariables,
+    })).rejects.toThrow("requires exactly these variables");
+  });
+
   it("renders with all declared variables and without unresolved placeholders", () => {
     const content = readPrompt();
     const section = readSection(content, sectionId);
-    const { rendered, missing } = renderSection(section, {
-      currentDate: "2026-05-14",
-      analysisInput: JSON.stringify({ inputType: "text", inputValue: "INPUT_VALUE_PLACEHOLDER" }),
-      acsSnapshotJson: "null",
-      inputGroundingSeedJson: JSON.stringify({
-        source: "direct_input",
-        inputType: "text",
-        inputValue: "INPUT_VALUE_PLACEHOLDER",
-        resolvedInputText: "RESOLVED_INPUT_TEXT_PLACEHOLDER",
-        detectedLanguage: "und",
-        currentDate: "2026-05-14",
-        acsSnapshotHash: null,
-        inputGroundingSeedHash: "seed-hash-placeholder",
-      }),
-    });
+    const { rendered, missing } = renderSection(section, renderVariables);
 
     expect(missing).toEqual([]);
     expect(rendered).not.toMatch(/\$\{\w+\}/);

@@ -9,6 +9,12 @@ import {
   type ClaimContract,
   type ClaimUnderstandingResult,
 } from "@/lib/analyzer-v2/claim-understanding/types";
+import {
+  ClaimContractSchema,
+  ClaimUnderstandingResultSchema,
+  parseClaimContract,
+  parseClaimUnderstandingResult,
+} from "@/lib/analyzer-v2/claim-understanding/schemas";
 
 const fixturesDir = path.resolve(process.cwd(), "test/fixtures/analyzer-v2");
 
@@ -98,6 +104,38 @@ describe("analyzer-v2 claim contract fixture", () => {
     expect(CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION).toBe(CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION);
     expect(CLAIM_UNDERSTANDING_GATEWAY_OUTPUT_SCHEMA_VERSION).toBe("v2.claim_understanding_result.0");
   });
+
+  it("pins production runtime schema versions to the V2 contract ids", () => {
+    const claimContract = directInputClaimContract();
+    const accepted: ClaimUnderstandingResult = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "accepted",
+      claimContract,
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+
+    expect(parseClaimContract(claimContract).schemaVersion).toBe("v2.claim_contract.0");
+    expect(parseClaimUnderstandingResult(accepted).schemaVersion).toBe("v2.claim_understanding_result.0");
+  });
+
+  it("rejects unknown keys and malformed enum values in production runtime schemas", () => {
+    const withUnknownKey = {
+      ...directInputClaimContract(),
+      legacyContext: "not allowed",
+    };
+    const withMalformedEnum = {
+      ...directInputClaimContract(),
+      input: {
+        ...directInputClaimContract().input,
+        inputType: "audio",
+      },
+    };
+
+    expect(ClaimContractSchema.safeParse(withUnknownKey).success).toBe(false);
+    expect(ClaimContractSchema.safeParse(withMalformedEnum).success).toBe(false);
+  });
 });
 
 describe("analyzer-v2 claim understanding result envelope", () => {
@@ -134,6 +172,22 @@ describe("analyzer-v2 claim understanding result envelope", () => {
 
     expect(validate(accepted), JSON.stringify(validate.errors, null, 2)).toBe(true);
     expect(accepted.claimContract.acsMigration).toBeNull();
+  });
+
+  it("rejects accepted envelopes with an invalid embedded ClaimContract at runtime", () => {
+    const accepted = {
+      schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+      status: "accepted",
+      claimContract: {
+        ...directInputClaimContract(),
+        schemaVersion: "v2.claim_contract.1",
+      },
+      integrityEvents: [],
+      blockedReason: null,
+      damagedReason: null,
+    };
+
+    expect(ClaimUnderstandingResultSchema.safeParse(accepted).success).toBe(false);
   });
 
   it("validates blocked no-valid-claim without a ClaimContract", () => {

@@ -100,6 +100,21 @@ export type AnalyzerV2CachePolicy = {
   approval: AnalyzerV2PolicyApproval;
 };
 
+export type AnalyzerV2CacheDecisionReason =
+  | "dimensions_complete_and_execution_approved"
+  | "no_store_due_to_acs_snapshot_hash_mismatch"
+  | "no_store_due_to_incomplete_dimensions"
+  | "no_store_until_execution_approved";
+
+export type AnalyzerV2CacheDecision = {
+  namespace: string;
+  canRead: boolean;
+  canWrite: boolean;
+  reason: AnalyzerV2CacheDecisionReason;
+  missingDimensions: readonly AnalyzerV2CacheDimension[];
+  keyParts: readonly { dimension: AnalyzerV2CacheDimension; value: string }[];
+};
+
 export type AnalyzerV2GatewayTask = {
   id: AnalyzerV2GatewayTaskId;
   owner: string;
