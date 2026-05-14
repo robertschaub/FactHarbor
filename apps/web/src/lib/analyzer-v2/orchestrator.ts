@@ -1,3 +1,4 @@
+import { runClaimUnderstandingRuntimeStage } from "@/lib/analyzer-v2/claim-understanding/runtime-stage";
 import { buildDamagedClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
 import {
   buildClaimBoundaryV2RunContext,
@@ -18,6 +19,8 @@ export async function runClaimBoundaryPipelineV2(
   await emit(input, "Analyzer V2 orchestrator initialized.", 8);
 
   const context = buildClaimBoundaryV2RunContext(input, options);
+  const claimUnderstandingState = runClaimUnderstandingRuntimeStage(input, context);
+  void claimUnderstandingState;
   const envelope = buildDamagedClaimBoundaryV2Envelope(context);
 
   await emit(input, "Analyzer V2 damaged structural envelope generated.", 90);

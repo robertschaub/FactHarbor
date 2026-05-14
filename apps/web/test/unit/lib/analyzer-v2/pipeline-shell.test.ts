@@ -2,6 +2,16 @@ import { describe, expect, it, vi } from "vitest";
 import { runClaimBoundaryV2Shell } from "@/lib/analyzer-v2/pipeline-shell";
 import { toResultCompatibilityView } from "@/lib/analyzer-v2/compatibility-view";
 
+function collectKeys(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap(collectKeys);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([key, child]) => [key, ...collectKeys(child)]);
+  }
+  return [];
+}
+
 describe("analyzer-v2 shell", () => {
   it("returns an explicitly damaged V2 pre-cutover envelope without running analysis", async () => {
     const onEvent = vi.fn();
@@ -75,5 +85,28 @@ describe("analyzer-v2 shell", () => {
         damagedReport: true,
       },
     });
+  });
+
+  it("does not expose internal Claim Understanding runtime state in the public result JSON", async () => {
+    const result = await runClaimBoundaryV2Shell({
+      inputType: "text",
+      inputValue: "Structural shell test input",
+    });
+    const keys = collectKeys(result.resultJson);
+    const serialized = JSON.stringify(result.resultJson);
+
+    expect(keys).not.toEqual(expect.arrayContaining([
+      "claimUnderstanding",
+      "claimUnderstandingResult",
+      "claimUnderstandingState",
+      "providerTelemetry",
+      "cacheDecision",
+      "keyParts",
+      "renderedPrompt",
+      "sideEffects",
+    ]));
+    expect(serialized).not.toContain("V2_CLAIM_UNDERSTANDING_GATE1");
+    expect(serialized).not.toContain("v2.claim-understanding.runtime-stage.0");
+    expect(serialized).not.toContain("gateway_policy_not_executable");
   });
 });

@@ -1,3 +1,4 @@
+import { isShellOnlyPlaceholderClaimId } from "@/lib/analyzer-v2/claim-understanding/types";
 import type {
   ClaimBoundaryV2Ingress,
   ClaimBoundaryV2SubmittedInput,
@@ -31,6 +32,15 @@ function readSelectedAtomicClaimIds(value: unknown): string[] {
     return [];
   }
 
+  const shellOnlyClaimIds = value
+    .filter((claimId): claimId is string => typeof claimId === "string")
+    .map((claimId) => claimId.trim())
+    .filter((claimId) => claimId.length > 0 && isShellOnlyPlaceholderClaimId(claimId));
+
+  if (shellOnlyClaimIds.length > 0) {
+    throw new Error("Analyzer V2 runner boundary rejects shell-only placeholder selected claim IDs.");
+  }
+
   const normalized = value
     .filter((claimId): claimId is string => typeof claimId === "string")
     .map((claimId) => claimId.trim())
@@ -38,19 +48,21 @@ function readSelectedAtomicClaimIds(value: unknown): string[] {
   return Array.from(new Set(normalized));
 }
 
+function readPreparedSeed(input: Record<string, unknown>): ClaimBoundaryV2Ingress["preparedSeed"] {
+  if (!isRecord(input.preparedStage1)) {
+    return null;
+  }
+
+  return {
+    acsSnapshot: input.preparedStage1,
+  };
+}
+
 export function normalizeClaimBoundaryV2IngressFromRunner(input: unknown): ClaimBoundaryV2Ingress {
   if (!isRecord(input)) {
     throw new Error("Analyzer V2 runner boundary requires an input object.");
   }
 
-  const preparedSeed = isRecord(input.preparedStage1)
-    ? {
-      acsSnapshot: input.preparedStage1,
-      acsSnapshotHash: isRecord(input.preparedStage1.preparationProvenance)
-        ? input.preparedStage1.preparationProvenance.resolvedInputSha256
-        : undefined,
-    }
-    : null;
   const runnerEventSink = input.onEvent;
 
   return {
@@ -59,7 +71,7 @@ export function normalizeClaimBoundaryV2IngressFromRunner(input: unknown): Claim
       kind: readInputKind(input.inputType),
       value: readRequiredString(input.inputValue, "input value"),
     },
-    preparedSeed,
+    preparedSeed: readPreparedSeed(input),
     selectedAtomicClaimIds: readSelectedAtomicClaimIds(input.selectedClaimIds),
     emitProgress: typeof runnerEventSink === "function"
       ? (event) => Promise.resolve(runnerEventSink(event.message, event.progress))

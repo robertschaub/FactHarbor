@@ -1,4 +1,3 @@
-import { isShellOnlyPlaceholderClaimId } from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 
 export type ClaimBoundaryV2RunContext = {
@@ -19,8 +18,7 @@ export type BuildClaimBoundaryV2RunContextOptions = {
 function normalizeSelectedClaimIds(selectedClaimIds: string[] | undefined): string[] {
   const normalized = (selectedClaimIds ?? [])
     .map((claimId) => claimId.trim())
-    .filter((claimId) => claimId.length > 0)
-    .filter((claimId) => !isShellOnlyPlaceholderClaimId(claimId));
+    .filter((claimId) => claimId.length > 0);
   return Array.from(new Set(normalized));
 }
 

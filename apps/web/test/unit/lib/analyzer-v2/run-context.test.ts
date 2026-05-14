@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildClaimBoundaryV2RunContext } from "@/lib/analyzer-v2/run-context";
 
 describe("analyzer-v2 run context", () => {
-  it("uses ACS resolved input and detected language without adding shell-only claim ids", () => {
+  it("uses ACS resolved input and detected language without hiding shell-only claim ids", () => {
     const context = buildClaimBoundaryV2RunContext(
       {
         runIdHint: "job-context",
@@ -27,6 +27,6 @@ describe("analyzer-v2 run context", () => {
 
     expect(context.resolvedInputText).toBe("Prepared resolved text");
     expect(context.detectedLanguage).toBe("de");
-    expect(context.selectedAtomicClaimIds).toEqual(["AC_SELECTED_01"]);
+    expect(context.selectedAtomicClaimIds).toEqual(["AC_V2_SHELL_01", "AC_SELECTED_01"]);
   });
 });

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { normalizeClaimBoundaryV2IngressFromRunner } from "@/lib/analyzer-v2/runner-ingress";
 
 describe("analyzer-v2 runner ingress", () => {
-  it("carries the full ACS prepared snapshot through the one-way runner adapter", async () => {
+  it("carries the full ACS prepared snapshot through the one-way runner adapter without deriving V2 hashes", async () => {
     const preparedStage1 = {
       version: 1,
       resolvedInputText: "Prepared resolved text",
@@ -36,11 +36,20 @@ describe("analyzer-v2 runner ingress", () => {
 
     expect(ingress.preparedSeed).toEqual({
       acsSnapshot: preparedStage1,
-      acsSnapshotHash: "acs-snapshot-hash",
     });
     expect(ingress.selectedAtomicClaimIds).toEqual(["AC_01"]);
 
     await ingress.emitProgress?.({ message: "progress", progress: 12 });
     expect(onEvent).toHaveBeenCalledWith("progress", 12);
+  });
+
+  it("rejects shell-only placeholder selected IDs before normalization can hide them", () => {
+    expect(() =>
+      normalizeClaimBoundaryV2IngressFromRunner({
+        inputType: "text",
+        inputValue: "Submitted text",
+        selectedClaimIds: [" AC_V2_SHELL_01 "],
+      })
+    ).toThrow("shell-only placeholder selected claim IDs");
   });
 });

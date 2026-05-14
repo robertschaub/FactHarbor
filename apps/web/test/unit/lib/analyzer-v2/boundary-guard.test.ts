@@ -9,6 +9,8 @@ const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const v2PipelineInputPath = path.resolve(v2AnalyzerRoot, "pipeline-input.ts");
 const claimUnderstandingModelAdapterPath = path.resolve(v2AnalyzerRoot, "claim-understanding/model-adapter.ts");
+const claimUnderstandingPromptLoaderPath = path.resolve(v2AnalyzerRoot, "claim-understanding/prompt-loader.ts");
+const claimUnderstandingRuntimeStagePath = path.resolve(v2AnalyzerRoot, "claim-understanding/runtime-stage.ts");
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -56,6 +58,10 @@ const adapterForbiddenProductPaths = [
   "pipeline-shell.ts",
   "runner-ingress.ts",
 ].map((fileName) => path.resolve(v2AnalyzerRoot, fileName));
+const noDispatchRuntimePaths = [
+  ...adapterForbiddenProductPaths,
+  claimUnderstandingRuntimeStagePath,
+];
 const forbiddenProviderSdkSpecifiers = [
   "ai",
   "openai",
@@ -248,6 +254,20 @@ function isClaimUnderstandingModelAdapterImport(filePath: string, specifier: str
   return resolved === adapterPath || resolved === `${adapterPath}.ts`;
 }
 
+function isClaimUnderstandingPromptLoaderImport(filePath: string, specifier: string): boolean {
+  if (specifier === "@/lib/analyzer-v2/claim-understanding/prompt-loader") {
+    return true;
+  }
+
+  if (!specifier.startsWith(".")) {
+    return false;
+  }
+
+  const resolved = toPosix(path.resolve(path.dirname(filePath), specifier));
+  const promptLoaderPath = toPosix(claimUnderstandingPromptLoaderPath).replace(/\.ts$/, "");
+  return resolved === promptLoaderPath || resolved === `${promptLoaderPath}.ts`;
+}
+
 function isProviderSdkImport(specifier: string): boolean {
   return forbiddenProviderSdkSpecifiers.some((forbidden) =>
     specifier === forbidden || specifier.startsWith(forbidden)
@@ -365,6 +385,27 @@ describe("analyzer-v2 boundary guard", () => {
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps 6B.3c-0 no-dispatch runtime paths free of dispatch-capable imports", () => {
+    const violations: string[] = [];
+
+    for (const sourcePath of noDispatchRuntimePaths) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
         }
       }
     }
