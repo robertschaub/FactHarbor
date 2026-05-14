@@ -1,0 +1,9 @@
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 Prompt Draft And Contract Tests
+**Task:** Record the completed Captain-approved Slice 6B.2 prompt-text implementation and consolidate the operative V2 docs so future agents enter Slice 6B.3 with the correct gate state.
+**Files touched:** `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`; `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`; `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
+**Key decisions:** Slice 6B.2 is complete at `8a1ef8cd`. Current work remains in `C:\DEV\FactHarbor` on Git branch `main`. The completed scope is clean-room prompt source plus contract/static-hygiene tests only. `claimboundary-v2` remains not file-seeded, prompt/model/cache approvals remain unflipped, and `claim_understanding_gate1` remains non-executable.
+**Open items:** Slice 6B.3 is the next gate. It requires separate Captain/deputy approval, updated LLM Expert/runtime review, file-seeding decision, prompt/model/cache approval records, executable-gateway tests, commit-first/runtime-refresh discipline, and live-job spend approval before any real jobs.
+**Warnings:** Do not treat the existence of `apps/web/prompts/claimboundary-v2.prompt.md` as runtime activation. Future file seeding must update the prompt-surface registry and file-seeded profile list together and verify postbuild reseed behavior. No V1 prompt/code/type reuse is permitted.
+**For next agent:** Start 6B.3 as a gated model-execution design/approval task, not as direct runtime implementation. Preserve the non-executable 6B.2 state until the approval gate is explicitly recorded.
+**Learnings:** Not appended; this is a status consolidation of the completed prompt-text slice and its guardrails.

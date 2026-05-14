@@ -51,13 +51,13 @@ Prompt/model execution:
 - New or changed prompt-backed V2 tasks require Captain approval and LLM Expert review.
 - Prompt/model/cache tasks remain blocked until approval is recorded in the gateway policy.
 - Slice 6A.5 hardening is complete at `724dd9aa`: full ACS prepared-snapshot ingress, shell-placeholder claim-id isolation, ACS/direct-input cache-policy alignment, and explicit prompt-output-to-`ClaimContract` schema mapping tests. Before Slice 6B Claim Understanding prompt/model execution, verify this guard still passes and record Captain approval plus LLM Expert review.
-- Slice 6B uses the review package in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; initial deputy review returned `MODIFY`. Slice 6B.1a is complete at `24f55d4a`: `ClaimUnderstandingResult` is the gateway output envelope and accepted results carry `ClaimContract`. Slice 6B.1b is complete at `2f1b60a4`: `claimboundary-v2` is manageable but not file-seeded, and `claim_understanding_gate1` has blocked model-policy metadata. Updated Claude Opus LLM Expert review approved requesting Captain prompt-text approval for 6B.2. Keep prompt text and runtime model execution as separate sub-slices. Slice 6B.2 still requires explicit Captain prompt-text approval before adding `V2_CLAIM_UNDERSTANDING_GATE1`.
+- Slice 6B uses the review package in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; initial deputy review returned `MODIFY`. Slice 6B.1a is complete at `24f55d4a`: `ClaimUnderstandingResult` is the gateway output envelope and accepted results carry `ClaimContract`. Slice 6B.1b is complete at `2f1b60a4`: `claimboundary-v2` is manageable but not file-seeded, and `claim_understanding_gate1` has blocked model-policy metadata. Slice 6B.2 is complete at `8a1ef8cd`: clean-room `claimboundary-v2.prompt.md` with `V2_CLAIM_UNDERSTANDING_GATE1`, contract/static-hygiene tests, and final Claude Opus LLM Expert approval. Keep prompt text and runtime model execution as separate sub-slices. Slice 6B.3 now requires separate Captain/deputy approval before file seeding, prompt/model/cache approval flips, executable gateway status, runtime LLM calls, or live jobs.
 
 UCM/model policy:
 
 - Existing UCM storage remains the foundation; do not redesign the database first.
 - Do not keep expanding the broad V1 `pipeline.default.json` shape as the long-term home for V2 prompt/model/task policy.
-- Minimal UCM for 6B.2 is complete: V2 prompt-profile validation/import support plus blocked model-policy metadata for `claim_understanding_gate1`.
+- Minimal UCM for 6B.2 is complete: V2 prompt-profile validation/import support, a reviewable clean-room `claimboundary-v2` prompt source, and blocked model-policy metadata for `claim_understanding_gate1`.
 - Broader task-oriented analysis-profile/admin-gate work remains a later track before broad V2 prompt/model execution and cutover.
 - Admin UI changes should start read-only/task-oriented, then add edit/activation flows only after the V2 task-policy model stabilizes.
 

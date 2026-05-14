@@ -1,5 +1,6 @@
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 LLM Expert Approval Request
+**Supersession note:** This approval-request handoff is historical. Slice 6B.2 is now complete at `8a1ef8cd`; current follow-up state is recorded in `Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B2_Prompt_Draft_Contract_Tests.md`.
 **Task:** Continue V2 pipeline rebuild at the Slice 6B.2 gate by obtaining updated LLM Expert review after 6B.1a/6B.1b.
 **Files touched:** `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; `Docs/WIP/2026-05-12_Pipeline_Rebuild_Specification_Plan.md`; `Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md`; `Docs/AGENTS/Agent_Outputs.md`; this handoff.
 **Key decisions:** Claude Opus performed a read-only LLM Expert review and returned `APPROVE` for asking Captain to approve Slice 6B.2 prompt-text work. The review found no code-side blockers after `ClaimUnderstandingResult`, nullable direct-input `acsMigration`, blocked model-policy metadata, ACS/direct cache separation, and gateway approval guards.

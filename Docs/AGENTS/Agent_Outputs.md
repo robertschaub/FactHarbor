@@ -2850,5 +2850,11 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 
 ---
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 LLM Expert Approval Request -- [Standard] [open-items: yes]
+**Superseded by next entry:** Slice 6B.2 was later approved, implemented, and committed at `8a1ef8cd`; use the following completion entry for current state.
 **For next agent:** Claude Opus LLM Expert returned `APPROVE` for asking Captain to approve Slice 6B.2 prompt-text work after 6B.1a/6B.1b. Captain approval is still required before adding `V2_CLAIM_UNDERSTANDING_GATE1`, prompt source files, file seeding, approval flips, runtime model calls, or live jobs.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B2_LLM_Expert_Approval_Request.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.2 Prompt Draft And Contract Tests -- [Standard] [open-items: yes]
+**For next agent:** Slice 6B.2 is complete at `8a1ef8cd` in `C:\DEV\FactHarbor` on `main`: clean-room non-executable `claimboundary-v2.prompt.md`, `V2_CLAIM_UNDERSTANDING_GATE1`, contract/static-hygiene tests, and final Claude Opus LLM Expert approval. `claimboundary-v2` remains not file-seeded, prompt/model/cache approvals remain unflipped, no runtime LLM call or live job was added, and V1 prompt/code/type reuse remains forbidden. Next boundary is 6B.3 gated model execution with separate Captain/deputy approval.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B2_Prompt_Draft_Contract_Tests.md

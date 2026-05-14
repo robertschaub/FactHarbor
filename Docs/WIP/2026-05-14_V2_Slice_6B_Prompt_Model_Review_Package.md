@@ -1,11 +1,11 @@
 # V2 Slice 6B Prompt And Model Review Package
 
 **Date:** 2026-05-14
-**Status:** Updated LLM Expert review approves requesting Captain prompt-text approval; Captain approval still required before prompt text or execution
+**Status:** Slice 6B.2 prompt draft and contract tests complete; Slice 6B.3 gated model execution approval required next
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`; 6B.1b UCM/profile/model-policy plumbing `2f1b60a4`
+**Baseline commits:** Slice 6A.5 implementation `724dd9aa`; status checkpoint `2e6fb865`; review package `eef99156`; 6B.1a envelope `24f55d4a`; 6B.1b UCM/profile/model-policy plumbing `2f1b60a4`; 6B.2 prompt draft and contract tests `8a1ef8cd`
 
 ---
 
@@ -13,13 +13,13 @@
 
 This package prepares the first prompt/model execution gate for the V2 pipeline: Slice 6B, Claim Understanding and Gate 1.
 
-It is not an implementation patch and does not approve prompt text. It defines the reviewable contract, approval questions, reviewer prompts, and the UCM follow-up plan needed before executable V2 Claim Understanding is added.
+It originally defined the reviewable contract, approval questions, reviewer prompts, and UCM follow-up plan needed before executable V2 Claim Understanding is added. As of `8a1ef8cd`, it also records the completed non-executable Slice 6B.2 prompt draft and contract-test result.
 
-Captain authorization on 2026-05-14 is interpreted as approval to proceed with the review package and deputy/LLM Expert review. Actual prompt text, prompt profile activation, model execution, and runtime LLM-backed Claim Understanding still require the recorded approval gate defined below.
+Captain authorization on 2026-05-14 approved the review package and deputy/LLM Expert review, then approved the 6B.2 prompt-text slice. Prompt profile activation, file seeding, model execution, runtime LLM-backed Claim Understanding, and live jobs still require the separate 6B.3 approval gate defined below.
 
 ## 2. Current Stable Baseline
 
-Slice 6A.5 is complete at `724dd9aa`; 6B.1a is complete at `24f55d4a`:
+Slice 6A.5 is complete at `724dd9aa`; 6B.1a is complete at `24f55d4a`; 6B.1b is complete at `2f1b60a4`; 6B.2 is complete at `8a1ef8cd`:
 
 - V2 runner ingress carries the full ACS prepared snapshot.
 - `PipelineRunContext` no longer injects shell-only placeholder claim IDs.
@@ -27,6 +27,8 @@ Slice 6A.5 is complete at `724dd9aa`; 6B.1a is complete at `24f55d4a`:
 - ACS prepared-snapshot migration fails closed on shell-only placeholders and missing selected claims.
 - Claim Understanding cache governance supports ACS-backed and direct-input key paths.
 - Gateway Claim Understanding output schema now maps to `v2.claim_understanding_result.0`; accepted results carry `v2.claim_contract.0`.
+- `apps/web/prompts/claimboundary-v2.prompt.md` now contains the clean-room `V2_CLAIM_UNDERSTANDING_GATE1` section and contract-oriented frontmatter.
+- `claimboundary-v2` remains not file-seeded, not activated, and not executable; prompt/model/cache approvals are not flipped.
 
 Verified before this package:
 
@@ -47,8 +49,8 @@ Slice 6B should be split into reviewable sub-slices:
 | 6B.0 review package | This document plus reviewer prompts and UCM proposal | No | Captain authorization to prepare package |
 | 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | Complete at `24f55d4a` |
 | 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Complete at `2f1b60a4` |
-| 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Explicit Captain prompt-text approval; updated LLM Expert review approved requesting this |
-| 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Deputy approval after 6B.2 tests pass |
+| 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Complete at `8a1ef8cd`; final Claude Opus LLM Expert review approved |
+| 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Separate Captain/deputy approval after 6B.2 status and runtime verifier are reviewed |
 | 6B.4 non-public structural smoke | Exercise the gated path on fixtures or explicitly approved jobs only | Yes, gated | Commit-first, runtime-refresh, and live-job spend approval if real jobs are used |
 
 The split prevents profile/schema plumbing from smuggling in prompt text or runtime analysis behavior.
@@ -64,15 +66,15 @@ flowchart LR
   T["6B.4 structural smoke"]
 
   S6A5 --> R --> C --> U
-  U -->|"Captain prompt approval + LLM Expert review"| P
-  P -->|"deputy approval"| E
+  U -->|"Captain prompt approval recorded"| P
+  P -->|"separate execution approval"| E
   E -->|"commit-first + runtime refresh + spend approval"| T
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef review fill:#fff4d6,stroke:#9a6700,color:#3a2600
   classDef gated fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S6A5,R,C,U done
-  class P,E,T gated
+  class S6A5,R,C,U,P done
+  class E,T gated
 ```
 
 ## 4. Claim Understanding Contract For Review
@@ -246,7 +248,7 @@ Current structural limits for V2 after 6B.1b:
 
 - config types are broad: `prompt`, `search`, `calculation`, `pipeline`, `sr`;
 - `pipeline.default.json` mixes model selection, stage behavior, ACS mode/caps, retry/repair controls, thresholds, and report-related knobs;
-- prompt frontmatter now recognizes `claimboundary-v2`, but no approved V2 prompt source file exists and file seeding is intentionally disabled;
+- prompt frontmatter now recognizes `claimboundary-v2`, and a clean-room V2 prompt source exists for contract review, but file seeding is intentionally disabled;
 - V2 gateway tasks already want task-level prompt/model/cache approval, but UCM UI is type/profile/file-oriented;
 - dead or weakly wired knobs are hard to see in the current UI;
 - prompt and model approval state is not a first-class admin workflow.
@@ -268,17 +270,19 @@ Recommended target concepts:
 
 The preferred direction is a new V2 analysis profile domain, for example `analysis-profile` or `analyzer-v2`, rather than continuing to overload `pipeline.default.json`. The exact name should be decided in a dedicated UCM design slice after 6B.1, because it affects API routes, admin UI, default files, schema drift tests, and migration.
 
-### 9.3 Minimal UCM Work Before Slice 6B Prompt Text
+### 9.3 Minimal UCM Work Before Slice 6B.3 Execution
 
-Before adding actual `V2_CLAIM_UNDERSTANDING_GATE1` prompt text:
+Before enabling actual `V2_CLAIM_UNDERSTANDING_GATE1` model execution:
 
 1. Decide how `claimboundary-v2` is represented in prompt frontmatter and validation. Done in 6B.1b.
-2. Add or update tests so V2 prompt profile names are accepted without allowing V1 prompt profile reuse. Done in 6B.1b.
+2. Add or update tests so V2 prompt profile names are accepted without allowing V1 prompt profile reuse. Done in 6B.1b and extended in 6B.2.
 3. Keep `claimboundary` and `claimboundary-v2` separate in UCM active profile selection. Done in 6B.1b at the validation/profile-list level; broader approval-state UI is later.
 4. Ensure the Admin UI can load, validate, diff, import/export, and activate a `claimboundary-v2` prompt profile without confusing it with V1. Partially done through existing generic UCM surfaces; task-oriented approval UI is later.
-5. Add a static guard that no V2 prompt profile loads `claimboundary.prompt.md` or V1 sections. Covered by Analyzer V2 boundary guard and prompt-surface registry tests; extend again when prompt text is added.
+5. Add a static guard that no V2 prompt profile loads `claimboundary.prompt.md` or V1 sections. Covered by Analyzer V2 boundary guard and prompt-surface registry tests; extend again when file seeding or runtime execution is enabled.
+6. Decide explicitly whether and when `claimboundary-v2` becomes file-seeded. If enabled, the prompt-surface registry and file-seeded profile list must change together and the postbuild reseed behavior must be verified.
+7. Record prompt/model/cache approvals and keep the gateway fail-closed until all required approval states are present.
 
-This is enough for 6B.2 prompt drafting. It is not enough for broad V2 cutover.
+This is enough to plan 6B.3. It is not enough for broad V2 cutover.
 
 ### 9.4 UCM UI Direction
 
@@ -352,9 +356,9 @@ Minimum verifier set:
 
 No live jobs are required for 6B.1 or 6B.2. Any 6B.4 real job must follow commit-first, runtime-refresh, Captain-defined input, and live-budget discipline.
 
-## 11. Updated LLM Expert Review - 2026-05-14
+## 11. Pre-6B.2 LLM Expert Review - 2026-05-14
 
-Claude Opus performed a read-only LLM Expert review after Slice 6B.1a and 6B.1b completed.
+Claude Opus performed a read-only LLM Expert review after Slice 6B.1a and 6B.1b completed. This was the approval-request review before the 6B.2 prompt source existed; the post-draft result is recorded in Section 12.
 
 Verdict: **APPROVE** proceeding to a Captain prompt-text approval request for Slice 6B.2.
 
@@ -389,8 +393,31 @@ Residual risks:
 - The prompt-surface registry and boundary guard must be extended when the new section is added, otherwise section-id drift could bypass the intended guard.
 - Embedding nullable ACS migration metadata in `ClaimContract` may require a later schema bump if Captain chooses to move migration metadata outside the contract.
 
-## 12. Current Decision
+## 12. Slice 6B.2 Implementation Result - 2026-05-14
 
-Recommended decision: **Captain approval required to proceed**.
+Slice 6B.2 is complete at `8a1ef8cd`.
 
-Proceed with Slice 6B only as sub-slices. Slices 6B.1a and 6B.1b are complete at `24f55d4a` and `2f1b60a4`. Updated LLM Expert review now approves requesting Captain prompt-text approval for 6B.2. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, create prompt source files, activate `claimboundary-v2` file seeding, or add runtime model execution until explicit Captain prompt-text approval is recorded.
+Implemented scope:
+
+- Added `apps/web/prompts/claimboundary-v2.prompt.md` with clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, frontmatter, variables, and required-section metadata.
+- Added prompt render/frontmatter/static-hygiene/schema tests and extended Claim Understanding envelope tests.
+- Extended prompt-surface and boundary guards so the V2 prompt source is visible for review while `claimboundary-v2` remains not file-seeded.
+- Kept gateway execution blocked; no approval-status flips, runtime LLM call, UI/API change, live job, or V1 prompt/code/type reuse was added.
+
+Final Claude Opus LLM Expert review returned **APPROVE** before commit, with no blockers and no required changes. Residual risks carried to 6B.3:
+
+- E2E runtime behavior is still untested because 6B.2 is intentionally non-executable.
+- When file seeding is later approved, the prompt-surface registry and `FILE_SEEDED_PROMPT_PROFILES` must change together and be verified.
+- The prompt version remains pre-release `0.1.0`.
+
+Verification for `8a1ef8cd`:
+
+- Focused 6B.2 verifier passed 7 files / 145 tests.
+- Full Analyzer V2 unit slice passed 13 files / 70 tests.
+- `npm -w apps/web run build` passed and did not seed `claimboundary-v2`.
+- Safe `npm test` passed.
+- `git diff --check` passed before commit.
+
+## 13. Current Decision
+
+Proceed with Slice 6B only as sub-slices. Slices 6B.1a, 6B.1b, and 6B.2 are complete at `24f55d4a`, `2f1b60a4`, and `8a1ef8cd`. The next boundary is 6B.3 gated model execution. Do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, or submit live jobs until separate Captain/deputy approval, LLM Expert/runtime review, and commit-first/runtime-refresh/spend discipline are recorded.

@@ -16,7 +16,7 @@ This plan has advanced beyond the specification-only phase. Keep this document a
 
 - Operative target spec: `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Draft.md`
 - Deputy review consolidation: `Docs/WIP/2026-05-12_Pipeline_Rebuild_Target_Specification_Review_Consolidation.md`
-- Current worktree status before this addendum: stable at `085b714e` (`docs: record xwiki integration debate`)
+- Current implementation status before this addendum: stable at `085b714e` (`docs: record xwiki integration debate`)
 
 Execution state:
 
@@ -33,8 +33,8 @@ Execution state:
 | Phase 6 / Slice 6B.0 | modify | Prompt/model review package prepared at `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy reviews require result-envelope contract and UCM/profile/model-policy plumbing before prompt text |
 | Phase 6 / Slice 6B.1a | complete | Committed at `24f55d4a`: `ClaimUnderstandingResult` envelope prevents failed/no-claim/direct-input states from corrupting `ClaimContract` |
 | Phase 6 / Slice 6B.1b | complete | Committed at `2f1b60a4`: `claimboundary-v2` prompt-profile/frontmatter support and blocked task-oriented model policy metadata for `claim_understanding_gate1` |
-| Phase 6 / Slice 6B.2 | Captain approval required next | Updated Claude Opus LLM Expert review approved requesting Captain prompt-text approval; prompt draft and contract tests may start only after explicit Captain approval |
-| Phase 6 / Slice 6B | blocked | Prompt/profile/model execution for V2 Claim Understanding requires explicit Captain approval and LLM Expert review |
+| Phase 6 / Slice 6B.2 | complete | Committed at `8a1ef8cd`: clean-room non-executable `claimboundary-v2` prompt source and contract/static-hygiene tests; final Claude Opus LLM Expert approval; no file seeding, approval flips, runtime LLM call, UI/API change, live job, or V1 reuse |
+| Phase 6 / Slice 6B.3 | approval required next | Gated Claim Understanding model execution requires separate Captain/deputy approval, prompt/model/cache approval records, file-seeding decision, runtime gateway tests, and commit-first/runtime-refresh/spend approval before any live jobs |
 
 Plan update from xWiki integration debate:
 
@@ -45,7 +45,7 @@ Plan update from xWiki integration debate:
 
 Live jobs used so far: 0. Approved live-job budget remaining: 8.
 
-Next action, unless Captain redirects: request explicit Captain prompt-text approval for Slice 6B.2 prompt draft and contract tests under the conditions recorded in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`. Updated LLM Expert review is complete and approved the request. Do not edit prompt text, create prompt source files, activate executable prompt profiles, or add runtime LLM-backed Claim Understanding until Captain approval is recorded.
+Next action, unless Captain redirects: prepare Slice 6B.3 gated Claim Understanding model execution for deputy/Captain approval under the conditions recorded in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`. Slice 6B.2 prompt text and contract tests are complete at `8a1ef8cd`, but V2 remains non-executable: do not activate `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make the gateway executable, or add runtime LLM-backed Claim Understanding until the separate 6B.3 gate is recorded.
 
 Readiness note from 2026-05-14: no further architecture-wide redesign is required before continuing implementation. Final review by Gemini, Claude Opus, and two deputies kept Slices 1-6A and rejected redo/quarantine. Slice 6A.5 contract/wiring hardening is complete at `724dd9aa`; Slice 6B.0 prompt/model review returned `MODIFY`; executable Slice 6B remains blocked by explicit prompt/model execution approval plus LLM Expert review. Exact mode caps and forced-review thresholds can be resolved as implementation-slice decisions under deputy review unless they become high risk or contested.
 
@@ -53,9 +53,9 @@ Main/UCM alignment note from 2026-05-14:
 
 - Current implementation continues in workspace `C:\DEV\FactHarbor` on Git branch `main`.
 - V1-before-V2-specification comparison anchor is tag `v1-before-v2-pipeline-specification` at `92b5a5f3`; create a comparison branch from that tag only when a concrete V1/V2 comparison task requires it.
-- Slice 6B.1b completed only minimal non-executable UCM/profile/model-policy plumbing: `claimboundary-v2` is a manageable prompt profile, and `claim_understanding_gate1` has blocked task-oriented model-policy metadata.
-- Broader UCM redesign is not a prerequisite for 6B.2 prompt drafting. It remains a later task-oriented analysis-profile/admin-gate track: keep existing UCM storage, avoid growing V2 policy into the broad V1 `pipeline.default.json` shape as the long-term home, and add task-oriented Admin UI/approval-state visibility only after the V2 content model stabilizes.
-- No prompt text, prompt source file, prompt activation, model execution, or broad UCM UI work starts before the documented Captain approval gate. Updated LLM Expert review has approved asking for that gate; it has not approved final prompt text or 6B.3 execution.
+- Slice 6B.2 completed only non-executable prompt drafting and contract tests: `claimboundary-v2` now has a clean-room prompt source for review, and `claim_understanding_gate1` remains blocked by gateway policy.
+- Broader UCM redesign is not a prerequisite for 6B.3 planning. It remains a later task-oriented analysis-profile/admin-gate track: keep existing UCM storage, avoid growing V2 policy into the broad V1 `pipeline.default.json` shape as the long-term home, and add task-oriented Admin UI/approval-state visibility only after the V2 content model stabilizes.
+- No prompt file seeding, prompt/model/cache approval flip, model execution, live job, or broad UCM UI work starts before the documented 6B.3 approval gate. Final prompt-text LLM Expert review approved 6B.2 as non-executable only; it did not approve runtime execution.
 
 ---
 
@@ -91,7 +91,7 @@ The work must start from a clean specification, reverse-engineered from the curr
 
 Specialized Claude role reviews and a Gemini adversarial review all requested changes. The consolidation debate result was **MODIFY**:
 
-- Keep Captain Intent, the worktree, reverse-engineer-first sequencing, no implementation before approval, UI stability, and the clean-architecture goal.
+- Keep Captain Intent, the agreed workspace, reverse-engineer-first sequencing, no implementation before approval, UI stability, and the clean-architecture goal.
 - Do not treat the first draft as a small patch-list plan. The plan must be a Plan V2 Baseline with hard gates before Phase 1 starts.
 - Reject any interpretation of "cleanup before rebuild" that breaks the current runnable system before a replacement path is proven.
 
