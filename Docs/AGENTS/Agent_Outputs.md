@@ -2913,3 +2913,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-1 Dispatch Frame Gate -- [Standard] [open-items: yes]
 **For next agent:** Deputy-team review of the 6B.3c dispatch package returned `MODIFY`; the only approved next source work is a pure internal `claim-understanding/dispatch-frame.ts` contract plus tests/static guards. Product dispatch, prompt rendering, model-adapter imports, cache decisions or hash construction, provider callbacks, approval flips, public diagnostics, live jobs, V1 imports, and direct URL body assumptions remain blocked.
 -> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame_Gate.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.3c-1 Dispatch Frame -- [Standard] [open-items: yes]
+**For next agent:** Slice 6B.3c-1 is complete at `8a663d3f`: pure internal `buildClaimUnderstandingDispatchFrame(...)`, direct-text exact pass-through, direct URL fail-closed behavior, ACS resolved-text/hash requirements, and boundary guards against prompt/model/cache/provider/V1 imports. Product runtime dispatch remains unapproved and requires a later review gate.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B3c1_Dispatch_Frame.md

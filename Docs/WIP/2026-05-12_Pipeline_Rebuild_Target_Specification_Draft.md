@@ -3,7 +3,7 @@
 **Date:** 2026-05-12
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3c-0; later Claim Understanding dispatch integration remains blocked pending separate review
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.3c-1; product-runtime Claim Understanding dispatch remains blocked pending separate review
 **Owner role:** Lead Architect
 
 ---
@@ -43,6 +43,7 @@ Implementation continues in `C:\DEV\FactHarbor` on Git branch `main` after deput
 | Slice 6B.3a: Claim Understanding foundation | done | `2d14c89a` | Explicit V2 prompt loader, production runtime schemas, cache/provenance no-dispatch/no-store decisions, policy eligibility guard, and tests completed. No file seeding, approval flips, runtime model call, orchestrator wiring, API/UI/report change, live jobs, or V1 analyzer imports |
 | Slice 6B.3b: model adapter contract | done | `04742922` | V2-owned local adapter under `apps/web/src/lib/analyzer-v2/`, dependency-injected mock dispatch, production schema validation, policy fail-closed behavior, identical structural retry, typed telemetry/provenance, no cache IO, no provider SDK callsite, no product-path imports, and no neutral/shared adapter. |
 | Slice 6B.3c-0: structural no-dispatch orchestration | done | `3223d99f` | Internal-only Claim Understanding runtime stage, ACS migration only with canonical V2 hashes, direct input blocked by shipped gateway policy, raw shell-placeholder rejection, no prompt/cache/provider/model dispatch, and public leak guards. |
+| Slice 6B.3c-1: dispatch-frame contract | done | `8a663d3f` | Pure internal frame builder for direct-text exact pass-through, direct-URL fail-closed handling, ACS resolved-text/hash requirements, and static guards against prompt/model/cache/provider/V1 imports. |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
 
@@ -60,6 +61,10 @@ flowchart LR
   S6B1A["6B.1a result envelope"]
   S6B1B["6B.1b UCM/profile plumbing"]
   S6B2["6B.2 prompt draft + tests"]
+  S6B3A["6B.3a foundation"]
+  S6B3B["6B.3b mock adapter"]
+  S6B3C0["6B.3c-0 no-dispatch runtime"]
+  S6B3C1["6B.3c-1 dispatch frame"]
   S6B["Claim Understanding prompt/model execution"]
   S7["Evidence lifecycle"]
   S8["Boundary formation"]
@@ -73,13 +78,14 @@ flowchart LR
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
   S6A --> S6A5 --> S6B0 --> S6B1A --> S6B1B
   S6B1B -->|"Captain prompt approval recorded"| S6B2
-  S6B2 -->|"6B.3b adapter complete; 6B.3c approval required"| S6B
+  S6B2 --> S6B3A --> S6B3B --> S6B3C0 --> S6B3C1
+  S6B3C1 -->|"later dispatch approval required"| S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A,S6B1B,S6B2 done
+  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A,S6B1B,S6B2,S6B3A,S6B3B,S6B3C0,S6B3C1 done
   class S6B blocked
   class S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
@@ -104,6 +110,7 @@ flowchart TB
     ENV["damaged 4.0.0-cb-precutover envelope"]
     GW["gateway policies blocked until approval"]
     CU["ClaimContract + ACS migration"]
+    DF["dispatch frame contract"]
   end
 
   subgraph "Not Yet Implemented"
@@ -119,6 +126,7 @@ flowchart TB
   RR --> FX
   ENTRY --> ENV
   GW --> CU
+  CU --> DF
   CU -. "contracts only" .-> LLM
   LLM --> EV --> CAB --> VER --> AGG
   V1 --> API
@@ -138,6 +146,8 @@ Slice 6B.3b is complete at `04742922`. Slice 6B.0 prepared the prompt/model revi
 6B.3c expert debate returned `MODIFY`: do not implement full runtime-dispatch/orchestrator wiring as originally written. The next boundary is 6B.3c-0 structural Claim Understanding orchestration only: internal runtime state, ACS migration at the V2 edge, direct-input gateway blocking before prompt/cache/provider work, shell-placeholder raw-ID failure before normalization can hide it, no model-adapter import from product execution paths, no prompt rendering, no provider callback, no cache IO, no public/API/UI/report field, no approval/status mutation, and no live jobs.
 
 Follow-up 6B.3c-0 acceptance debate also returned `MODIFY`: source work could start only under `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md` Section 7.1.1. That addendum named the exact file/test envelope: raw runner placeholder detection, no `resolvedInputSha256` reuse as ACS snapshot hash, V2-owned no-dispatch Claim Understanding stage/runtime state, internal-only orchestrator state, recursive public-result leak guard, import-time side-effect guard, no product-path model-adapter import, and no prompt/cache/provider side effects. Slice 6B.3c-0 is now complete at `3223d99f`.
+
+Deputy review of the dispatch integration package returned `MODIFY`: only a narrower 6B.3c-1 dispatch-frame contract was approved before product runtime dispatch. Slice 6B.3c-1 is complete at `8a663d3f`: it added a pure internal frame builder, direct-text exact pass-through, unresolved direct-URL fail-closed handling, ACS resolved-text/hash requirements, and static guards against prompt/model/cache/provider/V1 imports. Product runtime dispatch remains blocked until a later review approves the executable approval source, provider boundary, prompt/config/cache hash construction, cache posture, URL-resolution prerequisite, and product-path model-adapter import guard.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -1003,7 +1013,7 @@ Slice 6B.1b implemented the minimal UCM/profile/model-policy plumbing at `2f1b60
 - `claim_understanding_gate1` has a concrete, blocked model-policy metadata record covering tier, temperature, call budget, schema retry count, timeout, token budget, fallback, and escalation behavior;
 - gateway execution remains blocked until prompt, model, and cache approvals are all recorded.
 
-The next boundary is the narrowed 6B.3c-0 structural no-dispatch plan from `Docs/WIP/2026-05-14_V2_Slice_6B3_Revised_Implementation_Plan.md`. The completed 6B.3b approval covered only mock adapter mechanics. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire the orchestrator for dispatch, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
+The current boundary is the completed 6B.3c-1 dispatch-frame contract from `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md`. The completed 6B.3b approval covered only mock adapter mechanics, 6B.3c-0 covered only no-dispatch orchestration, and 6B.3c-1 covered only frame construction/rejection. Do not enable `claimboundary-v2` file seeding, flip prompt/model/cache approvals, make `claim_understanding_gate1` executable, wire the orchestrator for dispatch, or submit live jobs without separate Captain/deputy approval, updated LLM Expert/runtime review, and commit-first/runtime-refresh discipline.
 
 ---
 
@@ -1652,7 +1662,7 @@ This document is now the operative V2 target specification with implementation p
 - This documentation status update changes no source, prompt, config, API, UI, runtime, or live-job behavior.
 - Slice 6B.3a implementation is committed at `2d14c89a`; it changes only structural Analyzer V2 foundation code and tests.
 - Slice 6B.3b implementation is committed at `04742922`; it adds only mock adapter contract code and tests.
-- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; later dispatch-capable Claim Understanding integration remains unapproved.
+- Slice 6B.3c debate returned `MODIFY`; 6B.3c-0 structural no-dispatch implementation is committed at `3223d99f`; 6B.3c-1 dispatch-frame contract implementation is committed at `8a663d3f`; later dispatch-capable Claim Understanding integration remains unapproved.
 - Slice 6B.2 implementation verification passed: focused 6B.2 tests, full Analyzer V2 unit slice, web build, safe `npm test`, clean-room scans, and `git diff --check`.
 - No live jobs or validation batches were submitted.
 

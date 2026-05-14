@@ -1,9 +1,9 @@
 # V2 Slice 6B.3c Dispatch Integration Review Package
 
 **Date:** 2026-05-14
-**Status:** Deputy review returned `MODIFY`; next approved implementation is 6B.3c-1 dispatch-frame boundary contract only
+**Status:** 6B.3c-1 dispatch-frame boundary contract complete at `8a663d3f`; product runtime dispatch remains blocked
 **Owner role:** Lead Architect / Captain deputy
-**Current stable implementation:** 6B.3c-0 complete at `3223d99f`
+**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`
 
 ---
 
@@ -169,6 +169,27 @@ Deferred to later dispatch review:
 | URL identity | no input/cache identity is produced for unresolved direct URL |
 | Clean-room | no V1 analyzer import, no V1 prompt/profile/section reuse, no shared adapter that weakens V1/V2 boundary |
 
+## 8.1 Implementation Result
+
+Slice 6B.3c-1 was implemented at `8a663d3f`.
+
+Implementation outcome:
+
+- `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-frame.ts` defines a pure internal result type and frame builder.
+- Direct text frames preserve the submitted text exactly as both `analysisInput` and `resolvedInputText`.
+- Direct URL input fails closed before prompt/cache/provider/adapter work.
+- ACS-backed text or URL frames require resolved snapshot body text plus canonical V2 `acsSnapshotHash` and `inputGroundingSeedHash`.
+- Static boundary guards forbid prompt loader, model adapter, cache-governance, gateway policy, provider SDK, mock/fixture, and V1 analyzer imports from the frame module.
+
+Verification:
+
+- focused dispatch-frame + boundary tests passed: 2 files, 18 tests;
+- full Analyzer V2 unit slice passed: 16 files, 103 tests;
+- `npm -w apps/web run build` passed;
+- targeted clean-room source scan and `git diff --check` passed.
+
+No prompt rendering, adapter import/call, provider callback, provider SDK, cache decision/hash construction, approval flip, public/API/UI/report exposure, live job, or V1 reuse was added.
+
 ## 9. Later Dispatch Review Questions
 
 1. What exact approval source makes `claim_understanding_gate1` executable without mutating shipped registry constants?
@@ -180,4 +201,4 @@ Deferred to later dispatch review:
 
 ## 10. Short Reviewer Prompt
 
-Review this package as the narrowed 6B.3c-1 dispatch-frame contract gate after 6B.3c-0. Confirm whether the next implementation may add only a pure dispatch-frame module and tests, with no prompt rendering, adapter import, provider callback, cache decision, approval flip, public diagnostics, live jobs, V1 imports, or URL-body assumptions.
+Review the next product-runtime dispatch proposal after 6B.3c-1. Confirm the executable approval source, provider boundary, prompt/config/cache hash construction, cache posture, URL-resolution prerequisite, and replacement guard for product-path model-adapter import. Treat prompt rendering, provider callbacks, cache IO, approval flips, public diagnostics, live jobs, V1 imports, and URL-body assumptions as blockers unless explicitly justified and approved.

@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -262,11 +262,27 @@ Do not expand this slice to solve URL resolution, provider dispatch, prompt vari
 
 ### 7.2 Later 6B.3c Dispatch Integration Slice
 
-Provider dispatch remains deferred until after 6B.3c-0 passes. A later reviewed slice may wire the existing model adapter only if it defines:
+Provider dispatch remains deferred until after a later review approves executable integration. A later reviewed slice may wire the existing model adapter only if it defines:
 
 Current review package: `Docs/WIP/2026-05-14_V2_Slice_6B3c_Dispatch_Integration_Review_Package.md`.
 
-Follow-up debate after 6B.3c-0 returned `MODIFY`: product runtime dispatch remains blocked. Deputy review of the dispatch package also returned `MODIFY`, with consent for a narrower 6B.3c-1 dispatch-frame boundary contract only. The next approved implementation must stop at frame construction/rejection and must not import the model adapter, prompt loader, cache-governance builders, provider SDKs, mocks, test fixtures, or V1 analyzer code.
+Follow-up debate after 6B.3c-0 returned `MODIFY`: product runtime dispatch remains blocked. Deputy review of the dispatch package also returned `MODIFY`, with consent for a narrower 6B.3c-1 dispatch-frame boundary contract only. Slice 6B.3c-1 is complete at `8a663d3f`: it stops at frame construction/rejection and does not import the model adapter, prompt loader, cache-governance builders, provider SDKs, mocks, test fixtures, or V1 analyzer code.
+
+6B.3c-1 implementation consolidation:
+
+- Added `apps/web/src/lib/analyzer-v2/claim-understanding/dispatch-frame.ts` as a pure internal frame builder.
+- Direct text input produces a frame and preserves submitted text exactly as `analysisInput` and `resolvedInputText`.
+- Direct URL input fails closed before prompt/cache/provider/adapter work and does not treat the URL as body text.
+- ACS-backed input requires resolved snapshot text plus canonical `acsSnapshotHash` and `inputGroundingSeedHash`.
+- Static guards prove the frame module imports no V1 analyzer, prompt loader, model adapter, cache-governance builder, gateway policy, provider SDK, mock, or fixture module.
+
+6B.3c-1 verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/claim-understanding/dispatch-frame.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2`
+- `npm -w apps/web run build`; postbuild reseed reported `Prompts: 0 changed, 3 unchanged`
+- targeted clean-room source scan for forbidden dispatch-frame imports
+- `git diff --check`
 
 - the approval source for execution without mutating shipped registry constants;
 - the exact runtime provider-dispatch boundary;
