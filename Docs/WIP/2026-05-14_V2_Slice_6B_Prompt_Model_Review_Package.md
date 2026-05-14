@@ -46,7 +46,7 @@ Slice 6B should be split into reviewable sub-slices:
 |---|---|---:|---|
 | 6B.0 review package | This document plus reviewer prompts and UCM proposal | No | Captain authorization to prepare package |
 | 6B.1a Claim Understanding result envelope | Define success/failure output boundary so no-claim/direct-input failure does not corrupt `ClaimContract` | No | Complete at `24f55d4a` |
-| 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Deputy review; LLM Expert checks prompt governance boundary |
+| 6B.1b UCM/profile plumbing | Allow V2 prompt profile and task policy metadata without changing analysis behavior | No | Complete at `2f1b60a4` |
 | 6B.2 V2 Claim Understanding prompt draft + contract tests | Add new clean-room `V2_CLAIM_UNDERSTANDING_GATE1` prompt section and schema/render tests | No | Explicit Captain prompt-text approval + LLM Expert review |
 | 6B.3 gated model execution path | Add runtime LLM call behind V2 pre-cutover gate; no public cutover | Yes, gated | Deputy approval after 6B.2 tests pass |
 | 6B.4 non-public structural smoke | Exercise the gated path on fixtures or explicitly approved jobs only | Yes, gated | Commit-first, runtime-refresh, and live-job spend approval if real jobs are used |
@@ -71,8 +71,7 @@ flowchart LR
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef review fill:#fff4d6,stroke:#9a6700,color:#3a2600
   classDef gated fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S6A5,R,C done
-  class U review
+  class S6A5,R,C,U done
   class P,E,T gated
 ```
 
@@ -219,7 +218,7 @@ Consolidated decision:
 
 - **MODIFY before implementation.**
 - Insert 6B.1a for `ClaimUnderstandingResult`/failure-contract design and tests. Implemented at `24f55d4a`.
-- Insert 6B.1b for minimal V2 UCM/profile/model-policy plumbing.
+- Insert 6B.1b for minimal V2 UCM/profile/model-policy plumbing. Implemented at `2f1b60a4`.
 - Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text until both pre-prompt blockers are resolved and LLM Expert review is updated.
 
 ## 8. Reviewer Prompt
@@ -243,11 +242,11 @@ Current UCM storage is a useful foundation:
 - prompt files seeded into the prompt config store;
 - Admin UI history, validation, diff, import/export, rollback, and prompt editor capabilities.
 
-Current structural limits for V2:
+Current structural limits for V2 after 6B.1b:
 
 - config types are broad: `prompt`, `search`, `calculation`, `pipeline`, `sr`;
 - `pipeline.default.json` mixes model selection, stage behavior, ACS mode/caps, retry/repair controls, thresholds, and report-related knobs;
-- prompt frontmatter currently recognizes `claimboundary`, not `claimboundary-v2`;
+- prompt frontmatter now recognizes `claimboundary-v2`, but no approved V2 prompt source file exists and file seeding is intentionally disabled;
 - V2 gateway tasks already want task-level prompt/model/cache approval, but UCM UI is type/profile/file-oriented;
 - dead or weakly wired knobs are hard to see in the current UI;
 - prompt and model approval state is not a first-class admin workflow.
@@ -273,11 +272,11 @@ The preferred direction is a new V2 analysis profile domain, for example `analys
 
 Before adding actual `V2_CLAIM_UNDERSTANDING_GATE1` prompt text:
 
-1. Decide how `claimboundary-v2` is represented in prompt frontmatter and validation.
-2. Add or update tests so V2 prompt profile names are accepted without allowing V1 prompt profile reuse.
-3. Keep `claimboundary` and `claimboundary-v2` separate in UCM active profile selection.
-4. Ensure the Admin UI can load, validate, diff, import/export, and activate a `claimboundary-v2` prompt profile without confusing it with V1.
-5. Add a static guard that no V2 prompt profile loads `claimboundary.prompt.md` or V1 sections.
+1. Decide how `claimboundary-v2` is represented in prompt frontmatter and validation. Done in 6B.1b.
+2. Add or update tests so V2 prompt profile names are accepted without allowing V1 prompt profile reuse. Done in 6B.1b.
+3. Keep `claimboundary` and `claimboundary-v2` separate in UCM active profile selection. Done in 6B.1b at the validation/profile-list level; broader approval-state UI is later.
+4. Ensure the Admin UI can load, validate, diff, import/export, and activate a `claimboundary-v2` prompt profile without confusing it with V1. Partially done through existing generic UCM surfaces; task-oriented approval UI is later.
+5. Add a static guard that no V2 prompt profile loads `claimboundary.prompt.md` or V1 sections. Covered by Analyzer V2 boundary guard and prompt-surface registry tests; extend again when prompt text is added.
 
 This is enough for 6B.2 prompt drafting. It is not enough for broad V2 cutover.
 
@@ -300,8 +299,8 @@ Do not attempt a polished UI before the V2 config model is stable. First expose 
 
 | Track | Timing | Output |
 |---|---|---|
-| UCM-0 | before 6B.2 | `claimboundary-v2` prompt profile support and profile-separation tests |
-| UCM-1 | before 6B.2 | model task registry contract for Claim Understanding only |
+| UCM-0 | complete at `2f1b60a4` | `claimboundary-v2` prompt profile support and profile-separation tests |
+| UCM-1 | complete at `2f1b60a4` | blocked model task registry contract for Claim Understanding only |
 | UCM-2 | before Stage 7/Evidence Lifecycle prompts | V2 analysis profile schema proposal and config snapshot shape |
 | UCM-3 | before broad V2 cutover | task-oriented Admin UI read-only dashboard plus approval-state visibility |
 | UCM-4 | before Stage 5/report generation promotion | report-generation profile UI, comparator gate, and rollback controls |
@@ -357,4 +356,4 @@ No live jobs are required for 6B.1 or 6B.2. Any 6B.4 real job must follow commit
 
 Recommended decision: **modify then proceed**.
 
-Proceed with Slice 6B only as sub-slices. Slice 6B.1a is complete at `24f55d4a`; the immediate next implementation slice is UCM-0 / 6B.1b prompt-profile and task-policy plumbing. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text until 6B.1b is closed and LLM Expert review is updated.
+Proceed with Slice 6B only as sub-slices. Slices 6B.1a and 6B.1b are complete at `24f55d4a` and `2f1b60a4`. The immediate next boundary is 6B.2 prompt draft and contract tests, requiring updated LLM Expert review and explicit Captain prompt-text approval. Do not draft `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, create prompt source files, or add runtime model execution before that approval gate is recorded.

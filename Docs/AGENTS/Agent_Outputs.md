@@ -2827,3 +2827,8 @@ Deputy reviewer `Lorentz` approved this boundary as the right nucleus and warned
 ### 2026-05-14 | Senior Developer | Codex (GPT-5) | V2 Slice 6B.1b UCM Profile And Model Policy -- [Standard] [open-items: yes]
 **For next agent:** Added minimal non-executable UCM/profile/model-policy plumbing: `claimboundary-v2` is valid/manageable for prompt validation/import but not file-seeded; V1/V2 frontmatter separation is tested; `claim_understanding_gate1` has a concrete blocked model-policy registry entry; gateway execution remains blocked until prompt/model/cache approvals are recorded. No prompt file, prompt text, runtime model call, live job, or UI redesign was added.
 -> Docs/AGENTS/Handoffs/2026-05-14_Senior_Developer_V2_Slice_6B1b_UCM_Profile_Model_Policy.md
+
+---
+### 2026-05-14 | Lead Architect | Codex (GPT-5) | V2 Slice 6B.1b Status Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Plan/spec/guardrail docs now mark Slice 6B.1b complete at `2f1b60a4`. The next boundary is 6B.2 prompt draft and contract tests, requiring updated LLM Expert review and explicit Captain prompt-text approval. Broader UCM UI redesign remains a later task-oriented analysis-profile/admin-gate track.
+-> Docs/AGENTS/Handoffs/2026-05-14_Lead_Architect_V2_Slice_6B1b_Status_Consolidation.md

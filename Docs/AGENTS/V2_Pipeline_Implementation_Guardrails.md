@@ -46,7 +46,7 @@ Prompt/model execution:
 - New or changed prompt-backed V2 tasks require Captain approval and LLM Expert review.
 - Prompt/model/cache tasks remain blocked until approval is recorded in the gateway policy.
 - Slice 6A.5 hardening is complete at `724dd9aa`: full ACS prepared-snapshot ingress, shell-placeholder claim-id isolation, ACS/direct-input cache-policy alignment, and explicit prompt-output-to-`ClaimContract` schema mapping tests. Before Slice 6B Claim Understanding prompt/model execution, verify this guard still passes and record Captain approval plus LLM Expert review.
-- Slice 6B uses the review package in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy review returned `MODIFY`. Slice 6B.1a is complete at `24f55d4a`: `ClaimUnderstandingResult` is the gateway output envelope and accepted results carry `ClaimContract`. Keep UCM/profile plumbing, prompt text, and runtime model execution as separate sub-slices. UCM-0 / 6B.1b may add V2 prompt-profile support only if it remains non-executable and preserves clean-room separation.
+- Slice 6B uses the review package in `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md`; deputy review returned `MODIFY`. Slice 6B.1a is complete at `24f55d4a`: `ClaimUnderstandingResult` is the gateway output envelope and accepted results carry `ClaimContract`. Slice 6B.1b is complete at `2f1b60a4`: `claimboundary-v2` is manageable but not file-seeded, and `claim_understanding_gate1` has blocked model-policy metadata. Keep prompt text and runtime model execution as separate sub-slices. Slice 6B.2 requires updated LLM Expert review and explicit Captain prompt-text approval before adding `V2_CLAIM_UNDERSTANDING_GATE1`.
 
 Report generation:
 

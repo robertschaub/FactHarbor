@@ -3,7 +3,7 @@
 **Date:** 2026-05-12  
 **Worktree:** `C:\DEV\FactHarbor` (rehomed from `C:\DEV\FactHarbor-pipeline-rebuild-spec` on 2026-05-14)
 **Branch:** `codex/pipeline-rebuild-spec`  
-**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.1a; Slice 6B.1b UCM/profile plumbing required next
+**Status:** Deputy-approved target architecture; implementation stable through Slice 6B.1b; Slice 6B.2 prompt-text approval gate required next
 **Owner role:** Lead Architect  
 
 ---
@@ -36,9 +36,10 @@ Implementation has started in the new worktree after deputy approval of this tar
 | Slice 5: gateway governance skeleton | done | `aa07554f` | Prompt/model/cache governance is static and non-executable |
 | Slice 6A: Claim Understanding contracts | done | `617f8540` | V2 ClaimContract schema/fixture and pure ACS prepared-snapshot migration adapter |
 | Slice 6A.5: pre-6B contract/wiring hardening | done | `724dd9aa` | Full ACS snapshot ingress, shell-placeholder isolation, cache-policy alignment, and 6B schema alignment tests completed without prompt/model execution |
-| Slice 6B.0: Claim Understanding prompt/model review package | modify | `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` | Deputy reviews required 6B.1a result-envelope contract and still require 6B.1b UCM/profile/model-policy plumbing before prompt text or execution |
+| Slice 6B.0: Claim Understanding prompt/model review package | modify | `Docs/WIP/2026-05-14_V2_Slice_6B_Prompt_Model_Review_Package.md` | Deputy reviews required 6B.1a result-envelope contract and 6B.1b UCM/profile/model-policy plumbing before prompt text or execution |
 | Slice 6B.1a: Claim Understanding result envelope | done | `24f55d4a` | Non-executable `ClaimUnderstandingResult` envelope added; accepted outputs carry `ClaimContract`, blocked/damaged outputs carry typed reasons without fabricating a contract |
-| Slice 6B.1b: UCM/profile/model-policy plumbing | required next | not started | Add minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata without enabling execution |
+| Slice 6B.1b: UCM/profile/model-policy plumbing | done | `2f1b60a4` | `claimboundary-v2` profile/frontmatter support, V1/V2 profile separation, and blocked task model-policy metadata added without prompt text, file seeding, or execution |
+| Slice 6B.2: prompt draft + contract tests | approval required next | not started | Requires updated LLM Expert review and explicit Captain prompt-text approval before adding `V2_CLAIM_UNDERSTANDING_GATE1` prompt text |
 | Slice 6B: Claim Understanding prompt/model execution | blocked | not started | Requires explicit Captain prompt-change approval and LLM Expert review |
 
 No live jobs have been used for these slices. Approved live-job budget remaining: 8.
@@ -56,6 +57,7 @@ flowchart LR
   S6B0["6B review package"]
   S6B1A["6B.1a result envelope"]
   S6B1B["6B.1b UCM/profile plumbing"]
+  S6B2["6B.2 prompt draft + tests"]
   S6B["Claim Understanding prompt/model execution"]
   S7["Evidence lifecycle"]
   S8["Boundary formation"]
@@ -68,15 +70,16 @@ flowchart LR
 
   S0 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6A
   S6A --> S6A5 --> S6B0 --> S6B1A --> S6B1B
-  S6B1B -->|"Captain approval + LLM Expert review required"| S6B
+  S6B1B -->|"Captain prompt approval + LLM Expert review required"| S6B2
+  S6B2 --> S6B
   S6B --> S7 --> S8 --> S9 --> S10 --> S11 --> S12 --> S13 --> S14
 
   classDef done fill:#dff5e3,stroke:#2f7d32,color:#102a12
   classDef blocked fill:#fff0cc,stroke:#9a6700,color:#3a2600
   classDef future fill:#eef2ff,stroke:#4f5fa8,color:#151a3a
-  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A done
+  class S0,S1,S2,S3,S4,S5,S6A,S6A5,S6B0,S6B1A,S6B1B done
   class S6B blocked
-  class S6B1B,S7,S8,S9,S10,S11,S12,S13,S14 future
+  class S6B2,S7,S8,S9,S10,S11,S12,S13,S14 future
 ```
 
 Current architectural boundary:
@@ -128,7 +131,7 @@ flowchart TB
   class LLM,EV,CAB,VER,AGG future
 ```
 
-Slice 6B.1a is complete. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`, and the first blocker is now closed by the `ClaimUnderstandingResult` envelope. The next non-executable implementation boundary is 6B.1b UCM/profile/model-policy plumbing. Executable Slice 6B Claim Understanding can start only after the Captain approves prompt-change work and LLM Expert review is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
+Slice 6B.1b is complete. Slice 6B.0 prepared the prompt/model review package and UCM prerequisites; deputy review returned `MODIFY`, and the pre-prompt blockers are now closed by the `ClaimUnderstandingResult` envelope plus minimal UCM/profile/model-policy plumbing. The next implementation boundary is 6B.2 prompt draft and contract tests, which requires updated LLM Expert review and explicit Captain prompt-text approval. Executable Slice 6B Claim Understanding can start only after prompt text is approved and the later runtime execution gate is recorded. Until then, V2 stays non-executable for real analysis and V1 remains the product runtime.
 
 ### 1.1.1 Final Implementation Readiness Review - 2026-05-14
 
@@ -976,7 +979,16 @@ LLM Expert review found that a direct `ClaimContract` prompt output cannot hones
 - structural fields such as hashes, current date, profile ids, and ACS migration facts are copied by gateway/migration code, not invented by the LLM;
 - direct-input success does not require or fabricate `prepared-stage1-v1` migration metadata.
 
-The remaining pre-prompt blocker is 6B.1b: minimal `claimboundary-v2` prompt-profile support and task-oriented model-policy metadata for `claim_understanding_gate1`, still with execution blocked.
+**Post-6B.1b update**
+
+Slice 6B.1b implemented the minimal UCM/profile/model-policy plumbing at `2f1b60a4`:
+
+- `claimboundary-v2` is valid for prompt frontmatter and UCM prompt management, but remains excluded from file seeding until an approved prompt source file exists;
+- V1 `claimboundary` and V2 `claimboundary-v2` prompt profiles are validated as separate frontmatter profiles;
+- `claim_understanding_gate1` has a concrete, blocked model-policy metadata record covering tier, temperature, call budget, schema retry count, timeout, token budget, fallback, and escalation behavior;
+- gateway execution remains blocked until prompt, model, and cache approvals are all recorded.
+
+The next boundary is 6B.2 prompt draft and contract tests. Do not add `V2_CLAIM_UNDERSTANDING_GATE1` prompt text, prompt source files, or runtime model calls without updated LLM Expert review and explicit Captain prompt-text approval.
 
 ---
 
