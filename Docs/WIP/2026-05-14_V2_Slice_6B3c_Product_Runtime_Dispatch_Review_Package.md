@@ -1,9 +1,9 @@
 # V2 Slice 6B.3c-2 Product Runtime Dispatch Review Package
 
 **Date:** 2026-05-14
-**Status:** Product runtime dispatch remains blocked; post-readiness review permits only another non-executable owner/activation contract slice
+**Status:** Product runtime dispatch remains blocked; superseded for post-3B3 wiring by `Docs/WIP/2026-05-14_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md`
 **Owner role:** Lead Architect / Captain deputy
-**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`
+**Current stable implementation:** 6B.3c-1 complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`
 
 ---
 

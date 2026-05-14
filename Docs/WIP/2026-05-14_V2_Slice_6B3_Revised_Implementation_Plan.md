@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c review returned `MODIFY`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4 product wiring gate is docs-only and product wiring remains blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -335,6 +335,17 @@ For 3B1, prompt rendering, cache-decision construction, provider callback accept
 Post-3B2 deputy review returned `MODIFY/MODIFY` for 6B.3c-3B3. 3B3 may be specified only as a narrowed internal direct-text owner slice in `runtime-dispatch.ts`: owner-built prompt variables, owner-created post-render provenance, runtime no-store cache decision, adapter call through injected provider callback only, and one private executable-clone helper if required by the adapter. Product wiring, provider SDKs, public surfaces, ACS/direct URL execution, cache read/write, approval flips, prompt/config changes, live jobs, and V1 reuse remain blocked.
 
 6B.3c-3B3 is complete as that narrowed internal direct-text owner slice. `runtime-dispatch.ts` now renders the V2 prompt after satisfied readiness, builds the runtime no-store cache decision, calls the adapter only through the injected provider callback, and confines executable gateway task state to the private runtime-dispatch clone helper. Product wiring, public surfaces, ACS/direct URL execution, built-in provider SDKs, cache read/write, prompt/config changes, live jobs, and V1 reuse remain blocked.
+
+Post-3B3 product wiring review returned `MODIFY/BLOCK`. Product runtime wiring is not approved. The next stable step is the docs-only gate `Docs/WIP/2026-05-14_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md`.
+
+6B.3c-4 consolidation:
+
+- no source files are approved by the gate itself;
+- product runtime wiring must not start until a later deputy review approves a source package;
+- the source package must define product-owned runtime approval authority, provider callback factory ownership outside Analyzer V2, API acceptance mode, direct-text-only input limits, public-surface leak guards, rollback behavior, failure classification, live-job discipline, and V1-removal separation;
+- initial source, if later approved, should be env-gated/admin-internal, direct text only, no public UI selector change, no report/schema expansion, no ACS/direct URL execution, no cache read/write, no provider SDK imports in Analyzer V2, no V1 cleanup, and no live jobs before commit and runtime refresh.
+
+6B.3c-4 gate review returned split `MODIFY/BLOCK`, so there is no deputy-team consent for source wiring. Product paths must stay unreachable from `runtime-dispatch.ts`; only guard/test hardening that preserves the current blocked topology is low-risk. A future source package must first resolve product-owned approval authority, provider callback factory ownership, API acceptance mode, partial-result behavior, and the current product-path transitive reach into gateway policy/cache-governance metadata.
 
 ## 8. Approval Gate Before Code
 

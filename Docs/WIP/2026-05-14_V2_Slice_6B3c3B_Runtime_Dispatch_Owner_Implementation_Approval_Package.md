@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-3B Runtime Dispatch Owner Implementation Approval Package
 
 **Date:** 2026-05-14
-**Status:** 6B.3c-3B1 and 6B.3c-3B2 implemented as inert contracts only; 3B3 remains blocked pending review
+**Status:** 6B.3c-3B1, 3B2, and 3B3 complete; product wiring remains blocked pending the 6B.3c-4 wiring gate
 **Owner role:** Lead Architect / Captain deputy
 **Pre-3B1 baseline:** `a53564f0` (`docs: narrow v2 runtime dispatch owner package`)
 
@@ -323,6 +323,31 @@ Still blocked after 3B3:
 - product execution path wiring;
 - API/UI/report/export/public diagnostics;
 - built-in provider SDK imports or provider callback factories;
+- cache read/write and cache IO;
+- ACS execution and direct URL execution;
+- approval/status mutation of shipped gateway policy;
+- prompt source or config default changes;
+- live jobs;
+- V1 code, prompt, profile, section, or type reuse.
+
+## 14. Post-3B3 Product Wiring Review
+
+Post-3B3 deputy review returned `MODIFY/BLOCK` for product runtime wiring.
+
+Consolidated decision:
+
+- 3B3 remains valid as an internal direct-text owner.
+- Product wiring is not approved.
+- The next approved step is docs-only: `Docs/WIP/2026-05-14_V2_Slice_6B3c4_Product_Runtime_Dispatch_Wiring_Gate.md`.
+- No source files may import or call `executeClaimUnderstandingRuntimeDispatch(...)` from product paths until a later source package is reviewed and approved.
+
+The later source package must define runtime approval authority, provider callback factory ownership outside Analyzer V2, direct-text-only limits, API acceptance mode, public-surface leak guards, rollback behavior, failure classification, live-job discipline, and V1-removal separation.
+
+Still blocked after this review:
+
+- product execution path wiring;
+- API/UI/report/export/public diagnostics;
+- built-in provider SDK imports or provider callback factories inside Analyzer V2;
 - cache read/write and cache IO;
 - ACS execution and direct URL execution;
 - approval/status mutation of shipped gateway policy;
