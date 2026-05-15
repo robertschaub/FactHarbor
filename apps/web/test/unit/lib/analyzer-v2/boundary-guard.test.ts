@@ -1824,15 +1824,17 @@ describe("analyzer-v2 boundary guard", () => {
     ]);
   });
 
-  it("keeps Evidence Lifecycle source-acquisition contract-only before provider wiring", () => {
+  it("keeps Evidence Lifecycle source-acquisition controlled-harness-only before provider wiring", () => {
     const sourceAcquisitionFiles = collectFiles(evidenceLifecycleSourceAcquisitionRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
     );
     const violations: string[] = [];
 
     expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/structural-executor.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types.ts",
     ]);
 
@@ -1842,6 +1844,21 @@ describe("analyzer-v2 boundary guard", () => {
         || content.includes("RETRIEVAL_POLICY_CATALOG")
         || content.includes("buildPolicySnapshot")) {
         violations.push(`${toPosix(path.relative(webRoot, sourcePath))} owns private static policy constants`);
+      }
+      for (const forbiddenAuthorityFlag of [
+        "productionRuntime: true",
+        "providerSdk: true",
+        "network: true",
+        "parser: true",
+        "searchFetch: true",
+        "cacheStorage: true",
+        "sourceReliability: true",
+        "productRuntime: true",
+        "publicExposure: true",
+      ]) {
+        if (content.includes(forbiddenAuthorityFlag)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} enables forbidden source-acquisition authority ${forbiddenAuthorityFlag}`);
+        }
       }
 
       const sourceFile = parseSource(sourcePath);
@@ -1870,6 +1887,9 @@ describe("analyzer-v2 boundary guard", () => {
         if (isSearchFetchProviderImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
         }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports network/parser dependency ${specifier}`);
+        }
         if (isSourceReliabilityImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
         }
@@ -1885,6 +1905,20 @@ describe("analyzer-v2 boundary guard", () => {
         if (isTestOrMockImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
         }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
       }
     }
 
