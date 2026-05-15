@@ -1,13 +1,21 @@
 # FactHarbor Current Status
 
 **Version**: v2.11.0
-**Last Updated**: 2026-04-25
+**Last Updated**: 2026-05-15
 **Phase**: **Alpha**
-**Status**: ClaimAssessmentBoundary pipeline is operational. The current engineering focus has shifted from the April 15 Phase 7-only framing to the April 24 monitor-driven pipeline integrity and selection-readiness track. Recent work fixed report markdown/warning cleanup, stale verdict diagnostics, runner concurrency claiming, prepared Stage 1 retry diagnostics, stale claim-selection seeding, verdict citation integrity behavior, a Stage 1 validator-context gap where one-claim approvals did not see the input-derived `distinctEvents` inventory, and a Stage 4 deterministic-mode gap where self-consistency still ran stochastic reruns despite `deterministic=true`. Do **not** treat the session as fully closed: Stage 1 time-to-selection, broad-input Stage 1 quality, Stage 2 evidence lifecycle/provenance invariants, evidence-pool variance, runtime provenance drift, terminal-progress finalization, long-stage heartbeats, and warning materiality remain active work.
+**Status**: V2 pipeline rebuild is the current strategic execution track. `Docs/STATUS/Backlog.md` is the authoritative active queue; this file is a high-level snapshot and historical context. V1 ClaimAssessmentBoundary work is maintenance-only until V2 cutover readiness. The V2 4C3b hidden direct-text runtime path is now product-reachable after `01ba500e`, but only through the approved triple gate: stored variant `claimboundary-v2`, V2 shell gate enabled, and `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`. The next V2 gate is 4C3c smoke-readiness verification with committed/refreshed runtime state and hidden-artifact inspection proof; no live smoke, public exposure, cache IO, ACS/direct URL execution, or V1 cleanup is implied by this status.
 
 ---
 
-## Current Focus (2026-04-24 Monitor Session)
+## Current Execution Snapshot (2026-05-15)
+
+- **Canonical queue:** `Docs/STATUS/Backlog.md` is authoritative for active execution order. ACTIVE/OPEN rows in the April monitor queue now carry owner and next-action/blocker fields.
+- **V2 implementation state:** 4C3b hidden direct-text source wiring, bounded hidden artifact sink, and the P1 product-reachability fix are committed. The public result remains the damaged pre-cutover envelope.
+- **Next V2 gate:** 4C3c is smoke-readiness verification, not broad product activation. It must prove that one Captain-defined direct-text live smoke can create an inspectable hidden artifact without public leakage after source commit and runtime refresh.
+- **V1 posture:** V1 analyzer tasks remain maintenance-only for correctness, integrity, observability, and safety. Do not interpret V1 monitor work as a plan to continue or preserve V1 beyond V2 cutover.
+- **Open planning risk:** Static `CAPTAIN_APPROVAL` remains planned temporary debt until UCM/task-policy-derived activation authority exists.
+
+## April Monitor Context (2026-04-24)
 
 - **Strategic direction:** V2 pipeline is intended to replace the V1 ClaimAssessmentBoundary pipeline. There is no longer a plan to “complete” V1; V1 work is maintenance-only (correctness, safety, integrity, and observability) until V2 reaches cutover readiness.
 - **Quality and integrity remain first.** The next slice should improve evidence/provenance invariants, citation integrity, warning materiality, and Stage 1 diagnostics before broad optimization.
@@ -1157,6 +1165,6 @@ All remaining work is Alpha scope. See [Backlog](Backlog.md) for the full priori
 
 ---
 
-**Last Updated**: 2026-04-24
+**Last Updated**: 2026-05-15
 **Actual Version**: 2.11.0 (Code) | 3.0.0-cb (Schema) | `v1.0.0-poc` (Tag)
-**Document Status**: Current Alpha snapshot. Historical sections below remain for context; current prioritization lives in the top status block and in [Backlog](Backlog.md).
+**Document Status**: High-level Alpha snapshot. Current prioritization lives in [Backlog](Backlog.md); historical sections above remain for context and must not override the canonical active queue.

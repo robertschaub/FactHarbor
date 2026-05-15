@@ -368,3 +368,29 @@ The fix keeps the 4C3b design default-closed while making the approved path oper
 - shell/orchestrator/run-context only thread and freeze the status;
 - approval, provider, model, prompt, cache, timeout, and budget values remain from the deputy-approved temporary activation profile, not from env or job input;
 - public damaged envelope behavior, no-cache-IO behavior, no ACS/direct URL execution, and no-live-job scope remain unchanged.
+
+## 18. 4C3c Smoke-Readiness Definition
+
+Plan-review clarification, 2026-05-15: the activation source is no longer unresolved after the 4C3b P1 reachability fix. The product-owned path is `execution-selection.ts` -> `internal-runner-queue.ts` -> V2 shell/orchestrator -> `PipelineRunContext`, where the selected status is frozen into the activation snapshot. 4C3c must validate that path end-to-end under live runtime conditions; it must not broaden the activation authority.
+
+4C3c may start only when all of the following are true:
+
+- the 4C3b/P1 source state is committed and the working tree state for the smoke is recorded;
+- the web/runtime process has been restarted or otherwise refreshed so the committed source and env gates are live;
+- prompt/config state has been reseeded or explicitly verified current when applicable;
+- stored job variant selection is `claimboundary-v2`;
+- the V2 shell gate is enabled;
+- the dedicated runtime kill switch is exactly `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`;
+- the smoke input is one Captain-defined direct-text input, used verbatim;
+- the expected hidden artifact inspection path is prepared before submission.
+
+4C3c acceptance requires proof that:
+
+- the hidden direct-text Claim Understanding runtime executed and wrote an inspectable internal `v2_observability_ledger` artifact;
+- public API/UI/report/export/compatibility output stayed on the damaged pre-cutover envelope and exposed no activation snapshot or hidden artifact pointer;
+- cache read/write remained blocked;
+- ACS prepared snapshots and direct URL inputs remained blocked for runtime dispatch;
+- provider/model/prompt/cache authority came from the frozen activation profile, not env or job input;
+- rollback is still closing either the V2 shell gate or the dedicated runtime kill switch.
+
+If any of these checks fail, classify the result before further edits: keep the narrow evidence-backed part, quarantine speculative broadening, or revert the attempted smoke-only change. Do not expand to more live jobs until the failed 4C3c smoke is reviewed.

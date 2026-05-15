@@ -481,6 +481,7 @@ Post-4C3a hidden-wiring debate:
 - `execution-selection.ts` owns the env kill-switch read, `internal-runner-queue.ts` passes only the selected status, and `run-context.ts` freezes it in the activation snapshot;
 - env remains a kill-switch selector only and does not supply approval/model/provider/config authority;
 - no live jobs were submitted for the fix.
+- 4C3c is now defined as smoke-readiness verification of that committed/refreshed activation path, with acceptance checks recorded in `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md` section 18.
 
 ## 8. Approval Gate Before Code
 
