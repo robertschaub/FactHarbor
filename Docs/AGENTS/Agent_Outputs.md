@@ -3101,3 +3101,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7L-1 Query-Planning Runtime -- [Significant] [open-items: yes]
 **For next agent:** Implemented Captain-approved 7L-1 at `6162e057`: hidden/internal direct-text Evidence Lifecycle query-planning prompt/model runtime for accepted `ClaimContract` input only. The implementation records Captain approval (`Approved`, `2026-05-15T20:43:42.6482362Z`) against `Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md`, resolves shipped gateway/model policy internally, blocks invalid IDs and missing/`und` language before prompt/provider, uses only an injected provider boundary, keeps cache no-store/no-read, and leaves product/public/source/live/V1 surfaces untouched. Next gate is post-7L-1 review/consolidation before source acquisition, product wiring, live smoke, or broader prompt/model execution.
 -> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7L1_Query_Planning_Runtime.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7M Post-7L-1 Consolidation -- [Standard] [open-items: yes]
+**For next agent:** Committed docs-only 7M after Senior Developer, Code Reviewer, and LLM Expert all approved the next-step proposition. The next V2 action should be a 7M-1 source package for hidden query-plan inspection and non-executable query-plan-to-source-acquisition handoff only. Do not jump to source acquisition, provider/search/fetch, Source Reliability, cache IO, product wiring, public exposure, live jobs, ACS/direct URL execution, or V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7M_Post_7L1_Consolidation.md
