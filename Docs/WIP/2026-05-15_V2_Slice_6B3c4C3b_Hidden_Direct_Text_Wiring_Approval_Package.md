@@ -254,3 +254,10 @@ Verification:
 - provider SDK scan found SDK imports only in `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`;
 - cache/config/job-history IO scan found no forbidden access in the new activation path;
 - public-surface leak scan found no activation snapshot, hidden artifact, artifact sink, or runtime activation import leakage.
+
+## 14. Review Follow-Up
+
+Post-implementation review approved 4C3b and raised one pre-4C3c action:
+
+- F1 was addressed before 4C3c: the temporary in-memory `v2_observability_ledger` store now caps both retained ledgers and retained records per ledger, and reads/clears no longer create empty ledger entries.
+- F2 is accepted planned temporary debt: `CAPTAIN_APPROVAL` remains a static deputy-approved temporary activation profile for 4C3b. It must be replaced by real UCM/task-policy-derived approval when that storage and activation authority are ready.

@@ -2999,3 +2999,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 4C3b Hidden Direct-Text Wiring -- [Significant] [open-items: yes]
 **For next agent:** Implemented Captain-approved 4C3b hidden direct-text source wiring. `claim-understanding-runtime-activation.ts` owns executable gateway/provider-boundary construction, `PipelineRunContext` freezes the activation snapshot, `runtime-stage.ts` records hidden artifacts only in `v2_observability_ledger`, and public result/report/UI/export/compatibility surfaces remain unchanged. Default kill switch is closed; no live jobs were submitted. Next gate is 4C3c committed/runtime-refreshed live smoke only.
 -> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_4C3b_Hidden_Direct_Text_Wiring.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 4C3b Review F1 Artifact Sink Bounds -- [Standard] [open-items: yes]
+**For next agent:** Addressed review F1 before 4C3c by bounding the temporary in-memory `v2_observability_ledger`: retained ledgers and records per ledger are capped, and read/clear do not create empty retained ledgers. F2 remains planned temporary debt: static `CAPTAIN_APPROVAL` must be replaced by UCM/task-policy-derived authority later.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_4C3b_Review_F1_Artifact_Sink_Bounds.md

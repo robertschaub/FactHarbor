@@ -7,6 +7,8 @@ import type {
 
 export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION =
   "v2.claim-understanding.runtime-artifact-sink.0";
+export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT = 64;
+export const CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER = 16;
 
 export type ClaimUnderstandingRuntimeArtifact = {
   artifactVersion: typeof CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION;
@@ -50,17 +52,40 @@ export type ClaimUnderstandingRuntimeInMemoryArtifactSink =
     readonly records: readonly ClaimUnderstandingRuntimeArtifact[];
   };
 
-const globalRuntimeArtifacts = new Map<string, ClaimUnderstandingRuntimeArtifact[]>();
+const runtimeArtifactLedgers = new Map<string, ClaimUnderstandingRuntimeArtifact[]>();
 
 function recordsForLedger(ledgerId: string): ClaimUnderstandingRuntimeArtifact[] {
-  const existing = globalRuntimeArtifacts.get(ledgerId);
+  const existing = runtimeArtifactLedgers.get(ledgerId);
   if (existing) {
+    runtimeArtifactLedgers.delete(ledgerId);
+    runtimeArtifactLedgers.set(ledgerId, existing);
     return existing;
   }
 
   const records: ClaimUnderstandingRuntimeArtifact[] = [];
-  globalRuntimeArtifacts.set(ledgerId, records);
+  runtimeArtifactLedgers.set(ledgerId, records);
+
+  while (runtimeArtifactLedgers.size > CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT) {
+    const oldestLedgerId = runtimeArtifactLedgers.keys().next().value;
+    if (!oldestLedgerId) {
+      break;
+    }
+    runtimeArtifactLedgers.delete(oldestLedgerId);
+  }
+
   return records;
+}
+
+function appendBoundedRecord(
+  records: ClaimUnderstandingRuntimeArtifact[],
+  artifact: ClaimUnderstandingRuntimeArtifact,
+): void {
+  const recordsToDrop =
+    records.length - CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER + 1;
+  if (recordsToDrop > 0) {
+    records.splice(0, recordsToDrop);
+  }
+  records.push(artifact);
 }
 
 export function createClaimUnderstandingRuntimeInMemoryArtifactSink(
@@ -75,7 +100,7 @@ export function createClaimUnderstandingRuntimeInMemoryArtifactSink(
     publicPointerExposure: "forbidden",
     records,
     record: (artifact) => {
-      records.push(artifact);
+      appendBoundedRecord(records, artifact);
     },
   };
 }
@@ -83,9 +108,9 @@ export function createClaimUnderstandingRuntimeInMemoryArtifactSink(
 export function readClaimUnderstandingRuntimeArtifacts(
   ledgerId: string,
 ): readonly ClaimUnderstandingRuntimeArtifact[] {
-  return [...recordsForLedger(ledgerId)];
+  return [...(runtimeArtifactLedgers.get(ledgerId) ?? [])];
 }
 
 export function clearClaimUnderstandingRuntimeArtifacts(ledgerId: string): void {
-  recordsForLedger(ledgerId).length = 0;
+  runtimeArtifactLedgers.delete(ledgerId);
 }

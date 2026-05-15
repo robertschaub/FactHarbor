@@ -1,10 +1,47 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT,
+  CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER,
   CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
   clearClaimUnderstandingRuntimeArtifacts,
   createClaimUnderstandingRuntimeInMemoryArtifactSink,
   readClaimUnderstandingRuntimeArtifacts,
+  type ClaimUnderstandingRuntimeArtifact,
 } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
+
+function artifact(
+  ledgerId: string,
+  artifactId: string,
+): ClaimUnderstandingRuntimeArtifact {
+  return {
+    artifactVersion: CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
+    artifactId,
+    ledgerId,
+    visibility: "internal_admin_only",
+    publicPointerExposure: "forbidden",
+    runId: artifactId,
+    inputSource: "direct_input",
+    executionStatus: "blocked",
+    gatewayTaskId: "claim_understanding_gate1",
+    gatewayTaskStatus: "not_constructed",
+    activationSnapshotHash: "activation-hash",
+    configSnapshotHash: null,
+    promptContentHash: null,
+    renderedPromptHash: null,
+    providerTelemetry: null,
+    schemaOutcome: {
+      status: "not_attempted",
+      blockedReason: null,
+      damagedReason: null,
+    },
+    failureState: {
+      blockedReason: "runtime_activation_disabled",
+      failureMessage: null,
+    },
+    cacheDecision: null,
+    warningMateriality: "admin_only_internal",
+  };
+}
 
 describe("Analyzer V2 Claim Understanding runtime artifact sink", () => {
   it("records hidden runtime artifacts in an internal observability ledger without public pointers", async () => {
@@ -12,34 +49,7 @@ describe("Analyzer V2 Claim Understanding runtime artifact sink", () => {
     clearClaimUnderstandingRuntimeArtifacts(ledgerId);
     const sink = createClaimUnderstandingRuntimeInMemoryArtifactSink(ledgerId);
 
-    await sink.record({
-      artifactVersion: CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
-      artifactId: "artifact-1",
-      ledgerId,
-      visibility: "internal_admin_only",
-      publicPointerExposure: "forbidden",
-      runId: "job-artifact",
-      inputSource: "direct_input",
-      executionStatus: "blocked",
-      gatewayTaskId: "claim_understanding_gate1",
-      gatewayTaskStatus: "not_constructed",
-      activationSnapshotHash: "activation-hash",
-      configSnapshotHash: null,
-      promptContentHash: null,
-      renderedPromptHash: null,
-      providerTelemetry: null,
-      schemaOutcome: {
-        status: "not_attempted",
-        blockedReason: null,
-        damagedReason: null,
-      },
-      failureState: {
-        blockedReason: "runtime_activation_disabled",
-        failureMessage: null,
-      },
-      cacheDecision: null,
-      warningMateriality: "admin_only_internal",
-    });
+    await sink.record(artifact(ledgerId, "artifact-1"));
 
     expect(sink).toMatchObject({
       sinkKind: "v2_observability_ledger",
@@ -53,6 +63,41 @@ describe("Analyzer V2 Claim Understanding runtime artifact sink", () => {
         visibility: "internal_admin_only",
         publicPointerExposure: "forbidden",
         warningMateriality: "admin_only_internal",
+      }),
+    ]);
+  });
+
+  it("keeps the temporary in-memory ledger store bounded", async () => {
+    const ledgerId = "job-artifact:bounded-ledger";
+    clearClaimUnderstandingRuntimeArtifacts(ledgerId);
+    const sink = createClaimUnderstandingRuntimeInMemoryArtifactSink(ledgerId);
+
+    for (let index = 0; index <= CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER; index += 1) {
+      await sink.record(artifact(ledgerId, `artifact-${index}`));
+    }
+
+    expect(readClaimUnderstandingRuntimeArtifacts(ledgerId)).toHaveLength(
+      CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER,
+    );
+    expect(readClaimUnderstandingRuntimeArtifacts(ledgerId)[0]?.artifactId).toBe("artifact-1");
+  });
+
+  it("evicts the oldest retained ledger instead of growing unbounded across runs", async () => {
+    const baseLedgerId = "job-artifact:bounded-store";
+
+    for (let index = 0; index <= CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT; index += 1) {
+      const ledgerId = `${baseLedgerId}:${index}`;
+      clearClaimUnderstandingRuntimeArtifacts(ledgerId);
+      const sink = createClaimUnderstandingRuntimeInMemoryArtifactSink(ledgerId);
+      await sink.record(artifact(ledgerId, `artifact-${index}`));
+    }
+
+    expect(readClaimUnderstandingRuntimeArtifacts(`${baseLedgerId}:0`)).toEqual([]);
+    expect(readClaimUnderstandingRuntimeArtifacts(
+      `${baseLedgerId}:${CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT}`,
+    )).toEqual([
+      expect.objectContaining({
+        artifactId: `artifact-${CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT}`,
       }),
     ]);
   });
