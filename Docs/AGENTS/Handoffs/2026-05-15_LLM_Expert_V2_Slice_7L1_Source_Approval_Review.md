@@ -1,0 +1,9 @@
+---
+### 2026-05-15 | LLM Expert | Codex (GPT-5) | V2 Slice 7L-1 Source Approval Review
+**Task:** Review committed 7L-1 source approval package at `a298c3e7` for Captain approval readiness.
+**Files touched:** `Docs/AGENTS/Handoffs/2026-05-15_LLM_Expert_V2_Slice_7L1_Source_Approval_Review.md`; `Docs/AGENTS/Agent_Outputs.md`.
+**Key decisions:** Decision is `MODIFY`, not approve. The package is strong on file envelope, prompt-source authority, provider/search/fetch/SR/UCM/public/live-job blocks, and scarcity-as-query-intent. It is not yet precise enough because 7L-1 drops several 7L controls from the source approval contract: source-language-first/multilingual behavior is not stated as an implementation or verifier requirement, quality/cost controls are under-specified, and no-V1/clean-room checks should be explicit in stop conditions/verifiers.
+**Open items:** Before Captain approval, revise the package to restore explicit source-language-first and multilingual requirements, add focused tests for source-language/supplementary-lane behavior and no English defaulting, bind query count/batching/retry/cost controls to the model policy/runtime contract, and add explicit no-V1 import/reuse/clone stop conditions.
+**Warnings:** Do not implement 7L-1 from `a298c3e7` as-is. The existing prompt section contains source-language guidance, but the source package must not rely on prompt text alone for approval-critical implementation and verifier requirements.
+**For next agent:** Start from `Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md`; compare against 7L lines covering source-language-first, bounded batching/query counts, no deterministic keyword expansion, and quality/cost controls, then patch the package before requesting Captain approval.
+**Learnings:** Not appended to `Role_Learnings.md`; this is a gate-specific review rather than a durable new pattern.

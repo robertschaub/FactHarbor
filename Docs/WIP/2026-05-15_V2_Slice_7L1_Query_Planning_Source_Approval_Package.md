@@ -18,6 +18,7 @@ The target implementation is narrow:
 
 - accepted direct-text `ClaimContract` input only;
 - selected AtomicClaim IDs validated before prompt rendering;
+- source-language-first and multilingual query planning;
 - clean-room `V2_EVIDENCE_QUERY_PLANNING` prompt section loaded from the already committed V2 prompt file;
 - injected provider call boundary only;
 - strict `EvidenceQueryPlanningResult` schema validation;
@@ -37,6 +38,14 @@ This package incorporates:
 - Code Reviewer 7L package review: `APPROVE`;
 - Senior Developer 7L source-envelope review: `MODIFY`, addressed by 7L tightening.
 
+7L-1 review round on `a298c3e7`:
+
+- LLM Expert: `MODIFY` until source-language-first/multilingual behavior, quality/cost controls, and no-V1 stop conditions are explicit.
+- Senior Developer: `MODIFY` until model/cache policy values, approval traceability, no-store/no-read runtime boundary, and invalid-input no-call tests are explicit.
+- Code Reviewer: `MODIFY` until approval traceability, static guard specificity, and UI leak checks are explicit.
+
+This revision addresses those findings without source implementation.
+
 ## 3. Requested Captain Decision
 
 Requested approval:
@@ -44,6 +53,26 @@ Requested approval:
 > Approved to implement V2 Slice 7L-1 under `Docs/WIP/2026-05-15_V2_Slice_7L1_Query_Planning_Source_Approval_Package.md`, limited to internal hidden direct-text Evidence Lifecycle query-planning prompt/model execution for accepted `ClaimContract` input only. The source package may add the named `evidence_query_planning` gateway/model/cache approval authority, query-planning prompt loader, input/readiness validation, injected-provider model adapter, strict schema validation, hidden/internal result contract tests, and boundary guards. No provider/search/fetch/parser/network execution, no Source Reliability import/call, no UCM/default JSON changes, no prompt text edits, no prompt/profile file seeding, no product/orchestrator/runner wiring, no public API/UI/report/export/compatibility exposure, no live jobs/canary execution, no ACS/direct URL execution, no V1 analyzer/prompt/type/code reuse, and no V1 cleanup.
 
 If Captain does not approve this exact boundary, do not implement 7L-1.
+
+## 3.1 Approval Traceability Requirements
+
+The implementation may not use placeholder approval metadata.
+
+The source package must record:
+
+- approver: `Captain`;
+- approval date/time as the concrete conversation date/time available to the implementer;
+- exact Captain approval wording;
+- artifact pointer: this package path plus the conversation/message reference available in the implementation handoff;
+- implementation commit hash after the commit exists.
+
+Because the current `AnalyzerV2PolicyApproval` shape only supports `status`, `reviewer`, and `approvedAt`, the source code may store only:
+
+- `status: "approved"`;
+- `reviewer: "Captain"`;
+- `approvedAt: <approval timestamp>`.
+
+The exact approval quote, artifact pointer, and implementation commit must be recorded in `Docs/AGENTS/Agent_Outputs.md` and the completion handoff for 7L-1. If any of these are missing, the slice fails approval traceability and must not proceed to live validation.
 
 ## 4. Implementation Boundary
 
@@ -64,9 +93,11 @@ Existing files, with exact allowed purpose:
   - do not alter Claim Understanding policy behavior.
 - `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts`
   - add exactly one query-planning model policy;
+  - use the exact temporary policy values in Section 5.1;
   - approval may be the Captain-approved temporary approval for this slice only.
 - `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts`
   - add exactly one query-planning no-store/no-read cache-policy metadata entry if needed for `canExecuteAnalyzerV2GatewayTask(...)`;
+  - use the exact temporary cache-policy boundary in Section 5.2;
   - no cache read/write implementation.
 - `apps/web/src/lib/analyzer-v2/run-context.ts`
   - freeze query-planning policy/config/model references only if the implementation requires context-carried provenance;
@@ -118,6 +149,54 @@ Required authority rules:
 
 The approval is temporary until UCM/task-policy-derived activation authority exists.
 
+### 5.1 Temporary Model Policy Values
+
+Because UCM/default JSON changes are forbidden in 7L-1, the source package may use only this explicitly approved temporary model policy:
+
+| Field | Value |
+|---|---|
+| `policyId` | `v2.model.evidence_query_planning.0` |
+| `gatewayTaskId` | `evidence_query_planning` |
+| `modelTask` | `understand` |
+| `modelTier` | `standard` |
+| `providerPolicy` | `from_config_snapshot` |
+| `temperature` | `0.1` |
+| `maxCalls` | `1` |
+| `schemaRetryCount` | `0` |
+| `timeoutMs` | `90000` |
+| `maxOutputTokens` | `4000` |
+| `fallbackBehavior` | `none_fail_closed` |
+| `escalationBehavior` | `surface_provider_failure` |
+| `execution` | `blocked_until_prompt_model_cache_approval` |
+| `approval` | Captain-approved temporary approval for this exact package only |
+
+Additional cost/quality constraints:
+
+- selected AtomicClaims must be batched in a single query-planning call where quality allows;
+- accepted query plans must be bounded to at most 6 query entries;
+- code must not add deterministic keyword expansion, language heuristics, source ranking, or semantic routing;
+- no semantic repair loop is approved;
+- schema retry is intentionally `0` for this first hidden slice so malformed output becomes a damaged internal result rather than retry bait.
+
+Any different model tier, temperature, call count, retry count, timeout, output token budget, or query count requires renewed LLM Expert review and Captain approval.
+
+### 5.2 Temporary No-Store/No-Read Cache Boundary
+
+7L-1 may add query-planning cache-policy metadata only to satisfy gateway readiness and provenance.
+
+It must not add cache IO.
+
+If an `AnalyzerV2CacheDecision` is emitted, it must be query-planning-specific and no-store/no-read:
+
+- `canRead: false`;
+- `canWrite: false`;
+- reason: `no_store_runtime_dispatch_safety` or `no_store_until_execution_approved`;
+- namespace must be query-planning-specific;
+- key parts may be recorded for provenance only;
+- no cache lookup, cache write, storage adapter, or private cache mechanism.
+
+The implementation must not extend the Claim Understanding cache-governance behavior for Evidence Lifecycle query planning unless a later cache gate approves it.
+
 ## 6. Prompt Source Authority
 
 7L-1 must not edit prompt text.
@@ -139,6 +218,20 @@ The prompt loader must reject:
 - any prompt-profile seeding or UCM mutation path.
 
 Prompt content hash must be deterministic and recorded in provenance.
+
+## 6.1 Source-Language And Multilingual Requirements
+
+7L-1 must preserve source-language-first query planning.
+
+Implementation requirements:
+
+- prompt variables must carry the detected/current language signal available from the accepted `ClaimContract` or run context;
+- prompt rendering must not force English as the default;
+- accepted query plans must include source-language policy rationale;
+- supplementary-language decisions must be LLM-owned output, not code heuristics;
+- code must not classify language, choose English, or expand/translate queries through deterministic keyword rules.
+
+If the available `ClaimContract` or run context cannot provide the needed language signal, the runtime must block before prompt/model execution rather than defaulting to English.
 
 ## 7. Runtime Contract
 
@@ -190,13 +283,30 @@ Focused tests must prove:
 - unknown/empty/duplicate AtomicClaim IDs are rejected;
 - unselected AtomicClaims do not appear in the rendered prompt or accepted query plan;
 - prompt loader rejects wrong profile/file/section/variables;
+- rendered prompt and accepted query plan preserve the provided source-language signal;
+- English is not used as a default when the input language signal is non-English;
+- supplementary-language decisions are accepted only as LLM output, not deterministic code output;
 - provider callback is injected and no provider SDK import exists in Analyzer V2;
 - parse failure and schema failure are distinguished;
 - blocked/damaged readiness emits no query plan;
 - `evidence_scarcity_handling` remains query intent only;
 - hidden telemetry/artifacts are bounded and internal-only;
-- public app/API/report/export/compatibility surfaces are unchanged;
+- invalid IDs, blocked readiness, or gateway policy blocks prevent both prompt rendering and provider callback invocation;
+- approval/provenance traceability is present in the approved representation and in the completion handoff;
+- public app/API/UI/report/export/compatibility surfaces are unchanged;
 - no live-job path exists.
+
+Static guards must prove:
+
+- no V1 analyzer import, V1 prompt reuse, V1 type reuse, or cloned V1 source path;
+- no provider SDK import inside Analyzer V2;
+- no search/fetch/parser/network import;
+- no direct `fetch(...)`;
+- no Source Reliability import/call;
+- no cache IO or storage import;
+- no UCM/default JSON edit;
+- no product/orchestrator/runner import;
+- no public app/API/UI/report/export/compatibility import.
 
 Minimum verifier commands:
 
@@ -231,6 +341,7 @@ Stop and return to review if implementation requires:
 - live jobs;
 - ACS/direct URL;
 - prompt text edits;
+- V1 analyzer/prompt/type/code import, reuse, or cloning;
 - V1 cleanup.
 
 ## 11. Reviewer Prompt
