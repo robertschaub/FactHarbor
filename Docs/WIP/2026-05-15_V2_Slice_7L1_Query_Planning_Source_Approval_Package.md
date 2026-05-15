@@ -186,6 +186,19 @@ Any different model tier, temperature, call count, retry count, timeout, output 
 
 It must not add cache IO.
 
+Because UCM/default JSON changes are forbidden in 7L-1, the source package may use only this explicitly approved temporary cache-policy registry entry:
+
+| Field | Value |
+|---|---|
+| `policyId` | `v2.semantic.evidence-query-planning` |
+| `requiredDimensions` | `promptProfile`, `promptSectionId`, `promptContentHash`, `modelTask`, `provider`, `modelName`, `temperature`, `outputSchemaVersion`, `configSnapshotHash`, `resultSchemaVersion`, `inputIdentityHash`, `languageContextHash`, `currentDateBucket` |
+| `optionalDimensions` | `adapterVersion` |
+| `approval.status` | `approved` |
+| `approval.reviewer` | `Captain` |
+| `approval.approvedAt` | the Captain approval timestamp recorded under Section 3.1 |
+
+This cache-policy metadata is approval/provenance metadata only. It does not authorize cache reads, writes, storage adapters, durable keys, or reuse of the Claim Understanding cache-governance behavior.
+
 If an `AnalyzerV2CacheDecision` is emitted, it must be query-planning-specific and no-store/no-read:
 
 - `canRead: false`;
@@ -231,7 +244,7 @@ Implementation requirements:
 - supplementary-language decisions must be LLM-owned output, not code heuristics;
 - code must not classify language, choose English, or expand/translate queries through deterministic keyword rules.
 
-If the available `ClaimContract` or run context cannot provide the needed language signal, the runtime must block before prompt/model execution rather than defaulting to English.
+If the available `ClaimContract` or run context cannot provide the needed language signal, the runtime must block before prompt/model execution rather than defaulting to English. The sentinel `und` counts as unavailable for 7L-1 and must block before prompt rendering or provider callback invocation.
 
 ## 7. Runtime Contract
 
@@ -285,6 +298,7 @@ Focused tests must prove:
 - prompt loader rejects wrong profile/file/section/variables;
 - rendered prompt and accepted query plan preserve the provided source-language signal;
 - English is not used as a default when the input language signal is non-English;
+- `und` or missing language signal blocks before prompt rendering and provider callback invocation;
 - supplementary-language decisions are accepted only as LLM output, not deterministic code output;
 - provider callback is injected and no provider SDK import exists in Analyzer V2;
 - parse failure and schema failure are distinguished;
