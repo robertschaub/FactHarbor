@@ -212,6 +212,13 @@ const forbiddenSourceReliabilitySpecifierFragments = [
   "/source-reliability",
   "/sr-service",
 ];
+const forbiddenAcsDirectUrlSpecifierFragments = [
+  "/claim-selection",
+  "/prepared-snapshot",
+  "/direct-url",
+  "/url-resolver",
+  "/retrieval",
+];
 const approvedProviderFactorySdkSpecifiers = new Set([
   "ai",
   "@ai-sdk/anthropic",
@@ -950,6 +957,11 @@ function isSourceReliabilityImport(specifier: string): boolean {
     normalized === forbidden || normalized.startsWith(`${forbidden}/`)
   )
     || forbiddenSourceReliabilitySpecifierFragments.some((fragment) => normalized.includes(fragment));
+}
+
+function isAcsDirectUrlRuntimeImport(specifier: string): boolean {
+  const normalized = toPosix(specifier).toLowerCase();
+  return forbiddenAcsDirectUrlSpecifierFragments.some((fragment) => normalized.includes(fragment));
 }
 
 function isApprovedProviderFactorySdkImport(filePath: string, specifier: string): boolean {
@@ -1819,6 +1831,7 @@ describe("analyzer-v2 boundary guard", () => {
     const violations: string[] = [];
 
     expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types.ts",
     ]);
@@ -1859,6 +1872,9 @@ describe("analyzer-v2 boundary guard", () => {
         }
         if (isSourceReliabilityImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (isAcsDirectUrlRuntimeImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports ACS/direct URL runtime ${specifier}`);
         }
         if (isCacheIoImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
@@ -2085,6 +2101,7 @@ describe("analyzer-v2 boundary guard", () => {
 
     expect(queryPlanningFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/input-envelope.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/model-adapter.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/prompt-loader.ts",
       "src/lib/analyzer-v2/evidence-lifecycle/query-planning/runtime.ts",
@@ -2117,6 +2134,9 @@ describe("analyzer-v2 boundary guard", () => {
         }
         if (isSourceReliabilityImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (isAcsDirectUrlRuntimeImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports ACS/direct URL runtime ${specifier}`);
         }
         if (
           isCacheIoImport(specifier)
