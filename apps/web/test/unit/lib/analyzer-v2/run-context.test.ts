@@ -52,7 +52,26 @@ describe("analyzer-v2 run context", () => {
     );
     expect(context.observabilityLedger).toEqual({
       ledgerId: "job-context:precutover-observability",
-      status: "not_started_precutover",
+      status: "runtime_activation_ready",
     });
+    expect(context.claimUnderstandingRuntimeActivation).toMatchObject({
+      source: "v2_task_policy_snapshot",
+      status: "kill_switch_closed",
+      activationProfileId: "v2.claim-understanding.hidden-direct-text.4c3b",
+      authority: "deputy_approved_temporary_activation_profile",
+      suppliedBy: "product_owned_activation_authority",
+      freezeLocation: "pipeline_run_context",
+      rollbackTarget: {
+        commit: "fc68915d",
+        behavior: "fail_closed_to_v2_damaged_envelope",
+      },
+      hiddenArtifactSink: {
+        kind: "v2_observability_ledger",
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+      },
+    });
+    expect(context.claimUnderstandingRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(context.claimUnderstandingRuntimeActivation.configProfileHash).toMatch(/^[a-f0-9]{64}$/);
   });
 });

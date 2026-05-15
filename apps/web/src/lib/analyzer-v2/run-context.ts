@@ -8,6 +8,12 @@ import type {
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import { isRecord, readAcsResolvedInputText, sha256Json } from "@/lib/analyzer-v2/util";
 
+export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION =
+  "v2.claim-understanding.runtime-activation-snapshot.4c3b";
+export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID =
+  "v2.claim-understanding.hidden-direct-text.4c3b";
+export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT = "fc68915d";
+
 export type PipelineRunConfigSnapshot = {
   source: "not_loaded_pre_provider_wiring_gate";
   configSnapshotHash: null;
@@ -31,7 +37,37 @@ export type PipelineRunModelPolicySnapshot = {
 
 export type PipelineRunObservabilityLedgerHandle = {
   ledgerId: string;
-  status: "not_started_precutover";
+  status: "runtime_activation_ready";
+};
+
+export type PipelineRunClaimUnderstandingRuntimeActivationSnapshot = {
+  snapshotVersion: typeof CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION;
+  source: "v2_task_policy_snapshot";
+  status: "kill_switch_closed" | "enabled_hidden_direct_text";
+  activationProfileId: typeof CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID;
+  activationSnapshotHash: string;
+  authority: "deputy_approved_temporary_activation_profile";
+  suppliedBy: "product_owned_activation_authority";
+  freezeLocation: "pipeline_run_context";
+  approvalPointer: {
+    sourcePackage: "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md";
+    confirmedBy: "Captain";
+    confirmedAt: "2026-05-15";
+  };
+  configProfileHash: string;
+  rollbackTarget: {
+    commit: typeof CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT;
+    behavior: "fail_closed_to_v2_damaged_envelope";
+  };
+  hiddenArtifactSink: {
+    kind: "v2_observability_ledger";
+    visibility: "internal_admin_only";
+    publicPointerExposure: "forbidden";
+  };
+  provider: {
+    providerId: "anthropic";
+    modelId: "claude-haiku-4-5-20251001";
+  };
 };
 
 export type PipelineRunContext = {
@@ -47,6 +83,7 @@ export type PipelineRunContext = {
   promptProfile: PipelineRunPromptProfileRef;
   modelPolicy: PipelineRunModelPolicySnapshot;
   observabilityLedger: PipelineRunObservabilityLedgerHandle;
+  claimUnderstandingRuntimeActivation: PipelineRunClaimUnderstandingRuntimeActivationSnapshot;
 };
 
 export type ClaimBoundaryV2RunContext = PipelineRunContext;
@@ -90,6 +127,50 @@ function buildPromptProfileRef(
     sectionIds: Array.from(new Set(modelPolicy.gatewayTasks
       .map((task) => task.promptPolicy?.sectionId)
       .filter((sectionId): sectionId is string => typeof sectionId === "string" && sectionId.trim().length > 0))),
+  };
+}
+
+function buildClaimUnderstandingRuntimeActivationSnapshot(
+  modelPolicy: PipelineRunModelPolicySnapshot,
+): PipelineRunClaimUnderstandingRuntimeActivationSnapshot {
+  const configProfileHash = sha256Json({
+    activationProfileId: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID,
+    provider: "anthropic",
+    modelId: "claude-haiku-4-5-20251001",
+    modelPolicySnapshotHash: modelPolicy.snapshotHash,
+  });
+  const base = {
+    snapshotVersion: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION,
+    source: "v2_task_policy_snapshot",
+    status: "kill_switch_closed",
+    activationProfileId: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID,
+    authority: "deputy_approved_temporary_activation_profile",
+    suppliedBy: "product_owned_activation_authority",
+    freezeLocation: "pipeline_run_context",
+    approvalPointer: {
+      sourcePackage: "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md",
+      confirmedBy: "Captain",
+      confirmedAt: "2026-05-15",
+    },
+    configProfileHash,
+    rollbackTarget: {
+      commit: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT,
+      behavior: "fail_closed_to_v2_damaged_envelope",
+    },
+    hiddenArtifactSink: {
+      kind: "v2_observability_ledger",
+      visibility: "internal_admin_only",
+      publicPointerExposure: "forbidden",
+    },
+    provider: {
+      providerId: "anthropic",
+      modelId: "claude-haiku-4-5-20251001",
+    },
+  } satisfies Omit<PipelineRunClaimUnderstandingRuntimeActivationSnapshot, "activationSnapshotHash">;
+
+  return {
+    ...base,
+    activationSnapshotHash: sha256Json(base),
   };
 }
 
@@ -150,8 +231,9 @@ export function buildClaimBoundaryV2RunContext(
     modelPolicy,
     observabilityLedger: {
       ledgerId: `${runId}:precutover-observability`,
-      status: "not_started_precutover",
+      status: "runtime_activation_ready",
     },
+    claimUnderstandingRuntimeActivation: buildClaimUnderstandingRuntimeActivationSnapshot(modelPolicy),
   };
 }
 

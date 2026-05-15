@@ -104,6 +104,11 @@ describe("analyzer-v2 shell", () => {
       "cacheDecision",
       "keyParts",
       "renderedPrompt",
+      "activationSnapshot",
+      "activationSnapshotHash",
+      "hiddenArtifact",
+      "artifactId",
+      "artifactSink",
       "sideEffects",
     ]));
     expect(serialized).not.toContain("V2_CLAIM_UNDERSTANDING_GATE1");
@@ -231,6 +236,11 @@ describe("analyzer-v2 shell", () => {
       "keyParts",
       "renderedPrompt",
       "renderedPromptHash",
+      "activationSnapshot",
+      "activationSnapshotHash",
+      "hiddenArtifact",
+      "artifactId",
+      "artifactSink",
       "sideEffects",
       "runtimeDispatchStatus",
       "runtimeDispatchBlockedReason",

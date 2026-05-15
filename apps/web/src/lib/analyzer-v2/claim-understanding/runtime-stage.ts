@@ -11,7 +11,6 @@ import {
 import { migrateAcsPreparedSnapshotToClaimContract } from "@/lib/analyzer-v2/claim-understanding/prepared-snapshot";
 import {
   executeClaimUnderstandingRuntimeDispatch,
-  type ClaimUnderstandingRuntimeDispatchRequest,
   type ClaimUnderstandingRuntimeDispatchResult,
 } from "@/lib/analyzer-v2/claim-understanding/runtime-dispatch";
 import {
@@ -35,19 +34,19 @@ import {
   type PipelineRunContext,
 } from "@/lib/analyzer-v2/run-context";
 import { sha256Json } from "@/lib/analyzer-v2/util";
+import {
+  type ClaimUnderstandingRuntimeActivationState,
+  type ClaimUnderstandingRuntimeProviderBoundary,
+} from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
+import {
+  CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
+  type ClaimUnderstandingRuntimeArtifact,
+} from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
 
 export const CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION = "v2.claim-understanding.runtime-stage.0";
 const CLAIM_UNDERSTANDING_RUNTIME_APPROVAL_SNAPSHOT_VERSION =
   "v2.claim-understanding.runtime-approval-snapshot.gateway-policy.0";
 const CLAIMBOUNDARY_V2_PRECUTOVER_RESULT_SCHEMA_VERSION = "4.0.0-cb-precutover";
-
-export type ClaimUnderstandingRuntimeProviderBoundary = {
-  providerCall: ClaimUnderstandingRuntimeDispatchRequest["providerCall"];
-  provider: string;
-  modelName: string;
-  configSnapshotHash: string;
-  temperature: number;
-};
 
 export type ClaimUnderstandingDirectTextRuntimeDispatchOptions = {
   enabled?: boolean;
@@ -55,6 +54,8 @@ export type ClaimUnderstandingDirectTextRuntimeDispatchOptions = {
 };
 
 export type ClaimUnderstandingRuntimeStageOptions = {
+  activation?: ClaimUnderstandingRuntimeActivationState | null;
+  // Retained only so older scaffold callers fail closed instead of regaining execution reachability.
   directTextRuntimeDispatch?: ClaimUnderstandingDirectTextRuntimeDispatchOptions;
 };
 
@@ -72,6 +73,8 @@ export type ClaimUnderstandingRuntimeSideEffects = {
 export type ClaimUnderstandingDirectInputRuntimeBlockedReason =
   | "gateway_policy_not_executable"
   | "runtime_dispatch_not_enabled"
+  | "runtime_activation_disabled"
+  | "runtime_activation_invalid"
   | "runtime_dispatch_model_policy_missing"
   | "runtime_dispatch_provider_callback_missing"
   | "runtime_dispatch_preflight_blocked"
@@ -79,6 +82,7 @@ export type ClaimUnderstandingDirectInputRuntimeBlockedReason =
   | "runtime_dispatch_blocked";
 
 export type ClaimUnderstandingDirectInputRuntimeStatus =
+  | "blocked_by_runtime_activation"
   | "blocked_by_dispatch_preflight"
   | "blocked_by_missing_provider_callback"
   | "blocked_by_dispatch_readiness"
@@ -124,6 +128,11 @@ export type ClaimUnderstandingRuntimeState =
     cacheEligibility: "not_evaluated" | "runtime_no_store";
     sideEffects: ClaimUnderstandingRuntimeSideEffects;
   };
+
+type ClaimUnderstandingDirectInputRuntimeState = Extract<
+  ClaimUnderstandingRuntimeState,
+  { inputSource: "direct_input"; status: ClaimUnderstandingDirectInputRuntimeStatus }
+>;
 
 function noDispatchSideEffects(): ClaimUnderstandingRuntimeSideEffects {
   return {
@@ -318,6 +327,94 @@ function buildRuntimeApprovalSnapshotFromGatewayTask(
   };
 }
 
+function artifactSchemaOutcome(
+  result: ClaimUnderstandingResult | null,
+): ClaimUnderstandingRuntimeArtifact["schemaOutcome"] {
+  if (!result) {
+    return {
+      status: "not_attempted",
+      blockedReason: null,
+      damagedReason: null,
+    };
+  }
+
+  return {
+    status: result.status,
+    blockedReason: result.blockedReason,
+    damagedReason: result.damagedReason,
+  };
+}
+
+async function recordRuntimeArtifact(params: {
+  context: PipelineRunContext;
+  activation: ClaimUnderstandingRuntimeActivationState;
+  status: "blocked" | "completed";
+  gatewayTaskStatus: AnalyzerV2GatewayTaskStatus | "not_constructed";
+  result: ClaimUnderstandingResult | null;
+  blockedReason: string | null;
+  failureMessage: string | null;
+  dispatchResult?: ClaimUnderstandingRuntimeDispatchResult | null;
+}): Promise<void> {
+  const dispatchResult = params.dispatchResult ?? null;
+  const adapterTelemetry = dispatchResult?.status === "completed"
+    ? dispatchResult.adapterOutcome.telemetry
+    : null;
+  const providerTelemetry = adapterTelemetry?.providerId && adapterTelemetry.modelId
+    ? {
+      providerId: adapterTelemetry.providerId,
+      modelId: adapterTelemetry.modelId,
+      inputTokens: adapterTelemetry.tokenUsage.inputTokens,
+      outputTokens: adapterTelemetry.tokenUsage.outputTokens,
+      totalTokens: adapterTelemetry.tokenUsage.totalTokens,
+      durationMs: adapterTelemetry.durationMs,
+    }
+    : null;
+  const cacheDecision = dispatchResult?.cacheDecision
+    ? {
+      reason: dispatchResult.cacheDecision.reason,
+      canRead: dispatchResult.cacheDecision.canRead,
+      canWrite: dispatchResult.cacheDecision.canWrite,
+    }
+    : null;
+
+  await params.activation.artifactSink.record({
+    artifactVersion: CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION,
+    artifactId: sha256Json({
+      runId: params.context.runId,
+      activationSnapshotHash: params.activation.activationSnapshot.activationSnapshotHash,
+      status: params.status,
+      blockedReason: params.blockedReason,
+      failureMessage: params.failureMessage,
+    }),
+    ledgerId: params.activation.artifactSink.ledgerId,
+    visibility: "internal_admin_only",
+    publicPointerExposure: "forbidden",
+    runId: params.context.runId,
+    inputSource: "direct_input",
+    executionStatus: params.status,
+    gatewayTaskId: "claim_understanding_gate1",
+    gatewayTaskStatus: params.gatewayTaskStatus,
+    activationSnapshotHash: params.activation.activationSnapshot.activationSnapshotHash,
+    configSnapshotHash: params.activation.status === "enabled"
+      ? params.activation.runtimeConfigSnapshot.configSnapshotHash
+      : null,
+    promptContentHash: dispatchResult?.status === "completed"
+      ? dispatchResult.promptProvenance.promptContentHash
+      : null,
+    renderedPromptHash: dispatchResult?.status === "completed"
+      ? dispatchResult.promptProvenance.renderedPromptHash
+      : null,
+    providerTelemetry,
+    schemaOutcome: artifactSchemaOutcome(params.result),
+    failureState: {
+      blockedReason: params.blockedReason,
+      failureMessage: params.failureMessage,
+    },
+    cacheDecision,
+    warningMateriality: "admin_only_internal",
+  });
+}
+
 function buildDirectTextRuntimeProvenancePacket(
   frame: ClaimUnderstandingDispatchFrame,
   providerBoundary: ClaimUnderstandingRuntimeProviderBoundary,
@@ -373,7 +470,7 @@ function directRuntimeState(params: {
   runtimeDispatchBlockedReason: string | null;
   cacheEligibility: "not_evaluated" | "runtime_no_store";
   sideEffects: ClaimUnderstandingRuntimeSideEffects;
-}): ClaimUnderstandingRuntimeState {
+}): ClaimUnderstandingDirectInputRuntimeState {
   return {
     stageVersion: CLAIM_UNDERSTANDING_RUNTIME_STAGE_VERSION,
     visibility: "internal_only",
@@ -388,15 +485,46 @@ async function evaluateDirectInputRuntimeDispatch(
   context: PipelineRunContext,
   options: ClaimUnderstandingRuntimeStageOptions,
 ): Promise<ClaimUnderstandingRuntimeState> {
-  const gatewayTask = getPipelineRunGatewayTask(context, "claim_understanding_gate1");
+  const activation = options.activation ?? null;
 
-  if (options.directTextRuntimeDispatch?.enabled !== true) {
+  if (activation?.status === "disabled") {
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: "not_constructed",
+      result: null,
+      blockedReason: activation.disabledReason === "activation_snapshot_invalid"
+        ? "runtime_activation_invalid"
+        : "runtime_activation_disabled",
+      failureMessage: activation.failureMessage,
+    });
+
+    return directRuntimeState({
+      status: "blocked_by_runtime_activation",
+      result: null,
+      blockedReason: activation.disabledReason === "activation_snapshot_invalid"
+        ? "runtime_activation_invalid"
+        : "runtime_activation_disabled",
+      gatewayTaskStatus: "notImplemented",
+      runtimeDispatchStatus: "not_attempted",
+      runtimeDispatchBlockedReason: activation.disabledReason,
+      cacheEligibility: "not_evaluated",
+      sideEffects: noDispatchSideEffects(),
+    });
+  }
+
+  const gatewayTask = activation?.status === "enabled"
+    ? activation.gatewayTask
+    : getPipelineRunGatewayTask(context, "claim_understanding_gate1");
+
+  if (activation?.status !== "enabled") {
     return evaluateDirectInput(context);
   }
 
   const frameResult = buildClaimUnderstandingDispatchFrame(input, context);
   if (frameResult.status === "blocked") {
-    return directRuntimeState({
+    const state = directRuntimeState({
       status: "blocked_by_dispatch_preflight",
       result: null,
       blockedReason: "runtime_dispatch_preflight_blocked",
@@ -406,6 +534,16 @@ async function evaluateDirectInputRuntimeDispatch(
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects(),
     });
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: gatewayTask.status,
+      result: null,
+      blockedReason: state.blockedReason,
+      failureMessage: state.runtimeDispatchBlockedReason,
+    });
+    return state;
   }
 
   const approvalSnapshot = buildRuntimeApprovalSnapshotFromGatewayTask(gatewayTask);
@@ -413,9 +551,9 @@ async function evaluateDirectInputRuntimeDispatch(
     return evaluateDirectInput(context);
   }
 
-  const providerBoundary = options.directTextRuntimeDispatch.providerBoundary;
+  const providerBoundary = activation.providerBoundary;
   if (!hasRuntimeProviderBoundary(providerBoundary)) {
-    return directRuntimeState({
+    const state = directRuntimeState({
       status: "blocked_by_missing_provider_callback",
       result: null,
       blockedReason: "runtime_dispatch_provider_callback_missing",
@@ -425,6 +563,16 @@ async function evaluateDirectInputRuntimeDispatch(
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects(),
     });
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: gatewayTask.status,
+      result: null,
+      blockedReason: state.blockedReason,
+      failureMessage: state.runtimeDispatchBlockedReason,
+    });
+    return state;
   }
 
   const readiness: ClaimUnderstandingDispatchReadinessResult =
@@ -435,7 +583,7 @@ async function evaluateDirectInputRuntimeDispatch(
     });
 
   if (readiness.status === "blocked") {
-    return directRuntimeState({
+    const state = directRuntimeState({
       status: "blocked_by_dispatch_readiness",
       result: null,
       blockedReason: "runtime_dispatch_readiness_blocked",
@@ -445,11 +593,21 @@ async function evaluateDirectInputRuntimeDispatch(
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects(),
     });
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: gatewayTask.status,
+      result: null,
+      blockedReason: state.blockedReason,
+      failureMessage: state.runtimeDispatchBlockedReason,
+    });
+    return state;
   }
 
-  const modelPolicy = getPipelineRunTaskModelPolicy(context, "claim_understanding_gate1");
+  const modelPolicy = activation.modelPolicy ?? getPipelineRunTaskModelPolicy(context, "claim_understanding_gate1");
   if (!modelPolicy) {
-    return directRuntimeState({
+    const state = directRuntimeState({
       status: "runtime_dispatch_blocked",
       result: null,
       blockedReason: "runtime_dispatch_model_policy_missing",
@@ -459,6 +617,16 @@ async function evaluateDirectInputRuntimeDispatch(
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects(),
     });
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: gatewayTask.status,
+      result: null,
+      blockedReason: state.blockedReason,
+      failureMessage: state.runtimeDispatchBlockedReason,
+    });
+    return state;
   }
 
   const dispatchResult = await executeClaimUnderstandingRuntimeDispatch({
@@ -469,7 +637,7 @@ async function evaluateDirectInputRuntimeDispatch(
   });
 
   if (dispatchResult.status === "blocked") {
-    return directRuntimeState({
+    const state = directRuntimeState({
       status: "runtime_dispatch_blocked",
       result: null,
       blockedReason: "runtime_dispatch_blocked",
@@ -479,9 +647,20 @@ async function evaluateDirectInputRuntimeDispatch(
       cacheEligibility: dispatchResult.cacheDecision ? "runtime_no_store" : "not_evaluated",
       sideEffects: dispatchSideEffects(dispatchResult.sideEffects),
     });
+    await recordRuntimeArtifact({
+      context,
+      activation,
+      status: "blocked",
+      gatewayTaskStatus: gatewayTask.status,
+      result: null,
+      blockedReason: state.blockedReason,
+      failureMessage: dispatchResult.failureMessage ?? dispatchResult.blockedReason,
+      dispatchResult,
+    });
+    return state;
   }
 
-  return directRuntimeState({
+  const state = directRuntimeState({
     status: "runtime_dispatch_completed",
     result: dispatchResult.adapterOutcome.claimUnderstandingResult,
     blockedReason: null,
@@ -491,6 +670,17 @@ async function evaluateDirectInputRuntimeDispatch(
     cacheEligibility: "runtime_no_store",
     sideEffects: dispatchSideEffects(dispatchResult.sideEffects),
   });
+  await recordRuntimeArtifact({
+    context,
+    activation,
+    status: "completed",
+    gatewayTaskStatus: gatewayTask.status,
+    result: state.result,
+    blockedReason: null,
+    failureMessage: null,
+    dispatchResult,
+  });
+  return state;
 }
 
 export async function runClaimUnderstandingRuntimeStage(

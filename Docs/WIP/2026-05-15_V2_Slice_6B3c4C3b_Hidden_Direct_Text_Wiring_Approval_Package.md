@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C3b Hidden Direct-Text Wiring Approval Package
 
 **Date:** 2026-05-15
-**Status:** docs-only package after 4C3a implementation; 4C3b source wiring requires Captain confirmation before code
+**Status:** 4C3b source wiring implemented after Captain confirmation; 4C3c live smoke, public exposure, cache IO, ACS/direct URL execution, and V1 cleanup remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `fc68915d` (`feat: add v2 runtime activation contract`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -12,7 +12,9 @@
 
 4C3a added the inert activation-authority contract. 4C3b is the first slice that could make hidden direct-text Claim Understanding execution reachable from the V2 product shell.
 
-This package does **not** approve implementation by itself. It defines the source envelope and constraints that must be Captain-confirmed before code starts.
+This package did **not** approve implementation by itself. It defined the source envelope and constraints that required Captain confirmation before code started.
+
+Captain confirmation was received on 2026-05-15 with the recommended approval wording in Section 12.
 
 4C3b must produce, at most, an internal hidden direct-text Claim Understanding artifact while the public result remains the V2 damaged pre-cutover envelope.
 
@@ -219,4 +221,36 @@ Recommended confirmation wording:
 
 > Approved to implement 4C3b source wiring exactly under `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`: direct-text-only hidden runtime activation, V2-owned observability ledger hidden artifact sink, product-owned activation snapshot frozen in `PipelineRunContext`, fail-closed kill switch, no public API/UI/report/export/compatibility exposure, no cache IO, no ACS/direct URL execution, no live jobs, no V1 reuse, and no V1 cleanup.
 
-Without this confirmation, the next allowed work is review/package refinement only.
+Confirmation was received before implementation.
+
+## 13. 4C3b Implementation Result
+
+4C3b was implemented inside the approved source envelope:
+
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.ts`;
+- `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink.ts`;
+- provider runtime-config/factory contract updates under `apps/web/src/lib/analyzer-v2-runtime/`;
+- `PipelineRunContext` activation snapshot fields in `apps/web/src/lib/analyzer-v2/run-context.ts`;
+- product-owned activation construction in `apps/web/src/lib/analyzer-v2/orchestrator.ts`;
+- direct-text hidden dispatch handoff in `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts`;
+- focused runtime, boundary, public-leak, and routing tests.
+
+Implementation constraints preserved:
+
+- activation defaults to `kill_switch_closed`;
+- disabled activation performs no prompt rendering, provider factory invocation, adapter call, model call, or cache IO;
+- enabled activation is direct-text-only and builds executable gateway state only inside the approved activation owner;
+- hidden runtime artifacts are captured only in the V2-owned `v2_observability_ledger` in-memory sink;
+- public `resultJson`, report markdown, UI, export, compatibility view, and public job events receive no hidden artifact pointer or runtime telemetry;
+- ACS and direct URL execution remain blocked before prompt/cache/provider work;
+- no V1 analyzer, prompt, provider, type, or helper was reused;
+- no live jobs were submitted.
+
+Verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/lib/internal-runner-v2-routing.test.ts` passed 25 files / 201 tests;
+- `npm -w apps/web run build` passed with postbuild prompt/config reseed unchanged;
+- `git diff --check` passed;
+- provider SDK scan found SDK imports only in `apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts`;
+- cache/config/job-history IO scan found no forbidden access in the new activation path;
+- public-surface leak scan found no activation snapshot, hidden artifact, artifact sink, or runtime activation import leakage.

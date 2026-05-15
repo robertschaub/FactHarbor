@@ -129,6 +129,31 @@ describe("Analyzer V2 runtime Claim Understanding provider config contract", () 
     expect(result.snapshot.executionState).toBe("factory_only_not_product_wired");
   });
 
+  it("accepts a supplied config snapshot for hidden direct-text product activation", () => {
+    const snapshot = baseSnapshot({
+      executionState: "product_activation_wired_hidden_direct_text",
+      providerConstruction: {
+        sdkImportState: "imported",
+        callbackCreationState: "created",
+        factorySource: {
+          filePath: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH,
+          allowedSdkSpecifiers: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS,
+          configSnapshotAuthority: "supplied_validated_runtime_config_snapshot_only",
+        },
+      },
+    });
+
+    const result = validateClaimUnderstandingProviderRuntimeConfigSnapshot(snapshot);
+
+    expect(result).toEqual({
+      status: "contract_satisfied",
+      contractVersion: CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_CONFIG_CONTRACT_VERSION,
+      snapshot,
+      blockedReasons: [],
+    });
+    expect(result.snapshot.executionState).toBe("product_activation_wired_hidden_direct_text");
+  });
+
   it("rejects ad hoc or legacy config authority and missing identity values", () => {
     const result = validateClaimUnderstandingProviderRuntimeConfigSnapshot(baseSnapshot({
       source: "caller_supplied_ad_hoc",

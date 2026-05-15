@@ -1,7 +1,7 @@
 # V2 Slice 6B.3 Revised Implementation Plan
 
 **Date:** 2026-05-14
-**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; 6B.3c-4C3a activation-authority contract complete; 6B.3c-4C3b docs-only hidden wiring package complete; public product runtime exposure remains blocked
+**Status:** 6B.3a foundation complete at `2d14c89a`; 6B.3b model adapter complete at `04742922`; 6B.3c-0 structural no-dispatch orchestration complete at `3223d99f`; 6B.3c-1 dispatch-frame contract complete at `8a663d3f`; 6B.3c-2B dispatch-readiness contract complete at `6a9d7143`; 6B.3c-3B3 internal runtime-dispatch owner complete at `d615b699`; 6B.3c-4C1 approval-authority cleanup complete at `0aa31d4`; 6B.3c-4C2a provider runtime config contract complete; 6B.3c-4C2b-0 contract addendum complete; 6B.3c-4C2b provider factory source complete at `7f6f310a`; 6B.3c-4C3a activation-authority contract complete; 6B.3c-4C3b hidden direct-text source wiring complete after Captain confirmation; 4C3c live smoke and public product exposure remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Workspace:** `C:\DEV\FactHarbor`
 **Git branch:** `main`
@@ -456,6 +456,23 @@ Post-4C3a hidden-wiring debate:
 - existing job event/history endpoints are not an acceptable hidden artifact sink for provider telemetry, prompt hashes, runtime provenance, or hidden artifact pointers;
 - recommended hidden sink is a V2-owned `v2_observability_ledger`, with internal local smoke artifact support only for later committed/refreshed 4C3c inspection;
 - 4C3b source remains direct-text-only and must not add cache IO, public API/UI/report/export/compatibility exposure, ACS/direct URL execution, live jobs, V1 reuse, or V1 cleanup.
+
+6B.3c-4C3b implementation consolidation:
+
+- Captain confirmation was received on 2026-05-15 with the exact wording in the 4C3b approval package;
+- `PipelineRunContext` now freezes a product-owned runtime activation snapshot with approval pointer, rollback target, profile/config hash, provider/model identity, and hidden sink policy;
+- `claim-understanding-runtime-activation.ts` owns the only approved executable gateway construction and provider-boundary construction path for hidden direct-text activation;
+- activation defaults to `kill_switch_closed`, so default V2 shell behavior still produces the damaged pre-cutover envelope with no prompt/model/provider/cache work;
+- enabled activation is direct-text-only; ACS and direct URL are blocked before prompt/cache/provider work;
+- hidden runtime artifacts go only to the V2-owned `v2_observability_ledger` in-memory sink and are guarded from public API/UI/report/export/compatibility exposure;
+- no live jobs were submitted and V1 cleanup/removal remains blocked.
+
+6B.3c-4C3b verification:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/lib/internal-runner-v2-routing.test.ts` passed 25 files / 201 tests;
+- `npm -w apps/web run build` passed with prompt/config reseed unchanged;
+- `git diff --check` passed;
+- static scans found provider SDK imports only in the approved factory file, no forbidden cache/config/job-history IO in the activation path, and no public-surface activation/hidden-artifact leakage.
 
 ## 8. Approval Gate Before Code
 

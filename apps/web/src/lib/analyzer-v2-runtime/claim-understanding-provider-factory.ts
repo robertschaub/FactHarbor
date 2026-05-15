@@ -67,9 +67,12 @@ function assertFactorySnapshot(snapshot: ClaimUnderstandingProviderRuntimeConfig
     );
   }
 
-  if (snapshot.executionState !== "factory_only_not_product_wired") {
+  if (
+    snapshot.executionState !== "factory_only_not_product_wired"
+    && snapshot.executionState !== "product_activation_wired_hidden_direct_text"
+  ) {
     throw new ClaimUnderstandingProviderFactoryConfigurationError(
-      "Claim Understanding provider factory requires factory_only_not_product_wired execution state.",
+      "Claim Understanding provider factory requires factory-only or hidden direct-text product activation state.",
     );
   }
 

@@ -37,6 +37,7 @@ export type ClaimUnderstandingProviderRuntimeConfigSnapshot = {
   executionState:
     | "not_executable_contract_only"
     | "factory_only_not_product_wired"
+    | "product_activation_wired_hidden_direct_text"
     | "execution_approved";
   providerConstruction: {
     sdkImportState: "not_imported" | "imported";
@@ -181,7 +182,10 @@ function hasValidProviderConstruction(snapshot: ClaimUnderstandingProviderRuntim
       && factorySource.configSnapshotAuthority === "supplied_validated_runtime_config_snapshot_only";
   }
 
-  if (snapshot.executionState === "factory_only_not_product_wired") {
+  if (
+    snapshot.executionState === "factory_only_not_product_wired"
+    || snapshot.executionState === "product_activation_wired_hidden_direct_text"
+  ) {
     return snapshot.providerConstruction.sdkImportState === "imported"
       && snapshot.providerConstruction.callbackCreationState === "created"
       && factorySource.filePath === CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH

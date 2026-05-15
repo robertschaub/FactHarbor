@@ -41,6 +41,14 @@ const analyzerV2RuntimeActivationContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-runtime-activation.contract.ts",
 );
+const analyzerV2RuntimeActivationPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-runtime-activation.ts",
+);
+const analyzerV2RuntimeArtifactSinkPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "claim-understanding-runtime-artifact-sink.ts",
+);
 const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-factory.ts",
@@ -196,8 +204,11 @@ const runtimeDispatchApprovedImports = new Map<string, Set<string>>([
   ],
 ]);
 const runtimeScaffoldOptionOwnerPaths = new Set([
+  path.resolve(v2AnalyzerRoot, "run-context.ts"),
   claimUnderstandingRuntimeStagePath,
   claimUnderstandingRuntimeDispatchPath,
+  analyzerV2RuntimeActivationPath,
+  analyzerV2RuntimeArtifactSinkPath,
 ].map(toPosix));
 const runtimeScaffoldOptionTerms = [
   "claimUnderstandingRuntime",
@@ -259,6 +270,20 @@ const runtimeStageApprovedImports = new Map<string, Set<string>>([
     "@/lib/analyzer-v2/util",
     new Set(["sha256Json"]),
   ],
+  [
+    "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
+    new Set([
+      "ClaimUnderstandingRuntimeActivationState",
+      "ClaimUnderstandingRuntimeProviderBoundary",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+    new Set([
+      "CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_SINK_VERSION",
+      "ClaimUnderstandingRuntimeArtifact",
+    ]),
+  ],
 ]);
 const analyzerV2RuntimeProviderContractApprovedImports = new Map<string, Set<string>>([
   [
@@ -289,6 +314,71 @@ const analyzerV2RuntimeActivationContractApprovedImports = new Map<string, Set<s
       "AnalyzerV2GatewayTaskId",
       "AnalyzerV2ModelTask",
       "AnalyzerV2PolicyApproval",
+    ]),
+  ],
+]);
+const analyzerV2RuntimeActivationApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/claim-understanding/model-adapter",
+    new Set(["ClaimUnderstandingProviderCall"]),
+  ],
+  [
+    "@/lib/analyzer-v2/claim-understanding/types",
+    new Set(["CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set(["AnalyzerV2GatewayTask", "AnalyzerV2PolicyApproval", "AnalyzerV2TaskModelPolicy"]),
+  ],
+  [
+    "@/lib/analyzer-v2/run-context",
+    new Set([
+      "getPipelineRunGatewayTask",
+      "getPipelineRunTaskModelPolicy",
+      "PipelineRunClaimUnderstandingRuntimeActivationSnapshot",
+      "PipelineRunContext",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2-runtime/claim-understanding-provider-factory",
+    new Set(["buildClaimUnderstandingProviderFactory", "ClaimUnderstandingProviderFactory"]),
+  ],
+  [
+    "@/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract",
+    new Set([
+      "CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_ALLOWED_SDK_IMPORTS",
+      "CLAIM_UNDERSTANDING_PROVIDER_RUNTIME_FACTORY_SOURCE_PATH",
+      "ClaimUnderstandingProviderRuntimeConfigSnapshot",
+    ]),
+  ],
+  [
+    "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+    new Set(["createClaimUnderstandingRuntimeInMemoryArtifactSink", "ClaimUnderstandingRuntimeArtifactSink"]),
+  ],
+]);
+const analyzerV2RuntimeArtifactSinkApprovedImports = new Map<string, Set<string>>([
+  [
+    "@/lib/analyzer-v2/claim-understanding/model-adapter",
+    new Set(["ClaimUnderstandingProviderTelemetry"]),
+  ],
+  [
+    "@/lib/analyzer-v2/gateway/types",
+    new Set(["AnalyzerV2CacheDecision", "AnalyzerV2GatewayTaskId", "AnalyzerV2GatewayTaskStatus"]),
+  ],
+]);
+const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>([
+  [
+    toPosix(analyzerV2OrchestratorPath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
+      "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
+    ]),
+  ],
+  [
+    toPosix(claimUnderstandingRuntimeStagePath),
+    new Set([
+      "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation",
+      "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
     ]),
   ],
 ]);
@@ -1230,6 +1320,94 @@ describe("analyzer-v2 boundary guard", () => {
     expect(violations).toEqual([]);
   });
 
+  it("keeps the 6B.3c-4C3b runtime activation owner imports limited", () => {
+    expect(existsSync(analyzerV2RuntimeActivationPath)).toBe(true);
+    const sourceFile = parseSource(analyzerV2RuntimeActivationPath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeActivationApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`runtime activation owner imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`runtime activation owner imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeActivationPath, specifier)) {
+        violations.push(`runtime activation owner imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`runtime activation owner imports IO/storage dependency ${specifier}`);
+      }
+      if (isClaimUnderstandingPromptLoaderImport(analyzerV2RuntimeActivationPath, specifier)) {
+        violations.push(`runtime activation owner imports prompt loader ${specifier}`);
+      }
+      if (isClaimUnderstandingRuntimeDispatchImport(analyzerV2RuntimeActivationPath, specifier)) {
+        violations.push(`runtime activation owner imports runtime dispatch ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`runtime activation owner imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`runtime activation owner imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 6B.3c-4C3b hidden artifact sink imports limited and non-public", () => {
+    expect(existsSync(analyzerV2RuntimeArtifactSinkPath)).toBe(true);
+    const sourceFile = parseSource(analyzerV2RuntimeArtifactSinkPath);
+    const violations: string[] = [];
+
+    for (const importBinding of collectImportBindings(sourceFile)) {
+      const specifier = importBinding.specifier;
+      const approvedNames = analyzerV2RuntimeArtifactSinkApprovedImports.get(specifier);
+
+      if (!approvedNames) {
+        violations.push(`runtime artifact sink imports unapproved module ${specifier}`);
+        continue;
+      }
+
+      for (const importedName of importBinding.names) {
+        if (!approvedNames.has(importedName)) {
+          violations.push(`runtime artifact sink imports unapproved symbol ${importedName} from ${specifier}`);
+        }
+      }
+
+      if (isV1AnalyzerImport(analyzerV2RuntimeArtifactSinkPath, specifier)) {
+        violations.push(`runtime artifact sink imports V1 analyzer ${specifier}`);
+      }
+      if (isCacheIoImport(specifier)) {
+        violations.push(`runtime artifact sink imports IO/storage dependency ${specifier}`);
+      }
+      if (isProviderSdkImport(specifier)) {
+        violations.push(`runtime artifact sink imports provider SDK ${specifier}`);
+      }
+      if (isTestOrMockImport(specifier)) {
+        violations.push(`runtime artifact sink imports test/mock/fixture module ${specifier}`);
+      }
+    }
+
+    const content = readFileSync(analyzerV2RuntimeArtifactSinkPath, "utf8");
+    if (!content.includes("visibility: \"internal_admin_only\"")) {
+      violations.push("runtime artifact sink does not pin internal_admin_only visibility");
+    }
+    if (!content.includes("publicPointerExposure: \"forbidden\"")) {
+      violations.push("runtime artifact sink does not forbid public pointer exposure");
+    }
+
+    expect(violations).toEqual([]);
+  });
+
   it("keeps analyzer-v2-runtime contracts free of execution side effects and scaffold options", () => {
     const violations: string[] = [];
 
@@ -1267,9 +1445,11 @@ describe("analyzer-v2 boundary guard", () => {
       }
 
       const content = readFileSync(sourcePath, "utf8");
-      for (const term of runtimeScaffoldOptionTerms) {
-        if (content.includes(term)) {
-          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references runtime scaffold option ${term}`);
+      if (!runtimeScaffoldOptionOwnerPaths.has(toPosix(sourcePath))) {
+        for (const term of runtimeScaffoldOptionTerms) {
+          if (content.includes(term)) {
+            violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references runtime scaffold option ${term}`);
+          }
         }
       }
     }
@@ -1305,7 +1485,7 @@ describe("analyzer-v2 boundary guard", () => {
     expect(factorySdkImports).toEqual(["@ai-sdk/anthropic", "ai"]);
   });
 
-  it("keeps provider ownership contracts out of production callers until the next wiring gate", () => {
+  it("keeps analyzer-v2-runtime product imports limited to the 4C3b activation owners", () => {
     const violations: string[] = [];
 
     for (const sourcePath of collectFiles(srcRoot, (filePath) =>
@@ -1318,7 +1498,10 @@ describe("analyzer-v2 boundary guard", () => {
       const sourceFile = parseSource(sourcePath);
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
-          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime contract ${specifier}`);
+          const approved = analyzerV2RuntimeProductImportApprovedPaths.get(toPosix(sourcePath));
+          if (!approved?.has(specifier)) {
+            violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime module ${specifier}`);
+          }
         }
       }
     }

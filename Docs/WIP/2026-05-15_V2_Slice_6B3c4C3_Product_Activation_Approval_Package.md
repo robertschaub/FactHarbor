@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C3 Product Activation Approval Package
 
 **Date:** 2026-05-15
-**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b docs-only package created at `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`; 4C3b source wiring requires Captain confirmation; 4C3c live smoke, broader product activation source, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
+**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b hidden direct-text source wiring implemented after Captain confirmation under `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`; 4C3c live smoke, broader product activation, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `88787787` (`docs: record v2 provider factory source`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -58,7 +58,7 @@ Do not jump directly from 4C2b to live execution. The recommended split is:
 |---|---|---|
 | 4C3-0 | This docs-only product activation package | yes, docs only |
 | 4C3a | Activation authority contract: define product-owned runtime activation snapshot, approval source, hidden artifact sink, and rollback model without provider dispatch | yes, implemented as inert contract source |
-| 4C3b | Hidden direct-text runtime wiring using the 4C2b factory after 4C3a is reviewed | not yet |
+| 4C3b | Hidden direct-text runtime wiring using the 4C2b factory after 4C3a is reviewed | implemented after Captain confirmation |
 | 4C3c | First live smoke, one Captain-defined direct-text input, commit-first and runtime-refreshed | not yet |
 
 ```mermaid
@@ -333,3 +333,25 @@ Deputy consensus:
 - existing job events/history are not a safe hidden artifact sink;
 - the recommended sink is a V2-owned `v2_observability_ledger`, with an internal local smoke artifact adapter only for later committed/refreshed 4C3c inspection;
 - direct-text-only, no public exposure, no cache IO, no live jobs, no V1 reuse, no V1 cleanup.
+
+## 16. 4C3b Implementation Result
+
+Captain confirmation was received on 2026-05-15 using the exact approval wording from the 4C3b package. Source wiring then proceeded inside the approved envelope.
+
+Implemented behavior:
+
+- `PipelineRunContext` now freezes a product-owned Claim Understanding runtime activation snapshot with approval pointer, rollback target, profile/config hash, provider/model identity, and hidden artifact sink policy;
+- `claim-understanding-runtime-activation.ts` is the only approved owner that can turn the hidden direct-text activation snapshot into an executable gateway task and provider boundary;
+- default activation remains `kill_switch_closed`, so ordinary V2 shell execution still returns the damaged pre-cutover envelope without prompt/model/provider work;
+- enabled activation is direct-text-only and fails closed for unsupported input sources, invalid snapshots, factory failures, missing provider boundary, invalid telemetry, schema failure, or dispatch failure;
+- `claim-understanding-runtime-artifact-sink.ts` provides the V2-owned internal `v2_observability_ledger` sink, with no public pointer or job-history/event exposure;
+- runtime-stage records hidden internal artifacts for blocked/completed dispatch while preserving the public damaged envelope.
+
+Verification:
+
+- V2/runtime/routing unit slice passed: 25 files / 201 tests;
+- `npm -w apps/web run build` passed; postbuild reseed reported no prompt/config changes;
+- `git diff --check` passed;
+- static scans found provider SDK imports only in the approved factory file, no forbidden cache/config/job-history IO in the activation path, and no public-surface activation/hidden-artifact leakage.
+
+4C3c remains the next gate for committed/runtime-refreshed live smoke inspection. It must still prove a real hidden artifact can be inspected without public leakage before any broader activation or live-job expansion.

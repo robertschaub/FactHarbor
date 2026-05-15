@@ -220,6 +220,24 @@ describe("Analyzer V2 Claim Understanding provider factory", () => {
     });
   });
 
+  it("builds a hidden direct-text product activation provider callback from a validated snapshot", async () => {
+    vi.mocked(generateText).mockResolvedValueOnce(generateTextResult({
+      text: "{\"status\":\"accepted\"}",
+    }));
+    const factory = buildClaimUnderstandingProviderFactory(baseSnapshot({
+      executionState: "product_activation_wired_hidden_direct_text",
+    }));
+
+    await factory.providerCall(providerRequest());
+
+    expect(factory).toMatchObject({
+      providerId: "anthropic",
+      modelId: MODEL_ID,
+      configSnapshotHash: "factory-config-snapshot-hash",
+    });
+    expect(generateText).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects contract-only or non-Anthropic snapshots before provider callback creation", () => {
     expect(() => buildClaimUnderstandingProviderFactory(baseSnapshot({
       executionState: "not_executable_contract_only",

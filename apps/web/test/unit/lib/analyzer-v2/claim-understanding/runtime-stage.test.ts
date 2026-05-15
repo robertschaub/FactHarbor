@@ -5,7 +5,19 @@ import type {
   ClaimUnderstandingProviderCall,
   ClaimUnderstandingProviderCallRequest,
 } from "@/lib/analyzer-v2/claim-understanding/model-adapter";
+import {
+  CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+  CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+  type ClaimUnderstandingResult,
+} from "@/lib/analyzer-v2/claim-understanding/types";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
+import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
+import {
+  clearClaimUnderstandingRuntimeArtifacts,
+  createClaimUnderstandingRuntimeInMemoryArtifactSink,
+  readClaimUnderstandingRuntimeArtifacts,
+} from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
+import type { ClaimUnderstandingProviderRuntimeConfigSnapshot } from "@/lib/analyzer-v2-runtime/claim-understanding-provider-runtime-config.contract";
 
 const noDispatchSideEffects = {
   promptLoaded: false,
@@ -24,6 +36,17 @@ function buildContext(input: ClaimBoundaryV2Ingress) {
   });
 }
 
+function buildEnabledContext(input: ClaimBoundaryV2Ingress) {
+  const context = buildContext(input);
+  return {
+    ...context,
+    claimUnderstandingRuntimeActivation: {
+      ...context.claimUnderstandingRuntimeActivation,
+      status: "enabled_hidden_direct_text" as const,
+    },
+  };
+}
+
 function directTextRuntimeOptions(providerCall: ClaimUnderstandingProviderCall) {
   return {
     directTextRuntimeDispatch: {
@@ -36,6 +59,79 @@ function directTextRuntimeOptions(providerCall: ClaimUnderstandingProviderCall) 
         temperature: 0.15,
       },
     },
+  };
+}
+
+function acceptedResult(input: string, language = "und"): ClaimUnderstandingResult {
+  return {
+    schemaVersion: CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION,
+    status: "accepted",
+    claimContract: {
+      schemaVersion: CLAIM_CONTRACT_V2_SCHEMA_VERSION,
+      input: {
+        inputType: "text",
+        inputValue: input,
+        resolvedInputText: input,
+        detectedLanguage: language,
+        selectedAtomicClaimIds: ["AC_DIRECT_01"],
+      },
+      inputGroundingSeed: {
+        source: "direct_input",
+        inputType: "text",
+        inputValue: input,
+        resolvedInputText: input,
+        detectedLanguage: language,
+        currentDate: "2026-05-14",
+        acsSnapshotHash: null,
+        inputGroundingSeedHash: "direct-input-grounding-hash",
+      },
+      atomicClaims: [
+        {
+          id: "AC_DIRECT_01",
+          statement: input,
+          selected: true,
+          source: "v2_claim_understanding",
+          gate1Status: {
+            status: "passed",
+            source: "v2_claim_understanding",
+            summary: "Claim Understanding accepted the direct input.",
+            reasons: [],
+          },
+          integrityEvents: [],
+        },
+      ],
+      integrityEvents: [],
+      acsMigration: null,
+    },
+    integrityEvents: [],
+    blockedReason: null,
+    damagedReason: null,
+  };
+}
+
+function activationFor(params: {
+  input: ClaimBoundaryV2Ingress;
+  ledgerId: string;
+  providerCall: ClaimUnderstandingProviderCall;
+}) {
+  const context = buildEnabledContext(params.input);
+  clearClaimUnderstandingRuntimeArtifacts(params.ledgerId);
+  const artifactSink = createClaimUnderstandingRuntimeInMemoryArtifactSink(params.ledgerId);
+
+  return {
+    context,
+    artifactSink,
+    activation: buildClaimUnderstandingRuntimeActivation(context, {
+      artifactSink,
+      providerFactoryBuilder: (snapshot: ClaimUnderstandingProviderRuntimeConfigSnapshot) => ({
+        factoryVersion: "v2.claim-understanding.provider-factory.0",
+        factorySourcePath: "apps/web/src/lib/analyzer-v2-runtime/claim-understanding-provider-factory.ts",
+        configSnapshotHash: snapshot.configSnapshotHash,
+        providerId: "anthropic",
+        modelId: snapshot.modelId,
+        providerCall: params.providerCall,
+      }),
+    }),
   };
 }
 
@@ -278,22 +374,24 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
       selectedAtomicClaimIds: [],
     };
 
-    const state = await runClaimUnderstandingRuntimeStage(
+    const { context, activation } = activationFor({
       input,
-      buildContext(input),
-      directTextRuntimeOptions(async (request) => {
+      ledgerId: "job-runtime-direct-url:ledger",
+      providerCall: async (request) => {
         providerCalls.push(request);
         throw new Error("should not be called");
-      }),
-    );
+      },
+    });
+
+    const state = await runClaimUnderstandingRuntimeStage(input, context, { activation });
 
     expect(state).toMatchObject({
       inputSource: "direct_input",
-      status: "blocked_by_dispatch_preflight",
+      status: "blocked_by_runtime_activation",
       result: null,
-      blockedReason: "runtime_dispatch_preflight_blocked",
+      blockedReason: "runtime_activation_disabled",
       runtimeDispatchStatus: "not_attempted",
-      runtimeDispatchBlockedReason: "direct_url_requires_resolved_body",
+      runtimeDispatchBlockedReason: "unsupported_input_source",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
     });
@@ -371,6 +469,136 @@ describe("analyzer-v2 Claim Understanding runtime stage", () => {
       blockedReason: "gateway_policy_not_executable",
       cacheEligibility: "not_evaluated",
       sideEffects: noDispatchSideEffects,
+    });
+  });
+
+  it("runs hidden direct-text Claim Understanding with product-owned activation and records an internal artifact", async () => {
+    const inputValue = "Plastic recycling is pointless";
+    const providerCalls: ClaimUnderstandingProviderCallRequest[] = [];
+    const input: ClaimBoundaryV2Ingress = {
+      runIdHint: "job-runtime-direct-hidden",
+      submitted: {
+        kind: "text",
+        value: inputValue,
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    };
+    const ledgerId = "job-runtime-direct-hidden:ledger";
+    const { context, activation } = activationFor({
+      input,
+      ledgerId,
+      providerCall: async (request) => {
+        providerCalls.push(request);
+        return {
+          output: acceptedResult(inputValue),
+          telemetry: {
+            providerId: "anthropic",
+            modelId: "claude-haiku-4-5-20251001",
+            inputTokens: 101,
+            outputTokens: 49,
+            totalTokens: 150,
+            durationMs: 250,
+          },
+        };
+      },
+    });
+
+    const state = await runClaimUnderstandingRuntimeStage(input, context, { activation });
+
+    expect(state).toMatchObject({
+      inputSource: "direct_input",
+      status: "runtime_dispatch_completed",
+      blockedReason: null,
+      runtimeDispatchStatus: "completed",
+      cacheEligibility: "runtime_no_store",
+      sideEffects: {
+        promptLoaded: true,
+        promptRendered: true,
+        adapterCalled: true,
+        modelCalled: true,
+        cacheDecisionConstructed: true,
+        cacheRead: false,
+        cacheWrite: false,
+        providerCallbackCreated: false,
+      },
+    });
+    expect(state.result?.status).toBe("accepted");
+    expect(providerCalls).toHaveLength(1);
+    expect(providerCalls[0].inputFrame).toEqual({
+      analysisInput: inputValue,
+      resolvedInputText: inputValue,
+      detectedLanguage: "und",
+    });
+    expect(readClaimUnderstandingRuntimeArtifacts(ledgerId)).toEqual([
+      expect.objectContaining({
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+        executionStatus: "completed",
+        gatewayTaskStatus: "executable",
+        providerTelemetry: {
+          providerId: "anthropic",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 101,
+          outputTokens: 49,
+          totalTokens: 150,
+          durationMs: 250,
+        },
+        schemaOutcome: {
+          status: "accepted",
+          blockedReason: null,
+          damagedReason: null,
+        },
+        warningMateriality: "admin_only_internal",
+      }),
+    ]);
+  });
+
+  it("fails hidden direct-text activation closed when the provider reports invalid telemetry", async () => {
+    const input: ClaimBoundaryV2Ingress = {
+      runIdHint: "job-runtime-invalid-telemetry",
+      submitted: {
+        kind: "text",
+        value: "Using hydrogen for cars is more efficient than using electricity",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    };
+    const ledgerId = "job-runtime-invalid-telemetry:ledger";
+    const { context, activation } = activationFor({
+      input,
+      ledgerId,
+      providerCall: async () => ({
+        output: acceptedResult(input.submitted.value),
+        telemetry: {
+          providerId: "unknown",
+          modelId: "claude-haiku-4-5-20251001",
+          inputTokens: 1,
+          outputTokens: 1,
+          totalTokens: 2,
+          durationMs: 1,
+        },
+      }),
+    });
+
+    const state = await runClaimUnderstandingRuntimeStage(input, context, { activation });
+
+    expect(state).toMatchObject({
+      inputSource: "direct_input",
+      status: "runtime_dispatch_completed",
+      result: {
+        status: "damaged",
+        damagedReason: "claim_understanding_unavailable",
+      },
+      cacheEligibility: "runtime_no_store",
+    });
+    expect(readClaimUnderstandingRuntimeArtifacts(ledgerId)[0]).toMatchObject({
+      executionStatus: "completed",
+      providerTelemetry: null,
+      schemaOutcome: {
+        status: "damaged",
+        damagedReason: "claim_understanding_unavailable",
+      },
     });
   });
 });

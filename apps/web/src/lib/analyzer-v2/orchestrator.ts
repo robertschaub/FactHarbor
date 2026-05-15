@@ -13,6 +13,8 @@ import {
 } from "@/lib/analyzer-v2/run-context";
 import type { ClaimBoundaryV2Ingress } from "@/lib/analyzer-v2/pipeline-input";
 import type { ClaimBoundaryV2Envelope } from "@/lib/analyzer-v2/result-envelope";
+import { buildClaimUnderstandingRuntimeActivation } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-activation";
+import { createClaimUnderstandingRuntimeInMemoryArtifactSink } from "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink";
 
 export type RunClaimBoundaryPipelineV2Options = BuildClaimBoundaryV2RunContextOptions;
 
@@ -64,9 +66,16 @@ export async function runClaimBoundaryPipelineV2(
   await emit(input, "Analyzer V2 orchestrator initialized.", 8);
 
   const context = buildClaimBoundaryV2RunContext(input, options);
+  const claimUnderstandingActivation = buildClaimUnderstandingRuntimeActivation(
+    context,
+    {
+      artifactSink: createClaimUnderstandingRuntimeInMemoryArtifactSink(context.observabilityLedger.ledgerId),
+    },
+  );
   const claimUnderstandingState = await runClaimUnderstandingRuntimeStage(
     input,
     context,
+    { activation: claimUnderstandingActivation },
   );
   const envelope = buildDamagedClaimBoundaryV2Envelope(
     context,
