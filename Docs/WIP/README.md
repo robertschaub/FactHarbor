@@ -1,7 +1,7 @@
 # FactHarbor Work In Progress (WIP)
 
-**Last Updated**: 2026-05-12
-**Status**: Consolidation #12 complete. Pipeline rebuild specification track added.
+**Last Updated**: 2026-05-16
+**Status**: Consolidation #12 complete. Pipeline rebuild specification track added. Current V2 Slice 7 execution state is tracked in the canonical status documents and V2 guardrails, not by this WIP index.
 
 ---
 
@@ -23,6 +23,9 @@ Historical, implemented, decided, or superseded content lives in `Docs/ARCHIVE/`
 ### Canonical state + task tracking
 - [Current_Status.md](../STATUS/Current_Status.md)
 - [Backlog.md](../STATUS/Backlog.md)
+- [V2_Pipeline_Implementation_Guardrails.md](../AGENTS/V2_Pipeline_Implementation_Guardrails.md) — canonical V2 implementation constraints, active Slice 7 gate order, and blocked/allowed surfaces
+
+For the V2 pipeline rebuild, use `Current_Status.md`, `Backlog.md`, and `V2_Pipeline_Implementation_Guardrails.md` as the current execution map. The WIP documents below preserve package/specification history and review records; they are not the active queue when those canonical documents disagree.
 
 ---
 
