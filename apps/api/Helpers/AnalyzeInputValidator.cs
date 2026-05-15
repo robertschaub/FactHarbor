@@ -7,7 +7,7 @@ public static class AnalyzeInputValidator
         if (inputType != "url" && inputType != "text")
             return (false, "Invalid inputType: must be 'url' or 'text'");
 
-        var validPipelines = new[] { "claimboundary" };
+        var validPipelines = new[] { "claimboundary", "claimboundary-v2" };
         if (pipelineVariant != null && !validPipelines.Contains(pipelineVariant))
             return (false, $"Invalid pipelineVariant: must be one of {string.Join(", ", validPipelines.Select(p => $"'{p}'"))}");
 

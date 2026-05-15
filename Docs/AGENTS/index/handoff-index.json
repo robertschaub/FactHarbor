@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T06:20:58.937Z",
-  "count": 478,
+  "generatedAt": "2026-05-15T06:28:00.578Z",
+  "count": 479,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10272,6 +10272,27 @@
         "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md"
       ],
       "summary": "For 4C3c, inspect the bounded `readClaimUnderstandingRuntimeArtifacts(...)` path after runtime refresh. If more durable inspection is needed, create a reviewed artifact-storage gate instead of writing to existing job event/history endpoints."
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_4C3c_Api_Variant_Admission_Fix.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "4c3c",
+        "api",
+        "variant",
+        "admission",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/api/Helpers/AnalyzeInputValidator.cs",
+        "apps/api.Tests/Helpers/AnalyzeInputValidatorTests.cs",
+        "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md"
+      ],
+      "summary": "Commit and refresh the API before retrying the single 4C3c smoke. The failed submission did not create a job; it only proved API admission was incomplete."
     },
     {
       "file": "2026-05-15_Lead_Architect_V2_4C3c_Smoke_Inspection_Path.md",

@@ -379,6 +379,7 @@ Plan-review clarification, 2026-05-15: the activation source is no longer unreso
 - the web/runtime process has been restarted or otherwise refreshed so the committed source and env gates are live;
 - prompt/config state has been reseeded or explicitly verified current when applicable;
 - stored job variant selection is `claimboundary-v2`;
+- the API structural validator admits `claimboundary-v2` as a stored variant;
 - the V2 shell gate is enabled;
 - the dedicated runtime kill switch is exactly `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`;
 - the smoke input is one Captain-defined direct-text input, used verbatim;
