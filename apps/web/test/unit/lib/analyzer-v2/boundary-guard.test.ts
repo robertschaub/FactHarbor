@@ -74,6 +74,18 @@ const analyzerV2RuntimeProviderFactoryPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-factory.ts",
 );
+const analyzerV2RuntimeSourceAcquisitionAuthorityPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-runtime-authority.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionConfigContractPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-runtime-config.contract.ts",
+);
+const analyzerV2RuntimeSourceAcquisitionProviderContractPath = path.resolve(
+  analyzerV2RuntimeRoot,
+  "source-acquisition-provider-boundary.contract.ts",
+);
 const analyzerV2UnitTestRoot = path.resolve(webRoot, "test/unit/lib/analyzer-v2");
 const promptRoot = path.resolve(webRoot, "prompts");
 const analyzerV2FixtureRoot = path.resolve(webRoot, "test/fixtures/analyzer-v2");
@@ -453,6 +465,11 @@ const analyzerV2RuntimeProductImportApprovedPaths = new Map<string, Set<string>>
       "@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink",
     ]),
   ],
+]);
+const sourceAcquisitionRuntimeAuthorityOwnerSpecifiers = new Set([
+  "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority",
+  "@/lib/analyzer-v2-runtime/source-acquisition-runtime-config.contract",
+  "@/lib/analyzer-v2-runtime/source-acquisition-provider-boundary.contract",
 ]);
 
 function toPosix(value: string): string {
@@ -1539,6 +1556,15 @@ describe("analyzer-v2 boundary guard", () => {
     expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
       "src/lib/analyzer-v2-runtime/claim-understanding-runtime-activation.contract.ts",
     );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/source-acquisition-runtime-authority.ts",
+    );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/source-acquisition-runtime-config.contract.ts",
+    );
+    expect(analyzerV2RuntimeSourceFiles.map((filePath) => toPosix(path.relative(webRoot, filePath)))).toContain(
+      "src/lib/analyzer-v2-runtime/source-acquisition-provider-boundary.contract.ts",
+    );
 
     for (const sourcePath of analyzerV2RuntimeSourceFiles) {
       const sourceFile = parseSource(sourcePath);
@@ -1571,6 +1597,62 @@ describe("analyzer-v2 boundary guard", () => {
           }
         }
       }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 7N-3A source-acquisition runtime authority contract-only and non-public", () => {
+    const sourceAcquisitionRuntimeOwnerPaths = [
+      analyzerV2RuntimeSourceAcquisitionAuthorityPath,
+      analyzerV2RuntimeSourceAcquisitionConfigContractPath,
+      analyzerV2RuntimeSourceAcquisitionProviderContractPath,
+    ];
+    const violations: string[] = [];
+
+    for (const ownerPath of sourceAcquisitionRuntimeOwnerPaths) {
+      expect(existsSync(ownerPath)).toBe(true);
+      const sourceFile = parseSource(ownerPath);
+      const relativeOwnerPath = toPosix(path.relative(webRoot, ownerPath));
+
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        violations.push(`${relativeOwnerPath} imports ${specifier}`);
+      }
+
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
+      }
+
+      const content = readFileSync(ownerPath, "utf8");
+      for (const forbiddenText of [
+        "from \"ai\"",
+        "from \"@ai-sdk/",
+        "from \"@/lib/web-search\"",
+        "from \"@/lib/source-reliability\"",
+        "from \"@/lib/analyzer/",
+        "providerSdk: true",
+        "searchFetch: true",
+        "network: true",
+        "parser: true",
+        "cacheRead: true",
+        "cacheWrite: true",
+        "sourceReliability: true",
+        "productRuntime: true",
+        "publicExposure: true",
+        "liveJobs: true",
+      ]) {
+        if (content.includes(forbiddenText)) {
+          violations.push(`${relativeOwnerPath} references forbidden source-acquisition authority text ${forbiddenText}`);
+        }
+      }
+    }
+
+    const authorityContent = readFileSync(analyzerV2RuntimeSourceAcquisitionAuthorityPath, "utf8");
+    if (!authorityContent.includes("new WeakSet<object>()")) {
+      violations.push("source-acquisition runtime authority does not use a module-private WeakSet brand");
+    }
+    if (!authorityContent.includes("runtimeAuthorities.has(value)")) {
+      violations.push("source-acquisition runtime authority validator does not require owner-created membership");
     }
 
     expect(violations).toEqual([]);
@@ -1621,6 +1703,42 @@ describe("analyzer-v2 boundary guard", () => {
           if (!approved?.has(specifier)) {
             violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime module ${specifier}`);
           }
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps product and public surfaces from directly reaching source-acquisition runtime authority owners", () => {
+    const forbiddenTargetPaths = new Set([
+      analyzerV2RuntimeSourceAcquisitionAuthorityPath,
+      analyzerV2RuntimeSourceAcquisitionConfigContractPath,
+      analyzerV2RuntimeSourceAcquisitionProviderContractPath,
+    ].map(toPosix));
+    const filesToScan = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+      analyzerV2RuntimeActivationPath,
+      analyzerV2RuntimeArtifactInspectionRoutePath,
+    ].filter((filePath) => existsSync(filePath))));
+    const violations: string[] = [];
+
+    for (const sourcePath of filesToScan) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (sourceAcquisitionRuntimeAuthorityOwnerSpecifiers.has(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports source-acquisition runtime owner ${specifier}`);
+          continue;
+        }
+
+        if (!specifier.startsWith(".")) {
+          continue;
+        }
+
+        const resolved = resolveExistingTypeScriptFile(path.resolve(path.dirname(sourcePath), specifier));
+        if (resolved && forbiddenTargetPaths.has(toPosix(resolved))) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} reaches source-acquisition runtime owner ${toPosix(path.relative(webRoot, resolved))}`);
         }
       }
     }

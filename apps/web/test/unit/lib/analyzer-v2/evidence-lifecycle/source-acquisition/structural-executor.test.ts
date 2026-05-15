@@ -21,6 +21,11 @@ import {
   type SourceAcquisitionPortAttemptResult,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/execution-contract";
 import {
+  createSourceAcquisitionRuntimeAuthority,
+  SOURCE_ACQUISITION_RUNTIME_AUTHORITY_PACKAGE_PATH,
+  SOURCE_ACQUISITION_RUNTIME_AUTHORITY_VERSION,
+} from "@/lib/analyzer-v2-runtime/source-acquisition-runtime-authority";
+import {
   SOURCE_ACQUISITION_REQUEST_VERSION,
   type SourceAcquisitionStartDecision,
 } from "@/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types";
@@ -409,6 +414,63 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
         ...SOURCE_ACQUISITION_CONTROLLED_HARNESS_AUTHORITY,
         productionRuntime: true,
       } as SourceAcquisitionPort["authority"],
+    };
+
+    const decision = await executeSourceAcquisitionStructuralExecutor(executionRequest({ port }));
+
+    expect(decision).toMatchObject({
+      status: "blocked",
+      executorStopReason: "controlled_harness_authority_invalid",
+    });
+    expect(port.calls).toHaveLength(0);
+  });
+
+  it("rejects the 7N-3A runtime authority as a controlled-harness port authority", async () => {
+    const runtimeAuthority = createSourceAcquisitionRuntimeAuthority({
+      kind: "source_acquisition_runtime_authority_7n3a",
+      source: "v2_7n3a_source_io_authority_boundary_package",
+      authorityVersion: SOURCE_ACQUISITION_RUNTIME_AUTHORITY_VERSION,
+      packagePath: SOURCE_ACQUISITION_RUNTIME_AUTHORITY_PACKAGE_PATH,
+      approval: {
+        status: "approved_7n3a_authority_contract_only",
+        approvedBy: "deputy_review_team",
+        packagePath: SOURCE_ACQUISITION_RUNTIME_AUTHORITY_PACKAGE_PATH,
+        packageCommit: "8b4035cc",
+        approvedScope: "authority_boundary_contracts_only",
+      },
+      visibility: "internal_only",
+      configSnapshot: {
+        source: "v2_task_policy_snapshot",
+        freezeLocation: "runtime_owner_contract",
+        configSnapshotHash: "source-config-snapshot-hash-7n3a",
+        providerAllowlistSnapshotHash: "source-provider-allowlist-hash-7n3a",
+        budgetSnapshotHash: "source-budget-snapshot-hash-7n3a",
+        executionState: "not_executable_authority_contract_only",
+      },
+      capabilityScope: {
+        concreteProviderIo: false,
+        providerSdk: false,
+        searchFetch: false,
+        network: false,
+        parser: false,
+        urlDereference: false,
+        cacheRead: false,
+        cacheWrite: false,
+        durableStorage: false,
+        sourceReliability: false,
+        productRuntime: false,
+        publicExposure: false,
+        liveJobs: false,
+        acsPreparedSnapshot: false,
+        directUrl: false,
+        evidenceCorpusPopulation: false,
+        semanticInterpretation: false,
+      },
+      futureGate: "requires_7n3b_concrete_io_gate",
+    });
+    const port: SourceAcquisitionPort & { calls: SourceAcquisitionPortAttemptRequest[] } = {
+      ...controlledPort(),
+      authority: runtimeAuthority as SourceAcquisitionPort["authority"],
     };
 
     const decision = await executeSourceAcquisitionStructuralExecutor(executionRequest({ port }));
