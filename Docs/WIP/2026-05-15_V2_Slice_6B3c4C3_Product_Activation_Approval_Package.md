@@ -1,7 +1,7 @@
 # V2 Slice 6B.3c-4C3 Product Activation Approval Package
 
 **Date:** 2026-05-15
-**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b hidden direct-text source wiring implemented after Captain confirmation under `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`; 4C3c live smoke, broader product activation, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
+**Status:** 4C3a inert activation-authority/hidden-artifact contract source implemented after deputy-team review; 4C3b hidden direct-text source wiring implemented after Captain confirmation under `Docs/WIP/2026-05-15_V2_Slice_6B3c4C3b_Hidden_Direct_Text_Wiring_Approval_Package.md`; 4C3c first live smoke passed on commit `efb1f33f` with job `7b56c24a79ee4ab390cc3a6d5aed8986`; broader product activation, cache IO, public exposure, ACS/direct URL execution, and V1 cleanup remain blocked
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `88787787` (`docs: record v2 provider factory source`)
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
@@ -404,3 +404,35 @@ Plan-review clarification, 2026-05-15: the activation source is no longer unreso
 - rollback is still closing either the V2 shell gate or the dedicated runtime kill switch.
 
 If any of these checks fail, classify the result before further edits: keep the narrow evidence-backed part, quarantine speculative broadening, or revert the attempted smoke-only change. Do not expand to more live jobs until the failed 4C3c smoke is reviewed.
+
+## 19. 4C3c Live Smoke Result
+
+4C3c first live smoke passed on 2026-05-15 after committing and refreshing web/API runtime to `efb1f33f30209a56a9fbb392f27eb6ea18ed28bc`.
+
+Smoke input:
+
+- `Plastic recycling is pointless`
+
+Live submissions used in this gate:
+
+- `85ceff71ee274f80a8bbddd56b58f64b` on `7a263cbf`: API/job path reached V2 runtime and produced the expected damaged public envelope, but hidden artifact inspection returned zero artifacts because the temporary ledger was module-scoped. This was classified through `/debt-guard` as an incomplete existing mechanism.
+- `7b56c24a79ee4ab390cc3a6d5aed8986` on `efb1f33f`: accepted 4C3c smoke after the ledger-scope fix.
+
+Accepted smoke proof for `7b56c24a79ee4ab390cc3a6d5aed8986`:
+
+- job status `SUCCEEDED`;
+- stored variant `claimboundary-v2`;
+- created and executed commit hash `efb1f33f30209a56a9fbb392f27eb6ea18ed28bc`;
+- public result remained `_schemaVersion: 4.0.0-cb-precutover`, `pipeline: claimboundary-v2`, `analysisIssueCode: report_damaged`, verdict `UNVERIFIED`, truth `50`, confidence `0`;
+- hidden artifact inspection returned `artifactCount: 1` from `v2_observability_ledger`;
+- hidden artifact execution was `completed`, gateway task status `executable`, schema outcome `damaged`, damaged reason `claim_contract_validation_failed`;
+- provider telemetry recorded Anthropic `claude-haiku-4-5-20251001`, 3376 input tokens, 328 output tokens, 3704 total tokens, 3785 ms;
+- cache decision was no-store with `canRead: false` and `canWrite: false`;
+- public result serialization did not contain the hidden artifact id, ledger id, activation snapshot hash, runtime config hash, prompt hashes, rendered prompt hash, cache-decision reason, provider telemetry object, or artifact sink marker.
+
+4C3c conclusion:
+
+- direct-text hidden Claim Understanding runtime is product-reachable under explicit V2 shell plus dedicated runtime kill switch;
+- the first live smoke proves hidden artifact capture and inspection without public leakage;
+- the accepted result is still intentionally pre-cutover/damaged and must not be interpreted as analytical quality readiness;
+- next implementation may proceed only to the next reviewed V2 rebuild slice; broader live-job expansion, public V2 exposure, ACS/direct URL runtime dispatch, cache IO, and V1 cleanup remain blocked by their own gates.
