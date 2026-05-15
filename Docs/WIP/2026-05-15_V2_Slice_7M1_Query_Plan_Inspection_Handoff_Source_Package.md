@@ -1,7 +1,7 @@
 # V2 Slice 7M-1 Query-Plan Inspection And Handoff Source Package
 
 **Date:** 2026-05-15
-**Status:** reviewed source approval package; no source implementation yet
+**Status:** implemented at `e24a2816` (`feat: add v2 query plan inspection handoff`)
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `25b4209c` (`docs: add v2 post query planning consolidation`)
 **Parent gate:** 7M `Docs/WIP/2026-05-15_V2_Slice_7M_Post_7L1_Query_Planning_Consolidation.md`
@@ -12,7 +12,7 @@
 
 Define the exact source slice for internal query-plan inspection and non-executable handoff from query planning to source acquisition.
 
-This package is an approval request, not an implementation.
+This package was an approval request and is now the implementation record for source commit `e24a281645606d27e024ed854d6b1336835d390c`.
 
 Review outcome:
 
@@ -28,6 +28,14 @@ The approved boundary is source-package approval only. It does not authorize sou
 - 7H: inert source-acquisition port contract.
 
 7M-1 must not execute source acquisition.
+
+Implementation result:
+
+- added `apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection.ts`;
+- added `apps/web/src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.ts`;
+- added focused unit tests for inspection and handoff contracts;
+- updated `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts` to cover the new files and ACS/direct URL runtime-import exclusions;
+- changed no prompts, configs, product/orchestrator/runner/public surfaces, provider/search/fetch/source execution, Source Reliability, cache IO, ACS/direct URL execution, V1 code, or V1 cleanup.
 
 ## 2. Target Boundary
 
@@ -289,9 +297,28 @@ Use this prompt for Senior Developer, LLM Expert, Code Reviewer, Claude/Gemini, 
 
 ## 14. Verification For This Package
 
-Docs-only verification:
+Package review verification:
 
 - `git diff --check`;
 - `git diff --cached --check` after staging;
 - no source/test/prompt/config/schema edits;
 - no live jobs.
+
+Implementation verification:
+
+```powershell
+npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning/inspection.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/query-plan-handoff.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts
+npm -w apps/web run test -- test/unit/lib/analyzer-v2
+npm -w apps/web run build
+git diff --check
+git diff --cached --check
+```
+
+Results:
+
+- focused verifier passed: 3 files, 55 tests;
+- full Analyzer V2 unit slice passed: 39 files, 286 tests;
+- build passed;
+- whitespace checks passed;
+- manual forbidden-reference scan for the two new source modules found no V1 analyzer, analyzer-v2-runtime, Source Reliability, public/product, provider SDK, search/fetch/network/parser, or direct `fetch(...)` references;
+- no expensive real-LLM tests and no live jobs were run.
