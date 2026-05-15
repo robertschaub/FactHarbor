@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T06:28:00.578Z",
-  "count": 479,
+  "generatedAt": "2026-05-15T06:38:05.029Z",
+  "count": 480,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10293,6 +10293,23 @@
         "Docs/WIP/2026-05-15_V2_Slice_6B3c4C3_Product_Activation_Approval_Package.md"
       ],
       "summary": "Commit and refresh the API before retrying the single 4C3c smoke. The failed submission did not create a job; it only proved API admission was incomplete."
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_4C3c_Hidden_Artifact_Ledger_Fix.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "4c3c",
+        "hidden",
+        "artifact",
+        "ledger",
+        "fix"
+      ],
+      "files_touched": [],
+      "summary": "Lead Architect Handoff - V2 4C3c Hidden Artifact Ledger Fix"
     },
     {
       "file": "2026-05-15_Lead_Architect_V2_4C3c_Smoke_Inspection_Path.md",

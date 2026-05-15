@@ -390,6 +390,7 @@ Plan-review clarification, 2026-05-15: the activation source is no longer unreso
 - `GET /api/internal/analyzer-v2/claim-understanding-runtime-artifacts?ledgerId=<encoded-ledger-id>`;
 - protected by the existing admin-key check;
 - reads only the V2-owned in-memory `v2_observability_ledger`;
+- the in-memory ledger is process-global within the web runtime so route/module reload boundaries do not hide smoke artifacts;
 - returns only internal artifact records for the requested ledger id;
 - does not write job events/history, result JSON, report markdown, exports, UI state, or compatibility-view data.
 

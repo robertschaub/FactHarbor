@@ -52,25 +52,35 @@ export type ClaimUnderstandingRuntimeInMemoryArtifactSink =
     readonly records: readonly ClaimUnderstandingRuntimeArtifact[];
   };
 
-const runtimeArtifactLedgers = new Map<string, ClaimUnderstandingRuntimeArtifact[]>();
+type RuntimeArtifactLedgerGlobal = typeof globalThis & {
+  __factHarborV2ClaimUnderstandingRuntimeArtifactLedgers?: Map<string, ClaimUnderstandingRuntimeArtifact[]>;
+};
+
+function runtimeArtifactLedgers(): Map<string, ClaimUnderstandingRuntimeArtifact[]> {
+  const globalLedger = globalThis as RuntimeArtifactLedgerGlobal;
+  globalLedger.__factHarborV2ClaimUnderstandingRuntimeArtifactLedgers ??=
+    new Map<string, ClaimUnderstandingRuntimeArtifact[]>();
+  return globalLedger.__factHarborV2ClaimUnderstandingRuntimeArtifactLedgers;
+}
 
 function recordsForLedger(ledgerId: string): ClaimUnderstandingRuntimeArtifact[] {
-  const existing = runtimeArtifactLedgers.get(ledgerId);
+  const ledgers = runtimeArtifactLedgers();
+  const existing = ledgers.get(ledgerId);
   if (existing) {
-    runtimeArtifactLedgers.delete(ledgerId);
-    runtimeArtifactLedgers.set(ledgerId, existing);
+    ledgers.delete(ledgerId);
+    ledgers.set(ledgerId, existing);
     return existing;
   }
 
   const records: ClaimUnderstandingRuntimeArtifact[] = [];
-  runtimeArtifactLedgers.set(ledgerId, records);
+  ledgers.set(ledgerId, records);
 
-  while (runtimeArtifactLedgers.size > CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT) {
-    const oldestLedgerId = runtimeArtifactLedgers.keys().next().value;
+  while (ledgers.size > CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT) {
+    const oldestLedgerId = ledgers.keys().next().value;
     if (!oldestLedgerId) {
       break;
     }
-    runtimeArtifactLedgers.delete(oldestLedgerId);
+    ledgers.delete(oldestLedgerId);
   }
 
   return records;
@@ -108,9 +118,9 @@ export function createClaimUnderstandingRuntimeInMemoryArtifactSink(
 export function readClaimUnderstandingRuntimeArtifacts(
   ledgerId: string,
 ): readonly ClaimUnderstandingRuntimeArtifact[] {
-  return [...(runtimeArtifactLedgers.get(ledgerId) ?? [])];
+  return [...(runtimeArtifactLedgers().get(ledgerId) ?? [])];
 }
 
 export function clearClaimUnderstandingRuntimeArtifacts(ledgerId: string): void {
-  runtimeArtifactLedgers.delete(ledgerId);
+  runtimeArtifactLedgers().delete(ledgerId);
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_LEDGER_COUNT,
   CLAIM_UNDERSTANDING_RUNTIME_ARTIFACT_MAX_RECORDS_PER_LEDGER,
@@ -65,6 +65,25 @@ describe("Analyzer V2 Claim Understanding runtime artifact sink", () => {
         warningMateriality: "admin_only_internal",
       }),
     ]);
+  });
+
+  it("keeps the internal ledger visible across module reloads in the same process", async () => {
+    const ledgerId = "job-artifact:module-reload";
+    clearClaimUnderstandingRuntimeArtifacts(ledgerId);
+    const sink = createClaimUnderstandingRuntimeInMemoryArtifactSink(ledgerId);
+
+    await sink.record(artifact(ledgerId, "artifact-reloaded"));
+    vi.resetModules();
+    const reloaded = await import("@/lib/analyzer-v2-runtime/claim-understanding-runtime-artifact-sink");
+
+    expect(reloaded.readClaimUnderstandingRuntimeArtifacts(ledgerId)).toEqual([
+      expect.objectContaining({
+        artifactId: "artifact-reloaded",
+        visibility: "internal_admin_only",
+        publicPointerExposure: "forbidden",
+      }),
+    ]);
+    reloaded.clearClaimUnderstandingRuntimeArtifacts(ledgerId);
   });
 
   it("keeps the temporary in-memory ledger store bounded", async () => {
