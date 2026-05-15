@@ -38,6 +38,7 @@ const evidenceLifecycleRoot = path.resolve(v2AnalyzerRoot, "evidence-lifecycle")
 const evidenceLifecycleSourceAcquisitionRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition");
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleEvidenceCorpusRoot = path.resolve(evidenceLifecycleRoot, "evidence-corpus");
+const evidenceLifecycleSourceAcquisitionPortRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition-port");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-boundary.contract.ts",
@@ -181,6 +182,22 @@ const forbiddenSearchFetchProviderSpecifierFragments = [
   "/web-search",
   "/search-",
   "/research-acquisition-stage",
+];
+const forbiddenNetworkParserSpecifiers = [
+  "node:http",
+  "node:https",
+  "http",
+  "https",
+  "undici",
+  "node-fetch",
+  "axios",
+  "got",
+  "ky",
+  "cheerio",
+  "jsdom",
+  "pdf-parse",
+  "playwright",
+  "puppeteer",
 ];
 const forbiddenSourceReliabilitySpecifiers = [
   "@/lib/source-reliability",
@@ -597,6 +614,26 @@ function collectPromptFileLiterals(sourceFile: ts.SourceFile): string[] {
   return literals;
 }
 
+function collectDirectFetchCallLocations(sourceFile: ts.SourceFile): string[] {
+  const locations: string[] = [];
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isCallExpression(node)
+      && ts.isIdentifier(node.expression)
+      && node.expression.text === "fetch"
+    ) {
+      const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+      locations.push(`${sourceFile.fileName}:${line + 1}:${character + 1}`);
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return locations;
+}
+
 function collectIdentifiers(sourceFile: ts.SourceFile): string[] {
   const identifiers: string[] = [];
 
@@ -896,6 +933,12 @@ function isSearchFetchProviderImport(specifier: string): boolean {
     normalized === forbidden || normalized.startsWith(`${forbidden}/`)
   )
     || forbiddenSearchFetchProviderSpecifierFragments.some((fragment) => normalized.includes(fragment));
+}
+
+function isNetworkParserImport(specifier: string): boolean {
+  return forbiddenNetworkParserSpecifiers.some((forbidden) =>
+    specifier === forbidden || specifier.startsWith(`${forbidden}/`)
+  );
 }
 
 function isSourceReliabilityImport(specifier: string): boolean {
@@ -1697,6 +1740,7 @@ describe("analyzer-v2 boundary guard", () => {
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleTaskPolicyRoot)}/`)
         && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleEvidenceCorpusRoot)}/`)
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionPortRoot)}/`)
     );
     const violations: string[] = [];
 
@@ -1924,6 +1968,79 @@ describe("analyzer-v2 boundary guard", () => {
         ) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Evidence Lifecycle source-acquisition port contract inert before source execution", () => {
+    const sourceAcquisitionPortFiles = collectFiles(evidenceLifecycleSourceAcquisitionPortRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const violations: string[] = [];
+
+    expect(sourceAcquisitionPortFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port/static-contract.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port/types.ts",
+    ]);
+
+    for (const sourcePath of sourceAcquisitionPortFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
+        }
+        if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports cache governance ${specifier}`);
+        }
+        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports gateway policy ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports runtime dispatch ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isNetworkParserImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports network/parser dependency ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+        if (specifier.startsWith("@/app") || specifier.startsWith("@/components")) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports public surface ${specifier}`);
+        }
+        if (
+          specifier === "@/lib/analyzer-v2/orchestrator"
+          || specifier === "@/lib/analyzer-v2/pipeline-shell"
+          || specifier === "@/lib/analyzer-v2/runner-ingress"
+          || specifier === "@/lib/analyzer-v2"
+        ) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports product/orchestrator surface ${specifier}`);
+        }
+      }
+      for (const location of collectDirectFetchCallLocations(sourceFile)) {
+        violations.push(`direct fetch call at ${toPosix(path.relative(webRoot, location))}`);
       }
     }
 
