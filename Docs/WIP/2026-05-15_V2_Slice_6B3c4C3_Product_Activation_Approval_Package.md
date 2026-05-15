@@ -59,7 +59,7 @@ Do not jump directly from 4C2b to live execution. The recommended split is:
 | 4C3-0 | This docs-only product activation package | yes, docs only |
 | 4C3a | Activation authority contract: define product-owned runtime activation snapshot, approval source, hidden artifact sink, and rollback model without provider dispatch | yes, implemented as inert contract source |
 | 4C3b | Hidden direct-text runtime wiring using the 4C2b factory after 4C3a is reviewed | implemented after Captain confirmation |
-| 4C3c | First live smoke, one Captain-defined direct-text input, commit-first and runtime-refreshed | not yet |
+| 4C3c | First live smoke, one Captain-defined direct-text input, commit-first and runtime-refreshed | passed at `efb1f33f` / job `7b56c24a79ee4ab390cc3a6d5aed8986` |
 
 ```mermaid
 flowchart LR

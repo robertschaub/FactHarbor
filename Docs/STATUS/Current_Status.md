@@ -3,15 +3,16 @@
 **Version**: v2.11.0
 **Last Updated**: 2026-05-15
 **Phase**: **Alpha**
-**Status**: V2 pipeline rebuild is the current strategic execution track. `Docs/STATUS/Backlog.md` is the authoritative active queue; this file is a high-level snapshot and historical context. V1 ClaimAssessmentBoundary work is maintenance-only until V2 cutover readiness. The V2 4C3b hidden direct-text runtime path is now product-reachable after `01ba500e`, but only through the approved triple gate: stored variant `claimboundary-v2`, V2 shell gate enabled, and `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`. The next V2 gate is 4C3c smoke-readiness verification with committed/refreshed runtime state and hidden-artifact inspection proof; no live smoke, public exposure, cache IO, ACS/direct URL execution, or V1 cleanup is implied by this status.
+**Status**: V2 pipeline rebuild is the current strategic execution track. `Docs/STATUS/Backlog.md` is the authoritative active queue; this file is a high-level snapshot and historical context. V1 ClaimAssessmentBoundary work is maintenance-only until V2 cutover readiness. The V2 4C3b hidden direct-text runtime path is product-reachable only through the approved triple gate: stored variant `claimboundary-v2`, V2 shell gate enabled, and `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`. The 4C3c first live smoke passed on `efb1f33f` with job `7b56c24a79ee4ab390cc3a6d5aed8986`, proving hidden artifact capture without public leakage. Broader live-job expansion, public V2 exposure, cache IO, ACS/direct URL runtime dispatch, and V1 cleanup remain blocked by later reviewed gates.
 
 ---
 
 ## Current Execution Snapshot (2026-05-15)
 
 - **Canonical queue:** `Docs/STATUS/Backlog.md` is authoritative for active execution order. ACTIVE/OPEN rows in the April monitor queue now carry owner and next-action/blocker fields.
-- **V2 implementation state:** 4C3b hidden direct-text source wiring, bounded hidden artifact sink, and the P1 product-reachability fix are committed. The public result remains the damaged pre-cutover envelope.
-- **Next V2 gate:** 4C3c is smoke-readiness verification, not broad product activation. It must prove that one Captain-defined direct-text live smoke can create an inspectable hidden artifact without public leakage after source commit and runtime refresh.
+- **V2 implementation state:** 4C3b hidden direct-text source wiring, bounded hidden artifact sink, P1 product-reachability fix, API V2 variant admission, internal artifact inspection route, and 4C3c smoke ledger-scope fix are committed. The public result remains the damaged pre-cutover envelope.
+- **Latest V2 gate:** 4C3c first live smoke passed on `efb1f33f` / job `7b56c24a79ee4ab390cc3a6d5aed8986`; hidden artifact inspection returned one internal artifact and public output stayed damaged/pre-cutover without hidden-artifact values.
+- **Next V2 gate:** define and review the next rebuild slice after hidden Claim Understanding smoke. Do not broaden live jobs, public exposure, cache IO, ACS/direct URL dispatch, or V1 cleanup without a later reviewed gate.
 - **V1 posture:** V1 analyzer tasks remain maintenance-only for correctness, integrity, observability, and safety. Do not interpret V1 monitor work as a plan to continue or preserve V1 beyond V2 cutover.
 - **Open planning risk:** Static `CAPTAIN_APPROVAL` remains planned temporary debt until UCM/task-policy-derived activation authority exists.
 
