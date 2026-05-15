@@ -1,7 +1,7 @@
 # V2 Slice 7I Evidence Prompt/Model Task Contract Design
 
 **Date:** 2026-05-15
-**Status:** approved by deputy-team review; docs-only; no source authorization
+**Status:** approved docs-only at `f58373a5` (`docs: define v2 evidence task design gate`); no source authorization
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `db082989` (`docs: record v2 source acquisition port contract`)
 **Prior source gate:** 7H `24ad47fd` (`feat: add v2 source acquisition port contract`)
