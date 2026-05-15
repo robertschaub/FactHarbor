@@ -104,6 +104,77 @@ A later source package may be proposed only after review and Captain approval. T
 
 7L-1 must not wire provider/search/fetch. It may at most produce an internal query plan that a later 7M source-acquisition package can consume after separate review.
 
+## 5.1 Execution Authority Decision For 7L-1
+
+7L-1 must not use fake approvals, private executable task clones, or runtime-local bypasses of the V2 gateway policy.
+
+If Captain later approves 7L-1 prompt/model execution, the only approved authority direction is:
+
+- add executable eligibility for exactly `evidence_query_planning`, and no other Evidence Lifecycle task;
+- keep the shipped task blocked by default unless the approved 7L-1 activation path supplies a real executable task snapshot with prompt, model, and cache approvals;
+- record the approval pointer in the run context/provenance envelope;
+- preserve no-store/no-read cache behavior;
+- prove `canExecuteAnalyzerV2GatewayTask(...)` is true before any model call;
+- prove all other Evidence Lifecycle tasks remain non-executable;
+- avoid any product/public caller path unless a later product wiring gate explicitly approves it.
+
+Allowed authority files for a future 7L-1 package, if and only if the Captain approval names them:
+
+- `apps/web/src/lib/analyzer-v2/gateway/policy.ts` for the single `evidence_query_planning` eligibility/status rule;
+- `apps/web/src/lib/analyzer-v2/gateway/model-policy-registry.ts` for the query-planning model-policy metadata;
+- `apps/web/src/lib/analyzer-v2/gateway/cache-policy-registry.ts` only for no-store/no-read query-planning cache-policy metadata;
+- `apps/web/src/lib/analyzer-v2/run-context.ts` only for freezing the approved query-planning policy/config/model snapshot into the existing context pattern.
+
+Any authority mechanism outside those files is out of scope for 7L-1 and requires a new package.
+
+## 5.2 Source File Ownership Envelope
+
+A future 7L-1 source package must name its exact file list before implementation. The default allowed envelope is:
+
+Production files:
+
+- `apps/web/src/lib/analyzer-v2/evidence-lifecycle/query-planning/**`
+- `apps/web/src/lib/analyzer-v2/evidence-lifecycle/execution-readiness/**` only for query-planning readiness helpers or provenance types;
+- the authority files listed in Section 5.1, only if Captain approval explicitly names them.
+
+Test files:
+
+- `apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/query-planning/**`
+- `apps/web/test/unit/lib/analyzer-v2/evidence-lifecycle/execution-readiness/**`
+- `apps/web/test/unit/lib/analyzer-v2/gateway/policy.test.ts`
+- `apps/web/test/unit/lib/analyzer-v2/boundary-guard.test.ts`
+
+Forbidden in 7L-1 unless a separate reviewed package explicitly approves them:
+
+- `apps/web/src/lib/internal-runner-queue.ts`;
+- `apps/web/src/lib/analyzer-v2/orchestrator.ts`;
+- `apps/web/src/lib/analyzer-v2/pipeline-shell.ts`;
+- public app/API/UI/report/export/compatibility files;
+- `apps/web/src/lib/analyzer-v2-runtime/**` concrete provider factories;
+- provider/search/fetch/parser/network modules;
+- Source Reliability modules;
+- V1 analyzer modules.
+
+Boundary guards must cover any new `query-planning` folder and any newly allowed import from `analyzer-v2-runtime`.
+
+## 5.3 Prompt Source Authority
+
+7L-1 must not edit prompt text, seed prompt files, activate prompt profiles, or change UCM/default JSON.
+
+If prompt/model execution is approved later, 7L-1 may only load and hash the already committed clean-room `V2_EVIDENCE_QUERY_PLANNING` section from `apps/web/prompts/claimboundary-v2.prompt.md`.
+
+The required implementation pattern is a dedicated Evidence Lifecycle query-planning prompt loader under the 7L-1 file envelope. It must:
+
+- reject every prompt profile except `claimboundary-v2`;
+- reject every prompt file except `claimboundary-v2.prompt.md`;
+- reject every section except `V2_EVIDENCE_QUERY_PLANNING`;
+- reject unapproved render variables;
+- compute the prompt content hash deterministically;
+- expose the prompt section id and output schema version in provenance;
+- not write, seed, activate, import, or mutate UCM prompt state.
+
+If this loader cannot satisfy those constraints, 7L-1 must not implement prompt/model execution.
+
 ## 6. Readiness Preconditions For Later Execution
 
 Before any future 7L-1 execution source package can run prompt/model work, it must define and verify:
@@ -188,6 +259,32 @@ Static guards must prove no:
 - public result/report/export leak;
 - live-job path;
 - approval flip.
+
+Focused behavioral tests must prove:
+
+- unknown AtomicClaim IDs are rejected before prompt/model execution;
+- unselected AtomicClaims do not leak into the rendered prompt or accepted query plan;
+- no query plan is emitted for blocked/damaged readiness;
+- hidden runtime artifacts, if any, are internal-only and bounded;
+- public result/report/API/export/compatibility surfaces remain unchanged;
+- `evidence_scarcity_handling` may appear only as query intent, never as a scarcity finding, warning, sufficiency result, or report caveat.
+
+## 9.1 Scarcity Boundary
+
+The `evidence_scarcity_handling` retrieval-policy key remains allowed in the query-planning schema only as retrieval intent: it may ask the future source-acquisition stage to search for whether relevant evidence exists.
+
+It must not mean that scarcity has been found.
+
+7L-1 query planning must not emit:
+
+- evidence scarcity findings;
+- material scarcity candidates;
+- sufficiency status;
+- user-visible warnings;
+- report caveats;
+- verdict confidence adjustments.
+
+Those remain owned by later acquisition/extraction/sufficiency/warning gates.
 
 ## 10. Approval Boundary
 
