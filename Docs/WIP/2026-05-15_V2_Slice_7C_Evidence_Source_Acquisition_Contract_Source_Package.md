@@ -1,7 +1,7 @@
 # V2 Slice 7C Evidence Source Acquisition Contract Source Package
 
 **Date:** 2026-05-15
-**Status:** draft for review; no source implemented yet
+**Status:** source implemented at `22530936`
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `6e1ad528` (`docs: draft v2 evidence source gate`)
 **Prerequisite package:** `Docs/WIP/2026-05-15_V2_Slice_7B_Evidence_Source_Acquisition_Task_Policy_Approval_Package.md`
@@ -12,6 +12,8 @@
 Implement only the first non-executable Evidence Lifecycle source-acquisition contract.
 
 7C may define how an accepted `EvidenceLifecycleStartDecision` becomes a non-executable `SourceAcquisitionRequest`. It must not perform source acquisition, search, fetch, prompt rendering, model calls, cache IO, Source Reliability calls, public result exposure, or orchestrator wiring.
+
+Implementation commit: `22530936` (`feat: add v2 evidence source request contract`).
 
 ## 2. Source Envelope
 
@@ -137,6 +139,13 @@ Minimum verification after implementation:
 - `git diff --check`
 
 No live jobs are meaningful for 7C.
+
+Executed verification for `22530936`:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/intake.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` - passed, 3 files / 49 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.test.ts` - passed, 28 files / 229 tests.
+- `npm -w apps/web run build` - passed.
+- `git diff --check` - passed.
 
 ## 10. Explicit Non-Goals
 

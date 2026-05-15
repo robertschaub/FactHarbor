@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T07:56:18.186Z",
-  "count": 487,
+  "generatedAt": "2026-05-15T08:14:07.659Z",
+  "count": 488,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10556,6 +10556,23 @@
       ],
       "files_touched": [],
       "summary": "Implement the first Evidence Lifecycle boundary as an accepted-ClaimContract-only intake contract"
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_Slice_7C_Evidence_Source_Request.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7c",
+        "evidence",
+        "source",
+        "request"
+      ],
+      "files_touched": [],
+      "summary": "Implement the first non-executable Evidence Lifecycle source-acquisition request contract"
     },
     {
       "file": "2026-05-15_Senior_Developer_V2_Pre_Slice7_Context_Diagnostics.md",
