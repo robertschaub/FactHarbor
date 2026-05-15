@@ -1,10 +1,11 @@
 # V2 Slice 7H Source Acquisition Port Contract Source Package
 
 **Date:** 2026-05-15
-**Status:** approved by deputy-team review; no source implemented yet
+**Status:** implemented at `24ad47fd` (`feat: add v2 source acquisition port contract`)
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `6ae571ca` (`docs: record v2 source acquisition port gate`)
 **Prerequisite package:** `Docs/WIP/2026-05-15_V2_Slice_7G_Source_Acquisition_Execution_Ownership_And_Port_Design.md`
+**Source package approval:** deputy-team approved after adding explicit network/parser/fetch guards and blocked-authority test wording
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
 
 ## 1. Purpose
@@ -143,6 +144,13 @@ Minimum verification after implementation:
 - `git diff --check`
 
 No live jobs are meaningful for 7H.
+
+Implementation verification on `24ad47fd`:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition-port/static-contract.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` - passed, 2 files / 47 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.test.ts` - passed, 31 files / 247 tests.
+- `npm -w apps/web run build` - passed.
+- `git diff --check` - passed.
 
 ## 10. Non-Goals
 
