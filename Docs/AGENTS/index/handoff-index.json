@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T20:01:18.208Z",
-  "count": 498,
+  "generatedAt": "2026-05-15T20:10:13.945Z",
+  "count": 501,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10207,6 +10207,27 @@
       "summary": "Start from `apps/web/src/lib/analyzer-v2/claim-understanding/model-adapter.ts`, where `attempts[].failureMessage` records parse/schema failures, and `apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts`, where `recordRuntimeArtifact(...)` currently writes completed dispatch artifacts w"
     },
     {
+      "file": "2026-05-15_LLM_Expert_V2_Slice_7L_Query_Planning_Gate_Review.md",
+      "date": "2026-05-15",
+      "roles": [
+        "llm_expert"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7l",
+        "query",
+        "planning",
+        "gate",
+        "review"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-15_LLM_Expert_V2_Slice_7L_Query_Planning_Gate_Review.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Start from 7K-1 at `218fc879` and docs at `1a007020`/7K. Draft 7L as a review package with an explicit approve/modify/reject question and exact blocked-surface checklist. If implementation is proposed, require direct Captain wording and keep scope to internal query-planning prompt/model execution on"
+    },
+    {
       "file": "2026-05-15_Lead_Architect_Plan_Stability_Drift_Resolution.md",
       "date": "2026-05-15",
       "roles": [
@@ -10775,6 +10796,47 @@
         "Docs/WIP/2026-05-15_V2_Slice_7K_Evidence_Lifecycle_Execution_Design.md"
       ],
       "summary": "Start from commit `b57f379e` (`docs: design v2 evidence execution gate`). If continuing without Captain escalation, the only low-risk next step is a 7K-1 inert contract source package under the exact approval boundary in the 7K document."
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_Slice_7L_Query_Planning_Execution_Package.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7l",
+        "query",
+        "planning",
+        "execution",
+        "package"
+      ],
+      "files_touched": [
+        "Docs/WIP/2026-05-15_V2_Slice_7L_Evidence_Query_Planning_Execution_Package.md"
+      ],
+      "summary": "Start from `Docs/WIP/2026-05-15_V2_Slice_7L_Evidence_Query_Planning_Execution_Package.md`. If continuing with low risk, the next step is external/deputy review of that package. Do not implement 7L-1 source until Captain approves exact wording for the execution gate."
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_Slice_7L_Query_Planning_Position_Memo.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7l",
+        "query",
+        "planning",
+        "position",
+        "memo"
+      ],
+      "files_touched": [
+        "Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7L_Query_Planning_Position_Memo.md",
+        "Docs/AGENTS/Agent_Outputs.md"
+      ],
+      "summary": "Draft 7L as an approval/review package around a single hidden internal query-planning task: accepted direct-text `ClaimContract` in, bounded `EvidenceQueryPlanningResult` out, no provider/search/fetch. Freeze ownership of input envelope, pre-call readiness, prompt/model policy snapshot, provenance, "
     },
     {
       "file": "2026-05-15_Senior_Developer_V2_Pre_Slice7_Context_Diagnostics.md",
