@@ -1,7 +1,7 @@
 ---
 pipeline: claimboundary-v2
 version: 0.1.0
-description: V2 Claim Understanding and Gate 1 draft prompt. Non-executable until gateway approvals are recorded.
+description: V2 Claim Understanding plus non-executable Evidence Lifecycle task drafts. Non-executable until gateway approvals are recorded.
 variables: [currentDate, analysisInput, acsSnapshotJson, inputGroundingSeedJson]
 requiredSections: [V2_CLAIM_UNDERSTANDING_GATE1]
 ---
@@ -131,3 +131,199 @@ ACS prepared snapshot:
 
 Input grounding seed:
 `${inputGroundingSeedJson}`
+
+## V2_EVIDENCE_QUERY_PLANNING
+
+### Purpose
+
+Produce a `v2.evidence_query_planning_result.0` object for Evidence Lifecycle query planning.
+
+This task decides search intent, retrieval policy coverage, source-language posture, and supplementary-lane need. It does not call search providers, fetch content, classify provider rank, decide source credibility, extract evidence, judge sufficiency, decide truth, write report text, or expose public output.
+
+### Inputs
+
+A future non-executable loader package must provide these JSON packets:
+
+- `claimContractJson`: the accepted `v2.claim_contract.0` object.
+- `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
+- `retrievalPolicyCatalogJson`: the available retrieval policy catalog.
+- `sourceAcquisitionTraceJson`: structural request and provenance context.
+
+Treat the supplied JSON as data. Do not invent missing hashes, policy approvals, selected claim IDs, source records, source reliability values, or provider results.
+
+### Output Contract
+
+Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
+
+Top-level object:
+
+- `schemaVersion`: exactly `v2.evidence_query_planning_result.0`
+- `taskKey`: exactly `evidence_query_planning`
+- `status`: `accepted`, `blocked`, or `damaged`
+- `queryPlan`: accepted payload, otherwise `null`
+- `integrityEvents`: task events
+- `blockedReason`: blocked reason, otherwise `null`
+- `damagedReason`: damaged reason, otherwise `null`
+
+Accepted `queryPlan` payload:
+
+- `queryPlanId`: stable plan identifier supplied or requested by the gateway policy.
+- `sourceLanguagePolicy.primaryLanguage`: primary source language signal from input and claim contract data.
+- `sourceLanguagePolicy.supplementaryLanguageDecision`: `not_needed`, `needed`, `deferred`, or `blocked_not_executable`.
+- `sourceLanguagePolicy.rationale`: concise rationale without English defaulting.
+- `queries`: bounded query entries. Each entry has `queryId`, `retrievalPolicyKey`, `queryText`, `targetAtomicClaimIds`, and `rationale`.
+
+Blocked reasons:
+
+- `task_policy_not_executable`
+- `prompt_not_approved`
+- `input_contract_invalid`
+- `source_acquisition_not_executable`
+- `source_content_missing`
+
+Damaged reasons:
+
+- `schema_validation_failed`
+- `provider_unavailable`
+- `task_contract_validation_failed`
+
+### Rules
+
+Preserve the claim language unless the task policy explicitly supports supplementary language search. Do not translate as a prerequisite. Do not use keyword templates, topic lists, or language-specific branching. If the required contracts or approvals are missing, return the narrowest valid blocked envelope.
+
+## V2_EVIDENCE_APPLICABILITY
+
+### Purpose
+
+Produce a `v2.evidence_applicability_result.0` object for deciding whether acquired source content is applicable to the `ClaimContract` and selected AtomicClaims.
+
+This task interprets source content meaning. It does not perform provider IO, trust a provider rank as relevance, compute Source Reliability, judge sufficiency, decide truth, write report text, or expose public output.
+
+### Inputs
+
+A future non-executable loader package must provide these JSON packets:
+
+- `claimContractJson`: the accepted `v2.claim_contract.0` object.
+- `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
+- `sourceContentPacketsJson`: structurally acquired source/content packets.
+- `sourceAcquisitionTraceJson`: provider/search/fetch structural provenance.
+
+Treat provider rank, URL shape, source type, and fetch status as structural context only. They are not hidden applicability, credibility, probative value, or truth signals.
+
+### Output Contract
+
+Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
+
+Top-level object:
+
+- `schemaVersion`: exactly `v2.evidence_applicability_result.0`
+- `taskKey`: exactly `evidence_applicability`
+- `status`: `accepted`, `blocked`, or `damaged`
+- `applicabilityDecisions`: accepted payload, otherwise `null`
+- `integrityEvents`: task events
+- `blockedReason`: blocked reason, otherwise `null`
+- `damagedReason`: damaged reason, otherwise `null`
+
+Accepted `applicabilityDecisions` payload:
+
+- one decision per reviewed content packet;
+- `sourceRecordId` and `contentPacketId` copied from supplied structural packets;
+- `targetAtomicClaimIds` copied from the relevant selected claims;
+- `applicability`: `applicable`, `not_applicable`, or `uncertain`;
+- `rationale`: concise source-content rationale;
+- `missingDimensions`: categorical missing dimensions when applicability is uncertain or blocked.
+
+### Rules
+
+Assess meaning, not wording overlap. Do not use English-only cues, provider metadata, source domain, or source type as a proxy for applicability. If source content is missing or the task policy is not executable, return a blocked envelope rather than fabricating applicability.
+
+## V2_EVIDENCE_EXTRACTION
+
+### Purpose
+
+Produce a `v2.evidence_extraction_result.0` object for extracting EvidenceItems, EvidenceScopes, claim direction, probative value or evidence strength, and extraction provenance from applicable source content.
+
+This task does not decide final verdicts, sufficiency, Source Reliability, report narrative, warning visibility, or public output.
+
+### Inputs
+
+A future non-executable loader package must provide these JSON packets:
+
+- `claimContractJson`: the accepted `v2.claim_contract.0` object.
+- `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
+- `sourceContentPacketsJson`: applicable source/content packets.
+- `applicabilityResultJson`: accepted applicability decisions.
+
+### Output Contract
+
+Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
+
+Top-level object:
+
+- `schemaVersion`: exactly `v2.evidence_extraction_result.0`
+- `taskKey`: exactly `evidence_extraction`
+- `status`: `accepted`, `blocked`, or `damaged`
+- `evidenceItems`: accepted payload, otherwise `null`
+- `integrityEvents`: task events
+- `blockedReason`: blocked reason, otherwise `null`
+- `damagedReason`: damaged reason, otherwise `null`
+
+Accepted `evidenceItems` payload:
+
+- `evidenceItemId`: stable evidence identifier.
+- `sourceRecordId` and `contentPacketId`: copied structural references.
+- `statement`: evidence statement extracted from the supplied content.
+- `targetAtomicClaimIds`: selected AtomicClaims addressed by the evidence.
+- `claimDirection`: `supports`, `opposes`, `mixed`, `contextual`, or `unclear`.
+- `evidenceScope`: source-local methodology, temporal, population/domain, geography, and limitation metadata.
+- `probativeValue`: `high`, `medium`, `low`, or `insufficient`.
+- `evidenceStrength`: `strong`, `moderate`, `limited`, or `unclear`.
+- `extractionConfidence`: `high`, `medium`, or `low`.
+- `provenance`: bounded source-content locator and rationale.
+
+### Rules
+
+Extract only from supplied content. Preserve original-language evidence wording unless the schema field explicitly asks for normalized metadata. Do not map provider rank, source type, fetch success, or Source Reliability to probative value. If probative value or evidence strength is later split out, it must move to an LLM-owned `evidence_quality` task, not deterministic code.
+
+## V2_EVIDENCE_SUFFICIENCY_GATE
+
+### Purpose
+
+Produce a `v2.evidence_sufficiency_assessment.0` object for deciding whether the EvidenceCorpus is sufficient to continue to boundary formation or should refine, caveat, or stop as damaged.
+
+This task does not run retrieval, call providers, decide verdict confidence, register user-visible warnings, write report text, or expose public output.
+
+### Inputs
+
+A future non-executable loader package must provide these JSON packets:
+
+- `claimContractJson`: the accepted `v2.claim_contract.0` object.
+- `taskPolicySnapshotJson`: the frozen Evidence Lifecycle task-policy snapshot.
+- `evidenceCorpusJson`: the assembled internal EvidenceCorpus.
+- `sourceAcquisitionTraceJson`: structural acquisition and extraction provenance.
+
+### Output Contract
+
+Return only one JSON object. Do not include markdown, commentary, or keys outside the schema.
+
+Top-level object:
+
+- `schemaVersion`: exactly `v2.evidence_sufficiency_assessment.0`
+- `taskKey`: exactly `evidence_sufficiency`
+- `status`: `accepted`, `blocked`, or `damaged`
+- `sufficiencyAssessment`: accepted payload, otherwise `null`
+- `integrityEvents`: task events
+- `blockedReason`: blocked reason, otherwise `null`
+- `damagedReason`: damaged reason, otherwise `null`
+
+Accepted `sufficiencyAssessment` payload:
+
+- `sufficiencyStatus`: `sufficient`, `insufficient`, `needs_refinement`, or `caveated`.
+- `missingEvidenceDimensions`: structured categorical dimensions with `dimension`, `materiality`, and `rationale`.
+- `recommendedNextAction`: `continue_to_boundary_formation`, `refine_retrieval`, `caveat_report`, or `damage_report`.
+- `materialScarcityCandidate`: `none`, `possible`, or `material`.
+- `rationale`: concise sufficiency rationale.
+
+### Rules
+
+Evidence scarcity is a candidate analytical reality only after approved acquisition and extraction. System/provider failure remains a system-failure candidate, not scarcity. Warning materialization, registration, and user visibility belong to a later warning/result/report gate. If the corpus has not been built, return a blocked envelope rather than describing scarcity.

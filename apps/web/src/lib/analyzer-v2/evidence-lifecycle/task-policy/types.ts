@@ -1,10 +1,12 @@
+import type {
+  EvidenceLifecycleTaskKey,
+  EvidenceLifecycleTaskOutputSchemaVersion,
+  EvidenceLifecycleTaskPromptSectionId,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
+
 export const EVIDENCE_TASK_POLICY_SNAPSHOT_VERSION = "v2.evidence-lifecycle.task-policy.0";
 
-export type EvidenceTaskPolicyPlannedTaskKey =
-  | "evidence_query_planning"
-  | "evidence_applicability"
-  | "evidence_extraction"
-  | "evidence_sufficiency";
+export type EvidenceTaskPolicyPlannedTaskKey = EvidenceLifecycleTaskKey;
 
 export type EvidenceRetrievalPolicyCatalogKey =
   | "baseline_research"
@@ -16,6 +18,11 @@ export type EvidenceRetrievalPolicyCatalogKey =
 export type EvidenceTaskPolicyPlannedTask = {
   taskKey: EvidenceTaskPolicyPlannedTaskKey;
   status: "symbolic_not_executable";
+  promptSectionId: EvidenceLifecycleTaskPromptSectionId;
+  outputSchemaVersion: EvidenceLifecycleTaskOutputSchemaVersion;
+  promptApprovalStatus: "missing";
+  modelPolicyStatus: "not_approved";
+  executionAuthority: "not_executable";
 };
 
 export type EvidenceRetrievalPolicyCatalogEntry = {
