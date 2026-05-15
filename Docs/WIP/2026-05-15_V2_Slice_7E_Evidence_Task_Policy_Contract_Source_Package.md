@@ -1,9 +1,10 @@
 # V2 Slice 7E Evidence Task Policy Contract Source Package
 
 **Date:** 2026-05-15
-**Status:** draft for review; no source implemented yet
+**Status:** implemented at `d9d25ef7` (`feat: add v2 evidence task policy contract`)
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `c22ab0a1` (`docs: define v2 evidence task policy ownership`)
+**Source package approval:** deputy-team approved after the Senior Developer review required an extraction rather than a duplicate policy layer
 **Prerequisite package:** `Docs/WIP/2026-05-15_V2_Slice_7D_Evidence_Task_Policy_Snapshot_Ownership_Package.md`
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
 
@@ -119,6 +120,13 @@ Minimum verification after implementation:
 - `git diff --check`
 
 No live jobs are meaningful for 7E.
+
+Implementation verification on `d9d25ef7`:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/task-policy/static-policy.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` - passed, 3 files / 51 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.test.ts` - passed, 29 files / 235 tests.
+- `npm -w apps/web run build` - passed.
+- `git diff --check` - passed.
 
 ## 8. Non-Goals
 
