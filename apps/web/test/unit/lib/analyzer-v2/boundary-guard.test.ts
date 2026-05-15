@@ -36,6 +36,14 @@ const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cach
 const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
 const evidenceLifecycleRoot = path.resolve(v2AnalyzerRoot, "evidence-lifecycle");
 const evidenceLifecycleSourceAcquisitionRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition");
+const evidenceLifecycleSourceAcquisitionExecutionContractPath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "execution-contract.ts",
+);
+const evidenceLifecycleSourceAcquisitionStructuralExecutorPath = path.resolve(
+  evidenceLifecycleSourceAcquisitionRoot,
+  "structural-executor.ts",
+);
 const evidenceLifecycleTaskPolicyRoot = path.resolve(evidenceLifecycleRoot, "task-policy");
 const evidenceLifecycleTaskContractsRoot = path.resolve(evidenceLifecycleRoot, "task-contracts");
 const evidenceLifecycleExecutionReadinessRoot = path.resolve(evidenceLifecycleRoot, "execution-readiness");
@@ -1647,6 +1655,36 @@ describe("analyzer-v2 boundary guard", () => {
       for (const specifier of collectModuleSpecifiers(sourceFile)) {
         if (isDispatchCapableInternalImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports dispatch-capable internal ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps product and public surfaces from reaching the source-acquisition structural executor", () => {
+    const forbiddenTargets = new Set([
+      evidenceLifecycleSourceAcquisitionExecutionContractPath,
+      evidenceLifecycleSourceAcquisitionStructuralExecutorPath,
+    ].map(toPosix));
+    const scanRoots = Array.from(new Set([
+      ...adapterForbiddenProductPaths,
+      ...publicSurfaceFiles,
+    ]));
+    const violations: string[] = [];
+
+    for (const sourcePath of scanRoots) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        const resolved = resolveAnalyzerV2SourceImport(sourcePath, specifier);
+        if (resolved && forbiddenTargets.has(toPosix(resolved))) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} directly reaches ${toPosix(path.relative(webRoot, resolved))}`);
+        }
+      }
+
+      for (const importedPath of collectTransitiveAnalyzerV2Imports(sourcePath)) {
+        if (forbiddenTargets.has(toPosix(importedPath))) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} transitively reaches ${toPosix(path.relative(webRoot, importedPath))}`);
         }
       }
     }

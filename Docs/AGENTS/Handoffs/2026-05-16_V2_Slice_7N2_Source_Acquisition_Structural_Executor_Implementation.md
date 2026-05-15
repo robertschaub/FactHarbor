@@ -81,6 +81,38 @@ DEBT-GUARD COMPACT RESULT
 - This is still a controlled-harness structural executor. It does not authorize real source acquisition, provider wiring, product wiring, cache IO, Source Reliability use, public report exposure, or live jobs.
 - The next step should be post-7N-2 review/consolidation before any later package introduces executable source acquisition behavior.
 
+## Post-Commit Review Hardening
+
+Post-commit review initially returned `MODIFY` from three focused reviewers. The findings were resolved in a follow-up hardening commit:
+
+- exact 7M-1 handoff and 7C source-acquisition request version checks before port calls;
+- source-language policy structural shape validation before building the port request;
+- closed-field opaque content packet pointer validation;
+- opaque candidate/content packet pointer ID prefix validation to prevent URL/domain/source-identity material from serializing through ID values;
+- negative tests for can-write/storage-authority cache provenance, stale contract versions, malformed source-language policy, missing/invalid budgets, durable/dereferenceable pointers, forbidden pointer fields, leaking ID values, and one-call/no-retry partial execution;
+- reverse boundary guard preventing product/public surfaces from directly or transitively reaching the 7N-2 structural executor or execution contract.
+
+Additional verification after hardening:
+
+- `npm -w apps/web test -- --run test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/structural-executor.test.ts` — 12 tests
+- `npm -w apps/web test -- --run test/unit/lib/analyzer-v2/boundary-guard.test.ts` — 47 tests
+- `npm -w apps/web test -- --run test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition` — 4 files, 30 tests
+- `npm -w apps/web test -- --run test/unit/lib/analyzer-v2` — 40 files, 299 tests
+- `npm -w apps/web run build`
+
+DEBT-GUARD RESULT
+
+- Classification: incomplete-existing-mechanism.
+- Chosen option: amend the existing validators/tests/guard in place.
+- Rejected path and why: reverting 7N-2 would discard approved structural work; adding a parallel sanitizer would create a second trust mechanism.
+- What was removed/simplified: no runtime path removed; validator openness was narrowed.
+- What was added: stricter structural validation and negative coverage only.
+- Net mechanism count: unchanged.
+- Budget reconciliation: touched the expected executor, test, boundary guard, and handoff/index files; no provider/runtime/product/public path added.
+- Verification: focused/widened/full analyzer-v2/build passed.
+- Debt accepted and removal trigger: none.
+- Residual debt: 7N-3 must still add caller/owner-side enforcement so a future real IO port cannot merely claim the controlled-harness authority marker.
+
 ## Learnings
 
 - For opaque content packet pointers, a boolean field such as `rawContentIncluded: false` is useful and should not be conflated with raw content leakage.

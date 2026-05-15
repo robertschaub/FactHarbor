@@ -134,7 +134,7 @@ function sourceDecision(
   };
 }
 
-function pointer(id = "OCP_001"): OpaqueSourceContentPacketPointer {
+function pointer(id = "OPAQUE_CONTENT_PACKET_001"): OpaqueSourceContentPacketPointer {
   return {
     contentPacketPointerId: id,
     nonDurable: true,
@@ -150,7 +150,7 @@ function portResult(
     attemptId: "ATT_001",
     outcomeKind: "success",
     durationMs: 25,
-    candidateIds: ["CANDIDATE_001"],
+    candidateIds: ["OPAQUE_CANDIDATE_001"],
     contentPacketPointers: [pointer()],
     ...overrides,
   };
@@ -191,7 +191,7 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
       portResult({
         attemptId: `ATT_${index + 1}`,
         candidateIds: [`OPAQUE_CANDIDATE_${index + 1}`],
-        contentPacketPointers: [pointer(`OPAQUE_PACKET_${index + 1}`)],
+        contentPacketPointers: [pointer(`OPAQUE_CONTENT_PACKET_${index + 1}`)],
       })
     );
 
@@ -231,6 +231,19 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
   it("creates no port calls for blocked handoffs, missing provenance, or invalid cache provenance", async () => {
     for (const handoffDecision of [
       blockedHandoff(),
+      {
+        ...handoff(),
+        decisionVersion: "stale-handoff-decision-version",
+      } as unknown as QueryPlanSourceAcquisitionHandoffDecision,
+      handoff({
+        handoffVersion: "stale-handoff-version" as QueryPlanSourceAcquisitionHandoff["handoffVersion"],
+      }),
+      handoff({
+        sourceLanguagePolicy: {
+          ...sourceLanguagePolicy(),
+          rationale: undefined,
+        } as unknown as QueryPlanSourceAcquisitionHandoff["sourceLanguagePolicy"],
+      }),
       handoff({ promptProvenance: null as unknown as QueryPlanSourceAcquisitionHandoff["promptProvenance"] }),
       handoff({
         cacheProvenance: {
@@ -245,8 +258,25 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
           namespace: "cache",
           reason: "no_store_runtime_dispatch_safety",
           canRead: false,
+          canWrite: true,
+        } as unknown as QueryPlanSourceAcquisitionHandoff["cacheProvenance"],
+      }),
+      handoff({
+        cacheProvenance: {
+          namespace: "cache",
+          reason: "no_store_runtime_dispatch_safety",
+          canRead: false,
           canWrite: false,
           keyParts: ["not_allowed"],
+        } as unknown as QueryPlanSourceAcquisitionHandoff["cacheProvenance"],
+      }),
+      handoff({
+        cacheProvenance: {
+          namespace: "cache",
+          reason: "no_store_runtime_dispatch_safety",
+          canRead: false,
+          canWrite: false,
+          storageAuthority: "not_allowed",
         } as unknown as QueryPlanSourceAcquisitionHandoff["cacheProvenance"],
       }),
     ]) {
@@ -275,6 +305,17 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
         blockedReason: "evidence_lifecycle_blocked",
         sourceEvidenceLifecycleStatus: "blocked",
       },
+      {
+        ...sourceDecision(),
+        decisionVersion: "stale-source-acquisition-decision-version",
+      } as unknown as SourceAcquisitionStartDecision,
+      {
+        ...sourceDecision(),
+        request: {
+          ...sourceDecision().request!,
+          requestVersion: "stale-source-acquisition-request-version",
+        },
+      } as unknown as SourceAcquisitionStartDecision,
       {
         ...sourceDecision(),
         request: {
@@ -330,9 +371,13 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
     const ready = handoff();
     const baseBudget = buildSourceAcquisitionStructuralExecutionBudget(ready.handoff);
     const budgets: SourceAcquisitionExecutionBudgetSnapshot[] = [
+      null as unknown as SourceAcquisitionExecutionBudgetSnapshot,
       { ...baseBudget, source: "runtime_provider" } as SourceAcquisitionExecutionBudgetSnapshot,
       { ...baseBudget, maxQueryEntries: 1 },
       { ...baseBudget, maxAttemptsPerQuery: 2 } as SourceAcquisitionExecutionBudgetSnapshot,
+      { ...baseBudget, maxCandidateRecordsPerQuery: -1 },
+      { ...baseBudget, timeoutMs: 0 },
+      { ...baseBudget, maxContentPacketPointersPerQuery: -1 },
       { ...baseBudget, cancellationState: "requested" },
       { ...baseBudget, retryPolicy: "immediate_retry" } as SourceAcquisitionExecutionBudgetSnapshot,
       {
@@ -418,13 +463,24 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
     const timeoutDecision = await executeSourceAcquisitionStructuralExecutor(executionRequest({
       port: controlledPort(() => portResult({ durationMs: 30001 })),
     }));
+    const partialCalls: SourceAcquisitionPortAttemptRequest[] = [];
     const partialDecision = await executeSourceAcquisitionStructuralExecutor(executionRequest({
       port: {
         ...controlledPort(),
-        acquire: () => {
+        acquire: (request) => {
+          partialCalls.push(request);
           throw new Error("controlled harness failure");
         },
       },
+    }));
+    const secondQueryFailurePort = controlledPort((_request, index) => {
+      if (index === 1) {
+        throw new Error("controlled harness failure on second query");
+      }
+      return portResult({ attemptId: "ATT_FIRST" });
+    });
+    const secondQueryFailureDecision = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+      port: secondQueryFailurePort,
     }));
     const overCandidateCap = await executeSourceAcquisitionStructuralExecutor(executionRequest({
       budget: buildSourceAcquisitionStructuralExecutionBudget(handoff().handoff, {
@@ -441,6 +497,13 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
 
     expect(timeoutDecision).toMatchObject({ status: "damaged_structural", executorStopReason: "port_timeout" });
     expect(partialDecision).toMatchObject({ status: "damaged_structural", executorStopReason: "partial_execution" });
+    expect(partialCalls).toHaveLength(1);
+    expect(secondQueryFailureDecision).toMatchObject({
+      status: "damaged_structural",
+      executorStopReason: "partial_execution",
+      attempts: [{ attemptId: "ATT_FIRST" }],
+    });
+    expect(secondQueryFailurePort.calls).toHaveLength(2);
     expect(overCandidateCap).toMatchObject({
       status: "damaged_structural",
       executorStopReason: "port_candidate_cap_exceeded",
@@ -475,12 +538,93 @@ describe("analyzer-v2 source-acquisition structural executor", () => {
         })
       ),
     }));
+    const leakingCandidateId = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+      port: controlledPort(() => portResult({ candidateIds: ["https://example.test/source"] })),
+    }));
+    const leakingPointerId = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+      port: controlledPort(() =>
+        portResult({
+          contentPacketPointers: [pointer("example.test/source")],
+        })
+      ),
+    }));
+    const durablePointer = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+      port: controlledPort(() =>
+        portResult({
+          contentPacketPointers: [
+            {
+              ...pointer(),
+              nonDurable: false,
+            } as unknown as OpaqueSourceContentPacketPointer,
+          ],
+        })
+      ),
+    }));
+    const dereferenceablePointer = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+      port: controlledPort(() =>
+        portResult({
+          contentPacketPointers: [
+            {
+              ...pointer(),
+              dereferenceableByStructuralCore: true,
+            } as unknown as OpaqueSourceContentPacketPointer,
+          ],
+        })
+      ),
+    }));
+
+    for (const forbiddenField of [
+      "snippet",
+      "title",
+      "url",
+      "domain",
+      "sourceName",
+      "sourceRecord",
+      "providerRank",
+      "providerPayload",
+      "languageLabel",
+      "dereferenceLocator",
+      "storageAuthority",
+    ]) {
+      const decision = await executeSourceAcquisitionStructuralExecutor(executionRequest({
+        port: controlledPort(() =>
+          portResult({
+            contentPacketPointers: [
+              {
+                ...pointer(),
+                [forbiddenField]: "not allowed",
+              } as unknown as OpaqueSourceContentPacketPointer,
+            ],
+          })
+        ),
+      }));
+      expect(decision).toMatchObject({
+        status: "damaged_structural",
+        executorStopReason: "port_result_invalid",
+      });
+    }
 
     expect(invalidOutcome).toMatchObject({
       status: "damaged_structural",
       executorStopReason: "port_result_invalid",
     });
     expect(rawContentPointer).toMatchObject({
+      status: "damaged_structural",
+      executorStopReason: "port_result_invalid",
+    });
+    expect(leakingCandidateId).toMatchObject({
+      status: "damaged_structural",
+      executorStopReason: "port_result_invalid",
+    });
+    expect(leakingPointerId).toMatchObject({
+      status: "damaged_structural",
+      executorStopReason: "port_result_invalid",
+    });
+    expect(durablePointer).toMatchObject({
+      status: "damaged_structural",
+      executorStopReason: "port_result_invalid",
+    });
+    expect(dereferenceablePointer).toMatchObject({
       status: "damaged_structural",
       executorStopReason: "port_result_invalid",
     });

@@ -7,6 +7,7 @@ import type {
   QueryPlanSourceAcquisitionHandoffDecision,
   QueryPlanSourceAcquisitionHandoffQueryEntry,
 } from "./query-plan-handoff";
+import { QUERY_PLAN_SOURCE_ACQUISITION_HANDOFF_VERSION } from "./query-plan-handoff";
 import {
   SOURCE_ACQUISITION_CONTROLLED_HARNESS_AUTHORITY,
   SOURCE_ACQUISITION_STRUCTURAL_EXECUTION_VERSION,
@@ -22,6 +23,7 @@ import {
   type SourceAcquisitionPortAttemptResult,
 } from "./execution-contract";
 import type { SourceAcquisitionRequest, SourceAcquisitionStartDecision } from "./types";
+import { SOURCE_ACQUISITION_REQUEST_VERSION } from "./types";
 
 type BlockedStopReason = Exclude<SourceAcquisitionExecutorStopReason, "not_stopped">;
 
@@ -73,6 +75,38 @@ function stringListIsClean(values: readonly string[]): boolean {
   return values.length > 0
     && values.every((value) => isNonBlankString(value) && value === value.trim())
     && new Set(values).size === values.length;
+}
+
+function isOpaqueCandidateId(value: unknown): value is string {
+  return isNonBlankString(value)
+    && value === value.trim()
+    && value.startsWith("OPAQUE_CANDIDATE_")
+    && /^[A-Z0-9_]+$/.test(value);
+}
+
+function isOpaqueContentPacketPointerId(value: unknown): value is string {
+  return isNonBlankString(value)
+    && value === value.trim()
+    && value.startsWith("OPAQUE_CONTENT_PACKET_")
+    && /^[A-Z0-9_]+$/.test(value);
+}
+
+function sourceLanguagePolicyIsStructural(
+  value: QueryPlanSourceAcquisitionHandoff["sourceLanguagePolicy"],
+): boolean {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const decision = value.supplementaryLanguageDecision;
+  return isNonBlankString(value.primaryLanguage)
+    && isNonBlankString(value.rationale)
+    && (
+      decision === "not_needed"
+      || decision === "needed"
+      || decision === "deferred"
+      || decision === "blocked_not_executable"
+    );
 }
 
 function selectedSetContainsTargets(
@@ -129,6 +163,7 @@ function readReadyHandoff(
 ): QueryPlanSourceAcquisitionHandoff | BlockedStopReason {
   if (
     !isRecord(decision)
+    || decision.decisionVersion !== QUERY_PLAN_SOURCE_ACQUISITION_HANDOFF_VERSION
     || decision.visibility !== "internal_only"
     || decision.status !== "ready_not_executable"
     || !isRecord(decision.handoff)
@@ -138,11 +173,13 @@ function readReadyHandoff(
 
   const handoff = decision.handoff as QueryPlanSourceAcquisitionHandoff;
   if (
-    handoff.visibility !== "internal_only"
+    handoff.handoffVersion !== QUERY_PLAN_SOURCE_ACQUISITION_HANDOFF_VERSION
+    || handoff.visibility !== "internal_only"
     || handoff.executionScope !== "not_executable"
     || handoff.sourceAcquisitionStatus !== "ready_not_executable"
     || !stringListIsClean(handoff.selectedAtomicClaimIds)
     || !queryEntriesAreClean(handoff)
+    || !sourceLanguagePolicyIsStructural(handoff.sourceLanguagePolicy)
   ) {
     return "handoff_not_ready";
   }
@@ -164,6 +201,7 @@ function readReadySourceRequest(
 ): SourceAcquisitionRequest | BlockedStopReason {
   if (
     !isRecord(decision)
+    || decision.decisionVersion !== SOURCE_ACQUISITION_REQUEST_VERSION
     || decision.visibility !== "internal_only"
     || decision.status !== "source_acquisition_ready_not_executable"
     || !isRecord(decision.request)
@@ -173,7 +211,8 @@ function readReadySourceRequest(
 
   const request = decision.request as SourceAcquisitionRequest;
   if (
-    request.visibility !== "internal_only"
+    request.requestVersion !== SOURCE_ACQUISITION_REQUEST_VERSION
+    || request.visibility !== "internal_only"
     || request.executionScope !== "contract_only_no_provider_execution"
     || request.sourceAcquisitionStatus !== "ready_not_executable"
     || !isRecord(request.intake)
@@ -271,20 +310,19 @@ function authorityIsControlledHarness(
 }
 
 function contentPacketPointerIsOpaque(pointer: OpaqueSourceContentPacketPointer): boolean {
+  const allowedKeys = new Set([
+    "contentPacketPointerId",
+    "nonDurable",
+    "dereferenceableByStructuralCore",
+    "rawContentIncluded",
+  ]);
   return isRecord(pointer)
-    && isNonBlankString(pointer.contentPacketPointerId)
-    && pointer.contentPacketPointerId === pointer.contentPacketPointerId.trim()
+    && Object.keys(pointer).every((key) => allowedKeys.has(key))
+    && Object.keys(pointer).length === allowedKeys.size
+    && isOpaqueContentPacketPointerId(pointer.contentPacketPointerId)
     && pointer.nonDurable === true
     && pointer.dereferenceableByStructuralCore === false
-    && pointer.rawContentIncluded === false
-    && !("rawContent" in pointer)
-    && !("content" in pointer)
-    && !("text" in pointer)
-    && !("url" in pointer)
-    && !("domain" in pointer)
-    && !("title" in pointer)
-    && !("locator" in pointer)
-    && !("storageAuthority" in pointer);
+    && pointer.rawContentIncluded === false;
 }
 
 function portResultIsStructurallyValid(
@@ -298,9 +336,7 @@ function portResultIsStructurallyValid(
     && Number.isInteger(result.durationMs)
     && result.durationMs >= 0
     && Array.isArray(result.candidateIds)
-    && result.candidateIds.every((candidateId) =>
-      isNonBlankString(candidateId) && candidateId === candidateId.trim()
-    )
+    && result.candidateIds.every(isOpaqueCandidateId)
     && Array.isArray(result.contentPacketPointers)
     && result.contentPacketPointers.every(contentPacketPointerIsOpaque);
 }
