@@ -214,7 +214,7 @@ The handoff must carry:
 - source-language and supplementary-language policy fields;
 - structural query entries;
 - execution scope `not_executable`;
-- source-acquisition status `blocked_before_source_execution` or `ready_not_executable`.
+- source-acquisition status `ready_not_executable` only when a handoff exists; blocked states return a blocked decision with `handoff: null`.
 
 The handoff must not carry:
 
