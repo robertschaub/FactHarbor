@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T08:35:08.743Z",
-  "count": 489,
+  "generatedAt": "2026-05-15T08:47:54.110Z",
+  "count": 490,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10590,6 +10590,24 @@
       ],
       "files_touched": [],
       "summary": "Implement the shared non-executable Evidence Lifecycle task-policy contract"
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_Slice_7F_Evidence_Corpus_Build_Decision.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "slice",
+        "7f",
+        "evidence",
+        "corpus",
+        "build",
+        "decision"
+      ],
+      "files_touched": [],
+      "summary": "Implement the Evidence Corpus pre-execution build-decision boundary"
     },
     {
       "file": "2026-05-15_Senior_Developer_V2_Pre_Slice7_Context_Diagnostics.md",

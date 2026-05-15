@@ -1,10 +1,11 @@
 # V2 Slice 7F Evidence Corpus Pre-Execution Build Decision Package
 
 **Date:** 2026-05-15
-**Status:** draft for review; no source implemented yet
+**Status:** implemented at `b8a97413` (`feat: add v2 evidence corpus build decision`)
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `f7be0e06` (`docs: record v2 evidence task policy handoff`)
 **Prerequisite source gate:** 7E `d9d25ef7` (`feat: add v2 evidence task policy contract`)
+**Source package approval:** deputy-team approved after adding separate `notBuiltReason` and `blockedReason` fields
 **Checklist version/hash:** `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1` / `sha256:9029402e8d359ef21a5e92a181e290a9362203acaca1923a98606b63018fec96`
 
 ## 1. Purpose
@@ -170,6 +171,13 @@ Minimum verification after source implementation:
 - `git diff --check`
 
 No live jobs are meaningful for 7F.
+
+Implementation verification on `b8a97413`:
+
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2/evidence-lifecycle/evidence-corpus/build-decision.test.ts test/unit/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.test.ts test/unit/lib/analyzer-v2/boundary-guard.test.ts` - passed, 3 files / 53 tests.
+- `npm -w apps/web run test -- test/unit/lib/analyzer-v2 test/unit/lib/analyzer-v2-runtime test/unit/app/api/internal/analyzer-v2/claim-understanding-runtime-artifacts/route.test.ts` - passed, 30 files / 241 tests.
+- `npm -w apps/web run build` - passed.
+- `git diff --check` - passed.
 
 ## 10. Non-Goals
 
