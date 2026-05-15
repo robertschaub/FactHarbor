@@ -3106,3 +3106,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7M Post-7L-1 Consolidation -- [Standard] [open-items: yes]
 **For next agent:** Committed docs-only 7M after Senior Developer, Code Reviewer, and LLM Expert all approved the next-step proposition. The next V2 action should be a 7M-1 source package for hidden query-plan inspection and non-executable query-plan-to-source-acquisition handoff only. Do not jump to source acquisition, provider/search/fetch, Source Reliability, cache IO, product wiring, public exposure, live jobs, ACS/direct URL execution, or V1 cleanup.
 -> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7M_Post_7L1_Consolidation.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7M-1 Source Package -- [Standard] [open-items: yes]
+**For next agent:** Prepared reviewer-approved 7M-1 source package for hidden/internal query-plan inspection and non-executable query-plan-to-source-acquisition handoff only. Initial LLM Expert and Code Reviewer `MODIFY` findings were resolved by adding an explicit inspection request envelope with selected AtomicClaim IDs from the same 7L-1 invocation, banning selected-ID inference, tightening adapter diagnostic redaction, and adding structural/ACS-direct-URL verifier coverage. Next step is implementing 7M-1 exactly; source execution, product wiring, public exposure, live jobs, cache IO, Source Reliability, ACS/direct URL execution, and V1 cleanup remain blocked.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7M1_Source_Package.md
