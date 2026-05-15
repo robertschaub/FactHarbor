@@ -63,6 +63,7 @@ Use this checklist for every 6B.* Claim Understanding runtime/provider slice unt
 - Cache rule: runtime Claim Understanding remains no-store/no-read unless a later gate approves cache identity, cache IO ownership, provenance, rollback, and tests.
 - Public surface rule: the public result remains the damaged pre-cutover envelope until a separate result/report/API/UI gate approves exposure.
 - Live-job rule: live jobs become meaningful only after a committed, runtime-refreshed source-wiring slice can produce a real hidden V2 direct-text artifact without scaffold-only injection. Current Captain allowance is max 4 live jobs without further confirmation, but a slice may still require a narrower gate.
+- Captain-approved V2 direct-text canaries for future live-job gates: `Mehr als 235 000 Personen aus dem Asylbereich sind zurzeit in der Schweiz`; `Did the legal proceedings against Jair Bolsonaro comply with Brazilian law, and did the proceedings and the verdicts meet international standards for a fair trial?`. Do not substitute, paraphrase, translate, or add unapproved inputs.
 - V1 cleanup rule: V1 code/prompts/types are removal debt only after V2 owns the equivalent public path, cutover stabilizes, and the cleanup ledger verifier passes. Git history and tagged old worktrees are the backward-investigation mechanism.
 
 ## Approval Gates
