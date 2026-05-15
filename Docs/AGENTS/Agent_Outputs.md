@@ -3022,3 +3022,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | LLM Expert | Codex (GPT-5) | V2 4C3c Claim Understanding Diagnostics Gate Review -- [Standard] [open-items: yes]
 **For next agent:** Verdict is diagnostics first, not prompt/schema/model edits. 4C3c only exposes `schemaOutcome: damaged` / `claim_contract_validation_failed`; `model-adapter.ts` has attempt failure detail, but `runtime-stage.ts` drops it from completed hidden artifacts. Add a reviewed internal-only schema-error diagnostics gate before any topic-neutral prompt/schema/model correction.
 -> Docs/AGENTS/Handoffs/2026-05-15_LLM_Expert_V2_4C3c_Claim_Understanding_Diagnostics_Gate_Review.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 Slice 7J-1 Non-Executable Evidence Task Contracts -- [Significant] [open-items: yes]
+**For next agent:** Implemented Captain-approved 7J-1 at `1a874b8d`: inert Evidence Lifecycle prompt sections in `claimboundary-v2`, strict task-result schemas, categorical missing-evidence dimensions, non-executable task-policy metadata, and boundary/static verifier tests. No prompt seeding, approval flips, provider/search/fetch execution, cache IO, SR integration, public exposure, live jobs, or V1 cleanup.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7J1_NonExecutable_Evidence_Task_Contracts.md

@@ -1,7 +1,7 @@
 # V2 Slice 7J Evidence Prompt/Schema/Model/UCM Approval Package
 
 **Date:** 2026-05-15
-**Status:** consolidated approval package after LLM Expert/deputy review; pending direct Captain approval; no source authorization
+**Status:** consolidated approval package after LLM Expert/deputy review; approved by Captain for 7J-1; 7J-1 implemented at `1a874b8d`; no runtime/source execution authorization
 **Owner role:** Lead Architect / Captain deputy
 **Baseline:** `63acb0eb` (`docs: record v2 direct-text canaries`)
 **Prior gate:** 7I `f58373a5` (`docs: define v2 evidence task design gate`)
@@ -271,3 +271,10 @@ If Captain approves this consolidated package, the next allowed step is still on
 Exact Captain wording required before source implementation:
 
 > Approved to implement the next 7J non-executable source package under `Docs/WIP/2026-05-15_V2_Slice_7J_Evidence_Prompt_Schema_Model_UCM_Approval_Package.md`, limited to clean-room V2 Evidence Lifecycle prompt sections, structured output schemas, non-executable task-policy metadata, and inert verifier-style tests only. No live LLM/provider/search/fetch execution, runtime execution, file seeding, approval flips, provider/search/fetch execution, cache IO, Source Reliability integration, public exposure, live jobs, direct-text canary execution, or V1 cleanup.
+
+Approval and implementation record:
+
+- Captain approved the exact 7J-1 implementation boundary in conversation on 2026-05-15.
+- 7J-1 implementation commit: `1a874b8d` (`feat: add v2 evidence task contracts`).
+- Completion handoff: `Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_Slice_7J1_NonExecutable_Evidence_Task_Contracts.md`.
+- The implemented slice remains non-executable and does not authorize prompt/model runtime execution, file seeding, approval flips, provider/search/fetch execution, cache IO, Source Reliability integration, public exposure, live jobs, direct-text canary execution, ACS/direct URL execution, or V1 cleanup.
