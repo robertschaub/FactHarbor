@@ -35,6 +35,7 @@ const analyzerV2CachePolicyRegistryPath = path.resolve(v2AnalyzerRoot, "gateway/
 const analyzerV2CacheGovernancePath = path.resolve(v2AnalyzerRoot, "gateway/cache-governance.ts");
 const analyzerV2GatewayPolicyPath = path.resolve(v2AnalyzerRoot, "gateway/policy.ts");
 const evidenceLifecycleRoot = path.resolve(v2AnalyzerRoot, "evidence-lifecycle");
+const evidenceLifecycleSourceAcquisitionRoot = path.resolve(evidenceLifecycleRoot, "source-acquisition");
 const analyzerV2RuntimeProviderContractPath = path.resolve(
   analyzerV2RuntimeRoot,
   "claim-understanding-provider-boundary.contract.ts",
@@ -169,6 +170,25 @@ const forbiddenProviderSdkSpecifiers = [
   "@anthropic-ai/",
   "@google/generative-ai",
   "@mistralai/",
+];
+const forbiddenSearchFetchProviderSpecifiers = [
+  "@/lib/web-search",
+  "@/lib/search-provider-utils",
+];
+const forbiddenSearchFetchProviderSpecifierFragments = [
+  "/web-search",
+  "/search-",
+  "/research-acquisition-stage",
+];
+const forbiddenSourceReliabilitySpecifiers = [
+  "@/lib/source-reliability",
+  "@/lib/source-reliability-cache",
+  "@/lib/source-reliability-config",
+  "@/lib/source-reliability-eval-helpers",
+];
+const forbiddenSourceReliabilitySpecifierFragments = [
+  "/source-reliability",
+  "/sr-service",
 ];
 const approvedProviderFactorySdkSpecifiers = new Set([
   "ai",
@@ -866,6 +886,22 @@ function isProviderSdkImport(specifier: string): boolean {
   return forbiddenProviderSdkSpecifiers.some((forbidden) =>
     specifier === forbidden || specifier.startsWith(forbidden)
   );
+}
+
+function isSearchFetchProviderImport(specifier: string): boolean {
+  const normalized = toPosix(specifier);
+  return forbiddenSearchFetchProviderSpecifiers.some((forbidden) =>
+    normalized === forbidden || normalized.startsWith(`${forbidden}/`)
+  )
+    || forbiddenSearchFetchProviderSpecifierFragments.some((fragment) => normalized.includes(fragment));
+}
+
+function isSourceReliabilityImport(specifier: string): boolean {
+  const normalized = toPosix(specifier);
+  return forbiddenSourceReliabilitySpecifiers.some((forbidden) =>
+    normalized === forbidden || normalized.startsWith(`${forbidden}/`)
+  )
+    || forbiddenSourceReliabilitySpecifierFragments.some((fragment) => normalized.includes(fragment));
 }
 
 function isApprovedProviderFactorySdkImport(filePath: string, specifier: string): boolean {
@@ -1656,6 +1692,7 @@ describe("analyzer-v2 boundary guard", () => {
   it("keeps Evidence Lifecycle intake contract-only before provider wiring", () => {
     const evidenceLifecycleFiles = collectFiles(evidenceLifecycleRoot, (filePath) =>
       [".ts", ".tsx"].includes(path.extname(filePath))
+        && !toPosix(filePath).startsWith(`${toPosix(evidenceLifecycleSourceAcquisitionRoot)}/`)
     );
     const violations: string[] = [];
 
@@ -1687,6 +1724,62 @@ describe("analyzer-v2 boundary guard", () => {
         }
         if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isCacheIoImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
+        }
+        if (isProviderSdkImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports provider SDK ${specifier}`);
+        }
+        if (isTestOrMockImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports test/mock/fixture module ${specifier}`);
+        }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps Evidence Lifecycle source-acquisition contract-only before provider wiring", () => {
+    const sourceAcquisitionFiles = collectFiles(evidenceLifecycleSourceAcquisitionRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    );
+    const violations: string[] = [];
+
+    expect(sourceAcquisitionFiles.map((filePath) => toPosix(path.relative(webRoot, filePath))).sort()).toEqual([
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/request.ts",
+      "src/lib/analyzer-v2/evidence-lifecycle/source-acquisition/types.ts",
+    ]);
+
+    for (const sourcePath of sourceAcquisitionFiles) {
+      const sourceFile = parseSource(sourcePath);
+      for (const specifier of collectModuleSpecifiers(sourceFile)) {
+        if (isV1AnalyzerImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports V1 analyzer ${specifier}`);
+        }
+        if (isClaimUnderstandingModelAdapterImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports model adapter ${specifier}`);
+        }
+        if (isClaimUnderstandingPromptLoaderImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports prompt loader ${specifier}`);
+        }
+        if (isAnalyzerV2CacheGovernanceImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports cache governance ${specifier}`);
+        }
+        if (isAnalyzerV2GatewayPolicyImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports gateway policy ${specifier}`);
+        }
+        if (isClaimUnderstandingRuntimeDispatchImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports runtime dispatch ${specifier}`);
+        }
+        if (isAnalyzerV2RuntimeImport(sourcePath, specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime ${specifier}`);
+        }
+        if (isSearchFetchProviderImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports search/fetch provider ${specifier}`);
+        }
+        if (isSourceReliabilityImport(specifier)) {
+          violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports Source Reliability ${specifier}`);
         }
         if (isCacheIoImport(specifier)) {
           violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports IO/storage dependency ${specifier}`);
