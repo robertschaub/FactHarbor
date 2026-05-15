@@ -11,6 +11,7 @@ const v1AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer");
 const v2AnalyzerRoot = path.resolve(srcRoot, "lib/analyzer-v2");
 const analyzerV2RuntimeRoot = path.resolve(srcRoot, "lib/analyzer-v2-runtime");
 const analyzerV2IndexPath = path.resolve(v2AnalyzerRoot, "index.ts");
+const analyzerV2ExecutionSelectionPath = path.resolve(v2AnalyzerRoot, "execution-selection.ts");
 const analyzerV2OrchestratorPath = path.resolve(v2AnalyzerRoot, "orchestrator.ts");
 const analyzerV2PipelineShellPath = path.resolve(v2AnalyzerRoot, "pipeline-shell.ts");
 const analyzerV2RunnerIngressPath = path.resolve(v2AnalyzerRoot, "runner-ingress.ts");
@@ -60,6 +61,7 @@ const repoRoot = path.resolve(webRoot, "../..");
 const v2AgentsPath = path.resolve(v2AnalyzerRoot, "AGENTS.md");
 const canonicalGuardrailsPath = path.resolve(repoRoot, "Docs/AGENTS/V2_Pipeline_Implementation_Guardrails.md");
 const reportResultV2SchemaPath = path.resolve(analyzerV2FixtureRoot, "schemas/report-result-v2.schema.json");
+const hiddenRuntimeKillSwitchEnvName = "FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME";
 
 const fixtureDataExtensions = new Set([".json", ".md", ".txt"]);
 const forbiddenV1ContractIdentifiers = new Set([
@@ -1503,6 +1505,25 @@ describe("analyzer-v2 boundary guard", () => {
             violations.push(`${toPosix(path.relative(webRoot, sourcePath))} imports analyzer-v2-runtime module ${specifier}`);
           }
         }
+      }
+    }
+
+    expect(violations).toEqual([]);
+  });
+
+  it("keeps the 4C3b hidden runtime kill switch confined to product execution selection", () => {
+    const violations: string[] = [];
+    const approvedPath = toPosix(analyzerV2ExecutionSelectionPath);
+
+    for (const sourcePath of collectFiles(srcRoot, (filePath) =>
+      [".ts", ".tsx"].includes(path.extname(filePath))
+    )) {
+      const content = readFileSync(sourcePath, "utf8");
+      if (
+        content.includes(hiddenRuntimeKillSwitchEnvName)
+        && toPosix(sourcePath) !== approvedPath
+      ) {
+        violations.push(`${toPosix(path.relative(webRoot, sourcePath))} references hidden runtime kill switch env`);
       }
     }
 

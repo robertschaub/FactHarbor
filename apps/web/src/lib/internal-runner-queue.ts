@@ -430,7 +430,9 @@ async function runJobBackground(jobId: string) {
     };
 
     result = executionSelection.path === "claimboundary-v2-shell"
-      ? await runClaimBoundaryV2Shell(analysisInput)
+      ? await runClaimBoundaryV2Shell(analysisInput, {
+        runtimeActivationStatus: executionSelection.runtimeActivationStatus,
+      })
       : await runClaimBoundaryAnalysis(analysisInput);
 
     if (result?.resultJson?.meta && executionSelection.path === "claimboundary-v2-shell") {

@@ -355,3 +355,16 @@ Verification:
 - static scans found provider SDK imports only in the approved factory file, no forbidden cache/config/job-history IO in the activation path, and no public-surface activation/hidden-artifact leakage.
 
 4C3c remains the next gate for committed/runtime-refreshed live smoke inspection. It must still prove a real hidden artifact can be inspected without public leakage before any broader activation or live-job expansion.
+
+## 17. 4C3b P1 Reachability Review Fix
+
+Post-4C3b code review found that hidden direct-text activation was still unreachable from production runner flow because every `PipelineRunContext` froze `status: "kill_switch_closed"`.
+
+The fix keeps the 4C3b design default-closed while making the approved path operator-openable:
+
+- `execution-selection.ts` is the only source file that reads the dedicated runtime kill-switch env value `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`;
+- activation is enabled only when the stored job variant is `claimboundary-v2`, the existing V2 shell gate is enabled, and the dedicated runtime kill switch is open;
+- `internal-runner-queue.ts` passes the selected status into `runClaimBoundaryV2Shell`;
+- shell/orchestrator/run-context only thread and freeze the status;
+- approval, provider, model, prompt, cache, timeout, and budget values remain from the deputy-approved temporary activation profile, not from env or job input;
+- public damaged envelope behavior, no-cache-IO behavior, no ACS/direct URL execution, and no-live-job scope remain unchanged.

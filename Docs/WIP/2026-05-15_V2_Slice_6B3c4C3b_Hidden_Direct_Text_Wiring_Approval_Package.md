@@ -261,3 +261,16 @@ Post-implementation review approved 4C3b and raised one pre-4C3c action:
 
 - F1 was addressed before 4C3c: the temporary in-memory `v2_observability_ledger` store now caps both retained ledgers and retained records per ledger, and reads/clears no longer create empty ledger entries.
 - F2 is accepted planned temporary debt: `CAPTAIN_APPROVAL` remains a static deputy-approved temporary activation profile for 4C3b. It must be replaced by real UCM/task-policy-derived approval when that storage and activation authority are ready.
+
+Post-review P1 found that the hidden direct-text runtime was still unreachable from production runner flow because the run context always froze `kill_switch_closed`.
+
+P1 fix:
+
+- default activation remains `kill_switch_closed`;
+- `execution-selection.ts` owns the only runtime kill-switch environment read: `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`;
+- the runtime opens only when the stored variant is `claimboundary-v2`, the V2 shell gate is enabled, and the dedicated runtime kill switch is open;
+- `internal-runner-queue.ts` passes only the selected activation status into `runClaimBoundaryV2Shell`;
+- `run-context.ts` freezes that status into the activation snapshot hash;
+- env remains a kill-switch selector only, not approval/model/provider/config authority;
+- public result/report/UI/export/compatibility output remains damaged/pre-cutover and non-public;
+- no live jobs were submitted for this fix.

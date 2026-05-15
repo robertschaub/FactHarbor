@@ -13,6 +13,8 @@ export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION =
 export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID =
   "v2.claim-understanding.hidden-direct-text.4c3b";
 export const CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_ROLLBACK_COMMIT = "fc68915d";
+export const CLAIM_UNDERSTANDING_RUNTIME_KILL_SWITCH_CLOSED = "kill_switch_closed";
+export const CLAIM_UNDERSTANDING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT = "enabled_hidden_direct_text";
 
 export type PipelineRunConfigSnapshot = {
   source: "not_loaded_pre_provider_wiring_gate";
@@ -43,7 +45,7 @@ export type PipelineRunObservabilityLedgerHandle = {
 export type PipelineRunClaimUnderstandingRuntimeActivationSnapshot = {
   snapshotVersion: typeof CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION;
   source: "v2_task_policy_snapshot";
-  status: "kill_switch_closed" | "enabled_hidden_direct_text";
+  status: PipelineRunClaimUnderstandingRuntimeActivationStatus;
   activationProfileId: typeof CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID;
   activationSnapshotHash: string;
   authority: "deputy_approved_temporary_activation_profile";
@@ -70,6 +72,10 @@ export type PipelineRunClaimUnderstandingRuntimeActivationSnapshot = {
   };
 };
 
+export type PipelineRunClaimUnderstandingRuntimeActivationStatus =
+  | typeof CLAIM_UNDERSTANDING_RUNTIME_KILL_SWITCH_CLOSED
+  | typeof CLAIM_UNDERSTANDING_RUNTIME_ENABLED_HIDDEN_DIRECT_TEXT;
+
 export type PipelineRunContext = {
   runId: string;
   inputType: ClaimBoundaryV2Ingress["submitted"]["kind"];
@@ -90,6 +96,7 @@ export type ClaimBoundaryV2RunContext = PipelineRunContext;
 
 export type BuildClaimBoundaryV2RunContextOptions = {
   now?: () => Date;
+  runtimeActivationStatus?: PipelineRunClaimUnderstandingRuntimeActivationStatus;
 };
 
 function cloneJson<T>(value: T): T {
@@ -132,6 +139,8 @@ function buildPromptProfileRef(
 
 function buildClaimUnderstandingRuntimeActivationSnapshot(
   modelPolicy: PipelineRunModelPolicySnapshot,
+  status: PipelineRunClaimUnderstandingRuntimeActivationStatus =
+    CLAIM_UNDERSTANDING_RUNTIME_KILL_SWITCH_CLOSED,
 ): PipelineRunClaimUnderstandingRuntimeActivationSnapshot {
   const configProfileHash = sha256Json({
     activationProfileId: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID,
@@ -142,7 +151,7 @@ function buildClaimUnderstandingRuntimeActivationSnapshot(
   const base = {
     snapshotVersion: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_SNAPSHOT_VERSION,
     source: "v2_task_policy_snapshot",
-    status: "kill_switch_closed",
+    status,
     activationProfileId: CLAIM_UNDERSTANDING_RUNTIME_ACTIVATION_PROFILE_ID,
     authority: "deputy_approved_temporary_activation_profile",
     suppliedBy: "product_owned_activation_authority",
@@ -233,7 +242,10 @@ export function buildClaimBoundaryV2RunContext(
       ledgerId: `${runId}:precutover-observability`,
       status: "runtime_activation_ready",
     },
-    claimUnderstandingRuntimeActivation: buildClaimUnderstandingRuntimeActivationSnapshot(modelPolicy),
+    claimUnderstandingRuntimeActivation: buildClaimUnderstandingRuntimeActivationSnapshot(
+      modelPolicy,
+      options.runtimeActivationStatus,
+    ),
   };
 }
 

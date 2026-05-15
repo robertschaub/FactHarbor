@@ -74,4 +74,37 @@ describe("analyzer-v2 run context", () => {
     expect(context.claimUnderstandingRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
     expect(context.claimUnderstandingRuntimeActivation.configProfileHash).toMatch(/^[a-f0-9]{64}$/);
   });
+
+  it("freezes product-selected hidden direct-text runtime activation in the run context", () => {
+    const closedContext = buildClaimBoundaryV2RunContext({
+      runIdHint: "job-context-runtime-closed",
+      submitted: {
+        kind: "text",
+        value: "Submitted text",
+      },
+      preparedSeed: null,
+      selectedAtomicClaimIds: [],
+    });
+    const enabledContext = buildClaimBoundaryV2RunContext(
+      {
+        runIdHint: "job-context-runtime-enabled",
+        submitted: {
+          kind: "text",
+          value: "Submitted text",
+        },
+        preparedSeed: null,
+        selectedAtomicClaimIds: [],
+      },
+      {
+        runtimeActivationStatus: "enabled_hidden_direct_text",
+      },
+    );
+
+    expect(closedContext.claimUnderstandingRuntimeActivation.status).toBe("kill_switch_closed");
+    expect(enabledContext.claimUnderstandingRuntimeActivation.status).toBe("enabled_hidden_direct_text");
+    expect(enabledContext.claimUnderstandingRuntimeActivation.activationSnapshotHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(enabledContext.claimUnderstandingRuntimeActivation.activationSnapshotHash).not.toBe(
+      closedContext.claimUnderstandingRuntimeActivation.activationSnapshotHash,
+    );
+  });
 });

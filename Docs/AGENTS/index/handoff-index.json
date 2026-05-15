@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-15T05:24:46.215Z",
-  "count": 475,
+  "generatedAt": "2026-05-15T05:58:20.396Z",
+  "count": 476,
   "entries": [
     {
       "file": "2026-04-01_LLM_Expert_AI_Agent_Tooling_Assessment.md",
@@ -10209,6 +10209,27 @@
         "apps/web/src/lib/analyzer-v2/claim-understanding/runtime-stage.ts"
       ],
       "summary": "Continue with 4C3c only if the task is specifically a committed/runtime-refreshed live smoke gate. Re-read the 4C3b package, `V2-RUNTIME-GATE-CHECKLIST-2026-05-14.1`, `claim-understanding-runtime-activation.ts`, `runtime-stage.ts`, and `boundary-guard.test.ts` before widening activation. Preserve di"
+    },
+    {
+      "file": "2026-05-15_Lead_Architect_V2_4C3b_P1_Runtime_Reachability_Fix.md",
+      "date": "2026-05-15",
+      "roles": [
+        "lead_architect"
+      ],
+      "topics": [
+        "v2",
+        "4c3b",
+        "p1",
+        "runtime",
+        "reachability",
+        "fix"
+      ],
+      "files_touched": [
+        "apps/web/src/lib/analyzer-v2/execution-selection.ts",
+        "apps/web/src/lib/internal-runner-queue.ts",
+        "apps/web/src/lib/analyzer-v2/run-context.ts"
+      ],
+      "summary": "The product reachability path is `resolveAnalyzerExecutionSelection(...)` -> `runJobBackground(...)` -> `runClaimBoundaryV2Shell(..., { runtimeActivationStatus })` -> `buildClaimBoundaryV2RunContext(...)` -> `buildClaimUnderstandingRuntimeActivation(...)`. Keep the public envelope damaged/pre-cutove"
     },
     {
       "file": "2026-05-15_Lead_Architect_V2_4C3b_Review_F1_Artifact_Sink_Bounds.md",

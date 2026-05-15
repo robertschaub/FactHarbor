@@ -474,6 +474,14 @@ Post-4C3a hidden-wiring debate:
 - `git diff --check` passed;
 - static scans found provider SDK imports only in the approved factory file, no forbidden cache/config/job-history IO in the activation path, and no public-surface activation/hidden-artifact leakage.
 
+6B.3c-4C3b P1 reachability fix:
+
+- code review found that the product runner could not open hidden direct-text activation because `run-context.ts` always froze `kill_switch_closed`;
+- the fix keeps default closed but makes the hidden runtime reachable from production runner flow when, and only when, stored variant is `claimboundary-v2`, the V2 shell gate is enabled, and `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`;
+- `execution-selection.ts` owns the env kill-switch read, `internal-runner-queue.ts` passes only the selected status, and `run-context.ts` freezes it in the activation snapshot;
+- env remains a kill-switch selector only and does not supply approval/model/provider/config authority;
+- no live jobs were submitted for the fix.
+
 ## 8. Approval Gate Before Code
 
 Reviewers have approved this revised plan for 6B.3a foundation only.

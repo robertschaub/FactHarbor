@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   CLAIMBOUNDARY_V1_VARIANT,
   CLAIMBOUNDARY_V2_VARIANT,
+  CLAIM_UNDERSTANDING_RUNTIME_FLAG,
+  CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE,
+  isAnalyzerV2ClaimUnderstandingRuntimeEnabled,
   isAnalyzerV2ShellEnabled,
   resolveAnalyzerExecutionSelection,
 } from "@/lib/analyzer-v2/execution-selection";
@@ -14,6 +17,8 @@ describe("analyzer-v2 execution selection", () => {
       executedVariant: CLAIMBOUNDARY_V1_VARIANT,
       fallbackReason: null,
       v2ShellEnabled: false,
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
     });
   });
 
@@ -26,6 +31,8 @@ describe("analyzer-v2 execution selection", () => {
       executedVariant: CLAIMBOUNDARY_V1_VARIANT,
       fallbackReason: null,
       v2ShellEnabled: true,
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
     });
   });
 
@@ -36,6 +43,8 @@ describe("analyzer-v2 execution selection", () => {
       executedVariant: CLAIMBOUNDARY_V1_VARIANT,
       fallbackReason: "v2-shell-disabled",
       v2ShellEnabled: false,
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
     });
   });
 
@@ -48,6 +57,31 @@ describe("analyzer-v2 execution selection", () => {
       executedVariant: CLAIMBOUNDARY_V2_VARIANT,
       fallbackReason: null,
       v2ShellEnabled: true,
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
+    });
+  });
+
+  it("opens hidden direct-text runtime only behind the V2 shell and dedicated runtime kill switch", () => {
+    const env = {
+      FH_ANALYZER_V2_SHELL: "enabled",
+      [CLAIM_UNDERSTANDING_RUNTIME_FLAG]: CLAIM_UNDERSTANDING_RUNTIME_FLAG_ENABLED_VALUE,
+    };
+
+    expect(isAnalyzerV2ClaimUnderstandingRuntimeEnabled(env)).toBe(true);
+    expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V2_VARIANT, env)).toEqual({
+      path: "claimboundary-v2-shell",
+      requestedVariant: CLAIMBOUNDARY_V2_VARIANT,
+      executedVariant: CLAIMBOUNDARY_V2_VARIANT,
+      fallbackReason: null,
+      v2ShellEnabled: true,
+      runtimeActivationStatus: "enabled_hidden_direct_text",
+      runtimeActivationEnabled: true,
+    });
+    expect(resolveAnalyzerExecutionSelection(CLAIMBOUNDARY_V1_VARIANT, env)).toMatchObject({
+      path: "claimboundary-v1",
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
     });
   });
 
@@ -67,6 +101,8 @@ describe("analyzer-v2 execution selection", () => {
       executedVariant: CLAIMBOUNDARY_V1_VARIANT,
       fallbackReason: "unsupported-variant",
       v2ShellEnabled: true,
+      runtimeActivationStatus: "kill_switch_closed",
+      runtimeActivationEnabled: false,
     });
   });
 });

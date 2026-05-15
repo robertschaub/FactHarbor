@@ -3004,3 +3004,8 @@ Follow-up review of the gate also lacked consent for source wiring (`MODIFY/BLOC
 ### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 4C3b Review F1 Artifact Sink Bounds -- [Standard] [open-items: yes]
 **For next agent:** Addressed review F1 before 4C3c by bounding the temporary in-memory `v2_observability_ledger`: retained ledgers and records per ledger are capped, and read/clear do not create empty retained ledgers. F2 remains planned temporary debt: static `CAPTAIN_APPROVAL` must be replaced by UCM/task-policy-derived authority later.
 -> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_4C3b_Review_F1_Artifact_Sink_Bounds.md
+
+---
+### 2026-05-15 | Lead Architect | Codex (GPT-5.5) | V2 4C3b P1 Runtime Reachability Fix -- [Significant] [open-items: yes]
+**For next agent:** Addressed P1 dead-code finding. Hidden direct-text runtime is now reachable from product runner only when stored variant is `claimboundary-v2`, the V2 shell gate is enabled, and `FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME=enabled_hidden_direct_text`. Env is a kill-switch selector only; authority/model/provider/config remain the frozen temporary activation profile. No live jobs were submitted.
+-> Docs/AGENTS/Handoffs/2026-05-15_Lead_Architect_V2_4C3b_P1_Runtime_Reachability_Fix.md

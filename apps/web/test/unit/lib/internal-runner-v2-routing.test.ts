@@ -144,6 +144,7 @@ describe("internal runner V2 shell routing", () => {
     process.env.FH_API_BASE_URL = "http://localhost:3001";
     delete process.env.FH_ANALYZER_V2_SHELL;
     delete process.env.FH_ANALYZER_PIPELINE;
+    delete process.env.FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME;
     (globalThis as any).__fhProviderHealthState = undefined;
     (globalThis as any).__fhRunnerQueueState = undefined;
   });
@@ -200,6 +201,12 @@ describe("internal runner V2 shell routing", () => {
 
     expect(runClaimBoundaryAnalysis).not.toHaveBeenCalled();
     expect(runClaimBoundaryV2Shell).toHaveBeenCalledTimes(1);
+    expect(runClaimBoundaryV2Shell).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        runtimeActivationStatus: "kill_switch_closed",
+      }),
+    );
     expect(resultBodies[0].resultJson.meta).toMatchObject({
       pipeline: "claimboundary-v2",
     });
@@ -208,6 +215,24 @@ describe("internal runner V2 shell routing", () => {
     expect(resultBodies[0].resultJson.meta.pipelineVariantRequested).toBeUndefined();
     expect(resultBodies[0].resultJson.meta.pipelineVariantFallbackReason).toBeUndefined();
     expect(resultBodies[0].reportMarkdown).toBe("V2 shell fixture report");
+  });
+
+  it("passes hidden direct-text runtime activation only when the dedicated runtime kill switch is open", async () => {
+    process.env.FH_ANALYZER_V2_SHELL = "enabled";
+    process.env.FH_ANALYZER_V2_CLAIM_UNDERSTANDING_RUNTIME = "enabled_hidden_direct_text";
+
+    await runQueuedJobHarness({
+      jobId: "job-v2-hidden-runtime-enabled",
+      pipelineVariant: "claimboundary-v2",
+    });
+
+    expect(runClaimBoundaryAnalysis).not.toHaveBeenCalled();
+    expect(runClaimBoundaryV2Shell).toHaveBeenCalledWith(
+      expect.any(Object),
+      expect.objectContaining({
+        runtimeActivationStatus: "enabled_hidden_direct_text",
+      }),
+    );
   });
 
   it("fails the job cleanly when the enabled V2 shell throws unexpectedly", async () => {
