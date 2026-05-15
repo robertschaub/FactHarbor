@@ -184,7 +184,20 @@ export type EvidenceExtractionResult =
     schemaVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
     taskKey: "evidence_extraction";
     status: "accepted";
-    evidenceItems: ExtractedEvidenceItemContract[];
+    extractionStatus: "evidence_extracted";
+    rationale: string;
+    evidenceItems: [ExtractedEvidenceItemContract, ...ExtractedEvidenceItemContract[]];
+    integrityEvents: EvidenceLifecycleTaskEvent[];
+    blockedReason: null;
+    damagedReason: null;
+  }
+  | {
+    schemaVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
+    taskKey: "evidence_extraction";
+    status: "accepted";
+    extractionStatus: "no_extractable_evidence";
+    rationale: string;
+    evidenceItems: [];
     integrityEvents: EvidenceLifecycleTaskEvent[];
     blockedReason: null;
     damagedReason: null;
@@ -193,6 +206,8 @@ export type EvidenceExtractionResult =
     schemaVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
     taskKey: "evidence_extraction";
     status: "blocked";
+    extractionStatus: null;
+    rationale: null;
     evidenceItems: null;
     integrityEvents: EvidenceLifecycleTaskEvent[];
     blockedReason: EvidenceLifecycleTaskBlockedReason;
@@ -202,6 +217,8 @@ export type EvidenceExtractionResult =
     schemaVersion: typeof EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION;
     taskKey: "evidence_extraction";
     status: "damaged";
+    extractionStatus: null;
+    rationale: null;
     evidenceItems: null;
     integrityEvents: EvidenceLifecycleTaskEvent[];
     blockedReason: null;

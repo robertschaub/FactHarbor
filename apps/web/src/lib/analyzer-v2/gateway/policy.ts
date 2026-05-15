@@ -8,6 +8,10 @@ import {
   ANALYZER_V2_SOURCE_AWARE_CACHE_POLICY,
 } from "@/lib/analyzer-v2/gateway/cache-policy-registry";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
+import {
+  EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS,
+  EVIDENCE_TASK_PROMPT_SECTION_IDS,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import type {
   AnalyzerV2GatewayTask,
   AnalyzerV2GatewayTaskId,
@@ -108,12 +112,12 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
     notes: `Owns V2 claim understanding and Gate 1 contracts after explicit prompt/model approval; accepted results carry ${CLAIM_CONTRACT_V2_SCHEMA_VERSION}.`,
   }),
   task({
-    id: "research_query_planning",
-    owner: "research_planning",
+    id: "evidence_query_planning",
+    owner: "evidence_lifecycle",
     modelTask: "understand",
-    promptSectionId: "V2_RESEARCH_QUERY_PLANNING",
-    outputSchemaVersion: "v2.research_query_planning.0",
-    notes: "Owns V2 query planning after prompt/model/cache policy approval.",
+    promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_query_planning,
+    outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_query_planning,
+    notes: "Owns V2 Evidence Lifecycle query planning after prompt/model/cache policy approval.",
   }),
   {
     id: "research_acquisition",
@@ -127,13 +131,31 @@ export const ANALYZER_V2_GATEWAY_TASKS = [
     notes: "Structural acquisition adapter boundary; no LLM prompt policy is expected for fetching.",
   },
   task({
+    id: "evidence_applicability",
+    owner: "evidence_lifecycle",
+    modelTask: "extract_evidence",
+    promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_applicability,
+    outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_applicability,
+    sourceAware: true,
+    notes: "Owns V2 Evidence Lifecycle applicability assessment after prompt/model/cache policy approval.",
+  }),
+  task({
     id: "evidence_extraction",
     owner: "evidence_lifecycle",
     modelTask: "extract_evidence",
-    promptSectionId: "V2_EVIDENCE_EXTRACTION",
-    outputSchemaVersion: "v2.evidence_extraction.0",
+    promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_extraction,
+    outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_extraction,
     sourceAware: true,
-    notes: "Owns relevance, applicability, evidence extraction, and evidence-source identity cache requirements.",
+    notes: "Owns V2 Evidence Lifecycle evidence extraction and evidence-source identity cache requirements.",
+  }),
+  task({
+    id: "evidence_sufficiency",
+    owner: "evidence_lifecycle",
+    modelTask: "context_refinement",
+    promptSectionId: EVIDENCE_TASK_PROMPT_SECTION_IDS.evidence_sufficiency,
+    outputSchemaVersion: EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS.evidence_sufficiency,
+    sourceAware: true,
+    notes: "Owns V2 Evidence Lifecycle sufficiency assessment after prompt/model/cache policy approval.",
   }),
   task({
     id: "boundary_clustering",

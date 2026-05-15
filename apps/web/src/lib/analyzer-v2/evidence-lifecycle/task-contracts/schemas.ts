@@ -186,11 +186,25 @@ const ExtractedEvidenceItemContractSchema = z.object({
   }).strict(),
 }).strict();
 
-const AcceptedExtractionResultSchema = z.object({
+const AcceptedExtractionWithEvidenceResultSchema = z.object({
   schemaVersion: z.literal(EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION),
   taskKey: z.literal("evidence_extraction"),
   status: z.literal("accepted"),
+  extractionStatus: z.literal("evidence_extracted"),
+  rationale: z.string().min(1),
   evidenceItems: z.array(ExtractedEvidenceItemContractSchema).min(1),
+  integrityEvents: z.array(EvidenceLifecycleTaskEventSchema),
+  blockedReason: z.null(),
+  damagedReason: z.null(),
+}).strict();
+
+const AcceptedExtractionNoEvidenceResultSchema = z.object({
+  schemaVersion: z.literal(EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION),
+  taskKey: z.literal("evidence_extraction"),
+  status: z.literal("accepted"),
+  extractionStatus: z.literal("no_extractable_evidence"),
+  rationale: z.string().min(1),
+  evidenceItems: z.array(ExtractedEvidenceItemContractSchema).length(0),
   integrityEvents: z.array(EvidenceLifecycleTaskEventSchema),
   blockedReason: z.null(),
   damagedReason: z.null(),
@@ -200,6 +214,8 @@ const BlockedExtractionResultSchema = z.object({
   schemaVersion: z.literal(EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION),
   taskKey: z.literal("evidence_extraction"),
   status: z.literal("blocked"),
+  extractionStatus: z.null(),
+  rationale: z.null(),
   evidenceItems: z.null(),
   integrityEvents: z.array(EvidenceLifecycleTaskEventSchema).min(1),
   blockedReason: EvidenceLifecycleTaskBlockedReasonSchema,
@@ -210,14 +226,17 @@ const DamagedExtractionResultSchema = z.object({
   schemaVersion: z.literal(EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION),
   taskKey: z.literal("evidence_extraction"),
   status: z.literal("damaged"),
+  extractionStatus: z.null(),
+  rationale: z.null(),
   evidenceItems: z.null(),
   integrityEvents: z.array(EvidenceLifecycleTaskEventSchema).min(1),
   blockedReason: z.null(),
   damagedReason: EvidenceLifecycleTaskDamagedReasonSchema,
 }).strict();
 
-export const EvidenceExtractionResultSchema = z.discriminatedUnion("status", [
-  AcceptedExtractionResultSchema,
+export const EvidenceExtractionResultSchema = z.union([
+  AcceptedExtractionWithEvidenceResultSchema,
+  AcceptedExtractionNoEvidenceResultSchema,
   BlockedExtractionResultSchema,
   DamagedExtractionResultSchema,
 ]);

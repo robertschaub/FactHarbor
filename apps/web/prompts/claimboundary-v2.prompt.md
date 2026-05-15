@@ -263,6 +263,8 @@ Top-level object:
 - `schemaVersion`: exactly `v2.evidence_extraction_result.0`
 - `taskKey`: exactly `evidence_extraction`
 - `status`: `accepted`, `blocked`, or `damaged`
+- `extractionStatus`: `evidence_extracted` or `no_extractable_evidence` when accepted, otherwise `null`
+- `rationale`: bounded extraction rationale when accepted, otherwise `null`
 - `evidenceItems`: accepted payload, otherwise `null`
 - `integrityEvents`: task events
 - `blockedReason`: blocked reason, otherwise `null`
@@ -270,6 +272,7 @@ Top-level object:
 
 Accepted `evidenceItems` payload:
 
+- `evidenceItems` may be empty only when `extractionStatus` is `no_extractable_evidence`.
 - `evidenceItemId`: stable evidence identifier.
 - `sourceRecordId` and `contentPacketId`: copied structural references.
 - `statement`: evidence statement extracted from the supplied content.

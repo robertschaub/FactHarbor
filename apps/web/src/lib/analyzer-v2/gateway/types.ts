@@ -1,8 +1,10 @@
 export type AnalyzerV2GatewayTaskId =
   | "claim_understanding_gate1"
-  | "research_query_planning"
   | "research_acquisition"
+  | "evidence_query_planning"
+  | "evidence_applicability"
   | "evidence_extraction"
+  | "evidence_sufficiency"
   | "boundary_clustering"
   | "verdict_debate"
   | "verdict_validation"

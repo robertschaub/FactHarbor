@@ -8,6 +8,11 @@ import {
 } from "@/lib/analyzer-v2/gateway/policy";
 import { getAnalyzerV2TaskModelPolicy } from "@/lib/analyzer-v2/gateway/model-policy-registry";
 import { CLAIM_UNDERSTANDING_RESULT_SCHEMA_VERSION } from "@/lib/analyzer-v2/claim-understanding/types";
+import {
+  EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS,
+  EVIDENCE_TASK_PROMPT_SECTION_IDS,
+  type EvidenceLifecycleTaskKey,
+} from "@/lib/analyzer-v2/evidence-lifecycle/task-contracts/types";
 import type { AnalyzerV2GatewayTask } from "@/lib/analyzer-v2/gateway/types";
 
 describe("analyzer-v2 gateway policy registry", () => {
@@ -78,6 +83,28 @@ describe("analyzer-v2 gateway policy registry", () => {
     });
   });
 
+  it("aligns Evidence Lifecycle gateway metadata with the 7J task contracts without enabling execution", () => {
+    const evidenceTaskKeys: readonly EvidenceLifecycleTaskKey[] = [
+      "evidence_query_planning",
+      "evidence_applicability",
+      "evidence_extraction",
+      "evidence_sufficiency",
+    ];
+
+    for (const taskKey of evidenceTaskKeys) {
+      const task = getAnalyzerV2GatewayTask(taskKey);
+
+      expect(task.owner).toBe("evidence_lifecycle");
+      expect(task.status).toBe("blockedUntilPromptApproved");
+      expect(task.promptPolicy?.sectionId).toBe(EVIDENCE_TASK_PROMPT_SECTION_IDS[taskKey]);
+      expect(task.promptPolicy?.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
+      expect(task.outputSchemaVersion).toBe(EVIDENCE_TASK_OUTPUT_SCHEMA_VERSIONS[taskKey]);
+      expect(task.modelPolicy?.registryPolicyId).toBe("unregistered");
+      expect(isAnalyzerV2GatewayTaskEligibleForExecutableStatus(task)).toBe(false);
+      expect(canExecuteAnalyzerV2GatewayTask(task)).toBe(false);
+    }
+  });
+
   it("does not allow executable status without approved prompt, model, and cache policies", () => {
     const base = getAnalyzerV2GatewayTask("claim_understanding_gate1");
     const approved = {
@@ -125,7 +152,7 @@ describe("analyzer-v2 gateway policy registry", () => {
       );
     }
 
-    const laterPromptBackedTask = getAnalyzerV2GatewayTask("research_query_planning");
+    const laterPromptBackedTask = getAnalyzerV2GatewayTask("evidence_query_planning");
     expect(canExecuteAnalyzerV2GatewayTask({
       ...laterPromptBackedTask,
       status: "executable",

@@ -162,6 +162,8 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
       schemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
       taskKey: "evidence_extraction",
       status: "accepted",
+      extractionStatus: "evidence_extracted",
+      rationale: "One evidence item was extractable from the applicable source content.",
       evidenceItems: [
         {
           evidenceItemId: "EVI_001",
@@ -191,10 +193,18 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
       blockedReason: null,
       damagedReason: null,
     };
+    const acceptedWithNoExtractableEvidence: EvidenceExtractionResult = {
+      ...accepted,
+      extractionStatus: "no_extractable_evidence",
+      rationale: "The applicable source content did not contain extractable evidence for the selected AtomicClaim.",
+      evidenceItems: [],
+    };
     const blocked: EvidenceExtractionResult = {
       schemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
       taskKey: "evidence_extraction",
       status: "blocked",
+      extractionStatus: null,
+      rationale: null,
       evidenceItems: null,
       integrityEvents: [taskBlockedEvent],
       blockedReason: "prompt_not_approved",
@@ -204,6 +214,8 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
       schemaVersion: EVIDENCE_EXTRACTION_RESULT_SCHEMA_VERSION,
       taskKey: "evidence_extraction",
       status: "damaged",
+      extractionStatus: null,
+      rationale: null,
       evidenceItems: null,
       integrityEvents: [schemaFailureEvent],
       blockedReason: null,
@@ -211,9 +223,20 @@ describe("analyzer-v2 Evidence Lifecycle task output schemas", () => {
     };
 
     expect(parseEvidenceExtractionResult(accepted)).toEqual(accepted);
+    expect(parseEvidenceExtractionResult(acceptedWithNoExtractableEvidence)).toEqual(
+      acceptedWithNoExtractableEvidence,
+    );
     expect(parseEvidenceExtractionResult(blocked)).toEqual(blocked);
     expect(parseEvidenceExtractionResult(damaged)).toEqual(damaged);
     expect(EvidenceExtractionResultSchema.safeParse(withExtraField(accepted)).success).toBe(false);
+    expect(EvidenceExtractionResultSchema.safeParse({
+      ...accepted,
+      evidenceItems: [],
+    }).success).toBe(false);
+    expect(EvidenceExtractionResultSchema.safeParse({
+      ...acceptedWithNoExtractableEvidence,
+      evidenceItems: accepted.evidenceItems,
+    }).success).toBe(false);
   });
 
   it("validates sufficiency accepted, blocked, and damaged envelopes", () => {
